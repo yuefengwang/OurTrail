@@ -4,7 +4,7 @@
 .card-label {
   display: block;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   margin-bottom: 12px;
 }
 

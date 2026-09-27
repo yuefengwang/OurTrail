@@ -193,7 +193,7 @@
         </picker>
       </form-field>
       <label class="check-label">
-        <checkbox checked="{{form.acceptingSignups}}" bindchange="onAccepting" />
+        <checkbox color="#163E35" checked="{{form.acceptingSignups}}" bindchange="onAccepting" />
         <text class="check-text">发布后开放报名</text>
       </label>
       <text class="section-title">明确风险与应对方式</text>
@@ -240,15 +240,15 @@
     <view class="stack">
       <text>发布当前已保存的活动。报名、同行人和车辆不会自动创建。</text>
       <label class="check-label">
-        <checkbox checked="{{participate}}" bindchange="onParticipate" />
+        <checkbox color="#163E35" checked="{{participate}}" bindchange="onParticipate" />
         <text class="check-text">我本人也参加本次活动（可选）</text>
       </label>
       <block wx:if="{{participate}}">
         <text class="small muted">发布后以你的常用资料报名。请先在「我的」检查本人及紧急联络信息。</text>
         <form-field label="本人出行方式">
           <radio-group bindchange="onTripChange">
-            <label class="radio-label"><radio value="self" checked="{{tripSelf}}" /><text>自行前往</text></label>
-            <label class="radio-label"><radio value="pickup" checked="{{!tripSelf}}" /><text>按上车点集合</text></label>
+            <label class="radio-label"><radio color="#163E35" value="self" checked="{{tripSelf}}" /><text>自行前往</text></label>
+            <label class="radio-label"><radio color="#163E35" value="pickup" checked="{{!tripSelf}}" /><text>按上车点集合</text></label>
           </radio-group>
         </form-field>
         <form-field wx:if="{{!tripSelf}}" label="选择上车点">
@@ -260,7 +260,7 @@
           </picker>
         </form-field>
         <label class="check-label">
-          <checkbox checked="{{dataUse}}" bindchange="onDataUse" />
+          <checkbox color="#163E35" checked="{{dataUse}}" bindchange="onDataUse" />
           <text class="check-text">独立同意本次活动使用我的报名与安全联络资料</text>
         </label>
       </block>

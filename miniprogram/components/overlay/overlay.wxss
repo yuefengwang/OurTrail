@@ -75,6 +75,6 @@
   gap: 12px;
   margin-bottom: 16px;
 }
-.overlay__title { min-width: 0; font-size: var(--text-title, 18px); font-weight: 700; flex: 1; }
+.overlay__title { min-width: 0; font-size: var(--text-title, 18px); font-weight: 600; flex: 1; }
 .overlay__body { min-height: 0; max-height: 62vh; }
 .overlay__body .stack { display: flex; flex-direction: column; gap: 16px; }

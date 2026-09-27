@@ -133,6 +133,7 @@ Page({
     }, this.revision, this).then(res => {
       this.revision = res.revision
       const label = this.data.transitionNext === 'cancelled' ? '活动已取消。' : '已进入' + (F.PHASE_LABELS[this.data.transitionNext] || '') + '。'
+      wx.vibrateShort({ type: 'light', fail: () => {} })
       this.setData({ busy: false, transitionOpen: false, message: label })
       api.toast(label)
       this.reload()

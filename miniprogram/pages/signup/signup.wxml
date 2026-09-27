@@ -59,7 +59,7 @@
       <text class="section-title">选择参与人</text>
       <checkbox-group bindchange="onToggleCandidate">
         <label wx:for="{{candidates}}" wx:key="key" class="check-label" data-key="{{item.key}}">
-          <checkbox value="{{item.key}}" checked="{{item.checked}}" />
+          <checkbox color="#163E35" value="{{item.key}}" checked="{{item.checked}}" />
           <text class="check-text">{{item.person.name}} · {{item.kindLabel}}</text>
         </label>
       </checkbox-group>
@@ -97,17 +97,17 @@
         </form-field>
         <view>
           <label class="check-label" data-index="{{pi}}" data-key="dataUse">
-            <checkbox checked="{{p.consent.dataUse}}" data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent" />
+            <checkbox color="#163E35" checked="{{p.consent.dataUse}}" data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent" />
             <text class="check-text">同意本次活动使用报名与安全联络资料</text>
           </label>
           <text wx:if="{{errors['p' + pi + '-dataUse']}}" class="field-error">{{errors['p' + pi + '-dataUse']}}</text>
           <label wx:if="{{p.personRef.kind === 'companion'}}" class="check-label">
-            <checkbox checked="{{p.consent.proxyAuthority}}" data-index="{{pi}}" data-key="proxyAuthority" bindchange="onPartConsent" />
+            <checkbox color="#163E35" checked="{{p.consent.proxyAuthority}}" data-index="{{pi}}" data-key="proxyAuthority" bindchange="onPartConsent" />
             <text class="check-text">已获同行人授权，代为报名和处理行程</text>
           </label>
           <text wx:if="{{errors['p' + pi + '-proxyAuthority']}}" class="field-error">{{errors['p' + pi + '-proxyAuthority']}}</text>
           <label class="check-label">
-            <checkbox checked="{{p.consent.proxyHome}}" data-index="{{pi}}" data-key="proxyHome" bindchange="onPartConsent" />
+            <checkbox color="#163E35" checked="{{p.consent.proxyHome}}" data-index="{{pi}}" data-key="proxyHome" bindchange="onPartConsent" />
             <text class="check-text">授权代为确认安全到家（可选，独立授权）</text>
           </label>
         </view>
@@ -115,7 +115,7 @@
     </block>
 
     <label class="check-label">
-      <checkbox checked="{{keepTogether}}" bindchange="onKeepTogether" />
+      <checkbox color="#163E35" checked="{{keepTogether}}" bindchange="onKeepTogether" />
       <view class="check-text">
         <text>尽量安排同行人同车</text>
         <text class="small muted" style="display:block;">整组安排；容量不足时不会静默拆组。</text>

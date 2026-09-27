@@ -36,7 +36,7 @@
         </view>
       </view>
 
-      <view class="stack-gap3">
+      <view wx:if="{{hasAny}}" class="stack-gap3">
         <view class="segmented" aria-label="活动范围">
           <view class="seg {{filter === 'mine' ? 'on' : ''}}" data-value="mine" bindtap="onFilter">我的活动</view>
           <view class="seg {{filter === 'recent' ? 'on' : ''}}" data-value="recent" bindtap="onFilter">最近查看</view>

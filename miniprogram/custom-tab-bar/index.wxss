@@ -26,6 +26,6 @@
 }
 .tab.on {
   color: #163E35;
-  font-weight: 700;
+  font-weight: 600;
   background: #ECF0EF;
 }

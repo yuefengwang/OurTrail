@@ -113,6 +113,7 @@ Page({
     }, this.revision, this).then(res => {
       this.revision = res.revision
       this.setData({ busy: false })
+      wx.vibrateShort({ type: 'light', fail: () => {} })
       api.toast('已确认上车')
       return this.reload()
     }).catch(err => this.setData({ busy: false, error: api.errorText(err) }))
@@ -135,6 +136,7 @@ Page({
       .then(res => {
         this.revision = res.revision
         this.setData({ busy: false })
+        wx.vibrateShort({ type: 'light', fail: () => {} })
         api.toast('已确认发车')
         return this.reload()
       }).catch(err => this.setData({ busy: false, error: api.errorText(err) }))

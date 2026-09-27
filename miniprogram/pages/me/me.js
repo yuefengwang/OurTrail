@@ -29,6 +29,10 @@ Page({
     this.reload()
   },
 
+  onPullDownRefresh() {
+    this.reload().then(() => wx.stopPullDownRefresh()).catch(() => wx.stopPullDownRefresh())
+  },
+
   reload() {
     return Promise.all([
       api.read({ kind: 'profile' }),

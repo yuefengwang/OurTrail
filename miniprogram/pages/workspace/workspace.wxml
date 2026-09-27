@@ -23,9 +23,9 @@
       <view wx:for="{{tabLabels}}" wx:key="index" class="seg {{tab === index ? 'on' : ''}}" data-tab="{{index}}" bindtap="onTab">{{item}}</view>
     </view>
 
-    <roster-panel wx:if="{{tab === 1}}" activity-id="{{activityId || ''}}" />
-    <transport-panel wx:elif="{{tab === 2}}" activity-id="{{activityId || ''}}" />
-    <field-panel wx:elif="{{tab === 3}}" activity-id="{{activityId || ''}}" perspective="organizer" />
+    <roster-panel hidden="{{tab !== 1}}" activity-id="{{activityId || ''}}" />
+    <transport-panel hidden="{{tab !== 2}}" activity-id="{{activityId || ''}}" />
+    <field-panel hidden="{{tab !== 3}}" activity-id="{{activityId || ''}}" perspective="organizer" />
 
     <block wx:if="{{tab === 0}}">
       <view class="stack" style="gap:0;">

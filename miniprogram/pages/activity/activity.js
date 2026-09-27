@@ -288,6 +288,7 @@ Page({
     api.dispatchAndSync(payload, this.revision, this)
       .then(() => {
         this.setData({ busy: false, selMessage: successMsg })
+        wx.vibrateShort({ type: 'light', fail: () => {} })
         api.toast(successMsg)
         return this.reload()
       })

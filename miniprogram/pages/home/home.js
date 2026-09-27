@@ -112,7 +112,7 @@ Page({
       emptyTitle = '还没有最近查看的活动'
       emptyAction = ''
     }
-    this.setData({ tasks, cards, emptyTitle, emptyDetail, emptyAction })
+    this.setData({ tasks, cards, emptyTitle, emptyDetail, emptyAction, hasAny: all.length > 0 })
   },
 
   onFilter(e) {

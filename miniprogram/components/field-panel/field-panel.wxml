@@ -18,7 +18,7 @@
       <input class="input" value="{{search}}" placeholder="输入姓名" bindinput="onSearch" />
     </view>
     <label class="check-label">
-      <checkbox checked="{{unresolvedOnly}}" bindchange="onUnresolvedOnly" />
+      <checkbox color="#163E35" checked="{{unresolvedOnly}}" bindchange="onUnresolvedOnly" />
       <text class="check-text">只看去向或到家待核实人员</text>
     </label>
 

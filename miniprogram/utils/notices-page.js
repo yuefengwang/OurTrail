@@ -30,6 +30,10 @@ module.exports = function makeNoticesPage(getActivityId) {
       this.reload()
     },
 
+    onPullDownRefresh() {
+      this.reload().then(() => wx.stopPullDownRefresh()).catch(() => wx.stopPullDownRefresh())
+    },
+
     activityId() {
       return getActivityId.call(this)
     },
