@@ -1,4 +1,4 @@
-// 人员行：头像 + 姓名 + 状态徽标 + 副标题 + 操作插槽。由原型 PersonRow.tsx 移植。
+// 人员行：头像（微信头像图或首字占位）+ 姓名 + 状态徽标 + 副标题 + 操作插槽。
 'use strict'
 Component({
   properties: {
@@ -6,6 +6,7 @@ Component({
     status: { type: String, value: '' },
     tone: { type: String, value: 'neutral' },
     subtitle: { type: String, value: '' },
+    avatar: { type: String, value: '' },
   },
   data: { initial: '—' },
   observers: {

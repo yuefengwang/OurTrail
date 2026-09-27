@@ -16,6 +16,12 @@ function normalizedPerson(input) {
   person.emergency.name = person.emergency.name.trim()
   person.emergency.phone = person.emergency.phone.trim()
   person.medical = person.medical.trim()
+  if (typeof person.avatar === 'string') {
+    person.avatar = person.avatar.trim().slice(0, 500)
+    if (!person.avatar) delete person.avatar
+  } else {
+    delete person.avatar
+  }
   if (!person.name || !person.phone || !person.emergency.name || !person.emergency.phone) {
     return failure('INVALID_INPUT', '请填写参与者姓名、电话及紧急联系人姓名和电话。')
   }

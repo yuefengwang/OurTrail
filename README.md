@@ -14,7 +14,7 @@
 |---|---|---|
 | 活动 Tab | `pages/home` | 三视角合并列表（我的/最近/已结束）、协作任务入口、搜索、精选卡 |
 | 通知 Tab | `pages/notices` | 全部与我有关的通知、已读、组织者发布/复制/投递记录 |
-| 我的 Tab | `pages/me` | 常用资料、常用同行人、协作身份码、位置授权撤回 |
+| 我的 Tab | `pages/me` | 常用资料（微信头像/昵称/一键手机号同步，无验证码）、常用同行人、协作身份码、位置授权撤回 |
 | 活动详情 | `pages/activity` | 状态视图、我与同行人、路线/集合/风险/装备/费用、自助操作弹层、分享 |
 | 报名 | `pages/signup` | 多人整组报名、同行人授权、满员整组候补；编辑模式按用途读取 |
 | 编辑器 | `pages/editor` | 三步编辑（内容时间/路线集合/招募风险）、从我组织的活动复制、发布 |
@@ -45,7 +45,7 @@ miniprogram/
   pages/               home notices anotices me activity signup editor
                        workspace staff vehicle weather privacy
 cloudfunctions/trailApi/
-  index.js             11 个 action 路由（read/readForm/.../dispatch/getWeather）
+  index.js             12 个 action 路由（read/readForm/.../dispatch/getWeather/getPhoneNumber）
   store.js             持久层：按集合存文档（ot_*），事务内 revision CAS
   domain/              由原型 domain 层逐段移植：
                        schema(校验器)/permissions/invariants/commands/
@@ -98,6 +98,9 @@ docs/prototypes/ourtrail-app/   v1 高仿真原型（React，设计基准）
   定位不可用时退回人工签到（需填写现场说明）。
 - 模拟天气改为真实 Open-Meteo 预报；导出名单改为复制到剪贴板（CSV 文本）。
 - 车辆联络人页的分车入口由组织者在名单面板的「协作授权」里绑定（车辆联络角色）。
+- 个人资料以微信获取为准：头像走 `chooseAvatar`（存云存储 fileID）、昵称走 `type=nickname`
+  键盘点选、手机号走 `getPhoneNumber` 一键授权（服务端换码，无验证码）。
+  「手机号快速验证」需小程序完成认证并开通对应权限，未开通时提示手填兜底。
 
 ## 已知边界与后续
 

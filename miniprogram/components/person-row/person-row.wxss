@@ -1,1 +1,7 @@
 /* 复用 app.wxss 中 .person-row 体系；插槽操作换行在名称下方 */
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: 0 0 40px;
+}

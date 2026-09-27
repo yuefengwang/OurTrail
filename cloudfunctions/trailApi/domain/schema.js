@@ -112,9 +112,11 @@ function validate(spec, value) {
 
 const Coordinates = specObj({ lat: specNum(-90, 90), lng: specNum(-180, 180) })
 const Contact = specObj({ name: specText, phone: specText })
+// avatar：微信头像（云存储 fileID 或临时 URL），可选
 const Person = specObj({
   name: specText, phone: specText,
   emergency: Contact, medical: specText,
+  avatar: specOpt(specStr(500)),
 })
 const PersonRef = specUnion('kind', {
   user: specObj({ kind: specEnum(['user']), userId: specId }),

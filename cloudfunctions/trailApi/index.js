@@ -181,6 +181,28 @@ async function actionGetWeather(payload) {
   }
 }
 
+/* ---------- 微信手机号（一键授权，无验证码） ---------- */
+
+// 客户端 button open-type=getPhoneNumber 拿到 code，服务端换真实号码。
+// 主体/权限要求：小程序需完成认证并开通 phonenumber 权限；失败时给出可操作的提示。
+async function actionGetPhoneNumber(payload) {
+  const code = String((payload && payload.code) || '').trim()
+  if (!code) fail('INVALID_INPUT', '缺少手机号授权凭证，请重新点击授权。')
+  try {
+    const res = await cloud.openapi.phonenumber.getPhoneNumber({ code })
+    const info = (res && res.phoneInfo) || {}
+    const phone = info.purePhoneNumber || info.phoneNumber || ''
+    if (!phone) fail('INVALID_INPUT', '微信没有返回手机号，请手动填写。')
+    return { phone }
+  } catch (e) {
+    const errCode = e && (e.errCode !== undefined ? e.errCode : e.code)
+    if (errCode === 1400001 || (e && e.errMsg && e.errMsg.indexOf('invalid template') !== -1)) {
+      fail('FORBIDDEN', '当前小程序尚未开通「手机号快速验证」权限（需完成认证并开通），请手动填写手机号。')
+    }
+    fail('INVALID_INPUT', '获取微信手机号失败：' + ((e && (e.errMsg || e.message)) || '请重试或手动填写。'))
+  }
+}
+
 /* ---------- 路由 ---------- */
 
 const ROUTES = {
@@ -195,6 +217,7 @@ const ROUTES = {
   previewAssignments: actionPreviewAssignments,
   dispatch: actionDispatch,
   getWeather: actionGetWeather,
+  getPhoneNumber: actionGetPhoneNumber,
 }
 
 exports.main = async (event) => {

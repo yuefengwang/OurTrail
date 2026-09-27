@@ -28,6 +28,7 @@
         wx:for="{{passengers}}"
         wx:key="signupId"
         name="{{item.name}}"
+        avatar="{{item.avatar}}"
         subtitle="{{item.subtitle}}"
         status="{{item.status}}"
         tone="{{item.status === '已上车' || item.status === '另行返程' ? 'success' : 'warning'}}"

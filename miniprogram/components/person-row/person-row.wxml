@@ -1,5 +1,6 @@
 <view class="person-row">
-  <text class="avatar" aria-hidden="true">{{initial}}</text>
+  <image wx:if="{{avatar}}" class="avatar avatar-img" src="{{avatar}}" mode="aspectFill" />
+  <text wx:else class="avatar" aria-hidden="true">{{initial}}</text>
   <view class="person-row__body">
     <view class="person-row__heading">
       <text class="person-name">{{name}}</text>

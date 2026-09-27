@@ -48,16 +48,67 @@ Page({
           }
         }
       }
+      this.revision = res.revision
+      const person = Object.assign({ avatar: '' }, profile.person)
       this.setData({
         loading: false,
         denied: '',
         identity: profile.id,
         filled: !!profile.person.name,
-        person: profile.person,
-        companions: profile.companions.map(c => ({ id: c.id, name: c.person.name })),
+        person,
+        companions: profile.companions.map(c => ({ id: c.id, name: c.person.name, avatar: c.person.avatar || '' })),
         positionRows,
       })
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
+  },
+
+  // ---- 微信资料同步（以微信获取的为准，直接覆盖对应字段） ----
+  // 同步后若姓名+电话已齐，自动保存；否则提示补全。
+  syncSave(patch) {
+    const person = Object.assign({}, this.data.person, patch)
+    this.setData({ person, error: '' })
+    if (!person.name.trim() || !person.phone.trim()) {
+      api.toast('已填入，请补全资料后保存')
+      return
+    }
+    this.setData({ saving: true })
+    api.dispatch({ type: 'profile.save', person }, this.revision)
+      .then(() => {
+        this.setData({ saving: false })
+        api.toast('已按微信资料保存')
+        this.reload()
+      })
+      .catch(e => this.setData({ saving: false, error: api.errorText(e) }))
+  },
+
+  // 头像：open-type=chooseAvatar（默认微信头像）→ 上传云存储 → 存 fileID
+  onChooseAvatar(e) {
+    const tempPath = e.detail && e.detail.avatarUrl
+    if (!tempPath) return
+    if (!wx.cloud) {
+      this.setData({ error: '云能力不可用，无法保存头像。' })
+      return
+    }
+    wx.cloud.uploadFile({
+      cloudPath: 'avatars/' + this.data.identity + '/' + Date.now() + '.jpg',
+      filePath: tempPath,
+      success: res => {
+        if (res.fileID) this.syncSave({ avatar: res.fileID })
+      },
+      fail: () => this.setData({ error: '头像上传失败，请重试。' }),
+    })
+  },
+
+  // 手机号：open-type=getPhoneNumber 的 code 由服务端换取真实号码，无验证码
+  onPhoneCode(e) {
+    const d = e.detail || {}
+    if (!d.code) {
+      // 用户取消授权：静默返回
+      return
+    }
+    api.call('getPhoneNumber', { code: d.code }).then(res => {
+      if (res.phone) this.syncSave({ phone: res.phone })
+    }).catch(err => this.setData({ error: api.errorText(err) }))
   },
 
   onField(e) {

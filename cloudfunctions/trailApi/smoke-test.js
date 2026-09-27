@@ -60,11 +60,12 @@ function run() {
 
   console.log('== 2. profile.save 创建档案 ==')
   let state = emptyState()
-  let r = dispatch(state, LIN, { type: 'profile.save', person: { name: '林溪', phone: '00000000001', emergency: { name: '林母', phone: '00000000051' }, medical: '' } })
+  let r = dispatch(state, LIN, { type: 'profile.save', person: { name: '林溪', phone: '00000000001', emergency: { name: '林母', phone: '00000000051' }, medical: '', avatar: 'cloud://env.abc/avatars/1.jpg' } })
   check('profile.save ok', r.ok, r.error)
   state = r.value.state
   check('revision bumped', state.revision === 1)
   check('profile exists', state.profiles.length === 1 && state.profiles[0].person.name === '林溪')
+  check('avatar stored', state.profiles[0].person.avatar === 'cloud://env.abc/avatars/1.jpg')
 
   console.log('== 3. activity.create / publish（含发布即报名） ==')
   r = dispatch(state, LIN, { type: 'activity.create', input: fullActivityInput() })

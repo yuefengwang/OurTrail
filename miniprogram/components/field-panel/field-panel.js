@@ -67,6 +67,7 @@ Component({
           .map(r => ({
             signupId: r.signupId,
             name: r.name,
+            avatar: r.avatar || '',
             subtitle: r.pickup + ' · ' + (r.checkedIn ? '已签到' : '未签到') + ' · ' + (r.vehicle || '无乘车安排'),
             status: r.home ? '已到家' : F.DEPARTURE_LABELS[r.departure] || '出发待核实',
             tone: r.home || r.departure === 'not_departed' ? 'success' : 'warning',

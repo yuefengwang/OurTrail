@@ -1,2 +1,47 @@
-/* 我的页 */
+/* 我的页：微信资料同步 */
 .code-text { word-break: break-all; }
+
+.wx-sync {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 0 12px;
+  border-bottom: 1px solid var(--line, #DEE3DB);
+}
+.avatar-btn {
+  display: block;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  flex: 0 0 64px;
+  overflow: hidden;
+}
+.avatar-btn::after { border: none; }
+.avatar-img { width: 64px; height: 64px; flex: 0 0 64px; }
+.avatar-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  font-size: 24px;
+  background: var(--forest-soft, #ECF0EF);
+  color: var(--forest, #163E35);
+  border-radius: 50%;
+}
+.wx-sync__copy { flex: 1; min-width: 0; }
+
+.phone-row { display: flex; gap: 12px; align-items: center; }
+.phone-input { flex: 1; min-width: 0; }
+.phone-btn {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+button.phone-btn { font-family: inherit; line-height: 22px; }

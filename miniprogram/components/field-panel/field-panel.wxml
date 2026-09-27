@@ -27,6 +27,7 @@
         wx:for="{{rows}}"
         wx:key="signupId"
         name="{{item.name}}"
+        avatar="{{item.avatar}}"
         subtitle="{{item.subtitle}}"
         status="{{item.status}}"
         tone="{{item.tone}}"

@@ -69,6 +69,7 @@ Page({
       return {
         signupId: p.signupId,
         name: p.name,
+        avatar: p.avatar || '',
         subtitle: p.pickup + ' · ' + (p.seat ? p.seat + '号座' : '未编号'),
         status: leg === 'return' && p.returnPlan === 'independent' ? '另行返程' : (hasBoarded ? '已上车' : '未上车'),
         showBoard: canOperate && !legInfo.departed && isExpected && !hasBoarded,

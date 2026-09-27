@@ -11,11 +11,24 @@
     </view>
 
     <view class="card stack-gap3">
-      <form-field label="姓名">
-        <input class="input" value="{{person.name}}" maxlength="80" data-key="name" bindinput="onField" placeholder="活动里怎么称呼你" />
+      <view class="wx-sync">
+        <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" hover-class="button-hover">
+          <image wx:if="{{person.avatar}}" class="avatar avatar-img" src="{{person.avatar}}" mode="aspectFill" />
+          <text wx:else class="avatar avatar-text">{{person.name ? person.name[0] : '我'}}</text>
+        </button>
+        <view class="wx-sync__copy">
+          <text class="section-title">以微信资料为准</text>
+          <text class="small muted" style="display:block;margin-top:4px;">点头像用微信头像；昵称在键盘上点选；手机号一键授权，无需验证码。</text>
+        </view>
+      </view>
+      <form-field label="姓名（点键盘上方可直接填微信昵称）">
+        <input class="input" type="nickname" value="{{person.name}}" maxlength="80" data-key="name" bindinput="onField" placeholder="活动里怎么称呼你" />
       </form-field>
       <form-field label="联系电话">
-        <input class="input" type="number" maxlength="11" value="{{person.phone}}" data-key="phone" bindinput="onField" placeholder="11 位手机号" />
+        <view class="phone-row">
+          <input class="input phone-input" type="number" maxlength="11" value="{{person.phone}}" data-key="phone" bindinput="onField" placeholder="11 位手机号" />
+          <button class="button secondary phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onPhoneCode" hover-class="button-hover">一键获取</button>
+        </view>
       </form-field>
       <form-field label="紧急联系人姓名">
         <input class="input" value="{{person.emergency.name}}" maxlength="80" data-key="ename" bindinput="onField" placeholder="紧急时联系谁" />
@@ -51,7 +64,13 @@
         </view>
       </view>
       <view wx:for="{{companions}}" wx:key="id" class="list-row">
-        <view class="list-main"><text>{{item.name}}</text></view>
+        <view class="list-main">
+          <view style="display:flex;align-items:center;gap:12px;">
+            <image wx:if="{{item.avatar}}" class="avatar avatar-img" src="{{item.avatar}}" mode="aspectFill" />
+            <text wx:else class="avatar">{{item.name ? item.name[0] : '同'}}</text>
+            <text>{{item.name}}</text>
+          </view>
+        </view>
         <view class="cluster">
           <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEditCompanion">编辑</view>
           <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRemoveAsk">移除</view>

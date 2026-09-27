@@ -97,6 +97,7 @@ Component({
         .map(r => ({
           signupId: r.signupId,
           name: r.name,
+          avatar: r.avatar || '',
           statusLabel: F.STATUS_LABELS[r.status] || r.status,
           tone: r.status === 'confirmed' ? 'success' : (r.status === 'pending' ? 'warning' : 'neutral'),
           subtitle: [r.pickup, r.vehicle || '未分车', r.seat ? r.seat + '座' : '', r.checkedIn ? '已签到' : '', r.home ? '已到家' : '']

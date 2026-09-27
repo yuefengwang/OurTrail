@@ -12,7 +12,9 @@ const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key)
 // ---------- 投影边界：逐字段构造，不透传存储记录 ----------
 
 function personView(person) {
-  return { name: person.name, phone: person.phone, emergency: { name: person.emergency.name, phone: person.emergency.phone }, medical: person.medical }
+  const view = { name: person.name, phone: person.phone, emergency: { name: person.emergency.name, phone: person.emergency.phone }, medical: person.medical }
+  if (person.avatar) view.avatar = person.avatar
+  return view
 }
 function evidenceView(evidence) {
   return evidence ? { at: evidence.at, by: evidence.by, note: evidence.note } : null
@@ -85,6 +87,7 @@ function rowView(state, signup) {
   const activity = state.activities.find(a => a.id === signup.activityId)
   return {
     signupId: signup.id, groupId: signup.groupId, name: signup.participant.name, status: signup.status,
+    avatar: signup.participant.avatar || '',
     pickup: signup.trip.mode === 'self' ? '自行前往'
       : (activity ? (activity.pickupPoints.find(p => signup.trip.mode === 'shared' && p.id === signup.trip.pickupPointId) || {}).name || '' : ''),
     vehicle: vehicle ? vehicle.label : '', seat: assignment ? assignment.seatLabel : null,
@@ -340,7 +343,8 @@ function selectView(state, actor, request, now) {
         return {
           signupId: r.signupId, groupId: r.groupId, name: r.name, status: r.status, pickup: r.pickup,
           vehicle: r.vehicle, seat: r.seat, checkedIn: r.checkedIn, outboundBoarded: r.outboundBoarded,
-          returnBoarded: r.returnBoarded, returnPlan: r.returnPlan, departure: r.departure, home: r.home, phone: s.participant.phone,
+          returnBoarded: r.returnBoarded, returnPlan: r.returnPlan, departure: r.departure, home: r.home,
+          avatar: r.avatar, phone: s.participant.phone,
         }
       }),
     } : null,

@@ -125,6 +125,7 @@ Page({
     const rows = v.rows.map(r => ({
       signupId: r.signupId,
       name: r.name,
+      avatar: r.avatar || '',
       statusLabel: F.STATUS_LABELS[r.status] || r.status,
       tone: r.status === 'confirmed' ? 'success' : 'neutral',
       subtitle: [
