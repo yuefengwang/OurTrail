@@ -94,6 +94,12 @@ Page({
     gpxError: '',
     gpxMeta: null,
     gpxPoints: [],
+    // 渐进披露：节点/上车点默认收合，坐标默认隐藏
+    expandedPoints: {},
+    showPointCoords: {},
+    expandedPickups: {},
+    showPickupCoords: {},
+    draftSavedAt: '',
   },
 
   onLoad(options) {
@@ -155,6 +161,11 @@ Page({
 
   persistDraft() {
     draft.setDraft(this.activityId || 'new', 'activity-editor', this.buildInput())
+    const now = Date.now()
+    if (!this._lastMark || now - this._lastMark > 30000) {
+      this._lastMark = now
+      this.setData({ draftSavedAt: F.hhmm(new Date().toISOString()) })
+    }
   },
 
   buildInput() {
@@ -262,8 +273,11 @@ Page({
   },
   addPoint() {
     const form = JSON.parse(JSON.stringify(this.data.form))
-    form.points.push({ id: freshId('point'), name: '', kind: form.points.length ? 'checkpoint' : 'start', lat: '', lng: '' })
-    this.setData({ form })
+    const id = freshId('point')
+    form.points.push({ id, name: '', kind: form.points.length ? 'checkpoint' : 'start', lat: '', lng: '' })
+    const expandedPoints = Object.assign({}, this.data.expandedPoints)
+    expandedPoints[id] = true
+    this.setData({ form, expandedPoints })
     this.persistDraft()
   },
   removePoint(e) {
@@ -273,6 +287,48 @@ Page({
     this.setData({ form })
     this.persistDraft()
   },
+  togglePoint(e) {
+    const id = e.currentTarget.dataset.id
+    const expandedPoints = Object.assign({}, this.data.expandedPoints)
+    if (expandedPoints[id]) delete expandedPoints[id]
+    else expandedPoints[id] = true
+    this.setData({ expandedPoints })
+  },
+  togglePointCoords(e) {
+    const id = e.currentTarget.dataset.id
+    const showPointCoords = Object.assign({}, this.data.showPointCoords)
+    if (showPointCoords[id]) delete showPointCoords[id]
+    else showPointCoords[id] = true
+    this.setData({ showPointCoords })
+  },
+  choosePointLocation(e) {
+    const index = e.currentTarget.dataset.index
+    wx.chooseLocation({
+      success: res => {
+        const form = JSON.parse(JSON.stringify(this.data.form))
+        form.points[index].lat = String(res.latitude)
+        form.points[index].lng = String(res.longitude)
+        this.setData({ form })
+        this.persistDraft()
+      },
+      fail: () => {},
+    })
+  },
+  togglePickup(e) {
+    const id = e.currentTarget.dataset.id
+    const expandedPickups = Object.assign({}, this.data.expandedPickups)
+    if (expandedPickups[id]) delete expandedPickups[id]
+    else expandedPickups[id] = true
+    this.setData({ expandedPickups })
+  },
+  togglePickupCoords(e) {
+    const id = e.currentTarget.dataset.id
+    const showPickupCoords = Object.assign({}, this.data.showPickupCoords)
+    if (showPickupCoords[id]) delete showPickupCoords[id]
+    else showPickupCoords[id] = true
+    this.setData({ showPickupCoords })
+  },
+
   useSampleRoute() {
     const form = JSON.parse(JSON.stringify(this.data.form))
     form.routeTitle = '示例路线（请自行修改）'
@@ -280,7 +336,7 @@ Page({
       { id: freshId('point'), name: '示例起点', kind: 'start', lat: '', lng: '' },
       { id: freshId('point'), name: '示例终点', kind: 'finish', lat: '', lng: '' },
     ]
-    this.setData({ form })
+    this.setData({ form, expandedPoints: {}, showPointCoords: {} })
     this.persistDraft()
   },
 
@@ -308,8 +364,11 @@ Page({
   },
   addPickup() {
     const form = JSON.parse(JSON.stringify(this.data.form))
-    form.pickups.push({ id: freshId('pickup'), name: '', address: '', lat: '', lng: '', meeting: { date: '', time: '' } })
-    this.setData({ form })
+    const id = freshId('pickup')
+    form.pickups.push({ id, name: '', address: '', lat: '', lng: '', meeting: { date: '', time: '' } })
+    const expandedPickups = Object.assign({}, this.data.expandedPickups)
+    expandedPickups[id] = true
+    this.setData({ form, expandedPickups })
     this.persistDraft()
   },
   removePickup(e) {
@@ -466,7 +525,7 @@ Page({
     if (meta.distanceKm > 0) form.distanceKm = String(meta.distanceKm)
     if (meta.hasElevation) form.ascentM = String(meta.ascentM)
     if (!form.routeTitle.trim()) form.routeTitle = meta.fileName.replace(/\.(gpx|xml)$/i, '')
-    this.setData({ gpxOpen: false, form, message: '已导入 ' + points.length + ' 个路线节点，记得保存。' })
+    this.setData({ gpxOpen: false, form, expandedPoints: {}, showPointCoords: {}, expandedPickups: {}, showPickupCoords: {}, message: '已导入 ' + points.length + ' 个路线节点，记得保存。' })
     this.persistDraft()
   },
 

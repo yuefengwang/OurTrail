@@ -86,96 +86,174 @@
 
     <!-- 步骤 2：路线与集合 -->
     <view wx:if="{{step === 1}}" class="stack-gap3">
-      <form-field label="路线名称">
+      <form-field label="路线名称" hint="例如：青城后山 · 飞泉沟轻徒步">
         <input class="input" value="{{form.routeTitle}}" data-key="routeTitle" bindinput="onField" />
       </form-field>
-      <view class="cluster" style="align-items:flex-start;">
-        <form-field label="距离（km）" style="flex:1;">
-          <input class="input" type="digit" value="{{form.distanceKm}}" data-key="distanceKm" bindinput="onField" />
-        </form-field>
-        <form-field label="爬升（m）" style="flex:1;">
-          <input class="input" type="number" value="{{form.ascentM}}" data-key="ascentM" bindinput="onField" />
-        </form-field>
+
+      <!-- 自动路径：GPX 导入 -->
+      <view class="card stack-gap3">
+        <text class="section-title">有 GPX 轨迹？一键生成</text>
+        <text class="small muted">自动解析航点为路线节点，并按轨迹算好里程与爬升——通常只需再补集合上车点。</text>
+        <view class="button primary block" hover-class="button-hover" bindtap="onImportGpx">
+          <icon name="route" size="18" color="#FFFFFF" />
+          <text>导入 GPX 轨迹</text>
+        </view>
+        <text class="small muted">先把 .gpx 文件发到任意微信聊天（推荐「文件传输助手」），再点上方按钮从聊天里选择。</text>
       </view>
-      <view class="card-header">
+
+      <view class="cluster" style="justify-content:space-between;">
         <text class="section-title">路线节点</text>
-        <view class="cluster">
-          <view wx:if="{{!form.points.length}}" class="button text" hover-class="button-hover" bindtap="useSampleRoute">使用示例路线</view>
-          <view class="button text" hover-class="button-hover" bindtap="onImportGpx">
-            <icon name="route" size="16" color="#163E35" />
-            <text>导入 GPX 轨迹</text>
+        <view wx:if="{{!form.points.length}}" class="button text" hover-class="button-hover" bindtap="useSampleRoute">用示例路线</view>
+      </view>
+      <text class="small muted">节点是你计划经过的关键位置（起点、垭口、终点……），用于途中清点与进度确认。</text>
+
+      <block wx:for="{{form.points}}" wx:key="id">
+        <view
+          wx:if="{{!expandedPoints[item.id]}}"
+          class="card"
+          style="padding:12px 16px;"
+          hover-class="button-hover"
+          data-id="{{item.id}}"
+          bindtap="togglePoint"
+        >
+          <view class="cluster" style="justify-content:space-between;">
+            <view class="cluster" style="gap:8px;min-width:0;">
+              <text class="badge neutral tabular">{{index + 1}}</text>
+              <text style="font-weight:600;">{{item.name || (item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '节点 ' + index)}}</text>
+            </view>
+            <view class="cluster" style="gap:8px;flex:0 0 auto;">
+              <text class="badge {{item.kind === 'start' ? 'success' : item.kind === 'finish' ? 'info' : 'neutral'}}">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中'}}</text>
+              <text class="muted">›</text>
+            </view>
           </view>
         </view>
-      </view>
-      <text class="small muted">先把 GPX 文件发送到任意微信聊天（推荐「文件传输助手」），再点上方按钮从聊天中选择；自动解析航点/路线点为节点，并按轨迹算出总里程与累计爬升。</text>
-      <view wx:for="{{form.points}}" wx:key="id" class="fieldset stack-gap3">
-        <text class="legend">节点 {{index + 1}}</text>
-        <form-field label="节点名称">
-          <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onRoutePoint" />
-        </form-field>
-        <form-field label="节点类型">
-          <picker range="{{['起点', '途中节点', '终点']}}" value="{{item.kind === 'start' ? 0 : item.kind === 'finish' ? 2 : 1}}" data-index="{{index}}" bindchange="onPointKind">
-            <view class="picker">
-              <text class="picker-value">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中节点'}}</text>
-              <text class="picker-arrow">▾</text>
+        <view wx:else class="card stack-gap3">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="card-label">节点 {{index + 1}}</text>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePoint">收起</view>
+          </view>
+          <form-field label="节点名称" hint="留空将按“起点/终点/节点 N”显示">
+            <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onRoutePoint" />
+          </form-field>
+          <form-field label="节点类型">
+            <picker range="{{['起点', '途中节点', '终点']}}" value="{{item.kind === 'start' ? 0 : item.kind === 'finish' ? 2 : 1}}" data-index="{{index}}" bindchange="onPointKind">
+              <view class="picker">
+                <text class="picker-value">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中节点'}}</text>
+                <text class="picker-arrow">▾</text>
+              </view>
+            </picker>
+          </form-field>
+          <view class="stack-gap3">
+            <view class="cluster" style="justify-content:space-between;">
+              <text class="field-label">位置（可选）</text>
+              <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePointCoords">{{showPointCoords[item.id] ? '收起手动输入' : '手动输入'}}</view>
             </view>
-          </picker>
-        </form-field>
-        <view class="cluster" style="align-items:flex-start;">
-          <form-field label="纬度（可选）" style="flex:1;">
-            <input class="input" type="digit" value="{{item.lat}}" data-index="{{index}}" data-key="lat" bindinput="onRoutePoint" />
-          </form-field>
-          <form-field label="经度（可选）" style="flex:1;">
-            <input class="input" type="digit" value="{{item.lng}}" data-index="{{index}}" data-key="lng" bindinput="onRoutePoint" />
-          </form-field>
+            <view class="button secondary block" hover-class="button-hover" data-index="{{index}}" bindtap="choosePointLocation">
+              <icon name="pin" size="16" color="#163E35" />
+              <text>在地图上选点{{item.lat ? '（已设置）' : ''}}</text>
+            </view>
+            <block wx:if="{{showPointCoords[item.id]}}">
+              <view class="cluster" style="align-items:flex-start;">
+                <form-field label="纬度" style="flex:1;">
+                  <input class="input" type="digit" value="{{item.lat}}" data-index="{{index}}" data-key="lat" bindinput="onRoutePoint" />
+                </form-field>
+                <form-field label="经度" style="flex:1;">
+                  <input class="input" type="digit" value="{{item.lng}}" data-index="{{index}}" data-key="lng" bindinput="onRoutePoint" />
+                </form-field>
+              </view>
+            </block>
+          </view>
+          <view class="button text" hover-class="button-hover" data-index="{{index}}" catchtap="removePoint">移除此节点</view>
         </view>
-        <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="removePoint">移除此节点</view>
-      </view>
+      </block>
       <view class="button secondary block" hover-class="button-hover" bindtap="addPoint">
         <icon name="plus" size="18" color="#163E35" />
         <text>添加路线节点</text>
       </view>
 
       <text class="section-title">集合与上车点</text>
-      <view wx:for="{{form.pickups}}" wx:key="id" class="fieldset stack-gap3">
-        <text class="legend">上车点 {{index + 1}}</text>
-        <form-field label="上车点名称">
-          <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onPickup" />
-        </form-field>
-        <form-field label="详细集合位置">
-          <input class="input" value="{{item.address}}" data-index="{{index}}" data-key="address" bindinput="onPickup" />
-        </form-field>
-        <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="choosePickupLocation">
-          <icon name="pin" size="16" color="#163E35" />
-          <text>在地图上选点（自动填坐标）</text>
-        </view>
-        <form-field label="集合时间（北京时间）">
-          <view class="cluster" style="flex-wrap:nowrap;">
-            <picker mode="date" value="{{item.meeting.date}}" data-index="{{index}}" bindchange="onPickupDate" style="flex:1;">
-              <view class="picker {{item.meeting.date ? '' : 'placeholder'}}">
-                <text class="picker-value">{{item.meeting.date || '日期'}}</text>
-              </view>
-            </picker>
-            <picker mode="time" value="{{item.meeting.time}}" data-index="{{index}}" bindchange="onPickupTime" style="flex:1;">
-              <view class="picker {{item.meeting.time ? '' : 'placeholder'}}">
-                <text class="picker-value">{{item.meeting.time || '时间'}}</text>
-              </view>
-            </picker>
+      <text class="small muted">需要统一集合的才填这里；大家自行前往的可以不加。</text>
+      <block wx:for="{{form.pickups}}" wx:key="id">
+        <view
+          wx:if="{{!expandedPickups[item.id]}}"
+          class="card"
+          style="padding:12px 16px;"
+          hover-class="button-hover"
+          data-id="{{item.id}}"
+          bindtap="togglePickup"
+        >
+          <view class="cluster" style="justify-content:space-between;">
+            <view class="cluster" style="gap:8px;min-width:0;">
+              <text class="badge neutral tabular">{{index + 1}}</text>
+              <text style="font-weight:600;">{{item.name || '上车点 ' + (index + 1)}}</text>
+            </view>
+            <view class="cluster" style="gap:8px;flex:0 0 auto;">
+              <text class="small muted tabular">{{item.meeting.date || '待定'}} {{item.meeting.time}}</text>
+              <text class="muted">›</text>
+            </view>
           </view>
-        </form-field>
-        <view class="cluster" style="align-items:flex-start;">
-          <form-field label="纬度（可选）" style="flex:1;">
-            <input class="input" type="digit" value="{{item.lat}}" data-index="{{index}}" data-key="lat" bindinput="onPickup" />
-          </form-field>
-          <form-field label="经度（可选）" style="flex:1;">
-            <input class="input" type="digit" value="{{item.lng}}" data-index="{{index}}" data-key="lng" bindinput="onPickup" />
-          </form-field>
         </view>
-        <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="removePickup">移除此上车点</view>
-      </view>
+        <view wx:else class="card stack-gap3">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="card-label">上车点 {{index + 1}}</text>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickup">收起</view>
+          </view>
+          <form-field label="上车点名称">
+            <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onPickup" />
+          </form-field>
+          <form-field label="详细集合位置" hint="写清楚从哪儿进、认什么标志物">
+            <input class="input" value="{{item.address}}" data-index="{{index}}" data-key="address" bindinput="onPickup" />
+          </form-field>
+          <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="choosePickupLocation">
+            <icon name="pin" size="16" color="#163E35" />
+            <text>在地图上选点{{item.lat ? '（已设置）' : ''}}</text>
+          </view>
+          <form-field label="集合时间（北京时间）">
+            <view class="cluster" style="flex-wrap:nowrap;">
+              <picker mode="date" value="{{item.meeting.date}}" data-index="{{index}}" bindchange="onPickupDate" style="flex:1;">
+                <view class="picker {{item.meeting.date ? '' : 'placeholder'}}">
+                  <text class="picker-value">{{item.meeting.date || '日期'}}</text>
+                </view>
+              </picker>
+              <picker mode="time" value="{{item.meeting.time}}" data-index="{{index}}" bindchange="onPickupTime" style="flex:1;">
+                <view class="picker {{item.meeting.time ? '' : 'placeholder'}}">
+                  <text class="picker-value">{{item.meeting.time || '时间'}}</text>
+                </view>
+              </picker>
+            </view>
+          </form-field>
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="field-label">坐标（可选）</text>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickupCoords">{{showPickupCoords[item.id] ? '收起手动输入' : '手动输入'}}</view>
+          </view>
+          <block wx:if="{{showPickupCoords[item.id]}}">
+            <view class="cluster" style="align-items:flex-start;">
+              <form-field label="纬度" style="flex:1;">
+                <input class="input" type="digit" value="{{item.lat}}" data-index="{{index}}" data-key="lat" bindinput="onPickup" />
+              </form-field>
+              <form-field label="经度" style="flex:1;">
+                <input class="input" type="digit" value="{{item.lng}}" data-index="{{index}}" data-key="lng" bindinput="onPickup" />
+              </form-field>
+            </view>
+          </block>
+          <view class="button text" hover-class="button-hover" data-index="{{index}}" catchtap="removePickup">移除此上车点</view>
+        </view>
+      </block>
       <view class="button secondary block" hover-class="button-hover" bindtap="addPickup">
         <icon name="plus" size="18" color="#163E35" />
         <text>添加上车点</text>
+      </view>
+
+      <view class="card stack-gap3">
+        <text class="section-title">距离与爬升</text>
+        <view class="cluster" style="align-items:flex-start;">
+          <form-field label="距离（km）" hint="导入 GPX 自动填写" style="flex:1;">
+            <input class="input" type="digit" value="{{form.distanceKm}}" data-key="distanceKm" bindinput="onField" />
+          </form-field>
+          <form-field label="爬升（m）" hint="不确定可留空" style="flex:1;">
+            <input class="input" type="number" value="{{form.ascentM}}" data-key="ascentM" bindinput="onField" />
+          </form-field>
+        </view>
       </view>
     </view>
 
@@ -234,6 +312,7 @@
       <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSavePreview'}}">保存并预览</view>
     </view>
     <view wx:if="{{savedId && phase === 'draft' && canPublish}}" class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPublishOpen'}}">发布已保存的活动</view>
+    <text wx:if="{{draftSavedAt}}" class="small muted" style="text-align:center;">草稿已自动保存 · {{draftSavedAt}}</text>
   </view>
 
   <overlay open="{{publishOpen}}" kind="dialog" title="准备好发布了吗？" bind:close="onPublishClose">
