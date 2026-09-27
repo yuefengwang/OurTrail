@@ -125,12 +125,12 @@ Page({
   onTransitionConfirm() {
     if (!this.data.reason.trim() || this.data.busy) return
     this.setData({ busy: true, error: '' })
-    api.dispatch({
+    api.dispatchAndSync({
       type: 'activity.transition',
       activityId: this.activityId,
       next: this.data.transitionNext,
       reason: this.data.reason,
-    }, this.revision).then(res => {
+    }, this.revision, this).then(res => {
       this.revision = res.revision
       const label = this.data.transitionNext === 'cancelled' ? '活动已取消。' : '已进入' + (F.PHASE_LABELS[this.data.transitionNext] || '') + '。'
       this.setData({ busy: false, transitionOpen: false, message: label })

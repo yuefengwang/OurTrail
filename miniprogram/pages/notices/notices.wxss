@@ -1,1 +1,2 @@
 /* 通知列表：复用全局 notice-card / overlay 体系 */
+.page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }

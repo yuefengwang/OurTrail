@@ -1,6 +1,7 @@
 // 自定义 TabBar：活动 / 通知 / 我的（样式与原型 tabs 一致）
 'use strict'
 Component({
+  options: { styleIsolation: 'apply-shared' },
   data: {
     selected: 0,
     list: [

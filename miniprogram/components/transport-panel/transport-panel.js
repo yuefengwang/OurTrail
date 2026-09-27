@@ -5,6 +5,7 @@ const api = require('../../utils/api')
 const F = require('../../utils/format')
 
 Component({
+  options: { styleIsolation: 'apply-shared' },
   properties: {
     activityId: { type: String, value: '' },
   },
@@ -52,7 +53,8 @@ Component({
   methods: {
     reload() {
       const activityId = this.data.activityId
-      if (!activityId) return
+      if (!activityId || this._loading) return
+      this._loading = true
       return Promise.all([
         api.read({ kind: 'activity', activityId, perspective: 'organizer' }),
         api.readOr('readTransport', { activityId }),
@@ -61,15 +63,11 @@ Component({
           this.setData({ loading: false, denied: res.view.kind === 'denied' ? res.view.message : '无法管理车辆安排' })
           return
         }
-        if (!tr.ok) {
-          this.setData({ loading: false, denied: tr.error.message })
-          return
-        }
         this.revision = res.revision
         this.now = res.now
         this.view = res.view
         const v = res.view
-        const transport = tr.value
+        const transport = tr
         const pickupNames = {}
         for (const p of v.activity.pickupPoints) pickupNames[p.id] = p.name
         const nameOf = id => {
@@ -116,6 +114,7 @@ Component({
         const confirmed = v.rows.filter(r => r.status === 'confirmed').map(r => ({
           signupId: r.signupId, label: r.name + ' · ' + r.pickup + ' · ' + (r.vehicle || '未分车'),
         }))
+        this._loading = false
         this.setData({
           loading: false,
           denied: '',
@@ -132,7 +131,7 @@ Component({
           confirmed,
           assignments: transport.assignments,
         })
-      }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
+      }).catch(e => { this._loading = false; this.setData({ loading: false, denied: api.errorText(e) }) })
     },
 
     // ---- 预览自动分车 ----
@@ -191,7 +190,7 @@ Component({
     onPlanCommit() {
       if (!this.data.plan || this.data.busy) return
       this.setData({ busy: true, error: '' })
-      api.dispatch({ type: 'assignment.commit', activityId: this.data.activityId, preview: this.data.plan }, this.revision)
+      api.dispatchAndSync({ type: 'assignment.commit', activityId: this.data.activityId, preview: this.data.plan }, this.revision, this)
         .then(res => {
           this.revision = res.revision
           this.setData({ busy: false, planOpen: false, message: '分车方案已保存。' })
@@ -234,11 +233,11 @@ Component({
       const pick = this.data.confirmedOptions[this.data.assignIndex]
       if (!pick || this.data.busy) return
       this.setData({ busy: true, error: '' })
-      api.dispatch({
+      api.dispatchAndSync({
         type: 'assignment.set',
         activityId: this.data.activityId,
         target: { signupId: pick.signupId, vehicleId: this.data.assignVehicleId, seatLabel: this.data.assignSeat || null },
-      }, this.revision).then(res => {
+      }, this.revision, this).then(res => {
         this.revision = res.revision
         this.setData({ busy: false, assignOpen: false, message: '此人的车辆安排已保存。' })
         api.toast('已保存')
@@ -249,7 +248,7 @@ Component({
       const pick = this.data.confirmedOptions[this.data.assignIndex]
       if (!pick || this.data.busy) return
       this.setData({ busy: true, error: '' })
-      api.dispatch({ type: 'assignment.remove', activityId: this.data.activityId, signupId: pick.signupId }, this.revision)
+      api.dispatchAndSync({ type: 'assignment.remove', activityId: this.data.activityId, signupId: pick.signupId }, this.revision, this)
         .then(res => {
           this.revision = res.revision
           this.setData({ busy: false, assignOpen: false, message: '已移除此人的车辆安排。' })
@@ -262,12 +261,12 @@ Component({
       const swap = this.data.swapOptions[this.data.swapIndex]
       if (!pick || !swap || this.data.busy) return
       this.setData({ busy: true, error: '' })
-      api.dispatch({
+      api.dispatchAndSync({
         type: 'assignment.swap',
         activityId: this.data.activityId,
         firstSignupId: pick.signupId,
         secondSignupId: swap.signupId,
-      }, this.revision).then(res => {
+      }, this.revision, this).then(res => {
         this.revision = res.revision
         this.setData({ busy: false, assignOpen: false, message: '两人的车辆座位已交换。' })
         api.toast('已交换')
@@ -285,7 +284,7 @@ Component({
     onRemoveConfirm() {
       if (!this.data.removeVehicleId || this.data.busy) return
       this.setData({ busy: true, error: '' })
-      api.dispatch({ type: 'vehicle.remove', activityId: this.data.activityId, vehicleId: this.data.removeVehicleId }, this.revision)
+      api.dispatchAndSync({ type: 'vehicle.remove', activityId: this.data.activityId, vehicleId: this.data.removeVehicleId }, this.revision, this)
         .then(res => {
           this.revision = res.revision
           this.setData({ busy: false, removeOpen: false, message: '车辆已删除。' })
@@ -426,7 +425,7 @@ Component({
         }
       }
       this.setData({ busy: true, error: '' })
-      api.dispatch({
+      api.dispatchAndSync({
         type: 'vehicle.save',
         activityId: this.data.activityId,
         vehicleId: this.data.editingVehicleId || null,
@@ -435,7 +434,7 @@ Component({
           drivers, blockedSeats: blocked, seatLabels,
           pickupPointIds: f.pickupIds.slice(),
         },
-      }, this.revision).then(res => {
+      }, this.revision, this).then(res => {
         this.revision = res.revision
         this.setData({ busy: false, editorOpen: false, vform: null, message: '车辆安排已更新。' })
         api.toast('已保存')

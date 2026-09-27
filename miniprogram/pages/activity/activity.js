@@ -285,7 +285,7 @@ Page({
   run(payload, successMsg) {
     if (this.data.busy) return
     this.setData({ busy: true, selError: '', selMessage: '' })
-    api.dispatch(payload, this.revision)
+    api.dispatchAndSync(payload, this.revision, this)
       .then(() => {
         this.setData({ busy: false, selMessage: successMsg })
         api.toast(successMsg)

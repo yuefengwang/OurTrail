@@ -2,6 +2,7 @@
 'use strict'
 const ICONS = { empty: 'route', loading: 'clock', error: 'alert', denied: 'shield', offline: 'cloud' }
 Component({
+  options: { styleIsolation: 'apply-shared' },
   properties: {
     kind: { type: String, value: 'empty' },
     title: { type: String, value: '' },

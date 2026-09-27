@@ -115,3 +115,18 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
 - 2026-09-27：全部页面落地完成（home/notices/anotices/me/activity/signup/editor/workspace/staff/vehicle/weather + 三个面板组件），与并行 agent 的 utils 版本汇合；服务端 home 视图补充 meta（owner/joined/staff/vehicle/confirmed/pending/positionRows）。旧页 index/create/manage 已删除；`tools/check.js` 静态校验 ALL PASSED（JS/WXML/WXSS/app.json/组件引用）；README 已按新架构重写。**遗留待真机验证**：微信开发者工具内编译运行 + 云函数部署后全流程联调（本环境无法渲染小程序）。
 - 2026-09-27（联调排障）：首次真机联调出现「服务异常，请稍后再试」——定位为云端仍是**旧版 trailApi**（旧协议 error 为字符串，未知 action 返回 '未知操作：read'）。已加固 utils/api.js：兼容 error 字符串/errMsg、未部署时直接提示部署话术（NETWORK 分类）；app.json 移除全局 privacy-popup 注册（新页面未使用，消除按需注入警告；组件文件保留）。**下一步必须**：右键 cloudfunctions/trailApi →「上传并部署：云端安装依赖」。
 - 2026-09-27（微信资料同步）：我的页新增微信资料同步——头像（open-type=chooseAvatar → 上传云存储 → profile.person.avatar，云存储 fileID）、昵称（input type=nickname 键盘点选）、手机号（open-type=getPhoneNumber → 新增云函数 action `getPhoneNumber`，服务端 openapi.phonenumber.getPhoneNumber 换码，无验证码，全盘信任）。Person schema 加可选 avatar(≤500)；normalizedPerson/personView/rowView/vehicleTask.passengers 透传 avatar；person-row 组件与 activity/field/roster/vehicle 各列表渲染头像。同步后姓名+电话齐全即自动 profile.save（免确认，轻量化）。注意：手机号快捷验证需小程序主体已认证并开通 phonenumber 权限，未开通时服务端返回可读提示，手填兜底。
+- 2026-09-27（GPX + 主流程走查修 bug）：新增 GPX 轨迹导入——`utils/gpx.js` 纯函数解析（wpt/rtept 优先、纯轨迹按里程采样，自动算里程/爬升，节点 kind 首起点末终点），`tools/gpx-test.js` 18/18；编辑器第二步「导入 GPX 轨迹」→ 聊天文件选择 → 预览确认 → 填充路线节点/里程/爬升 → 保存后同步到活动详情。
+  走查修复的 bug：
+  1. **组件样式隔离**：10 个自定义组件未设 styleIsolation，app.wxss 全部不生效（布局散架的根因）→ 统一 `apply-shared`。
+  2. **overlay 关闭后拦截整页点击**：关闭态遮罩仍挂载且可命中 → `pointer-events:none + visibility 延迟隐藏`。
+  3. **readOr 不检查 ok**：非所有者读授权/车辆时在 undefined 上炸 → 严格解包，四处调用点适配。
+  4. **CONFLICT 死循环**：冲突后 revision 过期，重试永远失败 → `api.dispatchAndSync` 统一封装（31 处调用点），冲突自动重读页面。
+  5. **编辑器 routeId 丢失**：每次编辑都会另存一条私有路线 → reload 记住 routeId，buildInput 带回。
+  6. **面板重复加载**：observers+attached 双触发 → `_loading` 守卫。
+  7. **activity-card 缺 info 属性**：首页卡片人数行永不显示 → 补属性。
+- 2026-09-27（我的页重构）：按用户反馈重排——微信资料卡「点头像/昵称点键盘/手机号一键授权」三个入口全部**即点即覆盖对应字段并自动保存**（去掉手动保存按钮；姓名+手机号齐全后任意字段失焦即落库）；一键获取失败不再静默，区分「用户取消/未开通手机号权限/开发者工具不支持」三种提示；页面重排为 4 张卡（微信资料/紧急联系/同行人/身份码+位置授权）。注：微信政策下头像与昵称无法由服务端直接拉取，必须经 chooseAvatar/nickname 键盘确认，这是官方唯一入口。
+- 2026-09-27（手机号报错定位）：真机报「api scope is not declared in the privacy agreement」= 平台后台《用户隐私保护指引》未声明「手机号」。已把 me 页报错升级为带操作路径的指引（mp.weixin.qq.com → 设置 → 服务内容声明 → 用户隐私保护指引 → 增加「手机号」）；隐私页补充微信头像/昵称与一键取号的来源说明。此为平台配置问题，代码侧无需再改。
+- 2026-09-27（GPX 点击无反应排障）：根因 = wx.chooseMessageFile 是隐私接口，平台《用户隐私保护指引》未声明「选中的文件」时立即 fail，而旧代码 fail 静默 → 表现为点击无反应。修复：API 存在性守卫、fail 显式透出（区分取消/隐私未声明/其他）、移除 extension 过滤（避免列表被滤空）、编辑器加「先发文件到聊天再选择」引导文案。**平台侧待办**：隐私指引需声明「选中的文件」「手机号」「位置信息」三项（getPhoneNumber 已实测报 scope 未声明）。
+- 2026-09-27（待办·等平台审核）：用户已在 mp.weixin.qq.com 提交《用户隐私保护指引》更新（含「手机号」声明）。**审核通过后需真机回归**：「我的」页「微信一键获取」→ 应弹出微信官方授权框 → 取号后覆盖手机号字段并自动保存。在此之前该按钮会持续显示隐私声明指引文案，属预期行为。
+- 2026-09-27（UI skill）：新增项目级 skill `.agents/skills/ourtrail-ui/`（SKILL.md + design-system/platform-pitfalls/review-checklist 三份参考），沉淀本次落地全部 UI 规范与踩坑；多 agent 改 UI 前后对照使用。
+- 2026-09-27（UI 计划评审）：用 refactoring-ui 框架评审 UI 优化计划——P0（可用性 bug）保留；P1 缺视觉层次维度，补充 8 条（卡片去边框、主行动唯一化、危险按钮降级、空态隐藏筛选、原生控件品牌化、字重两档制、label:value 去除、对比度抽查）；P2 维持。对比度实测健康（muted/白 5.4、control-line 3.06 压线达标、语义浅底 ~5、leaf-on-forest 6.6）。ourtrail-ui skill 的 review-checklist 已补"视觉层次"节。执行方式修正：按任务流（报名/现场/分车）走查，不按页面批量改。

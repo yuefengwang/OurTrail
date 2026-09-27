@@ -4,6 +4,7 @@
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
+const gpx = require('../../utils/gpx')
 
 const emptyInput = () => ({
   title: '', description: '', organizerIntro: '',
@@ -88,6 +89,11 @@ Page({
     message: '',
     busy: false,
     canPublish: false,
+    // GPX 导入
+    gpxOpen: false,
+    gpxError: '',
+    gpxMeta: null,
+    gpxPoints: [],
   },
 
   onLoad(options) {
@@ -119,6 +125,7 @@ Page({
             delete a.phase
             initial = a
             phase = res.view.activity.phase
+            this.routeId = res.view.activity.routeId || null
           }
         }
       }
@@ -162,7 +169,7 @@ Page({
       acceptingSignups: f.acceptingSignups,
       capacity: Math.max(1, Math.min(500, Math.round(Number(f.capacity) || 24))),
       approvalMode: f.approvalMode,
-      routeId: null,
+      routeId: this.routeId || null,
       routeSnapshot: {
         title: f.routeTitle,
         distanceKm: Number(f.distanceKm) || 0,
@@ -354,7 +361,7 @@ Page({
     const payload = this.savedId
       ? { type: 'activity.edit', activityId: this.savedId, input }
       : { type: 'activity.create', input }
-    api.dispatch(payload, this.revision)
+    api.dispatchAndSync(payload, this.revision, this)
       .then(res => {
         const id = this.savedId || res.targetIds[0]
         this.savedId = id
@@ -382,13 +389,85 @@ Page({
   onCopyTemplate() {
     if (!this.data.templateId || this.data.busy) return
     this.setData({ busy: true, failure: '' })
-    api.dispatch({ type: 'activity.copy', sourceActivityId: this.data.templateId }, this.revision)
+    api.dispatchAndSync({ type: 'activity.copy', sourceActivityId: this.data.templateId }, this.revision, this)
       .then(res => {
         this.setData({ busy: false })
         const id = res.targetIds[0]
         if (id) wx.redirectTo({ url: '/pages/editor/editor?id=' + id })
       })
       .catch(e => this.setData({ busy: false, failure: api.errorText(e) }))
+  },
+
+  // ---- GPX 导入 ----
+  onImportGpx() {
+    this.setData({ gpxError: '' })
+    // wx.chooseMessageFile 是隐私接口：只能选聊天中的文件，且需平台隐私协议声明「选中的文件」。
+    // 失败必须显式透出（此前静默导致“点了没反应”）。
+    if (!wx.chooseMessageFile) {
+      this.setData({ gpxOpen: true, gpxError: '当前基础库不支持从聊天选择文件，请升级开发者工具或改用真机。' })
+      return
+    }
+    wx.chooseMessageFile({
+      count: 1,
+      type: 'file',
+      success: res => {
+        const file = res.tempFiles && res.tempFiles[0]
+        if (!file) return
+        if (file.size > gpx.MAX_FILE_BYTES) {
+          this.setData({ gpxOpen: true, gpxError: '文件超过 8MB，请换一个 GPX 文件。' })
+          return
+        }
+        wx.getFileSystemManager().readFile({
+          filePath: file.path,
+          encoding: 'utf8',
+          success: read => {
+            const parsed = gpx.parseGpx(read.data)
+            if (!parsed.ok) {
+              this.setData({ gpxOpen: true, gpxError: parsed.error })
+              return
+            }
+            this.setData({
+              gpxOpen: true,
+              gpxError: '',
+              gpxMeta: {
+                fileName: file.name || '轨迹.gpx',
+                count: parsed.points.length,
+                distanceKm: parsed.distanceKm,
+                ascentM: parsed.ascentM,
+                hasElevation: parsed.stats.hasElevation,
+              },
+              gpxPoints: parsed.points,
+            })
+          },
+          fail: err => this.setData({ gpxOpen: true, gpxError: '读取文件失败：' + ((err && err.errMsg) || '请重试') }),
+        })
+      },
+      fail: err => {
+        const msg = String((err && err.errMsg) || '')
+        if (/cancel/i.test(msg)) return
+        if (/privacy|scope is not declared/i.test(msg)) {
+          this.setData({
+            gpxOpen: true,
+            gpxError: '公众平台《用户隐私保护指引》尚未声明「选中的文件」，无法从聊天选择文件。请到 mp.weixin.qq.com → 设置 → 服务内容声明 补充并等生效；解析器本身不受影响，真机声明后即可用。',
+          })
+          return
+        }
+        this.setData({ gpxOpen: true, gpxError: '打开文件选择失败' + (msg ? '：' + msg : '') })
+      },
+    })
+  },
+  onGpxClose() { this.setData({ gpxOpen: false }) },
+  onGpxApply() {
+    const meta = this.data.gpxMeta
+    const points = this.data.gpxPoints
+    if (!meta || !points.length) return
+    const form = JSON.parse(JSON.stringify(this.data.form))
+    form.points = points.map(p => ({ id: freshId('point'), name: p.name, kind: p.kind, lat: String(p.coordinates.lat), lng: String(p.coordinates.lng) }))
+    if (meta.distanceKm > 0) form.distanceKm = String(meta.distanceKm)
+    if (meta.hasElevation) form.ascentM = String(meta.ascentM)
+    if (!form.routeTitle.trim()) form.routeTitle = meta.fileName.replace(/\.(gpx|xml)$/i, '')
+    this.setData({ gpxOpen: false, form, message: '已导入 ' + points.length + ' 个路线节点，记得保存。' })
+    this.persistDraft()
   },
 
   // ---- 发布 ----
@@ -428,12 +507,12 @@ Page({
         this.doPublish(participation, res.revision)
       }).catch(e => this.setData({ failure: api.errorText(e) }))
     } else {
-      this.doPublish(null, this.revision)
+      this.doPublish(null, this.revision, this)
     }
   },
 
   doPublish(participation, revision) {
-    api.dispatch({ type: 'activity.publish', activityId: this.savedId, participation }, revision)
+    api.dispatchAndSync({ type: 'activity.publish', activityId: this.savedId, participation }, revision, this)
       .then(() => {
         draft.clearDraft(this.activityId || 'new', 'activity-editor')
         this.setData({ publishOpen: false })

@@ -1,6 +1,7 @@
 // 人员行：头像（微信头像图或首字占位）+ 姓名 + 状态徽标 + 副标题 + 操作插槽。
 'use strict'
 Component({
+  options: { styleIsolation: 'apply-shared' },
   properties: {
     name: { type: String, value: '' },
     status: { type: String, value: '' },

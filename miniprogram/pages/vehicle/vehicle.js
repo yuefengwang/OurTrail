@@ -103,14 +103,14 @@ Page({
     if (this.data.busy) return
     const signupId = e.currentTarget.dataset.id
     this.setData({ busy: true, error: '' })
-    api.dispatch({
+    api.dispatchAndSync({
       type: 'attendance.board',
       activityId: this.activityId,
       signupId,
       leg: this.data.leg,
       boarded: true,
       note: '本车联系人现场逐人清点',
-    }, this.revision).then(res => {
+    }, this.revision, this).then(res => {
       this.revision = res.revision
       this.setData({ busy: false })
       api.toast('已确认上车')
@@ -131,7 +131,7 @@ Page({
   onDepart() {
     if (this.data.busy || this.data.departed) return
     this.setData({ busy: true, error: '' })
-    api.dispatch({ type: 'vehicle.depart', activityId: this.activityId, vehicleId: this.vehicleId, leg: this.data.leg, note: '本车清点后发车' }, this.revision)
+    api.dispatchAndSync({ type: 'vehicle.depart', activityId: this.activityId, vehicleId: this.vehicleId, leg: this.data.leg, note: '本车清点后发车' }, this.revision, this)
       .then(res => {
         this.revision = res.revision
         this.setData({ busy: false })
@@ -143,7 +143,7 @@ Page({
   onComplete() {
     if (this.data.busy || this.data.completed) return
     this.setData({ busy: true, error: '' })
-    api.dispatch({ type: 'vehicle.complete', activityId: this.activityId, vehicleId: this.vehicleId, leg: this.data.leg, note: '本程行驶已完成' }, this.revision)
+    api.dispatchAndSync({ type: 'vehicle.complete', activityId: this.activityId, vehicleId: this.vehicleId, leg: this.data.leg, note: '本程行驶已完成' }, this.revision, this)
       .then(res => {
         this.revision = res.revision
         this.setData({ busy: false })

@@ -7,6 +7,7 @@ const F = require('../../utils/format')
 const DEP_TONES = { unknown: 'warning', joined: 'success', not_departed: 'success', coordinating: 'warning' }
 
 Component({
+  options: { styleIsolation: 'apply-shared' },
   properties: {
     activityId: { type: String, value: '' },
     perspective: { type: String, value: 'organizer' },
@@ -49,7 +50,8 @@ Component({
   methods: {
     reload() {
       const activityId = this.data.activityId
-      if (!activityId) return
+      if (!activityId || this._loading) return
+      this._loading = true
       return api.read({ kind: 'activity', activityId, perspective: this.data.perspective }).then(res => {
         if (res.view.kind !== 'activity') {
           this.setData({ loading: false, denied: res.view.kind === 'denied' ? res.view.message : '当前任务不可用' })
@@ -79,6 +81,7 @@ Component({
           time: F.hhmm(p.reportedAt),
           stale: p.stale,
         }))
+        this._loading = false
         this.setData({
           loading: false,
           denied: '',
@@ -100,7 +103,7 @@ Component({
           pointLabels: v.activity.routeSnapshot.points.map(p => p.name),
           points: v.activity.routeSnapshot.points,
         })
-      }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
+      }).catch(e => { this._loading = false; this.setData({ loading: false, denied: api.errorText(e) }) })
     },
 
     onSearch(e) { this.setData({ search: e.detail.value }, () => this.reload()) },
@@ -186,7 +189,7 @@ Component({
       }
       if (!payload) return
       this.setData({ busy: true, error: '', message: '' })
-      api.dispatch(payload, this.revision)
+      api.dispatchAndSync(payload, this.revision, this)
         .then(res => {
           this.revision = res.revision
           this.setData({ busy: false, message: act.label + '已保存。' })
@@ -203,7 +206,7 @@ Component({
         this.setData({ error: '请填写核实与处理结果。' })
         return
       }
-      api.dispatch({ type: 'incident.resolve', activityId: this.data.activityId, incidentId: id, note }, this.revision)
+      api.dispatchAndSync({ type: 'incident.resolve', activityId: this.data.activityId, incidentId: id, note }, this.revision, this)
         .then(res => {
           this.revision = res.revision
           api.toast('已确认解决')

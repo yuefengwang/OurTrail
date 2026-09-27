@@ -229,7 +229,7 @@ Page({
       mode,
     }
     this.setData({ busy: true })
-    api.dispatch(payload, this.revision)
+    api.dispatchAndSync(payload, this.revision, this)
       .then(() => {
         this.setData({ busy: false })
         draft.clearDraft(this.activityId, 'signup')
@@ -315,14 +315,14 @@ Page({
     this.setData({ errors })
     if (Object.keys(errors).length) return
     this.setData({ busy: true })
-    api.dispatch({
+    api.dispatchAndSync({
       type: 'signup.edit',
       activityId: this.activityId,
       signupId: this.signupId,
       participant: form.person,
       trip: form.trip,
       purpose: this.approvedPurpose,
-    }, this.revision).then(() => {
+    }, this.revision, this).then(() => {
       this.setData({ busy: false })
       api.toast('修改已保存')
       wx.redirectTo({ url: '/pages/activity/activity?id=' + this.activityId + '&signupId=' + this.signupId })

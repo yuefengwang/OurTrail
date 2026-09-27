@@ -91,6 +91,7 @@ function buildSvg(name, color) {
 }
 
 Component({
+  options: { styleIsolation: 'apply-shared' },
   properties: {
     name: { type: String, value: 'activity' },
     size: { type: null, value: 22 },

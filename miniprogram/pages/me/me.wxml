@@ -7,57 +7,68 @@
     <view>
       <text class="eyebrow">我的同行资料</text>
       <text class="page-title" style="display:block;margin-top:4px;">下次出发，少填一点。</text>
-      <text class="muted" style="display:block;margin-top:4px;">常用资料的修改不追溯更改已经提交的报名。</text>
+      <text class="muted" style="display:block;margin-top:4px;">微信资料一键覆盖，其余失焦自动保存。</text>
     </view>
 
-    <view class="card stack-gap3">
-      <view class="wx-sync">
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view wx:if="{{hint}}" class="callout warning">{{hint}}</view>
+
+    <!-- 微信资料：点头像 / 昵称点键盘 / 手机号一键授权，全部立即生效 -->
+    <view class="card">
+      <text class="card-label">微信资料 · 点了就直接用</text>
+      <view class="wx-row">
         <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" hover-class="button-hover">
-          <image wx:if="{{person.avatar}}" class="avatar avatar-img" src="{{person.avatar}}" mode="aspectFill" />
-          <text wx:else class="avatar avatar-text">{{person.name ? person.name[0] : '我'}}</text>
+          <image wx:if="{{person.avatar}}" class="avatar-img" src="{{person.avatar}}" mode="aspectFill" />
+          <view wx:else class="avatar-fallback">
+            <text>{{person.name ? person.name[0] : '我'}}</text>
+          </view>
         </button>
-        <view class="wx-sync__copy">
-          <text class="section-title">以微信资料为准</text>
-          <text class="small muted" style="display:block;margin-top:4px;">点头像用微信头像；昵称在键盘上点选；手机号一键授权，无需验证码。</text>
+        <view class="nick-wrap">
+          <input
+            class="nick-input"
+            type="nickname"
+            value="{{person.name}}"
+            maxlength="80"
+            placeholder="微信昵称（点键盘上方填入）"
+            placeholder-class="input-placeholder"
+            data-key="name"
+            bindinput="onField"
+            bindblur="onBlurSave"
+          />
+          <text class="small muted">点头像用微信头像</text>
         </view>
       </view>
-      <form-field label="姓名（点键盘上方可直接填微信昵称）">
-        <input class="input" type="nickname" value="{{person.name}}" maxlength="80" data-key="name" bindinput="onField" placeholder="活动里怎么称呼你" />
-      </form-field>
-      <form-field label="联系电话">
-        <view class="phone-row">
-          <input class="input phone-input" type="number" maxlength="11" value="{{person.phone}}" data-key="phone" bindinput="onField" placeholder="11 位手机号" />
-          <button class="button secondary phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onPhoneCode" hover-class="button-hover">一键获取</button>
+      <view class="phone-row">
+        <view class="phone-value">
+          <text class="phone-text {{person.phone ? '' : 'empty'}}">{{person.phone || '手机号'}}</text>
+          <text class="small muted">来自微信授权，直接可用</text>
         </view>
-      </form-field>
-      <form-field label="紧急联系人姓名">
-        <input class="input" value="{{person.emergency.name}}" maxlength="80" data-key="ename" bindinput="onField" placeholder="紧急时联系谁" />
-      </form-field>
-      <form-field label="紧急联系电话">
-        <input class="input" type="number" maxlength="11" value="{{person.emergency.phone}}" data-key="ephone" bindinput="onField" />
-      </form-field>
-      <form-field label="健康与用药备注" hint="可选，仅用于本次活动的必要安全协作。">
-        <textarea class="textarea" value="{{person.medical}}" maxlength="2000" data-key="medical" bindinput="onField" />
-      </form-field>
-      <view wx:if="{{error}}" class="callout danger">{{error}}</view>
-      <view class="button primary block {{saving ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{saving ? '' : 'onSave'}}">保存常用资料</view>
-    </view>
-
-    <view class="callout">
-      <text class="callout-title">协作身份码</text>
-      <view style="margin-top:8px;display:flex;align-items:center;gap:12px;">
-        <text class="code-text" user-select>{{identity}}</text>
-        <view class="button text" hover-class="button-hover" bindtap="onCopyIdentity">
-          <icon name="copy" size="16" color="#163E35" />
-          <text>复制</text>
-        </view>
+        <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onPhoneCode" hover-class="button-hover">微信一键获取</button>
       </view>
-      <text style="display:block;margin-top:8px;">组织者把它填进「协作授权」后，你才能看到对应任务。</text>
     </view>
 
-    <view class="stack" style="gap:0;">
+    <!-- 紧急联系与安全备注：微信不提供，手填，失焦自动保存 -->
+    <view class="card stack-gap3">
+      <text class="card-label">紧急联系与安全备注</text>
+      <view class="field">
+        <text class="field-label">紧急联系人姓名</text>
+        <input class="input" value="{{person.emergency.name}}" maxlength="80" placeholder="紧急时联系谁" data-key="ename" bindinput="onField" bindblur="onBlurSave" />
+      </view>
+      <view class="field">
+        <text class="field-label">紧急联系电话</text>
+        <input class="input" type="number" maxlength="11" value="{{person.emergency.phone}}" placeholder="11 位手机号" data-key="ephone" bindinput="onField" bindblur="onBlurSave" />
+      </view>
+      <view class="field">
+        <text class="field-label">健康与用药备注</text>
+        <textarea class="textarea slim" value="{{person.medical}}" maxlength="2000" placeholder="可选，仅用于本次活动的必要安全协作" data-key="medical" bindinput="onField" bindblur="onBlurSave" />
+      </view>
+      <text class="small muted">{{saving ? '正在保存…' : '以上内容修改后自动保存'}}</text>
+    </view>
+
+    <!-- 常用同行人 -->
+    <view class="card stack-gap3">
       <view class="card-header">
-        <text class="section-title">常用同行人</text>
+        <text class="card-label">常用同行人</text>
         <view class="button text" hover-class="button-hover" bindtap="onAddCompanion">
           <icon name="plus" size="16" color="#163E35" />
           <text>添加</text>
@@ -65,9 +76,9 @@
       </view>
       <view wx:for="{{companions}}" wx:key="id" class="list-row">
         <view class="list-main">
-          <view style="display:flex;align-items:center;gap:12px;">
-            <image wx:if="{{item.avatar}}" class="avatar avatar-img" src="{{item.avatar}}" mode="aspectFill" />
-            <text wx:else class="avatar">{{item.name ? item.name[0] : '同'}}</text>
+          <view class="who">
+            <image wx:if="{{item.avatar}}" class="avatar-img sm" src="{{item.avatar}}" mode="aspectFill" />
+            <text wx:else class="avatar-fallback sm-text">{{item.name ? item.name[0] : '同'}}</text>
             <text>{{item.name}}</text>
           </view>
         </view>
@@ -76,19 +87,34 @@
           <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRemoveAsk">移除</view>
         </view>
       </view>
-      <text class="small muted" style="margin-top:8px;">保存条目不等于代办授权。每次报名仍需逐人同意；代报到家还需独立授权。</text>
+      <text wx:if="{{!companions.length}}" class="small muted">给家人朋友存一份资料，报名时直接勾选。</text>
+      <text class="small muted">保存条目不等于代办授权；每次报名仍需逐人同意。</text>
     </view>
 
-    <view wx:if="{{positionRows.length}}" class="stack" style="gap:0;">
-      <text class="section-title">位置与资料使用</text>
-      <text class="small muted">只在活动中主动上报一次位置，不会后台持续追踪。</text>
+    <!-- 协作身份码 -->
+    <view class="card stack-gap3">
+      <text class="card-label">协作身份码</text>
+      <view class="who">
+        <text class="code-text" user-select>{{identity}}</text>
+        <view class="button text" hover-class="button-hover" bindtap="onCopyIdentity">
+          <icon name="copy" size="16" color="#163E35" />
+          <text>复制</text>
+        </view>
+      </view>
+      <text class="small muted">组织者把它填进「协作授权」，你才能看到对应任务。</text>
+    </view>
+
+    <!-- 位置授权撤回 -->
+    <view wx:if="{{positionRows.length}}" class="card stack-gap3">
+      <text class="card-label">位置授权</text>
       <view wx:for="{{positionRows}}" wx:key="signupId" class="list-row">
         <view class="list-main">
           <text>{{item.label}}</text>
           <text class="list-sub">本次活动的位置授权仍然有效</text>
         </view>
-        <view class="button text" hover-class="button-hover" data-activity-id="{{item.activityId}}" data-signup-id="{{item.signupId}}" bindtap="onRevoke">撤回授权</view>
+        <view class="button text" hover-class="button-hover" data-activity-id="{{item.activityId}}" data-signup-id="{{item.signupId}}" bindtap="onRevoke">撤回</view>
       </view>
+      <text class="small muted">只在活动中主动上报一次位置，不会后台追踪。</text>
     </view>
   </view>
 

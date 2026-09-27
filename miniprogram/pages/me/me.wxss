@@ -1,12 +1,21 @@
-/* 我的页：微信资料同步 */
-.code-text { word-break: break-all; }
+/* 我的页：微信资料同步 + 自动保存 */
+.page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }
 
-.wx-sync {
+.card-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+/* 微信资料行：头像 + 昵称 */
+.wx-row {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 4px 0 12px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--line, #DEE3DB);
+  margin-bottom: 16px;
 }
 .avatar-btn {
   display: block;
@@ -19,29 +28,67 @@
   background: transparent;
   flex: 0 0 64px;
   overflow: hidden;
+  line-height: 1;
 }
 .avatar-btn::after { border: none; }
-.avatar-img { width: 64px; height: 64px; flex: 0 0 64px; }
-.avatar-text {
+.avatar-img { width: 64px; height: 64px; border-radius: 50%; flex: 0 0 64px; }
+.avatar-img.sm { width: 36px; height: 36px; flex: 0 0 36px; }
+.avatar-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 64px;
   height: 64px;
-  flex: 0 0 64px;
   font-size: 24px;
+  font-weight: 600;
   background: var(--forest-soft, #ECF0EF);
   color: var(--forest, #163E35);
   border-radius: 50%;
 }
-.wx-sync__copy { flex: 1; min-width: 0; }
+.avatar-fallback.sm-text {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  font-size: 15px;
+}
+.nick-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.nick-input {
+  min-height: 40px;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--line, #DEE3DB);
+  border-radius: 0;
+  background: transparent;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 40px;
+}
 
-.phone-row { display: flex; gap: 12px; align-items: center; }
-.phone-input { flex: 1; min-width: 0; }
+/* 手机号行 */
+.phone-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.phone-value { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.phone-text { font-size: 17px; font-weight: 600; color: var(--ink, #202A26); }
+.phone-text.empty { color: var(--muted, #5F6E66); font-weight: 400; }
 .phone-btn {
   flex: 0 0 auto;
-  min-height: 44px;
-  padding: 8px 14px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: var(--radius-button, 8px);
+  background: var(--forest, #163E35);
+  color: #FFFFFF;
   font-size: 13px;
+  font-weight: 600;
+  line-height: 22px;
 }
-button.phone-btn { font-family: inherit; line-height: 22px; }
+button.phone-btn { font-family: inherit; }
+.phone-btn::after { border: none; }
+
+/* 其余 */
+.who { display: flex; align-items: center; gap: 12px; }
+.code-text { flex: 1; min-width: 0; word-break: break-all; }
+.textarea.slim { min-height: 72px; }

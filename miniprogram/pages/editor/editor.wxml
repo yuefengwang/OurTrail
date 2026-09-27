@@ -99,8 +99,15 @@
       </view>
       <view class="card-header">
         <text class="section-title">路线节点</text>
-        <view wx:if="{{!form.points.length}}" class="button text" hover-class="button-hover" bindtap="useSampleRoute">使用示例路线</view>
+        <view class="cluster">
+          <view wx:if="{{!form.points.length}}" class="button text" hover-class="button-hover" bindtap="useSampleRoute">使用示例路线</view>
+          <view class="button text" hover-class="button-hover" bindtap="onImportGpx">
+            <icon name="route" size="16" color="#163E35" />
+            <text>导入 GPX 轨迹</text>
+          </view>
+        </view>
       </view>
+      <text class="small muted">先把 GPX 文件发送到任意微信聊天（推荐「文件传输助手」），再点上方按钮从聊天中选择；自动解析航点/路线点为节点，并按轨迹算出总里程与累计爬升。</text>
       <view wx:for="{{form.points}}" wx:key="id" class="fieldset stack-gap3">
         <text class="legend">节点 {{index + 1}}</text>
         <form-field label="节点名称">
@@ -261,6 +268,34 @@
       <view class="button primary block {{busy || (participate && !dataUse) ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || (participate && !dataUse) ? '' : 'publish'}}">
         {{participate ? '确认发布并为本人报名' : '只发布活动，不为本人报名'}}
       </view>
+    </view>
+  </overlay>
+
+  <overlay open="{{gpxOpen}}" kind="sheet" title="导入 GPX 轨迹" bind:close="onGpxClose">
+    <view class="stack">
+      <view wx:if="{{gpxError}}" class="callout danger">{{gpxError}}</view>
+      <block wx:if="{{gpxMeta && !gpxError}}">
+        <view class="callout">
+          <text class="callout-title">{{gpxMeta.fileName}}</text>
+          <text style="display:block;margin-top:4px;">解析出 {{gpxMeta.count}} 个路线节点{{gpxMeta.distanceKm > 0 ? ' · 全程约 ' + gpxMeta.distanceKm + ' km' : ''}}{{gpxMeta.hasElevation ? ' · 累计爬升约 ' + gpxMeta.ascentM + ' m' : ''}}。</text>
+        </view>
+        <view class="stack" style="gap:4px;">
+          <text class="small muted">将替换当前路线节点{{gpxMeta.distanceKm > 0 ? '与里程' : ''}}{{gpxMeta.hasElevation ? '、爬升' : ''}}；集合上车点与风险提示不受影响。确认前可先核对：</text>
+          <view wx:for="{{gpxPoints}}" wx:key="index" class="list-row">
+            <view class="list-main">
+              <text>{{item.name}}</text>
+              <text class="list-sub">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中节点'}} · {{item.coordinates.lat}}, {{item.coordinates.lng}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="button primary block" hover-class="button-hover" bindtap="onGpxApply">应用到路线</view>
+      </block>
+      <block wx:elif="{{gpxError}}">
+        <text class="small muted">请确认文件是标准 GPX（含 wpt/rtept/trkpt）后重试。</text>
+      </block>
+      <block wx:else>
+        <text class="small muted">正在读取文件…</text>
+      </block>
     </view>
   </overlay>
 </view>

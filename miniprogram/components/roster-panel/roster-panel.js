@@ -19,6 +19,7 @@ const ROLE_OPTIONS = ['现场协作', '车辆联络']
 const SCOPE_OPTIONS = ['明确选中的人员', '本活动全部人员']
 
 Component({
+  options: { styleIsolation: 'apply-shared' },
   properties: {
     activityId: { type: String, value: '' },
   },
@@ -71,7 +72,8 @@ Component({
   methods: {
     reload() {
       const activityId = this.data.activityId
-      if (!activityId) return
+      if (!activityId || this._loading) return
+      this._loading = true
       return api.read({ kind: 'activity', activityId, perspective: 'organizer' }).then(res => {
         if (res.view.kind !== 'activity') {
           this.setData({ loading: false, denied: res.view.kind === 'denied' ? res.view.message : '无法查看名单' })
@@ -80,11 +82,12 @@ Component({
         this.revision = res.revision
         this.now = res.now
         this.view = res.view
+        this._loading = false
         this.setData({ loading: false, denied: '' })
         this.render()
         this.loadTransport()
         if (this.data.accessOpen) this.loadAccess()
-      }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
+      }).catch(e => { this._loading = false; this.setData({ loading: false, denied: api.errorText(e) }) })
     },
 
     render() {
@@ -117,8 +120,7 @@ Component({
 
     loadTransport() {
       api.readOr('readTransport', { activityId: this.data.activityId }).then(result => {
-        if (!result.ok) return
-        const groups = result.value.groups
+        const groups = result.groups
           .filter(g => g.signupIds.length > 1)
           .map(g => ({
             id: g.id,
@@ -128,7 +130,7 @@ Component({
               return r ? r.name : ''
             }).filter(Boolean).join('、'),
           }))
-        this.setData({ groups, transportVehicles: result.value.vehicles })
+        this.setData({ groups, transportVehicles: result.vehicles })
       }).catch(() => {})
     },
 
@@ -182,7 +184,7 @@ Component({
         payload = { type: 'signup.cancel', activityId: this.data.activityId, signupIds: ids, reason: this.data.batchReason }
       } else payload = { type: 'signup.review', activityId: this.data.activityId, signupIds: ids, decision: this.data.batch }
       this.setData({ busy: true, error: '' })
-      api.dispatch(payload, this.revision)
+      api.dispatchAndSync(payload, this.revision, this)
         .then(res => {
           this.revision = res.revision
           this.setData({ busy: false, batch: '', selected: {}, message: '操作已保存。' })
@@ -209,7 +211,7 @@ Component({
         return
       }
       this.setData({ busy: true, error: '' })
-      api.dispatch({ type: 'export.record', activityId: this.data.activityId, signupIds: ids, mode, purpose }, this.revision)
+      api.dispatchAndSync({ type: 'export.record', activityId: this.data.activityId, signupIds: ids, mode, purpose }, this.revision, this)
         .then(res => {
           this.revision = res.revision
           return api.readExport(this.data.activityId, ids, mode, purpose)
@@ -262,7 +264,7 @@ Component({
     // ---- 同行组约束 ----
     onToggleGroup(e) {
       const { id, keep } = e.currentTarget.dataset
-      api.dispatch({ type: 'group.setTogether', activityId: this.data.activityId, groupId: id, keepTogether: !keep }, this.revision)
+      api.dispatchAndSync({ type: 'group.setTogether', activityId: this.data.activityId, groupId: id, keepTogether: !keep }, this.revision, this)
         .then(res => {
           this.revision = res.revision
           api.toast('同行组约束已保存')
@@ -276,11 +278,7 @@ Component({
     onAccessClose() { this.setData({ accessOpen: false }) },
     loadAccess() {
       api.readOr('readAccess', { activityId: this.data.activityId }).then(result => {
-        if (!result.ok) {
-          this.setData({ accessError: result.error.message })
-          return
-        }
-        const memberships = result.value.memberships.map(m => ({
+        const memberships = result.memberships.map(m => ({
           id: m.id,
           role: m.role,
           roleLabel: m.role === 'staff' ? '现场协作' : '车辆联络',
@@ -313,7 +311,7 @@ Component({
     },
     onRevokeMembership(e) {
       const id = e.currentTarget.dataset.id
-      api.dispatch({ type: 'membership.revoke', activityId: this.data.activityId, membershipId: id }, this.revision)
+      api.dispatchAndSync({ type: 'membership.revoke', activityId: this.data.activityId, membershipId: id }, this.revision, this)
         .then(res => {
           this.revision = res.revision
           api.toast('授权已撤销')
@@ -370,7 +368,7 @@ Component({
         role, id: membershipId, activityId: this.data.activityId, userId, expiresAt,
         vehicleId: this.transportVehicleIds[this.data.vehicleIndex],
       }
-      api.dispatch({ type: 'membership.save', activityId: this.data.activityId, membership }, this.revision)
+      api.dispatchAndSync({ type: 'membership.save', activityId: this.data.activityId, membership }, this.revision, this)
         .then(res => {
           this.revision = res.revision
           this.setData({ editingId: membershipId, message: '授权已保存。' })

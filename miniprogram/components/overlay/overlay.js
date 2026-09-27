@@ -1,6 +1,7 @@
 // 弹层组件：kind=sheet（底部上滑）或 dialog（居中）。由原型 Overlay.tsx 移植。
 'use strict'
 Component({
+  options: { styleIsolation: 'apply-shared' },
   options: { multipleSlots: false },
   properties: {
     open: { type: Boolean, value: false },

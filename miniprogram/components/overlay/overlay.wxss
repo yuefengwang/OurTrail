@@ -8,6 +8,15 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  /* 关闭态必须完全不拦截页面交互（淡出动画结束后隐藏） */
+  pointer-events: none;
+  visibility: hidden;
+  transition: visibility 0s linear var(--motion, 180ms);
+}
+.overlay-root.open {
+  pointer-events: auto;
+  visibility: visible;
+  transition: none;
 }
 .overlay-mask {
   position: absolute;

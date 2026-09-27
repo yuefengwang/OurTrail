@@ -61,7 +61,7 @@ module.exports = function makeNoticesPage(getActivityId) {
     loadPublishContext(activityId) {
       // 组织者才有发布/复制/投递记录（readNoticeManagement 仅所有者可读）
       api.readOr('readNoticeManagement', { activityId }).then(mgmt => {
-        const owned = new Map(mgmt.value.notices.map(n => [n.id, n]))
+        const owned = new Map(mgmt.notices.map(n => [n.id, n]))
         const items = this.data.items.map(item => {
           const own = owned.get(item.id)
           return Object.assign({}, item, {
@@ -116,7 +116,7 @@ module.exports = function makeNoticesPage(getActivityId) {
       } else {
         audience = { kind: 'activity' }
       }
-      api.dispatch({ type: 'notice.publish', activityId, audience, content: this.data.content }, this.revision)
+      api.dispatchAndSync({ type: 'notice.publish', activityId, audience, content: this.data.content }, this.revision, this)
         .then(() => {
           draft.clearDraft(activityId, 'notice')
           this.setData({ publishOpen: false, content: '', message: '通知已发布。' })
@@ -127,7 +127,7 @@ module.exports = function makeNoticesPage(getActivityId) {
 
     onMarkRead(e) {
       const { id, activityId } = e.currentTarget.dataset
-      api.dispatch({ type: 'notice.read', activityId, noticeId: id }, this.revision)
+      api.dispatchAndSync({ type: 'notice.read', activityId, noticeId: id }, this.revision, this)
         .then(() => this.reload())
         .catch(err => this.setData({ error: api.errorText(err) }))
     },
@@ -146,7 +146,7 @@ module.exports = function makeNoticesPage(getActivityId) {
         data: item.content,
         success: () => {
           // 记录复制投递（审计）
-          api.dispatch({ type: 'notice.delivery', activityId, noticeId: id, channel: 'copy', status: 'copied', detail: '小程序剪贴板复制' }, this.revision)
+          api.dispatchAndSync({ type: 'notice.delivery', activityId, noticeId: id, channel: 'copy', status: 'copied', detail: '小程序剪贴板复制' }, this.revision, this)
             .then(() => { this.setData({ message: '已复制；复制记录已保存。请自行选择发送对象。' }); this.reload() })
             .catch(err => this.setData({ message: '已复制，但记录未保存：' + api.errorText(err) }))
         },

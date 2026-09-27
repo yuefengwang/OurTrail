@@ -40,16 +40,40 @@ function read(request) {
   return call('read', { request })
 }
 
+// Result 型接口（readForm/readTransport/...）的解包：ok=false 时抛错
 function readOr(name, data) {
-  return call(name, data).then(r => r.value || r)
+  return call(name, data).then(r => {
+    if (r && r.ok) return r.value
+    const err = new Error((r && r.error && r.error.message) || '读取失败')
+    err.code = (r && r.error && r.error.code) || 'INVALID_INPUT'
+    throw err
+  })
 }
 
-// 提交命令：requestId 幂等；成功返回 { targetIds, replayed, revision }
+/** 提交命令；CONFLICT 时自动标记 needRefresh（页面应重读后重试） */
 function dispatch(payload, expectedRevision, requestId) {
   return call('dispatch', {
     payload,
     expectedRevision,
     requestId: requestId || ('req-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10)),
+  }).catch(e => {
+    if (e && e.code === 'CONFLICT') e.needRefresh = true
+    throw e
+  })
+}
+
+/**
+ * dispatch 的页面封装：并发冲突（CONFLICT）时自动重读页面数据并提示，
+ * 下次再点就能基于最新 revision 提交，避免「一直冲突」。
+ * page 需提供 reload()。
+ */
+function dispatchAndSync(payload, expectedRevision, page) {
+  return dispatch(payload, expectedRevision).catch(e => {
+    if (e && e.needRefresh && page && typeof page.reload === 'function') {
+      toast('安排已被他人更新，已刷新，请重试')
+      Promise.resolve(page.reload()).catch(() => {})
+    }
+    throw e
   })
 }
 

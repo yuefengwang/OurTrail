@@ -1,1 +1,31 @@
-/* TabBar 样式在 app.wxss 全局定义（.tabbar） */
+/* 自定义 TabBar（组件样式必须自包含，app.wxss 不注入组件内部） */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  padding: 8px 12px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  background: #FFFFFF;
+  border-top: 1px solid #DEE3DB;
+}
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 44px;
+  color: #5F6E66;
+  font-size: 12px;
+  line-height: 18px;
+  border-radius: 8px;
+}
+.tab.on {
+  color: #163E35;
+  font-weight: 700;
+  background: #ECF0EF;
+}
