@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "协作任务",
+  "usingComponents": {
+    "field-panel": "/components/field-panel/field-panel"
+  }
+}

@@ -1,0 +1,50 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="无法查看天气参考" detail="{{denied}}" />
+  <view wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在读取路线关键点。" />
+  </view>
+  <view wx:else class="stack">
+    <view>
+      <text class="eyebrow">行前参考</text>
+      <text class="page-title" style="display:block;margin-top:4px;">留意天气，也留意脚下。</text>
+    </view>
+
+    <view class="callout warning">天气是行前参考，不是出发许可。请出发前核实当地气象与路况。</view>
+
+    <form-field label="路线关键点">
+      <picker range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPoint">
+        <view class="picker">
+          <text class="picker-value">{{pointLabels[pointIndex] || '暂无路线节点'}}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </form-field>
+    <form-field label="查看日期">
+      <picker mode="date" value="{{date}}" bindchange="onDate">
+        <view class="picker">
+          <text class="picker-value">{{date}}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </form-field>
+
+    <block wx:if="{{loadingWeather}}">
+      <status-panel kind="loading" title="正在查询天气" detail="正在向气象服务查询该点的逐小时预报。" />
+    </block>
+    <block wx:elif="{{hours.length}}">
+      <text class="small muted">更新时间：{{updatedAt}}</text>
+      <view class="card" style="padding:0;">
+        <view wx:for="{{hours}}" wx:key="at" class="list-row">
+          <text style="font-weight:700;" class="tabular">{{item.at}}</text>
+          <view style="text-align:right;">
+            <text style="font-weight:700;">{{item.temperature}}°C</text>
+            <text class="list-sub">降水 {{item.precipitation}} mm · {{item.wind}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+    <status-panel wx:else kind="empty" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" />
+
+    <view wx:if="{{isOwner}}" class="button secondary block" hover-class="button-hover" bindtap="onDraftNotice">生成天气提醒草稿</view>
+  </view>
+</view>

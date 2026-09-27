@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "活动通知",
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "overlay": "/components/overlay/overlay",
+    "status-panel": "/components/status-panel/status-panel",
+    "form-field": "/components/form-field/form-field"
+  }
+}

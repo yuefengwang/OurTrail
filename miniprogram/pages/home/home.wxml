@@ -1,0 +1,75 @@
+<view class="page {{cards.length || tasks.length ? 'with-tabbar' : ''}}">
+  <status-panel wx:if="{{denied}}" kind="denied" title="暂时无法读取活动" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在核对与你有关的活动。" />
+  </block>
+  <block wx:else>
+    <view class="stack">
+      <view class="card-header">
+        <text class="eyebrow">OURTRAIL · 一起走过</text>
+        <view class="button text" hover-class="button-hover" bindtap="onNew">
+          <icon name="plus" size="16" color="#163E35" />
+          <text>发起活动</text>
+        </view>
+      </view>
+      <view>
+        <text class="page-title">{{profileName ? profileName + '，' : ''}}下一次同行</text>
+        <text class="muted" style="display:block;margin-top:8px;">从出发到平安到家，把安排放在一起。</text>
+      </view>
+
+      <view wx:if="{{tasks.length}}" class="stack" style="gap:0;">
+        <text class="section-title">需要我协作</text>
+        <view
+          wx:for="{{tasks}}"
+          wx:key="id"
+          class="list-row"
+          hover-class="button-hover"
+          data-id="{{item.id}}"
+          data-gostaff="{{item.goStaff}}"
+          bindtap="onOpenTask"
+        >
+          <view class="list-main">
+            <text>{{item.title}}</text>
+            <text class="list-sub">{{item.roles}} · {{item.phase}}</text>
+          </view>
+          <icon name="arrow" size="18" color="#163E35" />
+        </view>
+      </view>
+
+      <view class="stack-gap3">
+        <view class="segmented" aria-label="活动范围">
+          <view class="seg {{filter === 'mine' ? 'on' : ''}}" data-value="mine" bindtap="onFilter">我的活动</view>
+          <view class="seg {{filter === 'recent' ? 'on' : ''}}" data-value="recent" bindtap="onFilter">最近查看</view>
+          <view class="seg {{filter === 'finished' ? 'on' : ''}}" data-value="finished" bindtap="onFilter">已结束</view>
+        </view>
+        <view class="field">
+          <text class="field-label">查找我的活动</text>
+          <input class="input" type="text" confirm-type="search" placeholder="搜索活动或路线" value="{{search}}" bindinput="onSearch" />
+        </view>
+      </view>
+
+      <status-panel
+        wx:if="{{!cards.length}}"
+        kind="empty"
+        title="{{emptyTitle}}"
+        detail="{{emptyDetail}}"
+        actionLabel="{{emptyAction}}"
+        bind:action="onEmptyAction"
+      />
+      <view wx:else class="stack" aria-label="活动列表">
+        <activity-card
+          wx:for="{{cards}}"
+          wx:key="id"
+          title="{{item.title}}"
+          date="{{item.date}}"
+          meta="{{item.meta}}"
+          status="{{item.status}}"
+          featured="{{item.featured}}"
+          info="{{item.info}}"
+          data-id="{{item.id}}"
+          bind:open="onOpenCard"
+        />
+      </view>
+    </view>
+  </block>
+</view>

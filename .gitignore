@@ -1,0 +1,24 @@
+# ===== macOS =====
+.DS_Store
+
+# ===== Dependencies =====
+node_modules/
+
+# ===== Build / test output =====
+dist/
+test-results/
+playwright-report/
+
+# ===== WeChat devtools private config (may contain secrets) =====
+project.private.config.json
+
+# ===== Generated output (sparks / agent artifacts) =====
+spark-output/
+
+# ===== Agent / tool working directories =====
+.superpowers/
+.zcodeignore
+
+# ===== Prototype test artifacts (screenshots / evidence) =====
+docs/prototypes/ourtrail-app/tests/evidence/
+docs/prototypes/ourtrail-app/tests/home-browser.png

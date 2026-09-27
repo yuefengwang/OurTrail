@@ -1,0 +1,6 @@
+<view class="field {{error ? 'invalid' : ''}}">
+  <text class="field-label">{{label}}</text>
+  <slot />
+  <text wx:if="{{hint && !error}}" class="field-hint">{{hint}}</text>
+  <text wx:if="{{error}}" class="field-error">{{error}}</text>
+</view>

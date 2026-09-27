@@ -1,0 +1,97 @@
+<view class="stack">
+  <status-panel wx:if="{{denied}}" kind="denied" title="当前任务不可用" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在读取现场名单。" />
+  </block>
+  <view wx:else class="stack">
+    <view class="callout warning">
+      <text class="callout-title">{{headline}}</text>
+      <text style="display:block;margin-top:4px;">签到、上车、出发与到家分别记录，不能相互替代。</text>
+      <view class="cluster" style="margin-top:8px;">
+        <text>待到家 {{pendingHome}} 人</text>
+        <text>未结异常 {{openIncidents}} 项</text>
+      </view>
+    </view>
+
+    <view class="field">
+      <text class="field-label">查找现场人员</text>
+      <input class="input" value="{{search}}" placeholder="输入姓名" bindinput="onSearch" />
+    </view>
+    <label class="check-label">
+      <checkbox checked="{{unresolvedOnly}}" bindchange="onUnresolvedOnly" />
+      <text class="check-text">只看去向或到家待核实人员</text>
+    </label>
+
+    <view class="person-list">
+      <person-row
+        wx:for="{{rows}}"
+        wx:key="signupId"
+        name="{{item.name}}"
+        subtitle="{{item.subtitle}}"
+        status="{{item.status}}"
+        tone="{{item.tone}}"
+      >
+        <view class="button text" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="openSheet">现场记录</view>
+      </person-row>
+    </view>
+    <text wx:if="{{!rows.length}}" class="muted">当前范围没有符合条件的人员。</text>
+
+    <view class="stack" style="gap:12px;">
+      <text class="section-title">异常与处理</text>
+      <view wx:for="{{incidents}}" wx:key="id" class="card stack-gap3">
+        <text class="badge {{item.resolved ? 'success' : 'warning'}}">{{item.resolved ? '已核实处理' : '待跟进'}}</text>
+        <text>{{item.description}}</text>
+        <text wx:if="{{item.subjectNames}}" class="small muted">涉及：{{item.subjectNames}}</text>
+        <block wx:if="{{!item.resolved}}">
+          <form-field label="处理结果">
+            <textarea class="textarea" value="{{resolveNotes[item.id] || ''}}" data-id="{{item.id}}" bindinput="onResolveNote" />
+          </form-field>
+          <view class="button secondary block" hover-class="button-hover" data-id="{{item.id}}" bindtap="onResolve">确认本条已解决</view>
+        </block>
+      </view>
+      <text wx:if="{{!incidents.length}}" class="muted">当前范围没有异常记录。</text>
+    </view>
+
+    <view wx:if="{{phase === 'active'}}" class="stack" style="gap:12px;">
+      <text class="section-title">最后一次主动上报</text>
+      <text class="small muted">本人主动上报 · 非实时追踪 · 不用于导航。超过30分钟的点位不代表当前所在。</text>
+      <view wx:for="{{positions}}" wx:key="signupId" class="list-row">
+        <view class="list-main">
+          <text>{{item.name}}</text>
+          <text class="list-sub">{{item.coords}}</text>
+        </view>
+        <text class="badge {{item.stale ? 'warning' : 'neutral'}}">{{item.time}}{{item.stale ? ' · 已过时' : ''}}</text>
+      </view>
+      <text wx:if="{{!positions.length}}" class="muted">没有仍在授权期内的上报点。</text>
+    </view>
+
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view wx:if="{{message}}" class="callout success">{{message}}</view>
+  </view>
+</view>
+
+<overlay open="{{sheetOpen}}" kind="sheet" title="{{sel.name}} · 现场记录" bind:close="closeSheet">
+  <view class="stack">
+    <form-field label="逐人核实依据" hint="填写现场、电话核实的实际结果">
+      <textarea class="textarea" value="{{note}}" maxlength="2000" bindinput="onNote" />
+    </form-field>
+    <form-field wx:if="{{pointEnabled}}" label="路线节点">
+      <picker range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPoint">
+        <view class="picker {{pointIndex < 0 ? 'placeholder' : ''}}">
+          <text class="picker-value">{{pointIndex < 0 ? '选择节点' : pointLabels[pointIndex]}}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </form-field>
+    <view
+      wx:for="{{actions}}"
+      wx:key="label"
+      class="button secondary block {{busy ? 'disabled' : ''}}"
+      hover-class="button-hover"
+      data-index="{{index}}"
+      bindtap="{{busy ? '' : 'onAction'}}"
+    >{{item.label}}</view>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view wx:if="{{message}}" class="callout success">{{message}}</view>
+  </view>
+</overlay>

@@ -1,0 +1,4 @@
+/* 首页：卡片信息区留白 */
+.page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }
+.activity-card .activity-card__info { font-size: 12px; color: #5F6E66; }
+.activity-card--featured .activity-card__info { color: #D0D8D7; }

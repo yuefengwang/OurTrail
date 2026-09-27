@@ -1,0 +1,2 @@
+/* 样式复用 app.wxss 的 status-panel 体系 */
+.status-panel__copy { align-items: flex-start; }

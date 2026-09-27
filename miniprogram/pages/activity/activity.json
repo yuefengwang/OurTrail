@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "活动详情",
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "overlay": "/components/overlay/overlay",
+    "status-panel": "/components/status-panel/status-panel",
+    "form-field": "/components/form-field/form-field",
+    "person-row": "/components/person-row/person-row"
+  }
+}

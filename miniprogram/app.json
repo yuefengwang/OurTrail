@@ -1,0 +1,47 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/notices/notices",
+    "pages/me/me",
+    "pages/activity/activity",
+    "pages/signup/signup",
+    "pages/editor/editor",
+    "pages/workspace/workspace",
+    "pages/staff/staff",
+    "pages/vehicle/vehicle",
+    "pages/weather/weather",
+    "pages/anotices/anotices",
+    "pages/privacy/privacy"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#163E35",
+    "navigationBarTitleText": "OurTrail",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F5F5F0",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#5F6E66",
+    "selectedColor": "#163E35",
+    "backgroundColor": "#FFFFFF",
+    "list": [
+      { "pagePath": "pages/home/home", "text": "活动" },
+      { "pagePath": "pages/notices/notices", "text": "通知" },
+      { "pagePath": "pages/me/me", "text": "我的" }
+    ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于签到时校验是否到达集合点、以及主动上报一次位置"
+    }
+  },
+  "requiredPrivateInfos": ["getLocation", "chooseLocation"],
+  "lazyCodeLoading": "requiredComponents",
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "__usePrivacyCheck__": true,
+  "usingComponents": {
+    "privacy-popup": "/components/privacy-popup/privacy-popup"
+  }
+}

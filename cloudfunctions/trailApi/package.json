@@ -1,0 +1,9 @@
+{
+  "name": "trailApi",
+  "version": "1.0.0",
+  "description": "山野同路小程序云函数：报名事务、名单、分车、签到、天气代理",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

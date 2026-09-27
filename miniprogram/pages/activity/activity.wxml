@@ -1,0 +1,231 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="无法查看此活动" detail="{{denied}}" actionLabel="回到我的活动" bind:action="goHome" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在核对活动安排。" />
+  </block>
+  <view wx:else class="stack">
+
+    <view wx:if="{{draftNotice}}" class="callout warning">
+      <text class="callout-title">未发布预览 · 仅你可见</text>
+      <text style="display:block;margin-top:4px;">此预览不会发布活动，也不会替你报名。</text>
+    </view>
+
+    <view class="hero stack" style="gap:12px;">
+      <image class="trail-art" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNENkVBOEEiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTEzNS0yMEM0MCAzMSAyMjAgNTEgMTI2IDEwN1MzNSAxNzkgMTMyIDI2MCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE4My0yMEM4OCAzMSAxNjQgNzggODQgMTIzUzkyIDIwMSAxNzkgMjYwIiBzdHJva2Utd2lkdGg9IjEuMjUiLz48L3N2Zz4=" mode="aspectFit" />
+      <view class="cluster hero-body">
+        <text class="badge on-forest">{{badgeText}}</text>
+        <text class="small muted tabular">{{startAtLabel}}</text>
+      </view>
+      <text class="page-title hero-body">{{title}}</text>
+      <text class="muted hero-body">{{routeTitle}}</text>
+      <view class="metrics hero-body">
+        <view class="metric">
+          <text class="metric-value">{{distance}}<text class="metric-unit">km</text></text>
+          <text class="metric-label">路线里程</text>
+        </view>
+        <view class="metric">
+          <text class="metric-value">{{ascent}}<text class="metric-unit">m</text></text>
+          <text class="metric-label">累计爬升</text>
+        </view>
+        <view class="metric">
+          <text class="metric-value">{{confirmed}}<text class="metric-unit">/ {{capacity}}</text></text>
+          <text class="metric-label">已确认人数</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{!isDraft}}" class="callout {{stateTone}}">
+      <text class="callout-title">{{stateTitle}}</text>
+      <text style="display:block;margin-top:4px;">{{stateDetail}}</text>
+      <text class="small" style="display:block;margin-top:4px;">{{countersLine}}</text>
+    </view>
+
+    <view class="form-actions">
+      <view wx:if="{{isOwner}}" class="button primary" hover-class="button-hover" bindtap="onWorkspace" style="flex:1;">
+        <text>{{isDraft ? '返回编辑与发布' : '进入工作台'}}</text>
+        <icon name="arrow" size="18" color="#FFFFFF" />
+      </view>
+      <button
+        wx:elif="{{canSubmit}}"
+        class="button primary"
+        style="flex:1;"
+        hover-class="button-hover"
+        bindtap="onSignup"
+      >填写报名资料</button>
+      <view wx:elif="{{canSelfSheet}}" class="button primary" hover-class="button-hover" bindtap="onSelfSheet" style="flex:1;">{{selfButton}}</view>
+      <button class="button secondary" hover-class="button-hover" open-type="share" style="flex:1;">
+        <icon name="copy" size="18" color="#163E35" />
+        <text>分享</text>
+      </button>
+    </view>
+
+    <view wx:if="{{rows.length}}" class="stack" style="gap:0;">
+      <view class="card-header">
+        <text class="section-title">我与同行人</text>
+        <text class="small muted">每个人，独立确认</text>
+      </view>
+      <person-row
+        wx:for="{{rows}}"
+        wx:key="signupId"
+        name="{{item.name}}"
+        status="{{item.statusLabel}}"
+        tone="{{item.tone}}"
+        subtitle="{{item.subtitle}}"
+      >
+        <view class="button {{item.isPrimary ? 'secondary' : 'text'}}" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="onToggleRow">
+          {{item.isPrimary ? '当前查看' : '切换查看'}}
+        </view>
+        <view class="button text" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="openSheet">
+          <text>资料与操作</text>
+          <icon name="arrow" size="16" color="#163E35" />
+        </view>
+      </person-row>
+    </view>
+
+    <view class="stack" style="gap:0;">
+      <text class="section-title">这一次的安排</text>
+      <text>{{description}}</text>
+      <view class="list-row"><view class="list-main"><text>{{times[0].label}}</text></view><text class="tabular">{{times[0].value}}</text></view>
+      <view class="list-row"><view class="list-main"><text>{{times[1].label}}</text></view><text class="tabular">{{times[1].value}}</text></view>
+      <view class="list-row"><view class="list-main"><text>{{times[2].label}}</text></view><text class="tabular">{{times[2].value}}</text></view>
+      <text wx:if="{{organizerIntro}}" class="small muted">{{organizerIntro}}</text>
+    </view>
+
+    <view class="stack" style="gap:0;">
+      <view class="card-header">
+        <text class="section-title">路线与集合</text>
+        <view class="button text" hover-class="button-hover" bindtap="onWeather">
+          <icon name="cloud" size="18" color="#163E35" />
+          <text>天气参考</text>
+        </view>
+      </view>
+      <view class="timeline" style="margin-top:12px;">
+        <view wx:for="{{points}}" wx:key="id" class="timeline-item">
+          <text class="eyebrow">{{item.kindLabel}}</text>
+          <text style="display:block;font-weight:700;margin-top:2px;">{{item.name}}</text>
+        </view>
+      </view>
+      <view wx:for="{{pickups}}" wx:key="id" class="list-row" style="margin-top:12px;">
+        <view class="list-main">
+          <text>{{item.name}}</text>
+          <text class="list-sub">{{item.address}}</text>
+        </view>
+        <text class="small tabular">{{item.time}}</text>
+      </view>
+    </view>
+
+    <view class="stack" style="gap:12px;">
+      <text class="section-title">风险提示</text>
+      <block wx:if="{{risks.length}}">
+        <view wx:for="{{risks}}" wx:key="id" class="callout warning">
+          <text class="callout-title">{{item.title}}</text>
+          <text style="display:block;margin-top:4px;">{{item.advice}}</text>
+        </view>
+      </block>
+      <text wx:else class="muted">组织者尚未补充具体风险；户外活动存在天气与路况变化。</text>
+    </view>
+
+    <view class="stack" style="gap:12px;">
+      <text class="section-title">出发前，检查装备</text>
+      <view class="cluster">
+        <text wx:for="{{equipment}}" wx:key="index" class="badge neutral">{{item}}</text>
+        <text wx:if="{{!equipment.length}}" class="muted">组织者未填写装备清单。</text>
+      </view>
+    </view>
+
+    <view class="stack" style="gap:12px;">
+      <text class="section-title">费用与退出约定</text>
+      <text>{{feeNote}}</text>
+      <text wx:if="{{cancellationNote}}" class="muted">{{cancellationNote}}</text>
+      <text class="small muted">OurTrail 不收款，不处理支付或退款。</text>
+    </view>
+
+    <view wx:if="{{!isDraft}}" class="list-row" hover-class="button-hover" bindtap="onNotices">
+      <view class="list-main">
+        <text>活动通知</text>
+        <text class="list-sub">集合变更与最新安排</text>
+      </view>
+      <icon name="arrow" size="22" color="#163E35" />
+    </view>
+  </view>
+
+  <overlay open="{{sheetOpen}}" kind="sheet" title="{{selRow.name}} · 同行状态" bind:close="closeSheet">
+    <view class="stack">
+      <view class="cluster">
+        <text class="badge neutral">{{selRow.statusLabel}}</text>
+        <text class="small muted">{{selRow.line}}</text>
+      </view>
+      <view wx:if="{{selMessage}}" class="callout success">{{selMessage}}</view>
+      <view wx:if="{{selError}}" class="callout danger">{{selError}}</view>
+
+      <form-field label="本次说明" hint="取消、异常与代确认时请说明原因；操作只作用于当前这位参与人。">
+        <textarea class="textarea" maxlength="2000" value="{{selNote}}" bindinput="onSelNote" />
+      </form-field>
+
+      <view wx:if="{{canCheckin || canHome}}" class="form-actions">
+        <view wx:if="{{canCheckin}}" class="button primary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onCheckin'}}" style="flex:1;">确认已到集合点</view>
+        <view wx:if="{{canHome}}" class="button primary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onHome'}}" style="flex:1;">确认已安全到家</view>
+      </view>
+
+      <view wx:if="{{canNode}}" class="stack-gap3">
+        <form-field label="到达的路线节点">
+          <picker range="{{selPoints}}" range-key="label" value="{{selPointIndex}}" bindchange="onSelPoint">
+            <view class="picker {{selPointIndex < 0 ? 'placeholder' : ''}}">
+              <text class="picker-value">{{selPointIndex < 0 ? '请选择节点' : selPoints[selPointIndex].label}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </form-field>
+        <view class="button secondary {{busy || selPointIndex < 0 ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || selPointIndex < 0 ? '' : 'onNode'}}">确认到达此节点</view>
+      </view>
+
+      <view wx:if="{{canPosReport}}" class="stack-gap3">
+        <view class="button text" hover-class="button-hover" bindtap="onTogglePosBox">
+          <text>{{showPosBox ? '收起' : '展开'}}位置上报</text>
+        </view>
+        <view wx:if="{{showPosBox}}" class="stack-gap3">
+          <text class="small muted">仅本次主动上报一个位置点，不后台追踪；授权随活动结束失效，也可随时撤回。</text>
+          <label class="check-label">
+            <checkbox checked="{{selConsent}}" bindchange="onSelConsent" />
+            <text class="check-text">同意本次活动授权人员查看这次上报的位置，活动结束后失效</text>
+          </label>
+          <view class="button secondary {{busy || !selConsent ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !selConsent ? '' : 'onPosReport'}}">上报当前位置</view>
+          <view wx:if="{{canPosRevoke}}" class="button text" hover-class="button-hover" bindtap="{{busy ? '' : 'onPosRevoke'}}">撤回位置共享</view>
+        </view>
+      </view>
+
+      <view wx:if="{{canIncident}}" class="stack-gap3">
+        <form-field label="报备类型">
+          <picker range="{{kindOptions}}" value="{{selKindIndex}}" bindchange="onSelKind">
+            <view class="picker">
+              <text class="picker-value">{{kindOptions[selKindIndex]}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </form-field>
+        <text class="small muted">用上方「本次说明」写明现状、去向与需要的帮助；报备不等于已完成安全收尾。</text>
+        <view class="button danger {{busy || !selNote ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !selNote ? '' : 'onIncident'}}">提交报备</view>
+      </view>
+
+      <view wx:if="{{canEdit || canCancel}}" class="form-actions">
+        <view wx:if="{{canEdit}}" class="button secondary" hover-class="button-hover" bindtap="onEditRow" style="flex:1;">修改此人资料</view>
+        <view wx:if="{{canCancel}}" class="button danger {{busy || !selNote ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !selNote ? '' : 'onCancelRow'}}" style="flex:1;">确认取消此人报名</view>
+      </view>
+
+      <view class="stack-gap3">
+        <form-field label="查看必要安全联络资料" hint="紧急联络与健康备注仅供本次必要用途。">
+          <input class="input" value="{{selPurpose}}" bindinput="onSelPurpose" placeholder="说明本次查看的必要用途" />
+        </form-field>
+        <view class="button text {{selPurpose ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{selPurpose ? 'onSensitive' : ''}}">
+          <text>按用途查看</text>
+          <icon name="shield" size="16" color="#163E35" />
+        </view>
+        <view wx:if="{{selSensitive}}" class="callout">
+          <text>紧急联系人：{{selSensitive.emergency.name}}</text>
+          <text style="display:block;">紧急电话：{{selSensitive.emergency.phone}}</text>
+          <text style="display:block;">健康备注：{{selSensitive.medical || '未填写'}}</text>
+        </view>
+      </view>
+    </view>
+  </overlay>
+</view>

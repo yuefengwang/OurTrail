@@ -1,0 +1,16 @@
+<section class="empty-state status-panel status-panel--{{kind}}">
+  <span class="status-panel__icon">
+    <icon name="{{iconName}}" size="24" color="{{kind === 'error' ? '#B43D3B' : (kind === 'denied' || kind === 'offline') ? '#8C5A12' : '#163E35'}}" />
+  </span>
+  <view class="stack-gap3 status-panel__copy">
+    <text class="section-title">{{title}}</text>
+    <text class="muted">{{detail}}</text>
+  </view>
+  <view wx:if="{{kind === 'loading'}}" class="status-skeleton" aria-hidden="true">
+    <view class="sk"></view><view class="sk"></view><view class="sk"></view>
+  </view>
+  <view wx:if="{{actionLabel}}" class="button secondary" hover-class="button-hover" bindtap="onAction">
+    {{actionLabel}}
+    <icon name="arrow" size="18" color="#163E35" />
+  </view>
+</section>

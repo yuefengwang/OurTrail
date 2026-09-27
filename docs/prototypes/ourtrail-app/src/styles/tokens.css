@@ -1,0 +1,59 @@
+:root {
+  color-scheme: light;
+  --forest: #163E35;
+  --leaf: #D6EA8A;
+  --paper: #F5F5F0;
+  --white: #FFFFFF;
+  --ink: #202A26;
+  --muted: #5F6E66;
+  --line: #DEE3DB;
+  --danger: #B43D3B;
+  --warning: #8C5A12;
+  --info: #346583;
+  --success: #276145;
+
+  --surface: var(--white);
+  --forest-soft: color-mix(in srgb, var(--forest) 8%, var(--white));
+  --success-soft: color-mix(in srgb, var(--success) 9%, var(--white));
+  --warning-soft: color-mix(in srgb, var(--warning) 9%, var(--white));
+  --danger-soft: color-mix(in srgb, var(--danger) 7%, var(--white));
+  --info-soft: color-mix(in srgb, var(--info) 8%, var(--white));
+  --on-forest-muted: color-mix(in srgb, var(--white) 80%, var(--forest));
+  --on-forest-line: color-mix(in srgb, var(--white) 24%, var(--forest));
+  --control-line: color-mix(in srgb, var(--muted) 72%, var(--white));
+  --focus: var(--info);
+
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-utility: var(--font-body);
+  --text-caption: 12px;
+  --text-body: 14px;
+  --text-input: 16px;
+  --text-title: 18px;
+  --text-display: clamp(26px, 6.7vw, 32px);
+  --line-caption: 18px;
+  --line-body: 22px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-tag: 5px;
+  --radius-button: 8px;
+  --radius-card: 14px;
+  --radius-sheet: 20px;
+  --touch-target: 44px;
+  --action-height: 48px;
+  --app-width: 430px;
+  --motion: 180ms;
+  --ease: cubic-bezier(.2, .65, .3, 1);
+  --shadow-overlay: 0 8px 24px rgb(22 62 53 / 6%);
+  --shadow-frame: 0 16px 32px rgb(22 62 53 / 6%);
+  --backdrop: rgb(22 62 53 / 38%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion: 0ms; }
+}

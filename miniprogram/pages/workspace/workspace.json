@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "活动工作台",
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "overlay": "/components/overlay/overlay",
+    "form-field": "/components/form-field/form-field",
+    "status-panel": "/components/status-panel/status-panel",
+    "roster-panel": "/components/roster-panel/roster-panel",
+    "transport-panel": "/components/transport-panel/transport-panel",
+    "field-panel": "/components/field-panel/field-panel"
+  }
+}

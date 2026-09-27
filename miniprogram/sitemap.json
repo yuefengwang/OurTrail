@@ -1,0 +1,4 @@
+{
+  "desc": "山野同路：熟人圈子户外组队工具",
+  "rules": [{ "action": "disallow", "page": "*" }]
+}

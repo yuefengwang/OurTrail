@@ -1,0 +1,221 @@
+<view class="stack">
+  <status-panel wx:if="{{denied}}" kind="denied" title="无法管理车辆安排" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在读取车辆与人员安排。" />
+  </block>
+  <view wx:else class="stack">
+    <view class="card-header">
+      <text class="section-title">先看容量，再安排同行</text>
+      <view class="button text" hover-class="button-hover" data-id="" bindtap="onEditorOpen">
+        <icon name="plus" size="18" color="#163E35" />
+        <text>添加车辆</text>
+      </view>
+    </view>
+    <view class="metrics">
+      <view class="metric"><text class="metric-value">{{metrics.vehicles}}</text><text class="metric-label">辆车</text></view>
+      <view class="metric"><text class="metric-value">{{metrics.seats}}</text><text class="metric-label">可分配乘客位</text></view>
+      <view class="metric"><text class="metric-value">{{metrics.unassigned}}</text><text class="metric-label">待安排乘客</text></view>
+    </view>
+    <text class="small muted">可用乘客位 = 核载人数 − 司机人数 − 预留 / 禁用座位。参与者司机已计入司机，不再重复占乘客位。</text>
+
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view wx:if="{{message}}" class="callout success">{{message}}</view>
+
+    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPreview'}}">
+      <text>预览自动分车方案</text>
+      <icon name="arrow" size="18" color="#FFFFFF" />
+    </view>
+
+    <status-panel wx:if="{{!vehicles.length}}" kind="empty" title="还没有车辆安排" detail="先添加车辆、司机和覆盖的上车点，再预览分车。" />
+
+    <view wx:for="{{vehicles}}" wx:for-item="vh" wx:key="id" class="card stack-gap3">
+      <view class="card-header">
+        <text class="section-title">{{vh.label}}</text>
+        <text class="badge neutral">{{vh.passengers.length}} / {{vh.usable}} 乘客</text>
+      </view>
+      <text class="small muted">{{vh.plate}} · 核载 {{vh.legal}} − 司机 {{vh.drivers}} − 预留 {{vh.blocked}} = {{vh.usable}} 位</text>
+      <text class="small muted">司机：{{vh.driverNames}}</text>
+      <text class="small muted">上车点：{{vh.pickupList}}</text>
+
+      <view wx:if="{{vh.seatLabels}}" class="stack-gap3">
+        <text class="eyebrow">座位示意 · 点选座位安排人员</text>
+        <view class="seat-grid">
+          <block wx:for="{{vh.seatCells}}" wx:for-item="cell" wx:for-index="ci" wx:key="seat">
+            <view wx:if="{{cell.aisle}}" class="seat aisle" aria-hidden="true"></view>
+            <view
+              class="seat {{cell.occupied ? 'occupied' : ''}}"
+              data-vehicle="{{vh.id}}"
+              data-seat="{{cell.seat}}"
+              data-occupant="{{cell.signupId}}"
+              bindtap="openAssign"
+            >
+              <text style="font-weight:700;">{{cell.seat}}</text>
+              <text>{{cell.occupant || '空位'}}</text>
+            </view>
+          </block>
+        </view>
+      </view>
+      <view wx:else class="stack-gap3">
+        <view
+          wx:for="{{vh.passengers}}"
+          wx:key="signupId"
+          class="list-row"
+          data-vehicle="{{vh.id}}"
+          data-occupant="{{item.signupId}}"
+          bindtap="openAssign"
+        >
+          <view class="list-main">
+            <text>{{item.name}}</text>
+            <text class="list-sub">不编座号 · {{item.pickup}}</text>
+          </view>
+          <icon name="arrow" size="16" color="#163E35" />
+        </view>
+        <view class="button secondary block" hover-class="button-hover" data-vehicle="{{vh.id}}" bindtap="openAssign">安排乘客至此车</view>
+      </view>
+
+      <view class="form-actions">
+        <view class="button text" hover-class="button-hover" data-id="{{vh.id}}" bindtap="onEditorOpen">编辑车辆与司机</view>
+        <view class="button text" hover-class="button-hover" data-id="{{vh.id}}" bindtap="onRemoveAsk">删除车辆</view>
+      </view>
+    </view>
+
+    <view wx:if="{{groups.length}}" class="stack" style="gap:0;">
+      <text class="section-title">同车约束</text>
+      <view wx:for="{{groups}}" wx:key="id" class="list-row">
+        <view class="list-main"><text>{{item.names}} · 整组同车</text></view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 预览 -->
+<overlay open="{{planOpen}}" kind="sheet" title="分车方案预览" bind:close="onPlanClose">
+  <view class="stack">
+    <view class="callout">仅预览，尚未修改。提交前仍会核对容量、上车点与同车约束。</view>
+    <view class="metrics">
+      <view class="metric"><text class="metric-value">{{planCounts.changed}}</text><text class="metric-label">新增 / 调整</text></view>
+      <view class="metric"><text class="metric-value">{{planCounts.removed}}</text><text class="metric-label">移除安排</text></view>
+      <view class="metric"><text class="metric-value">{{planCounts.unassigned}}</text><text class="metric-label">未能安排</text></view>
+    </view>
+    <view wx:for="{{planChanged}}" wx:key="signupId" class="list-row">
+      <view class="list-main"><text>{{item.name}}</text><text class="list-sub">{{item.line}}</text></view>
+    </view>
+    <view wx:for="{{planRemoved}}" wx:key="signupId" class="callout warning">移除：{{item.name}} · {{item.line}}</view>
+    <view wx:for="{{planUnassigned}}" wx:key="signupId" class="callout warning">{{item.name}}：{{item.reason}}</view>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPlanCommit'}}">明确确认并提交此方案</view>
+    <view class="button secondary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPlanRecompute'}}">按最新状态重新计算</view>
+  </view>
+</overlay>
+
+<!-- 手动指派 -->
+<overlay open="{{assignOpen}}" kind="sheet" title="手动调整人员安排" bind:close="onAssignClose">
+  <view class="stack">
+    <text>{{assignSeat ? assignSeat + '座' : '不编座号'}}</text>
+    <form-field label="选择参与人">
+      <picker range="{{confirmedOptions}}" range-key="label" value="{{assignIndex}}" bindchange="onAssignPick">
+        <view class="picker {{assignIndex < 0 ? 'placeholder' : ''}}">
+          <text class="picker-value">{{assignIndex < 0 ? '请选择已确认人员' : confirmedOptions[assignIndex].label}}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </form-field>
+    <text class="small muted">同车组与上车点仍受检查；不会因为手动安排跳过约束。</text>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view class="button primary block {{busy || assignIndex < 0 ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || assignIndex < 0 ? '' : 'onAssignSet'}}">确认安排至此座位 / 车辆</view>
+    <block wx:if="{{hasCurrent}}">
+      <view class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onAssignRemove'}}">移除此人原有安排</view>
+      <form-field label="与另一位已分车人员交换">
+        <picker range="{{swapOptions}}" range-key="label" value="{{swapIndex}}" bindchange="onSwapPick">
+          <view class="picker {{swapIndex < 0 ? 'placeholder' : ''}}">
+            <text class="picker-value">{{swapIndex < 0 ? '请选择交换对象' : swapOptions[swapIndex].label}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+      <view class="button secondary block {{busy || swapIndex < 0 ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || swapIndex < 0 ? '' : 'onSwap'}}">确认交换两人安排</view>
+    </block>
+  </view>
+</overlay>
+
+<!-- 删除车辆 -->
+<overlay open="{{removeOpen}}" kind="dialog" title="确认删除车辆" bind:close="onRemoveClose">
+  <view class="stack">
+    <text>删除 {{removeLabel}}。如有人员安排、司机或任务关联不允许删除，系统会保留原安排并说明原因。</text>
+    <view class="button danger block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onRemoveConfirm'}}">确认删除此车</view>
+  </view>
+</overlay>
+
+<!-- 车辆编辑 -->
+<overlay open="{{editorOpen}}" kind="sheet" title="{{editingVehicleId ? '编辑车辆与司机' : '添加车辆'}}" bind:close="onEditorClose">
+  <view class="stack" wx:if="{{vform}}">
+    <form-field label="车辆名称">
+      <input class="input" value="{{vform.label}}" placeholder="例如：1号车" data-key="label" bindinput="onVField" />
+    </form-field>
+    <form-field label="车牌">
+      <input class="input" value="{{vform.plate}}" data-key="plate" bindinput="onVField" />
+    </form-field>
+    <view class="cluster" style="align-items:flex-start;">
+      <form-field label="核载人数（含司机）" style="flex:1;">
+        <input class="input" type="number" value="{{vform.legal}}" data-key="legal" bindinput="onVField" />
+      </form-field>
+      <form-field label="预留 / 禁用座位" style="flex:1;">
+        <input class="input" type="number" value="{{vform.blocked}}" data-key="blocked" bindinput="onVField" />
+      </form-field>
+    </view>
+    <view class="callout">
+      <text>{{vform.legal}} 核载 − {{vform.drivers.length}} 位司机 − {{vform.blocked}} 预留 = {{vform.legal - vform.drivers.length - vform.blocked}} 个乘客位</text>
+    </view>
+
+    <text class="section-title">司机名单</text>
+    <view wx:for="{{vform.drivers}}" wx:key="index" class="fieldset stack-gap3">
+      <text class="legend">司机 {{index + 1}}</text>
+      <form-field label="司机类型">
+        <picker range="{{['服务司机，不占参与者名额', '已确认参与者兼司机']}}" value="{{item.kind === 'participant' ? 1 : 0}}" data-index="{{index}}" bindchange="onDriverKind">
+          <view class="picker">
+            <text class="picker-value">{{item.kind === 'participant' ? '已确认参与者兼司机' : '服务司机，不占参与者名额'}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+      <block wx:if="{{item.kind === 'service'}}">
+        <form-field label="司机姓名">
+          <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onDriverField" />
+        </form-field>
+        <form-field label="司机联系电话">
+          <input class="input" type="number" maxlength="11" value="{{item.phone}}" data-index="{{index}}" data-key="phone" bindinput="onDriverField" />
+        </form-field>
+      </block>
+      <form-field wx:else label="选择参与者司机">
+        <picker range="{{confirmedOptions}}" range-key="label" value="{{item.signupIndex}}" data-index="{{index}}" bindchange="onDriverPick">
+          <view class="picker {{item.signupIndex < 0 ? 'placeholder' : ''}}">
+            <text class="picker-value">{{item.signupIndex < 0 ? '请选择' : confirmedOptions[item.signupIndex].label}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+      <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="removeDriver">移除此司机</view>
+    </view>
+    <view class="button secondary block" hover-class="button-hover" bindtap="addDriver">添加司机</view>
+
+    <text class="section-title">覆盖的上车点</text>
+    <checkbox-group bindchange="onPickupToggle">
+      <label wx:for="{{pickupOptions}}" wx:key="id" class="check-label">
+        <checkbox value="{{item.id}}" checked="{{vform.pickupIds.indexOf(item.id) !== -1}}" />
+        <text class="check-text">{{item.name}}</text>
+      </label>
+    </checkbox-group>
+
+    <label class="check-label">
+      <checkbox checked="{{vform.seatLabelsOn}}" bindchange="onSeatLabelsOn" />
+      <text class="check-text">使用明确座号（仅为可分配乘客位编号）</text>
+    </label>
+    <form-field wx:if="{{vform.seatLabelsOn}}" label="乘客座号" hint="用英文逗号分隔；数量应与可分配乘客位一致。">
+      <input class="input" value="{{vform.seatLabelsText}}" data-key="seatLabelsText" bindinput="onVField" />
+    </form-field>
+
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onVehicleSave'}}">保存车辆安排</view>
+    <text class="small muted">仅保存车辆资料，不重置已有去程与返程执行记录。</text>
+  </view>
+</overlay>

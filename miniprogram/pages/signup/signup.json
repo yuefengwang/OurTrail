@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "报名同行",
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "status-panel": "/components/status-panel/status-panel",
+    "form-field": "/components/form-field/form-field"
+  }
+}

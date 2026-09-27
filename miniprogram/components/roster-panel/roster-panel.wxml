@@ -1,0 +1,213 @@
+<view class="stack">
+  <status-panel wx:if="{{denied}}" kind="denied" title="无法查看名单" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在读取名单。" />
+  </block>
+  <view wx:else class="stack">
+    <view class="card-header">
+      <text class="section-title">参与人名单</text>
+      <view class="button text" hover-class="button-hover" bindtap="onAccessOpen">
+        <icon name="shield" size="16" color="#163E35" />
+        <text>协作授权</text>
+      </view>
+    </view>
+    <text class="small muted">{{countersLine}}</text>
+
+    <view class="field">
+      <text class="field-label">搜索名单</text>
+      <input class="input" value="{{search}}" placeholder="姓名、上车点或车辆" bindinput="onSearch" />
+    </view>
+    <form-field label="报名状态">
+      <picker range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatus">
+        <view class="picker">
+          <text class="picker-value">{{statusOptions[statusIndex]}}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </form-field>
+
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view wx:if="{{message}}" class="callout success">{{message}}</view>
+
+    <view class="card-header">
+      <label class="check-label" style="padding:0;">
+        <checkbox-group bindchange="onSelectAll"><checkbox checked="{{allChecked}}" /></checkbox-group>
+        <text class="check-text">选择当前结果</text>
+      </label>
+      <text class="small muted">已选 {{selectedCount}} 人</text>
+    </view>
+
+    <view wx:if="{{rows.length}}" class="person-list">
+      <person-row
+        wx:for="{{rows}}"
+        wx:key="signupId"
+        name="{{item.name}}"
+        status="{{item.statusLabel}}"
+        tone="{{item.tone}}"
+        subtitle="{{item.subtitle}}"
+      >
+        <checkbox-group data-id="{{item.signupId}}" bindchange="onSelect">
+          <label class="check-label" style="padding:0;"><checkbox checked="{{selected[item.signupId]}}" /><text class="check-text">选择</text></label>
+        </checkbox-group>
+        <view class="button text" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="onContact">联络与资料</view>
+      </person-row>
+    </view>
+    <status-panel wx:else kind="empty" title="没有匹配的参与人" detail="尝试其他姓名或报名状态。" />
+
+    <view class="stack" style="gap:12px;">
+      <view class="form-actions">
+        <view class="button primary {{selectedCount && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="confirm" bindtap="{{selectedCount && !busy ? 'onBatch' : ''}}">确认报名</view>
+        <view class="button secondary {{selectedCount && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="reject" bindtap="{{selectedCount && !busy ? 'onBatch' : ''}}">拒绝报名</view>
+      </view>
+      <view class="form-actions">
+        <view class="button secondary {{selectedCount && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="promote" bindtap="{{selectedCount && !busy ? 'onBatch' : ''}}">递补候补</view>
+        <view class="button danger {{selectedCount && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="cancel" bindtap="{{selectedCount && !busy ? 'onBatch' : ''}}">取消报名</view>
+      </view>
+      <view class="button text {{selectedCount && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{selectedCount && !busy ? 'onExportOpen' : ''}}">
+        <icon name="download" size="18" color="#163E35" />
+        <text>导出选中的 {{selectedCount}} 人</text>
+      </view>
+    </view>
+
+    <view wx:if="{{groups.length}}" class="stack" style="gap:0;">
+      <view class="card-header"><text class="section-title">同行组与同车约束</text></view>
+      <view wx:for="{{groups}}" wx:key="id" class="list-row">
+        <view class="list-main">
+          <text>{{item.names}}</text>
+          <text class="list-sub">{{item.keepTogether ? '整组同车，不允许自动拆分' : '允许分开安排'}}</text>
+        </view>
+        <view class="button text" hover-class="button-hover" data-id="{{item.id}}" data-keep="{{item.keepTogether}}" bindtap="onToggleGroup">
+          {{item.keepTogether ? '允许分车' : '保持同车'}}
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- 批量操作确认 -->
+<overlay open="{{!!batch}}" kind="dialog" title="{{batch === 'confirm' ? '确认报名' : batch === 'reject' ? '拒绝报名' : batch === 'promote' ? '递补候补' : '取消报名'}} · {{selectedCount}} 人" bind:close="onBatchClose">
+  <view class="stack">
+    <text>仅处理以下明确选中的人员。同行组约束若不满足，本次操作将整体失败。</text>
+    <text>{{batchNames}}</text>
+    <form-field wx:if="{{batch === 'cancel'}}" label="取消原因">
+      <textarea class="textarea" value="{{batchReason}}" bindinput="onBatchReason" />
+    </form-field>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onBatchConfirm'}}">确认仅处理这 {{selectedCount}} 人</view>
+  </view>
+</overlay>
+
+<!-- 联络与资料 -->
+<overlay open="{{contactOpen}}" kind="sheet" title="{{contact.name}} · 联络资料" bind:close="onContactClose">
+  <view class="stack">
+    <text wx:if="{{contact.phone}}">联系电话：{{contact.phone}}</text>
+    <text wx:elif="{{contact.phoneError}}" class="callout warning">{{contact.phoneError}}</text>
+    <form-field label="必要的查看用途" hint="紧急联络与健康备注按用途读取，用后即弃。">
+      <input class="input" value="{{purpose}}" bindinput="onPurpose" placeholder="例如：核实伤病后的紧急联络" />
+    </form-field>
+    <view class="button secondary block {{purpose ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{purpose ? 'onSensitive' : ''}}">查看紧急联络与健康备注</view>
+    <view wx:if="{{sensitive}}" class="callout">
+      <text>紧急联系人：{{sensitive.emergency.name}}</text>
+      <text style="display:block;">紧急电话：{{sensitive.emergency.phone}}</text>
+      <text style="display:block;">健康备注：{{sensitive.medical || '未填写'}}</text>
+    </view>
+    <view class="button text" hover-class="button-hover" bindtap="onEditSignup">按用途修改此人的报名资料</view>
+  </view>
+</overlay>
+
+<!-- 导出 -->
+<overlay open="{{exportOpen}}" kind="dialog" title="确认导出范围" bind:close="onExportClose">
+  <view class="stack">
+    <text>选中 {{selectedCount}} 人</text>
+    <form-field label="导出内容">
+      <picker range="{{exportModes}}" value="{{exportIndex}}" bindchange="onExportMode">
+        <view class="picker">
+          <text class="picker-value">{{exportModes[exportIndex]}}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </form-field>
+    <form-field label="导出用途">
+      <textarea class="textarea" value="{{exportPurpose}}" bindinput="onExportPurpose" />
+    </form-field>
+    <text class="small muted">先记录审计，再按当前权限生成名单（复制到剪贴板）。请妥善保存，不向无关人员转发。</text>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view class="button primary block {{busy && exportPurpose ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{busy || !exportPurpose ? '' : 'onExportConfirm'}}">确认用途并复制名单</view>
+  </view>
+</overlay>
+
+<!-- 协作授权 -->
+<overlay open="{{accessOpen}}" kind="sheet" title="协作授权" bind:close="onAccessClose">
+  <view class="stack">
+    <text class="small muted">授权限定人员范围、能力与有效期。到期自动失效，撤销后立即按新权限读取。让对方在「我的」页复制身份码给你。</text>
+    <view wx:if="{{accessError}}" class="callout danger">{{accessError}}</view>
+    <view wx:for="{{memberships}}" wx:key="id" class="list-row">
+      <view class="list-main">
+        <text>{{item.userId}}</text>
+        <text class="list-sub">{{item.roleLabel}} · 截止 {{item.expiresLabel}}</text>
+      </view>
+      <view class="cluster">
+        <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEditMembership">调整</view>
+        <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRevokeMembership">撤销</view>
+      </view>
+    </view>
+
+    <text class="section-title">{{editingId ? '调整现有授权' : '添加授权'}}</text>
+    <form-field label="对方身份码" hint="请对方在「我的」页复制">
+      <input class="input" value="{{mUserId}}" bindinput="onMUserId" placeholder="粘贴身份码" />
+    </form-field>
+    <form-field label="协作角色">
+      <picker range="{{roleOptions}}" value="{{roleIndex}}" bindchange="onRole">
+        <view class="picker">
+          <text class="picker-value">{{roleOptions[roleIndex]}}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </form-field>
+    <form-field label="授权截止时间（北京时间）">
+      <view class="cluster" style="flex-wrap:nowrap;">
+        <picker mode="date" value="{{expires.date}}" bindchange="onExpiresDate" style="flex:1;">
+          <view class="picker {{expires.date ? '' : 'placeholder'}}"><text class="picker-value">{{expires.date || '日期'}}</text></view>
+        </picker>
+        <picker mode="time" value="{{expires.time}}" bindchange="onExpiresTime" style="flex:1;">
+          <view class="picker {{expires.time ? '' : 'placeholder'}}"><text class="picker-value">{{expires.time || '时间'}}</text></view>
+        </picker>
+      </view>
+    </form-field>
+
+    <block wx:if="{{roleIndex === 0}}">
+      <form-field label="可见人员范围">
+        <picker range="{{scopeOptions}}" value="{{scopeIndex}}" bindchange="onScope">
+          <view class="picker">
+            <text class="picker-value">{{scopeOptions[scopeIndex]}}{{scopeIndex === 0 ? '（当前勾选 ' + selectedCount + ' 人）' : ''}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+      <view class="button text" hover-class="button-hover" bindtap="onUseCurrentSelection">使用当前名单勾选（{{selectedCount}} 人）</view>
+      <view>
+        <checkbox-group bindchange="onCap">
+          <label wx:for="{{capsList}}" wx:key="value" class="check-label">
+            <checkbox value="{{item.value}}" checked="{{caps[item.value]}}" />
+            <text class="check-text">{{item.label}}</text>
+          </label>
+        </checkbox-group>
+      </view>
+    </block>
+    <block wx:else>
+      <form-field label="负责车辆">
+        <picker range="{{vehicles}}" value="{{vehicleIndex}}" bindchange="onVehiclePick">
+          <view class="picker {{vehicleIndex < 0 ? 'placeholder' : ''}}">
+            <text class="picker-value">{{vehicleIndex < 0 ? '请选择车辆' : vehicles[vehicleIndex]}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+    </block>
+
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view wx:if="{{message}}" class="callout success">{{message}}</view>
+    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onAccessSave'}}">保存明确授权</view>
+    <view class="button text" hover-class="button-hover" bindtap="onAccessReset">清空表单，新增另一份授权</view>
+  </view>
+</overlay>

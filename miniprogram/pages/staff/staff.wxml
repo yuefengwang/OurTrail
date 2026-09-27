@@ -1,0 +1,10 @@
+<view class="page">
+  <view class="stack">
+    <view>
+      <text class="eyebrow">现场协作</text>
+      <text class="page-title" style="display:block;margin-top:4px;">照顾好这一小队。</text>
+      <text class="muted" style="display:block;margin-top:4px;">这里只展示当前仍授权给你的人员与任务；授权变更后立即生效。</text>
+    </view>
+    <field-panel activity-id="{{activityId}}" perspective="staff" />
+  </view>
+</view>

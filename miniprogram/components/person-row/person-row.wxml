@@ -1,0 +1,11 @@
+<view class="person-row">
+  <text class="avatar" aria-hidden="true">{{initial}}</text>
+  <view class="person-row__body">
+    <view class="person-row__heading">
+      <text class="person-name">{{name}}</text>
+      <text wx:if="{{status}}" class="badge {{tone}}">{{status}}</text>
+    </view>
+    <text wx:if="{{subtitle}}" class="small muted person-subtitle">{{subtitle}}</text>
+    <view class="person-row__actions"><slot /></view>
+  </view>
+</view>

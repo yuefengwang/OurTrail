@@ -1,0 +1,10 @@
+{
+  "component": true,
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "overlay": "/components/overlay/overlay",
+    "form-field": "/components/form-field/form-field",
+    "person-row": "/components/person-row/person-row",
+    "status-panel": "/components/status-panel/status-panel"
+  }
+}

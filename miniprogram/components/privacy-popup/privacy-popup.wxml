@@ -1,0 +1,14 @@
+<view wx:if="{{show}}" class="mask">
+  <view class="sheet">
+    <view class="title">隐私授权提醒</view>
+    <view class="body">
+      使用前需阅读并同意
+      <text class="link" bindtap="openContract">《隐私保护指引》</text>
+      。我们仅在您主动选择上车点、签到、位置上报时获取位置信息，并收集必要的联系方式用于组队。
+    </view>
+    <view class="row">
+      <button class="btn btn-ghost" bindtap="openContract">查看详情</button>
+      <button class="btn btn-primary grow" bindtap="agree">同意并继续</button>
+    </view>
+  </view>
+</view>

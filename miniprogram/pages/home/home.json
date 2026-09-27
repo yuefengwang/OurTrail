@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "活动",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "activity-card": "/components/activity-card/activity-card",
+    "status-panel": "/components/status-panel/status-panel"
+  }
+}

@@ -1,0 +1,136 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="{{mode === 'edit' ? '无法读取报名资料' : '当前无法报名'}}" detail="{{denied}}" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在准备报名表。" />
+  </block>
+
+  <!-- 编辑模式：用途门槛 -->
+  <view wx:elif="{{purposeGate}}" class="stack">
+    <view>
+      <text class="page-title">修改一位参与人的资料</text>
+      <text class="muted" style="display:block;margin-top:8px;">资料包含紧急联络与健康备注。请说明本次读取、修改的必要用途。</text>
+    </view>
+    <form-field label="修改用途">
+      <input class="input" value="{{purpose}}" bindinput="onPurpose" placeholder="例如：本人更新本次上车点" />
+    </form-field>
+    <view class="button primary block {{purpose ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{purpose ? 'onApprovePurpose' : ''}}">按此用途读取资料</view>
+  </view>
+
+  <!-- 编辑模式：表单 -->
+  <view wx:elif="{{mode === 'edit' && editForm}}" class="stack">
+    <view>
+      <text class="eyebrow">仅修改选中的参与人</text>
+      <text class="page-title" style="display:block;margin-top:4px;">{{editForm.person.name}} · 报名资料</text>
+    </view>
+    <view class="callout">用途：{{purpose}}</view>
+    <view class="card stack-gap3">
+      <form-field label="姓名" error="{{errors.name}}">
+        <input class="input" value="{{editForm.person.name}}" maxlength="80" data-key="name" bindinput="onEditField" />
+      </form-field>
+      <form-field label="联系电话" error="{{errors.phone}}">
+        <input class="input" type="number" maxlength="11" value="{{editForm.person.phone}}" data-key="phone" bindinput="onEditField" />
+      </form-field>
+      <form-field label="紧急联系人" error="{{errors.ename}}">
+        <input class="input" value="{{editForm.person.emergency.name}}" maxlength="80" data-key="ename" bindinput="onEditField" />
+      </form-field>
+      <form-field label="紧急联系电话" error="{{errors.ephone}}">
+        <input class="input" type="number" maxlength="11" value="{{editForm.person.emergency.phone}}" data-key="ephone" bindinput="onEditField" />
+      </form-field>
+      <form-field label="健康与用药备注" hint="可选，仅用于本次活动的必要安全协作。">
+        <textarea class="textarea" value="{{editForm.person.medical}}" maxlength="2000" data-key="medical" bindinput="onEditField" />
+      </form-field>
+    </view>
+    <view class="callout">
+      <text class="small">原授权只读。修改资料不会追加或扩大同行人的授权。</text>
+    </view>
+    <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
+    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onEditSubmit'}}">{{busy ? '正在保存…' : '保存此人的修改'}}</view>
+  </view>
+
+  <!-- 新报名 -->
+  <view wx:else class="stack">
+    <view>
+      <text class="eyebrow">一起出发 · 报名资料</text>
+      <text class="page-title" style="display:block;margin-top:4px;">这次，和谁同行？</text>
+      <text class="muted" style="display:block;margin-top:4px;">{{activityTitle}} · 还可申请 {{remaining}} 人。资料仅用于本次同行与安全联络。</text>
+    </view>
+
+    <view class="stack" style="gap:0;">
+      <text class="section-title">选择参与人</text>
+      <checkbox-group bindchange="onToggleCandidate">
+        <label wx:for="{{candidates}}" wx:key="key" class="check-label" data-key="{{item.key}}">
+          <checkbox value="{{item.key}}" checked="{{item.checked}}" />
+          <text class="check-text">{{item.person.name}} · {{item.kindLabel}}</text>
+        </label>
+      </checkbox-group>
+      <text wx:if="{{errors.selection}}" class="field-error">{{errors.selection}}</text>
+    </view>
+
+    <block wx:for="{{participants}}" wx:for-item="p" wx:for-index="pi" wx:key="key">
+      <view class="card stack-gap3">
+        <view class="card-header">
+          <text class="section-title">{{pi + 1}} / {{p.kindLabel === '本人' ? '我的资料' : '同行人资料'}}</text>
+          <text class="badge neutral">本次活动快照</text>
+        </view>
+        <form-field label="姓名" error="{{errors['p' + pi + '-name']}}">
+          <input class="input" value="{{p.person.name}}" maxlength="80" data-index="{{pi}}" data-key="name" bindinput="onPartField" />
+        </form-field>
+        <form-field label="联系电话" error="{{errors['p' + pi + '-phone']}}">
+          <input class="input" type="number" maxlength="11" value="{{p.person.phone}}" data-index="{{pi}}" data-key="phone" bindinput="onPartField" />
+        </form-field>
+        <form-field label="紧急联系人" error="{{errors['p' + pi + '-ename']}}">
+          <input class="input" value="{{p.person.emergency.name}}" maxlength="80" data-index="{{pi}}" data-key="ename" bindinput="onPartField" />
+        </form-field>
+        <form-field label="紧急联系电话" error="{{errors['p' + pi + '-ephone']}}">
+          <input class="input" type="number" maxlength="11" value="{{p.person.emergency.phone}}" data-index="{{pi}}" data-key="ephone" bindinput="onPartField" />
+        </form-field>
+        <form-field label="健康与用药备注" hint="可选，仅用于本次活动的必要安全协作。">
+          <textarea class="textarea" value="{{p.person.medical}}" maxlength="2000" data-index="{{pi}}" data-key="medical" bindinput="onPartField" />
+        </form-field>
+        <form-field label="出行方式 / 上车点" error="{{errors['p' + pi + '-trip']}}">
+          <picker range="{{tripOptions}}" value="{{p.tripIndex || 0}}" data-index="{{pi}}" bindchange="onPartTrip">
+            <view class="picker {{!p.tripIndex ? 'placeholder' : ''}}">
+              <text class="picker-value">{{tripOptions[p.tripIndex || 0] || '请选择'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </form-field>
+        <view>
+          <label class="check-label" data-index="{{pi}}" data-key="dataUse">
+            <checkbox checked="{{p.consent.dataUse}}" data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent" />
+            <text class="check-text">同意本次活动使用报名与安全联络资料</text>
+          </label>
+          <text wx:if="{{errors['p' + pi + '-dataUse']}}" class="field-error">{{errors['p' + pi + '-dataUse']}}</text>
+          <label wx:if="{{p.personRef.kind === 'companion'}}" class="check-label">
+            <checkbox checked="{{p.consent.proxyAuthority}}" data-index="{{pi}}" data-key="proxyAuthority" bindchange="onPartConsent" />
+            <text class="check-text">已获同行人授权，代为报名和处理行程</text>
+          </label>
+          <text wx:if="{{errors['p' + pi + '-proxyAuthority']}}" class="field-error">{{errors['p' + pi + '-proxyAuthority']}}</text>
+          <label class="check-label">
+            <checkbox checked="{{p.consent.proxyHome}}" data-index="{{pi}}" data-key="proxyHome" bindchange="onPartConsent" />
+            <text class="check-text">授权代为确认安全到家（可选，独立授权）</text>
+          </label>
+        </view>
+      </view>
+    </block>
+
+    <label class="check-label">
+      <checkbox checked="{{keepTogether}}" bindchange="onKeepTogether" />
+      <view class="check-text">
+        <text>尽量安排同行人同车</text>
+        <text class="small muted" style="display:block;">整组安排；容量不足时不会静默拆组。</text>
+      </view>
+    </label>
+
+    <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
+
+    <view wx:if="{{capacityAsk}}" class="callout warning stack-gap3">
+      <text class="callout-title">名额不足，是否整组候补？</text>
+      <text>{{participants.length}} 人将一起进入候补，不会自动占用正式名额。</text>
+      <view class="button secondary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onWaitlist'}}">明确同意整组候补</view>
+    </view>
+
+    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSubmit'}}">{{busy ? '正在提交…' : '提交报名'}}</view>
+    <text class="small muted">{{approvalHint}}</text>
+  </view>
+</view>

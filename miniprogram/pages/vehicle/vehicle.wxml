@@ -1,0 +1,49 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="本车任务不可用" detail="{{denied}}" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在读取本车名单。" />
+  </block>
+  <view wx:else class="stack">
+    <view class="hero stack" style="gap:8px;">
+      <view class="hero-body stack" style="gap:8px;">
+        <text class="eyebrow">本车联络任务</text>
+        <text class="page-title">{{label}}</text>
+        <text class="muted">{{plate}}</text>
+        <text class="small">{{capacityLine}}</text>
+      </view>
+    </view>
+
+    <view class="segmented" aria-label="行车方向">
+      <view class="seg {{leg === 'outbound' ? 'on' : ''}}" data-leg="outbound" bindtap="onLeg">去程</view>
+      <view class="seg {{leg === 'return' ? 'on' : ''}}" data-leg="return" bindtap="onLeg">返程</view>
+    </view>
+
+    <view class="stack" style="gap:4px;">
+      <text class="section-title">应到 {{expectedCount}} 人 · 已上车 {{boardedCount}} 人</text>
+      <text class="muted">{{legState}}</text>
+    </view>
+
+    <view class="person-list">
+      <person-row
+        wx:for="{{passengers}}"
+        wx:key="signupId"
+        name="{{item.name}}"
+        subtitle="{{item.subtitle}}"
+        status="{{item.status}}"
+        tone="{{item.status === '已上车' || item.status === '另行返程' ? 'success' : 'warning'}}"
+      >
+        <view class="button text" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="onCopyContact">复制联系</view>
+        <view wx:if="{{item.showBoard}}" class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="{{busy ? '' : 'onBoard'}}">确认上车</view>
+      </person-row>
+    </view>
+
+    <view wx:if="{{canOperate}}" class="form-actions">
+      <view class="button primary {{busy || departed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || departed ? '' : 'onDepart'}}">确认本程发车</view>
+      <view class="button secondary {{busy || !departed || completed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !departed || completed ? '' : 'onComplete'}}">完成本程行驶</view>
+    </view>
+
+    <text class="small muted">行驶完成不等于参与者安全到家；如有人未上车，请由现场负责人核实去向。</text>
+    <text wx:if="{{message}}" class="small muted">{{message}}</text>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+  </view>
+</view>

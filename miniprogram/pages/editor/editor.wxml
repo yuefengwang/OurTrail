@@ -1,0 +1,266 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="无法编辑此活动" detail="{{denied}}" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在准备编辑器。" />
+  </block>
+  <view wx:else class="stack">
+
+    <view>
+      <text class="eyebrow">{{savedId ? '编辑活动' : '发起一次同行'}}</text>
+      <text class="page-title" style="display:block;margin-top:4px;">把出发，安排妥当。</text>
+      <text class="muted" style="display:block;margin-top:4px;">先保存想法，准备好后再发布。保存草稿不会自动报名。</text>
+    </view>
+
+    <!-- 复制模板（仅新建且有过往活动时） -->
+    <view wx:if="{{!savedId && myActivities.length}}" class="card stack-gap3">
+      <text class="section-title">从我组织过的活动复制</text>
+      <form-field label="选择自己的活动模板" hint="创建一份新的草稿；不复制报名人员、车辆、授权与通知。">
+        <picker range="{{myActivities}}" range-key="title" value="{{templateIndex}}" bindchange="onTemplatePick">
+          <view class="picker {{templateIndex < 0 ? 'placeholder' : ''}}">
+            <text class="picker-value">{{templateIndex < 0 ? '请选择' : myActivities[templateIndex].title}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+      <view class="button secondary block {{templateId && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{templateId && !busy ? 'onCopyTemplate' : ''}}">创建模板副本并编辑</view>
+    </view>
+
+    <view class="segmented" aria-label="活动编辑步骤">
+      <view wx:for="{{stepLabels}}" wx:key="index" class="seg {{step === index ? 'on' : ''}}" data-step="{{index}}" bindtap="setStep">{{item}}</view>
+    </view>
+
+    <!-- 步骤 1：内容与时间 -->
+    <view wx:if="{{step === 0}}" class="stack-gap3">
+      <form-field label="活动名称">
+        <input class="input" value="{{form.title}}" maxlength="100" placeholder="这次想去哪里？" data-key="title" bindinput="onField" />
+      </form-field>
+      <form-field label="活动介绍">
+        <textarea class="textarea" value="{{form.description}}" maxlength="2000" placeholder="写下这次行程的节奏与适合人群" data-key="description" bindinput="onField" />
+      </form-field>
+      <form-field label="组织者与协作说明">
+        <textarea class="textarea" value="{{form.organizerIntro}}" maxlength="2000" data-key="organizerIntro" bindinput="onField" />
+      </form-field>
+      <form-field label="出发时间" hint="北京时间 UTC+08:00">
+        <view class="cluster" style="flex-wrap:nowrap;">
+          <picker mode="date" value="{{form.dt_start.date}}" data-key="dt_start" bindchange="onDate" style="flex:1;">
+            <view class="picker {{form.dt_start.date ? '' : 'placeholder'}}">
+              <text class="picker-value">{{form.dt_start.date || '选择日期'}}</text>
+            </view>
+          </picker>
+          <picker mode="time" value="{{form.dt_start.time}}" data-key="dt_start" bindchange="onTime" style="flex:1;">
+            <view class="picker {{form.dt_start.time ? '' : 'placeholder'}}">
+              <text class="picker-value">{{form.dt_start.time || '选择时间'}}</text>
+            </view>
+          </picker>
+        </view>
+      </form-field>
+      <form-field label="预计结束时间">
+        <view class="cluster" style="flex-wrap:nowrap;">
+          <picker mode="date" value="{{form.dt_end.date}}" data-key="dt_end" bindchange="onDate" style="flex:1;">
+            <view class="picker {{form.dt_end.date ? '' : 'placeholder'}}">
+              <text class="picker-value">{{form.dt_end.date || '选择日期'}}</text>
+            </view>
+          </picker>
+          <picker mode="time" value="{{form.dt_end.time}}" data-key="dt_end" bindchange="onTime" style="flex:1;">
+            <view class="picker {{form.dt_end.time ? '' : 'placeholder'}}">
+              <text class="picker-value">{{form.dt_end.time || '选择时间'}}</text>
+            </view>
+          </picker>
+        </view>
+      </form-field>
+      <form-field label="报名截止时间">
+        <view class="cluster" style="flex-wrap:nowrap;">
+          <picker mode="date" value="{{form.dt_deadline.date}}" data-key="dt_deadline" bindchange="onDate" style="flex:1;">
+            <view class="picker {{form.dt_deadline.date ? '' : 'placeholder'}}">
+              <text class="picker-value">{{form.dt_deadline.date || '选择日期'}}</text>
+            </view>
+          </picker>
+          <picker mode="time" value="{{form.dt_deadline.time}}" data-key="dt_deadline" bindchange="onTime" style="flex:1;">
+            <view class="picker {{form.dt_deadline.time ? '' : 'placeholder'}}">
+              <text class="picker-value">{{form.dt_deadline.time || '选择时间'}}</text>
+            </view>
+          </picker>
+        </view>
+      </form-field>
+    </view>
+
+    <!-- 步骤 2：路线与集合 -->
+    <view wx:if="{{step === 1}}" class="stack-gap3">
+      <form-field label="路线名称">
+        <input class="input" value="{{form.routeTitle}}" data-key="routeTitle" bindinput="onField" />
+      </form-field>
+      <view class="cluster" style="align-items:flex-start;">
+        <form-field label="距离（km）" style="flex:1;">
+          <input class="input" type="digit" value="{{form.distanceKm}}" data-key="distanceKm" bindinput="onField" />
+        </form-field>
+        <form-field label="爬升（m）" style="flex:1;">
+          <input class="input" type="number" value="{{form.ascentM}}" data-key="ascentM" bindinput="onField" />
+        </form-field>
+      </view>
+      <view class="card-header">
+        <text class="section-title">路线节点</text>
+        <view wx:if="{{!form.points.length}}" class="button text" hover-class="button-hover" bindtap="useSampleRoute">使用示例路线</view>
+      </view>
+      <view wx:for="{{form.points}}" wx:key="id" class="fieldset stack-gap3">
+        <text class="legend">节点 {{index + 1}}</text>
+        <form-field label="节点名称">
+          <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onRoutePoint" />
+        </form-field>
+        <form-field label="节点类型">
+          <picker range="{{['起点', '途中节点', '终点']}}" value="{{item.kind === 'start' ? 0 : item.kind === 'finish' ? 2 : 1}}" data-index="{{index}}" bindchange="onPointKind">
+            <view class="picker">
+              <text class="picker-value">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中节点'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </form-field>
+        <view class="cluster" style="align-items:flex-start;">
+          <form-field label="纬度（可选）" style="flex:1;">
+            <input class="input" type="digit" value="{{item.lat}}" data-index="{{index}}" data-key="lat" bindinput="onRoutePoint" />
+          </form-field>
+          <form-field label="经度（可选）" style="flex:1;">
+            <input class="input" type="digit" value="{{item.lng}}" data-index="{{index}}" data-key="lng" bindinput="onRoutePoint" />
+          </form-field>
+        </view>
+        <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="removePoint">移除此节点</view>
+      </view>
+      <view class="button secondary block" hover-class="button-hover" bindtap="addPoint">
+        <icon name="plus" size="18" color="#163E35" />
+        <text>添加路线节点</text>
+      </view>
+
+      <text class="section-title">集合与上车点</text>
+      <view wx:for="{{form.pickups}}" wx:key="id" class="fieldset stack-gap3">
+        <text class="legend">上车点 {{index + 1}}</text>
+        <form-field label="上车点名称">
+          <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onPickup" />
+        </form-field>
+        <form-field label="详细集合位置">
+          <input class="input" value="{{item.address}}" data-index="{{index}}" data-key="address" bindinput="onPickup" />
+        </form-field>
+        <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="choosePickupLocation">
+          <icon name="pin" size="16" color="#163E35" />
+          <text>在地图上选点（自动填坐标）</text>
+        </view>
+        <form-field label="集合时间（北京时间）">
+          <view class="cluster" style="flex-wrap:nowrap;">
+            <picker mode="date" value="{{item.meeting.date}}" data-index="{{index}}" bindchange="onPickupDate" style="flex:1;">
+              <view class="picker {{item.meeting.date ? '' : 'placeholder'}}">
+                <text class="picker-value">{{item.meeting.date || '日期'}}</text>
+              </view>
+            </picker>
+            <picker mode="time" value="{{item.meeting.time}}" data-index="{{index}}" bindchange="onPickupTime" style="flex:1;">
+              <view class="picker {{item.meeting.time ? '' : 'placeholder'}}">
+                <text class="picker-value">{{item.meeting.time || '时间'}}</text>
+              </view>
+            </picker>
+          </view>
+        </form-field>
+        <view class="cluster" style="align-items:flex-start;">
+          <form-field label="纬度（可选）" style="flex:1;">
+            <input class="input" type="digit" value="{{item.lat}}" data-index="{{index}}" data-key="lat" bindinput="onPickup" />
+          </form-field>
+          <form-field label="经度（可选）" style="flex:1;">
+            <input class="input" type="digit" value="{{item.lng}}" data-index="{{index}}" data-key="lng" bindinput="onPickup" />
+          </form-field>
+        </view>
+        <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="removePickup">移除此上车点</view>
+      </view>
+      <view class="button secondary block" hover-class="button-hover" bindtap="addPickup">
+        <icon name="plus" size="18" color="#163E35" />
+        <text>添加上车点</text>
+      </view>
+    </view>
+
+    <!-- 步骤 3：招募与风险 -->
+    <view wx:if="{{step === 2}}" class="stack-gap3">
+      <form-field label="人数上限" hint="1–500 人，待审核与已确认人数都占用名额。">
+        <input class="input" type="number" value="{{form.capacity}}" data-key="capacity" bindinput="onField" />
+      </form-field>
+      <form-field label="报名确认方式">
+        <picker range="{{['组织者手动审核', '符合条件自动确认']}}" bindchange="onApproval">
+          <view class="picker">
+            <text class="picker-value">{{form.approvalMode === 'manual' ? '组织者手动审核' : '符合条件自动确认'}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+      <label class="check-label">
+        <checkbox checked="{{form.acceptingSignups}}" bindchange="onAccepting" />
+        <text class="check-text">发布后开放报名</text>
+      </label>
+      <text class="section-title">明确风险与应对方式</text>
+      <view wx:for="{{form.risks}}" wx:key="id" class="fieldset stack-gap3">
+        <text class="legend">风险 {{index + 1}}</text>
+        <form-field label="风险提示">
+          <input class="input" value="{{item.title}}" data-index="{{index}}" data-key="title" bindinput="onRisk" />
+        </form-field>
+        <form-field label="应对建议">
+          <textarea class="textarea" value="{{item.advice}}" data-index="{{index}}" data-key="advice" bindinput="onRisk" />
+        </form-field>
+        <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="removeRisk">移除此风险</view>
+      </view>
+      <view class="button secondary block" hover-class="button-hover" bindtap="addRisk">添加风险提示</view>
+      <form-field label="装备清单" hint="每行一项">
+        <textarea class="textarea" value="{{form.equipmentText}}" data-key="equipmentText" bindinput="onField" />
+      </form-field>
+      <form-field label="费用说明" hint="仅说明费用，线下结算；不收款。">
+        <textarea class="textarea" value="{{form.feeNote}}" data-key="feeNote" bindinput="onField" />
+      </form-field>
+      <form-field label="取消与退出约定">
+        <textarea class="textarea" value="{{form.cancellationNote}}" data-key="cancellationNote" bindinput="onField" />
+      </form-field>
+    </view>
+
+    <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
+    <view wx:if="{{message}}" class="callout success">{{message}}</view>
+
+    <view class="form-actions">
+      <view wx:if="{{step > 0}}" class="button text" hover-class="button-hover" bindtap="prevStep">上一步</view>
+      <view wx:if="{{step < 2}}" class="button primary" hover-class="button-hover" bindtap="nextStep" style="flex:1;">
+        <text>下一步</text>
+        <icon name="arrow" size="18" color="#FFFFFF" />
+      </view>
+    </view>
+    <view class="form-actions">
+      <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSave'}}">{{phase === 'draft' ? '保存草稿' : '保存修改'}}</view>
+      <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSavePreview'}}">保存并预览</view>
+    </view>
+    <view wx:if="{{savedId && phase === 'draft' && canPublish}}" class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPublishOpen'}}">发布已保存的活动</view>
+  </view>
+
+  <overlay open="{{publishOpen}}" kind="dialog" title="准备好发布了吗？" bind:close="onPublishClose">
+    <view class="stack">
+      <text>发布当前已保存的活动。报名、同行人和车辆不会自动创建。</text>
+      <label class="check-label">
+        <checkbox checked="{{participate}}" bindchange="onParticipate" />
+        <text class="check-text">我本人也参加本次活动（可选）</text>
+      </label>
+      <block wx:if="{{participate}}">
+        <text class="small muted">发布后以你的常用资料报名。请先在「我的」检查本人及紧急联络信息。</text>
+        <form-field label="本人出行方式">
+          <radio-group bindchange="onTripChange">
+            <label class="radio-label"><radio value="self" checked="{{tripSelf}}" /><text>自行前往</text></label>
+            <label class="radio-label"><radio value="pickup" checked="{{!tripSelf}}" /><text>按上车点集合</text></label>
+          </radio-group>
+        </form-field>
+        <form-field wx:if="{{!tripSelf}}" label="选择上车点">
+          <picker range="{{form.pickups}}" range-key="name" value="{{tripPickupIndex}}" bindchange="onTripPickup">
+            <view class="picker {{tripPickupIndex < 0 ? 'placeholder' : ''}}">
+              <text class="picker-value">{{tripPickupIndex < 0 ? '请选择上车点' : form.pickups[tripPickupIndex].name}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </form-field>
+        <label class="check-label">
+          <checkbox checked="{{dataUse}}" bindchange="onDataUse" />
+          <text class="check-text">独立同意本次活动使用我的报名与安全联络资料</text>
+        </label>
+      </block>
+      <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
+      <view class="button primary block {{busy || (participate && !dataUse) ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || (participate && !dataUse) ? '' : 'publish'}}">
+        {{participate ? '确认发布并为本人报名' : '只发布活动，不为本人报名'}}
+      </view>
+    </view>
+  </overlay>
+</view>

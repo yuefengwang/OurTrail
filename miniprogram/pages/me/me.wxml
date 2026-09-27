@@ -1,0 +1,103 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="资料暂不可用" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在读取常用资料。" />
+  </block>
+  <view wx:else class="stack">
+    <view>
+      <text class="eyebrow">我的同行资料</text>
+      <text class="page-title" style="display:block;margin-top:4px;">下次出发，少填一点。</text>
+      <text class="muted" style="display:block;margin-top:4px;">常用资料的修改不追溯更改已经提交的报名。</text>
+    </view>
+
+    <view class="card stack-gap3">
+      <form-field label="姓名">
+        <input class="input" value="{{person.name}}" maxlength="80" data-key="name" bindinput="onField" placeholder="活动里怎么称呼你" />
+      </form-field>
+      <form-field label="联系电话">
+        <input class="input" type="number" maxlength="11" value="{{person.phone}}" data-key="phone" bindinput="onField" placeholder="11 位手机号" />
+      </form-field>
+      <form-field label="紧急联系人姓名">
+        <input class="input" value="{{person.emergency.name}}" maxlength="80" data-key="ename" bindinput="onField" placeholder="紧急时联系谁" />
+      </form-field>
+      <form-field label="紧急联系电话">
+        <input class="input" type="number" maxlength="11" value="{{person.emergency.phone}}" data-key="ephone" bindinput="onField" />
+      </form-field>
+      <form-field label="健康与用药备注" hint="可选，仅用于本次活动的必要安全协作。">
+        <textarea class="textarea" value="{{person.medical}}" maxlength="2000" data-key="medical" bindinput="onField" />
+      </form-field>
+      <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+      <view class="button primary block {{saving ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{saving ? '' : 'onSave'}}">保存常用资料</view>
+    </view>
+
+    <view class="callout">
+      <text class="callout-title">协作身份码</text>
+      <view style="margin-top:8px;display:flex;align-items:center;gap:12px;">
+        <text class="code-text" user-select>{{identity}}</text>
+        <view class="button text" hover-class="button-hover" bindtap="onCopyIdentity">
+          <icon name="copy" size="16" color="#163E35" />
+          <text>复制</text>
+        </view>
+      </view>
+      <text style="display:block;margin-top:8px;">组织者把它填进「协作授权」后，你才能看到对应任务。</text>
+    </view>
+
+    <view class="stack" style="gap:0;">
+      <view class="card-header">
+        <text class="section-title">常用同行人</text>
+        <view class="button text" hover-class="button-hover" bindtap="onAddCompanion">
+          <icon name="plus" size="16" color="#163E35" />
+          <text>添加</text>
+        </view>
+      </view>
+      <view wx:for="{{companions}}" wx:key="id" class="list-row">
+        <view class="list-main"><text>{{item.name}}</text></view>
+        <view class="cluster">
+          <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEditCompanion">编辑</view>
+          <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRemoveAsk">移除</view>
+        </view>
+      </view>
+      <text class="small muted" style="margin-top:8px;">保存条目不等于代办授权。每次报名仍需逐人同意；代报到家还需独立授权。</text>
+    </view>
+
+    <view wx:if="{{positionRows.length}}" class="stack" style="gap:0;">
+      <text class="section-title">位置与资料使用</text>
+      <text class="small muted">只在活动中主动上报一次位置，不会后台持续追踪。</text>
+      <view wx:for="{{positionRows}}" wx:key="signupId" class="list-row">
+        <view class="list-main">
+          <text>{{item.label}}</text>
+          <text class="list-sub">本次活动的位置授权仍然有效</text>
+        </view>
+        <view class="button text" hover-class="button-hover" data-activity-id="{{item.activityId}}" data-signup-id="{{item.signupId}}" bindtap="onRevoke">撤回授权</view>
+      </view>
+    </view>
+  </view>
+
+  <overlay open="{{companionOpen}}" kind="sheet" title="常用同行人资料" bind:close="onCompanionClose">
+    <view class="stack">
+      <form-field label="姓名">
+        <input class="input" value="{{companionPerson.name}}" maxlength="80" data-key="name" bindinput="onCompanionField" />
+      </form-field>
+      <form-field label="联系电话">
+        <input class="input" type="number" maxlength="11" value="{{companionPerson.phone}}" data-key="phone" bindinput="onCompanionField" />
+      </form-field>
+      <form-field label="紧急联系人姓名">
+        <input class="input" value="{{companionPerson.emergency.name}}" maxlength="80" data-key="ename" bindinput="onCompanionField" />
+      </form-field>
+      <form-field label="紧急联系电话">
+        <input class="input" type="number" maxlength="11" value="{{companionPerson.emergency.phone}}" data-key="ephone" bindinput="onCompanionField" />
+      </form-field>
+      <form-field label="健康备注">
+        <textarea class="textarea" value="{{companionPerson.medical}}" maxlength="2000" data-key="medical" bindinput="onCompanionField" />
+      </form-field>
+      <view class="button primary block" hover-class="button-hover" bindtap="onCompanionSave">保存同行人</view>
+    </view>
+  </overlay>
+
+  <overlay open="{{!!removeId}}" kind="dialog" title="移除常用同行人" bind:close="onRemoveCancel">
+    <view class="stack">
+      <text>只移除常用条目，已提交的报名与安全记录会保留。</text>
+      <view class="button danger block" hover-class="button-hover" bindtap="onRemoveConfirm">确认移除常用条目</view>
+    </view>
+  </overlay>
+</view>

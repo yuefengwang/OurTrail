@@ -1,0 +1,4 @@
+.p { color: var(--ink); font-size: 27rpx; line-height: 1.75; margin-top: 12rpx; }
+.li { display: flex; gap: 10rpx; font-size: 27rpx; line-height: 1.75; margin-top: 14rpx; color: var(--ink); }
+.li .dot { color: var(--forest); font-weight: 700; }
+.li b { color: var(--forest); }

@@ -1,0 +1,92 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="没有此工作台的访问权限" detail="{{denied}}" actionLabel="查看活动" bind:action="goDetail" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在核对当前需要关注的事。" />
+  </block>
+  <view wx:else class="stack">
+    <view class="stack" style="gap:8px;">
+      <view class="card-header">
+        <text class="eyebrow">{{eyebrow}}</text>
+        <text class="badge success">{{phaseLabel}}</text>
+      </view>
+      <text class="page-title">{{title}}</text>
+      <text class="muted">{{subtitle}}</text>
+    </view>
+
+    <view class="metrics">
+      <view class="metric"><text class="metric-value">{{pending}}</text><text class="metric-label">待审核</text></view>
+      <view class="metric"><text class="metric-value">{{unassigned}}</text><text class="metric-label">待分车</text></view>
+      <view class="metric"><text class="metric-value">{{thirdValue}}</text><text class="metric-label">{{thirdLabel}}</text></view>
+    </view>
+
+    <view class="segmented" aria-label="工作台分区">
+      <view wx:for="{{tabLabels}}" wx:key="index" class="seg {{tab === index ? 'on' : ''}}" data-tab="{{index}}" bindtap="onTab">{{item}}</view>
+    </view>
+
+    <roster-panel wx:if="{{tab === 1}}" activity-id="{{activityId || ''}}" />
+    <transport-panel wx:elif="{{tab === 2}}" activity-id="{{activityId || ''}}" />
+    <field-panel wx:elif="{{tab === 3}}" activity-id="{{activityId || ''}}" perspective="organizer" />
+
+    <block wx:if="{{tab === 0}}">
+      <view class="stack" style="gap:0;">
+        <text class="section-title">当前待办</text>
+        <view class="list-row" hover-class="button-hover" bindtap="goRoster">
+          <view class="list-main">
+            <text>确认报名与候补</text>
+            <text class="list-sub">{{pending}} 人待审核 · {{waitlisted}} 人候补</text>
+          </view>
+          <icon name="arrow" size="18" color="#163E35" />
+        </view>
+        <view class="list-row" hover-class="button-hover" bindtap="goTransport">
+          <view class="list-main">
+            <text>检查车辆与人员安排</text>
+            <text class="list-sub">{{unassigned}} 人尚未分车 · 不自动拆分同车组</text>
+          </view>
+          <icon name="arrow" size="18" color="#163E35" />
+        </view>
+        <view class="list-row" hover-class="button-hover" bindtap="goField">
+          <view class="list-main">
+            <text>现场清点与安全收尾</text>
+            <text class="list-sub">{{unchecked}} 人待签到 · {{openIncidents}} 项异常待处理 · {{pendingHome}} 人待到家</text>
+          </view>
+          <icon name="arrow" size="18" color="#163E35" />
+        </view>
+        <view class="list-row" hover-class="button-hover" bindtap="goNotices">
+          <view class="list-main">
+            <text>活动通知</text>
+            <text class="list-sub">发布安排，核对通知的实际状态</text>
+          </view>
+          <icon name="arrow" size="18" color="#163E35" />
+        </view>
+      </view>
+
+      <view class="stack" style="gap:12px;">
+        <text class="section-title">活动进程</text>
+        <view class="timeline">
+          <view wx:for="{{phaseTimeline}}" wx:key="phase" class="timeline-item">
+            <text class="badge {{item.current ? 'success' : 'neutral'}}">{{item.label}}</text>
+          </view>
+        </view>
+        <view class="button primary block {{canTransition && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canTransition && !busy ? 'onTransition' : ''}}">进入{{nextPhaseLabel}}</view>
+        <view class="form-actions">
+          <view wx:if="{{canEdit}}" class="button text" hover-class="button-hover" bindtap="goEdit">编辑活动</view>
+          <view wx:if="{{canCancel}}" class="button text" hover-class="button-hover" data-next="cancelled" bindtap="onTransition">取消活动</view>
+        </view>
+      </view>
+
+      <view class="button secondary block" hover-class="button-hover" bindtap="goDetail">以参与者视角查看活动</view>
+      <view wx:if="{{message}}" class="callout success">{{message}}</view>
+    </block>
+  </view>
+
+  <overlay open="{{transitionOpen}}" kind="dialog" title="{{transitionTitle}}" bind:close="onTransitionClose">
+    <view class="stack">
+      <text>阶段变更会影响报名与现场操作。未处理的出发去向、车辆或安全事项可能阻止变更。</text>
+      <form-field label="变更原因" hint="请明确说明本次阶段变更的依据。">
+        <textarea class="textarea" value="{{reason}}" maxlength="2000" bindinput="onReason" />
+      </form-field>
+      <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+      <view class="button {{transitionNext === 'cancelled' ? 'danger' : 'primary'}} block {{!reason || busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{!reason || busy ? '' : 'onTransitionConfirm'}}">确认变更，不跳过检查</view>
+    </view>
+  </overlay>
+</view>

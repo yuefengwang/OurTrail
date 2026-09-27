@@ -1,0 +1,24 @@
+<view class="container">
+  <view class="card">
+    <view class="h1">隐私保护指引</view>
+    <view class="muted" style="margin-top:8rpx">更新日期：2026-09-24</view>
+
+    <view class="h2" style="margin-top:36rpx">一、我们收集的信息</view>
+    <view class="p">本小程序是熟人圈子的户外组队工具（零金额、纯工具），仅收集为完成活动组队所必需的信息：</view>
+    <view class="li"><text class="dot">·</text><text><b>位置信息</b>：用于选择上车点/路线节点、签到时校验是否到达集合点、活动日位置上报。仅在您主动操作时获取，不做后台持续定位。</text></view>
+    <view class="li"><text class="dot">·</text><text><b>手机号</b>：用于报名联系、组织者联系队员。</text></view>
+    <view class="li"><text class="dot">·</text><text><b>紧急联系人姓名与电话</b>：用于户外活动安全，紧急情况下联系。</text></view>
+    <view class="li"><text class="dot">·</text><text><b>身份证号（选填）</b>：由您自愿填写，用于保险投保/实名核验等场景，非活动参与必需。</text></view>
+
+    <view class="h2" style="margin-top:36rpx">二、我们如何使用</view>
+    <view class="p">以上信息仅用于活动创建、报名、分车、签到、安全报备等组队流程，在组织者与参与者之间按需共享，<b>不用于任何营销或商业化目的</b>。您提交的活动标题、说明、备注等文本会经微信内容安全接口过滤。</view>
+
+    <view class="h2" style="margin-top:36rpx">三、存储与共享</view>
+    <view class="p">数据存储在微信云开发（腾讯云）环境中，按活动需要保留。除活动内的组织者与参与者外，我们不会向第三方提供您的个人信息。本工具<b>不提供公开广场、不做救援或保险承诺</b>。</view>
+
+    <view class="h2" style="margin-top:36rpx">四、您的权利</view>
+    <view class="p">您可随时在活动中修改或取消自己的报名信息；如需删除个人数据，可联系活动组织者或开发者处理。</view>
+
+    <view class="muted" style="margin-top:36rpx">如对本指引有疑问，可在小程序内反馈或联系开发者。</view>
+  </view>
+</view>

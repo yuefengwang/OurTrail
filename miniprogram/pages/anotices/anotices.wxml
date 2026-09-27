@@ -1,0 +1,68 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="暂不能查看通知" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在获取与你有关的通知。" />
+  </block>
+  <view wx:else class="stack">
+    <view>
+      <text class="eyebrow">同行消息</text>
+      <text class="page-title" style="display:block;margin-top:4px;">重要安排，不错过。</text>
+      <text class="muted" style="display:block;margin-top:4px;">站内发布、你已阅读与外部发送，是不同的记录。</text>
+    </view>
+
+    <view wx:if="{{canPublish}}" class="button primary block" hover-class="button-hover" bindtap="onOpenPublish">
+      <icon name="plus" size="18" color="#FFFFFF" />
+      <text>发布活动通知</text>
+    </view>
+
+    <status-panel wx:if="{{!items.length}}" kind="empty" title="还没有需要你查看的通知" detail="报名确认或集合安排更新后，会在这里显示。" />
+
+    <view
+      wx:for="{{items}}"
+      wx:key="id"
+      class="notice-card {{item.read ? '' : 'unread'}}"
+    >
+      <view class="card-header">
+        <text class="badge {{item.read ? 'neutral' : 'success'}}">{{item.read ? '已读' : '未读'}}</text>
+        <text class="small muted tabular">{{item.time}}</text>
+      </view>
+      <text user-select>{{item.content}}</text>
+      <view class="form-actions">
+        <view wx:if="{{!item.read}}" class="button text" hover-class="button-hover" data-id="{{item.id}}" data-activity-id="{{item.activityId}}" bindtap="onMarkRead">标记已读</view>
+        <view class="button text" hover-class="button-hover" data-id="{{item.activityId}}" bindtap="onOpenActivity">查看活动安排</view>
+        <view wx:if="{{item.owned}}" class="button secondary" hover-class="button-hover" data-id="{{item.id}}" data-activity-id="{{item.activityId}}" bindtap="onCopy">复制通知</view>
+      </view>
+      <view wx:if="{{item.owned && item.deliveries.length}}" class="stack-gap3">
+        <text class="small muted">投递记录</text>
+        <text wx:for="{{item.deliveries}}" wx:for-item="d" wx:key="id" class="small muted">{{d.label}}</text>
+      </view>
+    </view>
+
+    <text wx:if="{{message}}" class="small muted">{{message}}</text>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+  </view>
+
+  <overlay open="{{publishOpen}}" kind="sheet" title="发布活动通知" bind:close="onClosePublish">
+    <view class="stack">
+      <form-field label="通知内容" hint="发布后按受众站内可见；复制到群聊是另一条记录。">
+        <textarea class="textarea" maxlength="2000" value="{{content}}" bindinput="onContent" placeholder="例如：集合时间提前 10 分钟" />
+      </form-field>
+      <form-field label="通知范围">
+        <picker range="{{audienceOptions}}" bindchange="onAudience">
+          <view class="picker">
+            <text class="picker-value">{{audienceKind === 'activity' ? '本活动相关人员' : audienceKind === 'signups' ? '指定报名人员' : '指定车辆'}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+      <form-field wx:if="{{audienceKind === 'vehicle'}}" label="车辆编号">
+        <input class="input" value="{{target}}" bindinput="onTarget" placeholder="车辆 ID" />
+      </form-field>
+      <form-field wx:if="{{audienceKind === 'signups'}}" label="报名编号（逗号分隔）">
+        <input class="input" value="{{target}}" bindinput="onTarget" placeholder="signup ID 列表" />
+      </form-field>
+      <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+      <view class="button primary block {{content ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{content ? 'onPublish' : ''}}">发布站内通知</view>
+    </view>
+  </overlay>
+</view>
