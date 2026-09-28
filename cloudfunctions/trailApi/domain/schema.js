@@ -131,13 +131,17 @@ const RoutePoint = specObj({
   coordinates: specNull(Coordinates),
 })
 const RouteRisk = specObj({ id: specId, title: specText, advice: specText })
+// 轨迹折线采样点（GCJ-02）：画地图 polyline 用，导入 GPX 时按里程采样到 ≤200 点
+const TrackPoint = specObj({ lat: specNum(-90, 90), lng: specNum(-180, 180) })
 const RouteSnapshot = specObj({
   title: specText, distanceKm: specNum(0, Number.MAX_SAFE_INTEGER), ascentM: specCount,
   points: specArr(RoutePoint), risks: specArr(RouteRisk),
+  track: specOpt(specArr(TrackPoint, 2, 200)),
 })
 const Route = specObj({
   id: specId, ownerId: specId, title: specText, distanceKm: specNum(0, Number.MAX_SAFE_INTEGER),
   ascentM: specCount, points: specArr(RoutePoint), risks: specArr(RouteRisk),
+  track: specOpt(specArr(TrackPoint, 2, 200)),
 })
 const PickupPoint = specObj({
   id: specId, name: specText, meetingAt: specNull(specInstant),
@@ -152,6 +156,7 @@ const Activity = specObj({
   approvalMode: ApprovalMode, routeId: specNull(specId), routeSnapshot: RouteSnapshot,
   pickupPoints: specArr(PickupPoint), equipment: specArr(specText),
   feeNote: specText, cancellationNote: specText,
+  publishedAt: specOpt(specInstant),
 })
 
 const Trip = specUnion('mode', {
@@ -278,6 +283,7 @@ const ActivityInput = specObj((function () {
   delete keys.id
   delete keys.ownerId
   delete keys.phase
+  delete keys.publishedAt
   return keys
 })())
 const VehicleInput = specObj((function () {
@@ -307,6 +313,7 @@ const Payload = specUnion('type', {
   'activity.copy': specObj({ type: specEnum(['activity.copy']), sourceActivityId: specId }),
   'activity.publish': specObj({ type: specEnum(['activity.publish']), activityId: specId, participation: specNull(ParticipantInput) }),
   'activity.transition': specObj({ type: specEnum(['activity.transition']), activityId: specId, next: Phase, reason: specText }),
+  'activity.delete': specObj({ type: specEnum(['activity.delete']), activityId: specId }),
   'signup.submit': specObj({
     type: specEnum(['signup.submit']), activityId: specId,
     participants: specArr(ParticipantInput), keepTogether: specBool,

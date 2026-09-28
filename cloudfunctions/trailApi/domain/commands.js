@@ -14,7 +14,7 @@ const { handleNotices } = require('./notices')
 
 const summaries = {
   'activity.create': '活动草稿已保存', 'activity.edit': '活动说明与安排已更新', 'activity.copy': '已复制为新的活动草稿',
-  'activity.publish': '活动已发布', 'activity.transition': '活动阶段已更新',
+  'activity.publish': '活动已发布', 'activity.transition': '活动阶段已更新', 'activity.delete': '活动草稿已删除',
   'signup.submit': '新的报名已收到', 'signup.review': '报名审核结果已更新', 'signup.promote': '候补已转为待确认',
   'signup.cancel': '报名资格已取消或移除', 'signup.edit': '报名资料与出行安排已更新', 'group.setTogether': '同行安排要求已更新',
   'vehicle.save': '车辆安排已更新', 'vehicle.remove': '车辆已移除', 'assignment.commit': '分车方案已保存',
@@ -32,7 +32,7 @@ const summaries = {
 function handle(state, command, context) {
   const type = command.payload.type
   switch (type) {
-    case 'activity.create': case 'activity.edit': case 'activity.copy': case 'activity.publish': case 'activity.transition':
+    case 'activity.create': case 'activity.edit': case 'activity.copy': case 'activity.publish': case 'activity.transition': case 'activity.delete':
       return handleActivity(state, command, context)
     case 'signup.submit': case 'signup.review': case 'signup.promote': case 'signup.cancel': case 'signup.edit': case 'group.setTogether':
       return handleSignup(state, command, context)
@@ -53,7 +53,8 @@ function handle(state, command, context) {
 function recordChange(before, after, command, targetIds, context) {
   const p = command.payload
   const activityId = p.type === 'activity.create' || p.type === 'activity.copy' ? targetIds[0] : ('activityId' in p ? p.activityId : null)
-  if (!activityId || p.type === 'notice.read') return
+  // activity.delete：活动已随之移除，事件无处挂靠（且草稿无受众），不记录变更事件
+  if (!activityId || p.type === 'notice.read' || p.type === 'activity.delete') return
   const eventId = context.id('event')
   const summary = p.type === 'export.record'
     ? (p.mode === 'sensitive' ? '敏感' : '普通') + '名单导出：' + (p.purpose.trim() || '活动人员核对')

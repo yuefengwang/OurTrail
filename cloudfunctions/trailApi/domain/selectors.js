@@ -29,12 +29,28 @@ function activityView(activity) {
       title: activity.routeSnapshot.title, distanceKm: activity.routeSnapshot.distanceKm, ascentM: activity.routeSnapshot.ascentM,
       points: activity.routeSnapshot.points.map(p => ({ id: p.id, name: p.name, kind: p.kind, coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null })),
       risks: activity.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice })),
+      track: activity.routeSnapshot.track ? activity.routeSnapshot.track.map(p => ({ lat: p.lat, lng: p.lng })) : undefined,
     },
     pickupPoints: activity.pickupPoints.map(p => ({
       id: p.id, name: p.name, meetingAt: p.meetingAt, address: p.address,
       coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null,
     })),
     equipment: activity.equipment.slice(), feeNote: activity.feeNote, cancellationNote: activity.cancellationNote,
+  }
+}
+function discoverView(activity, owner, confirmed) {
+  return {
+    id: activity.id, title: activity.title, description: activity.description,
+    organizerIntro: activity.organizerIntro, startAt: activity.startAt, endAt: activity.endAt,
+    deadlineAt: activity.deadlineAt, phase: activity.phase, acceptingSignups: activity.acceptingSignups,
+    capacity: activity.capacity, approvalMode: activity.approvalMode, routeId: activity.routeId,
+    routeSnapshot: {
+      title: activity.routeSnapshot.title, distanceKm: activity.routeSnapshot.distanceKm, ascentM: activity.routeSnapshot.ascentM,
+      points: activity.routeSnapshot.points.map(p => ({ id: p.id, name: p.name, kind: p.kind, coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null })),
+      risks: activity.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice })),
+    },
+    equipment: activity.equipment.slice(), feeNote: activity.feeNote, cancellationNote: activity.cancellationNote,
+    publishedAt: activity.publishedAt, owner, confirmed,
   }
 }
 function vehicleView(vehicle, contacts) {
@@ -227,13 +243,14 @@ function selectView(state, actor, request, now) {
     return { kind: 'profile', profile: { id: profile.id, person: personView(profile.person), companions: profile.companions.map(c => ({ id: c.id, person: personView(c.person) })) } }
   }
   if (request.kind === 'home') {
+    const openedIds = Array.isArray(request.openedActivityIds) ? request.openedActivityIds : []
     const activities = state.activities.filter(a => {
       const owner = isOwner(state, actor, a.id)
       if (a.phase === 'draft') return owner
       const own = state.signups.some(s => s.activityId === a.id && isOwnSignup(s, actor))
       const membership = request.perspective === 'staff' ? hasStaffMembership(state, actor, a.id, now)
         : (request.perspective === 'vehicle' && state.vehicles.some(v => vehicleCan(state, actor, a.id, v.id, now)))
-      return owner || own || membership || request.openedActivityIds.indexOf(a.id) !== -1
+      return owner || own || membership || openedIds.indexOf(a.id) !== -1
     }).map(activityView)
     // 附加首页汇总（原型在客户端逐个 read 计算；这里一次算好）
     for (const activity of activities) {
@@ -257,6 +274,25 @@ function selectView(state, actor, request, now) {
       activity.meta = meta
     }
     return { kind: 'home', activities }
+  }
+  if (request.kind === 'discover') {
+    if (actor.userId === null) return deniedView('AUTH_REQUIRED', '请先完善资料，再看看别人发起的活动。')
+    const nowMs = Date.parse(now)
+    const search = typeof request.search === 'string' ? request.search.trim().toLowerCase() : ''
+    const pubMs = a => (a.publishedAt ? Date.parse(a.publishedAt) : -Infinity)
+    const startMs = a => (a.startAt ? Date.parse(a.startAt) : Infinity)
+    const activities = state.activities
+      .filter(a => {
+        if (['draft', 'cancelled', 'archived'].indexOf(a.phase) !== -1) return false
+        if (a.startAt && Date.parse(a.startAt) < nowMs) return false
+        if (!search) return true
+        const hay = (a.title + ' ' + a.routeSnapshot.title + ' ' + a.description).toLowerCase()
+        return hay.indexOf(search) !== -1
+      })
+      .sort((a, b) => pubMs(b) - pubMs(a) || startMs(a) - startMs(b))
+      .slice(0, 50)
+      .map(a => discoverView(a, isOwner(state, actor, a.id), state.signups.filter(s => s.activityId === a.id && s.status === 'confirmed').length))
+    return { kind: 'discover', activities }
   }
   if (request.kind === 'notices') {
     if (actor.userId === null) return deniedView('AUTH_REQUIRED', '请先选择当前账号。')
@@ -362,7 +398,9 @@ function permittedActions(state, actor, view, visible, now) {
   const actions = new Set()
   const add = payload => { if (canExecute(state, actor, payload, now).ok) actions.add(payload.type) }
   const work = phase !== 'archived' && phase !== 'cancelled'
-  const organizer = view.perspective === 'organizer'
+  // 组织者能力按"是否所有者"判定而非读取视角：详情页以 participant 视角读取，
+  // 所有者查看自己的草稿时也需要 activity.edit/activity.publish 等 UI 门控（域层 canExecute 仍是真闸门）。
+  const organizer = view.perspective === 'organizer' || isOwner(state, actor, activityId)
   if (organizer) {
     actions.add('activity.copy')
     actions.add('export.record')
@@ -373,7 +411,7 @@ function permittedActions(state, actor, view, visible, now) {
       actions.add('membership.revoke')
       actions.add('notice.publish')
       actions.add('notice.delivery')
-      if (phase === 'draft') actions.add('activity.publish')
+      if (phase === 'draft') { actions.add('activity.publish'); actions.add('activity.delete') }
       if (phase === 'published' || phase === 'gathering') {
         for (const type of ['signup.review', 'signup.promote', 'vehicle.save', 'vehicle.remove', 'assignment.commit', 'assignment.set', 'assignment.remove', 'assignment.swap']) actions.add(type)
       }

@@ -56,7 +56,7 @@ function persistPrivateRoute(state, activity, context) {
 
 function handleActivity(state, command, context) {
   const p = command.payload
-  if (['activity.create', 'activity.edit', 'activity.copy', 'activity.publish', 'activity.transition'].indexOf(p.type) === -1) {
+  if (['activity.create', 'activity.edit', 'activity.copy', 'activity.publish', 'activity.transition', 'activity.delete'].indexOf(p.type) === -1) {
     return failure('INVALID_INPUT', '此活动处理器不支持该操作。')
   }
   const actorId = command.actor.userId
@@ -81,6 +81,7 @@ function handleActivity(state, command, context) {
       copy.ownerId = actorId
       copy.phase = 'draft'
       copy.acceptingSignups = false
+      delete copy.publishedAt
       copy.startAt = null
       copy.endAt = null
       copy.deadlineAt = null
@@ -128,6 +129,7 @@ function handleActivity(state, command, context) {
       persistPrivateRoute(state, activity, context)
       activity.phase = 'published'
       activity.acceptingSignups = true
+      activity.publishedAt = context.now
       return success(targets)
     }
     case 'activity.transition': {
@@ -188,6 +190,26 @@ function handleActivity(state, command, context) {
       activity.phase = p.next
       activity.acceptingSignups = false
       return success([activity.id])
+    }
+    case 'activity.delete': {
+      // 删除仅限草稿：已发布活动有报名/履约/安全记录，走取消（transition → cancelled）。
+      if (activity.phase !== 'draft') return failure('WRONG_PHASE', '只有未发布的草稿可以删除；已发布活动请使用取消。')
+      state.activities = state.activities.filter(a => a.id !== activityId)
+      // 级联清理草稿作用域记录（草稿通常只有协作授权，防御式清干净以满足不变量）
+      const removedSignups = new Set(state.signups.filter(s => s.activityId === activityId).map(s => s.id))
+      state.signups = state.signups.filter(s => s.activityId !== activityId)
+      state.attendance = state.attendance.filter(a => !removedSignups.has(a.signupId))
+      state.groups = state.groups.filter(g => g.activityId !== activityId)
+      state.memberships = state.memberships.filter(m => m.activityId !== activityId)
+      state.notices = state.notices.filter(n => n.activityId !== activityId)
+      state.vehicles = state.vehicles.filter(v => v.activityId !== activityId)
+      state.assignments = state.assignments.filter(a => a.activityId !== activityId)
+      state.incidents = state.incidents.filter(i => i.activityId !== activityId)
+      state.positions = state.positions.filter(p => p.activityId !== activityId)
+      // 历史变更事件挂在活动上，活动没了事件也一并清理（事件是活动作用域的日志，非安全档案）
+      state.events = state.events.filter(e => e.activityId !== activityId)
+      // 私有路线保留：它是所有者可复用的路线资产（V2 路线库的种子）
+      return success([])
     }
     default: return failure('INVALID_INPUT', '此活动处理器不支持该操作。')
   }

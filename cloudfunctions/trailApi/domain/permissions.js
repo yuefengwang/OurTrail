@@ -236,6 +236,13 @@ function canExecute(state, actor, payload, now) {
       }
       return allowed()
     }
+    case 'activity.delete': {
+      if (!owner) return permissionDenied()
+      const target = state.activities.find(a => a.id === activityId)
+      return target && target.phase === 'draft'
+        ? allowed()
+        : permissionDenied('只有未发布的草稿可以删除；已发布活动请使用取消。')
+    }
     case 'activity.edit':
     case 'activity.copy':
     case 'activity.transition':
