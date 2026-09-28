@@ -40,13 +40,90 @@ function extractPoints(xml, tags) {
     if (Math.abs(lat) > 90 || Math.abs(lng) > 180) continue
     const inner = m[4] || ''
     const ele = Number(child(inner, 'ele'))
+    const timeStr = child(inner, 'time')
+    const time = timeStr ? Date.parse(timeStr) : NaN
     out.push({
       lat,
       lng,
       ele: Number.isFinite(ele) && inner.indexOf('<ele') !== -1 ? ele : null,
       name: decodeEntities(child(inner, 'name')),
+      time: Number.isFinite(time) ? time : null,
     })
   }
+  return out
+}
+
+// WGS-84 → GCJ-02 纠偏（中国境内；境外原样返回）。全站存储约定 GCJ-02：
+// 地图选点/签到本就 GCJ，GPX（WGS）在导入时统一转换，否则上图偏移数百米。
+const GCJ_A = 6378245.0
+const GCJ_EE = 0.00669342162296594323
+
+function outOfChina(lat, lng) {
+  return lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271
+}
+
+function transformLat(x, y) {
+  let ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x))
+  ret += ((20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0) / 3.0
+  ret += ((20.0 * Math.sin(y * Math.PI) + 40.0 * Math.sin((y / 3.0) * Math.PI)) * 2.0) / 3.0
+  ret += ((160.0 * Math.sin((y / 12.0) * Math.PI) + 320.0 * Math.sin((y * Math.PI) / 30.0)) * 2.0) / 3.0
+  return ret
+}
+
+function transformLng(x, y) {
+  let ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x))
+  ret += ((20.0 * Math.sin(6.0 * x * Math.PI) + 20.0 * Math.sin(2.0 * x * Math.PI)) * 2.0) / 3.0
+  ret += ((20.0 * Math.sin(x * Math.PI) + 40.0 * Math.sin((x / 3.0) * Math.PI)) * 2.0) / 3.0
+  ret += ((150.0 * Math.sin((x / 12.0) * Math.PI) + 300.0 * Math.sin((x / 30.0) * Math.PI)) * 2.0) / 3.0
+  return ret
+}
+
+function wgsToGcj(lat, lng) {
+  if (outOfChina(lat, lng)) return { lat, lng }
+  const radLat = (lat * Math.PI) / 180
+  let magic = Math.sin(radLat)
+  magic = 1 - GCJ_EE * magic * magic
+  const sqrtMagic = Math.sqrt(magic)
+  let dLat = transformLat(lng - 105.0, lat - 35.0)
+  let dLng = transformLng(lng - 105.0, lat - 35.0)
+  dLat = (dLat * 180.0) / (((GCJ_A * (1 - GCJ_EE)) / (magic * sqrtMagic)) * Math.PI)
+  dLng = (dLng * 180.0) / ((GCJ_A / sqrtMagic) * Math.cos(radLat) * Math.PI)
+  return { lat: Math.round((lat + dLat) * 1e6) / 1e6, lng: Math.round((lng + dLng) * 1e6) / 1e6 }
+}
+
+// GCJ-02 → WGS-84 逆变换：无解析逆，用局部线性反演迭代收敛（2 次即达亚毫米级）。
+// 场景：库存坐标是 GCJ，喂给要 WGS-84 的外部服务（如 Open-Meteo）前转换。
+function gcjToWgs(lat, lng) {
+  if (outOfChina(lat, lng)) return { lat, lng }
+  let wLat = lat
+  let wLng = lng
+  for (let i = 0; i < 2; i++) {
+    const cur = wgsToGcj(wLat, wLng)
+    wLat += lat - cur.lat
+    wLng += lng - cur.lng
+  }
+  return { lat: Math.round(wLat * 1e6) / 1e6, lng: Math.round(wLng * 1e6) / 1e6 }
+}
+
+// 按累计里程均匀采样到 max 点（保留首尾），画 polyline 用——原始轨迹可达数万点。
+function simplifyTrack(points, max) {
+  if (max === undefined) max = 200
+  const n = points.length
+  if (n <= max) return points.slice()
+  const m = measure(points)
+  const total = m.distance
+  const out = []
+  let cursor = 0
+  let lastIdx = -1
+  for (let k = 0; k < max; k++) {
+    const target = (total * k) / (max - 1)
+    while (cursor < n - 1 && m.cumulative[cursor + 1] <= target) cursor++
+    if (cursor !== lastIdx) {
+      out.push(points[cursor])
+      lastIdx = cursor
+    }
+  }
+  if (lastIdx !== n - 1) out.push(points[n - 1])
   return out
 }
 
@@ -116,17 +193,69 @@ function toRoutePoints(parsed) {
       else if (i === source.length - 1) name = '终点'
       else name = '节点 ' + i
     }
+    const c = wgsToGcj(p.lat, p.lng)
     return {
       name,
       kind: i === 0 ? 'start' : (i === source.length - 1 ? 'finish' : 'checkpoint'),
-      coordinates: { lat: Math.round(p.lat * 1e6) / 1e6, lng: Math.round(p.lng * 1e6) / 1e6 },
+      coordinates: c,
     }
   })
 }
 
+// 从解析结果推断建议的风险提示与装备清单：节点名关键词 + 里程/爬升/天数规则。
+// 只做"预填建议"——导入后在编辑器步骤 3 可修改，且只填空字段不覆盖用户已填内容。
+function suggestTrailInfo(parsed, m) {
+  const text = [].concat(parsed.waypoints, parsed.routePoints)
+    .map(p => p.name || '').join(' ')
+  const km = Math.round(m.distance)
+  const ascent = Math.round(m.ascent)
+  // 轨迹时间戳跨天数（无时间戳视为单日）：多日判定驱动露营/补给类建议
+  const allTimes = [].concat(parsed.track, parsed.routePoints, parsed.waypoints)
+    .map(p => p.time).filter(t => Number.isFinite(t))
+  const days = allTimes.length >= 2
+    ? Math.round((Math.max.apply(null, allTimes) - Math.min.apply(null, allTimes)) / 86400000) + 1
+    : 1
+  const risks = []
+  const equipment = ['徒步鞋（防滑）', '饮用水（每人至少 1.5L）', '防晒（帽子/防晒霜）']
+  if (/溪|河|涧|湖|桥|瀑|沟|谷|潭/.test(text)) {
+    risks.push({ title: '涉水与湿滑路段', advice: '溪谷行进保持队距，湿滑处互相照应，水位上涨时果断绕行或折返。' })
+    equipment.push('溯溪鞋或备用鞋', '防水袋（护手机与证件）')
+  }
+  if (/垭口|山脊|崖|顶|峰|岩/.test(text)) {
+    risks.push({ title: '垭口大风与天气突变', advice: '出发前查天气窗，随身备防风保暖衣物，大风时不停留垭口。' })
+    equipment.push('冲锋衣（防风）')
+  }
+  if (/营地|宿营|露营|扎营|民宿/.test(text)) {
+    risks.push({ title: '夜间低温与照明不足', advice: '天黑前扎营，头灯与保暖层每人必备，夜间不单独行动。' })
+    equipment.push('帐篷/睡袋（按人数）', '头灯', '炉具与餐具')
+  } else if (days >= 2) {
+    // 轨迹跨多天但节点名没有露营收敛词：按多日徒步补给给建议
+    risks.push({ title: days + ' 天行程的露营与补给', advice: '营地选背风、近水源处，按 ' + days + ' 天带足饮水、食物与备用电源，夜间不单独行动。' })
+    equipment.push('帐篷/睡袋（按人数）', '头灯', '备用电池/充电宝')
+  }
+  if (ascent >= 800) {
+    risks.push({ title: '累计爬升约 ' + ascent + ' 米，体力消耗大', advice: '控制节奏、按体能分队，出发前保证睡眠与补给。' })
+    equipment.push('登山杖')
+  }
+  if (km >= 15) {
+    risks.push({ title: '长距离（约 ' + km + ' km）', advice: '分段休息与补给，携带足量水与能量食品，预留天黑前下撤时间。' })
+    equipment.push('能量食品（坚果/能量胶）')
+  }
+  if (!risks.length) {
+    risks.push({ title: '山区天气多变', advice: '出发前查看天气预报，备雨具与保暖层，恶劣天气果断改期。' })
+  }
+  return {
+    risks,
+    equipment: equipment.filter((item, i) => equipment.indexOf(item) === i),
+    days,
+  }
+}
+
 /**
- * 解析 GPX 文本 → { ok, points, distanceKm, ascentM, stats }
+ * 解析 GPX 文本 → { ok, points, track, distanceKm, ascentM, stats, suggestions }
  * points: [{name, kind, coordinates:{lat,lng}}]，可直接填入编辑器路线节点。
+ * track: 采样到 ≤200 点的轨迹折线（已转 GCJ-02），供地图画线；无轨迹时为 []。
+ * suggestions: 按节点关键词与里程/爬升推断的风险/装备预填建议。
  */
 function parseGpx(xml) {
   if (typeof xml !== 'string' || xml.length > MAX_FILE_BYTES) {
@@ -145,11 +274,15 @@ function parseGpx(xml) {
     return { ok: false, error: 'GPX 里没有可用的路线点（需要至少 2 个航点/路线点，或一条轨迹）。' }
   }
   const m = measure(parsed.track.length >= 2 ? parsed.track : parsed.routePoints)
+  const lineSource = parsed.track.length >= 2 ? parsed.track : (parsed.routePoints.length >= 2 ? parsed.routePoints : [])
+  const track = simplifyTrack(lineSource, 200).map(p => wgsToGcj(p.lat, p.lng))
   return {
     ok: true,
     points,
+    track,
     distanceKm: Math.round(m.distance * 10) / 10,
     ascentM: Math.round(m.ascent),
+    suggestions: suggestTrailInfo(parsed, m),
     stats: {
       waypoints: parsed.waypoints.length,
       routePoints: parsed.routePoints.length,
@@ -159,4 +292,4 @@ function parseGpx(xml) {
   }
 }
 
-module.exports = { parseGpx, decodeEntities, extractPoints, measure, haversineKm, MAX_FILE_BYTES }
+module.exports = { parseGpx, decodeEntities, extractPoints, measure, haversineKm, wgsToGcj, gcjToWgs, simplifyTrack, suggestTrailInfo, MAX_FILE_BYTES }
