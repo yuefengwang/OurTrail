@@ -22,3 +22,6 @@ spark-output/
 # ===== Prototype test artifacts (screenshots / evidence) =====
 docs/prototypes/ourtrail-app/tests/evidence/
 docs/prototypes/ourtrail-app/tests/home-browser.png
+
+# ===== 个人轨迹数据导出（GPX 导入走用户自选文件，不入库）=====
+*.gpx
