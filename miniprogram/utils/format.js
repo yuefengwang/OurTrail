@@ -100,8 +100,29 @@ function validPhone(p) {
   return /^\d{11}$/.test(p || '')
 }
 
+// WMO weather_code → 简字徽标 + tone（文字承载语义，不引入图标资源；转译规则见天气设计文档 §5.2）
+const WMO_CODES = [
+  { max: 0, label: '晴', tone: 'success' },
+  { max: 2, label: '多云', tone: 'success' },
+  { max: 3, label: '阴', tone: 'neutral' },
+  { max: 48, label: '雾', tone: 'warning' },
+  { max: 57, label: '毛毛雨', tone: 'warning' },
+  { max: 67, label: '雨', tone: 'warning' },
+  { max: 77, label: '雪', tone: 'danger' },
+  { max: 82, label: '阵雨', tone: 'warning' },
+  { max: 86, label: '阵雪', tone: 'danger' },
+  { max: 99, label: '雷暴', tone: 'danger' },
+]
+
+function weatherPhrase(code) {
+  const c = Number(code)
+  if (!Number.isFinite(c)) return { label: '—', tone: 'neutral' }
+  const item = WMO_CODES.find(w => c <= w.max) || WMO_CODES[WMO_CODES.length - 1]
+  return { label: item.label, tone: item.tone }
+}
+
 module.exports = {
   pad, WEEK, cnParts, dateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
   relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
-  UNASSIGNED_LABELS, DETAIL_STATE_TITLES, usable, validPhone,
+  UNASSIGNED_LABELS, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase,
 }

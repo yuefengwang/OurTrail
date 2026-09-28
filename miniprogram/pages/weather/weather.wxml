@@ -9,7 +9,7 @@
       <text class="page-title" style="display:block;margin-top:4px;">留意天气，也留意脚下。</text>
     </view>
 
-    <view class="callout warning">天气是行前参考，不是出发许可。请出发前核实当地气象与路况。</view>
+    <view class="callout warning">天气是行前参考，不是出发许可。云层与云海为模型推算，出发前请核实当地气象与路况。</view>
 
     <form-field label="路线关键点">
       <picker range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPoint">
@@ -19,6 +19,77 @@
         </view>
       </picker>
     </form-field>
+
+    <block wx:if="{{loadingWeather}}">
+      <status-panel kind="loading" title="正在查询天气" detail="正在向气象服务查询该点的逐小时预报。" />
+    </block>
+    <block wx:elif="{{dayCards.length}}">
+      <!-- 7 日概览条 -->
+      <scroll-view class="day-strip" scroll-x enhanced show-scrollbar="{{false}}">
+        <view
+          wx:for="{{dayCards}}"
+          wx:key="date"
+          class="day-card {{item.selected ? 'on' : ''}}"
+          hover-class="button-hover"
+          bindtap="onDayTap"
+          data-date="{{item.date}}"
+        >
+          <text class="day-label">{{item.label}}</text>
+          <text class="day-date tabular">{{item.dateLabel}}</text>
+          <text class="day-phrase {{item.phrase.tone}}">{{item.phrase.label}}</text>
+          <text class="day-temp tabular">{{item.tMax}}/{{item.tMin}}°</text>
+          <text class="day-rain tabular">☂ {{item.precipProbMax}}%</text>
+        </view>
+      </scroll-view>
+
+      <!-- 当日徒步提示（转译，最多 2 条） -->
+      <view wx:for="{{callouts}}" wx:key="title" class="callout {{item.tone}}">
+        <text class="callout-title">{{item.title}}</text>
+      </view>
+
+      <!-- 云海与日照 -->
+      <view wx:if="{{seaCard}}" class="card stack-gap3">
+        <view class="card-header">
+          <text class="card-label">云海与日照</text>
+          <text wx:if="{{seaCard.elev !== null}}" class="small muted tabular">此点海拔约 {{seaCard.elev}} m</text>
+        </view>
+        <view class="list-row"><text>日出 / 日落</text><text class="tabular" style="font-weight:600;">{{seaCard.sunrise}} / {{seaCard.sunset}}</text></view>
+        <view class="list-row"><text>云量（低 / 中 / 高）</text><text class="tabular" style="font-weight:600;">{{seaCard.low}}% / {{seaCard.mid}}% / {{seaCard.high}}%</text></view>
+        <view class="list-row"><text>云层带高度</text><text class="tabular" style="font-weight:600;">{{seaCard.bandText}}</text></view>
+        <view wx:if="{{seaCard.seaTone}}" class="callout {{seaCard.seaTone}}">
+          <text class="callout-title">{{seaCard.seaText}}</text>
+        </view>
+        <text wx:else class="small muted">{{seaCard.seaText}}</text>
+      </view>
+
+      <!-- 分时段摘要 -->
+      <view class="card" style="padding:0;">
+        <view wx:for="{{slots}}" wx:key="t" class="list-row">
+          <text class="tabular" style="font-weight:700;">{{item.t}}</text>
+          <view style="text-align:right;">
+            <text style="font-weight:700;">{{item.phrase.label}} {{item.temp}}°C</text>
+            <text class="list-sub">降水 {{item.pop}}% · 风 {{item.wind}} km/h</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 逐小时明细（折叠） -->
+      <view class="button text" hover-class="button-hover" bindtap="toggleDetail">{{showDetail ? '收起逐小时数据' : '展开逐小时数据'}}</view>
+      <view wx:if="{{showDetail}}" class="card" style="padding:0;">
+        <view wx:for="{{detailRows}}" wx:key="t" class="list-row">
+          <text class="tabular">{{item.t}}</text>
+          <view style="text-align:right;">
+            <text style="font-weight:700;">{{item.phrase.label}} {{item.temp}}°C</text>
+            <text class="list-sub">降水 {{item.pop}}% · 风 {{item.wind}} · 能见度 {{item.visibility}} km</text>
+          </view>
+        </view>
+      </view>
+
+      <text class="small muted">更新时间：{{updatedAt}}</text>
+      <text class="small muted">数据来源 Open-Meteo.com（CC BY 4.0）</text>
+    </block>
+    <status-panel wx:else kind="empty" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" />
+
     <form-field label="查看日期">
       <picker mode="date" value="{{date}}" bindchange="onDate">
         <view class="picker">
@@ -27,23 +98,6 @@
         </view>
       </picker>
     </form-field>
-
-    <block wx:if="{{loadingWeather}}">
-      <status-panel kind="loading" title="正在查询天气" detail="正在向气象服务查询该点的逐小时预报。" />
-    </block>
-    <block wx:elif="{{hours.length}}">
-      <text class="small muted">更新时间：{{updatedAt}}</text>
-      <view class="card" style="padding:0;">
-        <view wx:for="{{hours}}" wx:key="at" class="list-row">
-          <text style="font-weight:700;" class="tabular">{{item.at}}</text>
-          <view style="text-align:right;">
-            <text style="font-weight:700;">{{item.temperature}}°C</text>
-            <text class="list-sub">降水 {{item.precipitation}} mm · {{item.wind}}</text>
-          </view>
-        </view>
-      </view>
-    </block>
-    <status-panel wx:else kind="empty" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" />
 
     <view wx:if="{{isOwner}}" class="button secondary block" hover-class="button-hover" bindtap="onDraftNotice">生成天气提醒草稿</view>
   </view>

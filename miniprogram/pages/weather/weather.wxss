@@ -1,1 +1,26 @@
-/* 天气页 */
+/* 天气页：7 日概览条（设计文档 §5.1） */
+.day-strip { display: flex; white-space: nowrap; }
+.day-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 84px;
+  padding: 12px 10px;
+  margin-right: 8px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.day-card.on { border-color: var(--forest); border-width: 2px; padding: 11px 9px; }
+.day-label { font-size: var(--text-caption); color: var(--muted); font-weight: 600; }
+.day-date { font-size: 10px; color: var(--muted); line-height: 12px; }
+.day-temp { font-size: var(--text-body); font-weight: 600; color: var(--ink); }
+.day-rain { font-size: var(--text-caption); color: var(--info); }
+
+/* WMO 简字徽标 tone（文字承载语义） */
+.day-phrase { font-size: var(--text-caption); font-weight: 600; }
+.day-phrase.success { color: var(--success); }
+.day-phrase.warning { color: var(--warning); }
+.day-phrase.danger { color: var(--danger); }
+.day-phrase.neutral { color: var(--muted); }
