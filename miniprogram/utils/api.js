@@ -27,8 +27,9 @@ function call(action, data) {
       const errMsg = (e && (e.errMsg || e.message)) || ''
       const err = new Error(
         /not *found/i.test(errMsg) ? '云函数 trailApi 尚未部署：请右键 cloudfunctions/trailApi →「上传并部署：云端安装依赖」'
-          : errMsg ? '云函数调用失败：' + errMsg
-            : '网络异常，请稍后再试'
+          : /-504003|FUNCTIONS_TIME_LIMIT|timed *out/i.test(errMsg) ? '云函数执行超时（-504003）：请重新上传部署 cloudfunctions/trailApi（config.json 已调至 20 秒），或在云开发控制台 → 云函数 → trailApi → 配置中把超时改为 20 秒'
+            : errMsg ? '云函数调用失败：' + errMsg
+              : '网络异常，请稍后再试'
       )
       err.code = 'NETWORK'
       throw err
@@ -48,6 +49,34 @@ function readOr(name, data) {
     err.code = (r && r.error && r.error.code) || 'INVALID_INPUT'
     throw err
   })
+}
+
+// ---- Result 透传型接口：云端返回 {ok, value|error}，页面自行检查 result.ok（不抛错）----
+function readForm(activityId, signupId, purpose) {
+  return call('readForm', { activityId, signupId, purpose })
+}
+function readTransport(activityId) {
+  return call('readTransport', { activityId })
+}
+function readSensitive(activityId, signupId, purpose) {
+  return call('readSensitive', { activityId, signupId, purpose })
+}
+function readContact(activityId, signupId) {
+  return call('readContact', { activityId, signupId })
+}
+function readExport(activityId, signupIds, mode, purpose) {
+  return call('readExport', { activityId, signupIds, mode, purpose })
+}
+// 云端 actionPreviewAssignments 成功时直接返回 plan（非 Result），此处重建 Result 以匹配页面契约
+function previewAssignments(activityId) {
+  return call('previewAssignments', { activityId }).then(
+    value => ({ ok: true, value }),
+    e => ({ ok: false, error: { message: errorText(e) } })
+  )
+}
+// getWeather 返回 {status:'ready'|'unavailable', ...}，非 Result
+function getWeather(activityId, pointId, date) {
+  return call('getWeather', { activityId, pointId, date })
 }
 
 /** 提交命令；CONFLICT 时自动标记 needRefresh（页面应重读后重试） */
@@ -86,4 +115,7 @@ function errorText(e) {
   return (e && e.message) || '操作失败，请稍后再试'
 }
 
-module.exports = { call, read, readOr, dispatch, toast, errorText }
+module.exports = {
+  call, read, readOr, dispatch, dispatchAndSync, toast, errorText,
+  readForm, readTransport, readSensitive, readContact, readExport, previewAssignments, getWeather,
+}
