@@ -31,57 +31,98 @@
 
     <!-- 步骤 1：内容与时间 -->
     <view wx:if="{{step === 0}}" class="stack-gap3">
-      <form-field label="活动名称">
+      <form-field label="活动名称" hint="例如：青城后山 · 周末轻徒步">
         <input class="input" value="{{form.title}}" maxlength="100" placeholder="这次想去哪里？" data-key="title" bindinput="onField" />
       </form-field>
-      <form-field label="活动介绍">
-        <textarea class="textarea" value="{{form.description}}" maxlength="2000" placeholder="写下这次行程的节奏与适合人群" data-key="description" bindinput="onField" />
-      </form-field>
-      <form-field label="组织者与协作说明">
-        <textarea class="textarea" value="{{form.organizerIntro}}" maxlength="2000" data-key="organizerIntro" bindinput="onField" />
-      </form-field>
-      <form-field label="出发时间" hint="北京时间 UTC+08:00">
-        <view class="cluster" style="flex-wrap:nowrap;">
-          <picker mode="date" value="{{form.dt_start.date}}" data-key="dt_start" bindchange="onDate" style="flex:1;">
-            <view class="picker {{form.dt_start.date ? '' : 'placeholder'}}">
-              <text class="picker-value">{{form.dt_start.date || '选择日期'}}</text>
+
+      <view class="card stack-gap3">
+        <text class="card-label">活动时间</text>
+        <text class="small muted">均为北京时间；发布前需要全部填好，现在可以先跳过。</text>
+
+        <view class="stack-gap3">
+          <view class="cluster" style="justify-content:space-between;" hover-class="button-hover" data-key="dt_start" bindtap="toggleTime">
+            <text style="font-weight:600;">出发时间</text>
+            <view class="cluster" style="gap:8px;">
+              <text class="{{form.dt_start.date ? 'tabular' : 'small muted'}}">{{form.dt_start.date || '待定'}} {{form.dt_start.time}}</text>
+              <text class="muted">›</text>
             </view>
-          </picker>
-          <picker mode="time" value="{{form.dt_start.time}}" data-key="dt_start" bindchange="onTime" style="flex:1;">
-            <view class="picker {{form.dt_start.time ? '' : 'placeholder'}}">
-              <text class="picker-value">{{form.dt_start.time || '选择时间'}}</text>
-            </view>
-          </picker>
+          </view>
+          <view wx:if="{{expandedTimes.dt_start}}" class="cluster" style="flex-wrap:nowrap;">
+            <picker mode="date" value="{{form.dt_start.date}}" data-key="dt_start" bindchange="onDate" style="flex:1;">
+              <view class="picker {{form.dt_start.date ? '' : 'placeholder'}}">
+                <text class="picker-value">{{form.dt_start.date || '选择日期'}}</text>
+              </view>
+            </picker>
+            <picker mode="time" value="{{form.dt_start.time}}" data-key="dt_start" bindchange="onTime" style="flex:1;">
+              <view class="picker {{form.dt_start.time ? '' : 'placeholder'}}">
+                <text class="picker-value">{{form.dt_start.time || '选择时间'}}</text>
+              </view>
+            </picker>
+          </view>
         </view>
-      </form-field>
-      <form-field label="预计结束时间">
-        <view class="cluster" style="flex-wrap:nowrap;">
-          <picker mode="date" value="{{form.dt_end.date}}" data-key="dt_end" bindchange="onDate" style="flex:1;">
-            <view class="picker {{form.dt_end.date ? '' : 'placeholder'}}">
-              <text class="picker-value">{{form.dt_end.date || '选择日期'}}</text>
+
+        <view class="stack-gap3">
+          <view class="cluster" style="justify-content:space-between;" hover-class="button-hover" data-key="dt_end" bindtap="toggleTime">
+            <text style="font-weight:600;">预计结束时间</text>
+            <view class="cluster" style="gap:8px;">
+              <text class="{{form.dt_end.date ? 'tabular' : 'small muted'}}">{{form.dt_end.date || '待定'}} {{form.dt_end.time}}</text>
+              <text class="muted">›</text>
             </view>
-          </picker>
-          <picker mode="time" value="{{form.dt_end.time}}" data-key="dt_end" bindchange="onTime" style="flex:1;">
-            <view class="picker {{form.dt_end.time ? '' : 'placeholder'}}">
-              <text class="picker-value">{{form.dt_end.time || '选择时间'}}</text>
-            </view>
-          </picker>
+          </view>
+          <view wx:if="{{expandedTimes.dt_end}}" class="cluster" style="flex-wrap:nowrap;">
+            <picker mode="date" value="{{form.dt_end.date}}" data-key="dt_end" bindchange="onDate" style="flex:1;">
+              <view class="picker {{form.dt_end.date ? '' : 'placeholder'}}">
+                <text class="picker-value">{{form.dt_end.date || '选择日期'}}</text>
+              </view>
+            </picker>
+            <picker mode="time" value="{{form.dt_end.time}}" data-key="dt_end" bindchange="onTime" style="flex:1;">
+              <view class="picker {{form.dt_end.time ? '' : 'placeholder'}}">
+                <text class="picker-value">{{form.dt_end.time || '选择时间'}}</text>
+              </view>
+            </picker>
+          </view>
         </view>
-      </form-field>
-      <form-field label="报名截止时间">
-        <view class="cluster" style="flex-wrap:nowrap;">
-          <picker mode="date" value="{{form.dt_deadline.date}}" data-key="dt_deadline" bindchange="onDate" style="flex:1;">
-            <view class="picker {{form.dt_deadline.date ? '' : 'placeholder'}}">
-              <text class="picker-value">{{form.dt_deadline.date || '选择日期'}}</text>
+
+        <view class="stack-gap3">
+          <view class="cluster" style="justify-content:space-between;" hover-class="button-hover" data-key="dt_deadline" bindtap="toggleTime">
+            <text style="font-weight:600;">报名截止时间</text>
+            <view class="cluster" style="gap:8px;">
+              <text class="{{form.dt_deadline.date ? 'tabular' : 'small muted'}}">{{form.dt_deadline.date || '待定'}} {{form.dt_deadline.time}}</text>
+              <text class="muted">›</text>
             </view>
-          </picker>
-          <picker mode="time" value="{{form.dt_deadline.time}}" data-key="dt_deadline" bindchange="onTime" style="flex:1;">
-            <view class="picker {{form.dt_deadline.time ? '' : 'placeholder'}}">
-              <text class="picker-value">{{form.dt_deadline.time || '选择时间'}}</text>
-            </view>
-          </picker>
+          </view>
+          <view wx:if="{{expandedTimes.dt_deadline}}" class="cluster" style="flex-wrap:nowrap;">
+            <picker mode="date" value="{{form.dt_deadline.date}}" data-key="dt_deadline" bindchange="onDate" style="flex:1;">
+              <view class="picker {{form.dt_deadline.date ? '' : 'placeholder'}}">
+                <text class="picker-value">{{form.dt_deadline.date || '选择日期'}}</text>
+              </view>
+            </picker>
+            <picker mode="time" value="{{form.dt_deadline.time}}" data-key="dt_deadline" bindchange="onTime" style="flex:1;">
+              <view class="picker {{form.dt_deadline.time ? '' : 'placeholder'}}">
+                <text class="picker-value">{{form.dt_deadline.time || '选择时间'}}</text>
+              </view>
+            </picker>
+          </view>
         </view>
-      </form-field>
+      </view>
+
+      <view class="card stack-gap3">
+        <view class="cluster" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleIntro">
+          <text style="font-weight:600;">详细介绍（可选）</text>
+          <view class="cluster" style="gap:8px;">
+            <text wx:if="{{form.description || form.organizerIntro}}" class="badge success">已填写</text>
+            <text class="muted">{{expandedIntro ? '▾' : '›'}}</text>
+          </view>
+        </view>
+        <block wx:if="{{expandedIntro}}">
+          <form-field label="活动介绍" hint="行程节奏、适合人群、强度说明">
+            <textarea class="textarea slim" value="{{form.description}}" maxlength="2000" placeholder="可选。写两句，报名的人更安心" data-key="description" bindinput="onField" />
+          </form-field>
+          <form-field label="组织者与协作说明">
+            <textarea class="textarea slim" value="{{form.organizerIntro}}" maxlength="2000" placeholder="可选。谁带队、如何分工协作" data-key="organizerIntro" bindinput="onField" />
+          </form-field>
+        </block>
+      </view>
     </view>
 
     <!-- 步骤 2：路线与集合 -->
@@ -259,42 +300,85 @@
 
     <!-- 步骤 3：招募与风险 -->
     <view wx:if="{{step === 2}}" class="stack-gap3">
-      <form-field label="人数上限" hint="1–500 人，待审核与已确认人数都占用名额。">
-        <input class="input" type="number" value="{{form.capacity}}" data-key="capacity" bindinput="onField" />
-      </form-field>
-      <form-field label="报名确认方式">
-        <picker range="{{['组织者手动审核', '符合条件自动确认']}}" bindchange="onApproval">
-          <view class="picker">
-            <text class="picker-value">{{form.approvalMode === 'manual' ? '组织者手动审核' : '符合条件自动确认'}}</text>
-            <text class="picker-arrow">▾</text>
-          </view>
-        </picker>
-      </form-field>
+      <view class="cluster" style="align-items:flex-start;">
+        <form-field label="人数上限" hint="1–500 人，待审核与已确认都占名额" style="flex:1;">
+          <input class="input" type="number" value="{{form.capacity}}" data-key="capacity" bindinput="onField" />
+        </form-field>
+        <form-field label="报名确认方式" style="flex:1;">
+          <picker range="{{['组织者手动审核', '符合条件自动确认']}}" bindchange="onApproval">
+            <view class="picker">
+              <text class="picker-value">{{form.approvalMode === 'manual' ? '手动审核' : '自动确认'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </form-field>
+      </view>
       <label class="check-label">
         <checkbox color="#163E35" checked="{{form.acceptingSignups}}" bindchange="onAccepting" />
         <text class="check-text">发布后开放报名</text>
       </label>
-      <text class="section-title">明确风险与应对方式</text>
-      <view wx:for="{{form.risks}}" wx:key="id" class="fieldset stack-gap3">
-        <text class="legend">风险 {{index + 1}}</text>
-        <form-field label="风险提示">
-          <input class="input" value="{{item.title}}" data-index="{{index}}" data-key="title" bindinput="onRisk" />
-        </form-field>
-        <form-field label="应对建议">
-          <textarea class="textarea" value="{{item.advice}}" data-index="{{index}}" data-key="advice" bindinput="onRisk" />
-        </form-field>
-        <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="removeRisk">移除此风险</view>
+
+      <view class="cluster" style="justify-content:space-between;">
+        <text class="section-title">风险提示</text>
       </view>
+      <text class="small muted">发布必须至少一条。写清楚最可能出的问题和应对方式即可。</text>
+
+      <block wx:for="{{form.risks}}" wx:key="id">
+        <view
+          wx:if="{{!expandedRisks[item.id]}}"
+          class="card"
+          style="padding:12px 16px;"
+          hover-class="button-hover"
+          data-id="{{item.id}}"
+          bindtap="toggleRisk"
+        >
+          <view class="cluster" style="justify-content:space-between;">
+            <view class="cluster" style="gap:8px;min-width:0;">
+              <text class="badge warning tabular">{{index + 1}}</text>
+              <text style="font-weight:600;">{{item.title || '风险 ' + (index + 1)}}</text>
+            </view>
+            <view class="cluster" style="gap:8px;flex:0 0 auto;">
+              <text wx:if="{{item.advice}}" class="badge neutral">有应对</text>
+              <text class="muted">›</text>
+            </view>
+          </view>
+        </view>
+        <view wx:else class="card stack-gap3">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="card-label">风险 {{index + 1}}</text>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="toggleRisk">收起</view>
+          </view>
+          <form-field label="风险提示">
+            <input class="input" value="{{item.title}}" data-index="{{index}}" data-key="title" bindinput="onRisk" />
+          </form-field>
+          <form-field label="应对建议">
+            <textarea class="textarea slim" value="{{item.advice}}" data-index="{{index}}" data-key="advice" bindinput="onRisk" />
+          </form-field>
+          <view class="button text" hover-class="button-hover" data-index="{{index}}" catchtap="removeRisk">移除此风险</view>
+        </view>
+      </block>
       <view class="button secondary block" hover-class="button-hover" bindtap="addRisk">添加风险提示</view>
-      <form-field label="装备清单" hint="每行一项">
-        <textarea class="textarea" value="{{form.equipmentText}}" data-key="equipmentText" bindinput="onField" />
-      </form-field>
-      <form-field label="费用说明" hint="仅说明费用，线下结算；不收款。">
-        <textarea class="textarea" value="{{form.feeNote}}" data-key="feeNote" bindinput="onField" />
-      </form-field>
-      <form-field label="取消与退出约定">
-        <textarea class="textarea" value="{{form.cancellationNote}}" data-key="cancellationNote" bindinput="onField" />
-      </form-field>
+
+      <view class="card stack-gap3">
+        <view class="cluster" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleExtras">
+          <text style="font-weight:600;">装备与费用说明（可选）</text>
+          <view class="cluster" style="gap:8px;">
+            <text wx:if="{{form.equipmentText || form.feeNote || form.cancellationNote}}" class="badge success">已填写</text>
+            <text class="muted">{{expandedExtras ? '▾' : '›'}}</text>
+          </view>
+        </view>
+        <block wx:if="{{expandedExtras}}">
+          <form-field label="装备清单" hint="每行一项">
+            <textarea class="textarea slim" value="{{form.equipmentText}}" data-key="equipmentText" bindinput="onField" />
+          </form-field>
+          <form-field label="费用说明" hint="仅说明费用，线下结算；不收款。">
+            <textarea class="textarea slim" value="{{form.feeNote}}" data-key="feeNote" bindinput="onField" />
+          </form-field>
+          <form-field label="取消与退出约定">
+            <textarea class="textarea slim" value="{{form.cancellationNote}}" data-key="cancellationNote" bindinput="onField" />
+          </form-field>
+        </block>
+      </view>
     </view>
 
     <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>

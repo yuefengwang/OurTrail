@@ -67,10 +67,37 @@
     </view>
 
     <block wx:for="{{participants}}" wx:for-item="p" wx:for-index="pi" wx:key="key">
-      <view class="card stack-gap3">
+      <!-- 收合态：姓名 + 资料完整度 + 必勾的授权 -->
+      <view wx:if="{{!expandedParts[p.key]}}" class="card stack-gap3">
+        <view class="cluster" style="justify-content:space-between;" hover-class="button-hover" data-key="{{p.key}}" bindtap="togglePart">
+          <view class="cluster" style="gap:8px;min-width:0;">
+            <text class="badge neutral tabular">{{pi + 1}}</text>
+            <text style="font-weight:600;">{{p.person.name || '未命名参与人'}}</text>
+            <text class="small muted">{{p.kindLabel}}</text>
+          </view>
+          <view class="cluster" style="gap:8px;flex:0 0 auto;">
+            <text class="badge {{p.complete ? 'success' : 'warning'}}">{{p.complete ? '资料齐' : '待补全'}}</text>
+            <text class="muted">›</text>
+          </view>
+        </view>
+        <view catchtap="noop">
+          <label class="check-label" style="padding-top:0;padding-bottom:0;">
+            <checkbox color="#163E35" checked="{{p.consent.dataUse}}" data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent" />
+            <text class="check-text">同意本次活动使用报名与安全联络资料</text>
+          </label>
+          <label wx:if="{{p.personRef.kind === 'companion'}}" class="check-label" style="padding-top:0;">
+            <checkbox color="#163E35" checked="{{p.consent.proxyAuthority}}" data-index="{{pi}}" data-key="proxyAuthority" bindchange="onPartConsent" />
+            <text class="check-text">已获同行人授权，代为报名</text>
+          </label>
+        </view>
+        <text wx:if="{{errors['p' + pi + '-dataUse'] || errors['p' + pi + '-proxyAuthority']}}" class="field-error">{{errors['p' + pi + '-dataUse'] || errors['p' + pi + '-proxyAuthority']}}</text>
+      </view>
+
+      <!-- 展开态：完整资料编辑 -->
+      <view wx:else class="card stack-gap3">
         <view class="card-header">
           <text class="section-title">{{pi + 1}} / {{p.kindLabel === '本人' ? '我的资料' : '同行人资料'}}</text>
-          <text class="badge neutral">本次活动快照</text>
+          <view class="button text" hover-class="button-hover" data-key="{{p.key}}" bindtap="togglePart">收起</view>
         </view>
         <form-field label="姓名" error="{{errors['p' + pi + '-name']}}">
           <input class="input" value="{{p.person.name}}" maxlength="80" data-index="{{pi}}" data-key="name" bindinput="onPartField" />
@@ -85,7 +112,7 @@
           <input class="input" type="number" maxlength="11" value="{{p.person.emergency.phone}}" data-index="{{pi}}" data-key="ephone" bindinput="onPartField" />
         </form-field>
         <form-field label="健康与用药备注" hint="可选，仅用于本次活动的必要安全协作。">
-          <textarea class="textarea" value="{{p.person.medical}}" maxlength="2000" data-index="{{pi}}" data-key="medical" bindinput="onPartField" />
+          <textarea class="textarea slim" value="{{p.person.medical}}" maxlength="2000" data-index="{{pi}}" data-key="medical" bindinput="onPartField" />
         </form-field>
         <form-field label="出行方式 / 上车点" error="{{errors['p' + pi + '-trip']}}">
           <picker range="{{tripOptions}}" value="{{p.tripIndex || 0}}" data-index="{{pi}}" bindchange="onPartTrip">
@@ -95,8 +122,8 @@
             </view>
           </picker>
         </form-field>
-        <view>
-          <label class="check-label" data-index="{{pi}}" data-key="dataUse">
+        <view catchtap="noop">
+          <label class="check-label" style="padding-top:0;padding-bottom:0;">
             <checkbox color="#163E35" checked="{{p.consent.dataUse}}" data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent" />
             <text class="check-text">同意本次活动使用报名与安全联络资料</text>
           </label>

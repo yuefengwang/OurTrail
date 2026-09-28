@@ -99,6 +99,10 @@ Page({
     showPointCoords: {},
     expandedPickups: {},
     showPickupCoords: {},
+    expandedTimes: {},
+    expandedIntro: false,
+    expandedRisks: {},
+    expandedExtras: false,
     draftSavedAt: '',
   },
 
@@ -389,8 +393,11 @@ Page({
   },
   addRisk() {
     const form = JSON.parse(JSON.stringify(this.data.form))
-    form.risks.push({ id: freshId('risk'), title: '', advice: '' })
-    this.setData({ form })
+    const id = freshId('risk')
+    form.risks.push({ id, title: '', advice: '' })
+    const expandedRisks = Object.assign({}, this.data.expandedRisks)
+    expandedRisks[id] = true
+    this.setData({ form, expandedRisks })
     this.persistDraft()
   },
   removeRisk(e) {
@@ -399,6 +406,27 @@ Page({
     form.risks.splice(index, 1)
     this.setData({ form })
     this.persistDraft()
+  },
+
+  toggleTime(e) {
+    const key = e.currentTarget.dataset.key
+    const expandedTimes = Object.assign({}, this.data.expandedTimes)
+    if (expandedTimes[key]) delete expandedTimes[key]
+    else expandedTimes[key] = true
+    this.setData({ expandedTimes })
+  },
+  toggleIntro() {
+    this.setData({ expandedIntro: !this.data.expandedIntro })
+  },
+  toggleRisk(e) {
+    const id = e.currentTarget.dataset.id
+    const expandedRisks = Object.assign({}, this.data.expandedRisks)
+    if (expandedRisks[id]) delete expandedRisks[id]
+    else expandedRisks[id] = true
+    this.setData({ expandedRisks })
+  },
+  toggleExtras() {
+    this.setData({ expandedExtras: !this.data.expandedExtras })
   },
 
   // ---- 步骤 ----

@@ -25,6 +25,7 @@ Page({
     failure: '',
     capacityAsk: false,
     busy: false,
+    expandedParts: {},
     // 编辑模式
     editForm: null,
     editConsentLocked: false,
@@ -97,7 +98,7 @@ Page({
         keepTogether = saved.keepTogether !== false
       }
       // 上车点展示值随 participants 状态变化，渲染前计算
-      const withTrip = participants.map(p => Object.assign({}, p, { tripIndex: this.tripIndexOf(p) }))
+      const withTrip = participants.map(p => this.decorateParticipant(p))
       this.setData({
         loading: false,
         denied: '',
@@ -132,7 +133,12 @@ Page({
     let participants = this.data.participants.slice()
     if (checked) {
       const cand = this.data.candidates.find(c => c.key === key)
-      if (cand && !participants.some(p => p.key === key)) participants.push(this.makeParticipant(cand))
+      if (cand && !participants.some(p => p.key === key)) {
+        participants.push(this.makeParticipant(cand))
+        const expandedParts = Object.assign({}, this.data.expandedParts)
+        expandedParts[key] = true
+        this.setData({ expandedParts })
+      }
     } else {
       participants = participants.filter(p => p.key !== key)
     }
@@ -145,7 +151,7 @@ Page({
       keepTogether: this.data.keepTogether,
     }, patch)
     if (patch.participants) {
-      patch = Object.assign({}, patch, { participants: patch.participants.map(p => Object.assign({}, p, { tripIndex: this.tripIndexOf(p) })) })
+      patch = Object.assign({}, patch, { participants: patch.participants.map(p => this.decorateParticipant(p)) })
     }
     draft.setDraft(this.activityId, 'signup', next)
     this.setData(patch)
@@ -214,7 +220,11 @@ Page({
 
   submit(mode) {
     const errors = this.validate()
-    this.setData({ errors, failure: '', capacityAsk: false })
+    const expandedParts = Object.assign({}, this.data.expandedParts)
+    this.data.participants.forEach((p, i) => {
+      if (Object.keys(errors).some(k => k.indexOf('p' + i + '-') === 0)) expandedParts[p.key] = true
+    })
+    this.setData({ errors, expandedParts, failure: '', capacityAsk: false })
     if (Object.keys(errors).length) return
     const payload = {
       type: 'signup.submit',
