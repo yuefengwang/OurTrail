@@ -3,7 +3,7 @@
 // 约定返回：{ ok:true, data } 或 { ok:false, error:{ code, message } }
 const cloud = require('wx-server-sdk')
 const crypto = require('crypto')
-const { fetchForecast } = require('./lib/weather')
+const { fetchForecast, gcjToWgs } = require('./lib/weather')
 const store = require('./store')
 const { canonicalPayload, deepClone, genId } = require('./domain/contracts')
 const { reduceCommand } = require('./domain/commands')
@@ -163,19 +163,30 @@ async function actionGetWeather(payload) {
   if (!Number.isFinite(distance) || distance < 0 || distance > 14) return { status: 'out_of_range' }
   if (!point.coordinates) return { status: 'unavailable', message: '此路线节点没有坐标，暂无法查询天气。' }
   try {
-    const forecast = await getCachedForecast(point.coordinates.lat, point.coordinates.lng, date)
+    // 库存坐标是 GCJ-02，Open-Meteo 要 WGS-84，查询前纠偏（设计文档 §6）
+    const wgs = gcjToWgs(point.coordinates.lat, point.coordinates.lng)
+    const forecast = await getCachedForecast(wgs.lat, wgs.lng, date)
     if (!forecast || forecast.tooEarly) return { status: 'out_of_range' }
     const SLOTS = ['06', '08', '10', '12', '14', '16', '18', '20']
-    const hours = (forecast.hours || [])
-      .filter(h => h && SLOTS.indexOf(h.t) !== -1)
+    const detail = forecast.detail || []
+    const hours = detail
+      .filter(h => SLOTS.indexOf(h.t) !== -1)
       .map(h => ({
         at: date + 'T' + h.t + ':00+08:00',
         temperature: Math.round(h.temp),
         precipitation: h.precip == null ? 0 : Math.round(h.precip * 10) / 10,
         wind: '风速 ' + (h.wind == null ? '—' : Math.round(h.wind)) + ' km/h',
       }))
-    if (!hours.length) return { status: 'out_of_range' }
-    return { status: 'ready', updatedAt: now, hours }
+    if (!detail.length) return { status: 'out_of_range' }
+    return {
+      status: 'ready',
+      updatedAt: now,
+      hours,
+      days: forecast.days || [],
+      detail,
+      series: forecast.series || [],
+      pointElevation: forecast.elevation,
+    }
   } catch (e) {
     return { status: 'unavailable', message: (e && e.message) || '天气服务暂时不可用。' }
   }

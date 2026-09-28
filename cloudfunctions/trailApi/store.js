@@ -55,6 +55,7 @@ async function ensureCollections(db) {
   await Promise.all(ALL_COLLECTIONS.map(name =>
     db.createCollection(COLLECTIONS[name]).catch(() => null)))
   await db.createCollection('ot_meta').catch(() => null)
+  await db.createCollection('weather_cache').catch(() => null)
 }
 
 async function ensureMeta(db) {
