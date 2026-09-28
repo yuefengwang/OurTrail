@@ -16,17 +16,25 @@
   gap: 6px 10px;
   margin-top: 8px;
 }
+/* 图例 = 色块 + 中性色文字。
+   原来整条 pill 都用语义色当文字色，"黄金" #D6A33C 压在 --forest-soft 上
+   对比度不足（截图里那两个字几乎没了）；改成色块承担颜色、文字保持 --ink。 */
 .lg {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--forest-soft);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ink);
 }
+.lg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.lg-text { line-height: 16px; }
 .lg-tip {
-  color: var(--muted);
-  font-weight: 400;
-  background: transparent;
-  padding: 0;
   margin-left: auto;
+  font-size: 10px;
+  color: var(--muted);
 }

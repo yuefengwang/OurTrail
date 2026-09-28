@@ -9,7 +9,10 @@
     ></canvas>
   </scroll-view>
   <view class="meteogram-legend">
-    <text class="lg" wx:for="{{legend}}" wx:key="k" style="color:{{item.c}};">{{item.t}}</text>
-    <text class="lg lg-tip">横滑看全程 · 点图上某天切换</text>
+    <view class="lg" wx:for="{{legend}}" wx:key="k">
+      <view class="lg-dot" style="background:{{item.c}};"></view>
+      <text class="lg-text">{{item.t}}</text>
+    </view>
+    <text class="lg-tip">{{legendTip}}</text>
   </view>
 </view>

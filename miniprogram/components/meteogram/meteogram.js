@@ -8,48 +8,29 @@
 // - canvas 是原生组件：圆角在低版本基础库可能失效，可接受降级。
 'use strict'
 
-const HOUR_W = 22 // 每小时列宽
-const CHART_H = 196
-const PAD_L = 34
-const PAD_R = 8
-
-// 行布局（自上而下）
-const ROW = {
-  marks: { y: 4, h: 20 },
-  temp: { y: 28, h: 46 },
-  rain: { y: 76, h: 32 },
-  cloud: { y: 110, h: 18 },
-  code: { y: 130, h: 18 },
-  axis: { y: 150, h: 26 },
-}
-
-// 天相窗口配色（语义色 + 主色派生），key 与 sky.js 的 hourMarks 一致
-const MARK_STYLE = {
-  cloudSea: { color: '#346583', text: '云海' },
-  star: { color: '#2D533F', text: '星空' },
-  galaxy: { color: '#163E35', text: '银河' },
-  rainbow: { color: '#8C5A12', text: '彩虹' },
-  alpenglow: { color: '#B43D3B', text: '光染' },
-  golden: { color: '#D6A33C', text: '黄金' },
-  blueHour: { color: '#6C7C93', text: '蓝调' },
-  inCloud: { color: '#8C9791', text: '入云' },
-}
-// 绘制顺序：入云是"减分项"放最底层，晨昏光/云海等放上层
-const MARK_ORDER = ['inCloud', 'cloudSea', 'alpenglow', 'golden', 'blueHour', 'rainbow', 'star', 'galaxy']
+// 几何与天相标记配色放在 layout.js：让"刻度栏装不下标签""两行刻度抢位"这类问题
+// 能被测试直接断言，也让全屏横屏页可以复用同一套几何。
+const {
+  HOUR_W, PAD_L, PAD_R, ROW, CHART_H, AXIS_DAY_DY, AXIS_HOUR_DY,
+  MARK_STYLE, MARK_LANES, LEGEND_KEYS,
+  MARK_LANE_H, MARK_LANE_GAP, MARK_FONT_PX, inkOn,
+} = require('./layout')
 
 const C = {
   night: '#F0F1EC',
   day: '#FFFFFF',
   grid: '#E4E8E1',
   axisText: '#5F6E66',
-  temp: '#B43D3B',
-  tempFill: 'rgba(180,61,59,0.10)',
+  // 温度线用中性墨色而不是红：红 #B43D3B 与天相标记「光染」是**同一个色值**，
+  // 图例里的红色分不清是温度还是光染。中性墨色也让"客观指标"这一层不与语义色抢注意力。
+  temp: '#202A26', // = --ink
+  tempFill: 'rgba(32,42,38,0.08)',
   rain: '#346583',
   showers: '#2E8B8B',
-  cloudLow: 'rgba(52,101,131,0.75)',
-  cloudMid: 'rgba(108,124,147,0.7)',
-  cloudHigh: 'rgba(140,151,145,0.6)',
-  selBand: 'rgba(22,62,53,0.05)',
+  cloudLow: '#346583',   // 云量色用**实色**，浓淡交给 ctx.globalAlpha：
+  cloudMid: '#6C7C93',   // 原来颜色自带 0.6–0.75 alpha，再叠一层 alpha 是乘法关系，
+  cloudHigh: '#8C9791',  // 低云量时几乎完全看不见。
+  selBand: 'rgba(22,62,53,0.12)',
   selEdge: 'rgba(22,62,53,0.35)',
   now: '#163E35',
   warn: '#8C5A12',
@@ -78,16 +59,10 @@ Component({
   data: {
     chartW: 300,
     chartH: CHART_H,
-    // 图例：与 MARK_STYLE 同源，只列出徒步者真正会追的窗口（入云不单列，它在图上是"变差"信号）
-    legend: [
-      { k: 'cloudSea', t: '云海', c: MARK_STYLE.cloudSea.color },
-      { k: 'alpenglow', t: '光染', c: MARK_STYLE.alpenglow.color },
-      { k: 'rainbow', t: '彩虹', c: MARK_STYLE.rainbow.color },
-      { k: 'star', t: '星空', c: MARK_STYLE.star.color },
-      { k: 'galaxy', t: '银河', c: MARK_STYLE.galaxy.color },
-      { k: 'golden', t: '黄金', c: MARK_STYLE.golden.color },
-      { k: 'blueHour', t: '蓝调', c: MARK_STYLE.blueHour.color },
-    ],
+    // 图例**动态**生成：只列图上真出现过的窗口。原来固定列 7 项，图上往往只有 1–2 种，
+    // 看着像装饰性 tag 云而不是图例。
+    legend: [],
+    legendTip: '横滑看全程 · 点图上某天切换',
   },
 
   observers: {
@@ -105,6 +80,7 @@ Component({
 
   methods: {
     scheduleDraw() {
+      this.refreshLegend()
       const n = this.data.series.length
       const w = Math.max(280, PAD_L + n * HOUR_W + PAD_R)
       if (w !== this.data.chartW) {
@@ -112,6 +88,20 @@ Component({
         return
       }
       this.initCanvas()
+    },
+
+    // 只列图上真出现过的天相窗口；一个都没有时把提示换成说明，避免留一行空图例
+    refreshLegend() {
+      const marks = this.data.marks || {}
+      const present = {}
+      Object.keys(marks).forEach(k => (marks[k] || []).forEach(m => { present[m] = true }))
+      const legend = LEGEND_KEYS.filter(k => present[k]).map(k => ({
+        k, t: MARK_STYLE[k].text, c: MARK_STYLE[k].color,
+      }))
+      const legendTip = legend.length ? '横滑看全程 · 点图上某天切换' : '该时段没有可标注的天相窗口'
+      if (JSON.stringify(legend) !== JSON.stringify(this.data.legend) || legendTip !== this.data.legendTip) {
+        this.setData({ legend, legendTip })
+      }
     },
 
     initCanvas() {
@@ -142,16 +132,24 @@ Component({
       const x = i => PAD_L + i * HOUR_W
       const cx = i => x(i) + HOUR_W / 2
 
-      // 1) 底色：夜间底 + 所选日高亮带
+      // 1) 底色：夜间底 + 所选日高亮带。
+      // 只铺到时间轴顶：原来铺满整高，把时间轴也染灰，轴文字底色不统一。
+      const BODY_H = ROW.axis.y
       for (let i = 0; i < series.length; i++) {
         const h = series[i]
         ctx.fillStyle = this.data.night[hourKey(h.d, h.t)] ? C.night : C.day
-        ctx.fillRect(x(i), 0, HOUR_W, H)
+        ctx.fillRect(x(i), 0, HOUR_W, BODY_H)
         if (this.data.selectedDates[h.d]) {
           ctx.fillStyle = C.selBand
-          ctx.fillRect(x(i), 0, HOUR_W, H)
+          ctx.fillRect(x(i), 0, HOUR_W, BODY_H)
         }
       }
+      // 所选日顶部色条：淡底在夜间灰底上仍不明显，给一条实条做明确锚点
+      series.forEach((h, i) => {
+        if (!this.data.selectedDates[h.d]) return
+        ctx.fillStyle = C.now
+        ctx.fillRect(x(i), 0, HOUR_W, 2)
+      })
       // 2) 日分隔线
       ctx.strokeStyle = C.selEdge
       ctx.lineWidth = 1
@@ -161,7 +159,7 @@ Component({
           const px = Math.round(x(i)) + 0.5
           ctx.beginPath()
           ctx.moveTo(px, 0)
-          ctx.lineTo(px, ROW.axis.y + ROW.axis.h - 8)
+          ctx.lineTo(px, ROW.axis.y + ROW.axis.h)
           ctx.stroke()
           prevDate = series[i].d
         }
@@ -175,39 +173,43 @@ Component({
       this.drawAxis(ctx, series, x, cx)
     },
 
-    // 天相窗口：把连续同 key 的小时合并成一段圆角条并写标签
+    // 天相窗口：按泳道分行画，同泳道内才叠放
     drawMarks(ctx, series, x) {
       const marks = this.data.marks || {}
-      const keys = {}
-      MARK_ORDER.forEach(k => { keys[k] = [] })
-      series.forEach((h, i) => {
-        const list = marks[hourKey(h.d, h.t)] || []
-        MARK_ORDER.forEach(k => { if (list.indexOf(k) !== -1) keys[k].push(i) })
-      })
-      ctx.font = '600 9px sans-serif'
-      ctx.textBaseline = 'middle'
-      MARK_ORDER.forEach(k => {
-        const idx = keys[k]
-        if (!idx.length) return
-        const st = MARK_STYLE[k]
-        let s = 0
-        for (let j = 0; j < idx.length; j++) {
-          const isBreak = j > 0 && idx[j] !== idx[j - 1] + 1
-          if (isBreak) { this.markRect(ctx, x(s), ROW.marks.y, (idx[j - 1] - s + 1) * HOUR_W, st); s = idx[j] }
-        }
-        this.markRect(ctx, x(s), ROW.marks.y, (idx[idx.length - 1] - s + 1) * HOUR_W, st)
+      MARK_LANES.forEach((lane, li) => {
+        const keys = {}
+        lane.forEach(k => { keys[k] = [] })
+        series.forEach((h, i) => {
+          const list = marks[hourKey(h.d, h.t)] || []
+          lane.forEach(k => { if (list.indexOf(k) !== -1) keys[k].push(i) })
+        })
+        const ly = ROW.marks.y + li * (MARK_LANE_H + MARK_LANE_GAP)
+        lane.forEach(k => {
+          const idx = keys[k]
+          if (!idx.length) return
+          const st = MARK_STYLE[k]
+          let s = 0
+          for (let j = 0; j < idx.length; j++) {
+            const isBreak = j > 0 && idx[j] !== idx[j - 1] + 1
+            if (isBreak) { this.markRect(ctx, x(s), ly, (idx[j - 1] - s + 1) * HOUR_W, st); s = idx[j] }
+          }
+          this.markRect(ctx, x(s), ly, (idx[idx.length - 1] - s + 1) * HOUR_W, st)
+        })
       })
     },
 
     markRect(ctx, px, py, w, st) {
-      const r = Math.min(4, w / 2)
+      const r = Math.min(3, w / 2)
       ctx.fillStyle = st.color
-      this.roundRect(ctx, px + 1, py, Math.max(3, w - 2), ROW.marks.h, r)
+      this.roundRect(ctx, px + 1, py, Math.max(3, w - 2), MARK_LANE_H, r)
       ctx.fill()
-      if (w >= 34) {
-        ctx.fillStyle = '#FFFFFF'
+      // 标签按色块亮度选墨色：浅色块（黄金等）上的白字一直看不清
+      if (w >= 30) {
+        ctx.fillStyle = inkOn(st.color)
+        ctx.font = '600 ' + MARK_FONT_PX + 'px sans-serif'
         ctx.textAlign = 'center'
-        ctx.fillText(st.text, px + w / 2, py + ROW.marks.h / 2 + 0.5)
+        ctx.textBaseline = 'middle'
+        ctx.fillText(st.text, px + w / 2, py + MARK_LANE_H / 2 + 0.5)
       }
     },
 
@@ -222,20 +224,33 @@ Component({
       ctx.closePath()
     },
 
-    // 温度线 + 面积；每 3 小时标数值
+    // 温度线 + 面积。左栏给三档刻度、图上给三条网格线。
+    // 不再逐 3 小时写数字：没有网格线时那些数字无从对位，纯属噪声，
+    // 而精确到小时的数值下面「逐小时数据」已经给了。
     drawTemp(ctx, series, x, cx) {
       const temps = series.map(h => (typeof h.temp === 'number' ? h.temp : null))
       const valid = temps.filter(t => t != null)
       if (!valid.length) return
       let lo = Math.min.apply(null, valid)
       let hi = Math.max.apply(null, valid)
-      if (hi - lo < 4) { const mid = (hi + lo) / 2; lo = mid - 2; hi = mid + 2 }
+      if (hi - lo < 4) { const mid2 = (hi + lo) / 2; lo = mid2 - 2; hi = mid2 + 2 }
       const pad = (hi - lo) * 0.12
       lo -= pad
       hi += pad
+      const mid = (hi + lo) / 2
       const top = ROW.temp.y + 8
       const bot = ROW.temp.y + ROW.temp.h - 6
       const ty = t => bot - ((t - lo) / (hi - lo)) * (bot - top)
+
+      // 网格线：高 / 中 / 低三档，与左栏刻度一一对应
+      ctx.strokeStyle = C.grid
+      ctx.lineWidth = 1
+      ;[top, (top + bot) / 2, bot].forEach(py => {
+        ctx.beginPath()
+        ctx.moveTo(PAD_L, Math.round(py) + 0.5)
+        ctx.lineTo(this.cssW - PAD_R, Math.round(py) + 0.5)
+        ctx.stroke()
+      })
 
       // 面积
       ctx.beginPath()
@@ -260,23 +275,16 @@ Component({
       ctx.strokeStyle = C.temp
       ctx.lineWidth = 1.5
       ctx.stroke()
-      // 数值：每 3 小时 + 极值
-      ctx.font = '10px sans-serif'
-      ctx.fillStyle = C.temp
-      ctx.textAlign = 'center'
-      series.forEach((h, i) => {
-        const t = temps[i]
-        if (t == null) return
-        const isTurn = (i > 0 && i < series.length - 1 && (temps[i] - temps[i - 1]) * (temps[i + 1] - t) < 0)
-        if (i % 3 !== 0 && !isTurn) return
-        ctx.fillText(String(Math.round(t)), cx(i), ty(t) - 5)
-      })
-      // 左轴极值
+
+      // 左栏三档刻度（带°，让刻度栏一眼看出这是温度）
+      // textBaseline 必须显式指定：markRect 里用了 middle，不复位会把刻度整体抬高半个字高
       ctx.font = '9px sans-serif'
       ctx.fillStyle = C.axisText
       ctx.textAlign = 'right'
-      ctx.fillText(String(Math.round(hi)), PAD_L - 4, top + 4)
-      ctx.fillText(String(Math.round(lo)), PAD_L - 4, bot)
+      ctx.textBaseline = 'alphabetic'
+      ctx.fillText(Math.round(hi) + '°', PAD_L - 4, top + 3)
+      ctx.fillText(Math.round(mid) + '°', PAD_L - 4, (top + bot) / 2 + 3)
+      ctx.fillText(Math.round(lo) + '°', PAD_L - 4, bot + 3)
     },
 
     // 降水双柱：precipitation（蓝）+ showers（青），按 pop 定不透明度
@@ -313,12 +321,14 @@ Component({
       ctx.font = '9px sans-serif'
       ctx.fillStyle = C.axisText
       ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
       ctx.fillText(maxV.toFixed(1), PAD_L - 4, ROW.rain.y + 8)
       ctx.textAlign = 'left'
       ctx.fillText('mm/h', 2, ROW.rain.y + 8)
     },
 
-    // 三层云量：低/中/高三条细带，透明度随云量；成层云带（band）用底部实心标记
+    // 三层云量：低/中/高三条连续色带（相邻小时必须无缝），透明度随云量；
+    // 成层云带（band）用底部实心标记。
     drawCloud(ctx, series, x, cx) {
       const y = ROW.cloud.y
       const hEach = 5
@@ -331,19 +341,24 @@ Component({
         ]
         layers.forEach((L, k) => {
           ctx.fillStyle = L.color
-          ctx.globalAlpha = 0.12 + 0.88 * (Math.max(0, Math.min(100, L.v)) / 100)
-          ctx.fillRect(cx(i) - 4, y + k * (hEach + 1), 8, hEach)
+          ctx.globalAlpha = 0.10 + 0.90 * (Math.max(0, Math.min(100, L.v)) / 100)
+          // 按**整列**画（x(i) 起、宽 HOUR_W），相邻小时才接得上。
+          // 原来用 cx(i) 居中 + 宽 8：每列只覆盖 36%，168 列 × 3 层 = 504 个孤立小方块，
+          // 看着像图片加载失败而不是云量。
+          ctx.fillRect(x(i), y + k * (hEach + 1), HOUR_W, hEach)
         })
         ctx.globalAlpha = 1
         if (h.band && h.band.cover >= 80) {
           ctx.fillStyle = C.cloudLow
-          ctx.fillRect(cx(i) - 4, y + 3 * (hEach + 1) - 1, 8, 2)
+          ctx.fillRect(x(i), y + 3 * (hEach + 1) - 1, HOUR_W, 2)
         }
       })
       ctx.font = '9px sans-serif'
       ctx.fillStyle = C.axisText
       ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
       ctx.fillText('高/中/低', PAD_L - 4, y + 8)
+      ctx.textBaseline = 'alphabetic'
     },
 
     // 天气简字：每 3 小时标一次（WMO code → 简字，与 format.js weatherPhrase 同源）
@@ -362,29 +377,38 @@ Component({
       })
     },
 
-    // 时间轴：每日标签（周X M/D）+ 每 6 小时刻度
+    // 时间轴：上行日期（周几 M/D），下行每 6 小时刻度，两行分开写
     drawAxis(ctx, series, x, cx) {
       const y = ROW.axis.y
+      const baseY = y + ROW.axis.h
+      // 底部基准线：给整张图一条明确的地板，也把图与下方图例分开
+      ctx.strokeStyle = C.grid
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.moveTo(PAD_L, Math.round(baseY) - 0.5)
+      ctx.lineTo(this.cssW - PAD_R, Math.round(baseY) - 0.5)
+      ctx.stroke()
+
       let prevDate = ''
       series.forEach((h, i) => {
         if (h.d !== prevDate) {
           prevDate = h.d
           const md = h.d.slice(5, 10).split('-')
-          ctx.font = '600 10px sans-serif'
-          ctx.fillStyle = C.now
+          // 日期行：周几与日期并成一条，独占一行，不再与下行小时刻度抢同一个 x/y
           ctx.textAlign = 'left'
           ctx.textBaseline = 'top'
-          ctx.fillText('周' + WEEK[new Date(h.d + 'T12:00:00+08:00').getUTCDay()], x(i) + 3, y + 2)
-          ctx.font = '9px sans-serif'
-          ctx.fillStyle = C.axisText
-          ctx.fillText(Number(md[0]) + '/' + Number(md[1]), x(i) + 3, y + 14)
+          ctx.font = '600 10px sans-serif'
+          ctx.fillStyle = C.now
+          const wd = '周' + WEEK[new Date(h.d + 'T12:00:00+08:00').getUTCDay()]
+          ctx.fillText(wd + ' ' + Number(md[0]) + '/' + Number(md[1]), x(i) + 3, y + AXIS_DAY_DY)
         }
+        // 小时行
         if (Number(h.t.slice(0, 2)) % 6 === 0) {
           ctx.font = '9px sans-serif'
           ctx.fillStyle = C.axisText
           ctx.textAlign = 'left'
           ctx.textBaseline = 'top'
-          ctx.fillText(h.t, x(i) + 2, y + 14)
+          ctx.fillText(h.t, x(i) + 2, y + AXIS_HOUR_DY)
         }
       })
     },

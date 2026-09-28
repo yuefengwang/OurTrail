@@ -477,6 +477,81 @@ async function windowCases() {
   }
 }
 
+// 9. meteogram 布局不变量（把这次评审修掉的坑钉住）
+// 几何从组件里抽到 layout.js 就是为了这里能直接断言——以前这些只能靠肉眼看截图。
+section('9. meteogram 布局不变量')
+
+const LAY = require('../miniprogram/components/meteogram/layout.js')
+
+{
+  const order = ['marks', 'temp', 'rain', 'cloud', 'code', 'axis']
+  let overlap = ''
+  for (let i = 0; i < order.length - 1; i++) {
+    const a = LAY.ROW[order[i]]
+    const b = LAY.ROW[order[i + 1]]
+    if (a.y + a.h > b.y) overlap = order[i] + '(' + a.y + '+' + a.h + ') > ' + order[i + 1] + '(' + b.y + ')'
+  }
+  check('行与行不重叠', !overlap, overlap)
+  check('画布高度覆盖最后一行', LAY.CHART_H >= LAY.ROW.axis.y + LAY.ROW.axis.h,
+    LAY.CHART_H + ' < ' + (LAY.ROW.axis.y + LAY.ROW.axis.h))
+
+  // 左刻度栏必须装得下最长标签 `高/中/低`（原来是 34px，右对齐会左溢出到 x=-15 被裁）
+  // 刻度栏画布字体是 9px，textWidth 必须按同一字号算
+  const widest = LAY.textWidth('高/中/低', 9)
+  check('刻度栏装得下最长标签 `高/中/低`（宽 ' + Math.round(widest) + '）',
+    LAY.PAD_L - 4 >= widest + 4, LAY.PAD_L + ' vs ' + Math.round(widest))
+  // `mm/h`（左对齐 x=2）与极值（右对齐到 PAD_L-4）不能叠
+  const gutterRoom = LAY.PAD_L - 4 - (2 + LAY.textWidth('mm/h', 9))
+  check('mm/h 与极值不重叠（余 ' + Math.round(gutterRoom) + 'px）',
+    gutterRoom >= LAY.textWidth('12.0', 9) + 4, '余 ' + Math.round(gutterRoom))
+
+  // 时间轴两行不能抢同一个 y（原来是 y+14 与 y+14，日分隔格必然双重曝光）
+  check('日期行与小时行分开（差 ' + (LAY.AXIS_HOUR_DY - LAY.AXIS_DAY_DY) + 'px）',
+    LAY.AXIS_HOUR_DY - LAY.AXIS_DAY_DY >= 12, String(LAY.AXIS_HOUR_DY - LAY.AXIS_DAY_DY))
+  check('小时标签落在轴行内',
+    LAY.AXIS_HOUR_DY + 9 <= LAY.ROW.axis.h, LAY.AXIS_HOUR_DY + ' + 9 > ' + LAY.ROW.axis.h)
+
+  // 3 条泳道必须放得进标记行（这是"被盖掉的标签"问题的根因所在）
+  const lanesNeed = LAY.MARK_LANE_H * 3 + LAY.MARK_LANE_GAP * 2
+  check('3 条泳道放得进标记行（需 ' + lanesNeed + '，有 ' + LAY.ROW.marks.h + '）',
+    lanesNeed <= LAY.ROW.marks.h, lanesNeed + ' > ' + LAY.ROW.marks.h)
+  check('温度行放得下三档刻度', LAY.ROW.temp.h >= 40, String(LAY.ROW.temp.h))
+
+  // 浅色块上的字要用深墨：黄金 #D6A33C 上的白字对比度只有 ~1.9:1
+  check('黄金色块用深墨（白字看不清）', LAY.inkOn('#D6A33C') !== '#FFFFFF', LAY.inkOn('#D6A33C'))
+  check('星空色块用白字', LAY.inkOn('#2D533F') === '#FFFFFF', LAY.inkOn('#2D533F'))
+  check('云海色块用白字', LAY.inkOn('#346583') === '#FFFFFF', LAY.inkOn('#346583'))
+}
+
+{
+  // 图例必须**动态**：只列图上真出现过的窗口（原来是固定 7 项，看着像 tag 云）
+  const prevComponent = global.Component
+  global.Component = cfg => { global.__COMP_CFG = cfg }
+  delete require.cache[require.resolve('../miniprogram/components/meteogram/meteogram.js')]
+  require('../miniprogram/components/meteogram/meteogram.js')
+  const cfg = global.__COMP_CFG
+  global.Component = prevComponent
+
+  const comp = Object.assign({}, cfg.methods || {}, cfg)
+  comp.data = JSON.parse(JSON.stringify(cfg.data || {}))
+  comp.setData = function (patch) { Object.assign(this.data, patch) }
+
+  comp.data.marks = { '2026-10-03T21:00': ['star'], '2026-10-03T22:00': ['star', 'galaxy'] }
+  comp.refreshLegend()
+  check('图例只列出现过的（星空、银河）',
+    comp.data.legend.map(i => i.k).join(',') === 'star,galaxy', comp.data.legend.map(i => i.k).join(','))
+
+  comp.data.marks = {}
+  comp.refreshLegend()
+  check('没有天相窗口时图例为空并给出说明',
+    comp.data.legend.length === 0 && /没有/.test(comp.data.legendTip), comp.data.legendTip)
+
+  comp.data.marks = { '2026-10-03T05:00': ['cloudSea'], '2026-10-03T18:00': ['alpenglow', 'golden'] }
+  comp.refreshLegend()
+  check('云海与晨昏光都列出', comp.data.legend.length === 3,
+    comp.data.legend.map(i => i.k).join(','))
+}
+
 raceCases()
   .catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') })
   .then(windowCases)
