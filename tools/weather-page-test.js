@@ -228,5 +228,114 @@ section('6. 窗口内复用：切日/切节点不外呼')
     s2.filter(x => x.d === d1).length === 24)
 }
 
-console.log('\npassed=' + passed + ' failed=' + failed)
-process.exit(failed ? 1 : 0)
+// 7. 首屏/切节点的日期竞态（回归）
+// 真机上 setData 回调在渲染后才异步回到逻辑层。若日期被放进回调里再设，
+// 紧随其后同步发出的 fetchWeather 就读到上一次的空日期 → 发出 date:'' → 云函数回"日期无效"。
+// 这里加载真页面（global.Page 捕获配置）+ 异步 setData 回调，把那条链原样跑一遍。
+section('7. 首屏与切节点的日期竞态（回归）')
+
+const api = require('../miniprogram/utils/api')
+const PAGE_PATH = require.resolve('../miniprogram/pages/weather/weather.js')
+
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+async function waitFor(cond, ms = 1500) {
+  const t0 = Date.now()
+  while (Date.now() - t0 < ms) { if (cond()) return true; await sleep(5) }
+  return cond()
+}
+
+// 造页面实例：数据同步并进 this.data，但回调像真机一样异步触发（竞态复现的关键）
+function makePage(cfg) {
+  const page = Object.assign({}, cfg)
+  page.data = JSON.parse(JSON.stringify(cfg.data || {}))
+  page._patches = [] // 记录每次 setData 的入参，用于观测"日期是否在第一轮就落定"
+  page.setData = function (patch, cb) {
+    this._patches.push(patch)
+    Object.assign(this.data, patch)
+    if (cb) setImmediate(cb)
+  }
+  return page
+}
+
+// 加载真页面配置并打上网络桩；返回 { page, calls }
+function bootPage(read) {
+  global.Page = cfg => { global.__PAGE_CFG = cfg }
+  delete require.cache[PAGE_PATH] // 每次取最新源码，避免吃到缓存的旧实现
+  require(PAGE_PATH)
+  const cfg = global.__PAGE_CFG
+  const calls = []
+  // weather.js 持有的是同一个 api 模块对象，改属性即生效
+  api.read = () => Promise.resolve(read)
+  api.getWeather = (activityId, pointId, date) => {
+    calls.push({ activityId, pointId, date })
+    return new Promise(() => {}) // 只关心入参，不消费返回体
+  }
+  return { page: makePage(cfg), calls }
+}
+
+async function raceCases() {
+  const points = [
+    { id: 'p1', name: '起点', time: '2020-05-02T07:00:00+08:00', coordinates: COORD },
+    { id: 'p2', name: '营地', time: '2020-05-03T07:00:00+08:00', coordinates: COORD },
+  ]
+  const startAt = '2026-10-03T07:00:00+08:00'
+  const read = {
+    revision: 1,
+    now: '2026-09-28T09:00:00+08:00',
+    view: {
+      kind: 'activity',
+      permittedActions: [],
+      activity: { id: 'a1', title: '测试活动', startAt, routeSnapshot: { points } },
+    },
+  }
+
+  // 情形 A：带了入口日期（详情页「天气」入口带入），首屏不能发空日期
+  {
+    const { page, calls } = bootPage(read)
+    page.onLoad({ id: 'a1', date: '2026-10-03' })
+    await page.reload()
+    await waitFor(() => calls.length > 0)
+    const first = calls[0]
+    check('首屏发出合法日期（不是空串）',
+      !!first && /^\d{4}-\d{2}-\d{2}$/.test(first.date), first ? JSON.stringify(first) : 'getWeather 未被调用')
+    check('首屏日期取入口带入的 2026-10-03', !!first && first.date === '2026-10-03', first && first.date)
+    check('页面显示的日期与请求一致', page.data.date === (first && first.date), page.data.date)
+    // 时序断言：reload 的第一轮 setData 就必须带合法日期。
+    // 若日期被放进回调里再设，这里会缺 date —— 即使下游有兜底，也说明时序已退化。
+    const firstPatch = (page._patches[0] || {})
+    check('reload 第一轮 setData 已带合法日期（无时序竞态）',
+      /^\d{4}-\d{2}-\d{2}$/.test(firstPatch.date || ''), JSON.stringify(Object.keys(firstPatch)))
+    // 兜底之后不应再多发请求
+    check('首屏一次到位，不重复外呼', calls.length === 1, 'calls=' + calls.length)
+
+    // 情形 B：切到第 2 天抵达的节点，日期跟着走，且必须同一次 setData 落定
+    const before = calls.length
+    page.onPoint({ detail: { value: 1 } })
+    await waitFor(() => calls.length > before)
+    const second = calls[1]
+    const expect = RS.schedule(points, startAt)[1].arriveDate
+    check('切到第 2 天节点后日期 = ' + expect, !!second && second.date === expect,
+      second ? second.date : 'getWeather 未被调用')
+    check('切节点后页面日期与请求一致', !!second && second.date === page.data.date, page.data.date)
+    check('切节点未多发请求（共 ' + calls.length + ' 次）', calls.length === 2, 'calls=' + calls.length)
+  }
+
+  // 情形 C：不带入口日期，兜底到活动出发日——这条正是线上截图那条链
+  {
+    const noTime = { ...read, view: { ...read.view, activity: { ...read.view.activity, routeSnapshot: { points: points.map(p => ({ id: p.id, name: p.name, coordinates: p.coordinates })) } } } }
+    const { page, calls } = bootPage(noTime)
+    page.onLoad({ id: 'a1' })
+    await page.reload()
+    await waitFor(() => calls.length > 0)
+    const first = calls[0]
+    check('无时间戳+无入口日期时发出 2026-10-03（活动出发日）',
+      !!first && first.date === '2026-10-03', first ? first.date : 'getWeather 未被调用')
+    check('页面日期非空', /^\d{4}-\d{2}-\d{2}$/.test(page.data.date), page.data.date)
+  }
+}
+
+raceCases().catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') }).then(() => {
+  console.log('\npassed=' + passed + ' failed=' + failed)
+  process.exit(failed ? 1 : 0)
+})
+

@@ -14,6 +14,8 @@ const RS = require('../../utils/route-schedule')
 
 const SLOTS = ['06', '08', '10', '12', '14', '16', '18', '20']
 const CHART_DAYS = 7
+// 云函数只认 'YYYY-MM-DD'，任何进 getWeather 的日期都先过这道闸
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 // 当日徒步提示：按优先级最多 2 条（规则表见设计文档 §5.2）
 function buildCallouts(day, detail, elev) {
@@ -100,6 +102,11 @@ Page({
       // 按轨迹时间戳推算各节点抵达日程：第几天、几点到（无时间戳的节点给不出提醒）
       const sched = RS.schedule(points, a.startAt)
       const hasStart = !!a.startAt
+      const pointIndex = Math.max(0, Math.min(this.pickInitialPoint(points.length), points.length - 1))
+      // 日期必须在这一轮 setData 里一并落定。setData 的回调是异步的：若把日期放到回调里再设，
+      // 紧随其后的 fetchWeather 会读到上一次的空日期，发出 date:''，云函数回"日期无效"。
+      // 同理请求也放进回调，确保 this.data.date 已是最终值。
+      const date = this.resolveDate(sched, pointIndex, this.userPickedDate ? this.data.date : '')
       this.setData({
         loading: false,
         denied: '',
@@ -111,10 +118,10 @@ Page({
         schedule: sched,
         scheduleBasis: RS.basisText(sched, hasStart),
         spanDays: RS.spanDays(sched),
-        pointIndex: Math.min(this.pickInitialPoint(points.length), points.length - 1),
+        pointIndex,
+        date,
         isOwner: res.view.permittedActions.indexOf('notice.publish') !== -1,
-      }, () => this.syncDateToNode())
-      if (points.length) this.fetchWeather()
+      }, () => { if (points.length) this.fetchWeather() })
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
   },
 
@@ -128,22 +135,22 @@ Page({
     return this.data.pointIndex
   },
 
-  // 决定查询日期。优先级：用户手动选 > 节点推算的抵达日 > 入口带入的日期 > 活动出发日 > 今天。
-  // 节点推算比入口日期更精确——详情页带过来的是活动出发日，而多日行程里到某节点往往是第 2、3 天。
-  resolveDate() {
-    if (this.userPickedDate && this.data.date) return this.data.date
-    const s = this.data.schedule[this.data.pointIndex]
+  /**
+   * 决定查询日期（纯函数，不读 this.data 的待更新状态）。
+   * 优先级：用户手动选 > 节点推算的抵达日 > 入口带入的日期 > 活动出发日 > 今天。
+   * 节点推算比入口日期更精确——详情页带过来的是活动出发日，而多日行程里到某节点往往是第 2、3 天。
+   */
+  resolveDate(sched, pointIndex, pickedDate) {
+    if (pickedDate && ISO_DATE.test(pickedDate)) return pickedDate
+    const s = (sched || [])[pointIndex]
     if (s && s.known && s.arriveDate) return s.arriveDate
-    if (this.initialDate) return this.initialDate
+    if (this.initialDate && ISO_DATE.test(this.initialDate)) return this.initialDate
     const a = this.view && this.view.activity
-    if (a && a.startAt) return F.cnParts(a.startAt).date
+    if (a && a.startAt) {
+      const d = F.cnParts(a.startAt).date
+      if (ISO_DATE.test(d)) return d
+    }
     return F.cnToday()
-  },
-
-  syncDateToNode() {
-    const date = this.resolveDate()
-    if (date === this.data.date) return
-    this.setData({ date })
   },
 
   // 已有返回体是否覆盖该日期。series 自带 7 天逐时，所以在窗口内切日/切节点不必再外呼。
@@ -160,6 +167,13 @@ Page({
       loadingWeather: true, dayCards: [], slots: [], callouts: [], metrics: null,
       detailRows: [], chartSeries: [], chartMarks: {}, chartNight: {},
       conclusions: [], skyMoon: null,
+    }
+    // 兜底：日期尚未落定时不外呼（云函数会回"日期无效"，那句话对用户没意义）。
+    // resolveDate 兜底链必然产出合法日期，收敛一次即可，不会循环。
+    if (!ISO_DATE.test(this.data.date)) {
+      const date = this.resolveDate(this.data.schedule, this.data.pointIndex, '')
+      this.setData({ date }, () => this.fetchWeather())
+      return
     }
     this.setData(reset)
     // 窗口内复用：切日、切节点都不重新查询（30 分钟缓存内本来就零成本，这里连等待都没有）
@@ -362,13 +376,13 @@ Page({
   },
 
   // 切换节点：若该节点能推算抵达日，日期自动跟到那一天（除非用户手动选过）
+  // 日期与 pointIndex 必须同一次 setData 落定，再发请求（同 reload 的理由）
   onPoint(e) {
     this._lastResult = null // 换了节点，缓存的返回体不再适用
-    this.setData({ pointIndex: Number(e.detail.value) }, () => {
-      this.userPickedDate = false
-      this.syncDateToNode()
-      this.fetchWeather()
-    })
+    this.userPickedDate = false
+    const pointIndex = Number(e.detail.value)
+    const date = this.resolveDate(this.data.schedule, pointIndex, '')
+    this.setData({ pointIndex, date }, () => this.fetchWeather())
   },
 
   onDate(e) {
