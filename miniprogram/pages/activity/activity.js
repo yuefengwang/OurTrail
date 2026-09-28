@@ -12,6 +12,103 @@ const KIND_OPTIONS = [
   { value: 'injury', label: '伤病' },
 ]
 
+// ---- 路线地图（设计文档 docs/product/路线地图可视化-活动详情页设计.md）----
+// 坐标全站 GCJ-02，map/openLocation 直接消费。marker 图标由 tools/gen-map-markers.js 生成。
+const MARKER_ICONS = {
+  start: '/assets/markers/start.png',
+  checkpoint: '/assets/markers/checkpoint.png',
+  finish: '/assets/markers/finish.png',
+  pickup: '/assets/markers/pickup.png',
+}
+const MARKER_SIZE = 22
+const MARKER_SIZE_SELECTED = 30
+const PICKUP_ID_BASE = 1000 // marker id 是 Number：节点用节点序号，上车点用 1000+序号 避让
+
+function mapMarkers(routePoints, pickups, selectedId) {
+  const markers = []
+  routePoints.forEach((p, i) => {
+    if (!p.coordinates) return
+    const selected = selectedId === i
+    markers.push({
+      id: i,
+      latitude: p.coordinates.lat,
+      longitude: p.coordinates.lng,
+      iconPath: MARKER_ICONS[p.kind] || MARKER_ICONS.checkpoint,
+      width: selected ? MARKER_SIZE_SELECTED : MARKER_SIZE,
+      height: selected ? MARKER_SIZE_SELECTED : MARKER_SIZE,
+      anchor: { x: 0.5, y: 0.5 },
+      label: { content: String(i + 1), color: '#163E35', bgColor: '#FFFFFF', borderRadius: 8, padding: 3, fontSize: 10, anchorX: 11, anchorY: -20, textAlign: 'center' },
+      callout: {
+        content: (p.kind === 'start' ? '起点 · ' : p.kind === 'finish' ? '终点 · ' : '') + p.name,
+        color: '#163E35', bgColor: '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: '#DEE3DB',
+        padding: 7, fontSize: 12, display: 'BYTAP',
+      },
+    })
+  })
+  pickups.forEach((p, i) => {
+    if (!p.coordinates) return
+    markers.push({
+      id: PICKUP_ID_BASE + i,
+      latitude: p.coordinates.lat,
+      longitude: p.coordinates.lng,
+      iconPath: MARKER_ICONS.pickup,
+      width: selectedId === PICKUP_ID_BASE + i ? MARKER_SIZE_SELECTED : MARKER_SIZE,
+      height: selectedId === PICKUP_ID_BASE + i ? MARKER_SIZE_SELECTED : MARKER_SIZE,
+      anchor: { x: 0.5, y: 0.5 },
+      callout: {
+        content: '上车点 · ' + p.name,
+        color: '#163E35', bgColor: '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: '#DEE3DB',
+        padding: 7, fontSize: 12, display: 'BYTAP',
+      },
+    })
+  })
+  return markers
+}
+
+// 组装地图数据：有轨迹画实线，无轨迹多点时画虚线连接；单点居中放大，多点 include-points 适配
+function buildRouteMap(a) {
+  const routePoints = a.routeSnapshot.points
+  const pickups = a.pickupPoints
+  const hasLocated = routePoints.some(p => p.coordinates) || pickups.some(p => p.coordinates)
+  if (!hasLocated) return { visible: false }
+  const track = (a.routeSnapshot.track || []).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+  const polyline = []
+  if (track.length >= 2) {
+    polyline.push({ points: track.map(p => ({ latitude: p.lat, longitude: p.lng })), color: '#163E35AA', width: 4, arrowLine: true })
+  } else {
+    const located = routePoints.filter(p => p.coordinates)
+    if (located.length >= 2) {
+      polyline.push({ points: located.map(p => ({ latitude: p.coordinates.lat, longitude: p.coordinates.lng })), color: '#8C9791AA', width: 2, dottedLine: true })
+    }
+  }
+  const markers = mapMarkers(routePoints, pickups, -1)
+  // include-points 无内边距参数：外扩 8% 的四个角点充当留白；坐标全部过滤非有限值（防御 fitBounds 崩溃）
+  const finite = markers.filter(m => Number.isFinite(m.latitude) && Number.isFinite(m.longitude))
+  if (!finite.length) return { visible: false }
+  const lats = finite.map(m => m.latitude)
+  const lngs = finite.map(m => m.longitude)
+  const latMin = Math.min.apply(null, lats)
+  const latMax = Math.max.apply(null, lats)
+  const lngMin = Math.min.apply(null, lngs)
+  const lngMax = Math.max.apply(null, lngs)
+  const padLat = (latMax - latMin || 0.01) * 0.08
+  const padLng = (lngMax - lngMin || 0.01) * 0.08
+  const includePoints = [
+    { latitude: latMin - padLat, longitude: lngMin - padLng },
+    { latitude: latMax + padLat, longitude: lngMax + padLng },
+  ]
+  return {
+    visible: true,
+    markers,
+    polyline,
+    includePoints,
+    latitude: (latMin + latMax) / 2,
+    longitude: (lngMin + lngMax) / 2,
+    scale: 13,
+    selectedId: -1,
+  }
+}
+
 Page({
   data: {
     loading: true,
@@ -45,6 +142,7 @@ Page({
     times: [],
     points: [],
     pickups: [],
+    map: { visible: false },
     risks: [],
     equipment: [],
     feeNote: '',
@@ -136,6 +234,7 @@ Page({
       ].filter(Boolean).join(' · '),
       isPrimary: r.signupId === v.primarySignupId,
     }))
+    const primary = v.rows.find(r => r.signupId === v.primarySignupId) || null
     const times = [
       { label: '出发时间', value: F.dtLabel(a.startAt) },
       { label: '预计结束', value: F.dtLabel(a.endAt) },
@@ -144,10 +243,14 @@ Page({
     const points = a.routeSnapshot.points.map((p, i) => ({
       id: p.id,
       name: p.name,
+      kind: p.kind,
       kindLabel: String(i + 1).padStart(2, '0') + ' · ' + (p.kind === 'start' ? '起点' : p.kind === 'finish' ? '终点' : '途中节点'),
+      coordinates: p.coordinates || null,
     }))
-    const pickups = a.pickupPoints.map(p => ({ id: p.id, name: p.name, address: p.address, time: F.dtLabel(p.meetingAt) }))
+    const pickups = a.pickupPoints.map(p => ({ id: p.id, name: p.name, address: p.address, time: F.dtLabel(p.meetingAt), coordinates: p.coordinates || null }))
     const risks = a.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice }))
+    this._routePoints = a.routeSnapshot.points
+    this._routePickups = a.pickupPoints
     this.setData({
       loading: false,
       denied: '',
@@ -174,7 +277,9 @@ Page({
       primaryId: v.primarySignupId || '',
       description: a.description || '活动说明待补充。',
       organizerIntro: a.organizerIntro,
+      startDate: a.startAt ? F.cnParts(a.startAt).date : '',
       times, points, pickups, risks,
+      map: buildRouteMap(a),
       equipment: a.equipment,
       feeNote: a.feeNote || '费用待组织者说明。',
       cancellationNote: a.cancellationNote,
@@ -192,6 +297,58 @@ Page({
       this.selectedSignupId = id
     }
     this.reload()
+  },
+
+  // ---- 路线地图交互 ----
+  // timeline 行点击 → 地图定位到该节点并选中放大
+  onPointLocate(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    const p = (this._routePoints || [])[index]
+    if (!p || !p.coordinates) return
+    // include-points 不能置空：空数组会让腾讯地图 fitBounds 读 undefined.lat 直接崩（渲染层白屏）。
+    // 联动定位改为以目标节点为中心的小范围 bbox，视野落到该节点附近。
+    const d = 0.006
+    this.setData({
+      'map.latitude': p.coordinates.lat,
+      'map.longitude': p.coordinates.lng,
+      'map.scale': 15,
+      'map.selectedId': index,
+      'map.markers': mapMarkers(this._routePoints, this._routePickups, index),
+      'map.includePoints': [
+        { latitude: p.coordinates.lat - d, longitude: p.coordinates.lng - d },
+        { latitude: p.coordinates.lat + d, longitude: p.coordinates.lng + d },
+      ],
+    })
+  },
+  // marker 点击 → 选中放大（callout 由原生 BYTAP 展示）。字段级 setData：不重传 include-points。
+  onMapMarkerTap(e) {
+    const id = Number(e.detail.markerId) || -1
+    if (id < 0) return
+    this.setData({
+      'map.selectedId': id,
+      'map.markers': mapMarkers(this._routePoints, this._routePickups, id),
+    })
+  },
+  // 途中节点「天气」：跳天气页并定位到该节点、默认活动出发日期（山中节点无公路，导航无意义）
+  onPointWeather(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    let url = '/pages/weather/weather?id=' + this.activityId + '&point=' + index
+    if (this.data.startDate) url += '&date=' + this.data.startDate
+    wx.navigateTo({ url })
+  },
+  // 导航（起点/终点/上车点）：拉起内置腾讯地图
+  onOpenLocation(e) {
+    const ds = e.currentTarget.dataset
+    const lat = Number(ds.lat)
+    const lng = Number(ds.lng)
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+    wx.openLocation({
+      latitude: lat,
+      longitude: lng,
+      name: ds.name || '',
+      address: ds.address || '',
+      scale: 16,
+    })
   },
 
   onWorkspace() {
@@ -254,11 +411,11 @@ Page({
         && (a.phase === 'gathering' || (a.phase === 'active' && row.departure === 'coordinating')),
       canNode: this.view.permittedActions.indexOf('attendance.node') !== -1
         && a.phase === 'active' && row.status === 'confirmed' && row.departure === 'joined',
-      canHome: (this.view.permittedActions.indexOf('attendance.home') !== -1 || row.signupId === v.primarySignupId)
+      canHome: (this.view.permittedActions.indexOf('attendance.home') !== -1 || row.signupId === this.view.primarySignupId)
         && a.phase === 'closing' && row.status === 'confirmed' && row.departure === 'joined' && !row.home,
       canIncident: ['gathering', 'active', 'closing'].indexOf(a.phase) !== -1 && row.status === 'confirmed'
         && this.view.permittedActions.indexOf('incident.report') !== -1,
-      canPosReport: row.signupId === v.primarySignupId
+      canPosReport: row.signupId === this.view.primarySignupId
         && ['gathering', 'active'].indexOf(a.phase) !== -1 && row.status === 'confirmed' && row.departure === 'joined'
         && this.view.permittedActions.indexOf('position.report') !== -1,
       canPosRevoke: this.view.permittedActions.indexOf('position.revoke') !== -1,

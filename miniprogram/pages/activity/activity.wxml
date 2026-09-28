@@ -100,10 +100,53 @@
           <text>天气参考</text>
         </view>
       </view>
+      <view wx:if="{{map.visible}}" class="map-card">
+        <map
+          class="map-canvas"
+          latitude="{{map.latitude}}"
+          longitude="{{map.longitude}}"
+          scale="{{map.scale}}"
+          markers="{{map.markers}}"
+          polyline="{{map.polyline}}"
+          include-points="{{map.includePoints}}"
+          show-compass="{{false}}"
+          show-scale="{{false}}"
+          bindmarkertap="onMapMarkerTap"
+        />
+      </view>
       <view class="timeline" style="margin-top:12px;">
-        <view wx:for="{{points}}" wx:key="id" class="timeline-item">
-          <text class="eyebrow">{{item.kindLabel}}</text>
-          <text style="display:block;font-weight:700;margin-top:2px;">{{item.name}}</text>
+        <view
+          wx:for="{{points}}"
+          wx:key="id"
+          class="timeline-item"
+          hover-class="{{item.coordinates ? 'button-hover' : 'none'}}"
+          bindtap="onPointLocate"
+          data-index="{{index}}"
+        >
+          <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
+            <view style="min-width:0;">
+              <text class="eyebrow">{{item.kindLabel}}</text>
+              <text style="display:block;font-weight:700;margin-top:2px;">{{item.name}}</text>
+            </view>
+            <block wx:if="{{item.coordinates}}">
+              <view
+                wx:if="{{item.kind === 'checkpoint'}}"
+                class="button text"
+                hover-class="button-hover"
+                catchtap="onPointWeather"
+                data-index="{{index}}"
+              >天气</view>
+              <view
+                wx:else
+                class="button text"
+                hover-class="button-hover"
+                catchtap="onOpenLocation"
+                data-lat="{{item.coordinates.lat}}"
+                data-lng="{{item.coordinates.lng}}"
+                data-name="{{item.name}}"
+              >导航</view>
+            </block>
+          </view>
         </view>
       </view>
       <view wx:for="{{pickups}}" wx:key="id" class="list-row" style="margin-top:12px;">
@@ -111,7 +154,19 @@
           <text>{{item.name}}</text>
           <text class="list-sub">{{item.address}}</text>
         </view>
-        <text class="small tabular">{{item.time}}</text>
+        <view class="cluster" style="gap:10px;">
+          <text wx:if="{{item.time}}" class="small tabular">{{item.time}}</text>
+          <view
+            wx:if="{{item.coordinates}}"
+            class="button text"
+            hover-class="button-hover"
+            bindtap="onOpenLocation"
+            data-lat="{{item.coordinates.lat}}"
+            data-lng="{{item.coordinates.lng}}"
+            data-name="{{item.name}}"
+            data-address="{{item.address}}"
+          >导航</view>
+        </view>
       </view>
     </view>
 
