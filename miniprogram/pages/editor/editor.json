@@ -3,6 +3,7 @@
   "usingComponents": {
     "icon": "/components/icon/icon",
     "status-panel": "/components/status-panel/status-panel",
-    "form-field": "/components/form-field/form-field"
+    "form-field": "/components/form-field/form-field",
+    "overlay": "/components/overlay/overlay"
   }
 }
