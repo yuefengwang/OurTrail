@@ -352,6 +352,22 @@ button.button { font-family: inherit; }
 .list-row .list-main { flex: 1; min-width: 0; }
 .list-row .list-sub { display: block; color: var(--muted); font-size: var(--text-caption); line-height: 18px; margin-top: 4px; }
 
+/* 快捷估算 chips（编辑器时间估算等） */
+.chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--forest-soft);
+  color: var(--forest);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  line-height: 18px;
+}
+
+/* ---------- 路线地图 ---------- */
+/* map 是原生组件：低版本基础库非同层渲染时圆角可能失效，属可接受降级（不做 cover-view 补偿） */
+.map-card { height: 260px; border-radius: 14px; overflow: hidden; background: var(--forest-soft); }
+.map-canvas { width: 100%; height: 100%; }
+
 /* ---------- 时间轴 ---------- */
 .timeline { padding-left: 20px; border-left: 1px solid var(--line); }
 .timeline-item { position: relative; padding-bottom: 20px; }
