@@ -211,6 +211,38 @@ function run() {
   r = dispatch(sTrack, LIN, { type: 'activity.create', input: badTrack })
   check('单点 track 被拒（min 2）', !r.ok, r.error)
 
+  console.log('== 10b. 节点 GPX 元数据 time/ele（按节点推算抵达日 + 真实海拔） ==')
+  const withMeta = fullActivityInput()
+  withMeta.routeSnapshot.points[1].time = '2026-09-27T14:20:00+08:00'
+  withMeta.routeSnapshot.points[1].ele = 1268
+  let sMeta = emptyState()
+  r = dispatch(sMeta, LIN, { type: 'profile.save', person: { name: '林溪', phone: '00000000001', emergency: { name: '林母', phone: '00000000051' }, medical: '' } })
+  sMeta = r.value.state
+  r = dispatch(sMeta, LIN, { type: 'activity.create', input: withMeta })
+  check('activity.create 带节点 time/ele ok', r.ok, r.error)
+  sMeta = r.value.state
+  const actMeta = sMeta.activities[0]
+  check('活动保留节点 time', actMeta.routeSnapshot.points[1].time === '2026-09-27T14:20:00+08:00')
+  check('活动保留节点 ele', actMeta.routeSnapshot.points[1].ele === 1268)
+  check('私有路线携带节点 time/ele', sMeta.routes[0].points[1].ele === 1268 && !!sMeta.routes[0].points[1].time)
+  const metaView = selectView(sMeta, { userId: LIN }, { kind: 'activity', activityId: actMeta.id, perspective: 'participant' }, '2026-09-26T07:00:00+08:00')
+  check('视图透传节点 time/ele', metaView.kind === 'activity'
+    && metaView.activity.routeSnapshot.points[1].time === '2026-09-27T14:20:00+08:00'
+    && metaView.activity.routeSnapshot.points[1].ele === 1268)
+  check('无元数据的节点不带该键（客户端据此判断能否推算抵达日）',
+    !('time' in metaView.activity.routeSnapshot.points[0]) && !('ele' in metaView.activity.routeSnapshot.points[0]))
+  const noMeta = fullActivityInput()
+  r = dispatch(sMeta, LIN, { type: 'activity.create', input: noMeta })
+  check('无 time/ele 仍可通过（specOpt 兼容缺省）', r.ok, r.error)
+  const badEle = fullActivityInput()
+  badEle.routeSnapshot.points[0].ele = 12000
+  r = dispatch(sMeta, LIN, { type: 'activity.create', input: badEle })
+  check('越界 ele 被拒（-500..9000）', !r.ok, r.error)
+  const badTime = fullActivityInput()
+  badTime.routeSnapshot.points[0].time = '2026-09-27 14:20'
+  r = dispatch(sMeta, LIN, { type: 'activity.create', input: badTime })
+  check('非 ISO instant 的 time 被拒', !r.ok, r.error)
+
   console.log('== 11. 所有者以 participant 视角看草稿仍有编辑/发布动作（详情页发布入口依赖） ==')
   const draftView = selectView(sTrack, { userId: LIN }, { kind: 'activity', activityId: act2.id, perspective: 'participant' }, '2026-09-26T07:00:00+08:00')
   check('草稿 owner-participant 可见 activity.edit', draftView.kind === 'activity' && draftView.permittedActions.indexOf('activity.edit') !== -1)

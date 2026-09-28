@@ -129,6 +129,11 @@ const RoutePoint = specObj({
   id: specId, name: specText,
   kind: specEnum(['start', 'checkpoint', 'finish']),
   coordinates: specNull(Coordinates),
+  // GPX 轨迹附带的元数据（可选，用户不可编辑）：
+  // time = 轨迹记录的时刻（ISO instant），用于按节点推算"第几天抵达"并定位对应日期的天气；
+  // ele  = 该点真实高程（m），用于云层带/云海/光染判断，替代模型降尺度海拔（误差 ±300-600m）。
+  time: specOpt(specInstant),
+  ele: specOpt(specNum(-500, 9000)),
 })
 const RouteRisk = specObj({ id: specId, title: specText, advice: specText })
 // 轨迹折线采样点（GCJ-02）：画地图 polyline 用，导入 GPX 时按里程采样到 ≤200 点

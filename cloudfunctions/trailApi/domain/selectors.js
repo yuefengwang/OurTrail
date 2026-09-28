@@ -19,15 +19,26 @@ function personView(person) {
 function evidenceView(evidence) {
   return evidence ? { at: evidence.at, by: evidence.by, note: evidence.note } : null
 }
+// 路线节点投影：time/ele 为可选的 GPX 元数据，缺省不带键（客户端据此判断能否推算抵达日）
+function pointView(p) {
+  const out = {
+    id: p.id, name: p.name, kind: p.kind,
+    coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null,
+  }
+  if (p.time) out.time = p.time
+  if (Number.isFinite(p.ele)) out.ele = p.ele
+  return out
+}
+
 function activityView(activity) {
   return {
-    id: activity.id, ownerId: activity.ownerId, title: activity.title, description: activity.description,
+    id: activity.id, title: activity.title, description: activity.description,
     organizerIntro: activity.organizerIntro, startAt: activity.startAt, endAt: activity.endAt,
     deadlineAt: activity.deadlineAt, phase: activity.phase, acceptingSignups: activity.acceptingSignups,
-    capacity: activity.capacity, approvalMode: activity.approvalMode, routeId: activity.routeId,
+    capacity: activity.capacity, approvalMode: activity.approvalMode, ownerId: activity.ownerId, routeId: activity.routeId,
     routeSnapshot: {
       title: activity.routeSnapshot.title, distanceKm: activity.routeSnapshot.distanceKm, ascentM: activity.routeSnapshot.ascentM,
-      points: activity.routeSnapshot.points.map(p => ({ id: p.id, name: p.name, kind: p.kind, coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null })),
+      points: activity.routeSnapshot.points.map(p => pointView(p)),
       risks: activity.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice })),
       track: activity.routeSnapshot.track ? activity.routeSnapshot.track.map(p => ({ lat: p.lat, lng: p.lng })) : undefined,
     },

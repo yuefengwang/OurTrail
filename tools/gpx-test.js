@@ -40,6 +40,19 @@ const TRACK_ONLY = `<?xml version="1.0"?>
   </trkseg></trk>
 </gpx>`
 
+// 带时间戳与高程的轨迹：08:00 出发，每点 30 分钟，用于验证节点元数据透传
+const TRACK_TIMED = `<?xml version="1.0"?>
+<gpx version="1.0" creator="t">
+  <trk><trkseg>
+    ${Array.from({ length: 12 }, (_, i) => {
+      const lat = 30 + i * 0.0009
+      const lng = 103 + i * 0.0009
+      const t = new Date(Date.parse('2026-09-26T00:00:00Z') + i * 1800000).toISOString().replace('.000Z', 'Z')
+      return `<trkpt lat="${lat.toFixed(6)}" lon="${lng.toFixed(6)}"><ele>${700 + i * 30}</ele><time>${t}</time></trkpt>`
+    }).join('\n    ')}
+  </trkseg></trk>
+</gpx>`
+
 function run() {
   console.log('== 航点优先 ==')
   const r1 = parseGpx(SAMPLE)
@@ -119,6 +132,15 @@ function run() {
   const camp = '<gpx><wpt lat="30.1" lon="103.1"><name>第一天营地</name></wpt><wpt lat="30.2" lon="103.2"><name>营地</name></wpt></gpx>'
   const r8 = parseGpx(camp)
   check('关键词触发露营建议', r8.ok && r8.suggestions.risks.some(r => r.title === '夜间低温与照明不足'))
+
+  console.log('== 节点元数据 time/ele 透传 ==')
+  const rt = parseGpx(TRACK_TIMED)
+  check('ok', rt.ok, rt.error)
+  check('节点带 ele（用户不可编辑，供云层带判断）', rt.ok && rt.points.every(p => Number.isFinite(p.ele)), rt.ok && rt.points.map(p => p.ele).join(','))
+  check('节点带 time（供按节点推算第几天抵达）', rt.ok && rt.points.every(p => typeof p.time === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(p.time)), rt.ok && rt.points.map(p => p.time).join(','))
+  check('时间沿轨迹递增', rt.ok && rt.points.every((p, i) => i === 0 || Date.parse(p.time) > Date.parse(rt.points[i - 1].time)))
+  check('无时间戳的轨迹不带 time 键', r4.ok && r4.points.every(p => !('time' in p)))
+  check('无时间戳的轨迹仍带 ele', r4.ok && r4.points.every(p => Number.isFinite(p.ele)))
 
   console.log('== 异常输入 ==')
   check('空文件', !parseGpx('').ok)

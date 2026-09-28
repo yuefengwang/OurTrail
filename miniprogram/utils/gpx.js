@@ -181,10 +181,26 @@ function toRoutePoints(parsed) {
       seen.add(i)
       const p = parsed.track[i]
       const km = Math.round(m.cumulative[i] * 10) / 10
-      source.push({ lat: p.lat, lng: p.lng, ele: p.ele, name: km > 0.05 ? '约 ' + km + ' 公里处' : '' })
+      source.push({ lat: p.lat, lng: p.lng, ele: p.ele, time: p.time, name: km > 0.05 ? '约 ' + km + ' 公里处' : '' })
     }
   }
   if (source.length < 2) return []
+
+  // 航点/路线点常常没有 <time>/<ele>（只有轨迹点带），按最近的轨迹点补齐：
+  // 这是需求"按轨迹标注点判断第几天抵达"的必要一步——具名航点正是用户看天气时对照的点。
+  // 时间误差等于轨迹采样间隔（通常秒到分钟级），高程误差等于相邻采样点的高程差。
+  const timed = parsed.track.filter(p => Number.isFinite(p.time) || Number.isFinite(p.ele))
+  const dense = timed.length > 2000 ? timed.filter((_, i) => i % Math.ceil(timed.length / 2000) === 0) : timed
+  const nearest = p => {
+    if (!dense.length || (Number.isFinite(p.time) && Number.isFinite(p.ele))) return p
+    let best = null
+    let bestKm = Infinity
+    for (const t of dense) {
+      const d = haversineKm(p, t)
+      if (d < bestKm) { bestKm = d; best = t }
+    }
+    return best ? { time: best.time, ele: best.ele } : p
+  }
 
   return source.map((p, i) => {
     let name = p.name
@@ -194,11 +210,18 @@ function toRoutePoints(parsed) {
       else name = '节点 ' + i
     }
     const c = wgsToGcj(p.lat, p.lng)
-    return {
+    const out = {
       name,
       kind: i === 0 ? 'start' : (i === source.length - 1 ? 'finish' : 'checkpoint'),
       coordinates: c,
     }
+    // 轨迹附带的时刻与高程：用户不可编辑，供按节点推算抵达日与判断是否高过云层带
+    const meta = nearest(p)
+    const time = Number.isFinite(p.time) ? p.time : meta.time
+    const ele = Number.isFinite(p.ele) ? p.ele : meta.ele
+    if (Number.isFinite(time)) out.time = new Date(time).toISOString()
+    if (Number.isFinite(ele)) out.ele = Math.round(ele)
+    return out
   })
 }
 

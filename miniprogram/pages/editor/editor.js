@@ -31,7 +31,14 @@ function toForm(input) {
     routeTitle: input.routeSnapshot.title,
     distanceKm: input.routeSnapshot.distanceKm === 0 ? '' : String(input.routeSnapshot.distanceKm),
     ascentM: input.routeSnapshot.ascentM === 0 ? '' : String(input.routeSnapshot.ascentM),
-    points: input.routeSnapshot.points.map(p => ({ id: p.id, name: p.name, kind: p.kind, lat: p.coordinates ? String(p.coordinates.lat) : '', lng: p.coordinates ? String(p.coordinates.lng) : '' })),
+    // time/ele 是 GPX 附带的元数据，用户不可编辑：必须原样带进表单，否则编辑一次草稿就丢了
+    points: input.routeSnapshot.points.map(p => ({
+      id: p.id, name: p.name, kind: p.kind,
+      lat: p.coordinates ? String(p.coordinates.lat) : '',
+      lng: p.coordinates ? String(p.coordinates.lng) : '',
+      time: p.time || '',
+      ele: Number.isFinite(p.ele) ? p.ele : null,
+    })),
     risks: input.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice })),
     track: (input.routeSnapshot.track || []).slice(),
     pickups: input.pickupPoints.map(p => ({ id: p.id, name: p.name, address: p.address, lat: p.coordinates ? String(p.coordinates.lat) : '', lng: p.coordinates ? String(p.coordinates.lng) : '', meeting: split(p.meetingAt) })),
@@ -199,7 +206,12 @@ Page({
         title: f.routeTitle,
         distanceKm: Number(f.distanceKm) || 0,
         ascentM: Math.round(Number(f.ascentM)) || 0,
-        points: f.points.map(p => ({ id: p.id, name: p.name, kind: p.kind, coordinates: coordsOrNull(p.lat, p.lng) })),
+        points: f.points.map(p => Object.assign(
+          { id: p.id, name: p.name, kind: p.kind, coordinates: coordsOrNull(p.lat, p.lng) },
+          // GPX 元数据原样透传（无值时不带键，schema 按 specOpt 兼容缺省）
+          p.time ? { time: p.time } : {},
+          Number.isFinite(p.ele) ? { ele: p.ele } : {}
+        )),
         risks: f.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice })),
       },
       pickupPoints: f.pickups.map(p => ({
@@ -679,7 +691,12 @@ Page({
     const points = this.data.gpxPoints
     if (!meta || !points.length) return
     const form = JSON.parse(JSON.stringify(this.data.form))
-    form.points = points.map(p => ({ id: freshId('point'), name: p.name, kind: p.kind, lat: String(p.coordinates.lat), lng: String(p.coordinates.lng) }))
+    form.points = points.map(p => ({
+      id: freshId('point'), name: p.name, kind: p.kind,
+      lat: String(p.coordinates.lat), lng: String(p.coordinates.lng),
+      // 轨迹自带时刻与高程：天气页据此推算"第几天抵达"与是否高过云层带，用户不可编辑
+      time: p.time || '', ele: Number.isFinite(p.ele) ? p.ele : null,
+    }))
     form.track = (this.data.gpxTrack || []).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
     // 预填风险与装备：只填空字段，用户已填内容不覆盖
     const sug = this.data.gpxSuggest
