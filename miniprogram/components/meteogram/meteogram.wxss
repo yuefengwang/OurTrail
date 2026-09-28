@@ -1,0 +1,32 @@
+/* meteogram：天气时间坐标图。canvas 是原生组件，宽度由数据算出并横向滚动。 */
+.meteogram { width: 100%; }
+.meteogram-scroll {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.meteogram-canvas { display: block; }
+
+.meteogram-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 8px;
+}
+.lg {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--forest-soft);
+}
+.lg-tip {
+  color: var(--muted);
+  font-weight: 400;
+  background: transparent;
+  padding: 0;
+  margin-left: auto;
+}

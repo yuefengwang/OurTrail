@@ -24,3 +24,34 @@
 .day-phrase.warning { color: var(--warning); }
 .day-phrase.danger { color: var(--danger); }
 .day-phrase.neutral { color: var(--muted); }
+.day-sun { font-size: 10px; color: var(--muted); }
+
+/* 区块标题：把页面分成"客观指标"与"结论"两段（用户需求 2 的信息架构） */
+.section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.section-title { font-size: var(--text-body); font-weight: 700; color: var(--ink); }
+.section-sub { font-size: var(--text-caption); color: var(--muted); }
+
+/* 天相结论卡：结论 + 依据 + 往哪看/时段 */
+.sky-card { display: flex; flex-direction: column; gap: 8px; }
+.sky-title { font-size: var(--text-body); font-weight: 700; color: var(--ink); }
+.sky-text { font-size: var(--text-body); line-height: 22px; color: var(--ink); }
+.sky-look {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--forest-soft);
+}
+.sky-look-label {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--forest);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+}
+.sky-look-text { flex: 1; font-size: var(--text-caption); line-height: 18px; color: var(--forest); }
+.warn-text { color: var(--warning); }
+

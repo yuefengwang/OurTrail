@@ -3,6 +3,7 @@
   "usingComponents": {
     "icon": "/components/icon/icon",
     "form-field": "/components/form-field/form-field",
-    "status-panel": "/components/status-panel/status-panel"
+    "status-panel": "/components/status-panel/status-panel",
+    "meteogram": "/components/meteogram/meteogram"
   }
 }

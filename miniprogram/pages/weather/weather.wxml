@@ -6,12 +6,13 @@
   <view wx:else class="stack">
     <view>
       <text class="eyebrow">行前参考</text>
-      <text class="page-title" style="display:block;margin-top:4px;">留意天气，也留意脚下。</text>
+      <text class="page-title" style="display:block;margin-top:4px;">留意天气，也留意天相。</text>
     </view>
 
-    <view class="callout warning">天气是行前参考，不是出发许可。云层与云海为模型推算，出发前请核实当地气象与路况。</view>
+    <view class="callout warning">这是概率判断，不是出发许可。云层与云海为模型推算，具体山谷的云海与光染任何产品都无法保证——出发前请核实当地气象与路况。</view>
 
-    <form-field label="路线关键点">
+    <!-- 节点：带"第几天抵达"标注（按轨迹时间戳与出发时刻推算） -->
+    <form-field label="路线关键点" hint="{{scheduleBasis}}">
       <picker range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPoint">
         <view class="picker">
           <text class="picker-value">{{pointLabels[pointIndex] || '暂无路线节点'}}</text>
@@ -24,6 +25,12 @@
       <status-panel kind="loading" title="正在查询天气" detail="正在向气象服务查询该点的逐小时预报。" />
     </block>
     <block wx:elif="{{dayCards.length}}">
+      <!-- ============ 客观指标 ============ -->
+      <view class="section-head">
+        <text class="section-title">客观指标</text>
+        <text class="section-sub">下面这 7 天的逐时预报，横滑看全程</text>
+      </view>
+
       <!-- 7 日概览条 -->
       <scroll-view class="day-strip" scroll-x enhanced show-scrollbar="{{false}}">
         <view
@@ -39,27 +46,58 @@
           <text class="day-phrase {{item.phrase.tone}}">{{item.phrase.label}}</text>
           <text class="day-temp tabular">{{item.tMax}}/{{item.tMin}}°</text>
           <text class="day-rain tabular">☂ {{item.precipProbMax}}%</text>
+          <text class="day-sun tabular">{{item.sunrise}}</text>
         </view>
       </scroll-view>
 
-      <!-- 当日徒步提示（转译，最多 2 条） -->
+      <!-- meteogram：时间坐标图（温度线 / 降水双柱 / 三层云量 / 天气简字 + 天相窗口标记） -->
+      <meteogram
+        series="{{chartSeries}}"
+        marks="{{chartMarks}}"
+        night="{{chartNight}}"
+        selected-dates="{{chartSelected}}"
+        bind:pickhour="onChartPickHour"
+      />
+
+      <!-- 当日数字指标：日出日落 / 三层云量 / 云层带 / 月相 -->
+      <view wx:if="{{metrics}}" class="card stack-gap3">
+        <view class="card-header">
+          <text class="card-label">{{date}} 的数字</text>
+          <text wx:if="{{metrics.elev !== null}}" class="small muted tabular">此点约 {{metrics.elev}} m · {{elevSource}}</text>
+        </view>
+        <view class="list-row"><text>日出 / 日落</text><text class="tabular" style="font-weight:600;">{{metrics.sunrise}} / {{metrics.sunset}}</text></view>
+        <view class="list-row"><text>天文暗夜（银河窗口）</text><text class="tabular" style="font-weight:600;">{{metrics.astroDawn}} – {{metrics.astroDusk}}</text></view>
+        <view class="list-row"><text>云量 低 / 中 / 高</text><text class="tabular" style="font-weight:600;">{{metrics.low}}% / {{metrics.mid}}% / {{metrics.high}}%</text></view>
+        <view class="list-row"><text>云层带高度</text><text class="tabular" style="font-weight:600;">{{metrics.bandText}}</text></view>
+        <view class="list-row"><text>月相</text><text class="tabular" style="font-weight:600;">{{metrics.moon}}</text></view>
+        <text wx:if="{{metrics.inBand}}" class="small warn-text">此点海拔落在云层带内，大概率在雾中行进。</text>
+      </view>
+
+      <!-- 当日徒步提示（安全类，优先级最高，独立于天相） -->
       <view wx:for="{{callouts}}" wx:key="title" class="callout {{item.tone}}">
         <text class="callout-title">{{item.title}}</text>
       </view>
 
-      <!-- 云海与日照 -->
-      <view wx:if="{{seaCard}}" class="card stack-gap3">
+      <!-- ============ 结论：天相判断 ============ -->
+      <view class="section-head">
+        <text class="section-title">结论 · 天相</text>
+        <text class="section-sub">按经验信号合成，附判断依据与该往哪看</text>
+      </view>
+
+      <view wx:for="{{conclusions}}" wx:key="key" class="card sky-card">
         <view class="card-header">
-          <text class="card-label">云海与日照</text>
-          <text wx:if="{{seaCard.elev !== null}}" class="small muted tabular">此点海拔约 {{seaCard.elev}} m</text>
+          <text class="sky-title">{{item.title}}</text>
+          <text wx:if="{{item.label}}" class="badge {{item.tone}}">{{item.label}}{{item.score ? ' ' + item.score : ''}}</text>
         </view>
-        <view class="list-row"><text>日出 / 日落</text><text class="tabular" style="font-weight:600;">{{seaCard.sunrise}} / {{seaCard.sunset}}</text></view>
-        <view class="list-row"><text>云量（低 / 中 / 高）</text><text class="tabular" style="font-weight:600;">{{seaCard.low}}% / {{seaCard.mid}}% / {{seaCard.high}}%</text></view>
-        <view class="list-row"><text>云层带高度</text><text class="tabular" style="font-weight:600;">{{seaCard.bandText}}</text></view>
-        <view wx:if="{{seaCard.seaTone}}" class="callout {{seaCard.seaTone}}">
-          <text class="callout-title">{{seaCard.seaText}}</text>
+        <text class="sky-text">{{item.text}}</text>
+        <view wx:if="{{item.look}}" class="sky-look">
+          <text class="sky-look-label">往哪看</text>
+          <text class="sky-look-text">{{item.look}}</text>
         </view>
-        <text wx:else class="small muted">{{seaCard.seaText}}</text>
+        <view wx:if="{{item.window}}" class="sky-look">
+          <text class="sky-look-label">时段</text>
+          <text class="sky-look-text tabular">{{item.window}}</text>
+        </view>
       </view>
 
       <!-- 分时段摘要 -->
@@ -86,7 +124,7 @@
       </view>
 
       <text class="small muted">更新时间：{{updatedAt}}</text>
-      <text class="small muted">数据来源 Open-Meteo.com（CC BY 4.0）</text>
+      <text class="small muted">数据来源 Open-Meteo.com（CC BY 4.0）· 日出日落与天相判断为本机按坐标与海拔推算</text>
     </block>
     <status-panel wx:else kind="empty" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" />
 

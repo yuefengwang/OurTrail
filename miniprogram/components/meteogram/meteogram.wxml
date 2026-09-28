@@ -1,0 +1,15 @@
+<view class="meteogram">
+  <scroll-view class="meteogram-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+    <canvas
+      type="2d"
+      id="meteo"
+      class="meteogram-canvas"
+      style="width:{{chartW}}px;height:{{chartH}}px;"
+      bindtap="onTap"
+    ></canvas>
+  </scroll-view>
+  <view class="meteogram-legend">
+    <text class="lg" wx:for="{{legend}}" wx:key="k" style="color:{{item.c}};">{{item.t}}</text>
+    <text class="lg lg-tip">横滑看全程 · 点图上某天切换</text>
+  </view>
+</view>

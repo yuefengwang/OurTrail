@@ -1,12 +1,19 @@
-// 天气参考（对应原型 screens/Weather.tsx + 徒步天气概览设计文档）：
-// 7 日概览条 + 当日徒步提示（云层带/降雪/雷暴转译）+ 分时段摘要 + 逐小时明细。
+// 天气参考（对应原型 screens/Weather.tsx + 徒步天气概览设计文档 + 天相与 meteogram 设计）：
+// 上半部分是客观指标（meteogram 时间坐标图 + 数字指标），下半部分是结论（天相判断）。
 // 组织者可一键生成天气提醒草稿并跳到活动通知页。
+//
+// 数据来源：getWeather 返回 series（7×24 逐时）+ days（7 日）+ detail（所选日 24h）。
+// 天文与天相判断全部在客户端算（utils/astro.js、utils/sky.js），云函数只负责取数。
 'use strict'
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
+const A = require('../../utils/astro')
+const sky = require('../../utils/sky')
+const RS = require('../../utils/route-schedule')
 
 const SLOTS = ['06', '08', '10', '12', '14', '16', '18', '20']
+const CHART_DAYS = 7
 
 // 当日徒步提示：按优先级最多 2 条（规则表见设计文档 §5.2）
 function buildCallouts(day, detail, elev) {
@@ -48,6 +55,19 @@ Page({
     emptyTitle: '',
     emptyDetail: '',
     isOwner: false,
+    // 节点抵达日程（需求：按轨迹标注点判断第几天抵达）
+    schedule: [],
+    scheduleBasis: '',
+    spanDays: null,
+    // meteogram
+    chartSeries: [],
+    chartMarks: {},
+    chartNight: {},
+    chartSelected: {},
+    // 天相结论
+    conclusions: [],
+    skyMoon: null,
+    elevSource: '',
   },
 
   onLoad(options) {
@@ -77,67 +97,172 @@ Page({
       this.view = res.view
       const a = res.view.activity
       const points = a.routeSnapshot.points
-      const date = this.userPickedDate || this.data.date || this.initialDate
-        || (a.startAt ? F.cnParts(a.startAt).date : F.cnToday())
-      let pointIndex = this.data.pointIndex
-      if (this.initialPoint !== null && this.initialPoint !== undefined) {
-        pointIndex = this.initialPoint
-        this.initialPoint = null // 只消费一次，后续 onShow 不再拉回
-      }
+      // 按轨迹时间戳推算各节点抵达日程：第几天、几点到（无时间戳的节点给不出提醒）
+      const sched = RS.schedule(points, a.startAt)
+      const hasStart = !!a.startAt
       this.setData({
         loading: false,
         denied: '',
-        pointLabels: points.map(p => p.name),
-        pointIndex: Math.min(pointIndex, Math.max(0, points.length - 1)),
-        date,
+        pointLabels: points.map((p, i) => {
+          const s = sched[i]
+          const label = s && s.known ? RS.nodeLabel(s) : ''
+          return label ? p.name + '（' + label + '）' : p.name
+        }),
+        schedule: sched,
+        scheduleBasis: RS.basisText(sched, hasStart),
+        spanDays: RS.spanDays(sched),
+        pointIndex: Math.min(this.pickInitialPoint(points.length), points.length - 1),
         isOwner: res.view.permittedActions.indexOf('notice.publish') !== -1,
-      })
+      }, () => this.syncDateToNode())
       if (points.length) this.fetchWeather()
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
+  },
+
+  // 从详情页带 point 入参时优先定位该节点（只消费一次）
+  pickInitialPoint(len) {
+    if (this.initialPoint !== null && this.initialPoint !== undefined) {
+      const idx = this.initialPoint
+      this.initialPoint = null
+      return Math.max(0, Math.min(idx, len - 1))
+    }
+    return this.data.pointIndex
+  },
+
+  // 决定查询日期。优先级：用户手动选 > 节点推算的抵达日 > 入口带入的日期 > 活动出发日 > 今天。
+  // 节点推算比入口日期更精确——详情页带过来的是活动出发日，而多日行程里到某节点往往是第 2、3 天。
+  resolveDate() {
+    if (this.userPickedDate && this.data.date) return this.data.date
+    const s = this.data.schedule[this.data.pointIndex]
+    if (s && s.known && s.arriveDate) return s.arriveDate
+    if (this.initialDate) return this.initialDate
+    const a = this.view && this.view.activity
+    if (a && a.startAt) return F.cnParts(a.startAt).date
+    return F.cnToday()
+  },
+
+  syncDateToNode() {
+    const date = this.resolveDate()
+    if (date === this.data.date) return
+    this.setData({ date })
   },
 
   fetchWeather() {
     const points = this.view.activity.routeSnapshot.points
     const point = points[this.data.pointIndex]
     if (!point) return
-    this.setData({ loadingWeather: true, dayCards: [], slots: [], callouts: [], seaCard: null, detailRows: [] })
+    const reset = {
+      loadingWeather: true, dayCards: [], slots: [], callouts: [], metrics: null,
+      detailRows: [], chartSeries: [], chartMarks: {}, chartNight: {},
+      conclusions: [], skyMoon: null,
+    }
+    this.setData(reset)
     api.getWeather(this.activityId, point.id, this.data.date).then(result => {
       if (result.status !== 'ready') {
-        this.setData({
+        this.setData(Object.assign({}, reset, {
           loadingWeather: false,
-          dayCards: [], slots: [], callouts: [], seaCard: null, detailRows: [],
           emptyTitle: result.status === 'out_of_range' ? '暂不展示天气数字' : '天气暂不可用',
           emptyDetail: result.status === 'out_of_range'
             ? '所选日期超出今天起14天的预报范围。请保留日期，临近出发再核实。'
             : result.message || '请稍后重试。',
-        })
+        }))
         return
       }
       const detail = result.detail || []
       const day = (result.days || []).find(x => x.date === this.data.date) || {}
-      this.setData({
+      // 海拔优先用 GPX 节点高程（真实值），缺失时退回模型降尺度值并说明来源
+      const elevOK = Number.isFinite(point.ele)
+      const elevation = elevOK ? point.ele : result.pointElevation
+      const skyCtx = {
+        date: this.data.date,
+        lat: point.coordinates.lat,
+        lng: point.coordinates.lng,
+        elevation,
+        elevOK,
+        detail,
+        days: result.days || [],
+        heading: this.headingAt(this.data.pointIndex),
+      }
+      const skyOut = sky.summarize(skyCtx)
+      this.setData(Object.assign({}, reset, {
         loadingWeather: false,
         emptyTitle: '',
         emptyDetail: '',
         updatedAt: F.dtFull(result.updatedAt),
-        dayCards: this.buildDayCards(result.days || []),
+        dayCards: this.buildDayCards(result.days || [], point.coordinates),
         slots: this.buildSlots(detail),
-        callouts: buildCallouts(day, detail, result.pointElevation),
-        seaCard: this.buildSeaCard(detail, day, result.pointElevation),
+        callouts: buildCallouts(day, detail, elevation),
+        metrics: this.buildMetricsCard(detail, day, elevation, skyOut),
         detailRows: this.buildDetailRows(detail),
-      })
-    }).catch(e => this.setData({
-      loadingWeather: false, dayCards: [], slots: [], callouts: [], seaCard: null, detailRows: [],
-      emptyTitle: '天气暂不可用', emptyDetail: api.errorText(e),
-    }))
+        elevSource: elevOK ? 'GPX 记录' : '模型降尺度（±300-600 m）',
+        conclusions: skyOut ? skyOut.items : [],
+        skyMoon: skyOut ? skyOut.moon : null,
+        chartSeries: this.buildChartSeries(result.series || [], this.data.date),
+        chartMarks: this.buildChartMarks(result.series || [], point.coordinates, elevation, elevOK, result.days || []),
+        chartNight: this.buildNightMap(result.series || [], point.coordinates, elevation),
+        chartSelected: { [this.data.date]: true },
+      }))
+    }).catch(e => this.setData(Object.assign({}, reset, {
+      loadingWeather: false, emptyTitle: '天气暂不可用', emptyDetail: api.errorText(e),
+    })))
   },
 
-  buildDayCards(days) {
-    const today = F.cnToday()
-    return days.slice(0, 7).map(day => {
+  // 节点的前进/山脊走向（用前后节点连线求方位角），供日照金山"往哪看"粗判
+  headingAt(index) {
+    const pts = this.view.activity.routeSnapshot.points
+    const cur = pts[index]
+    if (!cur || !cur.coordinates) return null
+    const next = pts[index + 1] || pts[index - 1]
+    if (!next || !next.coordinates) return null
+    return sky.bearingBetween(cur.coordinates, next.coordinates)
+  },
+
+  // meteogram 序列：从所选日起取 7 天
+  buildChartSeries(series, date) {
+    const start = series.findIndex(h => h.d === date)
+    if (start < 0) return series.slice(0, 24 * CHART_DAYS)
+    return series.slice(start, start + 24 * CHART_DAYS)
+  },
+
+  // 逐日算天相标记（图表标记行）。只算标记不算文案，结论卡另按所选日算。
+  buildChartMarks(series, coords, elevation, elevOK, days) {
+    const out = {}
+    const byDate = {}
+    for (const h of series) (byDate[h.d] = byDate[h.d] || []).push(h)
+    Object.keys(byDate).forEach(d => {
+      const marks = sky.hourMarks({
+        date: d, lat: coords.lat, lng: coords.lng, elevation, elevOK, detail: byDate[d], days,
+      })
+      Object.keys(marks).forEach(t => { out[d + 'T' + t] = marks[t] })
+    })
+    return out
+  },
+
+  // 夜间底色：逐日算天文暮光，落在暗夜的小时标出来
+  buildNightMap(series, coords, elevation) {
+    const out = {}
+    const byDate = {}
+    for (const h of series) (byDate[h.d] = byDate[h.d] || []).push(h)
+    Object.keys(byDate).forEach(d => {
+      const sun = A.sunTimes(d, coords.lat, coords.lng, elevation)
+      const dawn = sky.hourMin(sun.astroDawn)
+      const dusk = sky.hourMin(sun.astroDusk)
+      byDate[d].forEach(h => {
+        const m = sky.hourMin(h.t)
+        if (Number.isFinite(dawn) && Number.isFinite(dusk) && (m < dawn || m > dusk)) out[d + 'T' + h.t] = true
+      })
+    })
+    return out
+  },
+
+  // 7 日概览条：从所选日起 7 天（与 meteogram 窗口对齐），并按节点高程给出日出日落
+  buildDayCards(days, coords) {
+    const first = this.data.date
+    const picked = days.filter(d => d.date >= first).slice(0, CHART_DAYS)
+    const list = picked.length >= CHART_DAYS ? picked : days.slice(0, CHART_DAYS)
+    return list.map(day => {
       let label = '周' + F.WEEK[new Date(day.date + 'T12:00:00+08:00').getUTCDay()]
-      if (day.date === today) label = '今'
-      else if (day.date === this.addDays(today, 1)) label = '明'
+      if (day.date === F.cnToday()) label = '今'
+      else if (day.date === this.addDays(F.cnToday(), 1)) label = '明'
       const md = day.date.slice(5, 10).split('-')
       return {
         date: day.date,
@@ -147,43 +272,46 @@ Page({
         tMax: day.tMax,
         tMin: day.tMin,
         precipProbMax: day.precipProbMax,
+        // 逐日的日出日落用本地天文算（按节点海拔修正），比模型日值更贴合观感
+        sunrise: A.sunTimes(day.date, coords.lat, coords.lng, this.nodeElevation()).sunrise || day.sunrise,
         selected: day.date === this.data.date,
       }
     })
   },
 
-  // 云海与日照：日出日落 + 三层日均云量 + 云层带范围 + 结论（概率语言，设计文档 §5.3）
-  buildSeaCard(detail, day, elev) {
+  // 客观指标卡：只放数字，不做判断（判断统一交给下面的天相结论卡，避免两处口径打架）
+  // 日出日落/暮光用本地天文算并按节点海拔修正；云量与云层带用云函数的气压层剖面结果。
+  buildMetricsCard(detail, day, elev, skyOut) {
     const withBand = detail.filter(h => h.band && Number.isFinite(h.band.base) && Number.isFinite(h.band.top) && h.band.cover >= 80)
-    let bandText = '数据不足'
+    let bandText = '无成层云带'
     if (withBand.length) {
       const baseMin = Math.min.apply(null, withBand.map(h => h.band.base))
       const topMax = Math.max.apply(null, withBand.map(h => h.band.top))
       bandText = '约 ' + Math.round(baseMin) + '–' + Math.round(topMax) + ' m'
     }
-    const inBand = detail.some(h => h.band && Number.isFinite(elev) && h.band.base <= elev && elev <= h.band.top)
-    const seaHours = detail.filter(h => h.t <= '10' && h.band && Number.isFinite(elev)
-      && elev > h.band.top && h.band.cover >= 80 && Number.isFinite(h.cloud.high) && h.cloud.high < 30)
-    let seaText = '清晨云海需要云层压得低、此点在云上——今天条件一般'
-    let seaTone = ''
-    if (seaHours.length) {
-      seaText = '清晨 ' + seaHours[0].t + '–' + seaHours[seaHours.length - 1].t + ' 云海概率较大，此点在云带上方'
-      seaTone = 'success'
-    } else if (inBand) {
-      seaText = '此点大概率在云层带内，以雾中行进为主，看云海机会低'
-      seaTone = 'warning'
-    }
+    const inBand = withBand.some(h => Number.isFinite(elev) && h.band.base <= elev && elev <= h.band.top)
+    const sun = skyOut ? skyOut.sun : null
+    const moon = skyOut ? skyOut.moon : null
     return {
-      sunrise: day.sunrise || '—',
-      sunset: day.sunset || '—',
-      low: day.cloud ? day.cloud.low : '—',
-      mid: day.cloud ? day.cloud.mid : '—',
-      high: day.cloud ? day.cloud.high : '—',
+      sunrise: (sun && sun.sunrise) || day.sunrise || '--',
+      sunset: (sun && sun.sunset) || day.sunset || '--',
+      astroDusk: (sun && sun.astroDusk) || '--',
+      astroDawn: (sun && sun.astroDawn) || '--',
+      low: day.cloud ? day.cloud.low : '--',
+      mid: day.cloud ? day.cloud.mid : '--',
+      high: day.cloud ? day.cloud.high : '--',
       bandText,
-      seaText,
-      seaTone,
+      inBand,
+      moon: moon ? moon.name + ' · 月照 ' + moon.illumination + '%' : '--',
       elev: Number.isFinite(elev) ? Math.round(elev) : null,
     }
+  },
+
+  // 当前节点的可信海拔（GPX 优先），供逐日日出日落与图上标记复用
+  nodeElevation() {
+    const pts = this.view && this.view.activity.routeSnapshot.points
+    const p = pts && pts[this.data.pointIndex]
+    return p && Number.isFinite(p.ele) ? p.ele : null
   },
 
   addDays(iso, n) {
@@ -213,8 +341,13 @@ Page({
     }))
   },
 
+  // 切换节点：若该节点能推算抵达日，日期自动跟到那一天（除非用户手动选过）
   onPoint(e) {
-    this.setData({ pointIndex: Number(e.detail.value) }, () => this.fetchWeather())
+    this.setData({ pointIndex: Number(e.detail.value) }, () => {
+      this.userPickedDate = false
+      this.syncDateToNode()
+      this.fetchWeather()
+    })
   },
 
   onDate(e) {
@@ -222,7 +355,7 @@ Page({
     this.setData({ date: e.detail.value }, () => this.fetchWeather())
   },
 
-  // 7 日概览条：点击某天 = 切日期重查（30 分钟缓存内零成本）
+  // 7 日概览条：点击某天 = 切日期重查（缓存内零成本）
   onDayTap(e) {
     const date = e.currentTarget.dataset.date
     if (!date || date === this.data.date) return
@@ -233,15 +366,32 @@ Page({
     }, () => this.fetchWeather())
   },
 
+  // meteogram 上点某小时 = 切到那一天
+  onChartPickHour(e) {
+    const date = e.detail && e.detail.date
+    if (!date || date === this.data.date) return
+    this.userPickedDate = true
+    this.setData({
+      date,
+      chartSelected: { [date]: true },
+      dayCards: this.data.dayCards.map(c => Object.assign({}, c, { selected: c.date === date })),
+    }, () => this.fetchWeather())
+  },
+
   toggleDetail() {
     this.setData({ showDetail: !this.data.showDetail })
   },
 
+  // 生成天气提醒草稿：带上节点、抵达日与当天结论要点
   onDraftNotice() {
     const points = this.view.activity.routeSnapshot.points
     const point = points[this.data.pointIndex]
+    const s = this.data.schedule[this.data.pointIndex]
+    const when = s && s.known && s.arriveTime
+      ? this.data.date + ' ' + RS.nodeLabel(s) + '（' + point.name + '）'
+      : this.data.date + ' ' + (point ? point.name : '')
     draft.setDraft(this.activityId, 'notice', {
-      content: this.data.date + ' ' + (point ? point.name : '') + ' 天气提醒：出发前请核实当地预报与路况，准备防滑鞋与雨具。',
+      content: when + ' 天气提醒：出发前请核实当地预报与路况，准备防滑鞋与雨具。',
     })
     wx.navigateTo({ url: '/pages/anotices/anotices?id=' + this.activityId })
   },
