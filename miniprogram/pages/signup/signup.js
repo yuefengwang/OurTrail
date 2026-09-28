@@ -157,6 +157,17 @@ Page({
     this.setData(patch)
   },
 
+  // 参与人卡展开/收起
+  togglePart(e) {
+    const key = e.currentTarget.dataset.key
+    const expandedParts = Object.assign({}, this.data.expandedParts)
+    if (expandedParts[key]) delete expandedParts[key]
+    else expandedParts[key] = true
+    this.setData({ expandedParts })
+  },
+  // 阻止卡片内点击冒泡触发 togglePart
+  noop() {},
+
   onPartField(e) {
     const { index, key } = e.currentTarget.dataset
     const participants = this.data.participants.slice()
