@@ -7,15 +7,15 @@
     <view>
       <text class="eyebrow">我的同行资料</text>
       <text class="page-title" style="display:block;margin-top:4px;">下次出发，少填一点。</text>
-      <text class="muted" style="display:block;margin-top:4px;">微信资料一键覆盖，其余失焦自动保存。</text>
+      <text class="muted" style="display:block;margin-top:4px;">点头像和昵称直接用微信信息，其余修改后自动保存。</text>
     </view>
 
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
     <view wx:if="{{hint}}" class="callout warning">{{hint}}</view>
 
-    <!-- 微信资料：点头像 / 昵称点键盘 / 手机号一键授权，全部立即生效 -->
+    <!-- 我的资料：身份行（头像+昵称是一组） + 手机号手填为主、一键获取为可选捷径 -->
     <view class="card">
-      <text class="card-label">微信资料 · 点了就直接用</text>
+      <text class="card-label">我的资料</text>
       <view class="wx-row">
         <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" hover-class="button-hover">
           <image wx:if="{{person.avatar}}" class="avatar-img" src="{{person.avatar}}" mode="aspectFill" />
@@ -29,39 +29,52 @@
             type="nickname"
             value="{{person.name}}"
             maxlength="80"
-            placeholder="微信昵称（点键盘上方填入）"
+            placeholder="填写昵称"
             placeholder-class="input-placeholder"
             data-key="name"
             bindinput="onField"
             bindblur="onBlurSave"
           />
-          <text class="small muted">点头像用微信头像</text>
+          <text class="small muted">点头像换微信头像 · 点昵称可用微信键盘快捷填入</text>
         </view>
       </view>
-      <view class="phone-row">
-        <view class="phone-value">
-          <text class="phone-text {{person.phone ? '' : 'empty'}}">{{person.phone || '手机号'}}</text>
-          <text class="small muted">来自微信授权，直接可用</text>
+      <view class="field">
+        <view class="field-head">
+          <text class="field-label">手机号</text>
+          <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onPhoneCode" hover-class="button-hover">微信一键获取（可选）</button>
         </view>
-        <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onPhoneCode" hover-class="button-hover">微信一键获取</button>
+        <input class="input" type="number" maxlength="11" value="{{person.phone}}" placeholder="11 位手机号" data-key="phone" bindinput="onField" bindblur="onBlurSave" />
+        <text class="small muted">用于活动联络与安全应急。未开通微信快捷取号时，手动填写即可。</text>
       </view>
     </view>
 
-    <!-- 紧急联系与安全备注：微信不提供，手填，失焦自动保存 -->
+    <!-- 紧急联系与安全备注：一行两列 + 备注折叠，失焦自动保存 -->
     <view class="card stack-gap3">
       <text class="card-label">紧急联系与安全备注</text>
       <view class="field">
-        <text class="field-label">紧急联系人姓名</text>
-        <input class="input" value="{{person.emergency.name}}" maxlength="80" placeholder="紧急时联系谁" data-key="ename" bindinput="onField" bindblur="onBlurSave" />
+        <text class="field-label">紧急联系人</text>
+        <view class="cluster" style="gap:12px;">
+          <input class="input" style="flex:1.2;" value="{{person.emergency.name}}" maxlength="80" placeholder="姓名" data-key="ename" bindinput="onField" bindblur="onBlurSave" />
+          <input class="input" style="flex:1;" type="number" maxlength="11" value="{{person.emergency.phone}}" placeholder="电话" data-key="ephone" bindinput="onField" bindblur="onBlurSave" />
+        </view>
       </view>
-      <view class="field">
-        <text class="field-label">紧急联系电话</text>
-        <input class="input" type="number" maxlength="11" value="{{person.emergency.phone}}" placeholder="11 位手机号" data-key="ephone" bindinput="onField" bindblur="onBlurSave" />
+      <view class="cluster" style="justify-content:space-between;min-height:32px;" hover-class="button-hover" bindtap="toggleMedical">
+        <text class="field-label">健康与用药备注（可选）</text>
+        <view class="cluster" style="gap:8px;">
+          <text wx:if="{{person.medical}}" class="badge success">已填写</text>
+          <text class="muted">{{medicalOpen ? '▾' : '›'}}</text>
+        </view>
       </view>
-      <view class="field">
-        <text class="field-label">健康与用药备注</text>
-        <textarea class="textarea slim" value="{{person.medical}}" maxlength="2000" placeholder="可选，仅用于本次活动的必要安全协作" data-key="medical" bindinput="onField" bindblur="onBlurSave" />
-      </view>
+      <textarea
+        wx:if="{{medicalOpen}}"
+        class="textarea slim"
+        value="{{person.medical}}"
+        maxlength="2000"
+        placeholder="过敏、慢性病、常用药等，仅用于本次活动的必要安全协作"
+        data-key="medical"
+        bindinput="onField"
+        bindblur="onBlurSave"
+      />
       <text class="small muted">{{saving ? '正在保存…' : '以上内容修改后自动保存'}}</text>
     </view>
 

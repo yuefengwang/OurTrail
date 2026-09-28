@@ -20,6 +20,7 @@ Page({
     error: '',
     hint: '',
     saving: false,
+    medicalOpen: false,
   },
 
   onShow() {
@@ -96,6 +97,9 @@ Page({
   },
   onBlurSave() {
     this.persistPerson()
+  },
+  toggleMedical() {
+    this.setData({ medicalOpen: !this.data.medicalOpen })
   },
 
   // ---- 微信资料同步：获取即覆盖对应字段，随后自动保存 ----

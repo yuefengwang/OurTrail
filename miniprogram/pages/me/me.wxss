@@ -52,11 +52,12 @@
   font-size: 15px;
 }
 .nick-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.nick-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+/* 无下划线大字：身份行读作"个人资料"而非输入框（可编辑性由下方小字提示） */
 .nick-input {
   min-height: 40px;
   padding: 0;
   border: none;
-  border-bottom: 1px solid var(--line, #DEE3DB);
   border-radius: 0;
   background: transparent;
   font-size: 17px;
@@ -64,26 +65,20 @@
   line-height: 40px;
 }
 
-/* 手机号行 */
-.phone-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.phone-value { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.phone-text { font-size: 17px; font-weight: 600; color: var(--ink, #202A26); }
-.phone-text.empty { color: var(--muted, #5F6E66); font-weight: 400; }
+/* 手机号行：手填为主，一键获取降级为文字捷径（个人主体无「快速验证」权限） */
+.field-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .phone-btn {
   flex: 0 0 auto;
-  min-height: 40px;
-  padding: 8px 16px;
-  border-radius: var(--radius-button, 8px);
-  background: var(--forest, #163E35);
-  color: #FFFFFF;
+  min-height: 0;
+  padding: 4px 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--forest, #163E35);
   font-size: 13px;
   font-weight: 600;
-  line-height: 22px;
+  line-height: 20px;
+  text-align: right;
 }
 button.phone-btn { font-family: inherit; }
 .phone-btn::after { border: none; }
