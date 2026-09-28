@@ -1,3 +1,4 @@
+<wxs src="../../wxs/text.wxs" module="text" />
 <view class="page">
   <status-panel wx:if="{{denied}}" kind="denied" title="无法编辑此活动" detail="{{denied}}" />
   <block wx:elif="{{loading}}">
@@ -37,7 +38,7 @@
 
       <view class="card stack-gap3">
         <text class="card-label">活动时间</text>
-        <text class="small muted">均为北京时间；发布前需要全部填好，现在可以先跳过。</text>
+        <text class="small muted">均为北京时间。先定出发时间，结束与截止会按常见情况自动预填，点开可改或用快捷估算。</text>
 
         <view class="stack-gap3">
           <view class="cluster" style="justify-content:space-between;" hover-class="button-hover" data-key="dt_start" bindtap="toggleTime">
@@ -69,17 +70,29 @@
               <text class="muted">›</text>
             </view>
           </view>
-          <view wx:if="{{expandedTimes.dt_end}}" class="cluster" style="flex-wrap:nowrap;">
-            <picker mode="date" value="{{form.dt_end.date}}" data-key="dt_end" bindchange="onDate" style="flex:1;">
-              <view class="picker {{form.dt_end.date ? '' : 'placeholder'}}">
-                <text class="picker-value">{{form.dt_end.date || '选择日期'}}</text>
+          <view wx:if="{{expandedTimes.dt_end}}" class="stack-gap3">
+            <block wx:if="{{form.dt_start.date && form.dt_start.time}}">
+              <view class="cluster">
+                <view class="chip" hover-class="button-hover" data-kind="same" bindtap="onQuickEnd">当天往返</view>
+                <view class="chip" hover-class="button-hover" data-kind="2" bindtap="onQuickEnd">2 天</view>
+                <view class="chip" hover-class="button-hover" data-kind="3" bindtap="onQuickEnd">3 天</view>
+                <view class="chip" hover-class="button-hover" data-kind="5" bindtap="onQuickEnd">5 天</view>
               </view>
-            </picker>
-            <picker mode="time" value="{{form.dt_end.time}}" data-key="dt_end" bindchange="onTime" style="flex:1;">
-              <view class="picker {{form.dt_end.time ? '' : 'placeholder'}}">
-                <text class="picker-value">{{form.dt_end.time || '选择时间'}}</text>
-              </view>
-            </picker>
+              <text class="small muted">按出发时刻估算，选完可再微调。</text>
+            </block>
+            <text wx:else class="small muted">先填好上方出发时间，这里可以一键估算。</text>
+            <view class="cluster" style="flex-wrap:nowrap;">
+              <picker mode="date" value="{{form.dt_end.date}}" data-key="dt_end" bindchange="onDate" style="flex:1;">
+                <view class="picker {{form.dt_end.date ? '' : 'placeholder'}}">
+                  <text class="picker-value">{{form.dt_end.date || '选择日期'}}</text>
+                </view>
+              </picker>
+              <picker mode="time" value="{{form.dt_end.time}}" data-key="dt_end" bindchange="onTime" style="flex:1;">
+                <view class="picker {{form.dt_end.time ? '' : 'placeholder'}}">
+                  <text class="picker-value">{{form.dt_end.time || '选择时间'}}</text>
+                </view>
+              </picker>
+            </view>
           </view>
         </view>
 
@@ -91,17 +104,28 @@
               <text class="muted">›</text>
             </view>
           </view>
-          <view wx:if="{{expandedTimes.dt_deadline}}" class="cluster" style="flex-wrap:nowrap;">
-            <picker mode="date" value="{{form.dt_deadline.date}}" data-key="dt_deadline" bindchange="onDate" style="flex:1;">
-              <view class="picker {{form.dt_deadline.date ? '' : 'placeholder'}}">
-                <text class="picker-value">{{form.dt_deadline.date || '选择日期'}}</text>
+          <view wx:if="{{expandedTimes.dt_deadline}}" class="stack-gap3">
+            <block wx:if="{{form.dt_start.date && form.dt_start.time}}">
+              <view class="cluster">
+                <view class="chip" hover-class="button-hover" data-days="1" bindtap="onQuickDeadline">出发前 1 天</view>
+                <view class="chip" hover-class="button-hover" data-days="2" bindtap="onQuickDeadline">前 2 天</view>
+                <view class="chip" hover-class="button-hover" data-days="3" bindtap="onQuickDeadline">前 3 天</view>
               </view>
-            </picker>
-            <picker mode="time" value="{{form.dt_deadline.time}}" data-key="dt_deadline" bindchange="onTime" style="flex:1;">
-              <view class="picker {{form.dt_deadline.time ? '' : 'placeholder'}}">
-                <text class="picker-value">{{form.dt_deadline.time || '选择时间'}}</text>
-              </view>
-            </picker>
+              <text class="small muted">按出发时刻倒推，选完可再微调。</text>
+            </block>
+            <text wx:else class="small muted">先填好上方出发时间，这里可以一键倒推。</text>
+            <view class="cluster" style="flex-wrap:nowrap;">
+              <picker mode="date" value="{{form.dt_deadline.date}}" data-key="dt_deadline" bindchange="onDate" style="flex:1;">
+                <view class="picker {{form.dt_deadline.date ? '' : 'placeholder'}}">
+                  <text class="picker-value">{{form.dt_deadline.date || '选择日期'}}</text>
+                </view>
+              </picker>
+              <picker mode="time" value="{{form.dt_deadline.time}}" data-key="dt_deadline" bindchange="onTime" style="flex:1;">
+                <view class="picker {{form.dt_deadline.time ? '' : 'placeholder'}}">
+                  <text class="picker-value">{{form.dt_deadline.time || '选择时间'}}</text>
+                </view>
+              </picker>
+            </view>
           </view>
         </view>
       </view>
@@ -215,29 +239,26 @@
       <text class="section-title">集合与上车点</text>
       <text class="small muted">需要统一集合的才填这里；大家自行前往的可以不加。</text>
       <block wx:for="{{form.pickups}}" wx:key="id">
-        <view
-          wx:if="{{!expandedPickups[item.id]}}"
-          class="card"
-          style="padding:12px 16px;"
-          hover-class="button-hover"
-          data-id="{{item.id}}"
-          bindtap="togglePickup"
-        >
-          <view class="cluster" style="justify-content:space-between;">
+        <!-- 阅读态：名称/地址/集合时间/定位一屏可读 -->
+        <view wx:if="{{!editingPickups[item.id]}}" class="card" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickup">
+          <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
             <view class="cluster" style="gap:8px;min-width:0;">
               <text class="badge neutral tabular">{{index + 1}}</text>
               <text style="font-weight:600;">{{item.name || '上车点 ' + (index + 1)}}</text>
             </view>
-            <view class="cluster" style="gap:8px;flex:0 0 auto;">
-              <text class="small muted tabular">{{item.meeting.date || '待定'}} {{item.meeting.time}}</text>
-              <text class="muted">›</text>
-            </view>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" catchtap="togglePickup">编辑</view>
+          </view>
+          <text wx:if="{{item.address}}" style="display:block;margin-top:6px;">{{item.address}}</text>
+          <view class="cluster" style="gap:8px;margin-top:6px;">
+            <text class="small tabular">{{item.meeting.date || '待定'}} {{item.meeting.time}}</text>
+            <text wx:if="{{item.lat}}" class="small muted">· 已定位</text>
           </view>
         </view>
+        <!-- 编辑态 -->
         <view wx:else class="card stack-gap3">
           <view class="cluster" style="justify-content:space-between;">
             <text class="card-label">上车点 {{index + 1}}</text>
-            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickup">收起</view>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickup">完成</view>
           </view>
           <form-field label="上车点名称">
             <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onPickup" />
@@ -245,11 +266,23 @@
           <form-field label="详细集合位置" hint="写清楚从哪儿进、认什么标志物">
             <input class="input" value="{{item.address}}" data-index="{{index}}" data-key="address" bindinput="onPickup" />
           </form-field>
-          <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="choosePickupLocation">
+          <view class="button secondary block" hover-class="button-hover" data-index="{{index}}" bindtap="choosePickupLocation">
             <icon name="pin" size="16" color="#163E35" />
             <text>在地图上选点{{item.lat ? '（已设置）' : ''}}</text>
           </view>
-          <form-field label="集合时间（北京时间）">
+          <view class="stack-gap3">
+            <view class="cluster" style="justify-content:space-between;">
+              <text class="field-label">集合时间</text>
+              <text class="small tabular">{{item.meeting.date || '待定'}} {{item.meeting.time}}</text>
+            </view>
+            <block wx:if="{{form.dt_start.date && form.dt_start.time}}">
+              <view class="cluster">
+                <view class="chip" hover-class="button-hover" data-index="{{index}}" data-offset="0" bindtap="onPickupQuickTime">与出发同时</view>
+                <view class="chip" hover-class="button-hover" data-index="{{index}}" data-offset="-30" bindtap="onPickupQuickTime">提前 30 分</view>
+                <view class="chip" hover-class="button-hover" data-index="{{index}}" data-offset="-60" bindtap="onPickupQuickTime">提前 1 小时</view>
+              </view>
+            </block>
+            <text wx:else class="small muted">填好步骤 1 的出发时间后，这里可一键估算；日期默认出发日。</text>
             <view class="cluster" style="flex-wrap:nowrap;">
               <picker mode="date" value="{{item.meeting.date}}" data-index="{{index}}" bindchange="onPickupDate" style="flex:1;">
                 <view class="picker {{item.meeting.date ? '' : 'placeholder'}}">
@@ -262,7 +295,7 @@
                 </view>
               </picker>
             </view>
-          </form-field>
+          </view>
           <view class="cluster" style="justify-content:space-between;">
             <text class="field-label">坐标（可选）</text>
             <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickupCoords">{{showPickupCoords[item.id] ? '收起手动输入' : '手动输入'}}</view>
@@ -321,38 +354,32 @@
       <view class="cluster" style="justify-content:space-between;">
         <text class="section-title">风险提示</text>
       </view>
-      <text class="small muted">发布必须至少一条。写清楚最可能出的问题和应对方式即可。</text>
+      <text class="small muted">发布必须至少一条。逐条确认问题与应对，点「编辑」可修改。</text>
 
       <block wx:for="{{form.risks}}" wx:key="id">
-        <view
-          wx:if="{{!expandedRisks[item.id]}}"
-          class="card"
-          style="padding:12px 16px;"
-          hover-class="button-hover"
-          data-id="{{item.id}}"
-          bindtap="toggleRisk"
-        >
-          <view class="cluster" style="justify-content:space-between;">
+        <!-- 阅读态：风险是安全信息，标题与应对直接平铺，不藏进折叠 -->
+        <view wx:if="{{!editingRisks[item.id]}}" class="card" hover-class="button-hover" data-id="{{item.id}}" bindtap="toggleRisk">
+          <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
             <view class="cluster" style="gap:8px;min-width:0;">
               <text class="badge warning tabular">{{index + 1}}</text>
               <text style="font-weight:600;">{{item.title || '风险 ' + (index + 1)}}</text>
             </view>
-            <view class="cluster" style="gap:8px;flex:0 0 auto;">
-              <text wx:if="{{item.advice}}" class="badge neutral">有应对</text>
-              <text class="muted">›</text>
-            </view>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" catchtap="toggleRisk">编辑</view>
           </view>
+          <text wx:if="{{item.advice}}" style="display:block;margin-top:8px;line-height:1.6;">{{item.advice}}</text>
+          <text wx:else class="small muted" style="display:block;margin-top:8px;">还没写应对方式，点「编辑」补充。</text>
         </view>
+        <!-- 编辑态：按需展开，改完「完成」回到阅读态 -->
         <view wx:else class="card stack-gap3">
           <view class="cluster" style="justify-content:space-between;">
             <text class="card-label">风险 {{index + 1}}</text>
-            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="toggleRisk">收起</view>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="toggleRisk">完成</view>
           </view>
-          <form-field label="风险提示">
-            <input class="input" value="{{item.title}}" data-index="{{index}}" data-key="title" bindinput="onRisk" />
+          <form-field label="可能出的问题">
+            <input class="input" value="{{item.title}}" data-index="{{index}}" data-key="title" bindinput="onRisk" placeholder="如：垭口风大气温骤降、碎石坡湿滑" />
           </form-field>
-          <form-field label="应对建议">
-            <textarea class="textarea slim" value="{{item.advice}}" data-index="{{index}}" data-key="advice" bindinput="onRisk" />
+          <form-field label="应对方式">
+            <textarea class="textarea slim" value="{{item.advice}}" data-index="{{index}}" data-key="advice" bindinput="onRisk" placeholder="如：查好天气窗再出发，全员备防风衣物，控制队伍间距" />
           </form-field>
           <view class="button text" hover-class="button-hover" data-index="{{index}}" catchtap="removeRisk">移除此风险</view>
         </view>
@@ -364,12 +391,35 @@
           <text style="font-weight:600;">装备与费用说明（可选）</text>
           <view class="cluster" style="gap:8px;">
             <text wx:if="{{form.equipmentText || form.feeNote || form.cancellationNote}}" class="badge success">已填写</text>
-            <text class="muted">{{expandedExtras ? '▾' : '›'}}</text>
+            <text style="color:var(--forest);font-weight:600;">{{editingExtras ? '完成' : '编辑'}}</text>
           </view>
         </view>
-        <block wx:if="{{expandedExtras}}">
+
+        <!-- 阅读态：装备转徽标平铺、费用/取消为段落（textarea 读长清单会被截断） -->
+        <block wx:if="{{!editingExtras}}">
+          <block wx:if="{{form.equipmentText || form.feeNote || form.cancellationNote}}">
+            <block wx:if="{{form.equipmentText}}">
+              <text class="field-label">装备清单</text>
+              <view class="cluster" style="margin-top:8px;">
+                <text wx:for="{{text.lines(form.equipmentText)}}" wx:key="*this" class="badge neutral">{{item}}</text>
+              </view>
+            </block>
+            <block wx:if="{{form.feeNote}}">
+              <text class="field-label" style="display:block;margin-top:12px;">费用说明</text>
+              <text style="display:block;margin-top:4px;line-height:1.6;">{{form.feeNote}}</text>
+            </block>
+            <block wx:if="{{form.cancellationNote}}">
+              <text class="field-label" style="display:block;margin-top:12px;">取消与退出约定</text>
+              <text style="display:block;margin-top:4px;line-height:1.6;">{{form.cancellationNote}}</text>
+            </block>
+          </block>
+          <text wx:else class="small muted">装备、费用与取消约定都不填也可以发布；点「编辑」补充。</text>
+        </block>
+
+        <!-- 编辑态 -->
+        <block wx:else>
           <form-field label="装备清单" hint="每行一项">
-            <textarea class="textarea slim" value="{{form.equipmentText}}" data-key="equipmentText" bindinput="onField" />
+            <textarea class="textarea slim" value="{{form.equipmentText}}" data-key="equipmentText" bindinput="onField" placeholder="如：防滑徒步鞋&#10;头灯&#10;雨具" />
           </form-field>
           <form-field label="费用说明" hint="仅说明费用，线下结算；不收款。">
             <textarea class="textarea slim" value="{{form.feeNote}}" data-key="feeNote" bindinput="onField" />
@@ -391,20 +441,29 @@
         <icon name="arrow" size="18" color="#FFFFFF" />
       </view>
     </view>
+    <view wx:if="{{step === 2 && phase === 'draft'}}" class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPublishIntent'}}">发布活动</view>
     <view class="form-actions">
       <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSave'}}">{{phase === 'draft' ? '保存草稿' : '保存修改'}}</view>
       <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSavePreview'}}">保存并预览</view>
     </view>
-    <view wx:if="{{savedId && phase === 'draft' && canPublish}}" class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPublishOpen'}}">发布已保存的活动</view>
+    <view wx:if="{{phase === 'draft'}}" class="button danger block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onDeleteDraftOpen'}}">删除草稿</view>
     <text wx:if="{{draftSavedAt}}" class="small muted" style="text-align:center;">草稿已自动保存 · {{draftSavedAt}}</text>
   </view>
 
+  <overlay open="{{deleteDraftOpen}}" kind="dialog" title="删除这份草稿？" bind:close="onDeleteDraftClose">
+    <view class="stack">
+      <text>删除后不可恢复：路线节点、风险与装备预填都会丢失。已保存的私有路线会保留在你的账号下。{{savedId ? '' : '此草稿还未保存到服务器，删除只清除本机草稿。'}}</text>
+      <view class="button text" hover-class="button-hover" bindtap="onDeleteDraftClose">再想想</view>
+      <view class="button danger block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onDeleteDraftConfirm'}}">确认删除</view>
+    </view>
+  </overlay>
+
   <overlay open="{{publishOpen}}" kind="dialog" title="准备好发布了吗？" bind:close="onPublishClose">
     <view class="stack">
-      <text>发布当前已保存的活动。报名、同行人和车辆不会自动创建。</text>
+      <text>发布后参与者即可报名。报名、同行人和车辆数据不会自动创建。</text>
       <label class="check-label">
         <checkbox color="#163E35" checked="{{participate}}" bindchange="onParticipate" />
-        <text class="check-text">我本人也参加本次活动（可选）</text>
+        <text class="check-text">我本人也参加（发布后自动为我报名）</text>
       </label>
       <block wx:if="{{participate}}">
         <text class="small muted">发布后以你的常用资料报名。请先在「我的」检查本人及紧急联络信息。</text>
@@ -429,7 +488,7 @@
       </block>
       <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
       <view class="button primary block {{busy || (participate && !dataUse) ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || (participate && !dataUse) ? '' : 'publish'}}">
-        {{participate ? '确认发布并为本人报名' : '只发布活动，不为本人报名'}}
+        确认发布
       </view>
     </view>
   </overlay>
@@ -450,6 +509,7 @@
               <text class="list-sub">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中节点'}} · {{item.coordinates.lat}}, {{item.coordinates.lng}}</text>
             </view>
           </view>
+          <text wx:if="{{gpxSuggest}}" class="small muted">另外会按轨迹特征预填 {{gpxSuggest.risks.length}} 条风险提示{{gpxSuggest.equipment.length ? '与 ' + gpxSuggest.equipment.length + ' 项装备' : ''}}（步骤 3 可修改，已有内容不覆盖）。</text>
         </view>
         <view class="button primary block" hover-class="button-hover" bindtap="onGpxApply">应用到路线</view>
       </block>

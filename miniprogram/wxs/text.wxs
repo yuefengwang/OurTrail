@@ -1,0 +1,16 @@
+// 文本工具（WXS，WXML 内联调用）：多行文本拆为非空行数组，装备清单阅读态用。
+// 注意 WXS 正则须用 getRegExp（不支持字面量语法）。
+var TRIM_RE = getRegExp('^\\s+|\\s+$', 'g')
+
+module.exports = {
+  lines: function (s) {
+    if (!s) return []
+    var parts = s.split('\n')
+    var out = []
+    for (var i = 0; i < parts.length; i++) {
+      var t = parts[i].replace(TRIM_RE, '')
+      if (t) out.push(t)
+    }
+    return out
+  },
+}
