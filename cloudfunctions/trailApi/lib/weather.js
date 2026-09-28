@@ -7,7 +7,7 @@ const https = require('https')
 
 const HOURLY = [
   'temperature_2m', 'apparent_temperature', 'precipitation_probability', 'precipitation', 'showers',
-  'weather_code', 'wind_speed_10m', 'wind_gusts_10m',
+  'weather_code', 'wind_speed_10m', 'wind_gusts_10m', 'relative_humidity_2m',
   'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high',
   'uv_index', 'visibility', 'freezing_level_height',
 ]
@@ -190,6 +190,8 @@ function hourView(times, h, i) {
     code: (h.weather_code || [])[i],
     wind: (h.wind_speed_10m || [])[i],
     gust: (h.wind_gusts_10m || [])[i],
+    // 相对湿度：彩虹/雾/露的水分信号（降水为 0 时高湿仍可能有雾或虹）
+    rh: (h.relative_humidity_2m || [])[i],
     cloud: {
       low: (h.cloud_cover_low || [])[i],
       mid: (h.cloud_cover_mid || [])[i],
