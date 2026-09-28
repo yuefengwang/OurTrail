@@ -146,6 +146,12 @@ Page({
     this.setData({ date })
   },
 
+  // 已有返回体是否覆盖该日期。series 自带 7 天逐时，所以在窗口内切日/切节点不必再外呼。
+  covers(result, date, pointId) {
+    if (!result || result.pointId !== pointId) return false
+    return (result.series || []).some(h => h.d === date) && (result.days || []).some(d => d.date === date)
+  },
+
   fetchWeather() {
     const points = this.view.activity.routeSnapshot.points
     const point = points[this.data.pointIndex]
@@ -156,6 +162,12 @@ Page({
       conclusions: [], skyMoon: null,
     }
     this.setData(reset)
+    // 窗口内复用：切日、切节点都不重新查询（30 分钟缓存内本来就零成本，这里连等待都没有）
+    const cached = this._lastResult
+    if (this.covers(cached, this.data.date, point.id)) {
+      this.applyWeather(Object.assign({}, cached), point, reset)
+      return
+    }
     api.getWeather(this.activityId, point.id, this.data.date).then(result => {
       if (result.status !== 'ready') {
         this.setData(Object.assign({}, reset, {
@@ -167,43 +179,51 @@ Page({
         }))
         return
       }
-      const detail = result.detail || []
-      const day = (result.days || []).find(x => x.date === this.data.date) || {}
-      // 海拔优先用 GPX 节点高程（真实值），缺失时退回模型降尺度值并说明来源
-      const elevOK = Number.isFinite(point.ele)
-      const elevation = elevOK ? point.ele : result.pointElevation
-      const skyCtx = {
-        date: this.data.date,
-        lat: point.coordinates.lat,
-        lng: point.coordinates.lng,
-        elevation,
-        elevOK,
-        detail,
-        days: result.days || [],
-        heading: this.headingAt(this.data.pointIndex),
-      }
-      const skyOut = sky.summarize(skyCtx)
-      this.setData(Object.assign({}, reset, {
-        loadingWeather: false,
-        emptyTitle: '',
-        emptyDetail: '',
-        updatedAt: F.dtFull(result.updatedAt),
-        dayCards: this.buildDayCards(result.days || [], point.coordinates),
-        slots: this.buildSlots(detail),
-        callouts: buildCallouts(day, detail, elevation),
-        metrics: this.buildMetricsCard(detail, day, elevation, skyOut),
-        detailRows: this.buildDetailRows(detail),
-        elevSource: elevOK ? 'GPX 记录' : '模型降尺度（±300-600 m）',
-        conclusions: skyOut ? skyOut.items : [],
-        skyMoon: skyOut ? skyOut.moon : null,
-        chartSeries: this.buildChartSeries(result.series || [], this.data.date),
-        chartMarks: this.buildChartMarks(result.series || [], point.coordinates, elevation, elevOK, result.days || []),
-        chartNight: this.buildNightMap(result.series || [], point.coordinates, elevation),
-        chartSelected: { [this.data.date]: true },
-      }))
+      this._lastResult = Object.assign({ pointId: point.id }, result)
+      this.applyWeather(result, point, reset)
     }).catch(e => this.setData(Object.assign({}, reset, {
       loadingWeather: false, emptyTitle: '天气暂不可用', emptyDetail: api.errorText(e),
     })))
+  },
+
+  // 把返回体装配成页面数据。detail 在此从 series 里按所选日切出（云端也返回 detail，
+  // 但窗口内切日时我们用的是本地缓存，统一在这里切，保证两条路径口径一致）。
+  applyWeather(result, point, reset) {
+    const series = result.series || []
+    const detail = series.filter(h => h.d === this.data.date)
+    const day = (result.days || []).find(x => x.date === this.data.date) || {}
+    // 海拔优先用 GPX 节点高程（真实值），缺失时退回模型降尺度值并说明来源
+    const elevOK = Number.isFinite(point.ele)
+    const elevation = elevOK ? point.ele : result.pointElevation
+    const skyCtx = {
+      date: this.data.date,
+      lat: point.coordinates.lat,
+      lng: point.coordinates.lng,
+      elevation,
+      elevOK,
+      detail,
+      days: result.days || [],
+      heading: this.headingAt(this.data.pointIndex),
+    }
+    const skyOut = sky.summarize(skyCtx)
+    this.setData(Object.assign({}, reset, {
+      loadingWeather: false,
+      emptyTitle: '',
+      emptyDetail: '',
+      updatedAt: F.dtFull(result.updatedAt),
+      dayCards: this.buildDayCards(result.days || [], point.coordinates),
+      slots: this.buildSlots(detail),
+      callouts: buildCallouts(day, detail, elevation),
+      metrics: this.buildMetricsCard(detail, day, elevation, skyOut),
+      detailRows: this.buildDetailRows(detail),
+      elevSource: elevOK ? 'GPX 记录' : '模型降尺度（±300-600 m）',
+      conclusions: skyOut ? skyOut.items : [],
+      skyMoon: skyOut ? skyOut.moon : null,
+      chartSeries: this.buildChartSeries(series, this.data.date),
+      chartMarks: this.buildChartMarks(series, point.coordinates, elevation, elevOK, result.days || []),
+      chartNight: this.buildNightMap(series, point.coordinates, elevation),
+      chartSelected: { [this.data.date]: true },
+    }))
   },
 
   // 节点的前进/山脊走向（用前后节点连线求方位角），供日照金山"往哪看"粗判
@@ -343,6 +363,7 @@ Page({
 
   // 切换节点：若该节点能推算抵达日，日期自动跟到那一天（除非用户手动选过）
   onPoint(e) {
+    this._lastResult = null // 换了节点，缓存的返回体不再适用
     this.setData({ pointIndex: Number(e.detail.value) }, () => {
       this.userPickedDate = false
       this.syncDateToNode()

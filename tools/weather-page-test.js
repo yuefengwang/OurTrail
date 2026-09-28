@@ -201,5 +201,32 @@ section('5. 节点日程 → 天气日期的衔接')
   })())
 }
 
+section('6. 窗口内复用：切日/切节点不外呼')
+{
+  // 镜像页面 covers() 的判定：series 自带 7 天，窗口内的日期不必再查
+  const covers = (result, date, pointId) => {
+    if (!result || result.pointId !== pointId) return false
+    return (result.series || []).some(x => x.d === date) && (result.days || []).some(d => d.date === date)
+  }
+  const { times, h } = fakeHourly(4)
+  const series = times.map((_, i) => hourView(times, h, i))
+  const days = []
+  for (let d = 0; d < 4; d++) days.push({ date: DATE, cloud: { low: 10, mid: 20, high: 20 } })
+  // 构造 4 天不同的日期
+  const dlist = []
+  for (let d = 0; d < 4; d++) dlist.push(Date.parse(DATE + 'T00:00:00Z') + d * 86400000)
+  const s2 = series.map((x, i) => ({ ...x, d: new Date(dlist[Math.floor(i / 24)]).toISOString().slice(0, 10) }))
+  const dl = dlist.map(ms => ({ date: new Date(ms).toISOString().slice(0, 10) }))
+  const cached = { pointId: 'p1', series: s2, days: dl, detail: [], updatedAt: DATE + 'T10:00:00+08:00' }
+  const d0 = dl[0].date
+  const d1 = dl[1].date
+  check('缓存覆盖窗口内第 1 天', covers(cached, d0, 'p1'))
+  check('缓存覆盖窗口内第 2 天（切日零外呼）', covers(cached, d1, 'p1'))
+  check('窗口外不覆盖（需外呼）', covers(cached, '2026-10-20', 'p1') === false)
+  check('换节点后不覆盖（pointId 不匹配）', covers(cached, d0, 'p2') === false)
+  check('切日后能从 series 本地切出 detail（' + s2.filter(x => x.d === d1).length + ' 小时）',
+    s2.filter(x => x.d === d1).length === 24)
+}
+
 console.log('\npassed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)
