@@ -81,6 +81,10 @@ Component({
       this._ready = true
       this.scheduleDraw()
     },
+    detached: function () {
+      clearTimeout(this._sync1)
+      clearTimeout(this._sync2)
+    },
   },
 
   methods: {
@@ -97,9 +101,27 @@ Component({
       const w = Math.max(280, PAD_L + n * this.hw + PAD_R)
       if (w !== this.data.chartW) {
         this.setData({ chartW: w, chartH: CHART_H }, () => this.initCanvas())
-        return
+      } else {
+        this.initCanvas()
       }
-      this.initCanvas()
+      this.scheduleSync()
+    },
+
+    // 同层 canvas（type="2d"）的图层位置是在 initCanvas 那一刻量下来的，
+    // 之后页面再发生重排它不会自己跟过去——天气页里"上面多了一个标题按钮"、
+    // 7 日卡异步渲染都会把 canvas 整体往下推，图层却留在旧位置，
+    // 结果就是图盖在正文上（横向对、纵向错）。
+    // 布局落定后再量一次尺寸、重设 node.width/height 触发图层重新对齐，再重绘。
+    // 补两遍：页面里 7 日卡这类异步内容有时一帧后才把高度撑开。
+    scheduleSync() {
+      clearTimeout(this._sync1)
+      clearTimeout(this._sync2)
+      const again = () => {
+        if (!this._ready || !this.data.series.length) return
+        this.initCanvas()
+      }
+      this._sync1 = setTimeout(again, 100)
+      this._sync2 = setTimeout(again, 320)
     },
 
     // 只列图上真出现过的天相窗口；一个都没有时把提示换成说明，避免留一行空图例
@@ -121,6 +143,8 @@ Component({
       wx.createSelectorQuery().in(this).select('#meteo').fields({ node: true, size: true }).exec(res => {
         const info = res && res[0]
         if (!info || !info.node) return
+        // 还没排版完成时量到 0：这一帧不画，等 scheduleSync 的补测
+        if (!info.width || !info.height) return
         this.canvas = info.node
         this.ctx = info.node.getContext('2d')
         const dpr = (wx.getSystemInfoSync() || {}).pixelRatio || 2
