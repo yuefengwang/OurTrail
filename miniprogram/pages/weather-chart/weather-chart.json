@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "全图展示",
+  "pageOrientation": "landscape",
+  "usingComponents": {
+    "status-panel": "/components/status-panel/status-panel",
+    "meteogram": "/components/meteogram/meteogram"
+  }
+}

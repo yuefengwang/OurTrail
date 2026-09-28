@@ -11,6 +11,7 @@
     "pages/staff/staff",
     "pages/vehicle/vehicle",
     "pages/weather/weather",
+  "pages/weather-chart/weather-chart",
     "pages/anotices/anotices",
     "pages/privacy/privacy"
   ],

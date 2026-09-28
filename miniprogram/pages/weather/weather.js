@@ -7,6 +7,7 @@
 'use strict'
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
+const chartStore = require('../../utils/chart-store')
 const F = require('../../utils/format')
 const A = require('../../utils/astro')
 const sky = require('../../utils/sky')
@@ -224,6 +225,15 @@ Page({
       heading: this.headingAt(this.data.pointIndex),
     }
     const skyOut = sky.summarize(skyCtx)
+    const chartSeries = this.buildChartSeries(series, this.data.date)
+    const chartMarks = this.buildChartMarks(series, point.coordinates, elevation, elevOK, result.days || [])
+    const chartNight = this.buildNightMap(series, point.coordinates, elevation)
+    const chartSelected = { [this.data.date]: true }
+    // 交给「全图展示」横屏页：那一页在页面栈上方，直接读内存即可，不必把 168 小时序列塞 URL
+    chartStore.set({
+      series: chartSeries, marks: chartMarks, night: chartNight, selected: chartSelected,
+      pointName: point.name, date: this.data.date,
+    })
     this.setData(Object.assign({}, reset, {
       loadingWeather: false,
       emptyTitle: '',
@@ -237,10 +247,10 @@ Page({
       elevSource: elevOK ? 'GPX 记录' : '模型降尺度（±300-600 m）',
       conclusions: skyOut ? skyOut.items : [],
       skyMoon: skyOut ? skyOut.moon : null,
-      chartSeries: this.buildChartSeries(series, this.data.date),
-      chartMarks: this.buildChartMarks(series, point.coordinates, elevation, elevOK, result.days || []),
-      chartNight: this.buildNightMap(series, point.coordinates, elevation),
-      chartSelected: { [this.data.date]: true },
+      chartSeries,
+      chartMarks,
+      chartNight,
+      chartSelected,
     }))
   },
 
@@ -428,6 +438,15 @@ Page({
 
   toggleDetail() {
     this.setData({ showDetail: !this.data.showDetail })
+  },
+
+  // 全图展示：横屏整屏看。canvas 是原生组件压不出屏幕，只有更宽的视口能让 7 天一屏看完。
+  onFullscreen() {
+    if (!this.data.chartSeries.length) {
+      wx.showToast({ title: '图表还没有数据，先等预报加载完。', icon: 'none' })
+      return
+    }
+    wx.navigateTo({ url: '/pages/weather-chart/weather-chart' })
   },
 
   // 生成天气提醒草稿：带上节点、抵达日与当天结论要点

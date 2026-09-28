@@ -54,6 +54,11 @@ Component({
     selectedDates: { type: Object, value: {} },
     // 天数（用于日分隔线标签）
     dayCount: { type: Number, value: 7 },
+    // 每小时列宽（px）。22 = 标准；横屏「全图展示」页会按屏宽算出一个更小的值，
+    // 让整段 7 天一屏看完（"全览"），也会用 44 做"放大"。
+    hourWidth: { type: Number, value: HOUR_W },
+    // 图例右侧提示语。横屏页与天气页说的话不一样，所以由外部给。
+    tip: { type: String, value: '' },
   },
 
   data: {
@@ -66,7 +71,7 @@ Component({
   },
 
   observers: {
-    'series, marks, night, selectedDates': function () {
+    'series, marks, night, selectedDates, hourWidth': function () {
       if (this._ready) this.scheduleDraw()
     },
   },
@@ -79,10 +84,17 @@ Component({
   },
 
   methods: {
+    // 列宽收敛到可画区间：太窄画不出分隔，太宽撑破屏
+    hourWidth() {
+      const v = Number(this.data.hourWidth)
+      return Math.max(3, Math.min(72, Number.isFinite(v) && v > 0 ? v : HOUR_W))
+    },
+
     scheduleDraw() {
+      this.hw = this.hourWidth()
       this.refreshLegend()
       const n = this.data.series.length
-      const w = Math.max(280, PAD_L + n * HOUR_W + PAD_R)
+      const w = Math.max(280, PAD_L + n * this.hw + PAD_R)
       if (w !== this.data.chartW) {
         this.setData({ chartW: w, chartH: CHART_H }, () => this.initCanvas())
         return
@@ -98,7 +110,8 @@ Component({
       const legend = LEGEND_KEYS.filter(k => present[k]).map(k => ({
         k, t: MARK_STYLE[k].text, c: MARK_STYLE[k].color,
       }))
-      const legendTip = legend.length ? '横滑看全程 · 点图上某天切换' : '该时段没有可标注的天相窗口'
+      const base = this.data.tip || '横滑看全程 · 点图上某天切换'
+      const legendTip = legend.length ? base : '该时段没有可标注的天相窗口'
       if (JSON.stringify(legend) !== JSON.stringify(this.data.legend) || legendTip !== this.data.legendTip) {
         this.setData({ legend, legendTip })
       }
@@ -126,11 +139,13 @@ Component({
       const series = this.data.series
       const W = this.cssW
       const H = this.cssH
+      // 列宽在 scheduleDraw 里已算好；这里兜一次底（initCanvas 是异步回调）
+      const hw = this.hw = this.hw || this.hourWidth()
       ctx.clearRect(0, 0, W, H)
       if (!series.length) return
 
-      const x = i => PAD_L + i * HOUR_W
-      const cx = i => x(i) + HOUR_W / 2
+      const x = i => PAD_L + i * hw
+      const cx = i => x(i) + hw / 2
 
       // 1) 底色：夜间底 + 所选日高亮带。
       // 只铺到时间轴顶：原来铺满整高，把时间轴也染灰，轴文字底色不统一。
@@ -138,17 +153,17 @@ Component({
       for (let i = 0; i < series.length; i++) {
         const h = series[i]
         ctx.fillStyle = this.data.night[hourKey(h.d, h.t)] ? C.night : C.day
-        ctx.fillRect(x(i), 0, HOUR_W, BODY_H)
+        ctx.fillRect(x(i), 0, hw, BODY_H)
         if (this.data.selectedDates[h.d]) {
           ctx.fillStyle = C.selBand
-          ctx.fillRect(x(i), 0, HOUR_W, BODY_H)
+          ctx.fillRect(x(i), 0, hw, BODY_H)
         }
       }
       // 所选日顶部色条：淡底在夜间灰底上仍不明显，给一条实条做明确锚点
       series.forEach((h, i) => {
         if (!this.data.selectedDates[h.d]) return
         ctx.fillStyle = C.now
-        ctx.fillRect(x(i), 0, HOUR_W, 2)
+        ctx.fillRect(x(i), 0, hw, 2)
       })
       // 2) 日分隔线
       ctx.strokeStyle = C.selEdge
@@ -175,6 +190,7 @@ Component({
 
     // 天相窗口：按泳道分行画，同泳道内才叠放
     drawMarks(ctx, series, x) {
+      const hw = this.hw
       const marks = this.data.marks || {}
       MARK_LANES.forEach((lane, li) => {
         const keys = {}
@@ -191,17 +207,20 @@ Component({
           let s = 0
           for (let j = 0; j < idx.length; j++) {
             const isBreak = j > 0 && idx[j] !== idx[j - 1] + 1
-            if (isBreak) { this.markRect(ctx, x(s), ly, (idx[j - 1] - s + 1) * HOUR_W, st); s = idx[j] }
+            if (isBreak) { this.markRect(ctx, x(s), ly, (idx[j - 1] - s + 1) * hw, st); s = idx[j] }
           }
-          this.markRect(ctx, x(s), ly, (idx[idx.length - 1] - s + 1) * HOUR_W, st)
+          this.markRect(ctx, x(s), ly, (idx[idx.length - 1] - s + 1) * hw, st)
         })
       })
     },
 
     markRect(ctx, px, py, w, st) {
-      const r = Math.min(3, w / 2)
+      // 窄列（全览模式）不留内缩：w=3 时再内缩就画不出东西
+      const inset = w > 6 ? 1 : 0
+      const bw = Math.max(1, w - inset * 2)
+      const r = Math.min(3, bw / 2)
       ctx.fillStyle = st.color
-      this.roundRect(ctx, px + 1, py, Math.max(3, w - 2), MARK_LANE_H, r)
+      this.roundRect(ctx, px + inset, py, bw, MARK_LANE_H, r)
       ctx.fill()
       // 标签按色块亮度选墨色：浅色块（黄金等）上的白字一直看不清
       if (w >= 30) {
@@ -287,8 +306,13 @@ Component({
       ctx.fillText(Math.round(lo) + '°', PAD_L - 4, bot + 3)
     },
 
-    // 降水双柱：precipitation（蓝）+ showers（青），按 pop 定不透明度
+    // 降水双柱：precipitation（蓝）+ showers（青），按 pop 定不透明度。
+    // 全览模式（列宽 <10px）放不下两根柱子并排，合成一根，否则相邻列互相压。
     drawRain(ctx, series, x, cx) {
+      const hw = this.hw
+      const thin = hw < 10
+      const bw = Math.max(1, Math.min(3, Math.floor(hw / 4)))
+      const gap = thin ? 0 : Math.max(2, Math.floor(hw / 6))
       const maxV = Math.max(
         0.1,
         Math.max.apply(null, series.map(h => Math.max(numOr(h.precip, 0), numOr(h.showers, 0))))
@@ -298,17 +322,27 @@ Component({
         const p = numOr(h.precip, 0)
         const s = numOr(h.showers, 0)
         const pop = numOr(h.pop, 0)
+        if (thin) {
+          const v = Math.max(p, s)
+          if (v <= 0) return
+          const bh = Math.max(1, (v / maxV) * (ROW.rain.h - 4))
+          ctx.fillStyle = s > p ? C.showers : C.rain
+          ctx.globalAlpha = 0.45 + 0.55 * (pop / 100)
+          ctx.fillRect(cx(i) - Math.max(1, hw - 1) / 2, bot - bh, Math.max(1, hw - 1), bh)
+          ctx.globalAlpha = 1
+          return
+        }
         if (p > 0) {
           const bh = Math.max(1, (p / maxV) * (ROW.rain.h - 4))
           ctx.fillStyle = C.rain
           ctx.globalAlpha = 0.45 + 0.55 * (pop / 100)
-          ctx.fillRect(cx(i) - 3, bot - bh, 3, bh)
+          ctx.fillRect(cx(i) - gap - bw, bot - bh, bw, bh)
         }
         if (s > 0) {
           const bh = Math.max(1, (s / maxV) * (ROW.rain.h - 4))
           ctx.fillStyle = C.showers
           ctx.globalAlpha = 0.45 + 0.55 * (pop / 100)
-          ctx.fillRect(cx(i) + 1, bot - bh, 3, bh)
+          ctx.fillRect(cx(i) + gap, bot - bh, bw, bh)
         }
         ctx.globalAlpha = 1
       })
@@ -330,6 +364,7 @@ Component({
     // 三层云量：低/中/高三条连续色带（相邻小时必须无缝），透明度随云量；
     // 成层云带（band）用底部实心标记。
     drawCloud(ctx, series, x, cx) {
+      const hw = this.hw
       const y = ROW.cloud.y
       const hEach = 5
       series.forEach((h, i) => {
@@ -342,15 +377,15 @@ Component({
         layers.forEach((L, k) => {
           ctx.fillStyle = L.color
           ctx.globalAlpha = 0.10 + 0.90 * (Math.max(0, Math.min(100, L.v)) / 100)
-          // 按**整列**画（x(i) 起、宽 HOUR_W），相邻小时才接得上。
+          // 按**整列**画（x(i) 起、宽一列），相邻小时才接得上。
           // 原来用 cx(i) 居中 + 宽 8：每列只覆盖 36%，168 列 × 3 层 = 504 个孤立小方块，
           // 看着像图片加载失败而不是云量。
-          ctx.fillRect(x(i), y + k * (hEach + 1), HOUR_W, hEach)
+          ctx.fillRect(x(i), y + k * (hEach + 1), hw, hEach)
         })
         ctx.globalAlpha = 1
         if (h.band && h.band.cover >= 80) {
           ctx.fillStyle = C.cloudLow
-          ctx.fillRect(x(i), y + 3 * (hEach + 1) - 1, HOUR_W, 2)
+          ctx.fillRect(x(i), y + 3 * (hEach + 1) - 1, hw, 2)
         }
       })
       ctx.font = '9px sans-serif'
@@ -361,14 +396,16 @@ Component({
       ctx.textBaseline = 'alphabetic'
     },
 
-    // 天气简字：每 3 小时标一次（WMO code → 简字，与 format.js weatherPhrase 同源）
+    // 天气简字：标准宽度每 3 小时标一次；全览（窄列）时每 3 小时会叠成一团字，
+    // 改成每天正午一词，读作"这天什么天气"。
     drawCode(ctx, series, cx) {
+      const noonOnly = this.hw < 10
       ctx.font = '9px sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       let last = ''
       series.forEach((h, i) => {
-        if (i % 3 !== 0) return
+        if (noonOnly ? h.t !== '12' : i % 3 !== 0) return
         const label = PHRASE(numOr(h.code, 0))
         if (label === last) return
         last = label
@@ -377,8 +414,11 @@ Component({
       })
     },
 
-    // 时间轴：上行日期（周几 M/D），下行每 6 小时刻度，两行分开写
+    // 时间轴：上行日期（周几 M/D），下行小时刻度，两行分开写。
+    // 小时密度随列宽走：窄列时 6 小时一个标签也会叠，干脆只留日期行。
     drawAxis(ctx, series, x, cx) {
+      const hw = this.hw
+      const hourStep = hw < 8 ? 0 : (hw >= 40 ? 3 : 6)
       const y = ROW.axis.y
       const baseY = y + ROW.axis.h
       // 底部基准线：给整张图一条明确的地板，也把图与下方图例分开
@@ -403,7 +443,7 @@ Component({
           ctx.fillText(wd + ' ' + Number(md[0]) + '/' + Number(md[1]), x(i) + 3, y + AXIS_DAY_DY)
         }
         // 小时行
-        if (Number(h.t.slice(0, 2)) % 6 === 0) {
+        if (hourStep && Number(h.t.slice(0, 2)) % hourStep === 0) {
           ctx.font = '9px sans-serif'
           ctx.fillStyle = C.axisText
           ctx.textAlign = 'left'
@@ -415,10 +455,11 @@ Component({
 
     // 点击定位到某小时 → 通知页面切日
     onTap(e) {
+      const hw = this.hw || HOUR_W
       const px = (e.detail && Number.isFinite(e.detail.x) ? e.detail.x
         : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].x : NaN))
       if (!Number.isFinite(px)) return
-      const i = Math.floor((px - PAD_L) / HOUR_W)
+      const i = Math.floor((px - PAD_L) / hw)
       const h = this.data.series[i]
       if (!h) return
       this.triggerEvent('pickhour', { date: h.d, t: h.t })

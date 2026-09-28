@@ -1,0 +1,42 @@
+<view class="fc">
+  <block wx:if="{{ready && hasData}}">
+    <view class="fc-head">
+      <view class="fc-id">
+        <text class="fc-point">{{pointName}}</text>
+        <text class="fc-sub tabular">{{range}}</text>
+      </view>
+      <text class="fc-pick tabular">{{picked}}</text>
+      <view class="fc-spacer"></view>
+      <view class="segmented fc-modes">
+        <view
+          wx:for="{{modes}}"
+          wx:key="k"
+          class="seg {{mode === item.k ? 'on' : ''}}"
+          hover-class="button-hover"
+          bindtap="onMode"
+          data-k="{{item.k}}"
+        >{{item.t}}</view>
+      </view>
+      <button class="button text fc-close" hover-class="button-hover" bindtap="onBack">关闭</button>
+    </view>
+
+    <meteogram
+      series="{{series}}"
+      marks="{{marks}}"
+      night="{{night}}"
+      selected-dates="{{selected}}"
+      hour-width="{{hourWidth}}"
+      tip="{{tip}}"
+      bind:pickhour="onPickHour"
+    />
+  </block>
+
+  <status-panel
+    wx:if="{{ready && !hasData}}"
+    kind="empty"
+    title="还没有可展示的图表"
+    detail="先在天气页加载一次预报，再点「全图展示」。"
+    action-label="返回"
+    bind:action="onBack"
+  />
+</view>

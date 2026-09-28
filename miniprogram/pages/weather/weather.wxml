@@ -27,8 +27,11 @@
     <block wx:elif="{{dayCards.length}}">
       <!-- ============ 客观指标 ============ -->
       <view class="section-head">
-        <text class="section-title">客观指标</text>
-        <text class="section-sub">下面这 7 天的逐时预报，横滑看全程</text>
+        <view class="section-id">
+          <text class="section-title">客观指标</text>
+          <text class="section-sub">下面这 7 天的逐时预报</text>
+        </view>
+        <button class="button text" hover-class="button-hover" bindtap="onFullscreen">全图展示</button>
       </view>
 
       <!-- 7 日概览条 -->

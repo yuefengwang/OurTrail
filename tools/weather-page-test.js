@@ -552,6 +552,109 @@ const LAY = require('../miniprogram/components/meteogram/layout.js')
     comp.data.legend.map(i => i.k).join(','))
 }
 
+// 10. 全图展示（横屏页）：数据交接与"全览"列宽反推
+section('10. 全图展示（横屏页）')
+
+const chartStore = require('../miniprogram/utils/chart-store')
+const FC_PATH = require.resolve('../miniprogram/pages/weather-chart/weather-chart.js')
+
+function fcConfig() {
+  global.Page = cfg => { global.__FC_CFG = cfg }
+  delete require.cache[FC_PATH]
+  require(FC_PATH)
+  return global.__FC_CFG
+}
+
+{
+  const cfg = pageConfig()
+  const page = makePage(cfg)
+  page.data.date = DATE
+  page.view = { activity: { routeSnapshot: { points: [{ coordinates: COORD, name: '冷杉坪' }] } } }
+  const result = {
+    series: fakeSeries(DATE, 7),
+    days: fakeDays(DATE, 7),
+    updatedAt: DATE + 'T06:00:00+08:00',
+    pointElevation: 1500,
+  }
+  chartStore.clear()
+  page.applyWeather(result, { name: '冷杉坪', coordinates: COORD }, {})
+  const p = chartStore.get()
+  check('天气页把 7 天图表交给横屏页（store）', !!p && p.series.length === 168,
+    p ? String(p.series.length) : 'null')
+  check('store 带节点名（横屏页标题用）', !!p && p.pointName === '冷杉坪', p && p.pointName)
+  check('store 的选中日 = 所选日', !!p && p.selected[DATE] === true, p && Object.keys(p.selected || {}))
+  check('store 的 marks/night 与页面数据同源',
+    !!p && p.marks === page.data.chartMarks && p.night === page.data.chartNight)
+
+  const savedWx = global.wx
+  global.wx = { getSystemInfoSync: () => ({ windowWidth: 780, windowHeight: 390 }) }
+  try {
+    const fcfg = fcConfig()
+    const make = () => {
+      const pg = Object.assign({}, fcfg)
+      pg.data = JSON.parse(JSON.stringify(fcfg.data || {}))
+      pg.setData = function (patch, cb) { Object.assign(this.data, patch); if (cb) cb() }
+      return pg
+    }
+
+    // 空 store：不崩、给可理解的空态
+    chartStore.clear()
+    let pg = make()
+    pg.onLoad()
+    check('store 为空时进空态而不是崩', pg.data.ready === true && pg.data.hasData === false)
+
+    // 有数据
+    chartStore.set(p)
+    pg = make()
+    pg.onLoad()
+    check('读到 store 后进入图表态', pg.data.hasData === true && pg.data.series.length === 168,
+      String(pg.data.series.length))
+    check('标题给日期区间（9/28 – 10/4 · 7 天）', pg.data.range === '9/28 – 10/4 · 7 天', pg.data.range)
+
+    // 全览 = 按屏宽反推列宽，且必须真的塞得进视口
+    pg.applyMode('fit')
+    const vw = 780
+    const chartW = 52 + 168 * pg.data.hourWidth + 8
+    check('全览列宽按屏宽反推（780 → ' + pg.data.hourWidth + '）', pg.data.hourWidth === 4,
+      String(pg.data.hourWidth))
+    check('全览下整张图塞得进视口（' + chartW + ' ≤ ' + (vw - 32) + '）',
+      chartW <= vw - 32, String(chartW))
+    check('全览列宽不低于下限 3', pg.data.hourWidth >= 3, String(pg.data.hourWidth))
+
+    pg.applyMode('std')
+    check('标准 = 22（layout.HOUR_W）', pg.data.hourWidth === 22, String(pg.data.hourWidth))
+    pg.applyMode('big')
+    check('放大 = 44', pg.data.hourWidth === 44, String(pg.data.hourWidth))
+
+    // 极窄视口必须被下限夹住，不能算出 0/负数把图画没
+    global.wx = { getSystemInfoSync: () => ({ windowWidth: 120 }) }
+    pg.applyMode('fit')
+    check('极窄视口下夹到下限 3', pg.data.hourWidth === 3, String(pg.data.hourWidth))
+
+    // 点某小时 → 头部读数
+    global.wx = { getSystemInfoSync: () => ({ windowWidth: 780 }) }
+    pg.onPickHour({ detail: { date: DATE, t: '06:00' } })
+    check('点图上小时给出读数', /^9\/28 06:00/.test(pg.data.picked), pg.data.picked)
+
+    // 组件列宽收敛
+    global.Component = cfg2 => { global.__COMP_CFG2 = cfg2 }
+    delete require.cache[require.resolve('../miniprogram/components/meteogram/meteogram.js')]
+    require('../miniprogram/components/meteogram/meteogram.js')
+    const mcfg = global.__COMP_CFG2
+    global.Component = undefined
+    const mw = v => {
+      const c = Object.assign({}, mcfg.methods || {}, mcfg)
+      c.data = Object.assign({}, mcfg.data, { hourWidth: v })
+      return c.hourWidth()
+    }
+    check('列宽下限 3', mw(1) === 3, String(mw(1)))
+    check('列宽上限 72', mw(999) === 72, String(mw(999)))
+    check('未给列宽时回退标准 22', mw(0) === 22 && mw('x') === 22, mw(0) + '/' + mw('x'))
+  } finally {
+    global.wx = savedWx
+  }
+}
+
 raceCases()
   .catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') })
   .then(windowCases)
