@@ -31,8 +31,8 @@
 
     <!-- 步骤 1：内容与时间 -->
     <view wx:if="{{step === 0}}" class="stack-gap3">
-      <form-field label="活动名称" hint="例如：青城后山 · 周末轻徒步">
-        <input class="input" value="{{form.title}}" maxlength="100" placeholder="这次想去哪里？" data-key="title" bindinput="onField" />
+      <form-field label="活动名称">
+        <input class="input" value="{{form.title}}" maxlength="100" placeholder="这次想去哪里？如：青城后山 · 周末轻徒步" data-key="title" bindinput="onField" />
       </form-field>
 
       <view class="card stack-gap3">
