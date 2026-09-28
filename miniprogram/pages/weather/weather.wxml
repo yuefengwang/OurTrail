@@ -66,7 +66,7 @@
           <text wx:if="{{metrics.elev !== null}}" class="small muted tabular">此点约 {{metrics.elev}} m · {{elevSource}}</text>
         </view>
         <view class="list-row"><text>日出 / 日落</text><text class="tabular" style="font-weight:600;">{{metrics.sunrise}} / {{metrics.sunset}}</text></view>
-        <view class="list-row"><text>天文暗夜（银河窗口）</text><text class="tabular" style="font-weight:600;">{{metrics.astroDawn}} – {{metrics.astroDusk}}</text></view>
+        <view class="list-row"><text>天文暗夜（银河窗口）</text><text class="tabular" style="font-weight:600;">{{metrics.nightWindow}}</text></view>
         <view class="list-row"><text>云量 低 / 中 / 高</text><text class="tabular" style="font-weight:600;">{{metrics.low}}% / {{metrics.mid}}% / {{metrics.high}}%</text></view>
         <view class="list-row"><text>云层带高度</text><text class="tabular" style="font-weight:600;">{{metrics.bandText}}</text></view>
         <view class="list-row"><text>月相</text><text class="tabular" style="font-weight:600;">{{metrics.moon}}</text></view>

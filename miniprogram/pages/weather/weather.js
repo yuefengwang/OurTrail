@@ -153,10 +153,14 @@ Page({
     return F.cnToday()
   },
 
-  // 已有返回体是否覆盖该日期。series 自带 7 天逐时，所以在窗口内切日/切节点不必再外呼。
+  // 已有返回体是否可用于该日期。series 自带 7 天逐时，所以同点同日重进页面不必再外呼。
+  // 必须要求窗口**锚定**在所选日：若允许从窗口中间复用，剩余天数会越切越少
+  // （切到第 7 天只剩 1 天的图），宁可重取。
   covers(result, date, pointId) {
     if (!result || result.pointId !== pointId) return false
-    return (result.series || []).some(h => h.d === date) && (result.days || []).some(d => d.date === date)
+    const s = result.series || []
+    if (!s.length || s[0].d !== date) return false
+    return (result.days || []).some(d => d.date === date)
   },
 
   fetchWeather() {
@@ -250,7 +254,9 @@ Page({
     return sky.bearingBetween(cur.coordinates, next.coordinates)
   },
 
-  // meteogram 序列：从所选日起取 7 天
+  // meteogram 序列：从所选日起 7 天。云函数已把 series 锚定在所选日，
+  // 这里只做防御性重切；所选日不在窗口内（选了过去的日子）时与 buildDayCards 一样
+  // 退回序列首日，保证图与概览条永远同窗。
   buildChartSeries(series, date) {
     const start = series.findIndex(h => h.d === date)
     if (start < 0) return series.slice(0, 24 * CHART_DAYS)
@@ -288,11 +294,13 @@ Page({
     return out
   },
 
-  // 7 日概览条：从所选日起 7 天（与 meteogram 窗口对齐），并按节点高程给出日出日落
+  // 7 日概览条：与 meteogram 同一窗口（都从所选日起 7 天）。
+  // 原实现有一条 days.slice(0, CHART_DAYS) 的兜底，在所选日靠近预报末尾时会把窗口拉回今天，
+  // 与图错开 6 天、选中日掉出首屏——所以兜底只在"所选日根本不在窗口内"（如选了过去的日子）时
+  // 用，且此时 meteogram 的 buildChartSeries 会一起退回预报首日，两者始终同窗。
   buildDayCards(days, coords) {
-    const first = this.data.date
-    const picked = days.filter(d => d.date >= first).slice(0, CHART_DAYS)
-    const list = picked.length >= CHART_DAYS ? picked : days.slice(0, CHART_DAYS)
+    let list = days.filter(d => d.date >= this.data.date).slice(0, CHART_DAYS)
+    if (!list.length) list = days.slice(0, CHART_DAYS)
     return list.map(day => {
       let label = '周' + F.WEEK[new Date(day.date + 'T12:00:00+08:00').getUTCDay()]
       if (day.date === F.cnToday()) label = '今'
@@ -326,11 +334,16 @@ Page({
     const inBand = withBand.some(h => Number.isFinite(elev) && h.band.base <= elev && elev <= h.band.top)
     const sun = skyOut ? skyOut.sun : null
     const moon = skyOut ? skyOut.moon : null
+    const dawn = (sun && sun.astroDawn) || '--'
+    const dusk = (sun && sun.astroDusk) || '--'
+    // 天文暗夜是**跨零点**的：傍晚天文暮光终 → 次日天文晨光始。
+    // 原来按 dawn–dusk 顺序渲染，屏幕上读成"银河窗口 05:49–20:17"＝白天，
+    // 与 meteogram 上按 m<dawn||m>dusk 画的夜间底色当场矛盾。
+    const nightWindow = (dawn === '--' || dusk === '--') ? '--' : dusk + ' – 次日 ' + dawn
     return {
       sunrise: (sun && sun.sunrise) || day.sunrise || '--',
       sunset: (sun && sun.sunset) || day.sunset || '--',
-      astroDusk: (sun && sun.astroDusk) || '--',
-      astroDawn: (sun && sun.astroDawn) || '--',
+      nightWindow,
       low: day.cloud ? day.cloud.low : '--',
       mid: day.cloud ? day.cloud.mid : '--',
       high: day.cloud ? day.cloud.high : '--',

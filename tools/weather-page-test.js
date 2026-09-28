@@ -201,50 +201,22 @@ section('5. 节点日程 → 天气日期的衔接')
   })())
 }
 
-section('6. 窗口内复用：切日/切节点不外呼')
-{
-  // 镜像页面 covers() 的判定：series 自带 7 天，窗口内的日期不必再查
-  const covers = (result, date, pointId) => {
-    if (!result || result.pointId !== pointId) return false
-    return (result.series || []).some(x => x.d === date) && (result.days || []).some(d => d.date === date)
-  }
-  const { times, h } = fakeHourly(4)
-  const series = times.map((_, i) => hourView(times, h, i))
-  const days = []
-  for (let d = 0; d < 4; d++) days.push({ date: DATE, cloud: { low: 10, mid: 20, high: 20 } })
-  // 构造 4 天不同的日期
-  const dlist = []
-  for (let d = 0; d < 4; d++) dlist.push(Date.parse(DATE + 'T00:00:00Z') + d * 86400000)
-  const s2 = series.map((x, i) => ({ ...x, d: new Date(dlist[Math.floor(i / 24)]).toISOString().slice(0, 10) }))
-  const dl = dlist.map(ms => ({ date: new Date(ms).toISOString().slice(0, 10) }))
-  const cached = { pointId: 'p1', series: s2, days: dl, detail: [], updatedAt: DATE + 'T10:00:00+08:00' }
-  const d0 = dl[0].date
-  const d1 = dl[1].date
-  check('缓存覆盖窗口内第 1 天', covers(cached, d0, 'p1'))
-  check('缓存覆盖窗口内第 2 天（切日零外呼）', covers(cached, d1, 'p1'))
-  check('窗口外不覆盖（需外呼）', covers(cached, '2026-10-20', 'p1') === false)
-  check('换节点后不覆盖（pointId 不匹配）', covers(cached, d0, 'p2') === false)
-  check('切日后能从 series 本地切出 detail（' + s2.filter(x => x.d === d1).length + ' 小时）',
-    s2.filter(x => x.d === d1).length === 24)
-}
+// 6. 窗口复用与「图/卡同窗」契约
+// covers/buildDayCards/buildChartSeries 一律取**真实现**来测：先前这里放的是镜像实现，
+// 结果实现改了镜像没改，测试反而在为旧契约背书。
+section('6. 窗口复用与图/卡同窗契约')
 
-// 7. 首屏/切节点的日期竞态（回归）
-// 真机上 setData 回调在渲染后才异步回到逻辑层。若日期被放进回调里再设，
-// 紧随其后同步发出的 fetchWeather 就读到上一次的空日期 → 发出 date:'' → 云函数回"日期无效"。
-// 这里加载真页面（global.Page 捕获配置）+ 异步 setData 回调，把那条链原样跑一遍。
-section('7. 首屏与切节点的日期竞态（回归）')
-
-const api = require('../miniprogram/utils/api')
 const PAGE_PATH = require.resolve('../miniprogram/pages/weather/weather.js')
 
-const sleep = ms => new Promise(r => setTimeout(r, ms))
-async function waitFor(cond, ms = 1500) {
-  const t0 = Date.now()
-  while (Date.now() - t0 < ms) { if (cond()) return true; await sleep(5) }
-  return cond()
+// 加载真页面配置（global.Page 捕获）
+function pageConfig() {
+  global.Page = cfg => { global.__PAGE_CFG = cfg }
+  delete require.cache[PAGE_PATH] // 每次取最新源码，避免吃到缓存的旧实现
+  require(PAGE_PATH)
+  return global.__PAGE_CFG
 }
 
-// 造页面实例：数据同步并进 this.data，但回调像真机一样异步触发（竞态复现的关键）
+// 页面实例：数据同步并入 this.data，但 setData 回调像真机一样异步触发（竞态复现的关键）
 function makePage(cfg) {
   const page = Object.assign({}, cfg)
   page.data = JSON.parse(JSON.stringify(cfg.data || {}))
@@ -255,6 +227,86 @@ function makePage(cfg) {
     if (cb) setImmediate(cb)
   }
   return page
+}
+
+const addDays = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10)
+// 从起始日起 n 天的日值
+function fakeDays(from, n, code) {
+  const out = []
+  for (let i = 0; i < n; i++) out.push({
+    date: addDays(from, i), code: code == null ? 2 : code,
+    tMax: 20, tMin: 10, precipProbMax: 20,
+    cloud: { low: 10, mid: 20, high: 20 },
+  })
+  return out
+}
+// 从起始日起 n 天的逐小时序列（形状同 hourView 产出）
+function fakeSeries(from, n) {
+  const out = []
+  for (let i = 0; i < n * 24; i++) {
+    out.push({
+      d: addDays(from, Math.floor(i / 24)),
+      t: String(i % 24).padStart(2, '0') + ':00',
+      temp: 12, pop: 10, precip: 0, showers: 0, code: 2, wind: 7, rh: 60, uv: 3,
+      cloud: { low: 20, mid: 30, high: 30 }, band: null,
+    })
+  }
+  return out
+}
+
+{
+  const cfg = pageConfig()
+  const covers = cfg.covers
+  const days = fakeDays(DATE, 4)
+  const hours = fakeSeries(DATE, 4)
+  const cached = { pointId: 'p1', series: hours, days, detail: [], updatedAt: DATE + 'T10:00:00+08:00' }
+  const d0 = days[0].date
+  const d1 = days[1].date
+  check('同点同日的缓存可复用（重进页面零外呼）', covers(cached, d0, 'p1'))
+  // 窗口中间的日期**不允许**复用：series 是从所选日起的 7 天，从中间切会让剩余天数越切越少
+  check('窗口中间的日期不复用（否则图越切越短）', covers(cached, d1, 'p1') === false, d1)
+  check('窗口外不覆盖（需外呼）', covers(cached, '2026-10-20', 'p1') === false)
+  check('换节点后不覆盖（pointId 不匹配）', covers(cached, d0, 'p2') === false)
+  check('未锚定的返回体不覆盖（series 首日 ≠ 所选日）',
+    covers(Object.assign({}, cached, { series: hours.slice(24) }), d0, 'p1') === false)
+}
+
+{
+  // 图与概览条必须同窗：都从所选日起 7 天。这是 A 组修复的核心不变量。
+  const cfg = pageConfig()
+  const page = makePage(cfg)
+  page.view = { activity: { routeSnapshot: { points: [{ coordinates: COORD }] } } }
+  page.data.date = '2026-10-03'
+
+  const days = fakeDays(DATE, 12) // 今天 9/28 起 12 天，所选日 10/03 落在中间
+  const cards = page.buildDayCards(days, COORD)
+  const chart = page.buildChartSeries(fakeSeries('2026-10-03', 7), '2026-10-03')
+  check('所选日在窗口中间时概览条首日 = 所选日', cards[0].date === '2026-10-03', cards[0] && cards[0].date)
+  check('概览条 7 张', cards.length === 7, String(cards.length))
+  check('图 168 小时（7 天）', chart.length === 168, String(chart.length))
+  check('图首日 = 卡首日（同窗）', chart[0].d === cards[0].date, chart[0].d + ' vs ' + cards[0].date)
+
+  // 所选日不在窗口内（选了过去的日子）：两者一起退回预报首日，不能一个退一个不退
+  page.data.date = '2026-09-20'
+  const cards2 = page.buildDayCards(days, COORD)
+  const chart2 = page.buildChartSeries(fakeSeries(DATE, 7), '2026-09-20')
+  check('过去日期：卡与图一起退回预报首日',
+    cards2[0].date === DATE && chart2[0].d === DATE,
+    cards2[0].date + ' vs ' + chart2[0].d)
+}
+
+// 7. 首屏/切节点的日期竞态（回归）
+// 真机上 setData 回调在渲染后才异步回到逻辑层。若日期被放进回调里再设，
+// 紧随其后同步发出的 fetchWeather 就读到上一次的空日期 → 发出 date:'' → 云函数回"日期无效"。
+// 这里加载真页面（global.Page 捕获配置）+ 异步 setData 回调，把那条链原样跑一遍。
+
+const api = require('../miniprogram/utils/api')
+
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+async function waitFor(cond, ms = 1500) {
+  const t0 = Date.now()
+  while (Date.now() - t0 < ms) { if (cond()) return true; await sleep(5) }
+  return cond()
 }
 
 // 加载真页面配置并打上网络桩；返回 { page, calls }
@@ -274,6 +326,7 @@ function bootPage(read) {
 }
 
 async function raceCases() {
+  section('7. 首屏与切节点的日期竞态（回归）')
   const points = [
     { id: 'p1', name: '起点', time: '2020-05-02T07:00:00+08:00', coordinates: COORD },
     { id: 'p2', name: '营地', time: '2020-05-03T07:00:00+08:00', coordinates: COORD },
@@ -334,8 +387,102 @@ async function raceCases() {
   }
 }
 
-raceCases().catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') }).then(() => {
-  console.log('\npassed=' + passed + ' failed=' + failed)
+// 8. 云函数预报窗口从所选日起（A 组回归）
+// fetchForecast 会真外呼 Open-Meteo，这里把 https.get 桩掉，走真实切片逻辑。
+
+const https = require('https')
+const wf = require('../cloudfunctions/trailApi/lib/weather')
+
+const LEVELS = [1000, 975, 950, 925, 900, 850, 800, 700, 600]
+
+// 造一份 Open-Meteo 返回体：从 from 起 n 天逐小时 + 逐日
+function fakeOpenMeteo(from, n) {
+  const times = []
+  for (let i = 0; i < n * 24; i++) {
+    times.push(addDays(from, Math.floor(i / 24)) + 'T' + String(i % 24).padStart(2, '0') + ':00')
+  }
+  const hourly = { time: times }
+  const fill = (k, v) => { hourly[k] = times.map(() => v) }
+  fill('temperature_2m', 12); fill('apparent_temperature', 11)
+  fill('precipitation_probability', 10); fill('precipitation', 0); fill('showers', 0)
+  fill('weather_code', 2); fill('wind_speed_10m', 7); fill('wind_gusts_10m', 12)
+  fill('relative_humidity_2m', 60); fill('cloud_cover_low', 20)
+  fill('cloud_cover_mid', 30); fill('cloud_cover_high', 40)
+  fill('uv_index', 3); fill('visibility', 20000); fill('freezing_level_height', 4000)
+  LEVELS.forEach(lv => { fill('cloud_cover_' + lv + 'hPa', 10); fill('geopotential_height_' + lv + 'hPa', lv) })
+  const dayList = []
+  for (let i = 0; i < n; i++) dayList.push(addDays(from, i))
+  const daily = {
+    time: dayList,
+    weather_code: dayList.map(() => 2),
+    temperature_2m_max: dayList.map(() => 20), temperature_2m_min: dayList.map(() => 10),
+    wind_speed_10m_max: dayList.map(() => 9), precipitation_sum: dayList.map(() => 0),
+    precipitation_probability_max: dayList.map(() => 20), precipitation_hours: dayList.map(() => 0),
+    sunrise: dayList.map(d => d + 'T06:30'), sunset: dayList.map(d => d + 'T18:40'),
+    uv_index_max: dayList.map(() => 5),
+  }
+  return { elevation: 1234, hourly, daily }
+}
+
+// 桩掉 https.get：记录请求 URL，按 payload 应答
+function stubHttps(payload, capture) {
+  const saved = https.get
+  https.get = (url, cb) => {
+    capture.url = String(url)
+    const res = {
+      statusCode: 200,
+      resume() {},
+      on(ev, fn) { if (ev === 'data') capture._d = fn; else if (ev === 'end') capture._e = fn; return res },
+    }
+    process.nextTick(() => { cb(res); capture._d(JSON.stringify(payload)); capture._e() })
+    return { on() { return this }, setTimeout() { return this } }
+  }
+  return () => { https.get = saved }
+}
+
+async function windowCases() {
+  section('8. 云函数预报窗口从所选日起（A 组回归）')
+  const today = wf.cnToday()
+  const restores = []
+  try {
+    // 所选日 = 今天+5：窗口必须覆盖 今天 → 所选日+6 = 12 天，且序列锚定在所选日
+    {
+      const cap = {}
+      restores.push(stubHttps(fakeOpenMeteo(today, 16), cap))
+      const f = await wf.fetchForecast(30.9, 103.4, addDays(today, 5))
+      const fd = new URL(cap.url).searchParams.get('forecast_days')
+      check('forecast_days 覆盖 今天→所选日+6（12 天）', fd === '12', fd)
+      check('series 首日 = 所选日（不是今天）', f.series[0] && f.series[0].d === addDays(today, 5),
+        f.series[0] && f.series[0].d)
+      check('series 整 7 天 168 小时', f.series.length === 168, String(f.series.length))
+      check('days 首日 = 所选日（与图同窗）', f.days[0] && f.days[0].date === addDays(today, 5),
+        f.days[0] && f.days[0].date)
+      check('days 整 7 条', f.days.length === 7, String(f.days.length))
+      check('detail 是所选日 24 小时', f.detail.length === 24, String(f.detail.length))
+    }
+    // 所选日 = 今天+12：Open-Meteo 上限 16 天，只拿得到 4 天——有多少给多少，但首日仍须锚定
+    {
+      const cap = {}
+      restores.push(stubHttps(fakeOpenMeteo(today, 16), cap))
+      const far = addDays(today, 12)
+      const f = await wf.fetchForecast(30.9, 103.4, far)
+      const fd = new URL(cap.url).searchParams.get('forecast_days')
+      check('远期 forecast_days 封顶 16', fd === '16', fd)
+      check('远期 series 首日仍 = 所选日', f.series[0] && f.series[0].d === far, f.series[0] && f.series[0].d)
+      check('远期有多少给多少（4 天 96 小时）', f.series.length === 96, String(f.series.length))
+      check('远期 days 首日 = 所选日', f.days[0] && f.days[0].date === far, f.days[0] && f.days[0].date)
+    }
+  } finally {
+    restores.forEach(fn => fn())
+  }
+}
+
+raceCases()
+  .catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') })
+  .then(windowCases)
+  .catch(e => { failed++; console.error('  ✗ 窗口用例执行异常（' + e.message + '）') })
+  .then(() => {
+    console.log('\npassed=' + passed + ' failed=' + failed)
   process.exit(failed ? 1 : 0)
 })
 

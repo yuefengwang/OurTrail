@@ -123,7 +123,11 @@ function cloudBandAt(h, i) {
 async function fetchForecast(lat, lng, date) {
   const diff = Math.round((Date.parse(date) - Date.parse(cnToday())) / 86400000)
   if (diff > 15) return { tooEarly: true, days: [], detail: [] } // 超出预报范围，临近出发再查
-  const days = Math.min(16, Math.max(1, diff + 2))
+  // 图表与概览条都以「所选日」为首日展示 7 天，所以窗口必须覆盖 今天 → 所选日+6。
+  // 原来取 diff+2 天，所选日会落在窗口末尾：series 只剩 1 天（图窄到不用滑、也点不到"某天"），
+  // 而概览条又从今天起排，两者错开 6 天、选中日还不在首屏——这里是同一个根因，一并修掉。
+  // Open-Meteo forecast_days 上限 16：所选日再往后只能有多少给多少。
+  const days = Math.min(16, Math.max(1, diff + 7))
   const q = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lng),
@@ -172,9 +176,15 @@ async function fetchForecast(lat, lng, date) {
     if (times[i].indexOf(date) !== 0) continue
     detail.push(hourView(times, h, i))
   }
-  // meteogram 用全量逐小时序列（客户端只取前 7×24）
-  const series = times.slice(0, 168).map((_, i) => hourView(times, h, i))
-  return { elevation: Math.round(j.elevation), days: outDays, detail, series }
+  // 逐日概览同样从所选日起、且与 series 等长（最多 7 天）——两条各起一头正是"图一天、卡七天"错位的来源。
+  const dayStart = Math.max(0, outDays.findIndex(d => d.date === date))
+  const daysOut = outDays.slice(dayStart, dayStart + 7)
+  // meteogram 逐小时序列：**从所选日起**最多 168 小时（不足 7 天有多少给多少）。
+  // 不能固定取 times 的前 168 小时——times 永远从今天起，所选日靠后时会截出一段与所选日
+  // 完全无关的旧窗口，客户端兜底逻辑又会照单全收，导致上半屏与下半屏讲的不是同一天。
+  const start = Math.max(0, times.findIndex(t => t.slice(0, 10) === date))
+  const series = times.slice(start, start + 168).map((_, i) => hourView(times, h, start + i))
+  return { elevation: Math.round(j.elevation), days: daysOut, detail, series }
 }
 
 // 单小时投影（detail/series 共用）：t 保持 'HH:mm'（既有消费者依赖），d 为所属日期
