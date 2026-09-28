@@ -61,6 +61,27 @@
 | `.code-text` | 身份码等等宽强调 |
 | `.tabular` | 数字对齐（时间/里程/人数） |
 | `.map-card/.map-canvas` | 原生 `map` 组件外框（260px、14px 圆角、`overflow:hidden`）。低版本基础库非同层渲染时圆角会失效，接受降级、**不在 map 上叠普通 view**。marker 图标用 `assets/markers/*.png`（`tools/gen-map-markers.js` 生成；iconPath 不支持 base64），序号用 marker `label`，信息用原生 callout，白底 forest 字。地图元素配色：轨迹线 `#163E35AA` 宽 4 `arrowLine`、降级虚线 `#8C9791AA` 宽 2 `dottedLine`；marker=起点 forest/途中白底 forest 描边/终点 leaf+forest 描边/上车点 info 蓝，均为圆点造型（选中态放大到 30 即可，无需单独图）。 |
+| `.section-head/.section-title/.section-sub` | 页面内分区标题（把长页分成几段，如天气页的"客观指标 / 结论"）。标题 700 正文号，右侧 `.section-sub` 12px muted |
+| `.sky-card/.sky-title/.sky-text` | 结论卡（天相判断等）。`.sky-look` 为 forest-soft 底的方向/时段条，左侧 `.sky-look-label` 是白底 forest 药丸标签 |
+
+## canvas 自绘图表（meteogram）
+
+天气页 `<meteogram>` 是自绘图表，**画布内的颜色不能取 CSS 变量**（canvas 拿不到 var()），故在 `meteogram.js` 顶部维护一份字面量色板，改主题时要两处同步：
+
+| 用途 | 色值 |
+|---|---|
+| 夜间底 / 白昼底 | `#F0F1EC` / `#FFFFFF` |
+| 所选日高亮带 / 左边线 | `rgba(22,62,53,0.05)` / `rgba(22,62,53,0.35)` |
+| 温度线 / 面积 | `#B43D3B` / `rgba(180,61,59,0.10)`（danger 色，与页面语义一致） |
+| 降水柱 / 阵雨柱 | `#346583`（info）/ `#2E8B8B` |
+| 三层云量 高/中/低 | `rgba(140,151,145,0.6)` / `rgba(108,124,147,0.7)` / `rgba(52,101,131,0.75)`，透明度按云量 0.12→1.0 |
+| 天相窗口标记 | 云海 `#346583`、光染 `#B43D3B`、彩虹 `#8C5A12`、星空 `#2D533F`、银河 `#163E35`、黄金 `#D6A33C`、蓝调 `#6C7C93`、入云 `#8C9791` |
+
+- 列宽 22px、高 196px；canvas 宽度 = `34 + 列数×22 + 8`，外层 `scroll-view scroll-x`。**canvas 宽度必须在数据到达后才设定**，否则 `SelectorQuery` 量到的是旧值。
+- 绘制时按 `pixelRatio` 缩放：`node.width = cssWidth × dpr` 后再 `ctx.scale(dpr, dpr)`，否则文字发虚。
+- 组件必须声明 `options: { styleIsolation: 'apply-shared' }`（图例文字用 app.wxss 的 `.lg`）。**`options` 只能写一次**——写成两个同名字段后者覆盖前者，`apply-shared` 会被静默丢弃（form-field 与 overlay 曾因此散架）。
+- 太阳位置相关的窄窗口（黄金/蓝调只有十几分钟）**不能按"整点的太阳高度角"标记**，要按天文时刻窗口与整点相交判定，否则整段漏掉。
+
 
 ## 页面模板
 
