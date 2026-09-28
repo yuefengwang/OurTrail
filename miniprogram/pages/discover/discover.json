@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "发现活动",
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "status-panel": "/components/status-panel/status-panel",
+    "activity-card": "/components/activity-card/activity-card"
+  }
+}

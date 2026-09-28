@@ -7,9 +7,15 @@
     <view class="stack">
       <view class="card-header">
         <text class="eyebrow">OURTRAIL · 一起走过</text>
-        <view class="button text" hover-class="button-hover" bindtap="onNew">
-          <icon name="plus" size="16" color="#163E35" />
-          <text>发起活动</text>
+        <view class="cluster">
+          <view class="button text" hover-class="button-hover" bindtap="onGoDiscover">
+            <icon name="search" size="16" color="#163E35" />
+            <text>发现活动</text>
+          </view>
+          <view class="button text" hover-class="button-hover" bindtap="onNew">
+            <icon name="plus" size="16" color="#163E35" />
+            <text>发起活动</text>
+          </view>
         </view>
       </view>
       <view>

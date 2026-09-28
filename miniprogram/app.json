@@ -4,6 +4,7 @@
     "pages/notices/notices",
     "pages/me/me",
     "pages/activity/activity",
+    "pages/discover/discover",
     "pages/signup/signup",
     "pages/editor/editor",
     "pages/workspace/workspace",

@@ -1,0 +1,47 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="暂时看不到活动" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在整理已发布的活动。" />
+  </block>
+  <view wx:else class="stack">
+    <view>
+      <text class="eyebrow">发现活动</text>
+      <text class="page-title" style="display:block;margin-top:4px;">看看别人在约什么。</text>
+      <text class="muted" style="display:block;margin-top:4px;">按发布时间排序，只显示尚未出发的活动。</text>
+    </view>
+
+    <view class="callout">
+      <text class="callout-title">这些活动由个人发起</text>
+      <text style="display:block;margin-top:4px;">平台尚未做领队资质认证。路线强度、风险与装备要求以活动说明为准，报名前请自行评估是否适合自己。</text>
+    </view>
+
+    <view class="field">
+      <text class="field-label">查找已发布的活动</text>
+      <input class="input" type="text" confirm-type="search" placeholder="搜索活动名、路线或描述" value="{{search}}" bindinput="onSearch" />
+    </view>
+
+    <status-panel
+      wx:if="{{!cards.length}}"
+      kind="empty"
+      title="{{emptyTitle}}"
+      detail="{{emptyDetail}}"
+      actionLabel="{{search ? '清除搜索' : ''}}"
+      bind:action="onClearSearch"
+    />
+
+    <view wx:else class="stack" aria-label="已发布的活动">
+      <activity-card
+        wx:for="{{cards}}"
+        wx:key="id"
+        title="{{item.title}}"
+        date="{{item.date}}"
+        meta="{{item.meta}}"
+        status="{{item.status}}"
+        featured="{{item.featured}}"
+        info="{{item.info}}"
+        data-id="{{item.id}}"
+        bind:open="onOpenCard"
+      />
+    </view>
+  </view>
+</view>

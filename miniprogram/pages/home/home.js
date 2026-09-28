@@ -131,6 +131,10 @@ Page({
     wx.navigateTo({ url: '/pages/editor/editor' })
   },
 
+  onGoDiscover() {
+    wx.navigateTo({ url: '/pages/discover/discover' })
+  },
+
   onOpenCard(e) {
     const id = e.currentTarget.dataset.id
     if (!id) return
