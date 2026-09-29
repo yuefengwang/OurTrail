@@ -121,9 +121,15 @@ ok('组件引用检查完成')
 console.log('== 组件注册（反向） ==')
 const COMPONENT_NAMES = new Set()
 for (const f of files.filter(f => f.endsWith('.json'))) {
-  const m = f.match(/components\/([a-z0-9-]+)\/[a-z0-9-]+\.json$/)
+  // 路径分隔符必须先归一化：Windows 下 path.join 产出的是反斜杠，而正则写的是正斜杠，
+  // 匹配恒为 0 → 清单为空 → 所有标签都被当成内置标签放行 → 本步骤整个静默空转。
+  // 而按双机协议，Windows 正是唯一装有微信开发者工具的机器，也就是唯一能真机验证的机器——
+  // 恰好是这个 bug 最不能存在的地方。判据同时兼容两种分隔符。
+  const norm = f.split(path.sep).join('/')
+  const m = norm.match(/components\/([a-z0-9-]+)\/[a-z0-9-]+\.json$/)
   if (m) COMPONENT_NAMES.add(m[1])
 }
+if (COMPONENT_NAMES.size === 0) fail('组件清单为空：反向检查无法工作（路径分隔符或目录结构异常）')
 const reported = new Set()
 for (const f of files.filter(f => f.endsWith('.wxml'))) {
   const jsonPath = f.replace(/\.wxml$/, '.json')
