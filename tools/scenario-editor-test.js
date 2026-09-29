@@ -701,6 +701,24 @@ async function scenario11() {
       JSON.stringify(page.data.form.points[1]))
     check('成功路径不写 failure', page.data.failure === '', page.data.failure)
   }
+  {
+    let mode = 'fail'
+    const { page } = bootEditor({
+      seed: () => draft.setDraft('new', 'activity-editor', sampleInput()),
+      wx: { chooseLocation: o => (mode === 'fail'
+        ? o.fail({ errMsg: 'chooseLocation:fail auth deny' })
+        : o.success({ latitude: 30.95, longitude: 103.57, name: '南门', address: '某路 1 号' })) },
+    })
+    await settle(page)
+    page.choosePointLocation({ currentTarget: { dataset: { index: 0 } } })
+    check('先失败：failure 有值', !!page.data.failure)
+    mode = 'ok'
+    page.choosePointLocation({ currentTarget: { dataset: { index: 0 } } })
+    check('失败后再成功：坐标写入', page.data.form.points[0].lat === '30.95',
+      JSON.stringify(page.data.form.points[0]))
+    check('失败后再成功：陈旧报错必须清掉（否则提示与界面状态矛盾）', page.data.failure === '',
+      page.data.failure)
+  }
 }
 
 async function main() {

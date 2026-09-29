@@ -390,7 +390,7 @@ Page({
         const form = JSON.parse(JSON.stringify(this.data.form))
         form.points[index].lat = String(res.latitude)
         form.points[index].lng = String(res.longitude)
-        this.setData({ form })
+        this.setData({ form, failure: '' })
         this.persistDraft()
       },
       fail: err => {
@@ -443,7 +443,7 @@ Page({
         form.pickups[index].lat = String(res.latitude)
         form.pickups[index].lng = String(res.longitude)
         if (!form.pickups[index].address) form.pickups[index].address = res.address || res.name || ''
-        this.setData({ form })
+        this.setData({ form, failure: '' })
         this.persistDraft()
       },
       fail: err => {
