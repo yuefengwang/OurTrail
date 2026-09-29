@@ -26,12 +26,13 @@ Consequences worth knowing before you touch these files:
 - `astro.js` computes the sun's azimuth with `atan2` because `acos` overflows near the zenith. Its 银心 (galactic center) azimuth comes from an empirical 25–40°N curve — the source comment says explicitly 「不是星历」 (not an ephemeris). Do not "upgrade" it to a real ephemeris; the tests pin the empirical curve.
 - `sky.js` opens with 「这是『概率判断』，不是预报产品」. All output uses probability language and every conclusion carries its evidence, a bearing, and a time window.
 
-## `api.js` — TWO RESPONSE FLAVOURS
+## `api.js` — TWO RESULT SHAPES（都会 reject）
 
-This trips people up, so check which family you are calling:
+This trips people up, so check which family you are calling. `call()` resolves to `r.data` and **throws** on `{ok:false}` or any transport failure.
 
-- **Unwrap and throw:** `read`, `dispatch`, `getWeather`. Server returns `{ok:true,data}` or `{ok:false,error:{code,message}}`; these resolve to the payload and throw a normalized `Error` carrying `.code` (transport failures get `code = 'NETWORK'`, and `-504003` / `FUNCTIONS_TIME_LIMIT` / timeout are regex-mapped to a Chinese redeploy hint).
-- **Result passthrough, unthrown:** `readForm`, `readTransport`, `readSensitive`, `readContact`, `readExport`, `previewAssignments`. The page must check `result.ok` itself and read `result.value`.
+- **Unwrapped payload:** `read`, `dispatch`, `getWeather`, `readOr`. The server returns `{ok:true,data}` or `{ok:false,error:{code,message}}`, so these hand you the plain object and reject with a normalized `Error` carrying `.code`（transport failures get `code = 'NETWORK'`，`-504003` / `FUNCTIONS_TIME_LIMIT` / timeout 会被正则映射成中文重新部署提示）。`readOr` 再多走一步：它自己拆掉 `r.value`，`!r.ok` 时抛错。
+- **Result-shaped `{ok, value|error}`:** `readForm`, `readTransport`, `readSensitive`, `readContact`, `readExport`。**不是因为客户端透传，而是服务端把这些动作的 payload 包进了 `okValue()`**（`domain/contracts.js:17`）——所以 `call()` 解包后拿到的仍是一个 Result，调用方必须自己判 `result.ok` 再读 `result.value`。`previewAssignments` 同形，但额外把 throw 转成 `{ok:false}`，**它是唯一永不 reject 的**。
+- **⚠️ 关键：上面每一族在传输失败时都会 reject。** `result.ok === false` 只覆盖服务端 Result 那条路；网络异常、云函数未部署、`wx.cloud` 本身报错，走的是 reject。**所以每个调用点都必须有 `.catch()`** —— 只写 `result => result.ok ? … : …` 会在「云函数没部署」时静默失败，这正是 F8 那类 bug 的成因。
 
 `dispatch` auto-generates `requestId = 'req-' + base36(Date.now()) + random` when the caller omits it, and tags `err.needRefresh = true` on `CONFLICT`. `dispatchAndSync(payload, expectedRevision, page)` is what pages actually call: on `CONFLICT` it toasts 「安排已被他人更新，已刷新，请重试」 and invokes `page.reload()`. **It requires an argument with a duck-typed `reload()` method** — that is the interface contract.
 
