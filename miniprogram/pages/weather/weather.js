@@ -1,8 +1,14 @@
-// 天气参考（对应原型 screens/Weather.tsx + 徒步天气概览设计文档 + 天相与 meteogram 设计）：
+// 天气查询视图（对应原型 screens/Weather.tsx + P1/P2 天气设计 + P3 独立天气模块 §5）：
 // 上半部分是客观指标（meteogram 时间坐标图 + 数字指标），下半部分是结论（天相判断）。
-// 组织者可一键生成天气提醒草稿并跳到活动通知页。
+// 组织者在活动模式下可一键生成天气提醒草稿并跳到活动通知页。
 //
-// 数据来源：getWeather 返回 series（7×24 逐时）+ days（7 日）+ detail（所选日 24h）。
+// 三种模式（P3 §5.1，点来源无关，展示装配层共用）：
+//   activity —— 活动流：id(+point/date) 入参，api.read 活动视图取 routeSnapshot.points
+//   local/单点 —— 自由查询：lat/lng(+name/ele/eleSrc/date) 入参，无 read、无日程、可保存/分享
+//   local/轨迹组 —— set(轨迹组id)(+point/date) 入参，点集读本地 watch-points，
+//               按 §5.4 展开抵达日程（基准日 = 入口日期，会话内固定，防"日期前漂"）
+//
+// 数据来源：getWeather / getWeatherByPoint 返回 series（7×24 逐时）+ days（7 日）+ detail（所选日 24h）。
 // 天文与天相判断全部在客户端算（utils/astro.js、utils/sky.js），云函数只负责取数。
 'use strict'
 const api = require('../../utils/api')
@@ -12,6 +18,9 @@ const F = require('../../utils/format')
 const A = require('../../utils/astro')
 const sky = require('../../utils/sky')
 const RS = require('../../utils/route-schedule')
+const WP = require('../../utils/watch-points')
+
+const wpStore = WP.createWatchPoints(draft.wxStorage)
 
 const SLOTS = ['06', '08', '10', '12', '14', '16', '18', '20']
 const CHART_DAYS = 7
@@ -42,10 +51,16 @@ function buildCallouts(day, detail, elev) {
   return out.slice(0, 2)
 }
 
+// 海拔来源标签：活动模式沿用「GPX 记录」；自由查询按 eleSource 如实标注
+function elevLabel(eleSource) {
+  return eleSource === 'gpx' ? 'GPX 记录' : eleSource === 'picked' ? '地图选点' : '手动填写'
+}
+
 Page({
   data: {
     loading: true,
     denied: '',
+    mode: 'activity',
     pointLabels: [],
     pointIndex: 0,
     date: '',
@@ -71,57 +86,196 @@ Page({
     conclusions: [],
     skyMoon: null,
     elevSource: '',
+    // 自由查询单点：静态点卡替代节点 picker（P3 §5.1）
+    pointCard: null,
+    showSave: false,
   },
 
   onLoad(options) {
-    this.activityId = options.id || ''
+    const o = options || {}
+    // 模式判定宽容化（P3 §5.2）：src 省略时按入参推断——有 set 或 lat/lng 即 local，
+    // 手输 path、分享参数被截时更皮实。
+    this.mode = 'activity'
+    this.localKind = ''
+    this.setId = ''
+    if (o.set) {
+      this.mode = 'local'
+      this.localKind = 'track'
+      this.setId = String(o.set)
+    } else if (o.lat !== undefined || o.lng !== undefined || o.src === 'local') {
+      this.mode = 'local'
+      this.localKind = 'point'
+    }
+    this.activityId = o.id || ''
     this.userPickedDate = false
     // 详情页途中节点「天气」入口带入的定位参数：point 仅首次消费，date 作为初始日期
-    this.initialPoint = /^\d+$/.test(options.point || '') ? Number(options.point) : null
-    this.initialDate = /^\d{4}-\d{2}-\d{2}$/.test(options.date || '') ? options.date : ''
+    this.initialPoint = /^\d+$/.test(o.point || '') ? Number(o.point) : null
+    this.initialDate = /^\d{4}-\d{2}-\d{2}$/.test(o.date || '') ? o.date : ''
+    // 自由查询单点入参（hub 直达 / 分享落地共用）
+    this.localPoint = null
+    if (this.mode === 'local' && this.localKind === 'point') {
+      const lat = Number(o.lat)
+      const lng = Number(o.lng)
+      const ok = Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+      let name = ''
+      if (o.name) {
+        try { name = decodeURIComponent(String(o.name)) } catch (e) { name = String(o.name) }
+      }
+      const ele = Number(o.ele)
+      this.localPoint = ok ? {
+        id: 'wp-local',
+        name,
+        coordinates: { lat, lng },
+        ele: Number.isFinite(ele) && ele > -500 && ele <= 9000 ? Math.round(ele) : null,
+        eleSource: o.eleSrc === 'gpx' || o.eleSrc === 'picked' ? o.eleSrc : 'manual',
+      } : { invalid: true }
+    }
+    // 分享仅 local 模式（P3 §5.1）：定义了 onShareAppMessage 后转发对全页可用，
+    // 活动模式必须显式关掉——否则转发出去的默认 path 丢 id，对方只会看到 denied。
+    if (this.mode === 'activity' && typeof wx !== 'undefined' && wx.hideShareMenu) {
+      wx.hideShareMenu({ fail: () => {} })
+    }
   },
 
   onShow() {
     this.reload()
   },
 
-  reload() {
-    if (!this.activityId) {
-      this.setData({ loading: false, denied: '缺少活动编号。' })
-      return
+  // ---- 模式感知取点（P3 §5.2 评审补：此页原把 this.view… 内联读了 5 处，
+  // local 模式没有 this.view，必须统一入口，一处分流）----
+  getPoints() {
+    if (this.mode === 'activity') {
+      const v = this.view
+      return (v && v.activity && v.activity.routeSnapshot && v.activity.routeSnapshot.points) || []
     }
-    return api.read({ kind: 'activity', activityId: this.activityId, perspective: 'participant' }).then(res => {
-      if (res.view.kind !== 'activity') {
-        this.setData({ loading: false, denied: res.view.kind === 'denied' ? res.view.message : '活动不存在。' })
+    return this._localPoints || []
+  },
+
+  resolveContext() {
+    if (this.mode === 'activity') {
+      if (!this.activityId) return Promise.resolve({ denied: '缺少活动编号。' })
+      return api.read({ kind: 'activity', activityId: this.activityId, perspective: 'participant' }).then(res => {
+        if (res.view.kind !== 'activity') {
+          return { denied: res.view.kind === 'denied' ? res.view.message : '活动不存在。' }
+        }
+        this.revision = res.revision
+        this.now = res.now
+        this.view = res.view
+        const a = res.view.activity
+        const points = a.routeSnapshot.points
+        const sched = RS.schedule(points, a.startAt)
+        return {
+          points,
+          sched,
+          hasStart: !!a.startAt,
+          pointIndex: Math.max(0, Math.min(this.pickInitialPoint(points.length), points.length - 1)),
+          isOwner: res.view.permittedActions.indexOf('notice.publish') !== -1,
+          initialDate: this.userPickedDate ? this.data.date : '',
+          title: '',
+        }
+      })
+    }
+    if (this.localKind === 'point') {
+      if (!this.localPoint || this.localPoint.invalid) {
+        return Promise.resolve({ denied: '坐标不完整，无法查询。' })
+      }
+      const p = this.localPoint
+      const points = [{
+        id: p.id,
+        name: p.name,
+        kind: 'checkpoint',
+        coordinates: p.coordinates,
+        ele: p.ele,
+        eleSource: p.eleSource,
+        time: null,
+      }]
+      return Promise.resolve({
+        points, sched: [], hasStart: false, pointIndex: 0, isOwner: false,
+        initialDate: this.userPickedDate ? this.data.date : '',
+        title: this.displayPointName(p),
+      })
+    }
+    // 轨迹组：点集读本地存储；组被删后旧入口落 denied，零外呼
+    const set = wpStore.getTrack(this.setId)
+    if (!set || !set.points || set.points.length < 2) {
+      return Promise.resolve({ denied: '轨迹组已删除或不存在。' })
+    }
+    const len = set.points.length
+    const points = set.points.map((p, i) => ({
+      id: p.id,
+      name: p.name || (i === 0 ? '起点' : i === len - 1 ? '终点' : '节点 ' + i),
+      kind: i === 0 ? 'start' : i === len - 1 ? 'finish' : 'checkpoint',
+      coordinates: { lat: p.lat, lng: p.lng },
+      ele: p.ele,
+      eleSource: 'gpx',
+      time: p.time || null,
+    }))
+    // §5.4 抵达日程：startAt = 基准日 + GPX 锚点（首个有时间戳节点）的钟点。
+    // 基准日 = 入口日期或今天，**会话内固定**——若跟着"当前所选日期"走，切节点会把日期
+    // 带到抵达日、抵达日又成新基准，整个行程逐次前漂。切日只是查看，换基准从 hub 重进。
+    this._baseDate = this.initialDate || F.cnToday()
+    let sched = RS.schedule(points, null)
+    let hasStart = false
+    const anchor = points.find(p => p.time && Number.isFinite(Date.parse(p.time)))
+    if (anchor) {
+      const startAt = this._baseDate + 'T' + RS.clockOf(RS.minutesOfDay(anchor.time)) + ':00+08:00'
+      sched = RS.schedule(points, startAt)
+      hasStart = true
+    }
+    return Promise.resolve({
+      points, sched, hasStart,
+      pointIndex: Math.max(0, Math.min(this.pickInitialPoint(points.length), points.length - 1)),
+      isOwner: false,
+      initialDate: this.userPickedDate ? this.data.date : '',
+      title: set.name,
+    })
+  },
+
+  displayPointName(p) {
+    return p.name || WP.coordName(p.coordinates.lat, p.coordinates.lng)
+  },
+
+  reload() {
+    this.resolveContext().then(ctx => {
+      if (ctx.denied) {
+        this.setData({ loading: false, denied: ctx.denied })
         return
       }
-      this.revision = res.revision
-      this.now = res.now
-      this.view = res.view
-      const a = res.view.activity
-      const points = a.routeSnapshot.points
-      // 按轨迹时间戳推算各节点抵达日程：第几天、几点到（无时间戳的节点给不出提醒）
-      const sched = RS.schedule(points, a.startAt)
-      const hasStart = !!a.startAt
-      const pointIndex = Math.max(0, Math.min(this.pickInitialPoint(points.length), points.length - 1))
+      const points = ctx.points
+      this._localPoints = this.mode === 'local' ? points : null
+      this._elevLabel = this.mode === 'activity' ? 'GPX 记录' : elevLabel((points[0] || {}).eleSource)
       // 日期必须在这一轮 setData 里一并落定。setData 的回调是异步的：若把日期放到回调里再设，
       // 紧随其后的 fetchWeather 会读到上一次的空日期，发出 date:''，云函数回"日期无效"。
       // 同理请求也放进回调，确保 this.data.date 已是最终值。
-      const date = this.resolveDate(sched, pointIndex, this.userPickedDate ? this.data.date : '')
+      const date = this.resolveDate(ctx.sched, ctx.pointIndex, ctx.initialDate)
+      const single = this.mode === 'local' && this.localKind === 'point'
+      const p0 = points[0]
+      if (ctx.title && typeof wx !== 'undefined' && wx.setNavigationBarTitle) {
+        wx.setNavigationBarTitle({ title: ctx.title, fail: () => {} })
+      }
       this.setData({
         loading: false,
         denied: '',
-        pointLabels: points.map((p, i) => {
-          const s = sched[i]
+        mode: this.mode,
+        pointLabels: points.map((pt, i) => {
+          const s = ctx.sched[i]
           const label = s && s.known ? RS.nodeLabel(s) : ''
-          return label ? p.name + '（' + label + '）' : p.name
+          return label ? pt.name + '（' + label + '）' : pt.name
         }),
-        schedule: sched,
-        scheduleBasis: RS.basisText(sched, hasStart),
-        spanDays: RS.spanDays(sched),
-        pointIndex,
+        schedule: ctx.sched,
+        scheduleBasis: RS.basisText(ctx.sched, ctx.hasStart),
+        spanDays: RS.spanDays(ctx.sched),
+        pointIndex: ctx.pointIndex,
         date,
-        isOwner: res.view.permittedActions.indexOf('notice.publish') !== -1,
+        isOwner: ctx.isOwner,
+        showSave: single,
+        pointCard: single && p0 ? {
+          name: this.displayPointName(p0),
+          coordText: p0.coordinates.lat.toFixed(4) + ', ' + p0.coordinates.lng.toFixed(4),
+          eleText: Number.isFinite(p0.ele)
+            ? Math.round(p0.ele) + ' m · ' + elevLabel(p0.eleSource)
+            : '海拔未知 · 按模型推算（±300-600 m）',
+        } : null,
       }, () => { if (points.length) this.fetchWeather() })
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
   },
@@ -165,7 +319,7 @@ Page({
   },
 
   fetchWeather() {
-    const points = this.view.activity.routeSnapshot.points
+    const points = this.getPoints()
     const point = points[this.data.pointIndex]
     if (!point) return
     const reset = {
@@ -181,13 +335,18 @@ Page({
       return
     }
     this.setData(reset)
-    // 窗口内复用：切日、切节点都不重新查询（30 分钟缓存内本来就零成本，这里连等待都没有）
+    // 窗口内复用：切日、切节点都不重新查询（30 分钟缓存内本来就零成本，这里连等待都没有）。
+    // point.id 每模式唯一（活动节点 id / 单点 'wp-local' / 轨迹组节点导入时生成的 id），
+    // 换节点必然 miss，不会误复用别的点的序列。
     const cached = this._lastResult
     if (this.covers(cached, this.data.date, point.id)) {
       this.applyWeather(Object.assign({}, cached), point, reset)
       return
     }
-    api.getWeather(this.activityId, point.id, this.data.date).then(result => {
+    const fetching = this.mode === 'activity'
+      ? api.getWeather(this.activityId, point.id, this.data.date)
+      : api.getWeatherByPoint(point.coordinates.lat, point.coordinates.lng, this.data.date)
+    fetching.then(result => {
       if (result.status !== 'ready') {
         this.setData(Object.assign({}, reset, {
           loadingWeather: false,
@@ -211,7 +370,7 @@ Page({
     const series = result.series || []
     const detail = series.filter(h => h.d === this.data.date)
     const day = (result.days || []).find(x => x.date === this.data.date) || {}
-    // 海拔优先用 GPX 节点高程（真实值），缺失时退回模型降尺度值并说明来源
+    // 海拔优先用真实高程（GPX/手填），缺失时退回模型降尺度值并说明来源
     const elevOK = Number.isFinite(point.ele)
     const elevation = elevOK ? point.ele : result.pointElevation
     const skyCtx = {
@@ -232,7 +391,7 @@ Page({
     // 交给「全图展示」横屏页：那一页在页面栈上方，直接读内存即可，不必把 168 小时序列塞 URL
     chartStore.set({
       series: chartSeries, marks: chartMarks, night: chartNight, selected: chartSelected,
-      pointName: point.name, date: this.data.date,
+      pointName: this.displayPointName(point), date: this.data.date,
     })
     this.setData(Object.assign({}, reset, {
       loadingWeather: false,
@@ -244,7 +403,7 @@ Page({
       callouts: buildCallouts(day, detail, elevation),
       metrics: this.buildMetricsCard(detail, day, elevation, skyOut),
       detailRows: this.buildDetailRows(detail),
-      elevSource: elevOK ? 'GPX 记录' : '模型降尺度（±300-600 m）',
+      elevSource: elevOK ? (this._elevLabel || 'GPX 记录') : '模型降尺度（±300-600 m）',
       conclusions: skyOut ? skyOut.items : [],
       skyMoon: skyOut ? skyOut.moon : null,
       chartSeries,
@@ -256,7 +415,7 @@ Page({
 
   // 节点的前进/山脊走向（用前后节点连线求方位角），供日照金山"往哪看"粗判
   headingAt(index) {
-    const pts = this.view.activity.routeSnapshot.points
+    const pts = this.getPoints()
     const cur = pts[index]
     if (!cur || !cur.coordinates) return null
     const next = pts[index + 1] || pts[index - 1]
@@ -364,10 +523,9 @@ Page({
     }
   },
 
-  // 当前节点的可信海拔（GPX 优先），供逐日日出日落与图上标记复用
+  // 当前节点的可信海拔（真实高程优先），供逐日日出日落与图上标记复用
   nodeElevation() {
-    const pts = this.view && this.view.activity.routeSnapshot.points
-    const p = pts && pts[this.data.pointIndex]
+    const p = this.getPoints()[this.data.pointIndex]
     return p && Number.isFinite(p.ele) ? p.ele : null
   },
 
@@ -449,9 +607,10 @@ Page({
     wx.navigateTo({ url: '/pages/weather-chart/weather-chart' })
   },
 
-  // 生成天气提醒草稿：带上节点、抵达日与当天结论要点
+  // 生成天气提醒草稿：带上节点、抵达日与当天结论要点（仅活动模式；isOwner 才渲染）
   onDraftNotice() {
-    const points = this.view.activity.routeSnapshot.points
+    if (this.mode !== 'activity') return
+    const points = this.getPoints()
     const point = points[this.data.pointIndex]
     const s = this.data.schedule[this.data.pointIndex]
     const when = s && s.known && s.arriveTime
@@ -461,5 +620,58 @@ Page({
       content: when + ' 天气提醒：出发前请核实当地预报与路况，准备防滑鞋与雨具。',
     })
     wx.navigateTo({ url: '/pages/anotices/anotices?id=' + this.activityId })
+  },
+
+  // 保存此点（仅自由查询单点；轨迹组节点已在组里，活动模式无此语义）
+  onSavePoint() {
+    const point = this.getPoints()[this.data.pointIndex]
+    if (!point) return
+    const input = {
+      name: point.name,
+      lat: point.coordinates.lat,
+      lng: point.coordinates.lng,
+      ele: point.ele,
+      eleSource: point.eleSource || 'manual',
+    }
+    const save = (replaceId) => {
+      const r = wpStore.savePoint(replaceId ? Object.assign({ id: replaceId }, input) : input)
+      if (!r.ok) {
+        api.toast(r.reason === 'cap' ? '最多存 ' + WP.POINTS_CAP + ' 个观察点，先删一个' : '坐标无效，无法保存')
+        return
+      }
+      api.toast(r.updated ? '已替换原有观察点' : '已存入观察点')
+    }
+    // 3dp 网格去重（P3 §6）：命中即让用户选替换或并存，不静默产生重复行
+    const nearby = wpStore.listPoints().find(p => WP.dedupeKey(p.lat, p.lng) === WP.dedupeKey(input.lat, input.lng))
+    if (nearby && nearby.id !== point.id) {
+      wx.showModal({
+        title: '已有很近的观察点',
+        content: '「' + (nearby.name || WP.coordName(nearby.lat, nearby.lng)) + '」就在附近（约百米内），替换它吗？',
+        confirmText: '替换',
+        cancelText: '并存',
+        success: res => { if (res.confirm) save(nearby.id); else save(null) },
+        fail: () => save(null),
+      })
+      return
+    }
+    save(null)
+  },
+
+  // 分享（P3 §5.3 决策 (b)）：URL 只带 3dp 降精度坐标与日期，不带 name/ele——
+  // 这是本仓首个带坐标的分享链路，宁可少给信息也不泄露精确位置；≈百米网格足够定位山头。
+  // 接收方落地的点显示坐标文案名、海拔用模型值，可自行「存入观察点」。
+  // 活动模式已在 onLoad hideShareMenu，此 handler 不会走到。
+  onShareAppMessage() {
+    if (this.mode !== 'local') return { title: 'OurTrail 天气' }
+    const point = this.getPoints()[this.data.pointIndex]
+    if (!point) return { title: 'OurTrail 天气' }
+    const c = WP.sharePointPayload(point.coordinates.lat, point.coordinates.lng)
+    const selected = this.data.dayCards.find(x => x.date === this.data.date)
+    const title = this.displayPointName(point) + ' ' + this.data.date + ' 天气'
+      + (selected && selected.phrase ? ' · ' + selected.phrase.label : '')
+    return {
+      title,
+      path: '/pages/weather/weather?src=local&lat=' + c.lat + '&lng=' + c.lng + '&date=' + this.data.date,
+    }
   },
 })

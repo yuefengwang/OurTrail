@@ -4,4 +4,4 @@ const makeNoticesPage = require('../../utils/notices-page')
 
 Page(makeNoticesPage(function () {
   return null
-}))
+}, { tabBarIndex: 2 }))

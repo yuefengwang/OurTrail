@@ -1,0 +1,139 @@
+<view class="page">
+  <view class="stack">
+    <view>
+      <text class="eyebrow">天气</text>
+      <text class="page-title" style="display:block;margin-top:4px;">先看天，再上山。</text>
+    </view>
+
+    <!-- 输入区：主行动唯一化——地图选点是唯一实心按钮 -->
+    <view class="button primary block" hover-class="button-hover" bindtap="onPickMap">地图选点查天气</view>
+    <view class="button secondary block" hover-class="button-hover" bindtap="onManualOpen">输入经纬度</view>
+
+    <view class="card">
+      <view class="card-header">
+        <text class="card-label">导入 GPX 轨迹</text>
+      </view>
+      <text class="small" style="display:block;">导入轨迹，自动取出山路线上的标注点，逐点看天气与天相。</text>
+      <view class="button secondary block" style="margin-top:12px;" hover-class="button-hover" bindtap="onImportGpx">导入 GPX 轨迹</view>
+      <text class="small muted" style="display:block;margin-top:8px;">把 GPX 文件发到任意聊天，再点上面按钮选择。</text>
+    </view>
+
+    <!-- 我的观察点：有数据才显示，空态不渲染空卡片 -->
+    <view wx:if="{{points.length}}" class="card" style="padding:0;">
+      <view class="card-header">
+        <text class="card-label">我的观察点</text>
+        <text class="small muted tabular">{{points.length}}</text>
+      </view>
+      <view
+        wx:for="{{points}}"
+        wx:key="id"
+        class="list-row"
+        hover-class="button-hover"
+        bindtap="onPointTap"
+        data-id="{{item.id}}"
+      >
+        <view class="list-main">
+          <text>{{item.display}}</text>
+          <text class="list-sub tabular">{{item.subText}}</text>
+        </view>
+        <view class="button text" catchtap="onDeleteTap" data-type="point" data-id="{{item.id}}" data-name="{{item.display}}">删除</view>
+      </view>
+    </view>
+
+    <!-- 轨迹点组：收合式列表，节点行 = 名称 + 相对耗时 -->
+    <view wx:for="{{tracks}}" wx:key="id" class="card">
+      <view class="list-row" hover-class="button-hover" bindtap="onTrackToggle" data-id="{{item.id}}">
+        <view class="list-main">
+          <text>{{item.name}}</text>
+          <text class="list-sub tabular">{{item.statsText}}</text>
+        </view>
+        <text class="picker-arrow">{{trackOpen[item.id] ? '▴' : '▾'}}</text>
+      </view>
+      <view wx:if="{{trackOpen[item.id]}}" class="stack" style="gap:2px;padding:0 16px 12px;">
+        <view
+          wx:for="{{item.nodes}}"
+          wx:for-item="node"
+          wx:key="id"
+          class="list-row"
+          hover-class="button-hover"
+          bindtap="onTrackNodeTap"
+          data-set="{{item.id}}"
+          data-index="{{index}}"
+        >
+          <view class="list-main">
+            <text>{{node.name}}</text>
+            <text class="list-sub">{{node.label}}</text>
+          </view>
+        </view>
+        <view class="button text" hover-class="button-hover" catchtap="onDeleteTap" data-type="track" data-id="{{item.id}}" data-name="{{item.name}}">删除这组轨迹</view>
+      </view>
+    </view>
+
+    <text wx:if="{{!points.length && !tracks.length}}" class="small muted">还没有观察点。选一个点、输一组坐标或导一条轨迹，查过的点都能存住，下次免重传。</text>
+  </view>
+
+  <!-- 手动输入经纬度 -->
+  <overlay open="{{manualOpen}}" kind="dialog" title="输入经纬度" bind:close="onManualClose">
+    <view class="stack">
+      <view wx:if="{{manualError}}" class="callout danger">{{manualError}}</view>
+      <form-field label="名称（可选）">
+        <input class="input" value="{{manual.name}}" bindinput="onManualName" placeholder="如：四姑娘山大峰" />
+      </form-field>
+      <form-field label="纬度">
+        <input class="input" type="digit" value="{{manual.lat}}" bindinput="onManualLat" placeholder="31.0632" />
+      </form-field>
+      <form-field label="经度">
+        <input class="input" type="digit" value="{{manual.lng}}" bindinput="onManualLng" placeholder="102.9085" />
+      </form-field>
+      <form-field label="海拔（可选，影响天相判断）" hint="米。有真实海拔时，云海与晨昏光的判断更准。">
+        <input class="input" type="digit" value="{{manual.ele}}" bindinput="onManualEle" placeholder="4250" />
+      </form-field>
+      <view class="list-row" bindtap="onManualWgs">
+        <view class="list-main">
+          <text>这是 GPS 原始坐标（WGS-84）</text>
+          <text class="list-sub">从奥维/两步路等导出的坐标多为 WGS-84；微信地图里的坐标不用勾</text>
+        </view>
+        <checkbox checked="{{manual.wgs}}" color="#163E35" />
+      </view>
+      <view class="button primary block" hover-class="button-hover" bindtap="onManualSubmit">保存并查询</view>
+    </view>
+  </overlay>
+
+  <!-- GPX 预览 -->
+  <overlay open="{{gpxOpen}}" kind="sheet" title="导入 GPX 轨迹" bind:close="onGpxClose">
+    <view class="stack">
+      <view wx:if="{{gpxError}}" class="callout danger">{{gpxError}}</view>
+      <block wx:if="{{gpxMeta && !gpxError}}">
+        <view class="callout">
+          <text class="callout-title">{{gpxMeta.fileName}}</text>
+          <text style="display:block;margin-top:4px;">解析出 {{gpxMeta.count}} 个路线节点{{gpxMeta.distanceKm > 0 ? ' · 全程约 ' + gpxMeta.distanceKm + ' km' : ''}}{{gpxMeta.hasElevation ? ' · 累计爬升约 ' + gpxMeta.ascentM + ' m' : ''}}{{gpxMeta.hasTime ? ' · 含时刻（可推算抵达日）' : ''}}。</text>
+        </view>
+        <view class="stack" style="gap:4px;">
+          <text class="small muted">确认前可先核对各节点：</text>
+          <view wx:for="{{gpxPoints}}" wx:key="index" class="list-row">
+            <view class="list-main">
+              <text>{{item.name}}</text>
+              <text class="list-sub tabular">{{item.coordinates.lat}}, {{item.coordinates.lng}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="button primary block" hover-class="button-hover" bindtap="onGpxApply">存为轨迹点组</view>
+      </block>
+      <block wx:elif="{{gpxError}}">
+        <text class="small muted">请确认文件是标准 GPX（含 wpt/rtept/trkpt）后重试。</text>
+      </block>
+      <block wx:else>
+        <text class="small muted">正在读取文件…</text>
+      </block>
+    </view>
+  </overlay>
+
+  <!-- 删除确认 -->
+  <overlay open="{{deleteOpen}}" kind="dialog" title="{{deleteInfo.type === 'track' ? '删除这组轨迹？' : '删除这个观察点？'}}" bind:close="onDeleteClose">
+    <view class="stack">
+      <text>将删除「{{deleteInfo.name}}」{{deleteInfo.type === 'track' ? '及其全部节点，不可恢复。' : '，不可恢复。'}}</text>
+      <view class="button danger block" hover-class="button-hover" bindtap="onDeleteConfirm">删除</view>
+      <view class="button text block" hover-class="button-hover" bindtap="onDeleteClose">先留着</view>
+    </view>
+  </overlay>
+</view>

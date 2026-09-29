@@ -1,11 +1,11 @@
 # utils/ — 纯逻辑层
 
-10 files. **8 of the 10 are deliberately free of any `wx.*` API** so `tools/*-test.js` can `require()` them directly under plain Node. That property is the reason this directory is testable at all — do not break it.
+11 files. **9 of the 11 are deliberately free of any `wx.*` API** so `tools/*-test.js` can `require()` them directly under plain Node. That property is the reason this directory is testable at all — do not break it.
 
 | File | LOC | wx-free | Role |
 |---|---|---|---|
-| `api.js` | 121 | **NO** | The only `wx.cloud.callFunction` site in the entire mini program. 14 exports. |
-| `draft.js` | 78 | **NO** | The only other wx-dependent file — wx storage. |
+| `api.js` | ~128 | **NO** | The only `wx.cloud.callFunction` site in the entire mini program. 15 exports（含 `getWeatherByPoint`）. |
+| `draft.js` | ~92 | **NO** | wx storage 的两个落点之一：本地草稿 + 最近查看 + `wxStorage` 通用适配器（供注入式纯 util 用，见 `watch-points.js`）。 |
 | `format.js` | 128 | yes | UTC+8 formatting + every label-copy map + WMO `weatherPhrase` |
 | `util.js` | 111 | yes | `distanceKm` (haversine), `maskPhone`/`maskId`, `relativeDeadline`, `buildRosterTsv` (clipboard), `buildRosterCsv` (BOM + full PII, for insurance), `wmoText`, `reportText` |
 | `astro.js` | 283 | yes | NOAA solar/lunar math, twilights, 银心 season + azimuth |
@@ -13,13 +13,14 @@
 | `route-schedule.js` | 110 | yes | GPX offsets → per-node arrival day/time |
 | `gpx.js` | 318 | yes | GPX parser + GCJ↔WGS transforms + track simplification |
 | `chart-store.js` | 14 | yes | Module-singleton bus, weather page → landscape chart page |
-| `notices-page.js` | 160 | yes | `makeNoticesPage()` page factory |
+| `watch-points.js` | ~180 | yes | 观察点/轨迹点组（P3 独立天气）。**注入式 storage**：`createWatchPoints(storage)` 工厂，页面注入 `draft.wxStorage`、测试注入内存 Map——它是 wx-free 的同时仍走 wx 存储 |
+| `notices-page.js` | ~172 | yes | `makeNoticesPage(getActivityId, opts)` page factory（`opts.tabBarIndex` 供 Tab 页自报选中态） |
 
 Measured reference centrality (files requiring each): `api.js` 15 · `format.js` 12 · `draft.js` 7 · `astro.js` 5 · `sky.js` 3 · `route-schedule.js` 3 · `gpx.js` 3 · `chart-store.js` 3 · `notices-page.js` 2 · `util.js` 0.
 
 ## THE PURITY RULE
 
-`api.js` and `draft.js` are the **only** permitted `wx` dependencies. Everything else must stay pure so a Node script can import it with no stubbing.
+`api.js` and `draft.js` are the **only** permitted `wx` dependencies. Everything else must stay pure so a Node script can import it with no stubbing. If a pure util genuinely needs wx storage, invert the dependency instead of reaching for `wx`（`watch-points.js` 先例：`createWatchPoints(storage)` 工厂 + `draft.js` 导出 `wxStorage` 适配器）.
 
 Consequences worth knowing before you touch these files:
 - **Time is Beijing time, hardcoded UTC+8, no timezone library and no DST.** `format.js` does the offset arithmetic by hand.
@@ -54,8 +55,10 @@ A module-level `let payload` with `set`/`get`/`clear`, carrying `{series, marks,
 | `gpx.js` (incl. both `gcjToWgs` copies) | `node tools/gpx-test.js` | 47 |
 | `sky.js` | `node tools/sky-test.js` | 65 |
 | `route-schedule.js` | `node tools/route-schedule-test.js` | 41 |
-| `sky`+`astro`+`route-schedule` + `lib/weather` | `node tools/weather-page-test.js` | 91 |
-| `api.js` (monkey-patched) + `draft.js` | `node tools/scenario-editor-test.js` | 126 |
+| `watch-points.js` | `node tools/watch-points-test.js` | 37 |
+| `sky`+`astro`+`route-schedule` + `lib/weather` + weather 页（含 local 模式） | `node tools/weather-page-test.js` | 129 |
+| `api.js` (monkey-patched) + `draft.js` | `node tools/scenario-editor-test.js` | 137 |
+| `lib/weather` 纯函数（byPoint 校验/缓存 key/免鉴权集合） | `node cloudfunctions/trailApi/smoke-test.js` §15 | （并入 smoke） |
 
 ## ADDING A FILE HERE
 

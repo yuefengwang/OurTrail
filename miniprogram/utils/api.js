@@ -78,6 +78,10 @@ function previewAssignments(activityId) {
 function getWeather(activityId, pointId, date) {
   return call('getWeather', { activityId, pointId, date })
 }
+// P3 独立天气：按点自由查询（免活动语义）。返回体与 getWeather 的 ready 分支同形状。
+function getWeatherByPoint(lat, lng, date) {
+  return call('getWeatherByPoint', { lat, lng, date })
+}
 
 /** 提交命令；CONFLICT 时自动标记 needRefresh（页面应重读后重试） */
 function dispatch(payload, expectedRevision, requestId) {
@@ -118,4 +122,5 @@ function errorText(e) {
 module.exports = {
   call, read, readOr, dispatch, dispatchAndSync, toast, errorText,
   readForm, readTransport, readSensitive, readContact, readExport, previewAssignments, getWeather,
+  getWeatherByPoint,
 }

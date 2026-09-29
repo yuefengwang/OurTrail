@@ -75,4 +75,19 @@ function rememberActivity(activityId) {
   } catch (e) { /* ignore */ }
 }
 
-module.exports = { getDraft, setDraft, clearDraft, getOpened, rememberActivity, setOpenId, wxOpenId }
+// 通用 wx storage 适配器：给"注入式"纯 util 用（如 watch-points.js——它自身不引用 wx，
+// 由页面把本适配器注入 createWatchPoints(storage)，测试则注入内存适配器）。
+// 这是 AGENTS.md 纯度规则的落点：wx 依赖收敛在 api.js / draft.js 两个文件里。
+const wxStorage = {
+  get(key) {
+    try { return wx.getStorageSync(key) } catch (e) { return null }
+  },
+  set(key, value) {
+    try { wx.setStorageSync(key, value) } catch (e) { /* 存储失败不影响主流程 */ }
+  },
+}
+
+module.exports = {
+  getDraft, setDraft, clearDraft, getOpened, rememberActivity, setOpenId, wxOpenId,
+  wxStorage,
+}

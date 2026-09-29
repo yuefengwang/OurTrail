@@ -11,7 +11,8 @@
     "pages/staff/staff",
     "pages/vehicle/vehicle",
     "pages/weather/weather",
-  "pages/weather-chart/weather-chart",
+    "pages/weather-chart/weather-chart",
+    "pages/weather-hub/weather-hub",
     "pages/anotices/anotices",
     "pages/privacy/privacy"
   ],
@@ -29,6 +30,7 @@
     "backgroundColor": "#FFFFFF",
     "list": [
       { "pagePath": "pages/home/home", "text": "活动" },
+      { "pagePath": "pages/weather-hub/weather-hub", "text": "天气" },
       { "pagePath": "pages/notices/notices", "text": "通知" },
       { "pagePath": "pages/me/me", "text": "我的" }
     ]

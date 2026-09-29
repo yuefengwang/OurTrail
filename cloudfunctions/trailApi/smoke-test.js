@@ -7,6 +7,7 @@ const { assertInvariants } = require('./domain/invariants')
 const { selectView, selectTransport, getDetailState } = require('./domain/selectors')
 const { planAssignments } = require('./domain/allocation')
 const { canonicalPayload } = require('./domain/contracts')
+const W = require('./lib/weather')
 const crypto = require('crypto')
 
 let passed = 0
@@ -15,6 +16,7 @@ function check(name, cond, detail) {
   if (cond) { passed++; console.log('  ✓ ' + name) }
   else { failed++; console.error('  ✗ ' + name + (detail ? ' — ' + JSON.stringify(detail) : '')) }
 }
+function section(t) { console.log('== ' + t + ' ==') }
 
 const ctx = () => ({ now: '2026-09-26T07:00:00+08:00', id: genId })
 const fp = payload => crypto.createHash('sha256').update(canonicalPayload(payload), 'utf8').digest('hex')
@@ -325,6 +327,67 @@ function run() {
     && legacyDiscover.activities[legacyDiscover.activities.length - 1].id === draftForDiscover)
   const noOpenedIds = selectView(sTrack, { userId: OWNER }, { kind: 'home', perspective: 'participant' }, '2026-09-26T07:00:00+08:00')
   check('home 未传 openedActivityIds 不再抛异常', noOpenedIds.kind === 'home')
+
+  /* ================= 第 15 节：P3 独立天气 getWeatherByPoint 纯逻辑 =================
+   * index.js 无法在本地 require（wx-server-sdk），所以校验/窗口/纠偏/投影全部沉到
+   * lib/weather 的纯函数里（index.js 只做编排）。这里覆盖纯函数；缓存命中与免 OPENID
+   * 的完整链路在部署后真机验证（P3 §11 记录了这一取舍）。 */
+  section('15. 独立天气 getWeatherByPoint：校验/窗口/纠偏/投影')
+  {
+    const today = W.cnToday()
+    const plus = n => new Date(Date.parse(today + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10)
+
+    check('免鉴权集合：getWeather/getWeatherByPoint 在列，dispatch 不在',
+      W.isWeatherFreeAction('getWeather') && W.isWeatherFreeAction('getWeatherByPoint')
+      && !W.isWeatherFreeAction('dispatch') && !W.isWeatherFreeAction('read'))
+
+    // 缓存 key：2dp 网格（≈1.1 km）——两路径缓存互通的全部机制
+    const k1 = W.weatherCacheKey(30.911, 103.477, plus(1))
+    const k2 = W.weatherCacheKey(30.909, 103.479, plus(1))
+    const k3 = W.weatherCacheKey(30.921, 103.477, plus(1))
+    check('同 2dp 网格同 key（活动路径与自由路径共享缓存）', k1 === k2, k1 + ' vs ' + k2)
+    check('不同网格不同 key', k1 !== k3)
+
+    // 合法查询：GCJ 入参纠偏到 WGS（与活动路径同一变换）
+    const ok = W.resolvePointQuery({ lat: 30.9458, lng: 103.4769, date: plus(3) }, today)
+    check('合法查询 ok', ok.ok === true)
+    check('GCJ 入参纠偏到 WGS（两轴幅度 0.0005~0.01 度）', Number.isFinite(ok.wgs.lat)
+      && Math.abs(ok.wgs.lat - 30.9458) > 0.0005 && Math.abs(ok.wgs.lat - 30.9458) < 0.01
+      && Math.abs(ok.wgs.lng - 103.4769) > 0.0005 && Math.abs(ok.wgs.lng - 103.4769) < 0.01,
+      JSON.stringify(ok.wgs))
+
+    // 非法入参 → INVALID_INPUT
+    for (const [name, payload] of [
+      ['lat 超界', { lat: 91, lng: 103, date: plus(1) }],
+      ['lat 缺失', { lng: 103, date: plus(1) }],
+      ['lng 非数', { lat: 30, lng: 'abc', date: plus(1) }],
+      ['日期非 ISO', { lat: 30, lng: 103, date: '2026-10-3' }],
+      ['日期不存在', { lat: 30, lng: 103, date: '2026-02-30' }],
+    ]) {
+      const r = W.resolvePointQuery(payload, today)
+      check(name + ' → INVALID_INPUT', r.ok === false && r.code === 'INVALID_INPUT', JSON.stringify(r))
+    }
+
+    // 窗口：0–14 天内 ok；15 天外 / 过去 → out_of_range（业务态，非错误）
+    check('今天 ok', W.resolvePointQuery({ lat: 30, lng: 103, date: today }, today).ok === true)
+    check('14 天后 ok', W.resolvePointQuery({ lat: 30, lng: 103, date: plus(14) }, today).ok === true)
+    check('15 天后 out_of_range', W.resolvePointQuery({ lat: 30, lng: 103, date: plus(15) }, today).status === 'out_of_range')
+    check('昨天 out_of_range', W.resolvePointQuery({ lat: 30, lng: 103, date: plus(-1) }, today).status === 'out_of_range')
+
+    // 投影：形状与活动路径 ready 分支一致（无遗留 hours）
+    const forecast = {
+      elevation: 4250,
+      days: [{ date: today, code: 2, tMax: 20, tMin: 10, cloud: { low: 1, mid: 2, high: 3 } }],
+      detail: [{ t: '08:00', d: today, temp: 12 }],
+      series: [{ t: '08:00', d: today, temp: 12 }],
+    }
+    const body = W.pointResponse(forecast)
+    check('投影字段齐备', body && body.pointElevation === 4250 && body.days.length === 1
+      && body.detail.length === 1 && body.series.length === 1)
+    check('投影无遗留 hours 字段', body && !('hours' in body))
+    check('tooEarly → null（转 out_of_range）', W.pointResponse({ tooEarly: true, days: [], detail: [] }) === null)
+    check('当日无数据 → null', W.pointResponse({ elevation: 1, days: [], detail: [], series: [] }) === null)
+  }
 
   console.log('')
   console.log('passed=' + passed + ' failed=' + failed)

@@ -11,8 +11,18 @@
 
     <view class="callout warning">这是概率判断，不是出发许可。云层与云海为模型推算，具体山谷的云海与光染任何产品都无法保证——出发前请核实当地气象与路况。</view>
 
-    <!-- 节点：带"第几天抵达"标注（按轨迹时间戳与出发时刻推算） -->
-    <form-field label="路线关键点" hint="{{scheduleBasis}}">
+    <!-- 自由查询单点：静态点卡（P3 §5.1，替代节点 picker） -->
+    <view wx:if="{{pointCard}}" class="card">
+      <view class="card-header">
+        <text class="card-label">{{pointCard.name}}</text>
+      </view>
+      <view class="list-row"><text>坐标</text><text class="tabular" style="font-weight:600;">{{pointCard.coordText}}</text></view>
+      <view class="list-row"><text>海拔</text><text class="tabular" style="font-weight:600;">{{pointCard.eleText}}</text></view>
+      <view class="button text" hover-class="button-hover" bindtap="onSavePoint">存入我的观察点</view>
+    </view>
+
+    <!-- 活动流 / 轨迹组：节点 picker，带"第几天抵达"标注（按轨迹时间戳与出发时刻推算） -->
+    <form-field wx:if="{{!pointCard}}" label="路线关键点" hint="{{scheduleBasis}}">
       <picker range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPoint">
         <view class="picker">
           <text class="picker-value">{{pointLabels[pointIndex] || '暂无路线节点'}}</text>

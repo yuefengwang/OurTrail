@@ -214,4 +214,66 @@ function hourView(times, h, i) {
   }
 }
 
-module.exports = { fetchForecast, cnToday, gcjToWgs, cloudBandAt, hourView }
+/* ---------- P3 独立天气模块：按点自由查询的纯逻辑 ---------- */
+// index.js 只做编排（缓存读写、响应组装），校验/窗口判定/坐标纠偏/返回体投影都在这里，
+// smoke-test.js 不依赖 wx-server-sdk 即可覆盖。设计文档：天气模块升级-P3 §8。
+
+// 免 OPENID 的天气 action：天气是非个人数据，v1 起 getWeather 即免鉴权，byPoint 沿用同一语义。
+const FREE_ACTIONS = { getWeather: true, getWeatherByPoint: true }
+function isWeatherFreeAction(action) {
+  return FREE_ACTIONS[action] === true
+}
+
+// 缓存 key：WGS 坐标 2dp 网格（≈1.1 km）+ 日期。活动节点与自由查询落同格即共享缓存，
+// 这是"两路径缓存互通"的全部机制——index.js 的 getCachedForecast 也用本函数取 key。
+function weatherCacheKey(lat, lng, date) {
+  return 'w_' + lat.toFixed(2) + '_' + lng.toFixed(2) + '_' + date
+}
+
+/**
+ * 校验 + 窗口判定 + 坐标纠偏（纯函数）。
+ * @returns {ok:true, wgs:{lat,lng}, date}
+ *        | {ok:false, code:'INVALID_INPUT', message}   坐标/日期不合法（fail 出 envelopes 级错误）
+ *        | {ok:false, status:'out_of_range'}           距今 0–14 天窗口外（业务态，非错误）
+ */
+function resolvePointQuery(payload, todayIso) {
+  const lat = Number(payload && payload.lat)
+  const lng = Number(payload && payload.lng)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return { ok: false, code: 'INVALID_INPUT', message: '坐标无效，请检查经纬度。' }
+  }
+  const date = String((payload && payload.date) || '')
+  // 日期校验比活动路径的 validDateStr 更严一档：除了格式，还要求真实存在——
+  // Date.parse 会把 '2026-02-30' 滚动成 3 月 2 日，格式校验抓不住，必须往返比对。
+  const dateOK = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
+    && Number.isFinite(Date.parse(date + 'T00:00:00Z'))
+    && new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) === date
+  if (!dateOK) {
+    return { ok: false, code: 'INVALID_INPUT', message: '日期无效。' }
+  }
+  const diff = Math.round((Date.parse(date) - Date.parse(todayIso)) / 86400000)
+  if (!Number.isFinite(diff) || diff < 0 || diff > 14) return { ok: false, status: 'out_of_range' }
+  return { ok: true, wgs: gcjToWgs(lat, lng), date }
+}
+
+/**
+ * 把 fetchForecast 返回体投影为 byPoint 响应体（不含 status/updatedAt，index.js 补）。
+ * 形状与活动路径 ready 分支逐字段一致（少遗留 hours，客户端自 P2 起不消费）。
+ * 无可用数据（超预报范围/当日无数据）返回 null，由 index.js 转 out_of_range。
+ */
+function pointResponse(forecast) {
+  if (!forecast || forecast.tooEarly) return null
+  const detail = forecast.detail || []
+  if (!detail.length) return null
+  return {
+    days: forecast.days || [],
+    detail,
+    series: forecast.series || [],
+    pointElevation: forecast.elevation,
+  }
+}
+
+module.exports = {
+  fetchForecast, cnToday, gcjToWgs, cloudBandAt, hourView,
+  isWeatherFreeAction, weatherCacheKey, resolvePointQuery, pointResponse,
+}

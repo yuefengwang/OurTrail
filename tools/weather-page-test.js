@@ -740,12 +740,175 @@ function oldServerResult(today, selectedDate) {
   }
 }
 
+// ============ 12. local 模式（P3 独立天气模块 §5）============
+// 单点与轨迹组共用同一查询视图：不 read 活动、日期第一轮落定、分享降精度（决策 b）、
+// 轨迹组按 §5.4 展开抵达日程且基准日不随切日前漂。加载真页面配置（同第 7 节手法）。
+const WPm = require('../miniprogram/utils/watch-points')
+const ISO = /^\d{4}-\d{2}-\d{2}$/
+
+async function localCases() {
+  section('12. local 模式：单点 / 轨迹组 / 分享降精度 / 保存此点')
+
+  // weather.js 在 require 时捕获 draft.wxStorage（模块级 createWatchPoints），
+  // 必须在 pageConfig() 之前 patch，再逐次重取页面源码。
+  const draft = require('../miniprogram/utils/draft')
+  const storageMap = new Map()
+  draft.wxStorage = {
+    get: k => (storageMap.has(k) ? storageMap.get(k) : null),
+    set: (k, v) => storageMap.set(k, v),
+  }
+
+  const modalCalls = []
+  const toasts = []
+  const navTitles = []
+  global.wx = {
+    showModal: o => { modalCalls.push(o) },
+    showToast: o => { toasts.push(o) },
+    setNavigationBarTitle: o => { navTitles.push(o && o.title) },
+    hideShareMenu: () => {},
+  }
+
+  const readCalls = []
+  const byPointCalls = []
+  const actCalls = []
+  api.read = req => {
+    readCalls.push(req)
+    return Promise.resolve({ revision: 1, now: '', view: { kind: 'denied', message: 'local 模式不应读活动' } })
+  }
+  api.getWeather = (a, p, d) => { actCalls.push([a, p, d]); return new Promise(() => {}) }
+  api.getWeatherByPoint = (lat, lng, d) => {
+    byPointCalls.push([lat, lng, d])
+    return Promise.resolve({
+      status: 'ready', updatedAt: DATE + 'T10:00:00+08:00', pointElevation: 4250,
+      days: fakeDays(DATE, 7), detail: [], series: fakeSeries(DATE, 7),
+    })
+  }
+
+  // 轨迹组数据：经真实 fromGpx 组装（锚点 = 第 1 点 08:00，第 3 点 +25h）
+  const trackSet = WPm.fromGpx({
+    ok: true,
+    points: [
+      { name: '垭口', coordinates: { lat: 30.9458, lng: 103.4769 }, time: '2026-09-01T08:00:00+08:00', ele: 4200 },
+      { name: '营地', coordinates: { lat: 30.9511, lng: 103.4822 }, time: '2026-09-01T15:00:00+08:00', ele: 4500 },
+      { name: '', coordinates: { lat: 30.9600, lng: 103.4901 }, time: '2026-09-02T09:00:00+08:00', ele: 5000 },
+    ],
+    track: [], distanceKm: 21.3, ascentM: 1200, suggestions: null, stats: { hasElevation: true },
+  }, '测试轨迹.gpx')
+  storageMap.set(WPm.TRACKS_KEY, [trackSet])
+
+  const boot = options => {
+    const cfg = pageConfig()
+    const page = makePage(cfg)
+    page.onLoad(options)
+    page.onShow()
+    return page
+  }
+
+  // ---- 单点 ----
+  {
+    const page = boot({ src: 'local', lat: '31.06321', lng: '102.90856', name: encodeURIComponent('四姑娘山'), date: '2026-10-03' })
+    check('单点：不发起 api.read', readCalls.length === 0)
+    // resolveContext 是 Promise，setData 在微任务里——先等到查询发出，再回看第一轮 patch
+    const ok = await waitFor(() => byPointCalls.length === 1)
+    const first = page._patches.find(p => 'date' in p)
+    check('单点：第一轮 setData 已带合法 date', !!first && ISO.test(first.date), first && first.date)
+    check('单点：查询走 getWeatherByPoint 且入参齐全',
+      ok && byPointCalls[0][0] === 31.06321 && byPointCalls[0][1] === 102.90856 && byPointCalls[0][2] === '2026-10-03',
+      JSON.stringify(byPointCalls[0]))
+    check('单点：不调用 getWeather', actCalls.length === 0)
+    check('单点：静态点卡点名', !!page.data.pointCard && page.data.pointCard.name === '四姑娘山')
+    check('单点：显示保存入口', page.data.showSave === true)
+    check('单点：导航标题 = 点名', navTitles.indexOf('四姑娘山') !== -1)
+  }
+
+  // ---- 非法坐标 ----
+  {
+    const page = boot({ src: 'local', lat: '91', lng: '103' })
+    await waitFor(() => !!page.data.denied)
+    check('非法 lat → denied 且零外呼',
+      /坐标/.test(page.data.denied) && byPointCalls.length === 1 && readCalls.length === 0, page.data.denied)
+  }
+
+  // ---- name 缺省 ----
+  {
+    const page = boot({ src: 'local', lat: '31.0632', lng: '102.9085' })
+    await waitFor(() => !!page.data.pointCard)
+    check('name 缺省走坐标文案（不显示"未命名"）',
+      /北纬/.test(page.data.pointCard.name), page.data.pointCard && page.data.pointCard.name)
+  }
+
+  // ---- 保存此点 + 3dp 去重替换 ----
+  {
+    const page = boot({ src: 'local', lat: '31.0632', lng: '102.9085', name: 'TestPoint' })
+    await waitFor(() => byPointCalls.length >= 2)
+    page.onSavePoint()
+    const afterFirst = storageMap.get(WPm.POINTS_KEY) || []
+    check('保存此点：写入本地观察点', afterFirst.length === 1 && afterFirst[0].name === 'TestPoint')
+    page.onSavePoint()
+    check('同格再存触发去重确认', modalCalls.length === 1 && /已有很近的观察点/.test(modalCalls[0].title))
+    modalCalls[0].success({ confirm: true })
+    const after = storageMap.get(WPm.POINTS_KEY) || []
+    check('确认替换后仍一条且沿用原行', after.length === 1 && after[0].name === 'TestPoint'
+      && afterFirst[0].createdAt === after[0].createdAt)
+    check('保存成功有 toast 反馈', toasts.some(t => /已存入观察点|已替换/.test(t.title)))
+  }
+
+  // ---- 分享（P3 §5.3 决策 (b)：只带 3dp 坐标与日期，不带 name/ele）----
+  {
+    const page = boot({ src: 'local', lat: '31.06321', lng: '102.90856', name: 'MtTest' })
+    await waitFor(() => page.data.dayCards.length > 0)
+    const share = page.onShareAppMessage()
+    check('分享 path 只带 3dp 坐标与日期',
+      /^\/pages\/weather\/weather\?src=local&lat=31\.063&lng=102\.909&date=\d{4}-\d{2}-\d{2}$/.test(share.path), share.path)
+    check('分享 path 不带 name/ele（宁可少给信息也不泄露精确位置）',
+      share.path.indexOf('name=') === -1 && share.path.indexOf('ele=') === -1, share.path)
+    check('分享 title 含点名与日期',
+      share.title.indexOf('MtTest') !== -1 && share.title.indexOf(page.data.date) !== -1, share.title)
+  }
+
+  // ---- 轨迹组：§5.4 抵达日程 + 基准日防漂 ----
+  {
+    const page = boot({ src: 'local', set: trackSet.id, point: 2, date: '2026-10-03' })
+    check('轨迹组：不发起 api.read', readCalls.length === 0)
+    const ok = await waitFor(() => page.data.pointLabels.length === 3)
+    check('轨迹组：点集来自本地存储', ok)
+    check('轨迹组：锚点 08:00 + 基准日 10-03 展开第 2 天抵达', page.data.date === '2026-10-04', page.data.date)
+    check('轨迹组：picker 标签带第几天', /第2天/.test(page.data.pointLabels[2]), page.data.pointLabels[2])
+    check('轨迹组：无静态点卡、无保存入口（节点已在组里）',
+      page.data.pointCard === null && page.data.showSave === false)
+    check('轨迹组：查询按当前节点坐标', byPointCalls.some(c => c[0] === 30.96 && c[1] === 103.4901 && c[2] === '2026-10-04'))
+
+    // 防漂：用户切日后基准日固定——切到节点 1 日期回到它的抵达日，而非继续前漂
+    const baseBefore = page._baseDate
+    page.onDayTap({ currentTarget: { dataset: { date: '2026-10-05' } } })
+    await waitFor(() => page.data.date === '2026-10-05')
+    page.onPoint({ detail: { value: 1 } })
+    // 查询在 setData 回调（异步）里发出——等真实调用落账，再断言
+    const switched = await waitFor(() => byPointCalls.some(c => c[0] === 30.9511 && c[1] === 103.4822 && c[2] === '2026-10-03'))
+    check('切日后基准日固定（无"日期前漂"循环）',
+      page._baseDate === baseBefore && page.data.date === '2026-10-03',
+      'base=' + page._baseDate + ' date=' + page.data.date)
+    check('切节点再次查询按该节点坐标与抵达日', switched)
+  }
+
+  // ---- 组 id 失效 ----
+  {
+    const page = boot({ src: 'local', set: 'wt-gone' })
+    await waitFor(() => !!page.data.denied)
+    check('轨迹组已删除 → denied 且零外呼',
+      /轨迹组已删除/.test(page.data.denied) && readCalls.length === 0, page.data.denied)
+  }
+}
+
+
+
 raceCases()
   .catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') })
   .then(windowCases)
   .catch(e => { failed++; console.error('  ✗ 窗口用例执行异常（' + e.message + '）') })
+  .then(localCases)
+  .catch(e => { failed++; console.error('  ✗ local 模式用例执行异常（' + e.message + '）') })
   .then(() => {
     console.log('\npassed=' + passed + ' failed=' + failed)
   process.exit(failed ? 1 : 0)
 })
-
