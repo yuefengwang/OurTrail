@@ -112,14 +112,14 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Logic regression — 529 assertions, all currently passing
+# Logic regression — 537 assertions, all currently passing
 node cloudfunctions/trailApi/smoke-test.js   # passed=86   domain layer
 node tools/astro-test.js                     # passed=60   astronomy
 node tools/gpx-test.js                       # passed=47   GPX + coordinate transforms
 node tools/sky-test.js                       # passed=65   天相 conclusions
 node tools/route-schedule-test.js            # passed=41   schedule inference
 node tools/weather-page-test.js              # passed=104  cloud→page→component contract
-node tools/scenario-editor-test.js           # passed=126  editor page scenarios
+node tools/scenario-editor-test.js           # passed=134  editor page scenarios
 
 # Full pre-commit sweep
 node tools/check.js && node tools/check-handlers.js && \
