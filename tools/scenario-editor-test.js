@@ -652,8 +652,59 @@ async function scenario10() {
   }
 }
 
+async function scenario11() {
+  section('11. 地图选点失败必须有反馈：取消静默，其余给可操作指引')
+  const failWith = errMsg => ({
+    seed: () => draft.setDraft('new', 'activity-editor', sampleInput()),
+    wx: { chooseLocation: o => o.fail({ errMsg }) },
+  })
+  {
+    const { page } = bootEditor(failWith('chooseLocation:fail cancel'))
+    await settle(page)
+    page.choosePointLocation({ currentTarget: { dataset: { index: 0 } } })
+    check('用户取消选点：静默，不写 failure', page.data.failure === '', page.data.failure)
+  }
+  {
+    const { page } = bootEditor(failWith('chooseLocation:fail auth deny'))
+    await settle(page)
+    page.choosePointLocation({ currentTarget: { dataset: { index: 0 } } })
+    check('定位被拒：写 failure', !!page.data.failure)
+    check('定位被拒：指向「手动输入」兜底', /手动输入/.test(page.data.failure), page.data.failure)
+  }
+  {
+    const { page } = bootEditor(failWith('chooseLocation:fail privacy not authorized'))
+    await settle(page)
+    page.choosePointLocation({ currentTarget: { dataset: { index: 0 } } })
+    check('隐私未声明：判隐私分支而非鉴权（authorized 含 auth 子串，顺序勿换）',
+      /用户隐私保护指引/.test(page.data.failure), page.data.failure)
+  }
+  {
+    const { page } = bootEditor(failWith('chooseLocation:fail scope is not declared'))
+    await settle(page)
+    page.choosePickupLocation({ currentTarget: { dataset: { index: 0 } } })
+    check('上车点 scope 未声明：同样给隐私指引', /用户隐私保护指引/.test(page.data.failure), page.data.failure)
+  }
+  {
+    const { page } = bootEditor(failWith('chooseLocation:fail system error'))
+    await settle(page)
+    page.choosePointLocation({ currentTarget: { dataset: { index: 0 } } })
+    check('未知错误：附 errMsg 便于排障', /system error/.test(page.data.failure), page.data.failure)
+  }
+  {
+    const { page } = bootEditor({
+      seed: () => draft.setDraft('new', 'activity-editor', sampleInput()),
+      wx: { chooseLocation: o => o.success({ latitude: 30.95, longitude: 103.57, name: '南门', address: '某路 1 号' }) },
+    })
+    await settle(page)
+    page.choosePointLocation({ currentTarget: { dataset: { index: 1 } } })
+    check('成功路径未破坏：坐标写入节点', page.data.form.points[1].lat === '30.95',
+      JSON.stringify(page.data.form.points[1]))
+    check('成功路径不写 failure', page.data.failure === '', page.data.failure)
+  }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++
