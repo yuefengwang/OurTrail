@@ -21,9 +21,11 @@ spark-output/
 # opencode 的会话续跑状态（每个后台任务一个小 json，随用随写，不入库）
 .omo/
 
-# ===== Prototype test artifacts (screenshots / evidence) =====
-docs/prototypes/ourtrail-app/tests/evidence/
-docs/prototypes/ourtrail-app/tests/home-browser.png
+# 注：原型交付证据截图（docs/prototypes/ourtrail-app/tests/evidence/ 与
+# home-browser.png，共 11 个文件）**是有意入库**的——原型实施计划 §11「交付证据」
+# 一节直接引用它们。所以这里不再 ignore：早先的 ignore 规则写在 force-add 之后，
+# 一直是个空规则，删掉它比让规则说谎更诚实。真正不入库的是上面的 test-results/
+# 与 playwright-report/（Playwright 每次运行的产物）。
 
 # ===== 个人轨迹数据导出（GPX 导入走用户自选文件，不入库）=====
 *.gpx
