@@ -50,9 +50,8 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── lib/weather.js  # Open-Meteo proxy (duplicates gcjToWgs — keep in sync)
 │   └── smoke-test.js   # 86 cases, needs no wx-server-sdk
 ├── tools/             # 9 zero-dep node scripts: 6 tests + 2 checks + 1 generator
-├── docs/product/      # 8 tracked product specs + 3 ADRs — the "why"
-│                      # (a 9th, 天气模块升级-P3-独立天气模块设计.md, is a 待评审 local
-│                      #  draft that git has never tracked — don't assume it exists elsewhere)
+├── docs/product/      # 9 tracked product specs + 3 ADRs — the "why"
+│                      # (天气线三份：P1 徒步天气概览 / P2 天相与meteogram / P3 独立天气模块)
 ├── docs/prototypes/ourtrail-app/  # FROZEN React design spec — see its AGENTS.md
 ├── .agents/skills/ourtrail-ui/    # mandatory UI rules
 ├── PARALLEL_DEV.md / SYNC.md / README.md
