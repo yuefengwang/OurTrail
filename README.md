@@ -108,8 +108,8 @@ node tools/gpx-test.js && node tools/sky-test.js && node tools/route-schedule-te
 node tools/weather-page-test.js && node tools/scenario-editor-test.js
 ```
 
-共 **7 个套件 / 516 用例**：`smoke` 86（领域层，不需 wx-server-sdk）· `astro` 60 · `gpx` 47 ·
-`sky` 65 · `route-schedule` 41 · `weather-page` 91（云函数→页面→组件契约）·
+共 **7 个套件 / 529 用例**：`smoke` 86（领域层，不需 wx-server-sdk）· `astro` 60 · `gpx` 47 ·
+`sky` 65 · `route-schedule` 41 · `weather-page` 104（云函数→页面→组件契约）·
 `scenario-editor` 126（编辑器页面级场景）。`check.js` 是提交前铁律，`check-handlers.js`
 补它抓不到的一类（`node --check` 无法发现未定义标识符）。
 
