@@ -25,7 +25,8 @@
 | 现场面板 | `components/field-panel` | 签到/出发核实/节点/到家/返程/异常/位置，组织者与协作共用 |
 | 协作任务 | `pages/staff` | 现场协作者的专属视角（field-panel staff 版） |
 | 本车任务 | `pages/vehicle` | 车辆联络人：去程/返程逐人清点、发车/完成 |
-| 天气 | `pages/weather` | 路线关键点真实预报（Open-Meteo，云函数代理+缓存）、**天相结论卡**（云海/日照金山/星空/银河/彩虹/晨昏光）、天气提醒草稿 |
+| 天气 Tab | `pages/weather-hub` | 独立天气模块首页：地图选点 / 输入经纬度（含 WGS-84 开关）/ 导入 GPX 三种入口，本地观察点与轨迹点组管理（免档案、免活动） |
+| 天气查询 | `pages/weather` | 三种模式共用：活动流（节点→天气，含天气提醒草稿）与自由查询（单点/轨迹组，抵达日程、保存/分享降精度）；Open-Meteo 云函数代理+缓存、**天相结论卡**（云海/日照金山/星空/银河/彩虹/晨昏光） |
 | 天气全图 | `pages/weather-chart` | 横屏整屏看 7×24 小时 meteogram 时间坐标图（数据经 `utils/chart-store.js` 交接，不走 URL） |
 | 天相图表 | `components/meteogram` | canvas 自绘 meteogram：温度线/降水双柱/三层云量/天相窗口标记/日时轴（几何抽到 `layout.js` 供测试断言） |
 | 合规 | `pages/privacy` | 隐私指引（公众平台登记路径）。**全局授权弹窗已下线**：`components/privacy-popup` 组件文件按 2026-09-27 决策保留，但已从 `app.json` 注销、不再挂载 |
@@ -36,7 +37,7 @@
 project.config.json          小程序项目配置
 miniprogram/
   app.json / app.js / app.wxss   设计系统（tokens + 组件样式全局化）在这里
-  custom-tab-bar/                自定义底部导航（活动/通知/我的）
+  custom-tab-bar/                自定义底部导航（活动/天气/通知/我的）
   components/                    icon(SVG data URI)/overlay/status-panel/person-row/
                                  form-field/activity-card/field-panel/roster-panel/
                                  transport-panel/meteogram/privacy-popup(已注销，保留文件)
@@ -49,11 +50,12 @@ miniprogram/
     astro.js/sky.js  天文层与天相概率判断（纯计算，客户端侧）
     route-schedule.js  GPX 时间戳 → 各节点第几天抵达
     chart-store.js   天气页 → 横屏图页的内存交接
+    watch-points.js  观察点/轨迹点组（纯 util，storage 注入；P3 独立天气）
     util.js          脱敏/距离/名单导出等纯函数
   pages/               home discover notices anotices me activity signup editor
-                       workspace staff vehicle weather weather-chart privacy
+                       workspace staff vehicle weather weather-chart weather-hub privacy
 cloudfunctions/trailApi/
-  index.js             12 个 action 路由（read/readForm/.../dispatch/getWeather/getPhoneNumber）
+  index.js             13 个 action 路由（read/readForm/.../dispatch/getWeather/getWeatherByPoint/getPhoneNumber）
   store.js             持久层：按集合存文档（ot_*），事务内 revision CAS
   domain/              由原型 domain 层逐段移植：
                        schema(校验器)/permissions/invariants/commands/

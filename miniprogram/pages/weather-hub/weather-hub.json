@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "天气",
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "form-field": "/components/form-field/form-field",
+    "overlay": "/components/overlay/overlay"
+  }
+}

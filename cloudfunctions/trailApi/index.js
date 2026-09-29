@@ -3,7 +3,9 @@
 // 约定返回：{ ok:true, data } 或 { ok:false, error:{ code, message } }
 const cloud = require('wx-server-sdk')
 const crypto = require('crypto')
-const { fetchForecast, gcjToWgs } = require('./lib/weather')
+const {
+  fetchForecast, gcjToWgs, isWeatherFreeAction, weatherCacheKey, resolvePointQuery, pointResponse,
+} = require('./lib/weather')
 const store = require('./store')
 const { canonicalPayload, deepClone, genId } = require('./domain/contracts')
 const { reduceCommand } = require('./domain/commands')
@@ -136,7 +138,7 @@ async function actionDispatch(payload, openid) {
 /* ---------- 天气（真实 Open-Meteo，带缓存） ---------- */
 
 async function getCachedForecast(lat, lng, date) {
-  const key = 'w_' + lat.toFixed(2) + '_' + lng.toFixed(2) + '_' + date
+  const key = weatherCacheKey(lat, lng, date)
   const cached = await db.collection('weather_cache').doc(key).get().catch(() => null)
   if (cached && cached.data && Date.now() - new Date(cached.data.fetchedAt).getTime() < 30 * 60000) {
     return cached.data.forecast
@@ -214,6 +216,29 @@ async function actionGetPhoneNumber(payload) {
   }
 }
 
+// P3 独立天气模块：按点自由查询（无活动语义）。设计文档：天气模块升级-P3 §8。
+// 与 actionGetWeather 的差异只有"取坐标的方式"：不加载全量状态、不定位节点——
+// 这也是它更快的原因（loadState 全量加载是当年 3 秒超时的成分之一）。
+// 校验/窗口/纠偏/投影在 lib/weather.resolvePointQuery / pointResponse（纯函数，smoke 可测）。
+async function actionGetWeatherByPoint(payload) {
+  const now = nowIso()
+  const q = resolvePointQuery(payload, now.slice(0, 10))
+  if (!q.ok) {
+    if (q.status === 'out_of_range') return { status: 'out_of_range' }
+    fail(q.code || 'INVALID_INPUT', q.message || '坐标无效。')
+  }
+  try {
+    // 库存/入参坐标是 GCJ-02，Open-Meteo 要 WGS-84（resolvePointQuery 已纠偏）；
+    // 缓存 key 是 2dp 网格，与活动路径自然互通。
+    const forecast = await getCachedForecast(q.wgs.lat, q.wgs.lng, q.date)
+    const body = pointResponse(forecast)
+    if (!body) return { status: 'out_of_range' }
+    return Object.assign({ status: 'ready', updatedAt: now }, body)
+  } catch (e) {
+    return { status: 'unavailable', message: (e && e.message) || '天气服务暂时不可用。' }
+  }
+}
+
 /* ---------- 路由 ---------- */
 
 const ROUTES = {
@@ -228,6 +253,7 @@ const ROUTES = {
   previewAssignments: actionPreviewAssignments,
   dispatch: actionDispatch,
   getWeather: actionGetWeather,
+  getWeatherByPoint: actionGetWeatherByPoint,
   getPhoneNumber: actionGetPhoneNumber,
 }
 
@@ -238,7 +264,7 @@ exports.main = async (event) => {
   const handler = event && ROUTES[event.action]
   try {
     if (!handler) fail('INVALID_INPUT', '未知操作：' + (event && event.action))
-    if (!openid && event.action !== 'getWeather') fail('AUTH_REQUIRED', '请先登录微信后再使用。')
+    if (!openid && !isWeatherFreeAction(event.action)) fail('AUTH_REQUIRED', '请先登录微信后再使用。')
     const data = await handler(event || {}, openid)
     return { ok: true, data }
   } catch (e) {

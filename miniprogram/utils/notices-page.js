@@ -1,11 +1,16 @@
 // 通知页共享逻辑（原型 screens/Notices.tsx）：
 // 通知 Tab 与活动内通知复用；组织者可发布、复制、记录投递。
+//
+// 第二参 opts.tabBarIndex：Tab 页才传（通知 Tab=2）。自定义 TabBar 的选中态由各 Tab 页
+// 在 onShow 自报（组件 data.selected 硬编码 0、无路由自检，不设就永远高亮「活动」——
+// 通知页此前从未设置过，是评审挖出的现存 bug）；anotices 非 Tab 页共用本工厂，不传即零影响。
 'use strict'
 const api = require('./api')
 const draft = require('./draft')
 const F = require('./format')
 
-module.exports = function makeNoticesPage(getActivityId) {
+module.exports = function makeNoticesPage(getActivityId, opts) {
+  const tabBarIndex = opts && Number.isInteger(opts.tabBarIndex) ? opts.tabBarIndex : null
   return {
     data: {
       loading: true,
@@ -24,9 +29,13 @@ module.exports = function makeNoticesPage(getActivityId) {
 
     onLoad(options) {
       this._options = options || {}
+      this._tabBarIndex = tabBarIndex
     },
 
     onShow() {
+      if (this._tabBarIndex !== null && typeof this.getTabBar === 'function' && this.getTabBar()) {
+        this.getTabBar().setData({ selected: this._tabBarIndex })
+      }
       this.reload()
     },
 
