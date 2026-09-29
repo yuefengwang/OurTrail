@@ -655,6 +655,91 @@ function fcConfig() {
   }
 }
 
+// 11. 新客户端配旧云函数：部署前的必答题
+// A 组同时改了服务端窗口锚定和客户端 covers()。但**云函数部署与小程序热重载不是同一刻**——
+// 未部署时线上跑的是旧版 fetchForecast：`days = diff+2`（从今天起）、
+// `series = times.slice(0,168)`（也锚今天）。旧版窗口 diff+2 必然覆盖所选日，
+// 所以 days 里找得到所选日、series 里却不一定有（旧 series 固定 7 天 = 今天起 168 小时）。
+// 这里如实复刻旧版返回体，验证客户端在两种所选日距离下的真实行为。
+section('11. 新客户端配旧云函数：部署前的必答题')
+
+// 如实复刻旧版 fetchForecast 的返回体
+function oldServerResult(today, selectedDate) {
+  const diff = Math.round((Date.parse(selectedDate + 'T00:00:00Z') - Date.parse(today + 'T00:00:00Z')) / 86400000)
+  const win = Math.min(16, Math.max(1, diff + 2))       // 旧版：diff+2
+  const times = fakeSeries(today, win)                   // 从今天的 win 天逐小时
+  return {
+    pointId: 'p1',
+    series: times.slice(0, 168),                         // 旧版：固定前 168 小时，锚今天
+    days: fakeDays(today, win),                          // 旧版：全部 win 天，从今天起
+    detail: [],
+    updatedAt: today + 'T06:00:00+08:00',
+  }
+}
+
+{
+  const cfg = pageConfig()
+  const page = makePage(cfg)
+  const today = wf.cnToday()
+
+  // ---- 场景一：所选日 = 今天+3（旧版窗口内，series 也覆盖得到）----
+  {
+    const selected = addDays(today, 3)
+    const r = oldServerResult(today, selected)
+    check('近程：旧版 series 锚在今天', r.series[0].d === today, r.series[0].d)
+    check('近程：旧版 days 里含所选日', r.days.some(d => d.date === selected), selected)
+
+    page.data.date = selected
+    const chart = page.buildChartSeries(r.series, selected)
+    const cards = page.buildDayCards(r.days, COORD)
+    check('近程：图锚在所选日', chart[0].d === selected, chart[0].d)
+    check('近程：卡锚在所选日', cards[0].date === selected, cards[0].date)
+    check('近程：图与卡同窗', chart[0].d === cards[0].date,
+      '图 ' + chart[0].d + ' vs 卡 ' + cards[0].date)
+  }
+
+  // ---- 场景二：所选日 = 今天+10（旧版 series 只有 7 天，够不到）----
+  {
+    const selected = addDays(today, 10)
+    const r = oldServerResult(today, selected)
+    check('远期：旧版 series 够不到所选日（这是错位的根源）',
+      !r.series.some(h => h.d === selected), selected)
+    check('远期：旧版 days 仍含所选日（所以客户端兜底不会整体退回）',
+      r.days.some(d => d.date === selected), selected)
+
+    page.data.date = selected
+    const chart = page.buildChartSeries(r.series, selected)
+    const cards = page.buildDayCards(r.days, COORD)
+
+    // 这是本次测试的真正结论：未部署云函数时，图会退回今天、卡停在所选日 → 错位
+    check('**未部署云函数 + 所选日≥7天：图退回今天、卡停在所选日（错位）**',
+      chart[0].d === today && cards[0].date === selected,
+      '图 ' + chart[0].d + ' vs 卡 ' + cards[0].date)
+
+    // 但客户端的缓存契约是安全的：不会拿错锚的返回体当命中（宁可重取）
+    check('远期：错锚返回体不被判为可覆盖（缓存契约仍安全）',
+      cfg.covers(r, selected, 'p1') === false)
+  }
+
+  // ---- 客户端侧唯一能保证的不变量，与服务端版本无关 ----
+  {
+    const r = { pointId: 'p1', series: fakeSeries(addDays(today, 3), 2), days: fakeDays(today, 5), detail: [], updatedAt: today }
+    check('错锚返回体一律不判为可覆盖（series[0].d !== date 时必重取）',
+      cfg.covers(r, today, 'p1') === false)
+    check('同点同日且已锚定才判可覆盖',
+      cfg.covers({ pointId: 'p1', series: fakeSeries(today, 7), days: fakeDays(today, 5), detail: [], updatedAt: today }, today, 'p1') === true)
+  }
+
+  // ---- 天相标记与夜间底色不依赖服务端新增字段，旧版返回体也应算得出 ----
+  {
+    const r = oldServerResult(today, addDays(today, 3))
+    const marks = page.buildChartMarks(r.series, COORD, 1500, false, r.days)
+    const night = page.buildNightMap(r.series, COORD, 1500)
+    check('旧版返回体也能算出天相标记', Object.keys(marks).length > 0, String(Object.keys(marks).length))
+    check('旧版返回体也能算出夜间底色', Object.keys(night).length > 0, String(Object.keys(night).length))
+  }
+}
+
 raceCases()
   .catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') })
   .then(windowCases)
