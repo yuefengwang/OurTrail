@@ -242,7 +242,7 @@ Component({
       api.readContact(this.data.activityId, id).then(result => {
         if (result.ok) this.setData({ contact: Object.assign({}, this.data.contact, { phone: result.value.phone }) })
         else this.setData({ contact: Object.assign({}, this.data.contact, { phoneError: result.error.message }) })
-      }).catch(() => {})
+      }).catch(e => this.setData({ contact: Object.assign({}, this.data.contact, { phoneError: api.errorText(e) }) }))
     },
     onContactClose() { this.setData({ contactOpen: false, contact: null, sensitive: null }) },
     onPurpose(e) { this.setData({ purpose: e.detail.value, sensitive: null }) },
