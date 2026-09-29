@@ -114,6 +114,36 @@ for (const f of files.filter(f => f.endsWith('.json'))) {
 }
 ok('组件引用检查完成')
 
+// 5b. 反向校验：wxml 用到的自定义组件必须已在同名 json 注册。上一项是「注册了但文件不存在」，
+// 抓不到「用了但没注册」。判据不能只看连字符——本项目 icon/overlay 无连字符，scroll-view/
+// checkbox-group 等内置标签反而有；以实际组件清单为白名单才两头都对。
+// 两起事故：app.wxml 残留 <privacy-popup />（app.json 已无 usingComponents 键）；editor.json 漏注册 overlay（924d2b4）。
+console.log('== 组件注册（反向） ==')
+const COMPONENT_NAMES = new Set()
+for (const f of files.filter(f => f.endsWith('.json'))) {
+  const m = f.match(/components\/([a-z0-9-]+)\/[a-z0-9-]+\.json$/)
+  if (m) COMPONENT_NAMES.add(m[1])
+}
+const reported = new Set()
+for (const f of files.filter(f => f.endsWith('.wxml'))) {
+  const jsonPath = f.replace(/\.wxml$/, '.json')
+  let json = {}
+  if (fs.existsSync(jsonPath)) {
+    try { json = JSON.parse(fs.readFileSync(jsonPath, 'utf8')) } catch (e) { /* 解析失败第 5 项已报 */ }
+  }
+  const registered = new Set(Object.keys(json.usingComponents || {}))
+  const src = fs.readFileSync(f, 'utf8').replace(/<!--[\s\S]*?-->/g, '') // 去注释，防示例标签误报
+  for (const m of src.matchAll(/<([a-z][a-z0-9-]*)/g)) {
+    const name = m[1]
+    const key = f + ' ' + name
+    if (COMPONENT_NAMES.has(name) && !registered.has(name) && !reported.has(key)) {
+      reported.add(key)
+      fail(rel(f) + ' 用了 <' + name + '>，但 ' + path.basename(jsonPath) + ' 未在 usingComponents 注册')
+    }
+  }
+}
+ok('组件注册反向检查完成（清单 ' + COMPONENT_NAMES.size + ' 个组件）')
+
 // 6. app.json 中的页面不得再引用已删除目录
 console.log('== 旧页清理 ==')
 for (const dead of ['pages/index/', 'pages/create/', 'pages/manage/']) {
