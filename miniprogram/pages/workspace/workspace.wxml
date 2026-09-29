@@ -68,11 +68,9 @@
           </view>
         </view>
         <view class="button primary block {{canTransition && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canTransition && !busy ? 'onTransition' : ''}}">进入{{nextPhaseLabel}}</view>
-        <view class="form-actions">
-          <view wx:if="{{canEdit}}" class="button text" hover-class="button-hover" bindtap="goEdit">编辑活动</view>
-          <view wx:if="{{canCancel}}" class="button text" hover-class="button-hover" data-next="cancelled" bindtap="onTransition">取消活动</view>
-        </view>
+        <view wx:if="{{canEdit}}" class="button text" hover-class="button-hover" bindtap="goEdit">编辑活动</view>
       </view>
+      <view wx:if="{{canCancel}}" class="button danger block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onTransition'}}" data-next="cancelled">取消活动</view>
 
       <view class="button secondary block" hover-class="button-hover" bindtap="goDetail">以参与者视角查看活动</view>
       <view wx:if="{{message}}" class="callout success">{{message}}</view>

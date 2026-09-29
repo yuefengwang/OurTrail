@@ -6,10 +6,13 @@
   </block>
   <view wx:else class="stack">
 
-    <view>
-      <text class="eyebrow">{{savedId ? '编辑活动' : '发起一次同行'}}</text>
-      <text class="page-title" style="display:block;margin-top:4px;">把出发，安排妥当。</text>
-      <text class="muted" style="display:block;margin-top:4px;">先保存想法，准备好后再发布。保存草稿不会自动报名。</text>
+    <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
+      <view style="min-width:0;">
+        <text class="eyebrow">{{savedId ? '编辑活动' : '发起一次同行'}}</text>
+        <text class="page-title" style="display:block;margin-top:4px;">把出发，安排妥当。</text>
+        <text class="muted" style="display:block;margin-top:4px;">先保存想法，准备好后再发布。保存草稿不会自动报名。</text>
+      </view>
+      <view wx:if="{{phase === 'draft'}}" class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onDeleteDraftOpen'}}" style="flex:0 0 auto;">删除草稿</view>
     </view>
 
     <!-- 复制模板（仅新建且有过往活动时） -->
@@ -446,7 +449,6 @@
       <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSave'}}">{{phase === 'draft' ? '保存草稿' : '保存修改'}}</view>
       <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSavePreview'}}">保存并预览</view>
     </view>
-    <view wx:if="{{phase === 'draft'}}" class="button danger block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onDeleteDraftOpen'}}">删除草稿</view>
     <text wx:if="{{draftSavedAt}}" class="small muted" style="text-align:center;">草稿已自动保存 · {{draftSavedAt}}</text>
   </view>
 

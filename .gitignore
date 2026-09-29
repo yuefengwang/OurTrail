@@ -18,6 +18,8 @@ spark-output/
 # ===== Agent / tool working directories =====
 .superpowers/
 .zcodeignore
+# opencode 的会话续跑状态（每个后台任务一个小 json，随用随写，不入库）
+.omo/
 
 # ===== Prototype test artifacts (screenshots / evidence) =====
 docs/prototypes/ourtrail-app/tests/evidence/
