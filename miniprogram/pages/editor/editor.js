@@ -324,6 +324,20 @@ Page({
     this.persistDraft()
   },
 
+  // 选点失败文案，分类与 GPX 选文件一致。调用方已对「用户主动取消」提前 return，
+  // 这里只处理真失败：两种可操作文案都指向节点/上车点都有的「手动输入」经纬度兜底。
+  pickFailText(msg, what) {
+    // 隐私必须先判：微信的 privacy 报错是 "privacy not authorized"，而 authorized 含 auth
+    // 子串——先判鉴权会把「去公众平台补声明」错报成「去设置开定位」。顺序勿调换。
+    if (/privacy|scope is not declared/i.test(msg)) {
+      return '公众平台《用户隐私保护指引》尚未声明「位置信息」，无法调用地图选点。请到 mp.weixin.qq.com → 设置 → 服务内容声明 补充并等生效；期间可改用「手动输入」。'
+    }
+    if (/auth deny|denied|permission denied|deny/i.test(msg)) {
+      return '未获得定位权限，无法在地图上选' + what + '。可改用「手动输入」直接填经纬度，或在设置中开启定位。'
+    }
+    return '地图选点失败' + (what ? '（' + what + '）' : '') + (msg ? '：' + msg : '')
+  },
+
   // ---- 路线节点 ----
   onRoutePoint(e) {
     const { index, key } = e.currentTarget.dataset
@@ -376,10 +390,14 @@ Page({
         const form = JSON.parse(JSON.stringify(this.data.form))
         form.points[index].lat = String(res.latitude)
         form.points[index].lng = String(res.longitude)
-        this.setData({ form })
+        this.setData({ form, failure: '' })
         this.persistDraft()
       },
-      fail: () => {},
+      fail: err => {
+        const msg = String((err && err.errMsg) || '')
+        if (/cancel/i.test(msg)) return
+        this.setData({ failure: this.pickFailText(msg, '路线节点') })
+      },
     })
   },
   togglePickup(e) {
@@ -425,10 +443,14 @@ Page({
         form.pickups[index].lat = String(res.latitude)
         form.pickups[index].lng = String(res.longitude)
         if (!form.pickups[index].address) form.pickups[index].address = res.address || res.name || ''
-        this.setData({ form })
+        this.setData({ form, failure: '' })
         this.persistDraft()
       },
-      fail: () => {},
+      fail: err => {
+        const msg = String((err && err.errMsg) || '')
+        if (/cancel/i.test(msg)) return
+        this.setData({ failure: this.pickFailText(msg, '上车点') })
+      },
     })
   },
   addPickup() {
