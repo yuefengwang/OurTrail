@@ -69,7 +69,7 @@ for (const f of files.filter(f => f.endsWith('.wxml'))) {
 }
 ok('WXML 配平检查完成（如有 ✗ 见上）')
 
-// 3. WXSS 花括号配平 + 变量定义
+// 3. WXSS 花括号配平 + 变量定义 + 行注释
 console.log('== WXSS ==')
 for (const f of files.filter(f => f.endsWith('.wxss'))) {
   const src = fs.readFileSync(f, 'utf8')
@@ -83,6 +83,14 @@ for (const f of files.filter(f => f.endsWith('.wxss'))) {
     if (depth < 0) break
   }
   if (depth !== 0) fail(rel(f) + ' 花括号不配平（深度 ' + depth + '）')
+  // WXSS 是 CSS 系语法，不认 // 行注释（事故：lab.wxss 用 JS 风格注释，真机编译报
+  // "unexpected"。花括号配平抓不住纯注释文件）。剥掉块注释后再找 //——块注释里提到
+  // "//" 属合法说明文字；排除 "://"（url 协议写法）。
+  const noBlock = fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ')
+  noBlock.split('\n').forEach((line, i) => {
+    const t = line.replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/'(?:[^'\\]|\\.)*'/g, "''")
+    if (/(^|[^:])\/\//.test(t)) fail(rel(f) + ':' + (i + 1) + ' WXSS 不支持 // 行注释（请用 /* */）')
+  })
 }
 ok('WXSS 检查完成')
 
@@ -121,9 +129,15 @@ ok('组件引用检查完成')
 console.log('== 组件注册（反向） ==')
 const COMPONENT_NAMES = new Set()
 for (const f of files.filter(f => f.endsWith('.json'))) {
-  const m = f.match(/components\/([a-z0-9-]+)\/[a-z0-9-]+\.json$/)
+  // 路径分隔符必须先归一化：Windows 下 path.join 产出的是反斜杠，而正则写的是正斜杠，
+  // 匹配恒为 0 → 清单为空 → 所有标签都被当成内置标签放行 → 本步骤整个静默空转。
+  // 而按双机协议，Windows 正是唯一装有微信开发者工具的机器，也就是唯一能真机验证的机器——
+  // 恰好是这个 bug 最不能存在的地方。判据同时兼容两种分隔符。
+  const norm = f.split(path.sep).join('/')
+  const m = norm.match(/components\/([a-z0-9-]+)\/[a-z0-9-]+\.json$/)
   if (m) COMPONENT_NAMES.add(m[1])
 }
+if (COMPONENT_NAMES.size === 0) fail('组件清单为空：反向检查无法工作（路径分隔符或目录结构异常）')
 const reported = new Set()
 for (const f of files.filter(f => f.endsWith('.wxml'))) {
   const jsonPath = f.replace(/\.wxml$/, '.json')
@@ -150,6 +164,31 @@ for (const dead of ['pages/index/', 'pages/create/', 'pages/manage/']) {
   if (fs.existsSync(path.join(ROOT, dead))) fail('旧目录仍存在: ' + dead)
 }
 ok('旧页已删除')
+
+// 7. 相对 require 可解析：require 可以藏在函数体内（惰性加载），node --check 只验语法不解析路径，
+//    既有测试又可能从不走进那个分支——allocation.js 的 '../invariants' 就这样带病上线
+//    （真机预览分车必炸 Cannot find module）。这里按磁盘解析全部相对 require 兜底。
+console.log('== require 可解析 ==')
+{
+  const repoRoot = path.resolve(__dirname, '..')
+  const show = f => path.relative(repoRoot, f).split(path.sep).join('/')
+  const bases = [ROOT, path.join(repoRoot, 'cloudfunctions', 'trailApi'), path.join(repoRoot, 'cloudfunctions', 'trailApiLab')]
+  let checked = 0
+  for (const base of bases) {
+    if (!fs.existsSync(base)) continue
+    for (const f of walk(base, []).filter(f => f.endsWith('.js'))) {
+      const src = fs.readFileSync(f, 'utf8')
+      for (const m of src.matchAll(/require\((['"])(\.[^'"]+)\1\)/g)) {
+        checked++
+        const target = path.resolve(path.dirname(f), m[2])
+        if (!fs.existsSync(target) && !fs.existsSync(target + '.js') && !fs.existsSync(path.join(target, 'index.js'))) {
+          fail(show(f) + ' require(' + m[2] + ') 解析不到文件')
+        }
+      }
+    }
+  }
+  ok('相对 require 全部可解析（' + checked + ' 处，如有 ✗ 见上）')
+}
 
 console.log('')
 if (failed) {

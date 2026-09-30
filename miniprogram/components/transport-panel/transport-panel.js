@@ -16,6 +16,7 @@ Component({
     vehicles: [],
     groups: [],
     confirmed: [],
+    driverCandidates: [],
     pickupNames: {},
     // 车辆编辑
     editorOpen: false,
@@ -114,6 +115,10 @@ Component({
         const confirmed = v.rows.filter(r => r.status === 'confirmed').map(r => ({
           signupId: r.signupId, label: r.name + ' · ' + r.pickup + ' · ' + (r.vehicle || '未分车'),
         }))
+        // 参与者司机候选：域规则要求「已确认且尚无车辆安排」（transport.js 校验，先在这里过滤掉必被拒的人）
+        const driverCandidates = v.rows
+          .filter(r => r.status === 'confirmed' && !r.vehicle)
+          .map(r => ({ signupId: r.signupId, label: r.name + ' · ' + r.pickup }))
         this._loading = false
         this.setData({
           loading: false,
@@ -129,6 +134,7 @@ Component({
             names: g.signupIds.map(nameOf).join('、'),
           })),
           confirmed,
+          driverCandidates,
           assignments: transport.assignments,
         })
       }).catch(e => { this._loading = false; this.setData({ loading: false, denied: api.errorText(e) }) })
@@ -136,7 +142,7 @@ Component({
 
     // ---- 预览自动分车 ----
     onPreview() {
-      if (this.data.busy) return
+      if (this.data.busy || !this.data.vehicles.length) return
       api.previewAssignments(this.data.activityId).then(result => {
         if (!result.ok) {
           this.setData({ error: result.error.message })
@@ -310,7 +316,7 @@ Component({
           seatLabelsOn: !!vehicle.seatLabels,
           seatLabelsText: vehicle.seatLabels ? vehicle.seatLabels.join(',') : '',
           drivers: vehicle.drivers.map(d => d.kind === 'participant'
-            ? { kind: 'participant', signupIndex: this.data.confirmed.findIndex(c => c.signupId === d.signupId), name: '', phone: '' }
+            ? { kind: 'participant', signupIndex: this.data.driverCandidates.findIndex(c => c.signupId === d.signupId), name: '', phone: '' }
             : { kind: 'service', signupIndex: -1, name: d.name, phone: d.phone }),
           pickupIds: vehicle.pickupPointIds.slice(),
         } : {
@@ -393,9 +399,9 @@ Component({
       const drivers = []
       for (const d of f.drivers) {
         if (d.kind === 'participant') {
-          const c = this.data.confirmed[d.signupIndex]
+          const c = this.data.driverCandidates[d.signupIndex]
           if (!c) {
-            this.setData({ error: '参与者司机必须从已确认名单中选择。' })
+            this.setData({ error: '请为参与者司机选择人选（需已确认报名且尚未分车）。' })
             return
           }
           drivers.push({ kind: 'participant', signupId: c.signupId })

@@ -1,0 +1,87 @@
+<view class="space-time">
+  <view class="space-time-head">
+    <text class="section-title">沿线时空天相</text>
+    <view class="space-time-head-right">
+      <text class="space-time-sub">横轴时间 · 纵轴海拔</text>
+      <view
+        class="space-time-stay {{overnight ? 'on' : ''}}"
+        hover-class="space-time-stay-hover"
+        bindtap="onToggleOvernight"
+      >{{overnight ? '不留宿' : '留宿看晚霞/星空'}}</view>
+    </view>
+  </view>
+
+  <view class="space-time-frame">
+    <canvas
+      type="2d"
+      id="stCanvas"
+      class="space-time-canvas"
+      style="width:100%;height:{{chartH}}px;"
+    ></canvas>
+  </view>
+
+  <view wx:if="{{empty}}" class="space-time-empty">
+    <text class="space-time-sub">还没有可画的路线节点</text>
+  </view>
+
+  <block wx:else>
+    <view class="space-time-legend">
+      <view class="st-lg" wx:for="{{legend}}" wx:key="k">
+        <view class="st-lg-dot" style="background:{{item.c}};"></view>
+        <text class="st-lg-text">{{item.t}}</text>
+      </view>
+      <text class="st-lg-tip">{{legendTip}}</text>
+    </view>
+
+    <!-- 留宿夜间天象。窗口与文案全部来自 sky.js（裁 detail 复用），
+         本组件不造任何天文判断，所以这里只做呈现。 -->
+    <view wx:if="{{overnight && astro && astro.cards.length}}" class="space-time-astro">
+      <view class="space-time-astro-head">
+        <text class="space-time-astro-title">留宿夜间</text>
+        <text class="space-time-sub tabular">
+          日落 {{astro.sun.sunset || '--'}} · 天文暮光 {{astro.sun.astroDusk || '--'}}
+        </text>
+      </view>
+      <view wx:for="{{astro.cards}}" wx:key="key" class="space-time-astro-card">
+        <view class="space-time-astro-row">
+          <text class="space-time-astro-name">{{item.title}}</text>
+          <text wx:if="{{item.window}}" class="space-time-astro-window tabular">{{item.window}}</text>
+          <text wx:if="{{item.label}}" class="badge {{item.tone}}">{{item.label}}</text>
+        </view>
+        <text class="space-time-astro-text">{{item.text}}</text>
+        <text wx:if="{{item.look}}" class="space-time-astro-look">{{item.look}}</text>
+      </view>
+    </view>
+
+    <!-- 漫游：拖动或播放，走一遍这一天。读数由本组件算（它才有节点天相） -->
+    <view class="space-time-roam">
+      <roam-scrubber
+        min="{{roamMin}}"
+        max="{{roamMax}}"
+        value="{{roamValue}}"
+        playing="{{playing}}"
+        bind:change="onRoamChange"
+        bind:toggle="onRoamToggle"
+      >
+        <!-- 两行是刻意排的：原来四项挤在一个 flex 行里，375px 宽下
+             「→ 下一站」会单独折到第二行且与上一行脱节。
+             改为：行 1 = 节点进度（含下一站），行 2 = 海拔 + 天相。 -->
+        <view slot="readout" wx:if="{{readout}}" class="space-time-readout">
+          <view class="space-time-readout-row">
+            <text class="space-time-readout-node">第 {{readout.nodeIndex + 1}}/{{readout.nodeCount}} 站 · {{readout.nodeT}}</text>
+            <text wx:if="{{readout.nextT}}" class="space-time-readout-next">→ {{readout.nextT}}</text>
+          </view>
+          <view class="space-time-readout-row">
+            <text class="space-time-readout-alt tabular">{{readout.altText}}</text>
+            <!-- 天相色由色块承担，文字保持 --ink：#D6A33C 这类浅色当文字色压浅底对比度不足
+                 （meteogram 图例踩过这个坑，这里不要重犯） -->
+            <view class="space-time-readout-phen">
+              <view class="st-lg-dot" style="background:{{readout.color}};"></view>
+              <text class="space-time-readout-phen-text">{{readout.text}}</text>
+            </view>
+          </view>
+        </view>
+      </roam-scrubber>
+    </view>
+  </block>
+</view>

@@ -16,24 +16,31 @@ const {
   MARK_LANE_H, MARK_LANE_GAP, MARK_FONT_PX, inkOn,
 } = require('./layout')
 
+/* canvas 画布内拿不到 CSS 变量(var() 在 canvas 上下文无效)，所以这里必须留字面量。
+   但**不要凭记忆抄**——凡是 app.wxss 已有 token 的值，都在下面标了出来源。
+   新增画布色时先查 design-system.md 的 token 表；确实没有对应语义色的，
+   先在 app.wxss 加 token 并登记，再回来写字面量。 */
 const C = {
-  night: '#F0F1EC',
-  day: '#FFFFFF',
-  grid: '#E4E8E1',
-  axisText: '#5F6E66',
+  night: '#F0F1EC',        // 无 token（近似 --info-soft 但不同值，勿混用）
+  day: '#FFFFFF',          // = --white
+  grid: '#E4E8E1',         // 无 token
+  axisText: '#5F6E66',     // = --muted
   // 温度线用中性墨色而不是红：红 #B43D3B 与天相标记「光染」是**同一个色值**，
   // 图例里的红色分不清是温度还是光染。中性墨色也让"客观指标"这一层不与语义色抢注意力。
   temp: '#202A26', // = --ink
-  tempFill: 'rgba(32,42,38,0.08)',
-  rain: '#346583',
-  showers: '#2E8B8B',
-  cloudLow: '#346583',   // 云量色用**实色**，浓淡交给 ctx.globalAlpha：
-  cloudMid: '#6C7C93',   // 原来颜色自带 0.6–0.75 alpha，再叠一层 alpha 是乘法关系，
-  cloudHigh: '#8C9791',  // 低云量时几乎完全看不见。
-  selBand: 'rgba(22,62,53,0.12)',
-  selEdge: 'rgba(22,62,53,0.35)',
-  now: '#163E35',
-  warn: '#8C5A12',
+  tempFill: 'rgba(32,42,38,0.08)',   // ink 8%
+  rain: '#346583',        // = --info（同 cloudLow / MARK_STYLE.cloudSea）
+  showers: '#2E8B8B',     // 无 token
+  cloudLow: '#346583',   // = --info（= rain = MARK_STYLE.cloudSea）
+  // 云量色用**实色**，浓淡交给 ctx.globalAlpha：
+  cloudMid: '#6C7C93',   // = --blue-hour（= MARK_STYLE.blueHour）
+  // 原来颜色自带 0.6–0.75 alpha，再叠一层 alpha 是乘法关系，
+  cloudHigh: '#8C9791',  // = --control-line（= MARK_STYLE.inCloud）
+  // 低云量时几乎完全看不见。
+  selBand: 'rgba(22,62,53,0.12)',   // forest 12%
+  selEdge: 'rgba(22,62,53,0.35)',   // forest 35%
+  now: '#163E35',         // = --forest（= MARK_STYLE.galaxy）
+  warn: '#8C5A12',        // = --warning（= MARK_STYLE.rainbow）
 }
 
 const WEEK = ['日', '一', '二', '三', '四', '五', '六']

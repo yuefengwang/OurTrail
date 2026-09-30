@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "roam-scrubber": "/components/roam-scrubber/roam-scrubber"
+  }
+}

@@ -24,7 +24,15 @@ for (const pagesDir of targets) {
       if (fs.existsSync(p)) js += fs.readFileSync(p, 'utf8')
     }
     const handlers = new Set()
-    for (const m of wxml.matchAll(/(?:bind|catch)[a-z]*="([A-Za-z_][A-Za-z0-9_]*)"/g)) handlers.add(m[1])
+    // 三类绑定都审计：①直连 bindtap="fn"；②组件事件 bind:close="fn"（冒号前缀原先漏检）；
+    // ③表达式绑定 bindtap="{{busy ? '' : 'fn'}}"——提取其中的标识符字面量（原先整类漏检）
+    for (const m of wxml.matchAll(/(?:bind|catch)[a-z]*(?::[a-z-]+)?="([^"]*)"/g)) {
+      const v = m[1]
+      if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(v)) { handlers.add(v); continue }
+      for (const s of v.matchAll(/'([A-Za-z_][A-Za-z0-9_]*)'/g)) {
+        if (s[1]) handlers.add(s[1])
+      }
+    }
     const missing = [...handlers].filter(h => {
       const re = new RegExp('\\b' + h + '\\s*[:(]', 'm')
       return !re.test(js)

@@ -1,0 +1,55 @@
+/* roam-scrubber：漫游控件。只用 app.wxss token，不写字面量色。 */
+
+.roam { width: 100%; }
+
+.roam-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 播放/暂停。触控目标必须 ≥44px（design-system.md） */
+.roam-play {
+  width: var(--touch-target);
+  height: var(--touch-target);
+  margin: -8px 0;
+  border-radius: 50%;
+  background: var(--forest);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.roam-play-hover { opacity: 0.85; }
+
+.roam-play-icon {
+  font-size: 13px;
+  line-height: 1;
+  /* 播放三角与暂停双杠视觉居中略有偏差，各自微调 */
+  transform: translateX(1px);
+}
+
+.roam-slider {
+  flex: 1;
+  margin: 0;
+}
+
+.roam-clock {
+  flex: none;
+  min-width: 42px;
+  text-align: right;
+  font-size: var(--text-caption);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.roam-readout {
+  margin-top: 2px;
+  font-size: var(--text-caption);
+  line-height: 18px;
+  color: var(--muted);
+}
+
+.roam-readout-empty { color: var(--muted); }

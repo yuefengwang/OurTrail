@@ -28,6 +28,9 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 1. **`.agents/skills/ourtrail-ui/SKILL.md` + its 3 references** — the UI constitution. Load it for *any* change under `miniprogram/`, even if the user never says "设计系统". Its 14 `platform-pitfalls.md` entries each have a real incident behind them.
 2. **`PARALLEL_DEV.md`** — the two-machine git protocol this repo is built around. You are on a relay-backed remote; violating it desynchronizes a second machine.
 3. **`SYNC.md`** — 40+ entry changelog and the project's institutional memory. Search it before touching weather, editor, discover, or map code.
+4. **`docs/e2e-mp/README.md`** — 改完 WXML/WXSS/组件结构后，**静态门禁通过不代表页面正常**。
+   真机（微信开发者工具）驱动是本仓库唯一能看见像素的手段，见下方「直连微信开发者工具」一节。
+   P4 的 5 个真机 bug 里只有 1 个是逻辑问题，其余 4 个逻辑测试全都测不到。
 
 ---
 
@@ -75,6 +78,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 | 天相 / 概率判断 | `miniprogram/utils/sky.js` → `summarize`; astronomy in `utils/astro.js` |
 | Why does rule X exist? | `docs/product/` + `docs/prototypes/ourtrail-app/src/domain/` (read-only) |
 | It broke yesterday — what happened? | `SYNC.md` 变更日志 |
+| 改完 UI 怎么确认真的没坏？ | 真机驱动，见下方「直连微信开发者工具」+ `docs/e2e-mp/README.md` |
 
 ---
 
@@ -90,9 +94,10 @@ Reference centrality measured by **grep require-count** (no TS/JS LSP and no ast
 | `miniprogram/utils/draft.js` | 7 | wx-storage drafts + opened-activity LRU |
 | `domain/permissions.js` | 7 | All authorization |
 | `miniprogram/utils/astro.js` | 5 | NOAA solar/lunar math |
+| `miniprogram/utils/weather-model.js` | 1 | P4 track/node orchestration over `sky.js` (wx-free; **holds no 天相 thresholds**) |
 | `domain/schema.js` / `invariants.js` | 4 / 4 | Entity specs / referential integrity |
 | `domain/selectors.js` | 2 (but 493 LOC) | Every response shape |
-| `utils/{sky,route-schedule,gpx,chart-store}.js` | 3 each | 天相 / schedule mapping / GPX / cross-page bus |
+| `utils/{sky,route-schedule,gpx,chart-store}` | 3 each | 天相 / schedule mapping / GPX / cross-page bus |
 
 **Complexity hotspots** (>400 LOC, all hand-written, no framework to lean on): `miniprogram/pages/editor/editor.js` (798) · `editor.wxml` (526) · `pages/activity/activity.js` (548) · `components/meteogram/meteogram.js` (507) · `components/transport-panel/transport-panel.js` (445) · `utils/sky.js` (433) · `app.wxss` (484) · `domain/selectors.js` (493).
 
@@ -111,20 +116,48 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Logic regression — 540 assertions, all currently passing
-node cloudfunctions/trailApi/smoke-test.js   # passed=86   domain layer
-node tools/astro-test.js                     # passed=60   astronomy
-node tools/gpx-test.js                       # passed=47   GPX + coordinate transforms
-node tools/sky-test.js                       # passed=65   天相 conclusions
-node tools/route-schedule-test.js            # passed=41   schedule inference
-node tools/weather-page-test.js              # passed=104  cloud→page→component contract
-node tools/scenario-editor-test.js           # passed=137  editor page scenarios
+# Logic regression — 24 suites, all currently passing.
+# ⚠ 断言总数是**快照**（2026-09-30 12:2x 测得 1720），不是恒定值：
+#   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
+#   那些改动会增删用例（例：smoke 104→106、workspace 104→107 均非本轮 P4 改动）。
+#   **以每个脚本自己打印的 passed=N 为准**，不要信任何写死的总数。
+node cloudfunctions/trailApi/smoke-test.js   # 领域层（快照 106）
+node tools/astro-test.js                     # 天文（60）
+node tools/gpx-test.js                       # GPX + 坐标转换（47）
+node tools/sky-test.js                       # 天相结论（65）
+node tools/route-schedule-test.js            # 日程推算（41）
+node tools/weather-page-test.js              # 云函数→页面→组件契约（129）
+node tools/watch-points-test.js              # 观察点/轨迹点组（37）
+node tools/weather-model-test.js             # P4 轨迹层编排（wx-free 纯函数）（82）
+node tools/space-time-test.js                # P4 时空天相图几何 + 漫游读数（109）
+node tools/space-time-draw-test.js           # P4 真实 draw() 执行（记录式 2D 上下文）（55）
+node tools/roam-scrubber-test.js             # P4 漫游控件定时器与事件契约（33）
+
+# Page-level scenarios
+node tools/scenario-editor-test.js           # 137
+node tools/scenario-activity-test.js         # 136
+node tools/scenario-workspace-test.js        # 107
+node tools/scenario-signup-test.js           # 100
+node tools/scenario-me-test.js               # 81
+node tools/scenario-notices-test.js          # 64
+node tools/scenario-vehicle-test.js          # 55
+node tools/scenario-api-test.js              # 27
+node tools/scenario-discover-test.js         # 21
+node tools/scenario-lab-test.js              # 20
+node tools/scenario-staff-test.js            # 18
+
+# Lab cloud-function integration
+node tools/trailapilab-test.js               # 25
+node tools/lab-dryrun-test.js                # 165
 
 # Full pre-commit sweep
 node tools/check.js && node tools/check-handlers.js && \
 node cloudfunctions/trailApi/smoke-test.js && node tools/astro-test.js && \
 node tools/gpx-test.js && node tools/sky-test.js && node tools/route-schedule-test.js && \
-node tools/weather-page-test.js && node tools/scenario-editor-test.js
+node tools/weather-page-test.js && node tools/watch-points-test.js && \
+node tools/weather-model-test.js && node tools/space-time-test.js && \
+node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
+node tools/scenario-editor-test.js
 ```
 
 **Test style is hand-rolled** — no jest/vitest/miniprogram-simulate. Each `tools/*-test.js` redefines `check(name, cond, extra)` + `section(title)` and calls `process.exit(failed ? 1 : 0)`. `scenario-editor-test.js` contains the reusable harness: it stubs `global.wx`, captures the real `Page()` config, `delete require.cache` to force a fresh source read, and monkey-patches `utils/api` to assert emitted commands.
@@ -133,7 +166,119 @@ node tools/weather-page-test.js && node tools/scenario-editor-test.js
 
 ---
 
-## ANTI-PATTERNS (each one shipped a real bug)
+## 直连微信开发者工具：agent 端到端实现/测试闭环
+
+**这是本仓库唯一能看见「像素长什么样」的手段。** 静态门禁与单元测试都做不到这件事：
+它们能证明代码跑得通、图元合法，但证明不了**图真的画对了、slot 真的显示了、颜色真的没糊**。
+
+### 能抓到哪类 bug（本轮实证）
+
+P4 的 5 个真机 bug 里，**只有 1 个是逻辑正确性问题，其余 4 个静态检查与纯逻辑测试全部测不到**：
+
+| bug | 为什么测不到 |
+|---|---|
+| `marks[node.t]` 永远查不到（整点槽 vs 节点时间） | fixture 恰好全用整点，**取值掩盖了契约错误** |
+| 具名 slot 内容被静默丢弃（缺 `multipleSlots: true`） | 数据在组件 `data` 里好好的，纯逻辑测试断言的是 data 不是渲染 |
+| `L.textWidth is not a function`（漏导出） | 藏在 `drawRefs`，且被前一个 bug 掩盖成永不执行的分支 |
+| 播放头撑大时间轴致关留宿收不回 | 纯行为组合，只有真机能点出来 |
+| 读取数 slot 需 `options: { multipleSlots: true }` | 组件 data 正常，页面上就是空的 |
+
+规律：**凡是「数据对、渲染不对」的问题，逻辑测试天然测不到。** 而这正是小程序最常见的一类。
+
+### 一次性前置（人工，每台机器一次）
+
+两件事都**无法用命令行完成**，必须人做一次：
+
+1. **开服务端口**：微信开发者工具 → 设置 → 安全设置 → **服务端口 开启**，记下端口号（我们用 33278）。
+   未开启时所有 `cli` 命令报 `IDE service port disabled`，且**管道喂 `y` 无效**（需要真实交互 stdin）。
+2. **扫码登录**：`cli islogin` 返回 `{"login":true}` 才算好。账号需有 `appid` 的开发者权限。
+
+> 服务端口页面上的 **CLI 访问令牌**留空即可——留空时 CLI 的 HTTP/WebSocket 不校验令牌。
+> 本方案直连 WebSocket（`wsEndpoint`），走的就是这条不校验的路径。MCP 接口另开 Token 鉴权，与此无关。
+
+### 每轮流程
+
+```bash
+# 1) 改完代码后**必须**重开项目，否则模拟器仍用旧 bundle（这是最容易误判「改了没生效」的地方）
+cli close --project D:\OurTrail --port 33278
+cli open  --project D:\OurTrail --port 33278
+sleep 25
+cli auto  --project D:\OurTrail --auto-port 9421 --trust-project --port 33278
+#    → 期望输出 {"autoPort": 942, ...}；AppID 会回显，确认是本项目的
+
+# 2) 驱动库装在**仓库外**（本仓库零 npm 依赖是铁律，不能污染）
+cd %LOCALAPPDATA%\Temp\opencode\mp-auto
+npm.cmd init -y && npm.cmd install miniprogram-automator
+#    PowerShell 下要用 npm.cmd：执行策略会拦 npm.ps1（PSSecurityException）
+```
+
+`cli.bat` 路径含中文，PowerShell 里务必用 `& 'C:\Program Files (x86)\Tencent\微信web开发者工具\cli.bat' ...` 调用。
+
+### 驱动脚本骨架
+
+现成模板：`docs/e2e-mp/drive.js`（复制到临时目录后 `npm i miniprogram-automator` 即可跑）。
+
+```js
+const automator = require('miniprogram-automator')
+const mp = await automator.connect({ wsEndpoint: 'ws://127.0.0.1:9421' })
+const page = await mp.reLaunch('/pages/weather/weather')   // 返回值就是 page
+await page.waitFor(4000)
+
+await page.setData({ /* 合成数据，见下「数据从哪来」 */ })
+await page.waitFor(3000)
+
+await mp.pageScrollTo(1400)                                  // canvas 常在折叠线以下
+const buf = Buffer.from(String(await mp.screenshot()), 'base64')   // ⚠ 见下
+fs.writeFileSync(out, buf)
+
+const st = await page.$('space-time')                        // 自定义组件用标签名直接选
+console.log(await st.data())                                  // 读组件内部 data
+const sc = await page.$('roam-scrubber')
+await sc.callMethod('onChanging', { detail: { value: 570 } })  // 直接调组件方法驱动交互
+await mp.disconnect()
+```
+
+### 踩过的坑（逐条都是实际浪费过时间的）
+
+1. **`mp.screenshot()` 返回 base64 字符串，不是 Buffer。** 直接 `writeFileSync` 会得到「文本伪装的 png」，
+   后续 `System.Drawing` 报 `OutOfMemoryException`、读图工具报「图片过大」。必须
+   `Buffer.from(String(raw), 'base64')`。
+2. **改完代码必须 `close` + `open`。** 只调 `auto` 不会重新编译，会让你以为修复没生效——
+   本轮曾因此对着旧 bundle 排查了很久。
+3. **`pages/weather` 的渲染门槛链**（`weather.wxml`）：`denied` → `elif loading` → `else` 内
+   `wx:if loadingWeather`（**只出「正在查询天气」面板**）→ `wx:elif dayCards.length`（**图表在这里**）。
+   注入数据必须 `denied=''`、`loading=false`、`loadingWeather=false` 且 `dayCards` 非空，
+   否则元素根本不在 DOM 里，`page.$('space-time')` 返回 null。
+4. **`page.$()` 在滚动后可能拿不到元素**，重新取一次 `page` 句柄再试。
+5. **PowerShell 5.1 改 UTF-8 源文件会毁文件**：`Get-Content`/`Set-Content` 默认按 ANSI 读写，
+   中文与全角引号全变乱码。本轮因此重建过一个测试文件。**改仓库文件一律用编辑工具。**
+6. **中文路径在 `cd` + 相对路径下会失败**，`cd D:\OurTrail` 在工具 shell 里不生效，要用 `workdir` 参数。
+7. **抓测试输出用 `cmd /c "node x.js > %TEMP%\o.txt 2>&1"`**，再用 Node 按 utf-8 读文件筛 `✗`；
+   PowerShell 的 `2>&1 |` 会把中文与 `✗` 搅乱。
+8. `npm` 脚本在 `Start-Job` 里跑没有交互 stdin，`cli` 的交互式确认喂不进去。
+
+### 数据从哪来
+
+云函数未部署时页面取不到真实天气，**用 `page.setData` 注入合成数据**。
+这不影响验证目的：**渲染路径（canvas draw / 图层顺序 / 配色 / 文字 / slot / 布局）跑的是仓库里的真实代码，
+只有数据来源是合成的** —— 而那正是纯逻辑测试覆盖不到的部分。
+
+注入时注意 `spaceNodes` 形态：`[{ t:'HH:mm', d:'YYYY-MM-DD', alt, name }]`
+（`km` 不要传，GPX 路线点没这个字段，见 P4 设计文档 §10.3）。
+
+### 与执行级测试的分工
+
+| 手段 | 覆盖 | 何时用 |
+|---|---|---|
+| 纯逻辑测试 | 函数契约、阈值、边界 | 每次改动都跑 |
+| `space-time-draw-test`（记录式 2D 上下文） | **真的执行 `draw()`**，断言图层顺序 / dpr / 色值 / 无 NaN 坐标 | 改 canvas 绘制时 |
+| **真机（本节）** | 像素、slot 是否显示、实际布局、文字是否折行 | 改 WXML/WXSS/组件结构时 |
+
+`space-time-draw-test.js` 是前两者之间的中间档：它不需要 DevTools，能进 CI，但**看不见 slot 与像素**。
+本轮 `multipleSlots` 那个 bug 就是它放过的。
+
+---
+
 
 1. **`options` may appear exactly ONCE per `Component()`.** A second same-named key silently overwrites the first, dropping `styleIsolation: 'apply-shared'` and scattering every global class. Guard comments live at the top of `components/form-field/form-field.js` and `components/overlay/overlay.js`; the bug itself was fixed in `daa0508`.
 2. **Every `utils/*.js` function must be added to `module.exports`.** A missing export made all 27 `dispatchAndSync` call sites `undefined` — invisible because the user had never completed a server submit (`598db98`). Audit cross-file API surfaces **with a script, not by eye**.

@@ -117,6 +117,13 @@ function run() {
   r = dispatch(state, LIN, { type: 'activity.transition', activityId, next: 'gathering', reason: '按期集合' })
   check('published→gathering ok', r.ok, r.error)
   state = r.value.state
+  // 预览成功路径（2026-09-30 真机首爆点）：planAssignments 里的惰性 require 曾写错相对路径（../invariants），
+  // 既有用例只在 NOT_FOUND/WRONG_PHASE 提前返回、从未走进那一行。此用例必须穿过 require 到达装配逻辑。
+  const planPreview = planAssignments(state, { userId: LIN }, activityId, '2026-09-26T08:00:00+08:00')
+  check('planAssignments success path runs（惰性 require 可解析）', planPreview.ok, planPreview.error)
+  check('preview assigns尚未分车的 shared 参与者', planPreview.ok
+    && planPreview.value.assignments.some(a => a.signupId === state.signups[0].id)
+    && planPreview.value.unassigned.length === 0, JSON.stringify(planPreview.value))
 
   console.log('== 6. 现场履约链：分车→签到→上车→出发→active→节点→closing→home→archived ==')
   const linSignup = state.signups[0]

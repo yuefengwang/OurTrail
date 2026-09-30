@@ -121,8 +121,22 @@ function weatherPhrase(code) {
   return { label: item.label, tone: item.tone }
 }
 
+/**
+ * 自 00:00 起的分钟数 → 'HH:mm'。
+ *
+ * 与 `hhmm(iso)` 配对使用：`hhmm` 收 ISO instant，这个收「当日分钟数」。
+ * 存在这里而不是散在组件里，是因为本项目的时间格式化都收敛在本文件
+ * （不另开第二个日期库）。反向解析用 `utils/sky.js` 的 `hourMin`。
+ */
+function minutesLabel(mins) {
+  const v = Number(mins)
+  if (!isFinite(v)) return '--:--'
+  const m = ((Math.round(v) % 1440) + 1440) % 1440
+  return pad(Math.floor(m / 60)) + ':' + pad(m % 60)
+}
+
 module.exports = {
   pad, WEEK, cnParts, dateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
-  relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
+  minutesLabel, relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
   UNASSIGNED_LABELS, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase,
 }

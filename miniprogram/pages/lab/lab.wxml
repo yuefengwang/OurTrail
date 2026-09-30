@@ -1,0 +1,90 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="预演面板不可用" detail="{{denied}}" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在连接预演工具。" />
+  </block>
+
+  <view wx:else class="stack">
+    <view>
+      <text class="eyebrow">开发工具 · 仅白名单账号</text>
+      <text class="page-title">单人全流程预演</text>
+      <text class="muted" style="display:block;margin-top:4px;">演员由预演工具注入。审核、分车、阶段推进等组织者动作，请到各业务页亲手完成——预演走的就是真实数据链路。</text>
+    </view>
+
+    <view wx:if="{{message}}" class="callout">{{message}}</view>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+
+    <view class="card stack-gap3">
+      <view class="card-header">
+        <text class="section-title">预演活动</text>
+      </view>
+      <block wx:if="{{activity}}">
+        <view class="cluster" style="justify-content:space-between;">
+          <text style="font-weight:600;min-width:0;word-break:break-all;">{{activity.title}}</text>
+          <text class="badge neutral">{{activity.phase}}</text>
+        </view>
+        <text class="small muted">容量 {{activity.capacity}} · 报名 {{activity.signups}} 行 · 未结异常 {{activity.openIncidents}}</text>
+      </block>
+      <text wx:else class="muted">还没有 [预演] 活动。先在首页新建一个标题以「[预演]」开头的活动并发布，回到本页刷新。</text>
+    </view>
+
+    <view class="stack" style="gap:0;">
+      <text class="section-title">阶段</text>
+      <view wx:for="{{board}}" wx:key="stage" class="card stack-gap3">
+        <view class="cluster" style="justify-content:space-between;">
+          <view class="cluster" style="gap:8px;min-width:0;">
+            <text class="badge neutral tabular">{{item.stage}}</text>
+            <text style="font-weight:600;">{{item.title}}</text>
+          </view>
+          <text class="badge {{item.status === 'done' ? 'success' : item.status === 'ready' ? 'warning' : 'neutral'}}">{{item.status === 'done' ? '已完成' : item.status === 'ready' ? '可执行' : '被挡住'}}</text>
+        </view>
+        <text wx:if="{{item.reason && item.status !== 'done'}}" class="small muted">{{item.reason}}</text>
+        <view wx:if="{{item.status === 'ready'}}" class="button primary block {{busyStage === item.stage ? 'disabled' : ''}}" hover-class="button-hover" data-stage="{{item.stage}}" bindtap="{{busyStage === item.stage ? '' : 'onRunStage'}}">{{busyStage === item.stage ? '正在执行…' : '执行本阶段'}}</view>
+      </view>
+    </view>
+
+    <view class="card stack-gap3" wx:if="{{actors.length}}">
+      <view class="card-header">
+        <text class="section-title">演员名册</text>
+      </view>
+      <view wx:for="{{actors}}" wx:key="id" class="cluster" style="justify-content:space-between;">
+        <text>{{item.name}}<text wx:if="{{item.companions.length}}" class="small muted">（+{{item.companions.length}} 同行人）</text></text>
+        <text class="small muted tabular">{{item.id}}</text>
+      </view>
+    </view>
+
+    <view class="card stack-gap3">
+      <view class="card-header">
+        <text class="section-title">开发者白名单</text>
+      </view>
+      <text class="small muted">你的身份码：<text class="tabular">{{caller || '（未知）'}}</text>。开发者从「我的」页复制身份码发给你，粘贴到下面添加即生效，无需重新部署。</text>
+      <view wx:for="{{allowConfig}}" wx:key="*this" class="cluster" style="justify-content:space-between;">
+        <text class="small tabular" style="min-width:0;word-break:break-all;">{{item}}</text>
+        <text class="badge neutral">配置固定</text>
+      </view>
+      <view wx:for="{{allowDb}}" wx:key="*this" class="cluster" style="justify-content:space-between;">
+        <text class="small tabular" style="min-width:0;word-break:break-all;">{{item}}</text>
+        <view class="button text" hover-class="button-hover" data-id="{{item}}" bindtap="onAllowRemove">移除</view>
+      </view>
+      <view wx:if="{{!allowConfig.length && !allowDb.length}}" class="small muted">还没有动态白名单成员。</view>
+      <view class="cluster">
+        <input class="input" style="flex:1;" value="{{allowInput}}" placeholder="粘贴开发者的身份码" bindinput="onAllowInput" />
+        <view class="button secondary {{allowInput && !allowBusy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{allowInput && !allowBusy ? 'onAllowAdd' : ''}}">添加</view>
+      </view>
+    </view>
+
+    <view class="button danger block" hover-class="button-hover" bindtap="onCleanupAsk">清理预演数据</view>
+    <text class="small muted">按 [预演] 前缀与你的身份码过滤，不影响真实数据；私有路线保留。</text>
+  </view>
+
+  <overlay open="{{cleanupOpen}}" kind="dialog" title="清理预演数据？" bind:close="onCleanupClose">
+    <view class="stack" catchtap="noop">
+      <text>将删除全部 [预演] 活动及其报名、签到、通知等记录，并移除演员档案。此操作不可恢复。</text>
+      <label class="check-label">
+        <checkbox color="#163E35" checked="{{cleanupArmed}}" bindchange="onCleanupArm" />
+        <text class="check-text">我理解将删除以上预演数据</text>
+      </label>
+      <view class="button danger block {{cleanupArmed ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{cleanupArmed ? 'onCleanupConfirm' : ''}}">确认清理</view>
+    </view>
+  </overlay>
+</view>

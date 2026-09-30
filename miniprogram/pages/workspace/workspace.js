@@ -5,6 +5,16 @@ const F = require('../../utils/format')
 
 const NEXT_PHASE = { published: 'gathering', gathering: 'active', active: 'closing', closing: 'archived' }
 const TABS = ['总览', '名单', '分车', '现场']
+// 副标题随阶段换焦点：工作台只讲「现在最该做什么」
+const SUBTITLES = {
+  draft: '发布前把信息补齐，再开放报名。',
+  published: '先处理需要你确认的事，再安心出发。',
+  gathering: '人在集合点，以现场清点与出发核实为准。',
+  active: '行程进行中，逐项记录节点与异常。',
+  closing: '返程收尾，逐人确认安全到家。',
+  archived: '活动已归档，可回看名单与现场记录。',
+  cancelled: '活动已取消，仅保留记录供回看。',
+}
 
 Page({
   data: {
@@ -77,6 +87,7 @@ Page({
         denied: '',
         eyebrow: '组织者工作台',
         phaseLabel: F.PHASE_LABELS[phase] || phase,
+        subtitle: SUBTITLES[phase] || SUBTITLES.published,
         title: a.title || '未命名活动',
         pending: v.counters.pending,
         unassigned: v.counters.unassigned,
@@ -99,6 +110,8 @@ Page({
 
   onTab(e) {
     this.setData({ tab: Number(e.currentTarget.dataset.tab) })
+    // 切区后从页顶开始读：每个区是一块独立工作面，不带着上一区的滚动位置
+    if (typeof wx.pageScrollTo === 'function') wx.pageScrollTo({ scrollTop: 0, duration: 0, fail: () => {} })
   },
 
   goRoster() { this.setData({ tab: 1 }) },

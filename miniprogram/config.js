@@ -7,6 +7,9 @@ module.exports = {
   // 云函数名
   FUNC_NAME: 'trailApi',
 
+  // 预演工具云函数（开发者专用，见 cloudfunctions/trailApiLab/lab.config.js）
+  LAB_FUNC_NAME: 'trailApiLab',
+
   // 订阅消息模板 ID：微信公众平台 → 功能 → 订阅消息 → 选用模板后复制 ID。
   // 申请「活动变更通知」类模板（含 标题 + 说明 两个可填写字段效果最好）。
   // 留空时「发送通知」会提示未配置，并自动降级为复制文案到群里。

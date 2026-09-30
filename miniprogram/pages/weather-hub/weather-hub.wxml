@@ -15,7 +15,7 @@
       </view>
       <text class="small" style="display:block;">导入轨迹，自动取出山路线上的标注点，逐点看天气与天相。</text>
       <view class="button secondary block" style="margin-top:12px;" hover-class="button-hover" bindtap="onImportGpx">导入 GPX 轨迹</view>
-      <text class="small muted" style="display:block;margin-top:8px;">把 GPX 文件发到任意聊天，再点上面按钮选择。</text>
+      <text class="small muted" style="display:block;margin-top:8px;">把 GPX 文件发到任意聊天，再点上面按钮选择。导入后展开轨迹，点任一节点名即可进入该点的天气与天相。</text>
     </view>
 
     <!-- 我的观察点：有数据才显示，空态不渲染空卡片 -->
@@ -36,6 +36,7 @@
           <text>{{item.display}}</text>
           <text class="list-sub tabular">{{item.subText}}</text>
         </view>
+        <icon name="arrow" size="16" color="#5F6E66" />
         <view class="button text" catchtap="onDeleteTap" data-type="point" data-id="{{item.id}}" data-name="{{item.display}}">删除</view>
       </view>
     </view>
@@ -64,6 +65,7 @@
             <text>{{node.name}}</text>
             <text class="list-sub">{{node.label}}</text>
           </view>
+          <icon name="arrow" size="16" color="#5F6E66" />
         </view>
         <view class="button text" hover-class="button-hover" catchtap="onDeleteTap" data-type="track" data-id="{{item.id}}" data-name="{{item.name}}">删除这组轨迹</view>
       </view>

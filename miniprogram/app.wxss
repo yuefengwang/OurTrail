@@ -14,6 +14,13 @@ page {
   --info: #346583;
   --success: #276145;
 
+  /* 天相窗口色 —— 从 components/meteogram/layout.js 的 MARK_STYLE 提升而来。
+     此前这两个值只活在 meteogram 的 canvas 字面量色板里，canvas 拿不到 var()，
+     于是 WXML 侧（结论卡/徽标/图例）无法引用，只能再抄一份或干脆不用。
+     改色必须同步 MARK_STYLE，否则图上标记与页面文字会分叉。 */
+  --golden: #D6A33C;      /* 黄金 / 晚霞窗口 */
+  --blue-hour: #6C7C93;    /* 蓝调时刻 */
+
   --surface: #FFFFFF;
   --forest-soft: #ECF0EF;      /* forest 8% + white */
   --success-soft: #EBF0EE;     /* success 9% + white */
@@ -303,6 +310,8 @@ button.button { font-family: inherit; }
   padding-bottom: 12px;
 }
 .check-label checkbox, .check-label switch { flex: 0 0 auto; margin-top: 1px; }
+/* 勾选框由 checkbox-group 承载 change 时，group 是 .check-label 的直接 flex 子元素，行为与裸 checkbox 一致 */
+.check-label checkbox-group { flex: 0 0 auto; margin-top: 1px; }
 .check-label .check-text { flex: 1; min-width: 0; }
 .radio-label { display: flex; align-items: center; gap: 12px; min-height: var(--touch-target); }
 

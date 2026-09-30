@@ -2,6 +2,14 @@
 'use strict'
 const { FUNC_NAME } = require('../config')
 
+// 云函数内部异常（模块缺失/未定义标识符/空指针等）会把英文堆栈直接透传到界面——
+// 翻译成可行动的话术；细节在云端日志里，不拿 require stack 消耗用户信任
+function humanizeInternal(msg) {
+  return /Cannot find module|Require stack|ReferenceError|SyntaxError|TypeError|is not a function|is not defined/.test(msg)
+    ? '云函数内部错误：请重新上传部署 trailApi 后重试；仍复现请截图反馈本提示。'
+    : msg
+}
+
 function call(action, data) {
   return wx.cloud.callFunction({ name: FUNC_NAME, data: Object.assign({ action }, data || {}) })
     .then(res => {
@@ -10,11 +18,11 @@ function call(action, data) {
       // 兼容 error 为字符串的旧版协议；未部署新版时能直接看出原因
       let msg = '服务异常，请稍后再试'
       if (r && r.error) {
-        msg = typeof r.error === 'string' ? r.error : (r.error.message || msg)
+        msg = humanizeInternal(typeof r.error === 'string' ? r.error : (r.error.message || msg))
       } else if (r && r.errMsg) {
-        msg = r.errMsg
+        msg = humanizeInternal(r.errMsg)
       } else if (r && r.errorMessage) {
-        msg = r.errorMessage
+        msg = humanizeInternal(r.errorMessage)
       } else if (!r) {
         msg = '云函数没有返回结果，请确认已部署最新版 trailApi'
       }
@@ -28,7 +36,7 @@ function call(action, data) {
       const err = new Error(
         /not *found/i.test(errMsg) ? '云函数 trailApi 尚未部署：请右键 cloudfunctions/trailApi →「上传并部署：云端安装依赖」'
           : /-504003|FUNCTIONS_TIME_LIMIT|timed *out/i.test(errMsg) ? '云函数执行超时（-504003）：请重新上传部署 cloudfunctions/trailApi（config.json 已调至 20 秒），或在云开发控制台 → 云函数 → trailApi → 配置中把超时改为 20 秒'
-            : errMsg ? '云函数调用失败：' + errMsg
+            : errMsg ? humanizeInternal('云函数调用失败：' + errMsg)
               : '网络异常，请稍后再试'
       )
       err.code = 'NETWORK'

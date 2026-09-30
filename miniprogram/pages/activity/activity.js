@@ -322,8 +322,9 @@ Page({
   },
   // marker 点击 → 选中放大（callout 由原生 BYTAP 展示）。字段级 setData：不重传 include-points。
   onMapMarkerTap(e) {
-    const id = Number(e.detail.markerId) || -1
-    if (id < 0) return
+    // 0 号 marker（起点）是合法 id，不能用 || 兜底；NaN/负数才无效
+    const id = Number(e.detail.markerId)
+    if (!Number.isInteger(id) || id < 0) return
     this.setData({
       'map.selectedId': id,
       'map.markers': mapMarkers(this._routePoints, this._routePickups, id),
@@ -465,6 +466,7 @@ Page({
   onCheckin() {
     this.getLocation().then(coords => {
       this.run(this.selPayload({
+        type: 'attendance.checkin',
         checkIn: { method: 'simulation', evidence: { at: '', by: '', note: '本人定位签到' }, coordinates: coords },
       }), '签到已保存。')
     }).catch(err => {
@@ -474,20 +476,21 @@ Page({
         return
       }
       this.run(this.selPayload({
+        type: 'attendance.checkin',
         checkIn: { method: 'manual', evidence: { at: '', by: '', note: this.data.selNote } },
       }), '签到已保存。')
     })
   },
 
   onHome() {
-    this.run(this.selPayload({ note: this.data.selNote }), '安全到家已记录。')
+    this.run(this.selPayload({ type: 'attendance.home', note: this.data.selNote }), '安全到家已记录。')
   },
 
   onNode() {
     if (this.data.selPointIndex < 0) return
     const point = this.view.activity.routeSnapshot.points[this.data.selPointIndex]
     if (!point) return
-    this.run(this.selPayload({ pointId: point.id, note: this.data.selNote }), '节点到达已保存。')
+    this.run(this.selPayload({ type: 'attendance.node', pointId: point.id, note: this.data.selNote }), '节点到达已保存。')
   },
 
   onIncident() {

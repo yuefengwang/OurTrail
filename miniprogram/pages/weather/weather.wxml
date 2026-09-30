@@ -72,6 +72,19 @@
         bind:pickhour="onChartPickHour"
       />
 
+      <!-- P4 时空天相图：把 meteogram 的「时间×数值」补成「时间×海拔」，
+           云层带 + 逐节点天相轨迹 + 主窗口括号 + 抵达净空，一眼看懂云在不在脚下。
+           没有可信抵达时刻的节点不画（宁可少几个点，不编造）。 -->
+      <space-time
+        series="{{spaceSeries}}"
+        days="{{spaceDays}}"
+        nodes="{{spaceNodes}}"
+        lat="{{spaceLat}}"
+        lng="{{spaceLng}}"
+        obs-alt="{{spaceObsAlt}}"
+        arrive-t="{{spaceArriveT}}"
+      />
+
       <!-- 当日数字指标：日出日落 / 三层云量 / 云层带 / 月相 -->
       <view wx:if="{{metrics}}" class="card stack-gap3">
         <view class="card-header">

@@ -81,14 +81,19 @@
           </view>
         </view>
         <view catchtap="noop">
-          <label class="check-label" style="padding-top:0;padding-bottom:0;">
-            <checkbox color="#163E35" checked="{{p.consent.dataUse}}" data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent" />
-            <text class="check-text">同意本次活动使用报名与安全联络资料</text>
-          </label>
-          <label wx:if="{{p.personRef.kind === 'companion'}}" class="check-label" style="padding-top:0;">
-            <checkbox color="#163E35" checked="{{p.consent.proxyAuthority}}" data-index="{{pi}}" data-key="proxyAuthority" bindchange="onPartConsent" />
-            <text class="check-text">已获同行人授权，代为报名</text>
-          </label>
+          <!-- 勾选框用 checkbox-group 承载 change（官方只定义了 group 的 change 语义），单选布尔经 onPartConsent 归一化 -->
+          <checkbox-group data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent">
+            <label class="check-label" style="padding-top:0;padding-bottom:0;">
+              <checkbox color="#163E35" value="1" checked="{{p.consent.dataUse}}" />
+              <text class="check-text">同意本次活动使用报名与安全联络资料</text>
+            </label>
+          </checkbox-group>
+          <checkbox-group wx:if="{{p.personRef.kind === 'companion'}}" data-index="{{pi}}" data-key="proxyAuthority" bindchange="onPartConsent">
+            <label class="check-label" style="padding-top:0;">
+              <checkbox color="#163E35" value="1" checked="{{p.consent.proxyAuthority}}" />
+              <text class="check-text">已获同行人授权，代为报名</text>
+            </label>
+          </checkbox-group>
         </view>
         <text wx:if="{{errors['p' + pi + '-dataUse'] || errors['p' + pi + '-proxyAuthority']}}" class="field-error">{{errors['p' + pi + '-dataUse'] || errors['p' + pi + '-proxyAuthority']}}</text>
       </view>
@@ -123,31 +128,39 @@
           </picker>
         </form-field>
         <view catchtap="noop">
-          <label class="check-label" style="padding-top:0;padding-bottom:0;">
-            <checkbox color="#163E35" checked="{{p.consent.dataUse}}" data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent" />
-            <text class="check-text">同意本次活动使用报名与安全联络资料</text>
-          </label>
+          <checkbox-group data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent">
+            <label class="check-label" style="padding-top:0;padding-bottom:0;">
+              <checkbox color="#163E35" value="1" checked="{{p.consent.dataUse}}" />
+              <text class="check-text">同意本次活动使用报名与安全联络资料</text>
+            </label>
+          </checkbox-group>
           <text wx:if="{{errors['p' + pi + '-dataUse']}}" class="field-error">{{errors['p' + pi + '-dataUse']}}</text>
-          <label wx:if="{{p.personRef.kind === 'companion'}}" class="check-label">
-            <checkbox color="#163E35" checked="{{p.consent.proxyAuthority}}" data-index="{{pi}}" data-key="proxyAuthority" bindchange="onPartConsent" />
-            <text class="check-text">已获同行人授权，代为报名和处理行程</text>
-          </label>
+          <checkbox-group wx:if="{{p.personRef.kind === 'companion'}}" data-index="{{pi}}" data-key="proxyAuthority" bindchange="onPartConsent">
+            <label class="check-label">
+              <checkbox color="#163E35" value="1" checked="{{p.consent.proxyAuthority}}" />
+              <text class="check-text">已获同行人授权，代为报名和处理行程</text>
+            </label>
+          </checkbox-group>
           <text wx:if="{{errors['p' + pi + '-proxyAuthority']}}" class="field-error">{{errors['p' + pi + '-proxyAuthority']}}</text>
-          <label class="check-label">
-            <checkbox color="#163E35" checked="{{p.consent.proxyHome}}" data-index="{{pi}}" data-key="proxyHome" bindchange="onPartConsent" />
-            <text class="check-text">授权代为确认安全到家（可选，独立授权）</text>
-          </label>
+          <checkbox-group data-index="{{pi}}" data-key="proxyHome" bindchange="onPartConsent">
+            <label class="check-label">
+              <checkbox color="#163E35" value="1" checked="{{p.consent.proxyHome}}" />
+              <text class="check-text">授权代为确认安全到家（可选，独立授权）</text>
+            </label>
+          </checkbox-group>
         </view>
       </view>
     </block>
 
-    <label class="check-label">
-      <checkbox color="#163E35" checked="{{keepTogether}}" bindchange="onKeepTogether" />
-      <view class="check-text">
-        <text>尽量安排同行人同车</text>
-        <text class="small muted" style="display:block;">整组安排；容量不足时不会静默拆组。</text>
-      </view>
-    </label>
+    <checkbox-group bindchange="onKeepTogether">
+      <label class="check-label">
+        <checkbox color="#163E35" value="1" checked="{{keepTogether}}" />
+        <view class="check-text">
+          <text>尽量安排同行人同车</text>
+          <text class="small muted" style="display:block;">整组安排；容量不足时不会静默拆组。</text>
+        </view>
+      </label>
+    </checkbox-group>
 
     <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
 
