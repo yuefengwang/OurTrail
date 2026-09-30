@@ -163,7 +163,15 @@ Page({
 
   // ---- 常用同行人 ----
   onAddCompanion() {
-    this.setData({ companionOpen: true, companionId: null, companionPerson: emptyPerson() })
+    // 服务端 companion.save 要求先有本人档案；新账号不预检的话，保存失败只会在
+    // 弹层遮罩后面报错（error 渲染在页面顶部），用户看到的是"点保存没反应"。
+    const p = this.data.person || {}
+    if (!p.name || !p.phone) {
+      this.setData({ error: '先补全上方「我的资料」的姓名与手机号（填齐自动保存），再添加同行人。' })
+      api.toast('先补全本人姓名与手机号，再添加同行人')
+      return
+    }
+    this.setData({ companionOpen: true, companionId: null, companionPerson: emptyPerson(), error: '' })
   },
   onEditCompanion(e) {
     const id = e.currentTarget.dataset.id
@@ -195,7 +203,7 @@ Page({
     api.dispatchAndSync({ type: 'companion.save', companionId: this.data.companionId, person: p }, this.revision, this)
       .then(res => {
         this.revision = res.revision
-        this.setData({ companionOpen: false })
+        this.setData({ companionOpen: false, error: '' })
         api.toast('常用同行人已保存')
         this.reload()
       })

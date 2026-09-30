@@ -13,7 +13,7 @@
 const {
   HOUR_W, PAD_L, PAD_R, ROW, CHART_H, AXIS_DAY_DY, AXIS_HOUR_DY,
   MARK_STYLE, MARK_LANES, LEGEND_KEYS,
-  MARK_LANE_H, MARK_LANE_GAP, MARK_FONT_PX, inkOn,
+  MARK_LANE_H, MARK_LANE_GAP, MARK_FONT_PX, inkOn, tapColumn,
 } = require('./layout')
 
 /* canvas 画布内拿不到 CSS 变量(var() 在 canvas 上下文无效)，所以这里必须留字面量。
@@ -484,16 +484,22 @@ Component({
       })
     },
 
-    // 点击定位到某小时 → 通知页面切日
+    // 点击定位到某小时 → 通知页面切日。
+    // e.detail.x 是**页面坐标**；canvas 在横滚 scroll-view 里，滚动后内容左缘
+    // = boundingClientRect().left（已含 -scrollLeft 偏移，通常为负）。
+    // 直接减 PAD_L 不算滚动，滑过图后任何点按都会落回 series 首日
+    // （2026-09-30 开发者工具实测复现：滚到第 4 天点屏中部，日期被拉回首日）。
     onTap(e) {
       const hw = this.hw || HOUR_W
       const px = (e.detail && Number.isFinite(e.detail.x) ? e.detail.x
         : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].x : NaN))
       if (!Number.isFinite(px)) return
-      const i = Math.floor((px - PAD_L) / hw)
-      const h = this.data.series[i]
-      if (!h) return
-      this.triggerEvent('pickhour', { date: h.d, t: h.t })
+      this.createSelectorQuery().select('.meteogram-canvas').boundingClientRect(rect => {
+        if (!rect || !Number.isFinite(rect.left)) return
+        const h = this.data.series[tapColumn(px, rect.left, hw)]
+        if (!h) return
+        this.triggerEvent('pickhour', { date: h.d, t: h.t })
+      }).exec()
     },
   },
 })

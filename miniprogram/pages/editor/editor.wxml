@@ -200,7 +200,7 @@
             <text class="card-label">节点 {{index + 1}}</text>
             <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePoint">收起</view>
           </view>
-          <form-field label="节点名称" hint="留空将按“起点/终点/节点 N”显示">
+          <form-field label="节点名称" hint="发布前需为每个节点命名；GPX 导入的通常会自带名称">
             <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onRoutePoint" />
           </form-field>
           <form-field label="节点类型">
@@ -240,7 +240,7 @@
       </view>
 
       <text class="section-title">集合与上车点</text>
-      <text class="small muted">需要统一集合的才填这里；大家自行前往的可以不加。</text>
+      <text class="small muted">发布必填：至少 1 个集合上车点——用于统一出发与现场清点，大家自行前往时也请留一个出发点。</text>
       <block wx:for="{{form.pickups}}" wx:key="id">
         <!-- 阅读态：名称/地址/集合时间/定位一屏可读 -->
         <view wx:if="{{!editingPickups[item.id]}}" class="card" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickup">
@@ -435,6 +435,8 @@
     </view>
 
     <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
+    <!-- 档案闸门直达修复：文案指路「我的」却没有跳转，新用户要自己摸 Tab（2026-09-30 实测） -->
+    <view wx:if="{{profileGate}}" class="button secondary block" hover-class="button-hover" bindtap="onGoProfile">去「我的」补全资料（草稿已在本机，回来接着填）</view>
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
 
     <view class="form-actions">

@@ -103,6 +103,7 @@ Page({
     tripPickupIndex: -1,
     // 反馈
     failure: '',
+    profileGate: false,
     message: '',
     busy: false,
     // GPX 导入
@@ -561,9 +562,12 @@ Page({
       const person = res.view && res.view.profile && res.view.profile.person
       if (!person || !person.name || !person.phone) {
         const err = new Error('请先到「我的」补全姓名与手机号（填齐会自动保存），再回来保存或发布——活动归属与安全联络必需。')
-        this.setData({ busy: false, failure: err.message })
+        // profileGate：给 failure 配一个"去补全"直达按钮。冷启动实测：新用户填完整个
+        // 编辑器才被拦，文案指路另一个 Tab 却无跳转，实际要走 2 次进编辑器 + 2 次 Tab 往返。
+        this.setData({ busy: false, failure: err.message, profileGate: true })
         throw err
       }
+      this.setData({ profileGate: false })
       const input = this.buildInput()
       const payload = this.savedId
         ? { type: 'activity.edit', activityId: this.savedId, input }
@@ -589,6 +593,10 @@ Page({
     this.persistCurrent(this.data.phase === 'draft' ? '草稿已保存，尚未发布，也没有自动报名。' : '活动修改已保存。')
       .then(id => { if (preview && id) wx.navigateTo({ url: '/pages/activity/activity?id=' + id }) })
       .catch(() => {})
+  },
+  // 档案闸门的直达修复：switchTab 会关掉编辑器，但草稿在本机且进页自动恢复（draft 优先）
+  onGoProfile() {
+    wx.switchTab({ url: '/pages/me/me' })
   },
   // 发布前逐项预检（与服务端 full 校验对齐）：返回缺失项 [{step, label}]，
   // 让用户在对应步骤就被明确告知缺什么，而不是发布时撞到一句笼统的服务端报错。

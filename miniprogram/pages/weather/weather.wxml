@@ -1,5 +1,5 @@
 <view class="page">
-  <status-panel wx:if="{{denied}}" kind="denied" title="无法查看天气参考" detail="{{denied}}" />
+  <status-panel wx:if="{{denied}}" kind="denied" title="无法查看天气参考" detail="{{denied}}" action-label="重试" bind:action="reload" />
   <view wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取路线关键点。" />
   </view>
@@ -152,7 +152,7 @@
       <text class="small muted">更新时间：{{updatedAt}}</text>
       <text class="small muted">数据来源 Open-Meteo.com（CC BY 4.0）· 日出日落与天相判断为本机按坐标与海拔推算</text>
     </block>
-    <status-panel wx:else kind="empty" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" />
+    <status-panel wx:else kind="empty" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" action-label="重新查询" bind:action="fetchWeather" />
 
     <form-field label="查看日期">
       <picker mode="date" value="{{date}}" bindchange="onDate">
