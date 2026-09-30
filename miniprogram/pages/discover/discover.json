@@ -1,5 +1,6 @@
 {
   "navigationBarTitleText": "发现活动",
+  "enablePullDownRefresh": true,
   "usingComponents": {
     "icon": "/components/icon/icon",
     "status-panel": "/components/status-panel/status-panel",

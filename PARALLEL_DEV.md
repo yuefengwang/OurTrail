@@ -161,10 +161,10 @@ macOS 的 `ssh -T`（不分配终端）**不返回 shell 横幅，连接保持�
 |---|---|---|
 | 中转机 | ✅ 就是本机（192.168.1.101）| ❌ 需连 `192.168.1.101` |
 | origin | `ssh://yfwang@192.168.1.101/Users/yfwang/gitrelay/OurTrail.git` | 同左 |
-| 微信开发者工具 | ❌ 无 | ✅ 有（唯一能真机预览的环境）|
-| 渲染验证 | ❌ 只能静态校验 | ✅ 可真机跑 |
+| 微信开发者工具 | ✅ 有（2026-09-30 起启用；服务端口已开，CLI/自动化通道可用）| ✅ 有（真机预览）|
+| 渲染验证 | ✅ 自动化通道（`cli auto` + miniprogram-automator：截图/元素断言/真实云函数；工具内无真机摄像头等硬件能力）| ✅ 可真机跑 |
 
-**推论**：Mac 侧改完只能跑 `node tools/check.js`；**真机视觉/联调验证必须靠 Windows**。涉及 UI 或云函数部署的改动，Mac 提交后需在 Windows 上验证，再合并回 `master`。
+**推论（2026-09-30 更新）**：Mac 侧改完可以走「开发者工具自动化通道」做渲染级验证——`/Applications/wechatwebdevtools.app/Contents/MacOS/cli auto --project <repo> --auto-port 9420` 打开自动化，`miniprogram-automator`（装在仓库外临时目录，勿污染仓库零依赖）连接 `ws://127.0.0.1:9420` 即可逐页截图、查元素、驱动交互；服务端口号码以工具「设置 → 安全设置」实际显示为准（曾用 61253）。云函数**部署**仍只在 Windows/控制台操作；涉及真机硬件（相机/定位/蓝牙）的验证仍需 Windows 真机。
 
 ---
 

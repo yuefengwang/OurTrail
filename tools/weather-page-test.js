@@ -552,6 +552,25 @@ const LAY = require('../miniprogram/components/meteogram/layout.js')
     comp.data.legend.map(i => i.k).join(','))
 }
 
+// 9b. 点图换算 tapColumn（滚动映射回归）：e.detail.x 是页面坐标，canvas 在横滚
+// scroll-view 里，滚动后 boundingClientRect().left 为负——直接减 PAD_L 不算滚动，
+// 滑到第 4 天点屏中部会落回 series 首日（2026-09-30 开发者工具实测复现后修复）。
+const LAYOUT = require('../miniprogram/components/meteogram/layout')
+section('9b. 点图换算 tapColumn（滚动映射回归）')
+{
+  // 页面左 padding 20 + 卡片内边距 16 → 未滚动时 canvas 左缘 ≈36
+  check('未滚动：屏中部 x=180 → 第 1 天 04 时列', LAYOUT.tapColumn(180, 36, 22) === 4,
+    LAYOUT.tapColumn(180, 36, 22))
+  const scrolledLeft = 36 - 1584 // scrollLeft = 3 天 × 24 列 × 22px
+  check('滚到第 4 天：屏中部 x=180 → 内容列 76（第 4 天 04 时）',
+    LAYOUT.tapColumn(180, scrolledLeft, 22) === 76, LAYOUT.tapColumn(180, scrolledLeft, 22))
+  check('同一内容列两种坐标路径等价（rect.left 已含 -scrollLeft，不得重复加滚移）',
+    LAYOUT.tapColumn(180 + 1584, 36, 22) === LAYOUT.tapColumn(180, scrolledLeft, 22))
+  check('点在刻度栏返回负列（由 series 守卫吞掉）', LAYOUT.tapColumn(0, 36, 22) < 0)
+  check('hourWidth 收敛：放大模式 44px 列宽照常换算',
+    LAYOUT.tapColumn(180, 36, 44) === Math.floor((180 - 36 - 52) / 44))
+}
+
 // 10. 全图展示（横屏页）：数据交接与"全览"列宽反推
 section('10. 全图展示（横屏页）')
 

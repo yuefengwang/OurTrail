@@ -1,2 +1,7 @@
 /* 天气模块首页：布局与组件类全部复用 app.wxss（token/卡片/按钮/列表行）。
    这里只放本页特有的小间距调整。 */
+
+/* Tab 页底部留白（ourtrail-ui 硬性规则，模板见 home.wxss）：缺失时观察点列表
+   最后几行被固定 tabBar 拦腰截断、删除按钮点不到（2026-09-30 实测复现）。 */
+.page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }
+

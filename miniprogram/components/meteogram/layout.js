@@ -84,9 +84,20 @@ function inkOn(hex) {
   return lum > 0.55 ? '#1B2A24' : '#FFFFFF'
 }
 
+/* ---------- 点图换算 ---------- */
+
+// pageX（页面坐标）− canvas 视口左缘（横滚后为负）− 图内左留白 = 内容列号。
+// canvasLeft 必须来自 boundingClientRect().left——它已经吃掉了 scrollLeft，
+// 不能再单独加滚移；负列号由调用方用 series[i] 的 undefined 守卫吞掉（点在刻度栏时）。
+// 背景：直接减 PAD_L 不算滚动，滑过图后任何点按都落回 series 首日（2026-09-30 真机复现）。
+function tapColumn(pageX, canvasLeft, hourWidth) {
+  const hw = hourWidth > 0 ? hourWidth : HOUR_W
+  return Math.floor((pageX - canvasLeft - PAD_L) / hw)
+}
+
 module.exports = {
   HOUR_W, PAD_L, PAD_R, ROW, CHART_H, AXIS_DAY_DY, AXIS_HOUR_DY,
   MARK_STYLE, MARK_LANES, LEGEND_KEYS,
   MARK_LANE_H, MARK_LANE_GAP, MARK_FONT_PX,
-  GUTTER_FONT_PX, textWidth, inkOn,
+  GUTTER_FONT_PX, textWidth, inkOn, tapColumn,
 }

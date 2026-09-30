@@ -133,6 +133,8 @@
 
   <overlay open="{{companionOpen}}" kind="sheet" title="常用同行人资料" bind:close="onCompanionClose">
     <view class="stack">
+      <!-- 错误提示必须在弹层内：页面顶部的 error 会被全屏遮罩盖住（2026-09-30 实测复现） -->
+      <view wx:if="{{error}}" class="callout danger">{{error}}</view>
       <form-field label="姓名">
         <input class="input" value="{{companionPerson.name}}" maxlength="80" data-key="name" bindinput="onCompanionField" />
       </form-field>
