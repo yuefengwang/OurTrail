@@ -91,7 +91,9 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
         return api.read({ kind: 'activity', activityId, perspective: 'participant' }).then(res => {
           const canPublish = res.view.kind === 'activity'
             && ['archived', 'cancelled'].indexOf(res.view.activity.phase) === -1
-          this.setData({ items, canPublish, revision: res.revision })
+          // 发布上下文里读到的 revision 才是发布/已读/投递命令的 CAS 基准（写实例，不进 data）
+          this.revision = res.revision
+          this.setData({ items, canPublish })
           if (res.view.kind === 'activity') this.now = res.now
         })
       }).catch(() => {

@@ -1,0 +1,9 @@
+{
+  "name": "trailApiLab",
+  "version": "1.0.0",
+  "description": "OurTrail 预演工具：以合成演员身份执行预演剧本（仅测试用，勿用于生产数据）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

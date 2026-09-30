@@ -20,7 +20,7 @@ wxs/text.wxs 16 lines. WXS regex must use getRegExp().
 assets/markers/  generated PNGs — map marker.iconPath rejects base64
 ```
 
-**Hard layout convention, no exceptions:** every page/component is a same-named dir holding `<name>.{js,json,wxml,wxss}`. No barrels, no index re-exports, no nesting — the single exception is `components/meteogram/layout.js`. All component paths in JSON are **root-absolute** (`"/components/icon/icon"`).
+**Hard layout convention:** every page/component is a same-named dir holding `<name>.{js,json,wxml,wxss}`. No barrels, no index re-exports, no nesting. The only nested files are the **pure-geometry sidecars** `components/meteogram/layout.js` and `components/space-time/layout.js` — they exist so `tools/*-test.js` can assert geometry/colors without re-implementing the component (复刻页面计算会让测试为过期契约背书). All component paths in JSON are **root-absolute** (`"/components/icon/icon"`).
 
 ## PAGES (14)
 
@@ -97,7 +97,12 @@ Beyond the root list, specific to this directory:
 - **Nothing is mounted globally.** `app.json` has no `usingComponents` key and `app.wxml` has no tags — `app.json`/`app.wxml` are the floor of the tree, not a place to register things. `components/privacy-popup/` is kept on disk but dead. Register page components in the *page's* `.json`.
 - **A new page requires 5 steps:** create `pages/<n>/<n>.{js,json,wxml,wxss}` → register in `app.json` `pages` → declare `usingComponents` with root-absolute paths → add `styleIsolation` if you rely on `app.wxss` classes → `node tools/check.js`.
 - **`meteogram.js` re-measures its canvas twice** (`scheduleSync`, 100 ms and 320 ms). A `type="2d"` canvas caches its layer offset at `node.width` assignment and does not follow later reflow; measure after async layout settles or the chart overlays body text.
-- **`meteogram/layout.js` exists on purpose** — geometry and mark colors were extracted out of the component purely so `tools/` can assert them. The `MARK_STYLE` keys must stay in sync with `sky.js`'s `hourMarks` keys. Canvas cannot read CSS vars, so its palette is literal; keep it in sync with `app.wxss`.
+- **`meteogram/layout.js` exists on purpose** — geometry and mark colors were extracted out of the component purely so `tools/` can assert them. The `MARK_STYLE` keys must stay in sync with `sky.js`'s `hourMarks` keys. Canvas cannot read CSS vars, so its palette is literal; keep it in sync with `app.wxss`. `components/space-time/layout.js` follows the same pattern and **reuses** `meteogram/layout.js`'s `MARK_STYLE` rather than re-mapping the 天相 colors (they are the single source; if a key is added, change `sky.js` + `meteogram/layout.js` + `space-time/layout.js` together or the chart silently drops a mark).
+- **静态门禁通过 ≠ 页面正常。** 改完 WXML/WXSS/组件结构后跑一次真机（微信开发者工具）驱动，
+  见 `../AGENTS.md` 的「直连微信开发者工具」一节与 `../docs/e2e-mp/README.md`。
+  判据很硬：**凡是「数据对、渲染不对」的问题，逻辑测试天然测不到** ——
+  具名 slot 缺 `options: { multipleSlots: true }` 就是内容被静默丢弃、组件 `data` 里一切正常、页面上什么都没有。
+  另外：用具名 slot 必须声明 `multipleSlots`，改了组件 `options` 要用 `check-handlers.js` 之外的手段复核。
 - **`editor.js` must pass GPX `time`/`ele` through verbatim in both directions** (`toForm` / `buildInput`). They are user-invisible metadata, and dropping them silently erases the GPX record on a single draft edit. Named waypoints lack them, so `gpx.js` back-fills from the nearest track point.
 - **The editor has no undo stack.** Local drafts autosave to wx storage on every edit (throttled UI timestamp refresh every 30 s), and the server `phase:'draft'` row is the real persisted entity. `onPublishIntent()` saves silently *first*, then opens the publish sheet.
 - **Never trust `node --check`.** Run `node tools/check-handlers.js`; it also follows `require('../utils/...')` so factory-built handlers are checked.

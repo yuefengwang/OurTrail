@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "预演面板",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "overlay": "/components/overlay/overlay",
+    "status-panel": "/components/status-panel/status-panel"
+  }
+}

@@ -13,18 +13,16 @@
     </view>
     <text class="small muted">{{countersLine}}</text>
 
-    <view class="field">
-      <text class="field-label">搜索名单</text>
-      <input class="input" value="{{search}}" placeholder="姓名、上车点或车辆" bindinput="onSearch" />
-    </view>
-    <form-field label="报名状态">
+    <!-- 搜索 + 状态筛选一行放下，少占两行标签 -->
+    <view class="roster-filter">
+      <input class="input" placeholder="搜索姓名、上车点或车辆" value="{{search}}" bindinput="onSearch" />
       <picker range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatus">
         <view class="picker">
           <text class="picker-value">{{statusOptions[statusIndex]}}</text>
           <text class="picker-arrow">▾</text>
         </view>
       </picker>
-    </form-field>
+    </view>
 
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
@@ -55,20 +53,22 @@
     </view>
     <status-panel wx:else kind="empty" title="没有匹配的参与人" detail="尝试其他姓名或报名状态。" />
 
-    <view class="stack" style="gap:12px;">
+    <!-- 批量动作只在有勾选时出现：空选态不留一排死按钮 -->
+    <view wx:if="{{selectedCount}}" class="stack" style="gap:12px;">
       <view class="form-actions">
-        <view class="button secondary {{selectedCount && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="confirm" bindtap="{{selectedCount && !busy ? 'onBatch' : ''}}">确认报名</view>
-        <view class="button secondary {{selectedCount && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="reject" bindtap="{{selectedCount && !busy ? 'onBatch' : ''}}">拒绝报名</view>
+        <view class="button secondary {{!busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="confirm" bindtap="{{!busy ? 'onBatch' : ''}}">确认报名</view>
+        <view class="button secondary {{!busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="reject" bindtap="{{!busy ? 'onBatch' : ''}}">拒绝报名</view>
       </view>
       <view class="form-actions">
-        <view class="button secondary {{selectedCount && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="promote" bindtap="{{selectedCount && !busy ? 'onBatch' : ''}}">递补候补</view>
-        <view class="button secondary {{selectedCount && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="cancel" bindtap="{{selectedCount && !busy ? 'onBatch' : ''}}">取消报名</view>
+        <view class="button secondary {{!busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="promote" bindtap="{{!busy ? 'onBatch' : ''}}">递补候补</view>
+        <view class="button secondary {{!busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="cancel" bindtap="{{!busy ? 'onBatch' : ''}}">取消报名</view>
       </view>
-      <view class="button text {{selectedCount && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{selectedCount && !busy ? 'onExportOpen' : ''}}">
+      <view class="button text {{!busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{!busy ? 'onExportOpen' : ''}}">
         <icon name="download" size="18" color="#163E35" />
         <text>导出选中的 {{selectedCount}} 人</text>
       </view>
     </view>
+    <text wx:else class="small muted">勾选参与人后，可批量审核、递补、取消或导出。</text>
 
     <view wx:if="{{groups.length}}" class="stack" style="gap:0;">
       <view class="card-header"><text class="section-title">同行组与同车约束</text></view>

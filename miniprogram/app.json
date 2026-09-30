@@ -14,6 +14,7 @@
     "pages/weather-chart/weather-chart",
     "pages/weather-hub/weather-hub",
     "pages/anotices/anotices",
+    "pages/lab/lab",
     "pages/privacy/privacy"
   ],
   "window": {

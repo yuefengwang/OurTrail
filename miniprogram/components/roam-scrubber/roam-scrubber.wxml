@@ -1,0 +1,38 @@
+<!-- roam-scrubber：漫游控件（哑组件）。
+     刻意不认识天相、不认识轨迹——只管「当前值 / 拖动 / 播放」。
+     读数与天相由宿主（components/space-time）算好后经 slot 传入，
+     这样控件能被别处复用，也避免同一份天相算两遍。 -->
+<view class="roam">
+  <view class="roam-row">
+    <view
+      class="roam-play"
+      hover-class="roam-play-hover"
+      bindtap="onToggle"
+    >
+      <text class="roam-play-icon">{{playing ? '❚❚' : '▶'}}</text>
+    </view>
+
+    <slider
+      class="roam-slider"
+      min="{{min}}"
+      max="{{max}}"
+      step="{{step}}"
+      value="{{value}}"
+      disabled="{{disabled}}"
+      activeColor="var(--forest)"
+      backgroundColor="var(--forest-soft)"
+      block-color="var(--forest)"
+      block-size="18"
+      bindchanging="onChanging"
+      bindchange="onChange"
+    />
+
+    <text class="roam-clock tabular">{{clock}}</text>
+  </view>
+
+  <view class="roam-readout">
+    <slot name="readout">
+      <text class="roam-readout-empty">{{emptyText}}</text>
+    </slot>
+  </view>
+</view>

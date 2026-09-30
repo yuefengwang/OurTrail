@@ -1,0 +1,2 @@
+/* 预演面板：样式全部复用 app.wxss 全局类（.page/.stack/.card/.button/.badge/.callout）。 */
+/* 注意：WXSS 是 CSS 系语法，注释只能是块注释，不认 // 行注释。 */

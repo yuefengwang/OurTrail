@@ -21,7 +21,7 @@
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
 
-    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPreview'}}">
+    <view class="button primary block {{busy || !vehicles.length ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !vehicles.length ? '' : 'onPreview'}}">
       <text>预览自动分车方案</text>
       <icon name="arrow" size="18" color="#FFFFFF" />
     </view>
@@ -186,14 +186,16 @@
           <input class="input" type="number" maxlength="11" value="{{item.phone}}" data-index="{{index}}" data-key="phone" bindinput="onDriverField" />
         </form-field>
       </block>
-      <form-field wx:else label="选择参与者司机">
-        <picker range="{{confirmedOptions}}" range-key="label" value="{{item.signupIndex}}" data-index="{{index}}" bindchange="onDriverPick">
+      <!-- 候选=已确认且未分车（域规则会拒绝其余人），此前误绑了只在座位指派流程赋值的 confirmedOptions，下拉恒为空 -->
+      <form-field wx:else label="选择参与者司机" hint="需已确认报名，且尚未安排车辆。">
+        <picker range="{{driverCandidates}}" range-key="label" value="{{item.signupIndex}}" data-index="{{index}}" bindchange="onDriverPick">
           <view class="picker {{item.signupIndex < 0 ? 'placeholder' : ''}}">
-            <text class="picker-value">{{item.signupIndex < 0 ? '请选择' : confirmedOptions[item.signupIndex].label}}</text>
+            <text class="picker-value">{{item.signupIndex < 0 ? '请选择' : driverCandidates[item.signupIndex].label}}</text>
             <text class="picker-arrow">▾</text>
           </view>
         </picker>
       </form-field>
+      <text wx:if="{{item.kind === 'participant' && !driverCandidates.length}}" class="small muted">还没有可兼任司机的参与者：先在名单区确认报名，且此人尚未分车。</text>
       <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="removeDriver">移除此司机</view>
     </view>
     <view class="button secondary block" hover-class="button-hover" bindtap="addDriver">添加司机</view>

@@ -29,6 +29,8 @@
 | 天气查询 | `pages/weather` | 三种模式共用：活动流（节点→天气，含天气提醒草稿）与自由查询（单点/轨迹组，抵达日程、保存/分享降精度）；Open-Meteo 云函数代理+缓存、**天相结论卡**（云海/日照金山/星空/银河/彩虹/晨昏光） |
 | 天气全图 | `pages/weather-chart` | 横屏整屏看 7×24 小时 meteogram 时间坐标图（数据经 `utils/chart-store.js` 交接，不走 URL） |
 | 天相图表 | `components/meteogram` | canvas 自绘 meteogram：温度线/降水双柱/三层云量/天相窗口标记/日时轴（几何抽到 `layout.js` 供测试断言） |
+| 时空天相图 | `components/space-time` | **P4**：把「时间×数值」补成「时间×海拔」——云层带 + 逐节点天相渐变轨迹 + 主窗口括号 + 抵达净空。几何抽到 `layout.js`，天相判定复用 `utils/sky.js`（不自建阈值） |
+| 漫游滑块 | `components/roam-scrubber` | 拖动/播放走完这一天。**哑控件**：不认识天相也不认识轨迹，读数由 `space-time` 算好后经 slot 传入，避免同一份天相算两遍 |
 | 合规 | `pages/privacy` | 隐私指引（公众平台登记路径）。**全局授权弹窗已下线**：`components/privacy-popup` 组件文件按 2026-09-27 决策保留，但已从 `app.json` 注销、不再挂载 |
 
 ## 目录结构
@@ -40,7 +42,7 @@ miniprogram/
   custom-tab-bar/                自定义底部导航（活动/天气/通知/我的）
   components/                    icon(SVG data URI)/overlay/status-panel/person-row/
                                  form-field/activity-card/field-panel/roster-panel/
-                                 transport-panel/meteogram/privacy-popup(已注销，保留文件)
+                                 transport-panel/meteogram/space-time/privacy-popup(已注销，保留文件)
   utils/
     api.js           云函数调用封装（read/dispatch + Result 解包）
     draft.js         本地草稿 + 最近查看活动
@@ -48,12 +50,14 @@ miniprogram/
     notices-page.js  通知页共享逻辑（Tab 与活动内两处复用）
     gpx.js           GPX 解析 + GCJ↔WGS 坐标转换
     astro.js/sky.js  天文层与天相概率判断（纯计算，客户端侧）
+    weather-model.js P4 轨迹层编排：逐时插值/逐节点天相/连续段/评分（纯计算；**天相阈值一律委托 sky.js**）
     route-schedule.js  GPX 时间戳 → 各节点第几天抵达
     chart-store.js   天气页 → 横屏图页的内存交接
     watch-points.js  观察点/轨迹点组（纯 util，storage 注入；P3 独立天气）
     util.js          脱敏/距离/名单导出等纯函数
   pages/               home discover notices anotices me activity signup editor
                        workspace staff vehicle weather weather-chart weather-hub privacy
+                       lab（开发者预演面板，仅白名单账号可用，无入口——用编译模式直达）
 cloudfunctions/trailApi/
   index.js             13 个 action 路由（read/readForm/.../dispatch/getWeather/getWeatherByPoint/getPhoneNumber）
   store.js             持久层：按集合存文档（ot_*），事务内 revision CAS
@@ -67,8 +71,13 @@ tools/                 零依赖 node 脚本，无 root package.json、无 npm t
   check.js             静态门禁：JS 语法/WXML 配平/WXSS 花括号/app.json 页面齐全/
                        组件引用（正向 + 反向注册）
   check-handlers.js    页面与组件的 WXML bind* ↔ JS handler 交叉审计
-  *-test.js            6 个纯逻辑回归套件（见下「测试」）
+  *-test.js            6 个纯逻辑回归套件 + 11 个页面级场景套件 + trailApiLab 云函数
+                       集成测试（stub wx-server-sdk）+ 剧本离线干跑（见下「测试」）
+  sync-lab.js          把 trailApi 的 domain/store 同步进 trailApiLab（部署 lab 前跑）
   gen-map-markers.js   地图 marker PNG 生成器（写文件，非常驻脚本）
+cloudfunctions/trailApiLab/   预演工具（私有测试用）：以合成演员身份执行预演剧本，
+                       让单人即可在真机走完多人业务全流程；部署与用法见其 lab.config.js
+                       与 SYNC.md 2026-09-29 条目
 SYNC.md                落地过程的进度同步文档（含架构决策）
 AGENTS.md              分层知识库：起手先读，子目录另有 AGENTS.md
 docs/prototypes/ourtrail-app/   v1 高仿真原型（React，设计基准；已冻结，勿改勿跑）
@@ -107,13 +116,31 @@ docs/prototypes/ourtrail-app/   v1 高仿真原型（React，设计基准；已�
 node tools/check.js && node tools/check-handlers.js && \
 node cloudfunctions/trailApi/smoke-test.js && node tools/astro-test.js && \
 node tools/gpx-test.js && node tools/sky-test.js && node tools/route-schedule-test.js && \
-node tools/weather-page-test.js && node tools/scenario-editor-test.js
+node tools/weather-page-test.js && node tools/watch-points-test.js && \
+node tools/weather-model-test.js && node tools/space-time-test.js && \
+node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
+node tools/scenario-api-test.js && node tools/scenario-editor-test.js && \
+node tools/scenario-signup-test.js && node tools/scenario-workspace-test.js && \
+node tools/scenario-me-test.js && node tools/scenario-notices-test.js && \
+node tools/scenario-activity-test.js && node tools/scenario-staff-test.js && \
+node tools/scenario-vehicle-test.js && node tools/scenario-discover-test.js && \
+node tools/scenario-lab-test.js && node tools/trailapilab-test.js && \
+node tools/lab-dryrun-test.js
 ```
 
-共 **7 个套件 / 540 用例**：`smoke` 86（领域层，不需 wx-server-sdk）· `astro` 60 · `gpx` 47 ·
-`sky` 65 · `route-schedule` 41 · `weather-page` 104（云函数→页面→组件契约）·
-`scenario-editor` 137（编辑器页面级场景）。`check.js` 是提交前铁律，`check-handlers.js`
+共 **24 个套件**（断言总数是快照，2026-09-30 12:2x 测得 1720 —— 本仓库常有并行工作增删用例，**以各脚本自己打印的 `passed=N` 为准**）：
+`smoke` 106（领域层，不需 wx-server-sdk）· `astro` 60 · `gpx` 47 · `sky` 65 · `route-schedule` 41 ·
+`weather-page` 129（云函数→页面→组件契约）· `watch-points` 37 ·
+`weather-model` 82（P4 轨迹层编排）· `space-time` 109（P4 几何 + 漫游读数）·
+`space-time-draw` 55（执行真实 `draw()`，记录式 2D 上下文）· `roam-scrubber` 33（漫游控件定时器与事件）·
+页面级场景（editor 137 / activity 136 / workspace 107 / signup 100 / me 81 / notices 64 /
+vehicle 55 / api 27 / discover 21 / lab 20 / staff 18）· lab 集成（lab-dryrun 165 / trailapilab 25）。
+`check.js` 是提交前铁律，`check-handlers.js`
 补它抓不到的一类（`node --check` 无法发现未定义标识符）。
+
+> `space-time-draw` / `roam-scrubber` 是 canvas 组件的**执行级**回归：
+> 它们真的把 `draw()` 跑起来并断言图元与色值，但**不等于视觉验证**——
+> 像素级效果与滑块手感仍需微信开发者工具真机确认。
 
 ## 上线检查清单（沿用 V1 要求）
 

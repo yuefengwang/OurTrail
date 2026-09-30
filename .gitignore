@@ -29,3 +29,12 @@ spark-output/
 
 # ===== 个人轨迹数据导出（GPX 导入走用户自选文件，不入库）=====
 *.gpx
+
+# ===== Figma Make 导出的原型工程（不入库）=====
+# 「Weather Module Redesign/」是 P4 设计期的 React 高仿真原型（Figma Make 导出），
+# 1060 个文件 / 83 MB，带 node_modules 与构建产物。它是**设计过程的输入**，
+# 不是交付物——交付物是 docs/product/天气模块升级-P4-*.md 那份设计文档 +
+# miniprogram/ 里的实现。仓库里的冻结原型参考是 docs/prototypes/ourtrail-app/。
+# 原始导出随时可从 Figma 重新导出，入库只会让 clone 变重并与冻结参考打架。
+Weather Module Redesign/
+Weather Module Redesign.zip

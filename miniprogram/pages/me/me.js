@@ -92,7 +92,12 @@ Page({
     const key = e.currentTarget.dataset.key
     const person = JSON.parse(JSON.stringify(this.data.person))
     if (key === 'name' || key === 'phone' || key === 'medical') person[key] = e.detail.value
-    else person.emergency = Object.assign({}, person.emergency, { [key]: e.detail.value })
+    else if (key === 'ename' || key === 'ephone') {
+      // WXML 紧急联系两列的 data-key 是 ename/ephone，映射到 emergency.name/phone（杂散键会被服务端严格 schema 拒收）
+      const emergency = Object.assign({ name: '', phone: '' }, person.emergency)
+      emergency[key === 'ename' ? 'name' : 'phone'] = e.detail.value
+      person.emergency = emergency
+    }
     this.setData({ person, hint: '' })
   },
   onBlurSave() {
@@ -140,7 +145,11 @@ Page({
       return
     }
     const msg = String(d.errMsg || d.errmsg || '')
-    if (/cancel|取消/i.test(msg)) return
+    if (/cancel|取消/i.test(msg)) {
+      // 取消不是错误，但要给一句提示（与下方无权限/开发者工具分支同级，不静默）
+      this.setData({ hint: '已取消获取微信手机号，可手动填写。' })
+      return
+    }
     if (/privacy agreement|privacy|隐私/i.test(msg)) {
       this.setData({ error: '小程序后台的《用户隐私保护指引》还没有声明「手机号」：请登录 mp.weixin.qq.com → 设置 → 基本设置 → 服务内容声明 → 用户隐私保护指引 → 增加「手机号」（用途：活动报名联络与安全应急联系）并提交，生效后此按钮即可用。在此之前请手动填写。' })
     } else if (/1400001|permission|无权限|权限/i.test(msg)) {
@@ -168,7 +177,12 @@ Page({
     const key = e.currentTarget.dataset.key
     const person = JSON.parse(JSON.stringify(this.data.companionPerson))
     if (key === 'name' || key === 'phone' || key === 'medical') person[key] = e.detail.value
-    else person.emergency = Object.assign({}, person.emergency, { [key]: e.detail.value })
+    else if (key === 'ename' || key === 'ephone') {
+      // 同 onField：ename/ephone 映射到 emergency.name/phone
+      const emergency = Object.assign({ name: '', phone: '' }, person.emergency)
+      emergency[key === 'ename' ? 'name' : 'phone'] = e.detail.value
+      person.emergency = emergency
+    }
     this.setData({ companionPerson: person })
   },
   onCompanionClose() { this.setData({ companionOpen: false }) },

@@ -1,1 +1,5 @@
 /* 名单面板 */
+/* 搜索 + 状态筛选单行排布：输入占满，筛选器按内容收窄 */
+.roster-filter { display: flex; gap: 12px; align-items: center; }
+.roster-filter .input { flex: 1; min-width: 0; }
+.roster-filter picker { flex: 0 0 auto; }

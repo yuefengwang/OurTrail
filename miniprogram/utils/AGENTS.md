@@ -14,9 +14,10 @@
 | `gpx.js` | 318 | yes | GPX parser + GCJ↔WGS transforms + track simplification |
 | `chart-store.js` | 14 | yes | Module-singleton bus, weather page → landscape chart page |
 | `watch-points.js` | ~180 | yes | 观察点/轨迹点组（P3 独立天气）。**注入式 storage**：`createWatchPoints(storage)` 工厂，页面注入 `draft.wxStorage`、测试注入内存 Map——它是 wx-free 的同时仍走 wx 存储 |
+| `weather-model.js` | ~330 | yes | P4 轨迹层编排：`snap`/`nodeFacts`/`runsOf`/`annotateRuns`/`trackPoints`/`posAt`/`judge`。**不含任何天相阈值**——一律委托 `sky.js`；天相 key→颜色也在**不在**这里（`utils/` 不得反向依赖 `components/`，映射在 `components/space-time/layout.js`） |
 | `notices-page.js` | ~172 | yes | `makeNoticesPage(getActivityId, opts)` page factory（`opts.tabBarIndex` 供 Tab 页自报选中态） |
 
-Measured reference centrality (files requiring each): `api.js` 15 · `format.js` 12 · `draft.js` 7 · `astro.js` 5 · `sky.js` 3 · `route-schedule.js` 3 · `gpx.js` 3 · `chart-store.js` 3 · `notices-page.js` 2 · `util.js` 0.
+Measured reference centrality (files requiring each): `api.js` 15 · `format.js` 12 · `draft.js` 7 · `astro.js` 5 · `sky.js` 4 · `route-schedule.js` 3 · `gpx.js` 3 · `chart-store.js` 3 · `weather-model.js` 1 · `notices-page.js` 2 · `util.js` 0.
 
 ## THE PURITY RULE
 
@@ -56,6 +57,10 @@ A module-level `let payload` with `set`/`get`/`clear`, carrying `{series, marks,
 | `sky.js` | `node tools/sky-test.js` | 65 |
 | `route-schedule.js` | `node tools/route-schedule-test.js` | 41 |
 | `watch-points.js` | `node tools/watch-points-test.js` | 37 |
+| `weather-model.js`（P4 轨迹层编排） | `node tools/weather-model-test.js` | 82 |
+| `components/space-time/layout.js`（P4 几何 + 漫游读数） | `node tools/space-time-test.js` | 109 |
+| `components/space-time/` 组件（执行真实 `draw()`） | `node tools/space-time-draw-test.js` | 55 |
+| `components/roam-scrubber/` 组件 | `node tools/roam-scrubber-test.js` | 33 |
 | `sky`+`astro`+`route-schedule` + `lib/weather` + weather 页（含 local 模式） | `node tools/weather-page-test.js` | 129 |
 | `api.js` (monkey-patched) + `draft.js` | `node tools/scenario-editor-test.js` | 137 |
 | `lib/weather` 纯函数（byPoint 校验/缓存 key/免鉴权集合） | `node cloudfunctions/trailApi/smoke-test.js` §15 | （并入 smoke） |
@@ -76,5 +81,8 @@ A module-level `let payload` with `set`/`get`/`clear`, carrying `{series, marks,
 - **Do not mirror page logic inside a test.** `SYNC.md:162` records a test that was backing a stale contract precisely because it re-implemented the page's builder. Extract the logic to a module and have the test assert the real function — that is why `components/meteogram/layout.js` exists.
 - **WXS regex must use `getRegExp()`** — literals are unsupported (`wxs/text.wxs:2`).
 - **`sky.js`'s mark keys must stay in sync with `components/meteogram/layout.js` `MARK_STYLE`.** The chart and the prose conclusions share one threshold set; if the keys diverge, the chart silently drops a mark.
+- **`weather-model.js` 不许持有天相阈值。** 它是 P4 的轨迹编排层，天相一律 `require('./sky')`。原型（Figma Make React 工程）自带一套阈值是因为那边没有 `sky.js`；照搬就会留下第二套引擎，同一时刻图表与结论卡可能给不同结论，而 `sky-test.js` 的 65 例测不到它。
+- **逐节点判定要用节点自己的海拔与坐标。** 「云在脚下」正来自同一天气下不同海拔的判定差（低处 `inCloud` / 高处 `cloudSea`）；太阳高度角沿路线也会偏移，全组共用一个经纬度会算错天文时刻。
+- **没有可信抵达时刻的节点就不画。** `route-schedule.js` 的立场是「无时间信息时宁可沉默，不可编造」，时空天相图必须一致——宁可图上少几个点。
 - **A node with no GPX timestamp yields 「无时间信息」 — never fabricate an arrival time by interpolating on distance.** `route-schedule.js` is deliberately silent rather than wrong.
 - **`gpx.js` caps input at 8 MB / 12 points** and back-fills `time`/`ele` onto named waypoints from the nearest track point, because named waypoints normally lack both but are exactly the anchors users compare the sky against. Do not "simplify" that back-fill away.

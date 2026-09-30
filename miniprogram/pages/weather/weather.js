@@ -82,6 +82,16 @@ Page({
     chartMarks: {},
     chartNight: {},
     chartSelected: {},
+    // 时空天相图（P4）。spaceNodes 只含可信抵达时刻的节点，见 setData 处的注释。
+    spaceSeries: [],
+    // sky.js 的「前日有降水」依据。dayCards 是转换后的展示形状，不能直接喂给 sky.js
+    spaceDays: [],
+    spaceNodes: [],
+    spaceLat: NaN,
+    spaceLng: NaN,
+    // 抵达节点（观景位）的海拔与时刻，作为图的参考线输入
+    spaceObsAlt: null,
+    spaceArriveT: '',
     // 天相结论
     conclusions: [],
     skyMoon: null,
@@ -253,6 +263,29 @@ Page({
       if (ctx.title && typeof wx !== 'undefined' && wx.setNavigationBarTitle) {
         wx.setNavigationBarTitle({ title: ctx.title, fail: () => {} })
       }
+      // 时空天相图的节点输入：**只收有可信抵达时刻的节点**。
+      // route-schedule 的立场是「没有时间信息就不给提醒，不按距离插值」，这里必须一致
+      // ——宁可图上少几个点，也不编造抵达时刻。
+      // 坐标逐节点带上：太阳高度角沿路线会偏移，全组共用一个经纬度会算错天文时刻。
+      // km 暂缺：GPX 的 toRoutePoints 不输出数值化累计里程（只在 name 里写「约 X 公里处」），
+      // 给它加字段会改动 weather-page/editor 场景测试断言的点结构，留到漫游滑块那期一起做。
+      const spaceNodes = points.reduce((acc, pt, i) => {
+        const s = ctx.sched[i]
+        if (!s || !s.known || !s.arriveTime || !s.arriveDate) return acc
+        const co = pt.coordinates || {}
+        acc.push({
+          t: s.arriveTime,
+          d: s.arriveDate,
+          alt: Number.isFinite(pt.ele) ? pt.ele : null,
+          name: pt.name || '',
+          lat: Number.isFinite(co.lat) ? co.lat : undefined,
+          lng: Number.isFinite(co.lng) ? co.lng : undefined,
+        })
+        return acc
+      }, [])
+      const spaceLast = spaceNodes.length ? spaceNodes[spaceNodes.length - 1] : null
+      // 缺省坐标兜底用当前所选节点——单点查询与「local」模式下这就是唯一坐标
+      const curCo = (points[this.data.pointIndex] || p0 || {}).coordinates || {}
       this.setData({
         loading: false,
         denied: '',
@@ -265,6 +298,11 @@ Page({
         schedule: ctx.sched,
         scheduleBasis: RS.basisText(ctx.sched, ctx.hasStart),
         spanDays: RS.spanDays(ctx.sched),
+        spaceNodes,
+        spaceLat: Number.isFinite(curCo.lat) ? curCo.lat : NaN,
+        spaceLng: Number.isFinite(curCo.lng) ? curCo.lng : NaN,
+        spaceObsAlt: spaceLast && Number.isFinite(spaceLast.alt) ? spaceLast.alt : null,
+        spaceArriveT: spaceLast ? spaceLast.t : '',
         pointIndex: ctx.pointIndex,
         date,
         isOwner: ctx.isOwner,
@@ -388,6 +426,11 @@ Page({
     const chartMarks = this.buildChartMarks(series, point.coordinates, elevation, elevOK, result.days || [])
     const chartNight = this.buildNightMap(series, point.coordinates, elevation)
     const chartSelected = { [this.data.date]: true }
+    // 时空天相图要**完整** series，不是 chartSeries 那个从所选日起的 7 天切片——
+    // 多日线路的后续节点常落在切片之外，节点会静默拿不到天相。
+    // 这里多传一份完整序列是有意的取舍；若日后性能吃紧，可裁到
+    // 「spaceNodes 涉及的日期 ±1 天」而不是整条 168 小时。
+    const spaceSeries = series
     // 交给「全图展示」横屏页：那一页在页面栈上方，直接读内存即可，不必把 168 小时序列塞 URL
     chartStore.set({
       series: chartSeries, marks: chartMarks, night: chartNight, selected: chartSelected,
@@ -410,6 +453,8 @@ Page({
       chartMarks,
       chartNight,
       chartSelected,
+      spaceSeries,
+      spaceDays: result.days || [],
     }))
   },
 

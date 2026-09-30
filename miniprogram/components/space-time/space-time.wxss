@@ -1,0 +1,202 @@
+/* space-time：沿线时空天相图（X=时间 Y=海拔）。
+   画布内的颜色来自 meteogram/layout.js 的 MARK_STYLE 字面量色板（canvas 拿不到 var()），
+   页面侧颜色一律走 app.wxss token。 */
+
+.space-time { width: 100%; }
+
+.space-time-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.space-time-head-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+/* 留宿开关。触控目标 ≥44px 由 padding 补足 */
+.space-time-stay {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--info);
+  background: var(--info-soft);
+  border: 1px solid var(--info);
+  border-radius: 5px;
+  padding: 5px 8px;
+}
+.space-time-stay.on {
+  color: var(--muted);
+  background: var(--surface-alt);
+  border-color: var(--line);
+}
+.space-time-stay-hover { opacity: 0.8; }
+
+.space-time-sub {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--muted);
+}
+
+.space-time-frame {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* canvas 是原生组件，必须 display:block 否则会带基线空隙 */
+.space-time-canvas { display: block; }
+
+.space-time-empty { padding: 24px 0; text-align: center; }
+
+/* ---------- 留宿夜间天象 ---------- */
+
+.space-time-astro {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--forest-soft);
+}
+
+.space-time-astro-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.space-time-astro-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.space-time-astro-card {
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+.space-time-astro-card:first-of-type { border-top: none; }
+
+.space-time-astro-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.space-time-astro-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* 时刻用等宽数字，且不做弱化——它是要照着去蹲点的信息 */
+.space-time-astro-window {
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.space-time-astro-text {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-2, var(--ink));
+}
+
+.space-time-astro-look {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--muted);
+}
+
+.space-time-roam {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+/* 读数：刻意的两行，不靠 flex-wrap 意外折行 */
+.space-time-readout {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.space-time-readout-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.space-time-readout-node {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.space-time-readout-next { color: var(--muted); white-space: nowrap; }
+.space-time-readout-alt {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 天相：色块 + 中性色文字。刻意不用语义色当文字色。 */
+.space-time-readout-phen {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.space-time-readout-phen-text {
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--ink);
+}
+
+.space-time-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 8px;
+}
+
+/* 图例 = 色块 + 中性色文字。
+   刻意不把语义色当文字色：「黄金」#D6A33C 压在浅底上对比度不足。
+   与 meteogram 的 .lg 同款视觉；这里用 st- 前缀独立一份，
+   避免依赖别的组件的 wxss（组件之间不共享样式，只有 app.wxss 共享）。 */
+.st-lg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ink);
+}
+.st-lg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.st-lg-text { line-height: 16px; }
+.st-lg-tip {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--muted);
+}
