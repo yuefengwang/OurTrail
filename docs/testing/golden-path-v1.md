@@ -233,3 +233,9 @@ node tools/e2e-golden-path-test.js      # 逐节点账本 + VERDICT；退出码 
 - 双账号：报名 CTA 与审核分属两个身份，真正的「参与者视角全程」需要第二个可登录身份或真机；
 - 覆盖面（§20 明确不在本轮）：`position.* / incident.* / notice.* / membership.revoke` 四条线端到端仍为零，
   `attendance.node` 的 UI 语义、`assignment.remove/swap`、`attendance.returnPlan` 同理。
+
+**本轮该做而没做到的断言（记为缺口，不算已通过）**：任务书 §八 要求 Discover 节点核对「organizer 信息正确」，
+而 GP-04 实际只断言了「列表里确有本场且 `phase=published`」「按标题命中卡片」「点卡片落到
+`pages/activity/activity`」「详情标题与 `stateTitle` 正确」四项，**没有断言 `organizerIntro`**
+（该字段就在详情页 data 里，`activity.js:279`）。补法是一行 `u(...)`；没有补的原因是没有跑第 11 轮，
+不愿用一次未经十连跑验证的改动去替换已定版的构建。
