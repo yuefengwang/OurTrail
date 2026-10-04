@@ -1,36 +1,36 @@
 // B 层端到端（真模拟器）：node tools/e2e-ui-test.js
 // 通过微信开发者工具的自动化端口驱动真实运行的小程序——真实渲染、真实原生组件事件、真实云端读。
-// 与 A 层（tools/e2e-test.js，内存桩打 exports.main）互补：这一层验证的是「页面在真机/模拟器上真的能跑」。
+// 与 A 层（tools/e2e-test.js，内存桩打 exports.main）互补：这一层验证的是「用户在界面上能不能做成」。
 //
 // 前置（一次性）：开发者工具 → 设置 → 安全 → 打开「服务端口」（CLI/HTTP）。
-// 本脚本自动：调 HTTP /v2/auto 开自动化端口（9420）→ miniprogram-automator.connect → 驱动页面。
-// 依赖：miniprogram-automator 安装在 ~/.ourtrail-e2e（仓库保持零依赖，首次运行自动 npm install）。
+// 依赖：miniprogram-automator 装在 ~/.ourtrail-e2e（仓库保持零依赖，首次运行自动 npm install）。
 //
-// 安全边界：只读 + 本地表单交互，绝不 tap「提交/保存」类按钮（不写云端数据）；截图存 ~/.ourtrail-e2e/shots/。
+// 结果语义（必读，别再改回去）：账本 tools/e2e-result.js + docs/testing/e2e-result-semantics.md。
+//   · BUSINESS 与 UI 是两个独立维度；UI 的一条 PASS 必须由「真实 UI 操作 + 它的观测结果」两步构成；
+//   · 云侧 fallback 只能证 BUSINESS，替 UI 做完动作必须显式记 L.uiUnverified；
+//   · 门槛不过、通道退化 ⇒ INCONCLUSIVE（退出码 2），绝不是 PASS；
+//   · 安全边界：只在本脚本自建的 [预演] 沙盒里写数据，绝不 tap 真实活动的提交/保存。
 'use strict'
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
+const net = require('net')
 const { execFileSync } = require('child_process')
+const { createLedger, auditSource, BUSINESS, UI } = require('./e2e-result')
 
 const DEPS = path.join(os.homedir(), '.ourtrail-e2e')
 const SHOTS = path.join(DEPS, 'shots')
 const AUTOMATOR_PORT = 9420
-const SERVICE_HTTP = 'http://127.0.0.1:33278'
+const PROJECT = 'D:\\OurTrail'
+const CLI_CANDIDATES = [
+  'C:\\Program Files (x86)\\Tencent\\微信web开发者工具\\cli.bat',
+  'C:\\Program Files\\Tencent\\微信web开发者工具\\cli.bat',
+]
 
-let passed = 0
-let failed = 0
-function check(name, cond, extra) {
-  if (cond) { passed++; console.log('  ✓ ' + name) }
-  else { failed++; console.error('  ✗ ' + name + (extra ? '（' + extra + '）' : '')) }
-}
-function section(t) { console.log('== ' + t + ' ==') }
-// 软断言：依赖自动化元素查询通道的检查。通道退化（长会话下 data 通道正常而元素查询持续返回空）
-// 时降级为提示而非失败——同一断言在健康会话中已多次通过并有截图佐证；云侧业务链一律硬断言。
-function checkSoft(name, cond, extra) {
-  if (cond) { passed++; console.log('  ✓ ' + name) }
-  else { console.log('  · 跳过 ' + name + '（元素查询通道退化' + (extra ? '：' + extra : '') + '）') }
-}
+const L = createLedger({ dims: [BUSINESS, UI] })
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+// 清理动作的失败不参与任何结论，但必须出声——静默的 catch 就是下一个假 PASS。
+const quiet = (label, e) => console.log('  · [忽略] ' + label + '：' + String((e && (e.message || e)) || 'unknown').slice(0, 120))
 
 function loadAutomator() {
   const pkg = path.join(DEPS, 'node_modules', 'miniprogram-automator')
@@ -48,27 +48,25 @@ function loadAutomator() {
 
 async function main() {
   fs.mkdirSync(SHOTS, { recursive: true })
-  const sleep = ms => new Promise(r => setTimeout(r, ms))
-
   const automator = loadAutomator()
+  const shot = name => miniProgram.screenshot({ path: path.join(SHOTS, name + '.png') }).then(() => {}).catch(e => quiet('截图 ' + name, e))
 
-  // 0. 建立自动化连接（梯度重试）：直连 → cli auto → 关项目窗再以自动化模式重开。
+  // —— 0. 自我源码完整性门禁：本文件若重新长出假 PASS 通道，这一条先红 ——
+  const findings = auditSource(fs.readFileSync(__filename, 'utf8'), 'e2e-ui-test.js')
+  L.b('本脚本源码完整性自检（0 违规）', findings.length === 0,
+    findings.length ? findings.slice(0, 5).map(f => f.rule + ':' + f.line).join(' | ') : 'auditSource 无 findings')
+
+  // —— 1. 建立自动化连接（梯度重试：直连 → cli auto → 关项目窗再以自动化模式重开）——
   // 注意：HTTP /v2/auto 与 cli auto 混用会互相重置自动化会话，这里只用 CLI。
-  const CLI_CANDIDATES = [
-    'C:\\Program Files (x86)\\Tencent\\微信web开发者工具\\cli.bat',
-    'C:\\Program Files\\Tencent\\微信web开发者工具\\cli.bat',
-  ]
-  const PROJECT = 'D:\\OurTrail'
   const cli = CLI_CANDIDATES.find(p => fs.existsSync(p))
-  if (!cli) throw new Error('找不到开发者工具 cli.bat：' + CLI_CANDIDATES.join(' / '))
-  const runCli = args => { try { return execFileSync(cli, args, { timeout: 150000 }).toString() } catch (e) { return String(e) } }
-  let miniProgram = null
-  const net = require('net')
+  L.env('找到开发者工具 cli.bat', !!cli, cli || CLI_CANDIDATES.join(' / '))
+  const runCli = args => { try { return execFileSync(cli, args, { timeout: 150000 }).toString() } catch (e) { quiet('cli ' + args[0], e); return String(e) } }
   const waitPort = port => new Promise(resolve => {
     const probe = net.connect({ port, host: '127.0.0.1' })
     probe.once('connect', () => { probe.destroy(); resolve(true) })
-    probe.once('error', () => resolve(false) )
+    probe.once('error', () => resolve(false))
   })
+  let miniProgram = null
   for (let attempt = 1; attempt <= 3 && !miniProgram; attempt++) {
     try {
       miniProgram = await automator.connect({ wsEndpoint: 'ws://127.0.0.1:' + AUTOMATOR_PORT })
@@ -80,26 +78,44 @@ async function main() {
       for (let i = 0; i < 12 && !miniProgram; i++) {
         await sleep(4000)
         if (await waitPort(AUTOMATOR_PORT)) {
-          try { miniProgram = await automator.connect({ wsEndpoint: 'ws://127.0.0.1:' + AUTOMATOR_PORT }) } catch (e2) { /* 端口开了但服务未就绪，继续等 */ }
+          try { miniProgram = await automator.connect({ wsEndpoint: 'ws://127.0.0.1:' + AUTOMATOR_PORT }) } catch (e2) { quiet('端口已开但服务未就绪', e2) }
         }
       }
     }
   }
-  check('automator 连接开发者工具', !!miniProgram)
-  if (!miniProgram) throw new Error('无法建立自动化连接：请在开发者工具里确认项目窗口已打开且无弹窗遮挡')
+  L.env('automator 连接开发者工具（自动化端口 ' + AUTOMATOR_PORT + '）', !!miniProgram, miniProgram ? 'connected' : '三次梯度重连后仍无会话')
   const sys = await miniProgram.systemInfo()
-  check('模拟器运行中（基础库 ' + (sys && sys.SDKVersion) + '）', !!sys && !!sys.SDKVersion)
-  const shot = name => miniProgram.screenshot({ path: path.join(SHOTS, name + '.png') })
-  // element $ 偶发返回非数组（自动化通道抖动）：重试到拿到数组
-  const queryAll = async (scope, sel) => {
-    for (let i = 0; i < 5; i++) {
-      const r = await scope.$(sel)
-      if (Array.isArray(r)) return r
-      await sleep(2000)
+  L.env('模拟器运行中', !!(sys && sys.SDKVersion), 'SDKVersion=' + (sys && sys.SDKVersion))
+
+  // 重连会让既有 page/元素句柄全部失效；ensurePage 在元素操作前按标志重开页面。
+  let reconnected = false
+
+  // —— 助手：元素查询一律走 $$（$ 恒返回单个 Element，按数组用就永远查不到，历史上 tap 因此静默不发生）——
+  const queryAll = async (scope, sel, tries) => {
+    for (let i = 0; i < (tries || 4); i++) {
+      const els = await scope.$$(sel)
+      if (els && els.length) return els
+      await sleep(900)
     }
     return []
   }
-  // 页面打开助手：冷启动编译/模拟器预热可能超时，统一重试
+  const tapEl = async el => {
+    if (!el) return false
+    try { await el.tap(); return true } catch (e) { quiet('tap', e); return false }
+  }
+  const inputEl = async (el, value) => {
+    if (!el) return false
+    try { await el.input(value); return true } catch (e) { quiet('input', e); return false }
+  }
+  // 通道健康控制组：一个必然存在的标签查不到，就是元素通道退化（不是产品问题）。
+  const probeChannel = async page => {
+    const all = await queryAll(page, 'view', 3)
+    L.setChannel(all.length > 0 ? 'healthy' : 'degraded', '$$ view → ' + all.length + ' 个元素')
+    return all.length > 0
+  }
+  const healthy = () => L.channel() === 'healthy'
+  const uiGate = (reason, actions) => () => (healthy() ? { ok: true, actions: actions || 0 } : { ok: false, reason: reason || '元素查询通道退化（控制组 $ 返回空）' })
+  // 页面打开助手：冷启动编译/模拟器预热可能超时，统一重试并等 loading 落位
   const open = async url => {
     let lastErr
     for (let i = 0; i < 3; i++) {
@@ -116,30 +132,6 @@ async function main() {
     }
     throw lastErr || new Error('页面打不开：' + url)
   }
-
-  // 1. 首页装配 + 找一个真实活动 id（详情/报名页复用；工作台另建草稿，见下）
-  let page = await open('/pages/home/home')
-  const homeData = await page.data()
-  check('首页装配完成（loading=false，无 denied）', homeData && homeData.loading === false && !homeData.denied,
-    JSON.stringify({ loading: homeData && homeData.loading, denied: homeData && homeData.denied }))
-  const nonSandbox = (homeData.cards || []).filter(c => c.title !== '[预演] 工作台E2E')
-  const activityId = (nonSandbox[0] && nonSandbox[0].id) || ''
-  check('首页可见至少一个活动（用于详情/报名页驱动）', !!activityId, JSON.stringify(homeData.cards || []).slice(0, 200))
-  await shot('01-home')
-
-  // 2. 活动详情页
-  if (activityId) {
-    page = await open('/pages/activity/activity?id=' + activityId)
-    const actData = await page.data()
-    check('活动详情页装配（非 denied / 非 loading）', actData && actData.loading === false && !actData.denied,
-      JSON.stringify({ loading: actData && actData.loading, denied: actData && actData.denied }))
-    await shot('02-activity')
-  }
-
-  // 3. 工作台全链（[预演] 沙盒，沿用 trailApiLab 能力）：
-  //    UI 身份建 [预演] 活动 → 发布（发布即报名）→ lab 阶段 1 演员报名 → 工作台对账 → 审核消化 → 分车预览提交。
-  //    收尾把活动置为 cancelled（published/gathering 可取消；不跑 lab cleanup——那会按 [预演] 前缀
-  //    连用户手动预演的真实活动一起清掉，不安全）。
   const cloudCall = async (name, action, data) => {
     const call = () => miniProgram.evaluate(
       new Function('name', 'action', 'data', 'return new Promise(res => wx.cloud.callFunction({ name, data: Object.assign({ action }, data) }).then(r => res(r.result)).catch(e => res({ ok: false, err: String(e && e.errMsg || e) })))'),
@@ -148,17 +140,74 @@ async function main() {
     for (let i = 0; i < 3; i++) {
       try { r = await call(); if (r) return r } catch (e) {
         if (i === 2) throw e
-        // evaluate 超时 = 自动化会话老化：重连后再试。重连会让既有 page/元素句柄全部失效，
-        // 置标志让 ensurePage 在下一次元素操作前重开页面
-        try { await miniProgram.disconnect() } catch (e1) { /* ignore */ }
+        // evaluate 超时 = 自动化会话老化：重连后再试
+        try { await miniProgram.disconnect() } catch (e1) { quiet('disconnect(重连前)', e1) }
         await sleep(2000)
-        try { miniProgram = await automator.connect({ wsEndpoint: 'ws://127.0.0.1:' + AUTOMATOR_PORT }); reconnected = true } catch (e2) { /* 下一轮再试 */ }
+        try { miniProgram = await automator.connect({ wsEndpoint: 'ws://127.0.0.1:' + AUTOMATOR_PORT }); reconnected = true } catch (e2) { quiet('重连未就绪', e2) }
         await sleep(1500)
       }
       await sleep(4000)
     }
     return r
   }
+  // 幂等收敛：cleanup/stage 的每条删除/建档都幂等，超时（-504003）重试会接着上次进度推进
+  const converge = async (name, action, data, tries) => {
+    let r = null
+    for (let i = 0; i < (tries || 6); i++) {
+      try {
+        r = await cloudCall(name, action, data)
+        const bad = (r && r.ok && r.data && r.data.executed || []).filter(x => !x.ok)
+        if (r && r.ok && !bad.length) return r
+      } catch (e) { quiet('converge ' + action, e) }
+      await sleep(2500)
+    }
+    return r
+  }
+  // 元素查询通道会随长会话退化（data 通道不受影响）：元素密集段前强制换新会话
+  const hardReconnect = async () => {
+    try { await miniProgram.disconnect() } catch (e) { quiet('disconnect(hardReconnect)', e) }
+    await sleep(2000)
+    for (let i = 0; i < 3; i++) {
+      try { miniProgram = await automator.connect({ wsEndpoint: 'ws://127.0.0.1:' + AUTOMATOR_PORT }); reconnected = false; return true } catch (e) { quiet('hardReconnect 第 ' + (i + 1) + ' 次', e); await sleep(4000) }
+    }
+    return false
+  }
+  const ensurePage = async (pg, url) => {
+    if (!reconnected) return pg
+    reconnected = false
+    return open(url)
+  }
+
+  // ===== 2. 首页装配（真实渲染 + 找一个可驱动详情的活动 id）=====
+  let page = await open('/pages/home/home')
+  await probeChannel(page)
+  await L.block('首页装配', 2, async () => {
+    const homeData = await page.data()
+    L.u('首页装配完成（loading=false 且未 denied）',
+      !!homeData && homeData.loading === false && !homeData.denied,
+      JSON.stringify({ loading: homeData && homeData.loading, denied: homeData && homeData.denied }))
+    const cards = (homeData && homeData.cards) || []
+    L.u('首页可见至少一个活动（详情/报名页要拿它的 id）', cards.length > 0, JSON.stringify(cards.map(c => c.title)).slice(0, 200))
+  }, uiGate())
+  const homeData = await page.data()
+  const cards = (homeData && homeData.cards) || []
+  const activityId = ((cards || []).filter(c => c.title !== '[预演] 工作台E2E' && c.title !== '[预演] 报名E2E' && c.title !== '[预演] 勾选取证E2E')[0] || {}).id || ''
+  await shot('01-home')
+
+  // ===== 3. 活动详情页装配 =====
+  if (activityId) {
+    page = await open('/pages/activity/activity?id=' + activityId)
+    await L.block('活动详情页装配', 1, async () => {
+      const d = await page.data()
+      L.u('活动详情页装配（非 denied / 非 loading）', !!d && d.loading === false && !d.denied,
+        JSON.stringify({ loading: d && d.loading, denied: d && d.denied }))
+    }, uiGate())
+    await shot('02-activity')
+  }
+
+  // ===== 4. 工作台全链（[预演] 沙盒，沿用 trailApiLab 能力）=====
+  // 沙盒建/发与 lab 演员报名是本层的测试环境准备 ⇒ 记 BUSINESS；
+  // 面板渲染、tab 切换、弹层、按钮点击一律记 UI，且必须有真实 tap 打头。
   const sandboxInput = {
     title: '[预演] 工作台E2E', description: '自动化端到端', organizerIntro: '自动化',
     startAt: '2027-01-09T08:00:00+08:00', endAt: '2027-01-09T18:00:00+08:00', deadlineAt: '2027-01-08T20:00:00+08:00',
@@ -170,509 +219,524 @@ async function main() {
     ],
     equipment: ['防滑鞋'], feeNote: 'AA', cancellationNote: '行前联系',
   }
-  section('3. 工作台全链（[预演] 沙盒）：建活动 → 演员报名 → 对账 → 审核 → 分车')
-  // 长会话下 evaluate 承载 cloud 调用会老化超时：本段开始前重连一次自动化会话
-  try { await miniProgram.disconnect() } catch (e) { /* ignore */ }
-  await sleep(2000)
-  miniProgram = await automator.connect({ wsEndpoint: 'ws://127.0.0.1:' + AUTOMATOR_PORT })
-  // 幂等收敛：cleanup/stage 的每条删除/建档都幂等，超时（-504003）重试会接着上次的进度推进
-  const converge = async (name, action, data, tries) => {
-    let r = null
-    for (let i = 0; i < (tries || 6); i++) {
-      try {
-        r = await cloudCall(name, action, data)
-        const failed = (r && r.ok && r.data && r.data.executed || []).filter(x => !x.ok)
-        if (r && r.ok && !failed.length) return r
-        if (r && !r.ok && failed) { /* fallthrough retry */ }
-      } catch (e) { /* 超时/断连：继续 */ }
-      await sleep(2500)
-    }
-    return r
-  }
-  let reconnected = false
-  // 元素查询通道会随长会话退化（data 通道不受影响）：元素密集段前强制换新会话
-  const hardReconnect = async () => {
-    try { await miniProgram.disconnect() } catch (e) { /* ignore */ }
-    await sleep(2000)
-    for (let i = 0; i < 3; i++) {
-      try { miniProgram = await automator.connect({ wsEndpoint: 'ws://127.0.0.1:' + AUTOMATOR_PORT }); return } catch (e) { await sleep(4000) }
-    }
-    throw new Error('自动化会话重连失败')
-  }
-  // 重连后旧 page 句柄失效：元素查询前若发生过重连，重开页面
-  const ensurePage = async (pg, url) => {
-    if (!reconnected) return pg
-    reconnected = false
-    return open(url)
-  }
   let sandboxId = ''
-  let reusedSandbox = false
-  try {
+  section('工作台全链（[预演] 沙盒）')
+  await L.block('沙盒建档与发布', 2, async () => {
     // lab cleanup {profiles:true} 是预演体系的设计复位：清 [预演] 活动 + 演员档案与回执。
     // 回执（Receipt）没有 activityId 字段，确定性请求号只能靠这一步复位；演员档案由阶段 0 幂等重建。
     const cl = await converge('trailApiLab', 'cleanup', { profiles: true })
-    console.log('  · lab cleanup（设计复位）：' + (cl && cl.ok ? JSON.stringify(cl.data.removed) : JSON.stringify((cl && (cl.error || cl.err)) || '多次重试后仍超时').slice(0, 120)))
+    console.log('  · lab cleanup（设计复位）：' + JSON.stringify((cl && cl.data && cl.data.removed) || (cl && (cl.error || cl.err)) || '多次重试后仍超时').slice(0, 160))
     const created = await converge('trailApi', 'dispatch', { payload: { type: 'activity.create', input: sandboxInput } }, 3)
-    check('建 [预演] 活动草稿', created && created.ok === true, JSON.stringify((created && (created.error || created.err)) || '').slice(0, 200))
+    L.b('建 [预演] 活动草稿', !!created && created.ok === true, JSON.stringify((created && (created.error || created.err)) || 'ok').slice(0, 200))
     sandboxId = created && created.ok ? created.data.targetIds[0] : ''
-  } catch (e) {
-    check('建 [预演] 活动草稿', false, String(e && e.message).slice(0, 200))
-  }
-  if (sandboxId) try {
-    if (!reusedSandbox) {
-      const prof = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
-      const me = prof.ok ? prof.data.view.profile : null
-      const published = me ? await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me.id }, participant: me.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } }) : { ok: false, err: 'no profile' }
-      check('发布（发布即报名本人）', published.ok === true, JSON.stringify(published.error || published.err || '').slice(0, 200))
-    }
+    const prof = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
+    const me = prof && prof.ok ? prof.data.view.profile : null
+    const published = me ? await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me.id }, participant: me.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } }) : { ok: false, err: '没有档案' }
+    L.b('发布（发布即报名本人）', published.ok === true, JSON.stringify(published.error || published.err || 'ok').slice(0, 200))
+  }, () => ({ ok: true }))
+
+  let rows0 = []
+  let pending0 = []
+  await L.block('lab 演员报名落库', 3, async () => {
     const lab0 = await converge('trailApiLab', 'seed', { stage: 0 })
-    check('lab 阶段 0：建档 5 演员 + 2 同行人', lab0.ok === true,
-      JSON.stringify(lab0.error || lab0.err || (lab0.data && lab0.data.executed && lab0.data.executed.filter(x => !x.ok)) || lab0).slice(0, 300))
-    // 阶段 1 幂等（requestId 确定性）。若仍 REQUEST_REUSED（回执复位不彻底），按设计再走一次
-    // profiles:true 复位 + 重建沙盒；超时则重试（幂等只补剩余）。
+    L.b('lab 阶段 0：建档演员与同行人', lab0 && lab0.ok === true,
+      JSON.stringify((lab0 && lab0.data && lab0.data.executed || []).filter(x => !x.ok).slice(0, 2) || 'ok').slice(0, 300))
+    // 阶段 1 幂等（确定性 requestId）。仍 REQUEST_REUSED 就按设计复位 + 重建沙盒再走一次。
     let lab = null
     for (let i = 0; i < 3 && !(lab && lab.ok === true && !(lab.data && lab.data.executed || []).some(x => !x.ok)); i++) {
       lab = await cloudCall('trailApiLab', 'seed', { stage: 1 })
-      const failed = (lab.ok && lab.data && lab.data.executed || []).filter(x => !x.ok)
-      if (lab.ok === true && !failed.length) break
-      if (failed.length && failed.every(x => x.code === 'REQUEST_REUSED')) {
+      const bad = (lab && lab.ok && lab.data && lab.data.executed || []).filter(x => !x.ok)
+      if (lab && lab.ok === true && !bad.length) break
+      if (bad.length && bad.every(x => x.code === 'REQUEST_REUSED')) {
         console.log('  · 阶段 1 命中 REQUEST_REUSED → 设计复位（cleanup profiles:true）后重建沙盒')
-        await converge('trailApiLab', 'cleanup', { profiles: true })
+        const reset = await converge('trailApiLab', 'cleanup', { profiles: true })
+        L.b('阶段 1 复位（cleanup profiles:true）幂等收敛', !!reset && reset.ok === true, JSON.stringify((reset && (reset.error || reset.err)) || 'ok').slice(0, 160))
         const created2 = await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.create', input: sandboxInput } })
-        if (created2.ok) sandboxId = created2.data.targetIds[0]
+        if (created2 && created2.ok) sandboxId = created2.data.targetIds[0]
         const prof2 = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
-        const me2 = prof2.ok ? prof2.data.view.profile : null
-        if (me2) await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me2.id }, participant: me2.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } })
-        await converge('trailApiLab', 'seed', { stage: 0 })
+        const me2 = prof2 && prof2.ok ? prof2.data.view.profile : null
+        if (me2) {
+          const republish = await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me2.id }, participant: me2.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } })
+          L.b('沙盒重建后重新发布', republish.ok === true, JSON.stringify(republish.error || republish.err || 'ok').slice(0, 160))
+        }
+        const reseed0 = await converge('trailApiLab', 'seed', { stage: 0 })
+        L.b('复位后重建演员档案（阶段 0）', !!reseed0 && reseed0.ok === true, JSON.stringify((reseed0 && (reseed0.error || reseed0.err)) || 'ok').slice(0, 160))
         lab = await converge('trailApiLab', 'seed', { stage: 1 })
       } else {
         lab = await converge('trailApiLab', 'seed', { stage: 1 }, 4)
       }
     }
     const labFailed = (lab && lab.ok && lab.data && lab.data.executed || []).filter(x => !x.ok)
-    check('lab 阶段 1：演员报名 5 组（含整组与候补）', lab && lab.ok === true && !labFailed.length,
-      lab && (lab.error || lab.err) && /504003|timed out/i.test(lab.error && lab.error.message || lab.err || '')
-        ? '云函数执行超时——请重新上传部署 trailApiLab（含批量重构与 config.json timeout 20），部署说明见 SYNC.md 预演工具条目'
-        : JSON.stringify(labFailed.length ? labFailed : (lab && (lab.error || lab.err) || lab)).slice(0, 300))
-    const rev0 = async () => (await cloudCall('trailApi', 'read', { request: { kind: 'activity', activityId: sandboxId, perspective: 'organizer' } }))
-    const view0 = await rev0()
-    const rows0 = (view0.ok && view0.data.view.rows) || []
-    const pending0 = rows0.filter(r => r.status === 'pending')
-    check('演员报名落库：organizer 视角可见报名行（含待审核）', rows0.length > 1 && pending0.length > 0,
+    L.b('lab 阶段 1：演员报名多组（含整组与候补）', !!lab && lab.ok === true && !labFailed.length,
+      lab && (lab.error || lab.err) && /504003|timed out/i.test(String((lab.error && lab.error.message) || lab.err || ''))
+        ? '云函数执行超时——需重新上传部署 trailApiLab 并在控制台把超时调到 20 秒（见 SYNC.md 预演工具条目）'
+        : JSON.stringify(labFailed.length ? labFailed.slice(0, 2) : (lab && (lab.error || lab.err) || 'ok')).slice(0, 300))
+    const view0 = await cloudCall('trailApi', 'read', { request: { kind: 'activity', activityId: sandboxId, perspective: 'organizer' } })
+    rows0 = (view0 && view0.ok && view0.data.view.rows) || []
+    pending0 = rows0.filter(r => r.status === 'pending')
+    L.b('演员报名落库：organizer 回读得到待审核行', rows0.length > 1 && pending0.length > 0,
       JSON.stringify({ rows: rows0.length, pending: pending0.length }))
-    if (!(rows0.length > 1 && pending0.length > 0)) {
-      console.log('  （lab 阶段未收敛（多为云函数 3 秒超时，控制台把 trailApiLab 超时调到 20 秒即可）——降级为最小阵容继续）')
+  }, () => sandboxId ? { ok: true } : { ok: false, dim: BUSINESS, reason: '沙盒未建立，后续全链无从进行' })
+
+  if (sandboxId) {
+    const readOrg = async () => {
+      for (let i = 0; i < 3; i++) {
+        const r = await cloudCall('trailApi', 'read', { request: { kind: 'activity', activityId: sandboxId, perspective: 'organizer' } })
+        if (r && r.ok && r.data && r.data.view) return r
+        await sleep(2500)
+      }
+      throw new Error('organizer read 多次失败')
+    }
+    const revNow = async () => (await readOrg()).data.revision
+    // 写操作健壮封装：STORAGE_UNAVAILABLE/CONFLICT 等瞬时失败自动重读 revision 重试；
+    // 其余错误码原样返回（重试不能把业务失败洗成通过）。
+    const robustDispatch = async payload => {
+      let r = { ok: false, error: { code: 'NOT_RUN', message: '未执行' } }
+      for (let i = 0; i < 3; i++) {
+        r = await cloudCall('trailApi', 'dispatch', { expectedRevision: await revNow(), payload })
+        const code = r && r.error && r.error.code
+        if (r && r.ok) return r
+        if (code !== 'STORAGE_UNAVAILABLE' && code !== 'CONFLICT') return r
+        await sleep(2500)
+      }
+      return r
+    }
+    const advance = async (next, reason) => {
+      const r = await robustDispatch({ type: 'activity.transition', activityId: sandboxId, next, reason })
+      const v = await readOrg()
+      return { ok: r.ok === true, phase: (v && v.ok && v.data.view.kind === 'activity' && v.data.view.activity.phase) || '', err: r.error || r.err || '' }
+    }
+    // 按文案命中按钮必须反复重查直到匹配：面板正文本来就有 .button，
+    // 查一次非空就返回会永远漏掉随后才落位的弹层动作按钮（本轮实测踩过）。
+    const buttonLabels = async scope => {
+      const btns = (await scope.$$('.button')) || []
+      const out = []
+      for (const b of btns) out.push(String((await b.text()) || '').trim())
+      return out
+    }
+    // 按文案命中按钮：反复重查直到匹配（面板正文本来就有 .button，查一次非空就返回会漏掉
+    // 随后才落位的弹层动作按钮）；先在宿主组件作用域找，再退到页面作用域——弹层经 scroll-view
+    // 承载时两个作用域的可见集合可能不同。失败时把「屏上实际有什么」带进证据，不留谜团。
+    const findButtonByText = async (scope, label) => {
+      for (let i = 0; i < 5; i++) {
+        for (const sc of [scope, page]) {
+          const btns = (await sc.$$('.button')) || []
+          for (const b of btns) {
+            if (String((await b.text()) || '').trim() === label) return b
+          }
+        }
+        await page.waitFor(900)
+      }
+      return null
     }
 
     await hardReconnect()
     page = await open('/pages/workspace/workspace?id=' + sandboxId)
-    page = await ensurePage(page, '/pages/workspace/workspace?id=' + sandboxId)
-    let wsData = await page.data()
-    check('工作台装配（organizer 视角非 denied）', wsData && wsData.loading === false && !wsData.denied,
-      JSON.stringify({ loading: wsData && wsData.loading, denied: wsData && wsData.denied }))
-    if (wsData && !wsData.denied && wsData.loading === false) {
-      check('页头指标对账：待审核数与云端一致', wsData.pending === pending0.length,
-        JSON.stringify({ ui: wsData.pending, cloud: pending0.length }))
-      page = await ensurePage(page, '/pages/workspace/workspace?id=' + sandboxId)
-      const segs = await queryAll(page, '.seg')
-      checkSoft('四个分区 tab 渲染（总览/名单/分车/现场）', segs.length === 4, String(segs.length))
+    await probeChannel(page)
 
-      // 名单区：真实渲染 + 类名显隐（hidden 属性在组件宿主上无效的修复回归点）
-      if (segs[1]) await segs[1].tap()
+    await L.block('工作台装配与指标对账', 2, async () => {
+      page = await ensurePage(page, '/pages/workspace/workspace?id=' + sandboxId)
+      const ws = await page.data()
+      L.u('工作台装配（organizer 视角非 denied、loading 落位）', !!ws && ws.loading === false && !ws.denied,
+        JSON.stringify({ loading: ws && ws.loading, denied: ws && ws.denied }))
+      L.u('页头待审核数与云端回读一致', ws && ws.pending === pending0.length,
+        JSON.stringify({ ui: ws && ws.pending, cloud: pending0.length }))
+    }, uiGate('工作台元素通道退化，面板显隐与指标无法核对'))
+
+    await L.block('名单区真实渲染', 4, async () => {
+      const segs = await queryAll(page, '.seg')
+      L.u('四个分区 tab 渲染（总览/名单/分车/现场）', segs.length === 4, '.seg 命中 ' + segs.length + ' 个')
+      const ok = await tapEl(segs[1])
+      L.uiTap('点「名单」分区 tab', ok, 'tap .seg[1]')
       await page.waitFor(1000)
       const rosterEl = await page.$('roster-panel')
-      const rosterCls = (rosterEl ? await rosterEl.attribute('class') : '') || ''
-      checkSoft('名单面板可见（无 hide）', rosterCls.indexOf('hide') === -1, String(rosterCls))
-      // 该基础库的自动化不支持 >>> 跨组件选择器：拿宿主元素在子树内查询
+      const rosterCls = rosterEl ? String((await rosterEl.attribute('class')) || '') : '(查无 roster-panel)'
+      L.u('名单面板可见（hide 类已摘除——类名方案的真机回归点）', !!rosterEl && rosterCls.indexOf('hide') === -1, 'class=' + rosterCls)
       const rosterRows = rosterEl ? await rosterEl.$$('person-row') : []
-      check('名单行数与云端一致（面板真实渲染报名数据）', rosterRows.length === rows0.length,
+      L.u('名单行数与云端一致（面板真实渲染报名数据）', rosterRows.length === rows0.length,
         JSON.stringify({ ui: rosterRows.length, cloud: rows0.length }))
       await shot('03-workspace-roster')
+    }, uiGate('名单区需要元素通道', 1))
 
-      // 审核消化：全部待审核确认（经云端命令；批量审核 UI 由 scenario-workspace-test 覆盖）
-      if (pending0.length) {
-        const rv = (await rev0()).data.revision
-        const reviewed = await cloudCall('trailApi', 'dispatch', { payload: { type: 'signup.review', activityId: sandboxId, signupIds: pending0.map(r => r.signupId), decision: 'confirm' }, expectedRevision: rv })
-        check('审核确认全部待审核（组织者动作）', reviewed.ok === true, JSON.stringify(reviewed.error || reviewed.err || '').slice(0, 200))
-        page = await open('/pages/workspace/workspace?id=' + sandboxId)
-        await page.waitFor(1500)
-        wsData = await page.data()
-        check('审核后工作台指标归零（页面响应环境变化）', wsData.pending === 0, JSON.stringify({ ui: wsData.pending }))
-      }
-
-      // 分车：参与者司机（一名已确认演员）→ UI 点「预览自动分车」→ 出方案 → 提交
-      const profNow = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
-      const meName = (profNow.ok && profNow.data.view.profile.person.name) || ''
-      const rows1 = ((await rev0()).ok && (await rev0()).data.view.rows) || []
-      const confirmedRows = rows1.filter(r => r.status === 'confirmed' && r.name !== meName)
-      const driverRow = confirmedRows[0]
-      const rv1 = (await rev0()).data.revision
-      const vSave = await cloudCall('trailApi', 'dispatch', { expectedRevision: rv1, payload: { type: 'vehicle.save', activityId: sandboxId, vehicleId: null, input: { label: '1号车', plate: '川A·E2E', legalCapacity: 9, blockedSeats: 0, drivers: driverRow ? [{ kind: 'participant', signupId: driverRow.signupId }] : [{ kind: 'service', name: '服务司机', phone: '00000000009', userId: null }], seatLabels: ['01', '02', '03', '04', '05', '06', '07', '08'], pickupPointIds: ['pk-1', 'pk-2'] } } })
-      check('添加车辆（参与者司机=' + (driverRow ? driverRow.name : '服务司机') + '）', vSave.ok === true, JSON.stringify(vSave.error || vSave.err || '').slice(0, 200))
-      // 面板只在挂载时读数，云端直写对面板不可见：重开工作台页重新挂载
+    await L.block('审核消化', 2, async () => {
+      if (!pending0.length) { L.b('本沙盒没有待审核行（上一轮已消化）', pending0.length === 0, JSON.stringify({ pending: pending0.length })); return }
+      const reviewed = await cloudCall('trailApi', 'dispatch', { payload: { type: 'signup.review', activityId: sandboxId, signupIds: pending0.map(r => r.signupId), decision: 'confirm' }, expectedRevision: await revNow() })
+      L.b('审核确认全部待审核（组织者动作）', reviewed.ok === true, JSON.stringify(reviewed.error || reviewed.err || 'ok').slice(0, 200))
       page = await open('/pages/workspace/workspace?id=' + sandboxId)
       await page.waitFor(1500)
+      const ws = await page.data()
+      L.u('审核后工作台指标归零（页面响应环境变化）', !!ws && ws.pending === 0, JSON.stringify({ ui: ws && ws.pending }))
+    }, () => ({ ok: true }))
 
+    await L.block('参与者司机车辆与分车面板', 4, async () => {
+      const profNow = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
+      const meName = (profNow && profNow.ok && profNow.data.view.profile.person.name) || ''
+      const rows1 = ((await readOrg()).data.view.rows) || []
+      const confirmedRows = rows1.filter(r => r.status === 'confirmed' && r.name !== meName)
+      const driverRow = confirmedRows[0]
+      const vSave = await cloudCall('trailApi', 'dispatch', { expectedRevision: await revNow(), payload: { type: 'vehicle.save', activityId: sandboxId, vehicleId: null, input: { label: '1号车', plate: '川A·E2E', legalCapacity: 9, blockedSeats: 0, drivers: driverRow ? [{ kind: 'participant', signupId: driverRow.signupId }] : [{ kind: 'service', name: '服务司机', phone: '00000000009', userId: null }], seatLabels: ['01', '02', '03', '04', '05', '06', '07', '08'], pickupPointIds: ['pk-1', 'pk-2'] } } })
+      L.b('添加车辆（参与者司机=' + (driverRow ? driverRow.name : '服务司机') + '）', vSave.ok === true, JSON.stringify(vSave.error || vSave.err || 'ok').slice(0, 200))
+      // 面板只在挂载时读数：云端直写对已挂载面板不可见，必须重开页面重新挂载
+      page = await open('/pages/workspace/workspace?id=' + sandboxId)
+      await page.waitFor(1500)
       const segsPrev = await queryAll(page, '.seg')
-      if (segsPrev[2]) await segsPrev[2].tap()
+      const okTab = await tapEl(segsPrev[2])
+      L.uiTap('点「分车」分区 tab', okTab, 'tap .seg[2]')
       await page.waitFor(1200)
-      wsData = await page.data()
-      checkSoft('切到分车区（tab=2）', wsData.tab === 2, String(wsData.tab))
+      const ws = await page.data()
+      L.u('切到分车区（tab=2 落到页面数据）', !!ws && ws.tab === 2, 'tab=' + (ws && ws.tab))
       const tp = await page.$('transport-panel')
-      // 确认面板渲染出车辆卡（新挂载读到 vSave 结果）再点预览
       let vehicleCard = null
       for (let t = 0; t < 6 && !vehicleCard; t++) {
-        vehicleCard = await tp.$('.card')
+        const cards2 = tp ? await tp.$$('.card') : []
+        vehicleCard = cards2[0] || null
         if (!vehicleCard) await page.waitFor(1500)
       }
-      check('分车面板渲染出车辆卡', !!vehicleCard)
-      // 首选 UI 路径：预览 CTA → 方案弹层（overlay 子组件）→ 提交。UI 路径已被多次截图验证；
-      // 元素查询通道退化时自动降级云侧 previewAssignments + assignment.commit，不阻塞履约链。
-      const overlaysTp = tp ? await tp.$('overlay') : []
-      const planOv = overlaysTp[0]
-      const previewBtns = tp ? await queryAll(tp, '.button.primary.block') : []
-      let committed = false
-      if (previewBtns.length && planOv) {
-        await previewBtns[0].tap()
-        let planRows = 0
-        let danger = null
-        for (let t = 0; t < 6; t++) {
-          await page.waitFor(2000)
-          planRows = (await planOv.$('.list-row')).length
-          danger = await planOv.$('.callout.danger')
-          if (planRows > 0 || danger) break
-        }
-        if (planRows > 0) {
-          check('预览自动分车 → 方案弹层出差异行（require 修复的真机回归点）', true)
-          await shot('04-workspace-plan')
-          const commitBtn = await planOv.$('.button.primary.block')
-          if (commitBtn) {
-            await commitBtn.tap()
-            await page.waitFor(2500)
-            committed = true
-          } else {
-            check('找到「明确确认并提交此方案」按钮', false)
-          }
-        } else if (danger) {
-          check('预览自动分车 → 方案弹层出差异行（require 修复的真机回归点）', false,
-            '弹出了错误：' + String(await danger.text()).slice(0, 160))
-          await shot('04-workspace-plan-error')
-        }
-      }
-      const trAfter = await cloudCall('trailApi', 'readTransport', { activityId: sandboxId })
-      let assigns = (trAfter.ok && trAfter.data.ok !== false && trAfter.data.value.assignments) || []
-      if (!committed && !assigns.length) {
-        console.log('  · UI 预览通道不可用（元素查询退化）→ 云侧预览+提交降级路径')
-        const pv = await cloudCall('trailApi', 'previewAssignments', { activityId: sandboxId })
-        if (pv.ok) {
-          const rvP = (await cloudCall('trailApi', 'read', { request: { kind: 'activity', activityId: sandboxId, perspective: 'organizer' } })).data.revision
-          const cm = await cloudCall('trailApi', 'dispatch', { expectedRevision: rvP, payload: { type: 'assignment.commit', activityId: sandboxId, preview: pv.data } })
-          check('云侧降级：previewAssignments → assignment.commit（服务链路已被 e2e-test 覆盖）', cm.ok === true, JSON.stringify(cm.error || cm.err || '').slice(0, 160))
-        } else {
-          check('云侧降级：previewAssignments ok', false, JSON.stringify(pv.error || pv.err || '').slice(0, 160))
-        }
-      } else if (committed) {
-        const tr = await cloudCall('trailApi', 'readTransport', { activityId: sandboxId })
-        assigns = (tr.ok && tr.data.ok !== false && tr.data.value.assignments) || []
-        check('提交方案 → 云端落库安排（预览→提交全链）', assigns.length > 0, JSON.stringify(assigns).slice(0, 200))
-      }
-      await shot('05-workspace-transport')
+      L.u('分车面板渲染出车辆卡（新挂载读到上一步的写入）', !!vehicleCard, 'transport-panel .card ' + (vehicleCard ? '命中' : '为空'))
+    }, uiGate('分车面板需要元素通道', 1))
 
-      // ---- 履约全链：gathering → 逐人签到/出发 → active → 节点 → closing → 逐人到家 → 归档 ----
-      // 座位落位断言：重挂载后座位示意应有已占座（复合类选择器不可靠，按 class 属性过滤）
-      await hardReconnect()
-      page = await open('/pages/workspace/workspace?id=' + sandboxId)
-      page = await ensurePage(page, '/pages/workspace/workspace?id=' + sandboxId)
+    // 分车提交：UI 通道与云侧降级是两个不同结论——降级只证服务链路，UI 维度必须记未验证。
+    let uiCommitted = false
+    await L.block('UI 预览并提交分车方案', 4, async () => {
+      const tp = await page.$('transport-panel')
+      const planOv = tp ? (await tp.$$('overlay'))[0] : null
+      const previewBtns = tp ? await queryAll(tp, '.button.primary.block') : []
+      const okPrev = await tapEl(previewBtns[0])
+      L.uiTap('点「预览自动分车」按钮', okPrev && !!planOv, 'tap .button.primary.block @ transport-panel；overlay ' + (planOv ? '存在' : '缺失'))
+      // overlay 的具名 slot 内容在本基础库查不到，从面板作用域查渲染结果
+      let planRows = 0
+      let danger = null
+      for (let t = 0; t < 6; t++) {
+        await page.waitFor(2000)
+        planRows = tp ? (await tp.$$('.list-row')).length : 0
+        danger = tp ? (await tp.$$('.callout.danger'))[0] : null
+        if (planRows > 0 || danger) break
+      }
+      L.uEffect('预览自动分车 → 面板渲染出差异行（allocation 惰性 require 的真机回归点）', planRows > 0,
+        '.list-row 命中 ' + planRows + ' 行' + (danger ? '；同屏错误文案：' + String((await danger.text()) || '').slice(0, 120) : ''))
+      await shot('04-workspace-plan')
+      const commitBtn = tp ? await findButtonByText(tp, '明确确认并提交此方案') : null
+      const okCommit = await tapEl(commitBtn)
+      L.uiTap('点「明确确认并提交此方案」按钮', okCommit, 'findButtonByText 命中：' + (commitBtn ? '是' : '否') + '；面板可见 ' + JSON.stringify(await buttonLabels(tp)).slice(0, 200))
+      await page.waitFor(2500)
+      const tr = await cloudCall('trailApi', 'readTransport', { activityId: sandboxId })
+      const assigns = (tr && tr.ok && tr.data.ok !== false && tr.data.value.assignments) || []
+      uiCommitted = okCommit && assigns.length > 0
+      L.b('UI 提交后云端确实落库安排', assigns.length > 0, JSON.stringify(assigns).slice(0, 200))
+    }, uiGate('分车提交要走真实 UI 通道', 1))
+    if (!uiCommitted) {
+      // 允许 fallback 继续走履约链，但 UI 维度必须留下「未验证」的账
+      L.uiUnverified('分车提交经真实 UI 完成', '元素通道不足，改由云侧 previewAssignments+assignment.commit 代做')
+      const pv = await cloudCall('trailApi', 'previewAssignments', { activityId: sandboxId })
+      L.b('云侧降级 previewAssignments → ok', pv && pv.ok === true, JSON.stringify((pv && (pv.error || pv.err)) || 'ok').slice(0, 160))
+      if (pv && pv.ok) {
+        const cm = await cloudCall('trailApi', 'dispatch', { expectedRevision: await revNow(), payload: { type: 'assignment.commit', activityId: sandboxId, preview: pv.data } })
+        L.b('云侧降级 assignment.commit → ok', cm.ok === true, JSON.stringify(cm.error || cm.err || 'ok').slice(0, 160))
+      }
+    }
+
+    await hardReconnect()
+    page = await open('/pages/workspace/workspace?id=' + sandboxId)
+    await probeChannel(page)
+    await L.block('座位示意渲染', 2, async () => {
       const segsSeat = await queryAll(page, '.seg')
-      if (segsSeat[2]) await segsSeat[2].tap()
+      const okSeat = await tapEl(segsSeat[2])
+      L.uiTap('回到「分车」分区看座位示意', okSeat, 'tap .seg[2]')
       await page.waitFor(1500)
       const tpSeats = await page.$('transport-panel')
       const seatEls = tpSeats ? await queryAll(tpSeats, '.seat') : []
-      let occupiedCount = 0
+      let occupied = 0
       for (const seat of seatEls) {
-        const cls = String((await seat.attribute('class')) || '')
-        if (cls.indexOf('occupied') !== -1) occupiedCount++
+        if (String((await seat.attribute('class')) || '').indexOf('occupied') !== -1) occupied++
       }
-      checkSoft('座位示意渲染已占座（分车提交的可视结果）', occupiedCount > 0,
-        JSON.stringify({ seats: seatEls.length, occupied: occupiedCount }))
+      L.u('座位示意渲染出已占座（分车提交的可视结果）', occupied > 0,
+        JSON.stringify({ seats: seatEls.length, occupied }))
+    }, uiGate('座位示意需要元素通道', 1))
 
-      const rev0b = async () => {
-        for (let i = 0; i < 3; i++) {
-          const r = await cloudCall('trailApi', 'read', { request: { kind: 'activity', activityId: sandboxId, perspective: 'organizer' } })
-          if (r && r.ok && r.data && r.data.view) return r
-          await sleep(2500)
-        }
-        throw new Error('organizer read 多次失败')
-      }
-      // 写操作健壮封装：STORAGE_UNAVAILABLE/CONFLICT 等瞬时失败自动重读 revision 重试
-      const robustDispatch = async payload => {
-        for (let i = 0; i < 3; i++) {
-          const rv = (await rev0b()).data.revision
-          const r = await cloudCall('trailApi', 'dispatch', { expectedRevision: rv, payload })
-          const code = r && r.error && r.error.code
-          if (r && r.ok) return r
-          if (code !== 'STORAGE_UNAVAILABLE' && code !== 'CONFLICT') return r
-          await sleep(2500)
-        }
-        return { ok: false, error: { code: 'RETRIES_EXHAUSTED', message: '多次重试后仍失败' } }
-      }
-      const advance = async (next, reason) => {
-        const r = await robustDispatch({ type: 'activity.transition', activityId: sandboxId, next, reason })
-        const v = await rev0b()
-        return { ok: r.ok === true, phase: (v.ok && v.data.view.kind === 'activity' && v.data.view.activity.phase) || '', err: r.error || r.err || '' }
-      }
-      const findButtonByText = async (scope, label) => {
-        const btns = await scope.$$('.button')
-        for (const b of btns) {
-          const t = String((await b.text()) || '').trim()
-          if (t === label) return b
-        }
-        return null
-      }
-      let gath = await advance('gathering', '按期集合')
-      check('推进 gathering（进入集合）', gath.ok && gath.phase === 'gathering', JSON.stringify(gath).slice(0, 160))
+    let gath
+    await L.block('推进 gathering', 2, async () => {
+      gath = await advance('gathering', '按期集合')
+      L.b('推进 gathering 并回读到阶段值', gath.ok && gath.phase === 'gathering', JSON.stringify(gath).slice(0, 160))
+      // 已知 P1 的真机证据：工作台切区只 setData，面板挂载后不再重读（workspace.js:111 onTab）。
+      // 后果不是抽象的——阶段推到集合后，仍挂着的现场面板按旧 phase 算动作表，弹层里一个动作都没有，
+      // 组织者只能退出重进才能签到/核出发。这条断言在产品修好之前会一直红。
+      const fpStale = await page.$('field-panel')
+      const staleData = fpStale ? await fpStale.data() : null
+      L.u('阶段推进后已挂载的现场面板自行重读（面板不重读＝已知 P1，本轮真机坐实）',
+        !!staleData && staleData.phase === 'gathering',
+        JSON.stringify({ panelPhase: staleData && staleData.phase, cloudPhase: gath.phase }))
+    }, uiGate('需要读到已挂载面板的 phase', 0))
+    // 重挂载面板，让后续弹层动作表按最新阶段装配（否则动作表恒空，链路无法继续）
+    page = await open('/pages/workspace/workspace?id=' + sandboxId)
+    await probeChannel(page)
 
-      // 现场区：真实弹层驱动签到 + 出发核实（第一名参与者）；其余人批量走命令
+    // —— 现场区：第一名参与者走真实弹层（tap 开层 → input 写依据 → tap 动作按钮），其余批量走命令 ——
+    const confirmedRowsAll = ((await readOrg()).data.view.rows || []).filter(r => r.status === 'confirmed')
+    let uiTarget = confirmedRowsAll[0]
+    const uiDone = { checkin: false, departure: false }
+    await L.block('现场弹层签到（真实用户路径）', 8, async () => {
       page = await ensurePage(page, '/pages/workspace/workspace?id=' + sandboxId)
       const segsField = await queryAll(page, '.seg')
-      if (segsField[3]) await segsField[3].tap()
+      const okField = await tapEl(segsField[3])
+      L.uiTap('点「现场」分区 tab', okField, 'tap .seg[3]')
       await page.waitFor(1500)
       const fp = await page.$('field-panel')
       const fieldRows = fp ? await queryAll(fp, 'person-row') : []
-      const confirmedRowsAll = ((await rev0b()).ok && (await rev0b()).data.view.rows || []).filter(r => r.status === 'confirmed')
-      const tr0 = await cloudCall('trailApi', 'readTransport', { activityId: sandboxId })
-      const assignsMid0 = (tr0.ok && tr0.data.ok !== false && tr0.data.value.assignments) || []
-      const vehiclesMid0 = (tr0.ok && tr0.data.value.vehicles) || []
-      checkSoft('现场区渲染已确认名单', fieldRows.length === confirmedRowsAll.length,
+      L.u('现场区渲染已确认名单', fieldRows.length === confirmedRowsAll.length,
         JSON.stringify({ ui: fieldRows.length, cloud: confirmedRowsAll.length }))
-
-      let uiTarget = confirmedRowsAll[0]
-      let uiDone = false
       const sheetBtns = fp ? await queryAll(fp, '.button.text') : []
-      if (sheetBtns.length && uiTarget) {
-        await sheetBtns[0].tap()
-        // 等弹层真正打开（overlay 常驻 DOM，只看数据位）
-        let fpData = null
-        for (let t = 0; t < 6; t++) {
-          fpData = await fp.data()
-          if (fpData && fpData.sheetOpen === true) break
-          await page.waitFor(800)
-        }
-        check('现场记录弹层打开', !!(fpData && fpData.sheetOpen === true), JSON.stringify(fpData && fpData.sheetOpen))
-        const sheetOv = await fp.$('overlay')
-        const noteArea = sheetOv ? await sheetOv.$('.textarea') : null
-        if (noteArea) await noteArea.input('自动化核实：集合点当面确认')
-        const checkinBtn = await findButtonByText(sheetOv, '确认现场签到')
-        if (checkinBtn) {
-          await checkinBtn.tap()
-          await page.waitFor(2500)
-          let rowsNow = ((await rev0b()).ok && (await rev0b()).data.view.rows || [])
-          check('UI 弹层签到 → 云端落库（' + uiTarget.name + ' checkedIn）',
-            (rowsNow.find(r => r.signupId === uiTarget.signupId) || {}).checkedIn === true, '')
-        } else {
-          check('弹层出现「确认现场签到」动作', false, '动作按钮未找到')
-        }
-        // 关闭弹层（点遮罩），再开做出发核实
-        const mask = await fp.$('.overlay-mask')
-        if (mask) { await mask.tap(); await page.waitFor(800) }
-        const sheetBtns2 = await queryAll(fp, '.button.text')
-        if (sheetBtns2[0]) {
-          await sheetBtns2[0].tap()
-          let fpData2 = null
-          for (let t = 0; t < 6; t++) {
-            fpData2 = await fp.data()
-            if (fpData2 && fpData2.sheetOpen === true) break
-            await page.waitFor(800)
-          }
-          const noteArea2 = sheetOv ? await sheetOv.$('.textarea') : null
-          if (noteArea2) await noteArea2.input('自动化核实：随队出发')
-          const depBtn = await findButtonByText(sheetOv, '核实已随队出发')
-          if (depBtn) {
-            await depBtn.tap()
-            await page.waitFor(2500)
-            const rowsNow = ((await rev0b()).ok && (await rev0b()).data.view.rows || [])
-            check('UI 弹层出发核实 → 云端落库（' + uiTarget.name + ' departure=joined）',
-              (rowsNow.find(r => r.signupId === uiTarget.signupId) || {}).departure === 'joined', '')
-          } else {
-            check('弹层出现「核实已随队出发」动作', false, '动作按钮未找到')
-          }
-          // 上车动作不在现场面板（在车长任务页）：拼车乘客用命令补齐，否则 active 的硬门不过
-          const asgUi = assignsMid0.find(a => a.signupId === uiTarget.signupId)
-          const drvUi = vehiclesMid0.some(v => v.drivers.some(d => d.kind === 'participant' && d.signupId === uiTarget.signupId))
-          if (asgUi && !drvUi) {
-            const rvB = (await rev0b()).data.revision
-            await cloudCall('trailApi', 'dispatch', { expectedRevision: rvB, payload: { type: 'attendance.board', activityId: sandboxId, signupId: uiTarget.signupId, leg: 'outbound', boarded: true, note: '自动化清点上车' } })
-          }
-        }
-      } else {
-        checkSoft('现场区「现场记录」按钮渲染', false, String(sheetBtns.length) + '——批量命令路径已接管')
+      const okOpen = await tapEl(sheetBtns[0])
+      L.uiTap('点第一名参与者的「现场记录」', okOpen, 'tap .button.text @ field-panel，命中 ' + sheetBtns.length + ' 个')
+      let fpData = null
+      for (let t = 0; t < 6; t++) {
+        fpData = await fp.data()
+        if (fpData && fpData.sheetOpen === true) break
+        await page.waitFor(800)
       }
+      await page.waitFor(1200)
+      L.uEffect('现场记录弹层打开（组件 data.sheetOpen=true）', !!(fpData && fpData.sheetOpen === true), 'sheetOpen=' + (fpData && fpData.sheetOpen))
+      // 具名 slot 的内容归属宿主子树：从 field-panel 作用域查（从 overlay 元素往下查是 0 个，本轮实测）
+      const areas = fp ? await queryAll(fp, '.textarea') : []
+      const okInput = await inputEl(areas[areas.length - 1], '自动化核实：集合点当面确认')
+      L.uiInput('在弹层里填写核实依据', okInput, 'input .textarea @ field-panel 作用域，命中 ' + areas.length + ' 个')
+      const noteState = await fp.data()
+      L.uEffect('核实依据落到组件状态（data.note 等于所填文本）', !!noteState && noteState.note === '自动化核实：集合点当面确认', JSON.stringify({ note: noteState && noteState.note }))
+      const checkinBtn = fp ? await findButtonByText(fp, '确认现场签到') : null
+      const okCheckin = await tapEl(checkinBtn)
+      L.uiTap('点「确认现场签到」', okCheckin, (checkinBtn ? '命中' : '未找到') + '；面板可见按钮 ' + JSON.stringify(await buttonLabels(fp)).slice(0, 160) + '；弹层 actions=' + JSON.stringify((await fp.data()).actions || []))
+      await page.waitFor(2500)
+      let rowsNow = ((await readOrg()).data.view.rows || [])
+      const targetRow = rowsNow.find(r => r.signupId === (uiTarget && uiTarget.signupId)) || {}
+      uiDone.checkin = targetRow.checkedIn === true
+      L.b('弹层签到经服务端落库（' + (targetRow.name || '') + ' checkedIn）', uiDone.checkin, JSON.stringify({ checkedIn: targetRow.checkedIn }))
+    }, uiGate('现场弹层需要元素通道', 1))
 
-      // 批量兜底：签到 → （拼车乘客）上车 → 出发核实。rowsMid 已排除 UI 块已完成的人，
-      // 每步再按行内状态做条件执行（UI 块部分完成时不会重复下发）
-      
-      const rowsMid = ((await rev0b()).ok && (await rev0b()).data.view.rows || []).filter(r => r.status === 'confirmed' && !(r.checkedIn && r.departure))
-      const trMid = await cloudCall('trailApi', 'readTransport', { activityId: sandboxId })
-      const assignsMid = (trMid.ok && trMid.data.ok !== false && trMid.data.value.assignments) || []
-      const vehiclesMid = (trMid.ok && trMid.data.value.vehicles) || []
-      let bulkFail = ''
-      for (const row of rowsMid) {
-        if (!row.checkedIn) {
-          const r = await robustDispatch({ type: 'attendance.checkin', activityId: sandboxId, signupId: row.signupId, checkIn: { method: 'manual', evidence: { at: '', by: '', note: '自动化批量签到' } } })
-          if (!r.ok) { bulkFail = row.name + ' 签到:' + JSON.stringify(r.error || r.err || ''); break }
-        }
-        const asg = assignsMid.find(a => a.signupId === row.signupId)
-        const isDriver = vehiclesMid.some(v => v.drivers.some(d => d.kind === 'participant' && d.signupId === row.signupId))
-        if (asg && !isDriver && row.outboundBoarded !== true) {
-          const r = await robustDispatch({ type: 'attendance.board', activityId: sandboxId, signupId: row.signupId, leg: 'outbound', boarded: true, note: '自动化清点上车' })
-          if (!r.ok) { bulkFail = row.name + ' 上车:' + JSON.stringify(r.error || r.err || ''); break }
-        }
-        if (!row.departure || row.departure === 'unknown') {
-          const r = await robustDispatch({ type: 'attendance.departure', activityId: sandboxId, signupId: row.signupId, outcome: { kind: 'joined', evidence: { at: '', by: '', note: '自动化随队出发' } } })
-          if (!r.ok) { bulkFail = row.name + ' 出发:' + JSON.stringify(r.error || r.err || ''); break }
-        }
+    const tr0 = await cloudCall('trailApi', 'readTransport', { activityId: sandboxId })
+    const assignsMid0 = (tr0 && tr0.ok && tr0.data.ok !== false && tr0.data.value.assignments) || []
+    const vehiclesMid0 = (tr0 && tr0.ok && tr0.data.value.vehicles) || []
+    await L.block('现场弹层出发核实（真实用户路径）', 4, async () => {
+      const fp = await page.$('field-panel')
+      const sheetBtns = fp ? await queryAll(fp, '.button.text') : []
+      const okOpen = await tapEl(sheetBtns[0])
+      L.uiTap('再次点开「现场记录」弹层', okOpen, 'tap .button.text，命中 ' + sheetBtns.length + ' 个')
+      let fpData = null
+      for (let t = 0; t < 6; t++) {
+        fpData = await fp.data()
+        if (fpData && fpData.sheetOpen === true) break
+        await page.waitFor(800)
       }
-      check('批量签到/上车/出发核实完成', bulkFail === '', bulkFail)
+      L.uEffect('第二次开层同样成功（弹层可复用，不是一次性控件）', !!(fpData && fpData.sheetOpen === true), 'sheetOpen=' + (fpData && fpData.sheetOpen))
+      const areas2 = fp ? await queryAll(fp, '.textarea') : []
+      await inputEl(areas2[areas2.length - 1], '自动化核实：随队出发')
+      const depBtn = fp ? await findButtonByText(fp, '核实已随队出发') : null
+      const okDep = await tapEl(depBtn)
+      L.uiTap('点「核实已随队出发」', okDep, (depBtn ? '命中' : '未找到') + '；屏上可见 ' + JSON.stringify(await buttonLabels(fp)).slice(0, 200))
+      await page.waitFor(2500)
+      const rowsNow = ((await readOrg()).data.view.rows || [])
+      const targetRow = rowsNow.find(r => r.signupId === (uiTarget && uiTarget.signupId)) || {}
+      uiDone.departure = targetRow.departure === 'joined'
+      L.b('弹层出发核实经服务端落库（departure=joined）', uiDone.departure, JSON.stringify({ departure: targetRow.departure }))
+    }, uiGate('现场弹层需要元素通道', 1))
 
-      {
-        const dump = ((await rev0b()).ok && (await rev0b()).data.view.rows || []).filter(r => r.status === 'confirmed')
-        for (const r of dump) {
-          console.log('    · ' + r.name + ' checkedIn=' + !!r.checkedIn + ' departure=' + (r.departure || 'NONE') + ' vehicle=' + (r.vehicle || '无'))
-        }
+    // 上车动作不在现场面板（在产品里只有车长任务页有入口）：拼车乘客经命令补齐，否则 active 硬门过不去。
+    if (uiTarget) {
+      const asgUi = assignsMid0.find(a => a.signupId === uiTarget.signupId)
+      const drvUi = vehiclesMid0.some(v => v.drivers.some(d => d.kind === 'participant' && d.signupId === uiTarget.signupId))
+      if (asgUi && !drvUi) {
+        const brd = await robustDispatch({ type: 'attendance.board', activityId: sandboxId, signupId: uiTarget.signupId, leg: 'outbound', boarded: true, note: '自动化清点上车' })
+        L.b('拼车乘客去程上车（UI 无入口，经命令补齐——现场面板死按钮在案）', brd.ok === true, JSON.stringify(brd.error || brd.err || 'ok').slice(0, 160))
       }
-      let active = await advance('active', '全员到齐发车')
-      check('推进 active（出发核实硬门通过）', active.ok && active.phase === 'active', JSON.stringify(active).slice(0, 160))
-      const ownerRow = confirmedRowsAll.find(r => r.name === ((profNow.ok && profNow.data.view.profile.person.name) || '')) || confirmedRowsAll[0]
-      const nodeRv = (await rev0b()).data.revision
-      const nodeR = await cloudCall('trailApi', 'dispatch', { expectedRevision: nodeRv, payload: { type: 'attendance.node', activityId: sandboxId, signupId: ownerRow.signupId, pointId: 'pt-1', note: '全队抵达山门（自动化）' } })
-      check('路线节点确认 ok', nodeR.ok === true, JSON.stringify(nodeR.error || nodeR.err || '').slice(0, 160))
-      const closing = await advance('closing', '返程收尾')
-      check('推进 closing', closing.ok && closing.phase === 'closing', JSON.stringify(closing).slice(0, 160))
+    }
 
-      // UI 到家一人（弹层动作「核实安全到家」），其余批量
+    // 批量兜底：签到 →（拼车乘客）上车 → 出发核实。
+    // 判「已办」必须排除 departure==='unknown'（selectors.js:125 无记录时就是 'unknown'，按真值判断会把没办的人当办完）。
+    const resolved = r => r.checkedIn === true && r.departure && r.departure !== 'unknown'
+    const rowsMid = ((await readOrg()).data.view.rows || []).filter(r => r.status === 'confirmed' && !resolved(r))
+    const trMid = await cloudCall('trailApi', 'readTransport', { activityId: sandboxId })
+    const assignsMid = (trMid && trMid.ok && trMid.data.ok !== false && trMid.data.value.assignments) || []
+    const vehiclesMid = (trMid && trMid.ok && trMid.data.value.vehicles) || []
+    const bulkFail = []
+    for (const row of rowsMid) {
+      if (row.checkedIn !== true) {
+        const r = await robustDispatch({ type: 'attendance.checkin', activityId: sandboxId, signupId: row.signupId, checkIn: { method: 'manual', evidence: { at: '', by: '', note: '自动化批量签到' } } })
+        if (!r.ok) { bulkFail.push(row.name + ' 签到:' + JSON.stringify(r.error || r.err || '')); break }
+      }
+      const asg = assignsMid.find(a => a.signupId === row.signupId)
+      const isDriver = vehiclesMid.some(v => v.drivers.some(d => d.kind === 'participant' && d.signupId === row.signupId))
+      if (asg && !isDriver && row.outboundBoarded !== true) {
+        const r = await robustDispatch({ type: 'attendance.board', activityId: sandboxId, signupId: row.signupId, leg: 'outbound', boarded: true, note: '自动化清点上车' })
+        if (!r.ok) { bulkFail.push(row.name + ' 上车:' + JSON.stringify(r.error || r.err || '')); break }
+      }
+      if (!row.departure || row.departure === 'unknown') {
+        const r = await robustDispatch({ type: 'attendance.departure', activityId: sandboxId, signupId: row.signupId, outcome: { kind: 'joined', evidence: { at: '', by: '', note: '自动化随队出发' } } })
+        if (!r.ok) { bulkFail.push(row.name + ' 出发:' + JSON.stringify(r.error || r.err || '')); break }
+      }
+    }
+    L.b('批量签到/上车/出发核实全部成功（' + rowsMid.length + ' 人）', bulkFail.length === 0, bulkFail.join(' | ').slice(0, 240) || 'ok')
+    const dumpRows = ((await readOrg()).data.view.rows || []).filter(r => r.status === 'confirmed')
+    for (const r of dumpRows) console.log('    · ' + r.name + ' checkedIn=' + !!r.checkedIn + ' departure=' + (r.departure || 'NONE') + ' vehicle=' + (r.vehicle || '无'))
+
+    let active
+    let nodeR
+    let closing
+    await L.block('推进 active → 节点 → closing', 3, async () => {
+      active = await advance('active', '全员到齐发车')
+      L.b('推进 active（出发核实硬门通过）', active.ok && active.phase === 'active', JSON.stringify(active).slice(0, 160))
+      const ownerName = ((await cloudCall('trailApi', 'read', { request: { kind: 'profile' } }) || {}).data || {}).view
+      const meName2 = ownerName && ownerName.profile ? ownerName.profile.person.name : ''
+      const ownerRow = dumpRows.find(r => r.name === meName2) || dumpRows[0]
+      nodeR = await cloudCall('trailApi', 'dispatch', { expectedRevision: await revNow(), payload: { type: 'attendance.node', activityId: sandboxId, signupId: ownerRow.signupId, pointId: 'pt-1', note: '全队抵达山门（自动化）' } })
+      L.b('路线节点确认 ok', nodeR.ok === true, JSON.stringify(nodeR.error || nodeR.err || 'ok').slice(0, 160))
+      closing = await advance('closing', '返程收尾')
+      L.b('推进 closing', closing.ok && closing.phase === 'closing', JSON.stringify(closing).slice(0, 160))
+      // 同 gathering：不重挂载的话现场面板按 active 算动作表，closing 的「核实安全到家」不会出现
+      page = await open('/pages/workspace/workspace?id=' + sandboxId)
+      await probeChannel(page)
+    }, () => ({ ok: true }))
+
+    let uiHomeDone = false
+    await L.block('现场弹层到家核实（真实用户路径）', 4, async () => {
       const fp2 = await page.$('field-panel')
       const homeBtns = fp2 ? await queryAll(fp2, '.button.text') : []
-      let uiHomeTarget = confirmedRowsAll[0]
-      if (homeBtns.length) {
-        await homeBtns[0].tap()
-        let fp2Data = null
-        for (let t = 0; t < 6; t++) {
-          fp2Data = await fp2.data()
-          if (fp2Data && fp2Data.sheetOpen === true) break
-          await page.waitFor(800)
-        }
-        const homeOv = await fp2.$('overlay')
-        const noteArea3 = homeOv ? await homeOv.$('.textarea') : null
-        if (noteArea3) await noteArea3.input('自动化核实：家属电话确认到家')
-        const homeBtn = await findButtonByText(homeOv, '核实安全到家')
-        if (homeBtn) {
-          await homeBtn.tap()
-          await page.waitFor(2500)
-          const rowsNow = ((await rev0b()).ok && (await rev0b()).data.view.rows || [])
-          uiHomeTarget = rowsNow.find(r => r.signupId === uiHomeTarget.signupId) || {}
-          check('UI 弹层到家确认 → 云端落库（' + (uiHomeTarget.name || '') + ' home）', uiHomeTarget.home === true, JSON.stringify({ home: uiHomeTarget.home }))
-        } else {
-          check('弹层出现「核实安全到家」动作', false, 'closing 阶段动作未找到')
-        }
+      const okHome = await tapEl(homeBtns[0])
+      L.uiTap('点第一名参与者的「现场记录」（closing 阶段）', okHome, 'tap .button.text，命中 ' + homeBtns.length + ' 个')
+      let fp2Data = null
+      for (let t = 0; t < 6; t++) {
+        fp2Data = await fp2.data()
+        if (fp2Data && fp2Data.sheetOpen === true) break
+        await page.waitFor(800)
       }
-      const rowsEnd = ((await rev0b()).ok && (await rev0b()).data.view.rows || []).filter(r => r.status === 'confirmed')
-      for (const row of rowsEnd) {
-        if (row.home === true) continue
-        const rv = (await rev0b()).data.revision
-        await cloudCall('trailApi', 'dispatch', { expectedRevision: rv, payload: { type: 'attendance.home', activityId: sandboxId, signupId: row.signupId, note: '自动化批量到家确认' } })
-      }
-      const archive = await advance('archived', '结档归档')
-      check('全员闭环后归档 ok', archive.ok && archive.phase === 'archived', JSON.stringify(archive).slice(0, 160))
-      try {
-        await hardReconnect()
-        page = await open('/pages/workspace/workspace?id=' + sandboxId)
-        await page.waitFor(1500)
-        wsData = await page.data()
-        check('归档后工作台：待到家指标归零', wsData.thirdValue === 0 && wsData.thirdLabel === '待到家',
-          JSON.stringify({ v: wsData.thirdValue, l: wsData.thirdLabel }))
-        await shot('06-workspace-archived')
-      } catch (e) {
-        checkSoft('归档后工作台：待到家指标归零', false, String(e && e.message).slice(0, 80) + '——归档已由云端断言确认')
-      }
-      console.log('  · 沙盒活动已走完全履约链并归档（[预演] 工作台E2E，可在预演面板 cleanup 清理）')
+      L.uEffect('closing 阶段弹层可再次打开', !!(fp2Data && fp2Data.sheetOpen === true), 'sheetOpen=' + (fp2Data && fp2Data.sheetOpen))
+      const areas3 = fp2 ? await queryAll(fp2, '.textarea') : []
+      await inputEl(areas3[areas3.length - 1], '自动化核实：家属电话确认到家')
+      const homeBtn = fp2 ? await findButtonByText(fp2, '核实安全到家') : null
+      const okTap = await tapEl(homeBtn)
+      L.uiTap('点「核实安全到家」', okTap, (homeBtn ? '命中' : '未找到') + '；屏上可见 ' + JSON.stringify(await buttonLabels(fp2)).slice(0, 200))
+      await page.waitFor(2500)
+      const rowsNow = ((await readOrg()).data.view.rows || [])
+      const targetRow = rowsNow.find(r => r.signupId === (uiTarget && uiTarget.signupId)) || {}
+      uiHomeDone = targetRow.home === true
+      L.b('弹层到家确认经服务端落库', uiHomeDone, JSON.stringify({ home: targetRow.home }))
+    }, uiGate('到家核实需要元素通道', 1))
+
+    const homeFail = []
+    const rowsEnd = ((await readOrg()).data.view.rows || []).filter(r => r.status === 'confirmed')
+    for (const row of rowsEnd) {
+      if (row.home === true) continue
+      const r = await robustDispatch({ type: 'attendance.home', activityId: sandboxId, signupId: row.signupId, note: '自动化批量到家确认' })
+      if (!r.ok) homeFail.push(row.name + ':' + JSON.stringify(r.error || r.err || ''))
     }
-  } catch (e) {
-    check('工作台全链（[预演] 沙盒）', false, String(e && e.message).slice(0, 200))
+    L.b('其余人员到家确认全部成功（含逐人返回值核对）', homeFail.length === 0, homeFail.join(' | ').slice(0, 240) || 'ok')
+
+    let archive
+    await L.block('归档与归档后指标归零', 2, async () => {
+      archive = await advance('archived', '结档归档')
+      L.b('全员闭环后归档 ok', archive.ok && archive.phase === 'archived', JSON.stringify(archive).slice(0, 160))
+      await hardReconnect()
+      page = await open('/pages/workspace/workspace?id=' + sandboxId)
+      await page.waitFor(1500)
+      const ws = await page.data()
+      L.u('归档后工作台「待到家」归零', !!ws && ws.thirdValue === 0 && ws.thirdLabel === '待到家',
+        JSON.stringify({ v: ws && ws.thirdValue, l: ws && ws.thirdLabel }))
+      await shot('06-workspace-archived')
+    }, uiGate('归档后的工作台读数需要元素通道；本轮未取得', 0))
+    console.log('  · 沙盒活动已走完全履约链并归档（[预演] 工作台E2E，可在预演面板 cleanup 清理）')
   }
 
-  // 4. 报名页：档案回填 + 真实原生 tap 驱动授权勾选（不提交，不写云端）。
-  // 专用报名沙盒：真实活动都已截止或本人已报名（准入闸拒绝是正确行为），建一个可报名的 [预演] 活动
+  // ===== 5. 报名页：真实用户路径能否勾选同行人（P0-3 的裁决点）=====
+  // 准入闸：报名页只放行「已发布 + 未报名」，所以沙盒要发布后取消本人那条报名。
   const suInput = Object.assign({}, sandboxInput, { title: '[预演] 报名E2E', capacity: 5 })
-  const suCreated = await converge('trailApi', 'dispatch', { payload: { type: 'activity.create', input: suInput } }, 3)
-  check('建报名沙盒活动', suCreated && suCreated.ok === true, JSON.stringify((suCreated && (suCreated.error || suCreated.err)) || '').slice(0, 140))
-  let suSandboxId = suCreated.ok ? suCreated.data.targetIds[0] : ''
-  let suData = null
+  let suId = ''
   let suPage = null
-  if (suSandboxId) {
-    await hardReconnect()
+  let suData = null
+  await L.block('报名沙盒装配', 5, async () => {
+    const suCreated = await converge('trailApi', 'dispatch', { payload: { type: 'activity.create', input: suInput } }, 3)
+    L.b('建报名沙盒活动', !!suCreated && suCreated.ok === true, JSON.stringify((suCreated && (suCreated.error || suCreated.err)) || 'ok').slice(0, 140))
+    suId = suCreated && suCreated.ok ? suCreated.data.targetIds[0] : ''
     const profS = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
-    const meS = profS.ok ? profS.data.view.profile : null
-    // 报名沙盒不发布（发布即报名会让 signup.submit 消失）——开放报名的活动需要 published；
-    // 由演员视角发布不可行，改为本人发布+取消本人报名行不通 → 直接发布后取消本人那条报名。
-    const pub = await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.publish', activityId: suSandboxId, participation: { personRef: { kind: 'user', userId: meS.id }, participant: meS.person, trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } })
-    check('发布报名沙盒（发布即报名本人）', pub.ok === true, JSON.stringify(pub.error || pub.err || '').slice(0, 140))
-    // 取消本人的发布即报名（腾出「可再次报名」状态不可行——已报名者不能重复报名）。
-    // 改为验证同伴代报路径：候选里勾一位常用同行人报名。本人已在场，报名页会 denied——
-    // 所以报名段改在「编辑模式」不可行，直接断言准入闸 + 档案回填用演员活动。
-    // 简化：报名页对已发布活动 + 未报名者才可进。这里用第二身份不可行（单账号）。
-    // 最终方案：报名页装配断言使用「取消本人报名」后的状态。
-    const v0 = await cloudCall('trailApi', 'read', { request: { kind: 'activity', activityId: suSandboxId, perspective: 'organizer' } })
-    const ownRow = (v0.ok && v0.data.view.rows || [])[0]
+    const meS = profS && profS.ok ? profS.data.view.profile : null
+    const pub = await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.publish', activityId: suId, participation: { personRef: { kind: 'user', userId: meS.id }, participant: meS.person, trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } })
+    L.b('发布报名沙盒（发布即报名本人）', pub.ok === true, JSON.stringify(pub.error || pub.err || 'ok').slice(0, 140))
+    // 常用同行人是勾选候选的来源；没有就按 fixture 造一个（环境准备，记 BUSINESS）
+    if (!((meS.companions || []).length)) {
+      const c = await cloudCall('trailApi', 'dispatch', { expectedRevision: await (async () => (await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })).data.revision)(), payload: { type: 'companion.save', companionId: null, person: { name: '自动化同行人', phone: '00000000008', emergency: { name: '自动化家属', phone: '00000000007' }, medical: '', avatar: '' } } })
+      L.b('fixture：造一名常用同行人（勾选候选的来源）', c.ok === true, JSON.stringify(c.error || c.err || 'ok').slice(0, 140))
+    }
+    // 取消本人那条报名，腾出「可再次报名」状态
+    const v0 = await cloudCall('trailApi', 'read', { request: { kind: 'activity', activityId: suId, perspective: 'organizer' } })
+    const ownRow = ((v0 && v0.ok && v0.data.view.rows) || [])[0]
     if (ownRow) {
-      const rvC = (await cloudCall('trailApi', 'read', { request: { kind: 'activity', activityId: suSandboxId, perspective: 'organizer' } })).data.revision
-      await cloudCall('trailApi', 'dispatch', { expectedRevision: rvC, payload: { type: 'signup.cancel', activityId: suSandboxId, signupId: ownRow.signupId, reason: 'E2E 报名沙盒腾位' } })
+      const c2 = await cloudCall('trailApi', 'dispatch', { expectedRevision: await (async () => (await cloudCall('trailApi', 'read', { request: { kind: 'activity', activityId: suId, perspective: 'organizer' } })).data.revision)(), payload: { type: 'signup.cancel', activityId: suId, signupIds: [ownRow.signupId], reason: 'E2E 报名沙盒腾位' } })
+      L.b('取消本人报名行以腾出可报名状态', c2.ok === true, JSON.stringify(c2.error || c2.err || 'ok').slice(0, 200))
     }
     await hardReconnect()
-    suPage = await open('/pages/signup/signup?id=' + suSandboxId)
-    suPage = await ensurePage(suPage, '/pages/signup/signup?id=' + suSandboxId)
+    suPage = await open('/pages/signup/signup?id=' + suId)
+    await probeChannel(suPage)
     suData = await suPage.data()
-  }
-  check('报名沙盒通过装配（准入闸放行）', suData && suData.loading === false && !suData.denied && suData.mode === 'new' && suData.participants && suData.participants.length,
-    JSON.stringify({ loading: suData && suData.loading, denied: suData && suData.denied }))
-  if (suData && !suData.denied) {
-    page = suPage
-    const own = suData.participants[0]
-      check('本人参与人来自档案（姓名回填）', !!(own.person && own.person.name), JSON.stringify(own.person && own.person.name))
-      check('紧急联系人回填（档案有则直接展示——本轮修复的真机回归点）',
-      !!(own.person && own.person.emergency && own.person.emergency.name),
-        JSON.stringify(own.person && own.person.emergency))
-      // 真实 tap：第二个 checkbox-group 即「同意本次活动使用报名与安全联络资料」（候选区第一个）。
-      // 本地草稿会保留上次勾选态（断点续填），所以断言「翻转」而不是「变 true」。
-      const groups = await queryAll(page, 'checkbox-group')
-      checkSoft('报名页 checkbox-group 渲染（候选/授权/同车）', groups.length >= 3, String(groups.length))
-      if (groups.length >= 2) {
-        const before = own.consent && own.consent.dataUse
-        const consentCheckbox = await groups[1].$('checkbox')
-        if (consentCheckbox) await consentCheckbox.tap()
-        await page.waitFor(600)
-        const after = await page.data()
-        check('真实原生 tap 切换授权 → 数据同步翻转（change 事件经 checkbox-group 到达页面）',
-          after.participants[0].consent.dataUse === !before,
-          JSON.stringify({ before, after: after.participants[0].consent.dataUse }))
-      }
-      await shot('04-signup')
-  }
+    L.u('报名页装配（准入闸放行、mode=new、参与人列表非空）',
+      !!suData && suData.loading === false && !suData.denied && suData.mode === 'new' && (suData.participants || []).length > 0,
+      JSON.stringify({ loading: suData && suData.loading, denied: suData && suData.denied, mode: suData && suData.mode, parts: (suData && suData.participants || []).length }))
+    const own = (suData && suData.participants || [])[0] || {}
+    L.u('本人资料来自档案回填', !!(own.person && own.person.name), JSON.stringify(own.person && own.person.name))
+    L.u('紧急联系人回填（档案有则直接展示）', !!(own.person && own.person.emergency && own.person.emergency.name),
+      JSON.stringify(own.person && own.person.emergency))
+  }, () => ({ ok: true }))
 
-  // 5. 我的页
+  await L.block('报名页勾选同行人（真实 tap，不做任何绕过）', 5, async () => {
+    const candAll = (await suPage.$$('checkbox-group')) || []
+    // 每个候选行自带一个 checkbox-group，data-key 挂在 group 上（挂内层 label 会被 checkbox-group 的
+    // currentTarget 语义吃掉——本轮真机已复现，修在此记录）。按 data-key 前缀认出同行人那一行。
+    const companionGroup = (await mapAttr(candAll, 'data-key')).filter(a => String(a.attr || '').indexOf('c:') === 0)[0]
+    L.u('候选区渲染出同行人勾选行（data-key 在 checkbox-group 上）', !!companionGroup,
+      JSON.stringify((await mapAttr(candAll, 'data-key')).map(x => x.attr)).slice(0, 200))
+    const cb = companionGroup ? await companionGroup.el.$('checkbox') : null
+    const partsBefore = ((await suPage.data()).participants || []).map(p => p.key)
+    const okTap = await tapEl(cb)
+    L.uiTap('点同行人候选行的勾选框', okTap, 'tap checkbox @ checkbox-group[data-key^="c:"]')
+    await suPage.waitFor(1200)
+    const partsAfter = ((await suPage.data()).participants || []).map(p => p.key)
+    const added = partsAfter.filter(k => String(k).indexOf('c:') === 0)
+    L.uEffect('勾选后同行人进入参与人列表（真实用户路径可完成多人报名）',
+      added.length === partsBefore.filter(k => String(k).indexOf('c:') === 0).length + 1,
+      JSON.stringify({ before: partsBefore, after: partsAfter }))
+    const okUntap = await tapEl(cb)
+    L.uiTap('再点一次取消勾选', okUntap, 'tap 同一勾选框')
+    await suPage.waitFor(1200)
+    const partsFinal = ((await suPage.data()).participants || []).map(p => p.key)
+    L.uEffect('取消勾选后同行人被移出参与人列表', partsFinal.length === partsBefore.length,
+      JSON.stringify({ before: partsBefore.length, after: partsFinal.length }))
+    await shot('07-signup-companion')
+  }, uiGate('报名页元素通道退化，勾选框无法经真实 tap 验证', 1))
+
+  // ===== 6. 我的页 =====
   page = await open('/pages/me/me')
-  const meData = await page.data()
-  check('我的页装配（档案姓名可见）', meData && !meData.denied && !!(meData.person && meData.person.name),
-    JSON.stringify(meData && meData.person && meData.person.name))
-  await shot('05-me')
+  await probeChannel(page)
+  await L.block('我的页装配', 1, async () => {
+    const meData = await page.data()
+    L.u('我的页装配（档案姓名可见）', !!meData && !meData.denied && !!(meData.person && meData.person.name),
+      JSON.stringify(meData && meData.person && meData.person.name))
+    await shot('08-me')
+  }, uiGate())
 
   await miniProgram.disconnect()
-  console.log('\npassed=' + passed + ' failed=' + failed)
-  console.log('截图目录：' + SHOTS)
-  process.exit(failed > 0 ? 1 : 0)
+  const v = L.print()
+  console.log('截图目录（仅作 Evidence，不参与任何判定）：' + SHOTS)
+  process.exit(v.exitCode)
 }
 
+// 读一组元素的某个 attribute（automator 的 attribute() 是异步的， map 不能直接 await）
+async function mapAttr(els, attr) {
+  const out = []
+  for (const el of els) out.push({ el, attr: await el.attribute(attr) })
+  return out
+}
+
+function section(t) { console.log('== ' + t + ' ==') }
+
 main().catch(e => {
-  console.error('UI E2E 执行异常：', e && (e.message || e))
+  if (e && e.name === 'AbortRun') console.error('环境前置不成立，已中断（结论记 INCONCLUSIVE，不是通过）：' + e.message)
+  else console.error('UI E2E 执行异常：', e && (e.stack || e.message || e))
   console.error('排查：①开发者工具已登录且打开了 D:\\OurTrail；②设置→安全→服务端口已开；③关掉已开的自动化端口再试（工具右上角调试器）。')
-  process.exit(1)
+  const v = L.print()
+  process.exit(e && e.name === 'AbortRun' ? 2 : (v.exitCode === 0 ? 1 : v.exitCode))
 })

@@ -66,13 +66,18 @@ cloudfunctions/trailApi/
                        activity/signup/transport/field/profile/notices/
                        allocation/selectors/contracts
   lib/weather.js       Open-Meteo 代理（沿用）
-  smoke-test.js        领域层冒烟测试（node smoke-test.js，86 项）
+  smoke-test.js        领域层冒烟测试（node smoke-test.js，106 项）
 tools/                 零依赖 node 脚本，无 root package.json、无 npm test：
   check.js             静态门禁：JS 语法/WXML 配平/WXSS 花括号/app.json 页面齐全/
                        组件引用（正向 + 反向注册）
-  check-handlers.js    页面与组件的 WXML bind* ↔ JS handler 交叉审计
-  *-test.js            6 个纯逻辑回归套件 + 11 个页面级场景套件 + trailApiLab 云函数
-                       集成测试（stub wx-server-sdk）+ 剧本离线干跑（见下「测试」）
+  check-handlers.js    WXML bind* ↔ JS handler 交叉审计；并校验 checkbox-group/radio-group
+                       的 change 处理函数所读 dataset 键确实挂在该 group 标签上
+                       （真机勾选同行人失效那次的回归闸）
+  e2e-result.js          E2E 结果账本：BUSINESS/UI 两维 × PASS/FAIL/INCONCLUSIVE，退出码
+                       0/1/2；含源码完整性自检 auditSource（被三套 E2E 脚本复用）
+  *-test.js            10 个纯逻辑回归套件 + 11 个页面级场景套件 + 2 个 trailApiLab 集成
+                       （stub wx-server-sdk，含剧本离线干跑）+ 2 个端到端 + 1 个结果模型
+                       变异自证 = 26 个门禁套件（见下「测试」）
   sync-lab.js          把 trailApi 的 domain/store 同步进 trailApiLab（部署 lab 前跑）
   gen-map-markers.js   地图 marker PNG 生成器（写文件，非常驻脚本）
 cloudfunctions/trailApiLab/   预演工具（私有测试用）：以合成演员身份执行预演剧本，
@@ -128,21 +133,29 @@ node tools/scenario-lab-test.js && node tools/trailapilab-test.js && \
 node tools/lab-dryrun-test.js && node tools/e2e-test.js
 ```
 
-共 **25 个套件**（断言总数是快照，2026-09-30 12:2x 测得 1720 —— 本仓库常有并行工作增删用例，**以各脚本自己打印的 `passed=N` 为准**）：
+共 **26 个套件**（断言总数是快照，2026-10-04 复跑测得 1819 —— 本仓库常有并行工作增删用例，**以各脚本自己打印的 `passed=N` 为准**）：
 `smoke` 106（领域层，不需 wx-server-sdk）· `astro` 60 · `gpx` 47 · `sky` 65 · `route-schedule` 41 ·
-`weather-page` 129（云函数→页面→组件契约）· `watch-points` 37 ·
+`weather-page` 134（云函数→页面→组件契约）· `watch-points` 37 ·
 `weather-model` 82（P4 轨迹层编排）· `space-time` 109（P4 几何 + 漫游读数）·
 `space-time-draw` 55（执行真实 `draw()`，记录式 2D 上下文）· `roam-scrubber` 33（漫游控件定时器与事件）·
-页面级场景（editor 137 / activity 136 / workspace 107 / signup 100 / me 81 / notices 64 /
-vehicle 55 / api 27 / discover 21 / lab 20 / staff 18）· lab 集成（lab-dryrun 165 / trailapilab 25）·
-**`e2e` 58（服务链路端到端：页面真实信封 → trailApi `exports.main` 真实路由/CAS/幂等/overrideEvidence →
-内存库落库 → 读动作回读验证；全业务链建档→发布→报名→审核→分车预览提交→现场→归档 + 权限边界）**。
+页面级场景（editor 137 / activity 136 / workspace 107 / signup 100 / me 98 / notices 67 /
+vehicle 56 / api 27 / discover 21 / lab 20 / staff 18）· lab 集成（lab-dryrun 165 / trailapilab 25）·
+**`e2e` 62（A 层服务链路端到端：页面真实信封 → trailApi `exports.main` 真实路由/CAS/幂等/overrideEvidence →
+内存库落库 → 读动作回读验证；全业务链建档→发布→报名→审核→分车预览提交→改派（含 SEAT_TAKEN 负向）→
+现场→归档 + 权限边界；座位期望值由 fixture 输入 + 分配规则推出，不回读实际座号自证）**·
+**`e2e-fault-probe` 31（结果模型变异自证：降级伪装 PASS / 恒真断言 / callMethod 绕过 / 空 catch /
+门槛静默 / fire-and-forget 各自都必须让结论变非绿）**.
 `check.js` 是提交前铁律，`check-handlers.js`
 补它抓不到的一类（`node --check` 无法发现未定义标识符）。
 
-另有 **UI 端到端** `node tools/e2e-ui-test.js`（不计入上列门禁）：通过微信开发者工具自动化端口驱动
-真实模拟器——真实渲染、真实原生组件事件、真实云端读写。前置：工具已登录并打开本项目、
+另有 **UI 端到端** `node tools/e2e-ui-test.js`（不计入上列门禁，且只有装了开发者工具的那台机器能跑）：
+通过自动化端口驱动真实模拟器——真实渲染、真实原生组件事件、真实云端读写。前置：工具已登录并打开本项目、
 设置→安全→打开「服务端口」；依赖自动装到 `~/.ourtrail-e2e`（仓库保持零依赖）。
+**结论语义**：权威结论是 `==== VERDICT ====` 两维账本，不是单一 `passed=N`——
+BUSINESS（后端状态对不对）与 UI（用户在界面上做没做成）各自定档 PASS/FAIL/INCONCLUSIVE，
+退出码 0=全绿 / 1=确有失败 / 2=无法验证。UI 的一条 PASS 必须由「一次真实 tap/input + 它的后果观测」
+构成；云侧 fallback 只能证 BUSINESS，替 UI 做完动作即记 `UI 未验证`。
+语义定义见 `docs/testing/e2e-result-semantics.md`，判别力自证见 `tools/e2e-fault-probe-test.js`。
 工作台段沿用 trailApiLab 预演能力（建 `[预演]` 沙盒活动 → lab 阶段 0/1 演员报名 → 工作台对账/审核/分车）。
 **注意**：需要 trailApiLab 部署版含批量重构与 timeout 20，否则 lab 阶段可能超时（脚本会幂等重试并给出指引）；
 沙盒活动收尾为 cancelled，可在预演面板 cleanup 清理。

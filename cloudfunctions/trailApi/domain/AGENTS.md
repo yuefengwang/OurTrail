@@ -1,6 +1,6 @@
 # domain/ — 业务内核
 
-13 modules, ~1795 lines of **pure JS with no `wx-server-sdk` import**. All authorization, all business rules, and every response shape the client ever sees live here. The client imports **none** of it — `SYNC.md:32` records that as a settled architecture decision (「客户端不引入 domain 代码」). Keeping the directory SDK-free is what lets `../smoke-test.js` run the whole reducer / invariants / selectors / allocation stack under plain Node.
+13 modules, ~2409 lines of **pure JS with no `wx-server-sdk` import**（`wc -l` 实测，2026-10-04）. All authorization, all business rules, and every response shape the client ever sees live here. The client imports **none** of it — `SYNC.md:32` records that as a settled architecture decision (「客户端不引入 domain 代码」). Keeping the directory SDK-free is what lets `../smoke-test.js` run the whole reducer / invariants / selectors / allocation stack under plain Node.
 
 | Module | LOC | Refs | Role |
 |---|---|---|---|
@@ -44,7 +44,7 @@ Enums: `Phase` (155) `draft | published | gathering | active | closing | archive
 6. `recordChange` — automatic `ActivityEvent` + notice fanout
 7. `assertInvariants(state)` on the result
 
-37 command types, grouped:
+39 command types (`commands.js` summaries 实测), grouped:
 
 - `activity.` create · edit · copy · publish · transition · delete
 - `signup.` submit · review · promote · cancel · edit, plus `signup.group.setTogether`
@@ -63,7 +63,7 @@ Growth caps at `commands.js:89-136` **silently truncate history**: receipts ≤ 
 
 ## AUTHORIZATION — `permissions.js`
 
-`isOwner`, `isOwnSignup`, `isSelfSignup`, `hasProxyConsent`, `staffCan`, `vehicleCan`, `canReadSensitive`, `canReadNotice`, `canExecute` (exports at 265 — a switch over all 37 commands).
+`isOwner`, `isOwnSignup`, `isSelfSignup`, `hasProxyConsent`, `staffCan`, `vehicleCan`, `canReadSensitive`, `canReadNotice`, `canExecute` (exports at 265 — a switch over all 39 commands).
 
 - `staffCan(state, actor, activityId, capability, signupIds, now)` = `StaffScope` ∩ `Capability[]` ∩ unexpired. **The expiry boundary is strict less-than: `expiresAt === now` is already expired.**
 - `vehicleCan` never grants roster / field / sensitive capability.
@@ -83,7 +83,7 @@ Enforced here, not in the client. All of these have a test or a pin behind them:
 - A `SignupGroup` occupies capacity as a **unit**. `manual` approvalMode ⇒ pending, `automatic` ⇒ confirmed. When full, the **whole group** must explicitly waitlist.
 - Phase gates: `published→gathering` requires no pending; `gathering→active` requires every actual traveller verified departed (check-in + outbound boarding); `closing→archived` requires all home with no open incidents; cancellation is only possible before departure.
 - `PositionReport`: one latest per person, `consentExpiresAt` = the activity's `endAt`, non-revisable after revocation, **stale after strictly 30 minutes**.
-- Reading sensitive data requires a declared `purpose`; exporting a sensitive roster writes an `export.record` audit **first**.
+- Reading sensitive data requires a declared `purpose`（**门槛在读取侧，但服务端不落任何审计记录**）；`export.record` 是**客户端主动发的命令**，服务端不强制——「先写审计」是自律而非机制，2026-10-04 回代码确认.
 - `notice.read` produces **no** event. `recordChange` fans out to everyone for publish/edit/transition, and to affected people for `signup.*` / `assignment.*`.
 
 ## ADD A COMMAND

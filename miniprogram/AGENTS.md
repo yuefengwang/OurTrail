@@ -6,15 +6,15 @@ Native WeChat mini program. **Zero npm dependencies** — no `package.json`, no 
 
 ```
 app.js       12 lines. wx.cloud.init(CLOUD_ENV) only.
-app.json     14 pages + custom:true tabBar (活动/通知/我的). NO usingComponents key.
+app.json     16 pages + custom:true tabBar (活动/通知/我的). NO usingComponents key.
 app.wxml     comment only — the global <privacy-popup /> was de-registered in 2026-09-27
              and its leftover tag removed 2026-09-29. Nothing is mounted globally.
 app.wxss     484 lines. THE design system: 33 CSS custom properties on `page`
              (not :root) + every globalized component class.
 config.js    16 lines. CLOUD_ENV='cloud1-d9ghcm034574b9d55', FUNC_NAME='trailApi',
              NOTICE_TMPL_IDS={activity:''} (empty ⇒ clipboard fallback). Only env file.
-pages/       14 dirs, 1:1 with app.json.
-components/  11 dirs. custom-tab-bar/ sits outside components/.
+pages/       16 dirs, 1:1 with app.json.
+components/  13 dirs（12 在用 + privacy-popup 死代码）. custom-tab-bar/ sits outside components/（在 miniprogram/ 根下）.
 utils/       10 files → see utils/AGENTS.md
 wxs/text.wxs 16 lines. WXS regex must use getRegExp().
 assets/markers/  generated PNGs — map marker.iconPath rejects base64

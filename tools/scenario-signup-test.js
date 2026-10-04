@@ -74,6 +74,10 @@ function checkGate(gate, issue, name, cond, extra) {
 }
 
 // ---- 合成事件（WXML 绑定：checkbox-group/picker/input/checkbox/tap）----
+// pickEv 的 currentTarget.dataset.key 只在「data-key 挂在 checkbox-group 自己身上」时才成立：
+// checkbox-group 的 change 事件 currentTarget 恒为 group，内层 label 的 data-* 不会到达这里。
+// 这条契约由 node tools/check-handlers.js 的 dataset 检查守着（曾把 data-key 挂在内层 label 上，
+// 真机勾选同行人完全失效而本套件全绿——2026-10-04 定案）。
 const tap = key => ({ currentTarget: { dataset: { key } } })
 const pickEv = (key, values) => ({ currentTarget: { dataset: { key } }, detail: { value: values } })
 const field = (index, key, value) => ({ currentTarget: { dataset: { index, key } }, detail: { value } })

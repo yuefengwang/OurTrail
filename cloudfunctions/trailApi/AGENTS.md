@@ -1,6 +1,6 @@
 # cloudfunctions/trailApi/ — 服务端
 
-**ONE** cloud function. Not twelve. The twelve are `action` values multiplexed through a single `ROUTES` map (`index.js:219`). A second function is structurally possible but strongly discouraged — there is no shared package, so you would fork `domain/`, and the revision-CAS design spans the whole state.
+**ONE production** cloud function. The 13 are `action` values multiplexed through a single `ROUTES` map (`index.js:244`). A second function is structurally possible but strongly discouraged — there is no shared package, so you would fork `domain/`, and the revision-CAS design spans the whole state.
 
 Only dependency in the entire server: `wx-server-sdk ~3.0.1`. No weather SDK, no LLM SDK, no map/route package, no ORM, no test framework. `package.json` declares **no scripts**. Weather is a raw keyless `https.get` to `api.open-meteo.com` (`lib/weather.js:139`); only `crypto`, `https`, and `zlib` are Node builtins in use.
 
@@ -13,14 +13,14 @@ store.js          137  16 ot_* collections (14 mapped + ot_meta + weather_cache)
                       loadState, diffCollections, persistState (revision CAS in a
                       transaction), ensureCollections
 config.json         8  { timeout: 20, permissions: { openapi: [security.msgSecCheck] } }
-domain/          1795  13 pure modules, zero wx-server-sdk → see domain/AGENTS.md
+domain/          2409  13 pure modules, zero wx-server-sdk → see domain/AGENTS.md
 lib/weather.js    217  Open-Meteo proxy, GCJ→WGS, cloud-band reconstruction
-smoke-test.js     334  86 domain assertions; runs with NO wx-server-sdk
+smoke-test.js     404  106 domain assertions; runs with NO wx-server-sdk
 ```
 
 There is no `common/`, `utils/`, or `_shared` module. Sharing is relative `require` inside one deployed package.
 
-## THE 12 ACTIONS
+## THE 13 ACTIONS
 
 `exports.main` resolves `ROUTES[event.action]`, injects the actor as `cloud.getWXContext().OPENID` (never from the payload), and always returns `{ok:true, data}` or `{ok:false, error:{code, message}}`. `getWeather` is the only action that does not require an OPENID.
 
@@ -31,19 +31,20 @@ There is no `common/`, `utils/`, or `_shared` module. Sharing is relative `requi
 | `readTransport` | `{activityId}` | Result |
 | `readAccess` | `{activityId}` | Result (owner-only collaboration grants) |
 | `readNoticeManagement` | `{activityId}` | Result (owner-only) |
-| `readSensitive` | `{activityId, signupId, purpose}` | Result — **writes an audit record on read** |
+| `readSensitive` | `{activityId, signupId, purpose}` | Result — **纯读，服务端不写审计**（此前本文声称「writes an audit record on read」不实，2026-10-04 回代码校正；可追责性只来自客户端自律的 `export.record` 命令）|
 | `readContact` | `{activityId, signupId}` | Result |
 | `readExport` | `{activityId, signupIds, mode, purpose}` | Result (CSV text) |
 | `previewAssignments` | `{activityId}` | bare `plan`, **not** a Result |
 | `dispatch` | `{payload, requestId, expectedRevision}` | `{targetIds, replayed, revision}` |
 | `getWeather` | `{activityId, pointId, date}` | `{status, hours, days, detail, series, pointElevation}` |
+| `getWeatherByPoint` | `{lat, lng, date}` | 同上（按坐标直取，供未挂活动的路线点用） |
 | `getPhoneNumber` | `{code}` | `{phone}` |
 
 `read` sub-dispatches on `request.kind` inside `selectors.js:246` — `profile` | `home` | `discover` | `notices` | `activity`; anything else returns a `deniedView('FORBIDDEN')`. `kind:'activity'` also takes `perspective` (`participant|organizer|staff|vehicle`) and `vehicleId`.
 
-**`dispatch` is the only write path.** All 37 command types funnel through it.
+**`dispatch` is the only write path.** All 39 command types funnel through it.
 
-## THE DISPATCH FUNNEL (`index.js:110`)
+## THE DISPATCH FUNNEL (`index.js:112` `actionDispatch`)
 
 1. `deepClone` the payload, then `overrideEvidence` — recursively rewrites every object that is exactly the 3-key `{at, by, note}` shape, overwriting `at` with server time and `by` with the server OPENID. **Client-supplied `at`/`by` are discarded; only `note` survives (≤2000 chars).**
 2. `sha256(canonicalPayload(clean))` → the idempotency fingerprint.
@@ -73,6 +74,6 @@ Document-per-record, not one blob — this exists to stay under the 512 KB singl
 
 ## TESTING
 
-`node cloudfunctions/trailApi/smoke-test.js` → `passed=86 failed=0`. It exercises the full reducer / invariants / selectors / allocation stack **without importing `wx-server-sdk`** — that is the whole reason `domain/` is a separate, dependency-free directory. `exports._internal` on `index.js` is the test hook that lets the test reach `assertInvariants` without pulling in the SDK.
+`node cloudfunctions/trailApi/smoke-test.js` → `passed=106 failed=0`。另有服务链路端到端 `node tools/e2e-test.js`（62 项，把客户端真实信封直接打进 `exports.main`）与 `node tools/e2e-fault-probe-test.js`（31 项结果模型自证）. It exercises the full reducer / invariants / selectors / allocation stack **without importing `wx-server-sdk`** — that is the whole reason `domain/` is a separate, dependency-free directory. `exports._internal` on `index.js` is the test hook that lets the test reach `assertInvariants` without pulling in the SDK.
 
 **Any change to `domain/`, `store.js`, or a command handler must keep this suite runnable under plain Node.** Adding an `index.js`/`store.js` dependency into `domain/` breaks the project's only backend test.

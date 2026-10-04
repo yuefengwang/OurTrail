@@ -14,6 +14,32 @@
 
 本轮 P4 的 5 个真机 bug 里，**只有 1 个是逻辑正确性问题**，其余 4 个逻辑测试全都测不到。
 
+## 结果语义（先读这条，否则读数会骗人）
+
+`tools/e2e-ui-test.js` 的权威结论是 `==== VERDICT ====` 块，而不是 `passed=N`：
+
+| 维度 | 证据来源 | 退出码 |
+|---|---|---|
+| BUSINESS | dispatch 信封 / read·readTransport·readExport·readForm 回读 / 领域不变量 | 0 全绿 · 1 确有失败 · 2 无法验证 |
+| UI | 真实 `element.tap()` / `input()` + 后果观测（元素数量·class·文本·page.data·组件 data） | 同上（OVERALL 取两维较差者） |
+
+硬规则：UI 的一条 PASS 必须先有一次成功的真实操作（`L.uiTap`/`L.uiInput`），其后的
+`L.uEffect(...)` 才算用户路径证据；不依赖操作的纯渲染读数用 `L.u(...)`。云侧 fallback 代做
+被测动作只能记 BUSINESS，UI 侧必须显式 `L.uiUnverified(...)`。门槛不过 / 通道退化 ⇒ INCONCLUSIVE，
+**不是 PASS**。账本 API 在 `tools/e2e-result.js`，判别力自证在 `tools/e2e-fault-probe-test.js`。
+
+## 真机新采到的三个坑（都已写进代码注释）
+
+1. **`page.$(sel)` 恒返回单个 Element，`$$` 才给数组**（实测 `.card`：$=Element / $$=38）。
+   按数组用 `$` ⇒ 查询恒空 ⇒ 历史所有 tap 静默不发生，而 `page.data()` 一切正常。
+2. **具名 slot 的内容要按「宿主组件作用域」查**：`transport-panel` 弹层里的 `.list-row` 与
+   「明确确认并提交此方案」按钮，从 `tp.$$` 查得到，从 `overlay` 元素往下查是 0 个。
+3. **弹层有过渡，`data.sheetOpen` 立刻为 true 不代表子树已落位**：查控件前先 waitFor + 轮询，
+   并以「所填文本是否落到组件 `data.note`」这类可验证后果确认命中的是目标控件。
+
+顺带一条测试侧纪律：给 `String.replace` 传含 `$$` 的替换串会被吃掉一个 `$`，
+`fp.$$'.textarea'` 会写成 `fp.$'.textarea'` —— 替换一律用函数形式 `s.replace(a, () => b)`。
+
 ## 三档手段的分工
 
 | 手段 | 覆盖 | 需要 DevTools | 能进 CI |

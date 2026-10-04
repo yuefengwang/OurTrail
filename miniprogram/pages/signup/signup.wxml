@@ -57,8 +57,10 @@
 
     <view class="stack" style="gap:0;">
       <text class="section-title">选择参与人</text>
-      <checkbox-group bindchange="onToggleCandidate">
-        <label wx:for="{{candidates}}" wx:key="key" class="check-label" data-key="{{item.key}}">
+      <!-- 一行一个 checkbox-group：change 事件的 currentTarget 就是 group 本身，data-key 必须挂在 group 上。
+           挂进内层 label 时 handler 读到 undefined，勾选既不新增也不移除参与人（真机已复现，见 SYNC.md 2026-10-04）。 -->
+      <checkbox-group wx:for="{{candidates}}" wx:key="key" data-key="{{item.key}}" bindchange="onToggleCandidate">
+        <label class="check-label">
           <checkbox color="#163E35" value="{{item.key}}" checked="{{item.checked}}" />
           <text class="check-text">{{item.person.name}} · {{item.kindLabel}}</text>
         </label>

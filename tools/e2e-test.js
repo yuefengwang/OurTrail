@@ -72,6 +72,7 @@ function fullActivityInput() {
 async function main() {
   let activityId = ''
   let chenSignupId = ''
+  let linSignupId = ''
   let wangCompanionId = ''
   let v1Id = ''
 
@@ -151,7 +152,7 @@ async function main() {
     r = await lin.previewAssignments(activityId)
     check('previewAssignments → ok（惰性 require 修复回归点；此前此处 Cannot find module）', r.ok === true, JSON.stringify(r.error || r))
     const plan = r.data
-    const linSignupId = ((await lin.read({ kind: 'activity', activityId, perspective: 'organizer' })).data.view.rows.find(x => x.name === '林溪') || {}).signupId
+    linSignupId = ((await lin.read({ kind: 'activity', activityId, perspective: 'organizer' })).data.view.rows.find(x => x.name === '林溪') || {}).signupId
     check('方案：林溪+王五入列、司机陈屿不占乘客位、无人淘汰',
       plan.assignments.length === 2
       && plan.assignments.some(a => a.signupId === linSignupId)
@@ -175,7 +176,7 @@ async function main() {
     v1Id = plan.assignments[0].vehicleId
   }
 
-  section('4. 域规则对齐：参与者司机不占乘客位（DRIVER_CONFLICT），手动指派可改派')
+  section('4. 域规则对齐：参与者司机不占乘客位（DRIVER_CONFLICT），手动指派可改派，占座冲突被拒（SEAT_TAKEN）')
   {
     const rev = async () => (await lin.read({ kind: 'activity', activityId, perspective: 'organizer' })).data.revision
     let r = await lin.dispatch({
@@ -194,11 +195,34 @@ async function main() {
     const onV2 = tr.data.value.assignments.filter(a => a.vehicleId === v2Id)
     check('readTransport 回读：王五已在 2号车', onV2.length === 1 && onV2[0].signupId === wangSignupId && onV2[0].seatLabel === null,
       JSON.stringify(tr.data.value.assignments))
-    r = await lin.dispatch({ type: 'assignment.set', activityId, target: { signupId: wangSignupId, vehicleId: v1Id, seatLabel: '02' } }, await rev())
-    check('改派回 1号车 02 座 ok', r.ok === true, JSON.stringify(r.error || ''))
+    // —— 确定性座位空间 ——
+    // 自动方案只把 1号车 seatLabels 里自然序最低的空座发出去，且不重排既有座位（allocation.js:84-90），
+    // 所以 2 位乘客占的是 {'01','02'} 这个**集合**；至于谁占 01 谁占 02 取决于 signupId 的自然序，
+    // 而 signupId 带 genId 的同毫秒随机后缀（contracts.js:37）→ 写死「王五原本坐 02」必然偶发翻车（SEAT_TAKEN）。
+    // 解法：先按本 fixture 的独立输入（seatLabels 列表 + 只占了 01/02）把林溪显式安置到 '05'，
+    // 此后 1号车的占用集合就完全由我们的输入决定：'02' 必空、'05' 必被林溪占——
+    // 期望值来自域规则与输入，不回读实际座号（回读当期望即自证循环）。
+    const FREE_SEAT = '02'
+    const TAKEN_SEAT = '05'
+    r = await lin.dispatch({ type: 'assignment.set', activityId, target: { signupId: linSignupId, vehicleId: v1Id, seatLabel: TAKEN_SEAT } }, await rev())
+    check('显式安置林溪到 1号车 ' + TAKEN_SEAT + ' 座（把座位空间变成 fixture 已知量）ok', r.ok === true, JSON.stringify(r.error || ''))
+    r = await lin.dispatch({ type: 'assignment.set', activityId, target: { signupId: wangSignupId, vehicleId: v1Id, seatLabel: FREE_SEAT } }, await rev())
+    check('改派王五回 1号车 ' + FREE_SEAT + ' 座 ok', r.ok === true, JSON.stringify(r.error || ''))
     tr = await lin.readTransport(activityId)
     check('回读：仍共 2 条安排（改派不产生重复行）',
       tr.data.value.assignments.length === 2, JSON.stringify(tr.data.value.assignments))
+    check('回读：两人座号等于显式输入（王五=' + FREE_SEAT + '、林溪=' + TAKEN_SEAT + '）',
+      tr.data.value.assignments.length === 2
+      && (tr.data.value.assignments.find(a => a.signupId === wangSignupId) || {}).seatLabel === FREE_SEAT
+      && (tr.data.value.assignments.find(a => a.signupId === linSignupId) || {}).seatLabel === TAKEN_SEAT,
+      JSON.stringify(tr.data.value.assignments))
+    r = await lin.dispatch({ type: 'assignment.set', activityId, target: { signupId: wangSignupId, vehicleId: v1Id, seatLabel: TAKEN_SEAT } }, await rev())
+    check('同一座位安排两人 → SEAT_TAKEN（此前两层 E2E 对该错误码零覆盖）',
+      r.ok === false && r.error.code === 'SEAT_TAKEN', JSON.stringify(r.error || r))
+    tr = await lin.readTransport(activityId)
+    check('SEAT_TAKEN 拒绝后零副作用（王五仍在 ' + FREE_SEAT + ' 座）',
+      (tr.data.value.assignments.find(a => a.signupId === wangSignupId) || {}).seatLabel === FREE_SEAT,
+      JSON.stringify(tr.data.value.assignments))
   }
 
   section('5. 现场链：逐人签到/上车/出发核实（域规则：joined 乘客需签到+上车，参与者司机免上车）；证据由服务端覆写')

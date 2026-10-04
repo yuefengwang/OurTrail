@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — OurTrail
 
-**Generated:** 2026-09-29 · **Commit:** `7423c82` · **Branch:** `master` (clean)
+**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：16 页 / 13 组件目录 / 13 actions / 39 commands / smoke 106）· **Base commit:** `1acd55e`
 
 ---
 
@@ -12,8 +12,8 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 
 | Layer | Reality |
 |---|---|
-| Client | WeChat mini program, **native WXML/WXSS/CommonJS JS**. 14 pages, 11 components, **zero npm dependencies** (no `miniprogram/package.json`, no `miniprogram_npm/`). `libVersion 3.8.12`, appid `wx1227a277a3f2f7ea` |
-| Backend | **ONE** cloud function `trailApi` — not 12. 12 `action` values multiplexed through one `ROUTES` map, fanning out to **37 command types**. Sole dependency `wx-server-sdk ~3.0.1` |
+| Client | WeChat mini program, **native WXML/WXSS/CommonJS JS**. **16 pages**, **13 个组件目录**（12 在用 + `privacy-popup` 死代码）+ 位于 `miniprogram/custom-tab-bar/`（不在 components/ 下）, **zero npm dependencies** (no `miniprogram/package.json`, no `miniprogram_npm/`). `libVersion 3.8.12`, appid `wx1227a277a3f2f7ea` |
+| Backend | **ONE production** cloud function `trailApi` — 13 `action` values multiplexed through one `ROUTES` map (`index.js:244`), fanning out to **39 command types**. Sole dependency `wx-server-sdk ~3.0.1`. 另有 **`trailApiLab`**：私有预演工具云函数（只给 `pages/lab` 造 `[预演]` 沙盒），与生产**共用同一套 `ot_*` 集合**，不是第二条服务链路 |
 | Store | Document-per-record across **16** `ot_*` collections (14 in the `COLLECTIONS` map, plus `ot_meta` and `weather_cache`). `ot_meta/main` = `{revision, savedAt}`. Writes diff records inside one transaction with a **revision CAS** |
 | Domain | 13 pure JS modules in `cloudfunctions/trailApi/domain/` — all authorization, business rules, and response shapes live here and **the client cannot bypass any of it** |
 | Weather | Keyless `https.get` to `api.open-meteo.com` via a cloud-function proxy, 30-min `weather_cache`. **All astronomy/天相 computation is client-side** |
@@ -31,6 +31,11 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 4. **`docs/e2e-mp/README.md`** — 改完 WXML/WXSS/组件结构后，**静态门禁通过不代表页面正常**。
    真机（微信开发者工具）驱动是本仓库唯一能看见像素的手段，见下方「直连微信开发者工具」一节。
    P4 的 5 个真机 bug 里只有 1 个是逻辑问题，其余 4 个逻辑测试全都测不到。
+5. **`docs/testing/e2e-result-semantics.md` + `tools/e2e-result.js`** — 动两套 E2E（`tools/e2e-test.js` /
+   `tools/e2e-ui-test.js`）之前必读。要点：BUSINESS 与 UI 是两个独立维度；**UI 的一条 PASS 必须由
+   「一次真实 tap/input + 它的后果观测」构成**；云侧 fallback 只能证 BUSINESS；门槛不过或通道退化
+   记 INCONCLUSIVE（退出码 2），**永远不是 PASS**。判别力由 `tools/e2e-fault-probe-test.js`（31 项变异）
+   自证；改测试语义之前先跑它，改完再跑一次。
 
 ---
 
@@ -41,20 +46,24 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 ├── miniprogram/       # CLIENT — see miniprogram/AGENTS.md
 │   ├── app.js/json/wxml/wxss   # entry; app.wxss IS the design system
 │   ├── config.js      # CLOUD_ENV / FUNC_NAME / NOTICE_TMPL_IDS — the only env file
-│   ├── pages/         # 14 dirs, 1:1 with app.json `pages`
-│   ├── components/    # 11 dirs + custom-tab-bar/
+│   ├── pages/         # 16 dirs, 1:1 with app.json `pages`
+│   ├── components/    # 13 dirs（12 在用 + privacy-popup 死代码）
+│   ├── custom-tab-bar/  # 与 components/ 同级，样式必须自包含
 │   ├── utils/         # 10 files — see miniprogram/utils/AGENTS.md
 │   ├── wxs/           # text.wxs
 │   └── assets/markers/  # generated PNGs (map markers reject base64)
 ├── cloudfunctions/trailApi/   # BACKEND — see cloudfunctions/trailApi/AGENTS.md
-│   ├── index.js        # 12-action router, overrideEvidence, weather
+│   ├── index.js        # 13-action router (ROUTES@244), overrideEvidence, weather
 │   ├── store.js        # 16 ot_* collections, loadState, persistState CAS
 │   ├── domain/         # 13 pure modules — see .../domain/AGENTS.md
 │   ├── lib/weather.js  # Open-Meteo proxy (duplicates gcjToWgs — keep in sync)
-│   └── smoke-test.js   # 86 cases, needs no wx-server-sdk
-├── tools/             # 9 zero-dep node scripts: 6 tests + 2 checks + 1 generator
+│   └── smoke-test.js   # 106 cases, needs no wx-server-sdk
+├── tools/             # 32 个零依赖 node 脚本：26 个门禁套件 + 2 个静态检查 +
+│                      #   e2e-result.js（结果账本，被两套 E2E require）+ 桩/生成器
 ├── docs/product/      # 9 tracked product specs + 3 ADRs — the "why"
 │                      # (天气线三份：P1 徒步天气概览 / P2 天相与meteogram / P3 独立天气模块)
+├── docs/testing/      # 审计与测试基线：cross-agent-audit.md（裁决记录）/
+│                      #   e2e-result-semantics.md（两维四态语义）/ 覆盖矩阵 / 清单
 ├── docs/prototypes/ourtrail-app/  # FROZEN React design spec — see its AGENTS.md
 ├── .agents/skills/ourtrail-ui/    # mandatory UI rules
 ├── PARALLEL_DEV.md / SYNC.md / README.md
@@ -99,7 +108,7 @@ Reference centrality measured by **grep require-count** (no TS/JS LSP and no ast
 | `domain/selectors.js` | 2 (but 493 LOC) | Every response shape |
 | `utils/{sky,route-schedule,gpx,chart-store}` | 3 each | 天相 / schedule mapping / GPX / cross-page bus |
 
-**Complexity hotspots** (>400 LOC, all hand-written, no framework to lean on): `miniprogram/pages/editor/editor.js` (798) · `editor.wxml` (526) · `pages/activity/activity.js` (548) · `components/meteogram/meteogram.js` (507) · `components/transport-panel/transport-panel.js` (445) · `utils/sky.js` (433) · `app.wxss` (484) · `domain/selectors.js` (493).
+**Complexity hotspots** (>400 LOC, `wc -l`, 2026-10-04 实测): `miniprogram/pages/editor/editor.js` (828) · `editor.wxml` (528) · `pages/activity/activity.js` (551) · `domain/selectors.js` (493) · `app.wxss` (493) · `components/meteogram/meteogram.js` (520) · `components/transport-panel/transport-panel.js` (457) · `utils/sky.js` (433) · `pages/signup/signup.js` (482).
 
 ---
 
@@ -116,22 +125,27 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Logic regression — 24 suites, all currently passing.
-# ⚠ 断言总数是**快照**（2026-09-30 12:2x 测得 1720），不是恒定值：
+# Logic regression — 26 gated suites, all currently passing（2026-10-04 复跑）.
+# ⚠ 断言总数是**快照**，不是恒定值：
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
 #   那些改动会增删用例（例：smoke 104→106、workspace 104→107 均非本轮 P4 改动）。
 #   **以每个脚本自己打印的 passed=N 为准**，不要信任何写死的总数。
-node cloudfunctions/trailApi/smoke-test.js   # 领域层（快照 106）
+node cloudfunctions/trailApi/smoke-test.js   # 领域层（106）
 node tools/astro-test.js                     # 天文（60）
 node tools/gpx-test.js                       # GPX + 坐标转换（47）
 node tools/sky-test.js                       # 天相结论（65）
 node tools/route-schedule-test.js            # 日程推算（41）
-node tools/weather-page-test.js              # 云函数→页面→组件契约（129）
+node tools/weather-page-test.js              # 云函数→页面→组件契约（134）
 node tools/watch-points-test.js              # 观察点/轨迹点组（37）
 node tools/weather-model-test.js             # P4 轨迹层编排（wx-free 纯函数）（82）
 node tools/space-time-test.js                # P4 时空天相图几何 + 漫游读数（109）
 node tools/space-time-draw-test.js           # P4 真实 draw() 执行（记录式 2D 上下文）（55）
 node tools/roam-scrubber-test.js             # P4 漫游控件定时器与事件契约（33）
+
+# 端到端两层（A 层计入门禁；B 层需开发者工具，不计入门禁）
+node tools/e2e-test.js                         # A 层服务链路 E2E（62 项，真信封打 exports.main）
+node tools/e2e-fault-probe-test.js             # 结果模型变异自证（31 项）
+node tools/e2e-ui-test.js                      # B 层真模拟器 UI E2E（两维账本，退出码 0/1/2）
 
 # Page-level scenarios
 node tools/scenario-editor-test.js           # 137
@@ -162,7 +176,8 @@ node tools/scenario-editor-test.js
 
 **Test style is hand-rolled** — no jest/vitest/miniprogram-simulate. Each `tools/*-test.js` redefines `check(name, cond, extra)` + `section(title)` and calls `process.exit(failed ? 1 : 0)`. `scenario-editor-test.js` contains the reusable harness: it stubs `global.wx`, captures the real `Page()` config, `delete require.cache` to force a fresh source read, and monkey-patches `utils/api` to assert emitted commands.
 
-**Run/preview is WeChat DevTools only.** Deploy: right-click `cloudfunctions/trailApi` → 上传并部署：云端安装依赖. **This Mac has no DevTools installed** (PARALLEL_DEV.md §6) — static checks are the only automated gate here, and UI/cloud-function work must be verified on the Windows box before merging.
+**Run/preview is WeChat DevTools only.** Deploy: right-click `cloudfunctions/trailApi` → 上传并部署：云端安装依赖；或用 `cli cloud functions deploy --e <env> --n <fn> --r`（CLI 部署不继承控制台超时配置，部署后要把超时改回 20 秒）.
+**只有装了开发者工具的那台机器能跑 UI/E2E**：当前 Windows 机可以（`C:\Program Files (x86)\Tencent\微信web开发者工具\cli.bat`，服务端口 33278，自动化端口 9420）；Mac 那台没有装，静态门禁是那里唯一的自动闸门。
 
 ---
 
