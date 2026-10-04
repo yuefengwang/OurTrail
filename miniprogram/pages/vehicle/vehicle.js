@@ -33,11 +33,10 @@ Page({
   },
 
   reload() {
-    if (!this.vehicleId) {
-      this.setData({ loading: false, denied: '本车任务缺少车辆参数。' })
-      return
-    }
-    return api.read({ kind: 'activity', activityId: this.activityId, perspective: 'vehicle', vehicleId: this.vehicleId }).then(res => {
+    // vehicleId 缺省时服务端会自动挑选本人可联络的车辆（selectors activityView 的
+    // vehicle 视角：无 vehicleId 即 vehicleCan 命中的第一辆）。home 的协作任务卡
+    // 只带 activityId，此前客户端把"缺参"当死路，车辆联络人从唯一入口进来就是 denied（P0-2）。
+    return api.read({ kind: 'activity', activityId: this.activityId, perspective: 'vehicle', vehicleId: this.vehicleId || undefined }).then(res => {
       if (res.view.kind !== 'activity' || !res.view.vehicleTask) {
         this.setData({ loading: false, denied: res.view.kind === 'denied' ? res.view.message : '本车联络授权已结束。' })
         return
@@ -45,6 +44,7 @@ Page({
       this.revision = res.revision
       this.now = res.now
       this.view = res.view
+      this.vehicleId = res.view.vehicleTask.vehicle.id // 采用服务端解析出的车辆，后续操作都带它
       this.render()
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
   },

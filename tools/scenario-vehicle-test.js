@@ -261,9 +261,9 @@ async function scenario1() {
     JSON.stringify(names))
 }
 
-// 2. 守卫与降级：缺 vehicleId / 服务端 denied / vehicleTask 缺失 / 读取失败
+// 2. 守卫与降级：缺 vehicleId 自动选车 / 服务端 denied / vehicleTask 缺失 / 读取失败
 async function scenario2() {
-  section('2. 守卫与降级：缺参不外呼 / denied 透出 / 无 vehicleTask / 读取失败')
+  section('2. 守卫与降级：缺参自动选车 / denied 透出 / 无 vehicleTask / 读取失败')
   {
     makeWx()
     const env = installApi({ view: vehicleView() })
@@ -271,9 +271,14 @@ async function scenario2() {
     page.onLoad({ id: 'a1' })
     page.onShow()
     await sleep(20)
-    check('缺 vehicleId：直接 denied「本车任务缺少车辆参数。」且零外呼',
-      page.data.loading === false && page.data.denied === '本车任务缺少车辆参数。' && env.reads.length === 0,
-      page.data.denied)
+    // P0-2 修复：home 协作任务卡只带 activityId，缺 vehicleId 不再是死路——
+    // 服务端（selectors vehicle 视角）自动挑选本人可联络的车辆，客户端采用其解析结果。
+    check('缺 vehicleId：仍外呼且请求不带 vehicleId 值（服务端自动选车）',
+      page.data.loading === false && env.reads.length === 1 && env.reads[0].vehicleId === undefined,
+      JSON.stringify(env.reads[0]))
+    check('缺 vehicleId：采用服务端解析的车辆并正常装配',
+      page.vehicleId === 'v1' && page.data.label === '1号车' && page.data.denied === '',
+      JSON.stringify({ vehicleId: page.vehicleId, label: page.data.label, denied: page.data.denied }))
   }
   {
     makeWx()

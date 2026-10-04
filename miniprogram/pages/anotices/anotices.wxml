@@ -55,12 +55,30 @@
           </view>
         </picker>
       </form-field>
-      <form-field wx:if="{{audienceKind === 'vehicle'}}" label="车辆编号">
-        <input class="input" value="{{target}}" bindinput="onTarget" placeholder="车辆 ID" />
+      <!-- P0-3：定向候选来自真实名单/车辆档案，不再手填内部 ID（全站无处可查的死路） -->
+      <form-field wx:if="{{audienceKind === 'vehicle'}}" label="指定车辆" hint="{{vehicleRows.length ? '' : '此活动还没有车辆档案——先到工作台「分车」添加。'}}">
+        <picker range="{{vehicleRows}}" range-key="label" value="{{vehicleIndex}}" bindchange="onVehicleTarget">
+          <view class="picker">
+            <text class="picker-value">{{vehicleRows[vehicleIndex].label || '暂无可选车辆'}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
       </form-field>
-      <form-field wx:if="{{audienceKind === 'signups'}}" label="报名编号（逗号分隔）">
-        <input class="input" value="{{target}}" bindinput="onTarget" placeholder="signup ID 列表" />
-      </form-field>
+      <view wx:if="{{audienceKind === 'signups'}}" class="stack" style="gap:4px;">
+        <text class="small muted">勾选要通知的报名人员（含全部状态）：</text>
+        <view
+          wx:for="{{signupRows}}"
+          wx:key="id"
+          class="list-row"
+          hover-class="button-hover"
+          bindtap="onToggleSignupTarget"
+          data-id="{{item.id}}"
+        >
+          <view class="list-main"><text>{{item.label}}</text></view>
+          <checkbox checked="{{item.checked}}" color="#163E35" style="pointer-events:none;" />
+        </view>
+        <text wx:if="{{!signupRows.length}}" class="small muted">此活动还没有报名记录。</text>
+      </view>
       <view wx:if="{{error}}" class="callout danger">{{error}}</view>
       <view class="button primary block {{content ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{content ? 'onPublish' : ''}}">发布站内通知</view>
     </view>

@@ -136,7 +136,15 @@ function mgmtValue() {
 }
 function activityView(phase) {
   return {
-    view: { kind: 'activity', permittedActions: [], activity: { id: 'a1', title: '青城后山 · 周末轻徒步', phase: phase || 'active' } },
+    view: {
+      kind: 'activity', permittedActions: [], activity: { id: 'a1', title: '青城后山 · 周末轻徒步', phase: phase || 'active' },
+      // P0-3：定向通知的候选名单（rowView 形状，键为 signupId）
+      rows: [
+        { signupId: 's1', name: '张三', status: 'confirmed' },
+        { signupId: 's2', name: '李四', status: 'pending' },
+        { signupId: 's3', name: '王五', status: 'waitlisted' },
+      ],
+    },
     revision: 9,
     now: NOW,
   }
@@ -151,6 +159,7 @@ function bootNotices(path, opts) {
     notices: (opts.notices || sampleNotices()).slice(),
     revision: opts.revision || 4,
     activityPhase: opts.activityPhase || 'active',
+    transportVehicles: opts.transportVehicles || null,
     applyDispatch: null,
   }
   const reads = []   // read 的 request
@@ -168,6 +177,10 @@ function bootNotices(path, opts) {
   }
   api.readOr = (name, data) => {
     readOrs.push({ name, data })
+    if (name === 'readTransport') {
+      // P0-3：定向车辆的候选来源。桩返回的是 api.readOr 拆包后的 value（与其余 readOr 桩同约定）
+      return Promise.resolve({ vehicles: state.transportVehicles || [] })
+    }
     if (opts.mgmt === null) return Promise.reject(new Error('无权访问'))
     return Promise.resolve(opts.mgmt !== undefined ? opts.mgmt : mgmtValue())
   }
@@ -310,7 +323,10 @@ async function scenario3() {
 async function scenario4() {
   section('4. 发布流：草稿续填 / 受众三形态 / notice.publish payload / 失败保留')
   {
-    const { page, cmds, reads } = bootNotices(ANOTICES_PATH, { options: { id: 'a1' } })
+    const { page, cmds, reads } = bootNotices(ANOTICES_PATH, {
+      options: { id: 'a1' },
+      transportVehicles: [{ id: 'v9', label: '9号车', plate: '川A·9' }],
+    })
     await settleActivity(page, reads)
     page.onOpenPublish()
     check('打开发布弹层（无草稿 → 空内容）', page.data.publishOpen === true && page.data.content === '')
@@ -342,25 +358,42 @@ async function scenario4() {
       && page.data.message === '通知已发布。', JSON.stringify({ m: page.data.message }))
     await waitFor(() => reads.filter(r => r.kind === 'notices').length === 2)
     check('发布后重读列表', reads.filter(r => r.kind === 'notices').length === 2, String(reads.length))
-    // 指定报名人员：发布成功会清空输入，像真实用户一样重开弹层重填再发；中英文逗号/空格混排拆成 id 数组
+    // 指定报名人员（P0-3 改造后）：候选来自 organizer 名单（fixture rows），勾选即选中——
+    // 发布成功会清空输入，像真实用户一样重开弹层（onOpenPublish 重新拉候选）再勾再发
     page.onOpenPublish()
+    await waitFor(() => page.data.signupRows.length === 3)
     page.onContent(inputEv('报名的伙伴注意带头灯'))
     page.onAudience(inputEv('1'))
-    page.onTarget(inputEv('s1，s2 s3'))
+    await waitFor(() => page.data.audienceKind === 'signups')
+    check('报名候选带状态文案（rowView.signupId → label）',
+      page.data.signupRows[0].id === 's1' && /已确认/.test(page.data.signupRows[0].label)
+        && /待审核/.test(page.data.signupRows[1].label),
+      JSON.stringify(page.data.signupRows))
+    // 守卫先行（此时还未勾选）：空选集发布被拦，不再产出空 signupIds 的死命令
+    check('未勾选就发布被拦', (() => {
+      page.onPublish()
+      return cmds.length === 1 && /至少勾选/.test(page.data.error)
+    })(), page.data.error)
+    page.onToggleSignupTarget({ currentTarget: { dataset: { id: 's1' } } })
+    page.onToggleSignupTarget({ currentTarget: { dataset: { id: 's2' } } })
     page.onPublish()
     await waitFor(() => cmds.length === 2)
-    check('signups 受众：拆分为 id 数组（全半角逗号与空格都能切）',
-      JSON.stringify(cmds[1].payload.audience) === JSON.stringify({ kind: 'signups', signupIds: ['s1', 's2', 's3'] }),
+    check('signups 受众：来自勾选的 signupIds',
+      JSON.stringify(cmds[1].payload.audience) === JSON.stringify({ kind: 'signups', signupIds: ['s1', 's2'] }),
       JSON.stringify(cmds[1].payload.audience))
     check('signups 受众通过服务端 schema 校验', schema.validate(schema.Payload.map['notice.publish'], cmds[1].payload))
-    // 指定车辆：trim 后作 vehicleId
+    // 指定车辆（P0-3 改造后）：候选来自 readTransport，picker 选中即 vehicleId
     page.onOpenPublish()
+    await waitFor(() => page.data.vehicleRows.length === 1 && page.data.vehicleRows[0].id === 'v9')
     page.onContent(inputEv('车辆 9 号 7:40 发车'))
     page.onAudience(inputEv('2'))
-    page.onTarget(inputEv(' v9 '))
+    await waitFor(() => page.data.audienceKind === 'vehicle')
+    check('车辆候选带车牌（readTransport → label）', /9号车/.test(page.data.vehicleRows[0].label),
+      page.data.vehicleRows[0].label)
+    page.onVehicleTarget(inputEv('0'))
     page.onPublish()
     await waitFor(() => cmds.length === 3)
-    check('vehicle 受众：vehicleId 去空格',
+    check('vehicle 受众：vehicleId 来自候选（不再手填）',
       JSON.stringify(cmds[2].payload.audience) === JSON.stringify({ kind: 'vehicle', vehicleId: 'v9' }),
       JSON.stringify(cmds[2].payload.audience))
     check('vehicle 受众通过服务端 schema 校验', schema.validate(schema.Payload.map['notice.publish'], cmds[2].payload))
@@ -461,7 +494,8 @@ async function scenario6() {
     check('两页初始 data 深度一致', JSON.stringify(tab.data) === JSON.stringify(act.data))
     check('工厂携带完整 handler 面（列表/发布/已读/复制/导航/刷新）',
       ['onShow', 'onPullDownRefresh', 'reload', 'activityId', 'onMarkRead', 'onOpenActivity', 'onCopy',
-        'onOpenPublish', 'onClosePublish', 'onContent', 'onAudience', 'onTarget', 'onPublish']
+        'onOpenPublish', 'onClosePublish', 'onContent', 'onAudience', 'onPublish',
+        'loadTargets', 'onToggleSignupTarget', 'onVehicleTarget']
         .every(k => typeof tab[k] === 'function'),
       JSON.stringify(keys.filter(k => typeof tab[k] !== 'function')))
     tab.onLoad({})

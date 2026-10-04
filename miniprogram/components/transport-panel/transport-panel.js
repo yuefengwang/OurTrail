@@ -417,6 +417,12 @@ Component({
         this.setData({ error: '请填写车辆名称、有效核载人数和完整司机信息。' })
         return
       }
+      // 服务端要求车辆至少挂一个本活动集合点（否则报「集合点不属于本场活动」的谜语），
+      // 这里提前用可执行的文案拦住（2026-09-30 真机走查实测：不勾上车点提交必炸）。
+      if (!f.pickupIds.length) {
+        this.setData({ error: '请至少勾选一个集合上车点——车辆在此接人。' })
+        return
+      }
       const usable = legal - drivers.length - blocked
       if (usable < 0) {
         this.setData({ error: '核载减去司机及不可用位后不能为负数。' })

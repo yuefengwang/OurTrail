@@ -21,7 +21,9 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       content: '',
       audienceKind: 'activity',
       audienceOptions: ['本活动相关人员', '指定报名人员', '指定车辆'],
-      target: '',
+      signupRows: [],
+      vehicleRows: [],
+      vehicleIndex: -1,
       message: '',
       error: '',
       vehicles: [],
@@ -106,9 +108,52 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       const activityId = this.activityId()
       if (!activityId) return
       const saved = draft.getDraft(activityId, 'notice')
-      this.setData({ publishOpen: true, content: saved ? saved.content || '' : '' })
+      this.setData({
+        publishOpen: true,
+        content: saved ? saved.content || '' : '',
+        signupRows: [],
+        vehicleRows: [],
+        vehicleIndex: -1,
+        error: '',
+      })
+      this.loadTargets(activityId)
     },
     onClosePublish() { this.setData({ publishOpen: false }) },
+
+    // 定向通知的候选来源（P0-3：原先要求手填 signup ID/车辆 ID，全站无处可查，是功能性死路）。
+    // 名单走 organizer 视角 read（rows 即全部报名），车辆走 readTransport（组织者专属）。
+    loadTargets(activityId) {
+      api.read({ kind: 'activity', activityId, perspective: 'organizer' }).then(res => {
+        if (res.view.kind !== 'activity') return
+        const rows = res.view.rows || []
+        this.setData({
+          signupRows: rows.map(r => ({
+            id: r.signupId,
+            label: (r.name || '未命名') + ' · ' + (F.STATUS_LABELS[r.status] || r.status),
+            checked: false,
+          })),
+        })
+      }).catch(() => {})
+      api.readOr('readTransport', { activityId }).then(t => {
+        const vehicles = t.vehicles || []
+        this.setData({
+          vehicleRows: vehicles.map(v => ({
+            id: v.id,
+            label: (v.label || '车辆') + (v.plate ? ' · ' + v.plate : ''),
+          })),
+          vehicleIndex: vehicles.length ? 0 : -1,
+        })
+      }).catch(() => {})
+    },
+    onToggleSignupTarget(e) {
+      const id = e.currentTarget.dataset.id
+      this.setData({
+        signupRows: this.data.signupRows.map(r => Object.assign({}, r, { checked: r.id === id ? !r.checked : r.checked })),
+      })
+    },
+    onVehicleTarget(e) {
+      this.setData({ vehicleIndex: Number(e.detail.value) })
+    },
 
     onContent(e) {
       const activityId = this.activityId()
@@ -116,18 +161,27 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       this.setData({ content: e.detail.value })
     },
     onAudience(e) {
-      this.setData({ audienceKind: ['activity', 'signups', 'vehicle'][Number(e.detail.value) || 0] })
+      this.setData({ audienceKind: ['activity', 'signups', 'vehicle'][Number(e.detail.value) || 0], error: '' })
     },
-    onTarget(e) { this.setData({ target: e.detail.value }) },
 
     onPublish() {
       const activityId = this.activityId()
       if (!activityId || !this.data.content.trim()) return
       let audience
       if (this.data.audienceKind === 'vehicle') {
-        audience = { kind: 'vehicle', vehicleId: this.data.target.trim() }
+        const v = this.data.vehicleRows[this.data.vehicleIndex]
+        if (!v) {
+          this.setData({ error: '此活动还没有车辆档案——先到工作台「分车」添加车辆，或改选其他通知范围。' })
+          return
+        }
+        audience = { kind: 'vehicle', vehicleId: v.id }
       } else if (this.data.audienceKind === 'signups') {
-        audience = { kind: 'signups', signupIds: this.data.target.split(/[,，\s]+/).filter(Boolean) }
+        const ids = this.data.signupRows.filter(r => r.checked).map(r => r.id)
+        if (!ids.length) {
+          this.setData({ error: '至少勾选一名要通知的报名人员。' })
+          return
+        }
+        audience = { kind: 'signups', signupIds: ids }
       } else {
         audience = { kind: 'activity' }
       }
