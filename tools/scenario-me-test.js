@@ -120,6 +120,12 @@ function profileView(over) {
 const emptyProfileView = () => profileView({
   profile: { person: { name: '', phone: '', emergency: { name: '', phone: '' }, medical: '' } },
 })
+// me.js 的本地草稿（防「切页回来资料丢失」，键与 me.js 的 DRAFT_KEY 一致）
+const DRAFT_KEY = 'ourtrail.draft.me.person.v1'
+const draftOf = env => {
+  const d = env && env.store ? env.store[DRAFT_KEY] : null
+  return (d === '' || d == null) ? null : d
+}
 function homeView(activities) {
   return { view: { kind: 'home', activities: activities || [] }, revision: 2, now: '2026-09-29T09:00:00+08:00' }
 }
@@ -269,7 +275,10 @@ async function scenario2() {
     await sleep(20) // 给 persistPerson 的分支留一拍
     check('姓名未齐：取号回填但不发 profile.save',
       apiCalls.length === 1 && dispatches.length === 0, JSON.stringify({ calls: apiCalls.length, d: dispatches.length }))
-    check('给「补全后自动保存」引导', page.data.hint === '补全姓名与手机号后会自动保存', page.data.hint)
+    // 断言**意图**而非逐字文案：引导语现在还会带上「紧急联系人与健康备注已记在本机」
+    // （服务端硬门槛要求姓名+手机号齐全，domain/profile.js:36，而紧急联系人与它无关，
+    //   不说清楚用户会以为白填了）。逐字 pin 会让任何文案改进都变成测试回归。
+    check('给「补全后自动保存」引导', /补全姓名与手机号后/.test(page.data.hint || ''), page.data.hint)
   }
   {
     // 用户取消：不调接口、不发命令；提示按已知问题口径计 skipped
@@ -340,10 +349,13 @@ async function scenario3() {
     check('emergency 原样保留服务端形状（服务端严格 schema 可收）',
       JSON.stringify(person.emergency) === JSON.stringify({ name: '', phone: '' }), JSON.stringify(person.emergency))
     check('CAS 基准 = 档案读的 revision', dispatches[0].revision === 7, String(dispatches[0].revision))
+    // 用户动作（blur / 微信资料同步）要出 toast；只有防抖自动保存才静默（否则每敲一个字弹一次）
     check('保存成功反馈「资料已保存」+ saving 复位 + revision 前滚',
       env.rec.toasts.indexOf('资料已保存') !== -1 && page.data.saving === false && page.revision === 8,
       JSON.stringify({ toasts: env.rec.toasts, saving: page.data.saving, rev: page.revision }))
-    check('落库后无提示语残留', page.data.hint === '' && page.data.error === '')
+    // 「已保存」是**静默自动保存的确认**，2s 后自动清掉：既给反馈，又不会像催填提示那样长期挂着
+    check('落库后提示已保存（待自动清除），error 为空',
+      page.data.hint === '已保存' && page.data.error === '', page.data.hint)
   }
   {
     const { page, dispatches } = bootMe({ profile: emptyProfileView() })
@@ -352,14 +364,14 @@ async function scenario3() {
     check('输入即覆盖对应字段', page.data.person.name === '李四')
     page.onBlurSave(blurEv())
     check('不齐：不发命令', dispatches.length === 0, String(dispatches.length))
-    check('不齐：给「补全后自动保存」引导', page.data.hint === '补全姓名与手机号后会自动保存', page.data.hint)
+    check('不齐：给「补全后自动保存」引导', /补全姓名与手机号后/.test(page.data.hint || ''), page.data.hint)
     page.onField(fieldEv('phone', '13900000000'))
     page.onBlurSave(blurEv())
     await waitFor(() => dispatches.length > 0)
     check('补齐后失焦：自动落库带姓名电话',
       dispatches[0].payload.person.name === '李四' && dispatches[0].payload.person.phone === '13900000000',
       JSON.stringify(dispatches[0] && dispatches[0].payload.person))
-    check('补齐落库后引导消失', page.data.hint === '')
+    check('补齐落库后催填引导消失（换成已保存）', page.data.hint === '已保存', page.data.hint)
   }
   {
     const { page, dispatches } = bootMe({})
@@ -369,6 +381,121 @@ async function scenario3() {
     await waitFor(() => dispatches.length > 0)
     check('健康备注失焦同样触发落库并带最新值', dispatches[0].payload.person.medical === '花粉过敏',
       JSON.stringify(dispatches[0] && dispatches[0].payload.person.medical))
+  }
+  // ══════════════ 以下为「资料丢失」回归（用户实测复现）══════════════
+  // 旧实现：onShow → reload() → `person: Object.assign({avatar:''}, profile.person)`
+  // 用服务端值**整个覆盖** data.person。服务端 profile.save 硬性要求姓名+手机号齐全
+  // （domain/profile.js:36），所以「先填紧急联系人、姓名没填完就切走」这一常见路径下，
+  // 输入**永远存不进去**，切页回来还被抹掉。修法是本地草稿 + reload 合入草稿。
+  {
+    const { page, env } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    // 只填紧急联系人 + 健康备注（姓名手机号没填 → 门槛不满足 → 不落库）
+    page.onField(fieldEv('ename', '王五'))
+    page.onField(fieldEv('ephone', '13700000000'))
+    page.onField(fieldEv('medical', '花粉过敏'))
+    page.onBlurSave(blurEv())
+    const d = draftOf(env)
+    check('门槛未满足时把输入写进本地草稿',
+      d && d.emergency.name === '王五' && d.emergency.phone === '13700000000' && d.medical === '花粉过敏',
+      JSON.stringify(d))
+    check('草稿不含 avatar（云存储 fileID 由 onChooseAvatar 单独落库）',
+      d && d.avatar === undefined, d && JSON.stringify(d.avatar))
+  }
+  {
+    // 关键回归：切到别的页面再回来（= onShow → reload），输入必须还在
+    const { page } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    page.onField(fieldEv('ename', '王五'))
+    page.onField(fieldEv('medical', '花粉过敏'))
+    page.onBlurSave(blurEv())
+    // 模拟切页：onShow 会重新拉档案
+    page.onShow()
+    await settle(page)
+    check('★ 切页回来后紧急联系人仍在（曾被服务端空值抹掉）',
+      page.data.person.emergency.name === '王五', JSON.stringify(page.data.person.emergency))
+    check('★ 切页回来后健康备注仍在',
+      page.data.person.medical === '花粉过敏', page.data.person.medical)
+  }
+  {
+    // 草稿不得污染 avatar：avatar 永远取服务端值。
+    // 用「只改紧急联系人、姓名手机号保持服务端值」来构造——服务端 name+phone 本就齐全，
+    // blur 会真的落库并清草稿，所以草稿在 onShow 时已不存在，这条只验 avatar 没被写坏。
+    const { page } = bootMe({ profile: profileView({ person: { avatar: 'cloud://avatar-1' } }) })
+    await settle(page)
+    check('服务端头像已回填', page.data.person.avatar === 'cloud://avatar-1', page.data.person.avatar)
+    page.onField(fieldEv('ename', '钱十三'))
+    page.onField(fieldEv('ephone', '13100000000'))
+    page.onShow()
+    await settle(page)
+    check('★ 草稿合入时 avatar 仍取服务端值，不被草稿污染',
+      page.data.person.avatar === 'cloud://avatar-1', page.data.person.avatar)
+    check('草稿里的紧急联系人合入成功', page.data.person.emergency.name === '钱十三',
+      JSON.stringify(page.data.person.emergency))
+    check('服务端已有手输字段保持不变', page.data.person.name === '张三', page.data.person.name)
+  }
+  {
+    // 落库成功后清草稿：否则下次编辑会从一份过期草稿起步
+    const { page, dispatches, env } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    page.onField(fieldEv('name', '孙七'))
+    page.onField(fieldEv('phone', '13600000000'))
+    page.onField(fieldEv('ename', '周八'))
+    page.onBlurSave(blurEv())
+    await waitFor(() => dispatches.length > 0)
+    check('落库 payload 带全部字段（含紧急联系人）',
+      dispatches[0].payload.person.emergency.name === '周八', JSON.stringify(dispatches[0].payload.person))
+    check('★ 落库成功后草稿被清掉', !draftOf(env), JSON.stringify(draftOf(env)))
+  }
+  {
+    // 落库失败必须保留草稿，否则用户以为填的东西没了
+    const { page, env } = bootMe({ profile: emptyProfileView(), dispatchPlan: [new Error('网络异常')] })
+    await settle(page)
+    page.onField(fieldEv('name', '吴九'))
+    page.onField(fieldEv('phone', '13500000000'))
+    page.onBlurSave(blurEv())
+    await waitFor(() => page.data.saving === false && page.data.error !== '')
+    const d = draftOf(env)
+    check('★ 落库失败时草稿保留（不丢用户输入）', d && d.name === '吴九', JSON.stringify(d))
+    check('落库失败给出错误提示', !!page.data.error, page.data.error)
+  }
+  {
+    // 防抖自动保存：不必点别处
+    const { page, dispatches } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    page.onField(fieldEv('name', '郑十'))
+    page.onField(fieldEv('phone', '13400000000'))
+    check('刚输入完还没到防抖窗口，不该立刻发', dispatches.length === 0, String(dispatches.length))
+    await waitFor(() => dispatches.length > 0, 3000)
+    check('★ 输入停顿后自动落库（无需点别处触发）', dispatches.length === 1, String(dispatches.length))
+  }
+  {
+    // 自动保存必须静默：否则每敲一个字弹一次 toast
+    const { page, dispatches, env } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    page.onField(fieldEv('name', '钱十一'))
+    page.onField(fieldEv('phone', '13300000000'))
+    await waitFor(() => dispatches.length > 0, 3000)
+    check('★ 自动保存不弹 toast（只给 hint 确认）', env.rec.toasts.indexOf('资料已保存') === -1,
+      JSON.stringify(env.rec.toasts))
+    // dispatches 是 stub 同步记录的，而 hint 写在 .then() 里（微任务）——要等一拍再读
+    await waitFor(() => page.data.hint === '已保存', 2000)
+    check('自动保存给「已保存」确认', page.data.hint === '已保存', page.data.hint)
+  }
+  {
+    // 卸载后不得再有定时器在跑：留着会在页面消失后继续 setData + 发请求。
+    // ⚠ 先 sleep(AUTO_SAVE)：api 是模块级单例，上一个块若留下未清的防抖定时器，
+    //   它触发时 api.dispatchAndSync 已指向本块的闭包，会把 dispatch 记到**错误的块**里。
+    //   这是测试隔离问题，不是产品缺陷（真机上页面切换会走 onUnload）。
+    const { page, dispatches } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    await sleep(1000) // 让前一块的残留定时器先落地
+    page.onField(fieldEv('name', '甲十二'))
+    page.onField(fieldEv('phone', '13200000000'))
+    page.onUnload()
+    const n = dispatches.length
+    await sleep(1200)
+    check('★ 页面卸载后不再触发自动保存', dispatches.length === n, n + ' -> ' + dispatches.length)
   }
   {
     const { page, dispatches } = bootMe({})
