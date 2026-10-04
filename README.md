@@ -125,18 +125,27 @@ node tools/scenario-me-test.js && node tools/scenario-notices-test.js && \
 node tools/scenario-activity-test.js && node tools/scenario-staff-test.js && \
 node tools/scenario-vehicle-test.js && node tools/scenario-discover-test.js && \
 node tools/scenario-lab-test.js && node tools/trailapilab-test.js && \
-node tools/lab-dryrun-test.js
+node tools/lab-dryrun-test.js && node tools/e2e-test.js
 ```
 
-共 **24 个套件**（断言总数是快照，2026-09-30 12:2x 测得 1720 —— 本仓库常有并行工作增删用例，**以各脚本自己打印的 `passed=N` 为准**）：
+共 **25 个套件**（断言总数是快照，2026-09-30 12:2x 测得 1720 —— 本仓库常有并行工作增删用例，**以各脚本自己打印的 `passed=N` 为准**）：
 `smoke` 106（领域层，不需 wx-server-sdk）· `astro` 60 · `gpx` 47 · `sky` 65 · `route-schedule` 41 ·
 `weather-page` 129（云函数→页面→组件契约）· `watch-points` 37 ·
 `weather-model` 82（P4 轨迹层编排）· `space-time` 109（P4 几何 + 漫游读数）·
 `space-time-draw` 55（执行真实 `draw()`，记录式 2D 上下文）· `roam-scrubber` 33（漫游控件定时器与事件）·
 页面级场景（editor 137 / activity 136 / workspace 107 / signup 100 / me 81 / notices 64 /
-vehicle 55 / api 27 / discover 21 / lab 20 / staff 18）· lab 集成（lab-dryrun 165 / trailapilab 25）。
+vehicle 55 / api 27 / discover 21 / lab 20 / staff 18）· lab 集成（lab-dryrun 165 / trailapilab 25）·
+**`e2e` 58（服务链路端到端：页面真实信封 → trailApi `exports.main` 真实路由/CAS/幂等/overrideEvidence →
+内存库落库 → 读动作回读验证；全业务链建档→发布→报名→审核→分车预览提交→现场→归档 + 权限边界）**。
 `check.js` 是提交前铁律，`check-handlers.js`
 补它抓不到的一类（`node --check` 无法发现未定义标识符）。
+
+另有 **UI 端到端** `node tools/e2e-ui-test.js`（不计入上列门禁）：通过微信开发者工具自动化端口驱动
+真实模拟器——真实渲染、真实原生组件事件、真实云端读写。前置：工具已登录并打开本项目、
+设置→安全→打开「服务端口」；依赖自动装到 `~/.ourtrail-e2e`（仓库保持零依赖）。
+工作台段沿用 trailApiLab 预演能力（建 `[预演]` 沙盒活动 → lab 阶段 0/1 演员报名 → 工作台对账/审核/分车）。
+**注意**：需要 trailApiLab 部署版含批量重构与 timeout 20，否则 lab 阶段可能超时（脚本会幂等重试并给出指引）；
+沙盒活动收尾为 cancelled，可在预演面板 cleanup 清理。
 
 > `space-time-draw` / `roam-scrubber` 是 canvas 组件的**执行级**回归：
 > 它们真的把 `draw()` 跑起来并断言图元与色值，但**不等于视觉验证**——

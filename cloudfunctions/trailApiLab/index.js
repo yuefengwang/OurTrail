@@ -240,12 +240,15 @@ async function actionCleanup(event, auth) {
     .filter(a => a.title.indexOf(stages.PREFIX) === 0 && (!ownerOpenid || a.ownerId === ownerOpenid))
     .map(a => a.id)
   const removed = {}
-  // 按活动维度清理（私有路线保留——它是发起人可复用的资产，与 activity.delete 同一取舍）
+  // 按活动维度清理（私有路线保留——它是发起人可复用的资产，与 activity.delete 同一取舍）。
+  // 文档键一律用 store.recordKey 推导——assignment 无 id 字段（键是 signupId），手写 r.id 会传
+  // undefined 给 doc()，真云 SDK 同步抛「docId必须为字符串或数字」（.catch 拦不住），桩库却容忍——真机首爆。
+  // 注意 receipts 不在此列：Receipt 无 activityId 字段，按活动过滤永远匹配不到（死代码不写）；
+  // 确定性请求号的复位靠下方 profiles 分支清 u-lab-* 回执（阶段 0 幂等重建档案）。
   for (const name of ['activities', 'groups', 'signups', 'vehicles', 'assignments', 'memberships', 'incidents', 'events', 'notices']) {
     const docs = state[name].filter(r => ids.indexOf(r.activityId) !== -1)
     for (const r of docs) {
-      const key = name === 'receipts' ? r.actorId + '__' + r.requestId : r.id
-      await db.collection(store.COLLECTIONS[name]).doc(key).remove().catch(() => null)
+      await db.collection(store.COLLECTIONS[name]).doc(store.recordKey(name, r)).remove().catch(() => null)
     }
     removed[name] = docs.length
   }
@@ -254,9 +257,20 @@ async function actionCleanup(event, auth) {
   for (const name of ['attendance', 'positions']) {
     const docs = state[name].filter(r => signupIds.has(r.signupId))
     for (const r of docs) {
-      await db.collection(store.COLLECTIONS[name]).doc(r.signupId).remove().catch(() => null)
+      await db.collection(store.COLLECTIONS[name]).doc(store.recordKey(name, r)).remove().catch(() => null)
     }
     removed[name] = docs.length
+  }
+  // 孤儿清扫：signupId 已无 signup 对应的履约/位置记录是死数据（旧版 cleanup 在 assignments 上
+  // 同步抛错半途中止，signups 已删而 attendance 未删，会让「每份报名恰有一份履约」不变量
+  // 永久破损、卡死后续所有活动创建）。这类记录无论如何都不该存在，全局安全。
+  const liveSignupIds = new Set(state.signups.map(s => s.id))
+  for (const name of ['attendance', 'positions']) {
+    const orphans = state[name].filter(r => !liveSignupIds.has(r.signupId))
+    for (const r of orphans) {
+      await db.collection(store.COLLECTIONS[name]).doc(store.recordKey(name, r)).remove().catch(() => null)
+    }
+    if (orphans.length) removed[name + '_orphans'] = orphans.length
   }
   // 可选：演员档案与其回执一并清掉（下次阶段 0 会重新建档）。
   // 注意这一步独立于活动清理——只跑了阶段 0、还没建活动时也要能清档案。
@@ -268,7 +282,7 @@ async function actionCleanup(event, auth) {
     removed.profiles = actors.length
     const receipts = state.receipts.filter(r => r.actorId.indexOf('u-lab-') === 0)
     for (const r of receipts) {
-      await db.collection(store.COLLECTIONS.receipts).doc(r.actorId + '__' + r.requestId).remove().catch(() => null)
+      await db.collection(store.COLLECTIONS.receipts).doc(store.recordKey('receipts', r)).remove().catch(() => null)
     }
     removed.receipts = receipts.length
   }
