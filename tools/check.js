@@ -190,6 +190,42 @@ console.log('== require 可解析 ==')
   ok('相对 require 全部可解析（' + checked + ' 处，如有 ✗ 见上）')
 }
 
+// 6. 裸 checkbox 上绑 bindchange —— 微信只定义了 checkbox-group 的 change 语义，
+// 直接绑在 <checkbox> 上的 handler 在真机永不触发（2026-10-04 真机实测：tap 后 data 不翻转）。
+// 已知未修的 7 处登记在下面，只允许变少不允许变多：修掉一处就从清单里删掉，删空后此规则即为硬门禁。
+console.log('== 勾选框事件载体 ==')
+const KNOWN_BARE_CHECKBOX = new Set([
+  'pages/activity/activity.wxml:245',
+  'pages/editor/editor.wxml:353',
+  'pages/editor/editor.wxml:469',
+  'pages/editor/editor.wxml:489',
+  'pages/lab/lab.wxml:84',
+  'components/field-panel/field-panel.wxml:21',
+  'components/transport-panel/transport-panel.wxml:212',
+])
+{
+  const bare = []
+  for (const f of files.filter(f => f.endsWith('.wxml'))) {
+    const src = fs.readFileSync(f, 'utf8').replace(/<!--[\s\S]*?-->/g, '')
+    const lines = src.split(/\r?\n/)
+    lines.forEach((l, i) => {
+      if (!/<checkbox(?!-group)[^>]*bindchange/.test(l)) return
+      const before = lines.slice(0, i).join('\n')
+      const opens = (before.match(/<checkbox-group[\s>]/g) || []).length
+      const closes = (before.match(/<\/checkbox-group>/g) || []).length
+      if (opens > closes) return
+      bare.push(rel(f) + ':' + (i + 1))
+    })
+  }
+  const fresh = bare.filter(x => !KNOWN_BARE_CHECKBOX.has(x))
+  const fixed = [...KNOWN_BARE_CHECKBOX].filter(x => bare.indexOf(x) === -1)
+  bare.forEach(x => console.log('  · 已知未修（勾选框永不生效）：' + x))
+  if (fresh.length) fresh.forEach(x => fail(x + ' 新增：bindchange 绑在裸 <checkbox> 上，真机永不触发——请改成一个 <checkbox-group data-… bindchange>（每行一个）或包进 group'))
+  if (fixed.length) console.log('  · 已修复但仍在清单里（请从 KNOWN_BARE_CHECKBOX 删除）：' + fixed.join(', '))
+  if (!bare.length) ok('不再有裸 checkbox 绑 change')
+  else if (!fresh.length) ok('裸 checkbox 绑 change 未增加（存量 ' + bare.length + ' 处已登记）')
+}
+
 console.log('')
 if (failed) {
   console.error('FAILED: ' + failed + ' 项问题')

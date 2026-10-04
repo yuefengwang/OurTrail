@@ -140,8 +140,12 @@ const LINT_PROBES = [
   { id: 'F2-06', desc: 'checkSoft 降级洗白（历史 R2）', inject: 'checkSoft(\'座位示意\', segs.length === 4)', expectRule: 'SOFT-ASSERTION' },
   { id: 'F2-07', desc: 'callMethod 绕过真实控件（伪用户路径）', inject: 'await scrubber.callMethod(\'onChanging\', { detail: { value: 570 } })', expectRule: 'CALLMETHOD-BYPASS' },
   { id: 'F2-08', desc: '空 catch 吞掉执行异常（历史 R9）', inject: 'try { await tapIt() } catch (e) {}', expectRule: 'EMPTY-CATCH' },
-  { id: 'F2-09', desc: 'fire-and-forget 命令不看返回值（历史 R6）', inject: '  await cloudCall(\'trailApi\', \'dispatch\', { payload })', expectRule: 'UNRECHECKED-COMMAND' },
-  { id: 'F2-10', desc: '负向对照：命令结果被赋值就不算漏检', inject: '  const r2 = await cloudCall(\'trailApi\', \'dispatch\', { payload })', expectRule: null },
+  { id: 'F2-09', desc: '恒真断言写进套件本地包装函数 b(...)（只匹配 L.b 就绕过自检——本轮实际抓到过一条）',
+    inject: 'b(\'环境准备：同行人已在档案里\', true, JSON.stringify(names))', expectRule: 'LITERAL-TRUE-ASSERTION' },
+  { id: 'F2-10', desc: '本地包装 tap(...) 的恒真条件同样要被抓到',
+    inject: 'tap(\'点「确认上车」\', true, \'tap 按钮\')', expectRule: 'LITERAL-TRUE-ASSERTION' },
+  { id: 'F2-11', desc: 'fire-and-forget 命令不看返回值（历史 R6）', inject: '  await cloudCall(\'trailApi\', \'dispatch\', { payload })', expectRule: 'UNRECHECKED-COMMAND' },
+  { id: 'F2-12', desc: '负向对照：命令结果被赋值就不算漏检', inject: '  const r2 = await cloudCall(\'trailApi\', \'dispatch\', { payload })', expectRule: null },
 ]
 
 async function main() {
@@ -165,8 +169,8 @@ async function main() {
     }
   }
 
-  section('F3 当前工作树门禁（两套 E2E 源码必须 0 违规）')
-  for (const t of ['e2e-test.js', 'e2e-ui-test.js']) {
+  section('F3 当前工作树门禁（三套真机 E2E 源码必须 0 违规：A / B / Golden Path）')
+  for (const t of ['e2e-test.js', 'e2e-ui-test.js', 'e2e-golden-path-test.js']) {
     const file = path.join(__dirname, t)
     if (!fs.existsSync(file)) { check('F3 ' + t + ' 存在', false, '文件缺失'); continue }
     const findings = auditSource(fs.readFileSync(file, 'utf8'), t)

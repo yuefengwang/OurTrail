@@ -240,7 +240,10 @@ function splitArgs(inner) {
 // 条件写成字面量 true / !0 / 1 即无条件 PASS，与被测行为无关。
 function findLiteralTrueAssertions(src) {
   const hits = []
-  const callRe = /(?:\bcheck|(?:\bL|\bledger)\.(?:b|u|uEffect|env|uiTap|uiInput))\s*\(/g
+  // 断言入口有两种写法：账本方法（`L.b(...)`）与套件里的本地薄包装（`b(...) / u(...) / ue(...) /
+  // ui(...) / env(...) / tap(...) / input(...)`）。只匹配前者的话，把 `true` 写进包装函数就绕过了自检
+  // ——本轮在黄金路径脚本里就抓到一条这样的硬编码真，因此两类入口都必须在探测范围内。
+  const callRe = /(?:\bcheck|(?:\bL|\bledger)\.(?:b|u|uEffect|env|uiTap|uiInput)|\b(?:b|u|ue|ui|env|tap|input))\s*\(/g
   let m
   while ((m = callRe.exec(src))) {
     const start = m.index + m[0].length

@@ -164,3 +164,31 @@ returnPlan{assigned|independent}   nodes[]{pointId,evidence}   home{evidence}
 对应 `field-panel.js:122-143` 的按阶段动作表。⇒ **「核实未出发 / 标记迟到协调 / 记录下撤报备 / 记录其他异常」
 这 4 个 UI 动作真实存在、可点，但两层 E2E 一条都没测**；其中 `not_departed` 与 `coordinating`
 正是归档安全门（`UNRESOLVED_SAFETY`）的输入，属于 P0 语义。
+
+## 六、GP 层（Golden Path，`tools/e2e-golden-path-test.js`）带来的增量
+
+> 读数口径与上文不同，分开列，不混算：
+> **口径 ①「源码直发」**= 命令类型字面量出现在套件源码里（环境准备 / 负向用例）；
+> **口径 ②「UI 状态反证」**= 脚本只做了真实点击，命令由客户端发出，但**回读到的状态变化只可能由该命令产生**
+> （例：`home=true` 反证 `attendance.home` 确实在服务端执行过）。口径 ② 不声称「UI 证据充分」，
+> 它只回答「这条命令在真云上被真实用户路径触发过没有」。
+
+| 口径 | A | B | GP | 三层并集 | 39 中零 E2E |
+|---|---|---|---|---|---|
+| ① 源码直发 | 15 | 13 | 7 | **18** | 21 |
+| ①+② 含 UI 状态反证 | — | — | 12 条命令经真实 tap | **21** | **18** |
+
+GP 相对 A∪B 的净新增（口径 ①）：`membership.save` · `signup.edit`（都是环境准备，UI 侧记未验证）。
+GP 净新增（口径 ②，即第一次由普通用户点击在真云上跑通）：`activity.edit` · `activity.publish` ·
+`signup.submit` · `signup.review` · `assignment.commit`（2 人整组）· `attendance.checkin`（2 人）·
+`attendance.board`（2 人，车长页）· `attendance.departure`（2 人）· `vehicle.depart` · `vehicle.complete` ·
+`attendance.home`（2 人）· `activity.transition`（4 段：published→gathering→active→closing→archived）。
+其中 `vehicle.depart` / `vehicle.complete` 是**第一次在任何 E2E 层出现**（此前 §二 写着「发车/完成本程零 E2E」）；
+`attendance.board` 此前只有 A 层服务链路，本轮第一次由车长页真实点击完成。
+
+仍未被任何一层端到端触达的 18 种：`activity.copy` `activity.delete` `assignment.remove` `assignment.swap`
+`attendance.returnPlan` `companion.remove` `export.record` `group.setTogether` `incident.report`
+`incident.resolve` `membership.revoke` `notice.delivery` `notice.publish` `notice.read` `position.report`
+`position.revoke` `signup.promote` `vehicle.remove` —— 四条零 E2E 业务线（`position.* / incident.* / notice.* /
+membership.revoke`）保持原样，属 Golden Path v2 的范围（见 `golden-path-v1.md` §9）。
+
