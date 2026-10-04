@@ -15,6 +15,11 @@ function fakeDb() {
   function collection(name) {
     return {
       doc(id) {
+        // 对齐真云 SDK：docId 非字符串/数字同步抛错（assignment 手写 r.id 曾传 undefined，
+        // 桩库容忍、真机炸「docId必须为字符串或数字」——桩必须比真 SDK 更严或同严）
+        if (typeof id !== 'string' && typeof id !== 'number') {
+          throw new Error('docId必须为字符串或数字')
+        }
         return {
           get: () => {
             const d = coll(name).get(id)

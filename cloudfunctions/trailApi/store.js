@@ -133,5 +133,5 @@ async function persistState(db, before, after, expectedRevision, nowIso) {
 
 module.exports = {
   COLLECTIONS, ALL_COLLECTIONS, ensureCollections, ensureMeta, loadState, persistState,
-  diffCollections, failure, ConflictError,
+  diffCollections, recordKey, failure, ConflictError,
 }
