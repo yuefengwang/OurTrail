@@ -5,20 +5,19 @@
 //
 // 手法与 tools/scenario-editor-test.js / scenario-signup-test.js 一致：
 // setData 记录进 _patches 并同步 this.data，setData 回调经 setImmediate 异步触发；
-// wx 桩：内存 storage / toast / 剪贴板 / 下拉收尾 / wx.cloud.uploadFile（头像上云）。
+// wx 桩：内存 storage / toast / 剪贴板 / 下拉收尾 / 导航 / wx.cloud.uploadFile（头像上云）。
 // me.js 持有的是 api 模块对象本身（const api = require(...) 后 api.foo()），覆写属性即生效。
+// draft.js 每台页面随 me.js 一起重新 require（其 wxOpenId 有模块级缓存，不清会跨用例串味）。
 //
-// 已知问题（涉及用例按「正确行为」断言但计为 skipped（~ 标记），修复后自动转为真实校验）：
-// ① me.js:95,171（onField/onCompanionField）把紧急联系字段的 data-key（'ename'/'ephone'）原样写进
-//    emergency 对象，未映射到 emergency.name/phone——填写不回显（WXML 绑定 emergency.name），
-//    且 profile.save / companion.save 的 person.emergency 带杂散键会被服务端严格 schema
-//    （schema.js「strict 不接受多余键」）整单拒绝。
-// ② me.js:143 用户取消一键取号（errMsg 含 cancel）静默 return、无任何提示，与同函数注释
-//    （me.js:129「给出可操作的提示」）及 SYNC.md 2026-09-27「区分用户取消/未开通权限/开发者
-//    工具三种提示」不符。
+// 本文件对齐 Identity Hub 重构（docs/product/profile/03/11/12）：
+// 激活流 / 草稿 v2（账号键 + savedAt + v1 兼容）/ 本机未保存横幅 / 错误三作用域 /
+// 统计与最近活动（utils/me-view 纯函数）。历史已修问题（紧急联系字段映射、取号取消提示）
+// 的 skipped 闸门已删除，相关断言转为真实校验（skipped 恒为 0）。
 'use strict'
 const ME_PATH = require.resolve('../miniprogram/pages/me/me.js')
+const DRAFT_PATH = require.resolve('../miniprogram/utils/draft.js')
 const api = require('../miniprogram/utils/api')
+const meView = require('../miniprogram/utils/me-view')
 
 let passed = 0
 let failed = 0
@@ -26,18 +25,6 @@ let skipped = 0
 function check(name, cond, extra) {
   if (cond) { passed++; console.log('  ✓ ' + name) }
   else { failed++; console.error('  ✗ ' + name + (extra ? '（' + extra + '）' : '')) }
-}
-// 已知问题统一口径：'path:line 说明'
-const ISSUE_EMERGENCY = "miniprogram/pages/me/me.js:95,171 onField/onCompanionField 把紧急联系字段的 data-key（'ename'/'ephone'）原样写进 emergency 对象，未映射到 emergency.name/phone——填写不回显，且 profile.save/companion.save 的 person.emergency 带杂散键会被服务端严格 schema（strict 不接受多余键）整单拒绝"
-const ISSUE_CANCEL = 'miniprogram/pages/me/me.js:143 用户取消（errMsg 含 cancel）静默 return 无任何提示，与同函数注释（me.js:129「给出可操作的提示」）及 SYNC.md 2026-09-27「区分用户取消/未开通权限/开发者工具三种提示」不符'
-function skipKnown(name, issue) {
-  skipped++
-  console.log('  ~ ' + name + '（已知问题：' + issue + '）')
-}
-// gate=true 表示该断言依赖已知问题的链路 → 计 skipped；否则真实校验
-function checkGate(gate, issue, name, cond, extra) {
-  if (gate) skipKnown(name, issue)
-  else check(name, cond, extra)
 }
 function section(t) { console.log('== ' + t + ' ==') }
 
@@ -54,16 +41,19 @@ async function waitFor(cond, ms) {
 async function settle(page) { await waitFor(() => page.data.loading === false) }
 
 // ---- 合成事件（WXML 绑定：input bindinput/bindblur、button open-type、tap）----
-const fieldEv = (key, value) => ({ currentTarget: { dataset: { key } }, detail: { value } })
-const blurEv = () => ({})
+// scope = 输入所在的编辑面（data-scope），决定保存失败时错误落在哪个作用域
+const fieldEv = (key, value, scope) => ({ currentTarget: { dataset: { key, scope } }, detail: { value } })
+const blurEv = scope => ({ currentTarget: { dataset: { scope: scope || '' } } })
 const tapId = id => ({ currentTarget: { dataset: { id } } })
+const tapDs = ds => ({ currentTarget: { dataset: ds } })
 const avatarEv = url => ({ detail: { avatarUrl: url } })
 const phoneEv = detail => ({ detail })
 
-// ---- wx 桩：内存 storage + toast/剪贴板/下拉收尾记录；每台页面换新，互不串味 ----
+// ---- wx 桩：内存 storage + toast/剪贴板/下拉收尾/导航记录；每台页面换新，互不串味 ----
+// 注意：不预置 ourtrail.openid——真机上 openid 在首次档案读回填（12 §3），测试对齐这个现实
 function makeWx(over) {
-  const store = { 'ourtrail.openid': 'u-test' }
-  const rec = { toasts: [], clipboard: [], pulls: 0, uploads: [] }
+  const store = {}
+  const rec = { toasts: [], clipboard: [], pulls: 0, navs: [], uploads: [] }
   const wx = Object.assign({
     getStorageSync: k => (Object.prototype.hasOwnProperty.call(store, k) ? store[k] : ''),
     setStorageSync: (k, v) => { store[k] = v },
@@ -71,15 +61,18 @@ function makeWx(over) {
     showToast: o => rec.toasts.push((o && o.title) || ''),
     stopPullDownRefresh: () => rec.pulls++,
     setClipboardData: o => { rec.clipboard.push(o.data); if (o.success) o.success() },
+    navigateTo: o => rec.navs.push(o.url),
+    switchTab: o => rec.navs.push(o.url),
     vibrateShort: () => {},
   }, over || {})
   return { wx, store, rec }
 }
 
-// 加载真页面配置（global.Page 捕获；每次取最新源码，避免吃到缓存的旧实现）
+// 加载真页面配置（global.Page 捕获；每次取最新源码；draft.js 缓存一并清除）
 function pageConfig() {
   global.Page = cfg => { global.__PAGE_CFG = cfg }
   delete require.cache[ME_PATH]
+  delete require.cache[DRAFT_PATH]
   require(ME_PATH)
   return global.__PAGE_CFG
 }
@@ -120,14 +113,21 @@ function profileView(over) {
 const emptyProfileView = () => profileView({
   profile: { person: { name: '', phone: '', emergency: { name: '', phone: '' }, medical: '' } },
 })
-// me.js 的本地草稿（防「切页回来资料丢失」，键与 me.js 的 DRAFT_KEY 一致）
-const DRAFT_KEY = 'ourtrail.draft.me.person.v1'
-const draftOf = env => {
-  const d = env && env.store ? env.store[DRAFT_KEY] : null
-  return (d === '' || d == null) ? null : d
+
+// 草稿读取（与 me.js 的键策略对齐）：v2 账号键优先，v1 迁移来源兜底
+const DRAFT_KEY_V1 = 'ourtrail.draft.me.person.v1'
+const acctKey = id => 'ourtrail.draft.me.person.' + (id || 'p1')
+function draftOf(env, id) {
+  const store = env.store
+  const v2 = store[acctKey(id)]
+  if (v2 && v2.fields) return v2
+  const legacy = store[DRAFT_KEY_V1]
+  if (legacy && legacy.emergency) return { fields: legacy, savedAt: '' }
+  return null
 }
-function homeView(activities) {
-  return { view: { kind: 'home', activities: activities || [] }, revision: 2, now: '2026-09-29T09:00:00+08:00' }
+
+function homeView(activities, kind) {
+  return { view: { kind: kind || 'home', activities: activities || [] }, revision: 2, now: '2026-09-29T09:00:00+08:00' }
 }
 // 首页带位置授权行（me 页 positionRows 的来源）
 const homeWithPosition = () => homeView([
@@ -169,32 +169,11 @@ function bootMe(opts) {
   return { page, reads, dispatches, apiCalls, env }
 }
 
-// ---- 已知问题①探针（独立小页，不动主流程状态）：紧急联系字段 data-key 是否映射到 emergency.name/phone ----
-let _emergencyOk = null
-function emergencyMappingOk() {
-  if (_emergencyOk !== null) return _emergencyOk
-  const { page } = bootMe({})
-  page.onField(fieldEv('ename', '赵六'))
-  page.onField(fieldEv('ephone', '13611111111'))
-  const em = page.data.person.emergency
-  _emergencyOk = em.name === '赵六' && em.phone === '13611111111' && !('ename' in em) && !('ephone' in em)
-  return _emergencyOk
-}
-// ---- 已知问题②探针：用户取消一键取号后是否有任何提示 ----
-let _cancelPromptOk = null
-function cancelPromptShown() {
-  if (_cancelPromptOk !== null) return _cancelPromptOk
-  const { page } = bootMe({})
-  page.onPhoneCode(phoneEv({ errMsg: 'getPhoneNumber:fail cancel' }))
-  _cancelPromptOk = page.data.error !== '' || page.data.hint !== ''
-  return _cancelPromptOk
-}
-
-// 1. 首次进入无档案：空壳展示 + 引导，不炸；denied / 读失败也有出口；完整档案装配正确
+// 1. 首屏装配：空壳 / denied / 读失败 / 完整档案 / 统计与最近活动 / 协作码缩略 / 激活态
 async function scenario1() {
-  section('1. 首屏装配：空壳档案 / denied / 读失败 / 完整档案映射')
+  section('1. 首屏装配：空壳档案 / denied / 读失败 / 完整档案 / 统计与最近活动')
   {
-    const { page, reads } = bootMe({ profile: emptyProfileView() })
+    const { page, reads, env } = bootMe({ profile: emptyProfileView() })
     check('onShow 即触发 reload（无 onLoad）', reads.length > 0)
     await settle(page)
     check('读取顺序：先档案后首页，首页带 participant 视角与空 openedActivityIds',
@@ -210,7 +189,10 @@ async function scenario1() {
     check('空档案 avatar 兜底空串、无同行人、无位置授权行',
       page.data.person.avatar === '' && page.data.companions.length === 0 && page.data.positionRows.length === 0,
       JSON.stringify({ c: page.data.companions, p: page.data.positionRows }))
+    check('空档案未激活（激活卡出现的数据位）', page.data.activated === false, String(page.data.activated))
     check('无残留错误/提示', page.data.error === '' && page.data.hint === '')
+    check('★ profile.id 到手即回填草稿账号段（draft.setOpenId 修复）',
+      env.store['ourtrail.openid'] === 'p1', String(env.store['ourtrail.openid']))
   }
   {
     const { page } = bootMe({ profile: { view: { kind: 'denied', message: '请先选择当前账号。' }, revision: 1, now: '' } })
@@ -223,6 +205,13 @@ async function scenario1() {
     await settle(page)
     check('读取失败：errorText 落到 denied', page.data.denied === '网络异常' && page.data.loading === false,
       page.data.denied)
+  }
+  {
+    // 首页视图不可用（如 denied）：统计隐藏、最近活动空态，页面不炸
+    const { page } = bootMe({ home: homeView([], 'denied') })
+    await settle(page)
+    check('home 不可用：stats 为 null（页面隐藏指标行）', page.data.stats === null, JSON.stringify(page.data.stats))
+    check('home 不可用：recent 为空（空态组件接管）', page.data.recent.length === 0)
   }
   {
     const { page } = bootMe({
@@ -243,12 +232,78 @@ async function scenario1() {
       && page.data.positionRows[0].activityId === 'a1' && page.data.positionRows[0].signupId === 's1',
       JSON.stringify(page.data.positionRows))
     check('revision 取自档案读（后续 CAS 基准）', page.revision === 7, String(page.revision))
+    check('完整档案已激活', page.data.activated === true, String(page.data.activated))
+  }
+  {
+    // 协作码缩略（10 §4）：长 openid 前 4 + … + 后 4；完整值仍留在 identity 供复制
+    const longId = 'openid-abcdef12345678'
+    const { page } = bootMe({ profile: profileView({ profile: { id: longId } }) })
+    await settle(page)
+    check('协作码缩略展示：前 4 + … + 后 4',
+      page.data.displayIdentity === 'open…5678', page.data.displayIdentity)
+    check('完整 id 保留在 identity（复制出口用）', page.data.identity === longId)
+    {
+      const short = bootMe({})
+      await settle(short.page)
+      check('短 id 原样展示', short.page.data.displayIdentity === 'p1', short.page.data.displayIdentity)
+    }
   }
 }
 
-// 2. 微信资料三分支：一键取号成功回填并自动保存；取消/隐私/无权限/开发者工具各给对应提示
+// 2. 激活流：引导卡数据位 / sheet 打开清残留 / 缺项点名 / 完成落库并关闭 / 跳过零写
 async function scenario2() {
-  section('2. 微信资料同步：一键取号成功 / 取消 / 隐私未声明 / 未开通权限 / 开发者工具')
+  section('2. 激活流：sheet 打开 / 缺项点名 / 完成落库 / 跳过零写')
+  {
+    const { page } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    check('未激活时 onboardingOpen 默认关闭（引导卡非模态）',
+      page.data.onboardingOpen === false && page.data.activated === false)
+    page.onOpenOnboarding()
+    check('点引导卡打开激活 sheet', page.data.onboardingOpen === true)
+    page.onCompleteOnboarding()
+    check('缺姓名电话：不发命令，sheet 内点名缺项',
+      /还差/.test(page.data.sheetError || '') && page.data.sheetError.indexOf('姓名') !== -1
+      && page.data.sheetError.indexOf('手机号') !== -1,
+      page.data.sheetError)
+    page.onCloseSheet()
+    check('跳过：关闭 sheet、不发命令', page.data.onboardingOpen === false)
+  }
+  {
+    const { page, dispatches } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    page.onOpenOnboarding()
+    page.onField(fieldEv('name', '新用户', 'onboarding'))
+    page.onCompleteOnboarding()
+    check('只补姓名仍差手机号：点名且不落库', dispatches.length === 0
+      && page.data.sheetError.indexOf('手机号') !== -1, page.data.sheetError)
+    page.onField(fieldEv('phone', '13900000000', 'onboarding'))
+    page.onCompleteOnboarding()
+    await waitFor(() => dispatches.length > 0)
+    check('补齐后「完成」：发 profile.save 并关闭 sheet',
+      dispatches[0].payload.type === 'profile.save' && dispatches[0].payload.person.name === '新用户'
+      && page.data.onboardingOpen === false,
+      JSON.stringify(dispatches[0] && dispatches[0].payload))
+    check('激活完成后 activated 翻真', page.data.activated === true)
+  }
+  {
+    // 已激活账号不出现引导数据位；编辑面打开时清空其它作用域残留（12 §5）
+    const { page } = bootMe({})
+    await settle(page)
+    check('已激活：无待完善徽标数据位', page.data.activated === true)
+    page.setData({ error: '旧的页面级错误' })
+    page.onOpenPhone()
+    check('打开手机号 sheet：页面级错误被清空（作用域隔离）',
+      page.data.phoneSheetOpen === true && page.data.error === '' && page.data.sheetError === '')
+    page.onCloseSheet()
+    check('关闭 sheet：全部编辑面复位',
+      page.data.phoneSheetOpen === false && page.data.emergencySheetOpen === false
+      && page.data.medicalSheetOpen === false)
+  }
+}
+
+// 3. 微信资料同步：取号成功回填自动保存；取消/隐私/无权限/开发者工具提示落在 sheet 内
+async function scenario3() {
+  section('3. 微信资料同步：一键取号成功 / 取消 / 隐私 / 无权限 / 开发者工具 / 换码失败')
   {
     // 成功：姓名已有、电话为空 → 取号回填后姓名+电话齐全 → 自动落库
     const { page, apiCalls, dispatches, env } = bootMe({ profile: profileView({ person: { phone: '' } }) })
@@ -264,7 +319,6 @@ async function scenario2() {
       dispatches[0].payload.type === 'profile.save' && dispatches[0].payload.person.name === '张三'
       && dispatches[0].payload.person.phone === '13800000000',
       JSON.stringify(dispatches[0] && dispatches[0].payload))
-    check('免确认：无确认弹层状态位', page.data.companionOpen === false)
   }
   {
     // 成功但姓名未填：回填字段、给引导，不落库
@@ -272,65 +326,58 @@ async function scenario2() {
     await settle(page)
     page.onPhoneCode(phoneEv({ code: 'wx-code-2' }))
     await waitFor(() => page.data.person.phone === '13800000000')
-    await sleep(20) // 给 persistPerson 的分支留一拍
+    await sleep(20)
     check('姓名未齐：取号回填但不发 profile.save',
       apiCalls.length === 1 && dispatches.length === 0, JSON.stringify({ calls: apiCalls.length, d: dispatches.length }))
-    // 断言**意图**而非逐字文案：引导语现在还会带上「紧急联系人与健康备注已记在本机」
-    // （服务端硬门槛要求姓名+手机号齐全，domain/profile.js:36，而紧急联系人与它无关，
-    //   不说清楚用户会以为白填了）。逐字 pin 会让任何文案改进都变成测试回归。
     check('给「补全后自动保存」引导', /补全姓名与手机号后/.test(page.data.hint || ''), page.data.hint)
   }
   {
-    // 用户取消：不调接口、不发命令；提示按已知问题口径计 skipped
+    // 用户取消：不调接口、不发命令；提示落在 sheet 内且不是错误（12 §6）
     const { page, apiCalls, dispatches } = bootMe({})
     await settle(page)
     page.onPhoneCode(phoneEv({ errMsg: 'getPhoneNumber:fail cancel' }))
     await sleep(20)
     check('用户取消：不调 getPhoneNumber、不发 profile.save',
       apiCalls.length === 0 && dispatches.length === 0, JSON.stringify({ calls: apiCalls.length, d: dispatches.length }))
-    const silent = !cancelPromptShown()
-    checkGate(silent, ISSUE_CANCEL, '用户取消：给出「已取消」类提示',
-      cancelPromptShown() && /取消|已放弃|cancel/i.test(page.data.error + page.data.hint),
-      'error=' + JSON.stringify(page.data.error) + ' hint=' + JSON.stringify(page.data.hint))
+    check('用户取消：sheet 内给「已取消」提示（非 error 作用域）',
+      /取消/.test(page.data.sheetHint || '') && page.data.sheetError === '',
+      JSON.stringify({ hint: page.data.sheetHint, err: page.data.sheetError }))
   }
   {
-    // 隐私指引未声明「手机号」：给带操作路径的指引文案
     const { page, apiCalls } = bootMe({})
     await settle(page)
     page.onPhoneCode(phoneEv({ errMsg: 'getPhoneNumber:fail api scope is not declared in the privacy agreement' }))
-    check('隐私 scope 未声明：指引去平台配置《用户隐私保护指引》',
-      page.data.error.indexOf('用户隐私保护指引') !== -1 && page.data.error.indexOf('mp.weixin.qq.com') !== -1,
-      page.data.error)
+    check('隐私 scope 未声明：sheet 内指引去平台配置《用户隐私保护指引》',
+      page.data.sheetError.indexOf('用户隐私保护指引') !== -1 && page.data.sheetError.indexOf('mp.weixin.qq.com') !== -1,
+      page.data.sheetError)
     check('隐私分支：不调接口（服务端换码无从谈起）', apiCalls.length === 0, JSON.stringify(apiCalls))
   }
   {
-    // 未开通「手机号快速验证」权限（1400001）
     const { page } = bootMe({})
     await settle(page)
     page.onPhoneCode(phoneEv({ errMsg: 'getPhoneNumber:fail 1400001 no permission' }))
-    check('未开通权限：提示手动填写', page.data.error.indexOf('手机号快速验证') !== -1
-      && page.data.error.indexOf('手动填写') !== -1, page.data.error)
+    check('未开通权限：sheet 内提示手动填写', page.data.sheetError.indexOf('手机号快速验证') !== -1
+      && page.data.sheetError.indexOf('手动填写') !== -1, page.data.sheetError)
   }
   {
-    // 开发者工具不支持
     const { page } = bootMe({})
     await settle(page)
     page.onPhoneCode(phoneEv({ errMsg: 'getPhoneNumber:fail can only be invoked by user in developer tools' }))
-    check('开发者工具：提示真机预览或手动填写', page.data.error.indexOf('开发者工具') !== -1, page.data.error)
+    check('开发者工具：sheet 内提示真机预览或手动填写', page.data.sheetError.indexOf('开发者工具') !== -1,
+      page.data.sheetError)
   }
   {
-    // 服务端换码失败：errorText 透出
     const { page } = bootMe({ callImpl: () => Promise.reject(new Error('换取手机号失败')) })
     await settle(page)
     page.onPhoneCode(phoneEv({ code: 'wx-code-3' }))
-    await waitFor(() => page.data.error !== '')
-    check('换码失败：可读报错透出', page.data.error === '换取手机号失败', page.data.error)
+    await waitFor(() => page.data.sheetError !== '')
+    check('换码失败：可读报错透出到 sheet', page.data.sheetError === '换取手机号失败', page.data.sheetError)
   }
 }
 
-// 3. 自动保存：姓名+手机号齐全后任一字段失焦即落库；不齐只引导；防重复提交与失败恢复
-async function scenario3() {
-  section('3. 自动保存：齐全即落库 / 不齐只引导 / 防重 / 失败恢复')
+// 4. 自动保存 + 草稿 v2：齐全即落库 / 不齐引导 / 防抖 / 防重 / 失败恢复 / 两轮 reload 存活
+async function scenario4() {
+  section('4. 自动保存与草稿 v2：落库 / 草稿存活 / 防抖 / 防重 / 失败恢复')
   {
     const { page, dispatches, env } = bootMe({})
     await settle(page)
@@ -340,22 +387,20 @@ async function scenario3() {
     check('payload = {type, person} 两键，person 带姓名电话（免确认）',
       JSON.stringify(Object.keys(dispatches[0].payload).sort()) === JSON.stringify(['person', 'type'])
       && dispatches[0].payload.person.name === '张三' && dispatches[0].payload.person.phone === '13800000000',
-      JSON.stringify(dispatches[0].payload))
+      JSON.stringify(dispatches[0] && dispatches[0].payload))
     const person = dispatches[0].payload.person
     check('person 键集 = avatar/emergency/medical/name/phone（无杂散键）',
       JSON.stringify(Object.keys(person).sort()) === JSON.stringify(['avatar', 'emergency', 'medical', 'name', 'phone'])
       && JSON.stringify(Object.keys(person.emergency).sort()) === JSON.stringify(['name', 'phone']),
       JSON.stringify(Object.keys(person)))
-    check('emergency 原样保留服务端形状（服务端严格 schema 可收）',
-      JSON.stringify(person.emergency) === JSON.stringify({ name: '', phone: '' }), JSON.stringify(person.emergency))
     check('CAS 基准 = 档案读的 revision', dispatches[0].revision === 7, String(dispatches[0].revision))
-    // 用户动作（blur / 微信资料同步）要出 toast；只有防抖自动保存才静默（否则每敲一个字弹一次）
     check('保存成功反馈「资料已保存」+ saving 复位 + revision 前滚',
       env.rec.toasts.indexOf('资料已保存') !== -1 && page.data.saving === false && page.revision === 8,
       JSON.stringify({ toasts: env.rec.toasts, saving: page.data.saving, rev: page.revision }))
-    // 「已保存」是**静默自动保存的确认**，2s 后自动清掉：既给反馈，又不会像催填提示那样长期挂着
     check('落库后提示已保存（待自动清除），error 为空',
       page.data.hint === '已保存' && page.data.error === '', page.data.hint)
+    check('★ 落库成功后草稿（账号键与 v1）都被清掉', !draftOf(env), JSON.stringify(draftOf(env)))
+    check('★ 落库成功后横幅数据位复位', page.data.draftPending === false)
   }
   {
     const { page, dispatches } = bootMe({ profile: emptyProfileView() })
@@ -382,50 +427,54 @@ async function scenario3() {
     check('健康备注失焦同样触发落库并带最新值', dispatches[0].payload.person.medical === '花粉过敏',
       JSON.stringify(dispatches[0] && dispatches[0].payload.person.medical))
   }
-  // ══════════════ 以下为「资料丢失」回归（用户实测复现）══════════════
-  // 旧实现：onShow → reload() → `person: Object.assign({avatar:''}, profile.person)`
-  // 用服务端值**整个覆盖** data.person。服务端 profile.save 硬性要求姓名+手机号齐全
-  // （domain/profile.js:36），所以「先填紧急联系人、姓名没填完就切走」这一常见路径下，
-  // 输入**永远存不进去**，切页回来还被抹掉。修法是本地草稿 + reload 合入草稿。
+  // ══════════════ 草稿回归（用户实测复现 + v2 语义）══════════════
   {
     const { page, env } = bootMe({ profile: emptyProfileView() })
     await settle(page)
     // 只填紧急联系人 + 健康备注（姓名手机号没填 → 门槛不满足 → 不落库）
-    page.onField(fieldEv('ename', '王五'))
-    page.onField(fieldEv('ephone', '13700000000'))
-    page.onField(fieldEv('medical', '花粉过敏'))
-    page.onBlurSave(blurEv())
+    page.onField(fieldEv('ename', '王五', 'emergency'))
+    page.onField(fieldEv('ephone', '13700000000', 'emergency'))
+    page.onField(fieldEv('medical', '花粉过敏', 'medical'))
+    page.onBlurSave(blurEv('emergency'))
     const d = draftOf(env)
-    check('门槛未满足时把输入写进本地草稿',
-      d && d.emergency.name === '王五' && d.emergency.phone === '13700000000' && d.medical === '花粉过敏',
+    check('门槛未满足时把输入写进本地草稿 v2（含 fields.savedAt）',
+      d && d.fields.emergency.name === '王五' && d.fields.emergency.phone === '13700000000'
+      && d.fields.medical === '花粉过敏' && typeof d.savedAt === 'string',
       JSON.stringify(d))
     check('草稿不含 avatar（云存储 fileID 由 onChooseAvatar 单独落库）',
-      d && d.avatar === undefined, d && JSON.stringify(d.avatar))
+      d && d.fields.avatar === undefined, d && JSON.stringify(d.fields.avatar))
   }
   {
-    // 关键回归：切到别的页面再回来（= onShow → reload），输入必须还在
-    const { page } = bootMe({ profile: emptyProfileView() })
+    // ★ 关键回归（v2 修复）：切页回来（reload）草稿**保留在 storage**，且能撑过多次往返。
+    // 旧实现的 pruneDraft 把合并值当比较基准，草稿每次 reload 都被清掉——输入只能活一轮。
+    const { page, env } = bootMe({ profile: emptyProfileView() })
     await settle(page)
-    page.onField(fieldEv('ename', '王五'))
-    page.onField(fieldEv('medical', '花粉过敏'))
-    page.onBlurSave(blurEv())
-    // 模拟切页：onShow 会重新拉档案
+    page.onField(fieldEv('ename', '王五', 'emergency'))
+    page.onField(fieldEv('medical', '花粉过敏', 'medical'))
+    page.onBlurSave(blurEv('emergency'))
     page.onShow()
     await settle(page)
-    check('★ 切页回来后紧急联系人仍在（曾被服务端空值抹掉）',
-      page.data.person.emergency.name === '王五', JSON.stringify(page.data.person.emergency))
-    check('★ 切页回来后健康备注仍在',
-      page.data.person.medical === '花粉过敏', page.data.person.medical)
+    check('★ 第一次切页回来：紧急联系人与健康备注仍在（页面值）',
+      page.data.person.emergency.name === '王五' && page.data.person.medical === '花粉过敏',
+      JSON.stringify(page.data.person))
+    check('★ 第一次切页回来：草稿仍在 storage（横幅数据位亮起）',
+      !!draftOf(env) && page.data.draftPending === true,
+      JSON.stringify({ d: draftOf(env), pending: page.data.draftPending }))
+    page.onShow()
+    await settle(page)
+    check('★ 第二次切页回来：输入仍未丢（旧实现在这里丢数据）',
+      page.data.person.emergency.name === '王五' && page.data.person.medical === '花粉过敏'
+      && !!draftOf(env),
+      JSON.stringify({ em: page.data.person.emergency, med: page.data.person.medical }))
+    check('★ 草稿横幅时间戳存在（v2 savedAt）', /\d{2}-\d{2} \d{2}:\d{2}/.test(page.data.draftSavedAt || ''),
+      page.data.draftSavedAt)
   }
   {
     // 草稿不得污染 avatar：avatar 永远取服务端值。
-    // 用「只改紧急联系人、姓名手机号保持服务端值」来构造——服务端 name+phone 本就齐全，
-    // blur 会真的落库并清草稿，所以草稿在 onShow 时已不存在，这条只验 avatar 没被写坏。
     const { page } = bootMe({ profile: profileView({ person: { avatar: 'cloud://avatar-1' } }) })
     await settle(page)
     check('服务端头像已回填', page.data.person.avatar === 'cloud://avatar-1', page.data.person.avatar)
-    page.onField(fieldEv('ename', '钱十三'))
-    page.onField(fieldEv('ephone', '13100000000'))
+    page.onField(fieldEv('ename', '钱十三', 'emergency'))
     page.onShow()
     await settle(page)
     check('★ 草稿合入时 avatar 仍取服务端值，不被草稿污染',
@@ -435,13 +484,38 @@ async function scenario3() {
     check('服务端已有手输字段保持不变', page.data.person.name === '张三', page.data.person.name)
   }
   {
+    // v1 兼容迁移：旧键（裸五字段、无 savedAt）被读出合入，横幅无时间戳；落库后 v1 键清除。
+    // 种子 = 当时的服务端值 + medical/emergency 增量（真实的 v1 草稿长这样：draftableOf 抄当时 data）
+    const { page, dispatches, env } = bootMe({
+      profile: profileView(),
+      seed: env2 => {
+        env2.store[DRAFT_KEY_V1] = { name: '张三', phone: '13800000000', medical: '花粉过敏', emergency: { name: '王五', phone: '' } }
+      },
+    })
+    await settle(page)
+    check('★ v1 草稿被读出并合入（medical/emergency 来自旧键）',
+      page.data.person.medical === '花粉过敏' && page.data.person.emergency.name === '王五',
+      JSON.stringify(page.data.person))
+    check('★ v1 草稿无时间戳：横幅亮起但不显示时间',
+      page.data.draftPending === true && page.data.draftSavedAt === '',
+      JSON.stringify({ p: page.data.draftPending, t: page.data.draftSavedAt }))
+    page.onBlurSave(blurEv())
+    await waitFor(() => dispatches.length > 0)
+    check('★ v1 草稿落库成功后旧键被清掉（迁移完成）',
+      env.store[DRAFT_KEY_V1] === '' || env.store[DRAFT_KEY_V1] === null || env.store[DRAFT_KEY_V1] === undefined,
+      String(env.store[DRAFT_KEY_V1]))
+    check('迁移落库 payload 带迁移来的值',
+      dispatches[0].payload.person.medical === '花粉过敏' && dispatches[0].payload.person.emergency.name === '王五',
+      JSON.stringify(dispatches[0] && dispatches[0].payload.person))
+  }
+  {
     // 落库成功后清草稿：否则下次编辑会从一份过期草稿起步
     const { page, dispatches, env } = bootMe({ profile: emptyProfileView() })
     await settle(page)
     page.onField(fieldEv('name', '孙七'))
     page.onField(fieldEv('phone', '13600000000'))
-    page.onField(fieldEv('ename', '周八'))
-    page.onBlurSave(blurEv())
+    page.onField(fieldEv('ename', '周八', 'emergency'))
+    page.onBlurSave(blurEv('emergency'))
     await waitFor(() => dispatches.length > 0)
     check('落库 payload 带全部字段（含紧急联系人）',
       dispatches[0].payload.person.emergency.name === '周八', JSON.stringify(dispatches[0].payload.person))
@@ -456,7 +530,7 @@ async function scenario3() {
     page.onBlurSave(blurEv())
     await waitFor(() => page.data.saving === false && page.data.error !== '')
     const d = draftOf(env)
-    check('★ 落库失败时草稿保留（不丢用户输入）', d && d.name === '吴九', JSON.stringify(d))
+    check('★ 落库失败时草稿保留（不丢用户输入）', d && d.fields.name === '吴九', JSON.stringify(d))
     check('落库失败给出错误提示', !!page.data.error, page.data.error)
   }
   {
@@ -478,18 +552,15 @@ async function scenario3() {
     await waitFor(() => dispatches.length > 0, 3000)
     check('★ 自动保存不弹 toast（只给 hint 确认）', env.rec.toasts.indexOf('资料已保存') === -1,
       JSON.stringify(env.rec.toasts))
-    // dispatches 是 stub 同步记录的，而 hint 写在 .then() 里（微任务）——要等一拍再读
     await waitFor(() => page.data.hint === '已保存', 2000)
     check('自动保存给「已保存」确认', page.data.hint === '已保存', page.data.hint)
   }
   {
     // 卸载后不得再有定时器在跑：留着会在页面消失后继续 setData + 发请求。
-    // ⚠ 先 sleep(AUTO_SAVE)：api 是模块级单例，上一个块若留下未清的防抖定时器，
-    //   它触发时 api.dispatchAndSync 已指向本块的闭包，会把 dispatch 记到**错误的块**里。
-    //   这是测试隔离问题，不是产品缺陷（真机上页面切换会走 onUnload）。
+    // ⚠ 先 sleep：api 是模块级单例，上一个块若留下未清的防抖定时器，会把 dispatch 记到错误的块。
     const { page, dispatches } = bootMe({ profile: emptyProfileView() })
     await settle(page)
-    await sleep(1000) // 让前一块的残留定时器先落地
+    await sleep(1000)
     page.onField(fieldEv('name', '甲十二'))
     page.onField(fieldEv('phone', '13200000000'))
     page.onUnload()
@@ -523,9 +594,63 @@ async function scenario3() {
   }
 }
 
-// 4. 头像/昵称：chooseAvatar 上云覆盖 avatar 字段并自动保存；失败/无云能力有可读出口
-async function scenario4() {
-  section('4. 头像/昵称：即点即覆盖并自动保存')
+// 5. 本机未保存横幅：条件 / 立即保存 / 放弃（dialog 确认）
+async function scenario5() {
+  section('5. 本机未保存横幅：条件 / 立即保存 / 放弃本机修改')
+  {
+    // 横幅亮起：草稿 ≠ 服务端（门槛未满足的输入）
+    const { page, env } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    check('无草稿时横幅数据位为假', page.data.draftPending === false)
+    page.onField(fieldEv('ename', '王五', 'emergency'))
+    check('输入后（门槛未满足）横幅数据位亮起', page.data.draftPending === true)
+    check('横幅时间戳来自草稿 v2 savedAt', /\d{2}-\d{2} \d{2}:\d{2}/.test(page.data.draftSavedAt || ''),
+      page.data.draftSavedAt)
+    // 立即保存：门槛未满足 → 落库不发，横幅继续亮（草稿仍在）
+    page.onSaveDraftNow()
+    await sleep(20)
+    check('立即保存（门槛未满足）：不落库、草稿保留、横幅仍亮',
+      !!draftOf(env) && page.data.draftPending === true, JSON.stringify(draftOf(env)))
+  }
+  {
+    // 立即保存（门槛满足）：落库成功 → 草稿清、横幅灭
+    const { page, dispatches, env } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    page.onField(fieldEv('name', '孙七'))
+    page.onField(fieldEv('phone', '13600000000'))
+    page.onSaveDraftNow()
+    await waitFor(() => dispatches.length > 0)
+    await sleep(10)
+    check('立即保存：落库成功后横幅数据位熄灭、草稿清空',
+      page.data.draftPending === false && !draftOf(env),
+      JSON.stringify({ p: page.data.draftPending, d: draftOf(env) }))
+  }
+  {
+    // 放弃本机修改：dialog 确认 → 清草稿 + reload 显示服务端值
+    const { page, env } = bootMe({ profile: profileView() })
+    await settle(page)
+    page.onField(fieldEv('medical', '本机未保存的备注', 'medical'))
+    await sleep(20)
+    check('放弃前：横幅亮起', page.data.draftPending === true)
+    page.onAskDiscard()
+    check('放弃入口：先出确认 dialog', page.data.discardAsk === true)
+    page.onDiscardCancel()
+    check('取消放弃：复位不删', page.data.discardAsk === false && page.data.draftPending === true)
+    page.onAskDiscard()
+    page.onDiscardConfirm()
+    await settle(page)
+    check('确认放弃：草稿清除、横幅熄灭',
+      !draftOf(env) && page.data.draftPending === false && page.data.discardAsk === false,
+      JSON.stringify({ d: draftOf(env), p: page.data.draftPending }))
+    check('确认放弃：页面显示回服务端值',
+      page.data.person.medical === '' && page.data.person.name === '张三',
+      JSON.stringify(page.data.person))
+  }
+}
+
+// 6. 头像/昵称：chooseAvatar 上云覆盖 avatar 字段并自动保存；失败/无云能力有可读出口
+async function scenario6() {
+  section('6. 头像/昵称：即点即覆盖并自动保存')
   {
     const uploads = []
     const { page, dispatches, env } = bootMe({
@@ -579,9 +704,39 @@ async function scenario4() {
   }
 }
 
-// 5. 同行人增删（companion.save/remove）+ 紧急联系人两列 + 健康备注折叠
-async function scenario5() {
-  section('5. 同行人增删 / 紧急联系人两列 / 健康备注折叠')
+// 7. D 组编辑面（手机号/紧急联系人/健康备注 sheet）+ 同行人增删改 + emergency 映射
+async function scenario7() {
+  section('7. D 组 sheet / 同行人 / 紧急联系人映射')
+  {
+    const { page, dispatches } = bootMe({})
+    await settle(page)
+    page.onOpenEmergency()
+    check('紧急联系人摘要行打开 sheet', page.data.emergencySheetOpen === true)
+    page.onField(fieldEv('ename', '赵六', 'emergency'))
+    page.onField(fieldEv('ephone', '13611111111', 'emergency'))
+    check('紧急联系两列输入映射到 emergency.name/phone（非杂散键）',
+      page.data.person.emergency.name === '赵六' && page.data.person.emergency.phone === '13611111111'
+      && !('ename' in page.data.person.emergency) && !('ephone' in page.data.person.emergency),
+      JSON.stringify(page.data.person.emergency))
+    page.onBlurSave(blurEv('emergency'))
+    await waitFor(() => dispatches.length > 0)
+    const em = dispatches[0].payload.person.emergency
+    check('紧急联系人填齐后失焦：profile.save 的 emergency 干净可收（服务端严格 schema）',
+      em.name === '赵六' && em.phone === '13611111111'
+        && JSON.stringify(Object.keys(em).sort()) === JSON.stringify(['name', 'phone']),
+      JSON.stringify(em))
+  }
+  {
+    const { page } = bootMe({})
+    await settle(page)
+    page.onOpenMedical()
+    check('健康备注摘要行打开 sheet', page.data.medicalSheetOpen === true)
+    page.onField(fieldEv('medical', '哮喘史', 'medical'))
+    check('sheet 内输入写入 medical 字段', page.data.person.medical === '哮喘史')
+    page.onCloseSheet()
+    check('关闭后内容保留在页面态（草稿/自动保存接管）', page.data.medicalSheetOpen === false
+      && page.data.person.medical === '哮喘史')
+  }
   {
     const { page, dispatches, reads } = bootMe({})
     await settle(page)
@@ -604,7 +759,7 @@ async function scenario5() {
       && JSON.stringify(Object.keys(person.emergency).sort()) === JSON.stringify(['name', 'phone']),
       JSON.stringify(person))
     check('同行人保存反馈 + 弹层收起',
-      page.data.companionOpen === false && page.data.error === '', JSON.stringify(page.data))
+      page.data.companionOpen === false && page.data.companionError === '', JSON.stringify(page.data))
     await waitFor(() => reads.length === before + 2)
     check('同行人保存后重读档案与首页（回填列表）', reads.length === before + 2, String(reads.length))
   }
@@ -614,8 +769,8 @@ async function scenario5() {
     })
     await settle(page)
     page.onCompanionSave()
-    check('姓名或电话缺失：不发命令并点名', dispatches.length === 0
-      && page.data.error === '请填写同行人姓名与联系电话。', page.data.error)
+    check('姓名或电话缺失：不发命令并在弹层内点名', dispatches.length === 0
+      && page.data.companionError === '请填写同行人姓名与联系电话。', page.data.companionError)
     page.onEditCompanion(tapId('c1'))
     await waitFor(() => page.data.companionOpen === true && page.data.companionId === 'c1')
     check('编辑入口：按 id 回填同行人资料（重新读档案）',
@@ -655,66 +810,45 @@ async function scenario5() {
     check('移除后重读回填列表', reads.length === before + 2, String(reads.length))
   }
   {
-    // 紧急联系人两列：依赖已知问题①的映射，坏了计 skipped
-    const broken = !emergencyMappingOk()
-    checkGate(broken, ISSUE_EMERGENCY, '紧急联系人姓名两列输入映射到 emergency.name（非杂散键）',
-      (() => { const { page } = bootMe({}); page.onField(fieldEv('ename', '赵六')); return page.data.person.emergency.name === '赵六' && !('ename' in page.data.person.emergency) })())
-    checkGate(broken, ISSUE_EMERGENCY, '紧急联系人电话两列输入映射到 emergency.phone',
-      (() => { const { page } = bootMe({}); page.onField(fieldEv('ephone', '13611111111')); return page.data.person.emergency.phone === '13611111111' && !('ephone' in page.data.person.emergency) })())
-    {
-      // 填齐后失焦落库：需先等 reload 装配出档案（否则自动保存的"资料未齐"守卫会正确拦截）
-      const { page, dispatches } = bootMe({})
-      await settle(page)
-      page.onField(fieldEv('ename', '赵六'))
-      page.onField(fieldEv('ephone', '13611111111'))
-      page.onBlurSave(blurEv())
-      await waitFor(() => dispatches.length > 0)
-      const em = dispatches.length ? dispatches[0].payload.person.emergency : null
-      checkGate(broken, ISSUE_EMERGENCY, '紧急联系人填齐后失焦：profile.save 的 emergency 干净可收（服务端严格 schema）',
-        !!em && em.name === '赵六' && em.phone === '13611111111'
-          && JSON.stringify(Object.keys(em).sort()) === JSON.stringify(['name', 'phone']),
-        JSON.stringify(em))
-    }
-    checkGate(broken, ISSUE_EMERGENCY, '同行人弹层的紧急联系人字段同样映射到 emergency.name/phone',
-      (() => {
-        const { page } = bootMe({})
-        page.onAddCompanion()
-        page.onCompanionField(fieldEv('ename', '赵六'))
-        page.onCompanionField(fieldEv('ephone', '13611111111'))
-        const em = page.data.companionPerson.emergency
-        return em.name === '赵六' && em.phone === '13611111111' && !('ename' in em) && !('ephone' in em)
-      })())
-  }
-  {
+    // 同行人弹层内的紧急联系人字段同样映射到 emergency.name/phone
     const { page } = bootMe({})
     await settle(page)
-    check('健康备注默认折叠', page.data.medicalOpen === false)
-    page.toggleMedical()
-    check('点击行展开备注（medicalOpen toggle）', page.data.medicalOpen === true)
-    page.onField(fieldEv('medical', '哮喘史'))
-    check('展开后输入写入 medical 字段', page.data.person.medical === '哮喘史')
-    page.toggleMedical()
-    check('再点收起且已填内容保留', page.data.medicalOpen === false && page.data.person.medical === '哮喘史')
+    page.onAddCompanion()
+    page.onCompanionField(fieldEv('ename', '赵六'))
+    page.onCompanionField(fieldEv('ephone', '13611111111'))
+    const em = page.data.companionPerson.emergency
+    check('同行人弹层的紧急联系人字段映射到 emergency.name/phone',
+      em.name === '赵六' && em.phone === '13611111111' && !('ename' in em) && !('ephone' in em),
+      JSON.stringify(em))
   }
 }
 
-// 6. 身份码：展示 profile.id 原文 + 复制；位置授权撤回；下拉刷新收尾
-async function scenario6() {
-  section('6. 身份码 / 位置授权撤回 / 下拉刷新')
+// 8. 协作码 / 最近活动导航 / 位置授权撤回 / 下拉刷新
+async function scenario8() {
+  section('8. 协作码 / 最近活动 / 位置撤回 / 下拉刷新')
   {
     const { page, env } = bootMe({})
     await settle(page)
-    check('身份码展示形态 = 档案 id 原文（WXML user-select 直出）', page.data.identity === 'p1', page.data.identity)
+    check('身份码完整值保留（identity = profile.id）', page.data.identity === 'p1', page.data.identity)
     page.onCopyIdentity()
-    check('复制按钮调 wx.setClipboardData 且内容 = 身份码',
+    check('复制按钮调 wx.setClipboardData 且内容 = 完整协作码',
       env.rec.clipboard.length === 1 && env.rec.clipboard[0] === 'p1', JSON.stringify(env.rec.clipboard))
-    check('复制成功反馈', env.rec.toasts.indexOf('身份码已复制') !== -1, JSON.stringify(env.rec.toasts))
+    check('复制成功反馈「协作码已复制」', env.rec.toasts.indexOf('协作码已复制') !== -1, JSON.stringify(env.rec.toasts))
+  }
+  {
+    const { page, env } = bootMe({ home: homeWithPosition() })
+    await settle(page)
+    check('最近活动装配（来源 home 读，slim 行）',
+      page.data.recent.length === 0, JSON.stringify(page.data.recent)) // homeWithPosition 的活动无 phase/meta.owner
+    page.onOpenRecent(tapDs({ id: 'a1' }).currentTarget ? { currentTarget: { dataset: { id: 'a1' } } } : {})
+    check('点击最近活动行发起 navigateTo 详情页', env.rec.navs.indexOf('/pages/activity/activity?id=a1') !== -1,
+      JSON.stringify(env.rec.navs))
   }
   {
     const { page, dispatches, reads, env } = bootMe({ home: homeWithPosition() })
     await settle(page)
     const before = reads.length
-    page.onRevoke({ currentTarget: { dataset: { activityId: 'a1', signupId: 's1' } } })
+    page.onRevoke(tapDs({ activityId: 'a1', signupId: 's1' }))
     await waitFor(() => dispatches.length > 0)
     check('撤回位置授权发 position.revoke（activityId+signupId）',
       dispatches[0].payload.type === 'position.revoke' && dispatches[0].payload.activityId === 'a1'
@@ -743,8 +877,107 @@ async function scenario6() {
   }
 }
 
+// 9. 错误作用域隔离（12 §5）：页面 / sheet / companion 三槽位互不越界
+async function scenario9() {
+  section('9. 错误作用域：页面级 / sheet / companion 三槽位')
+  {
+    // phone 作用域失败 → sheetError；页面级 error 保持为空
+    const { page } = bootMe({ dispatchPlan: [new Error('保存失败，请稍后再试')] })
+    await settle(page)
+    page.onOpenPhone()
+    page.onField(fieldEv('phone', '13800000001', 'phone'))
+    page.onBlurSave(blurEv('phone'))
+    await waitFor(() => page.data.sheetError !== '')
+    check('sheet 内保存失败：错误落在 sheetError，页面级 error 为空',
+      page.data.sheetError === '保存失败，请稍后再试' && page.data.error === '',
+      JSON.stringify({ s: page.data.sheetError, p: page.data.error }))
+  }
+  {
+    // 页面级失败（昵称 blur）→ error；随后打开编辑面时被清空
+    const { page } = bootMe({ dispatchPlan: [new Error('保存失败，请稍后再试')] })
+    await settle(page)
+    page.onBlurSave(blurEv())
+    await waitFor(() => page.data.error !== '')
+    check('页面级保存失败：错误落在 error', page.data.error === '保存失败，请稍后再试', page.data.error)
+    page.onOpenMedical()
+    check('打开编辑面清掉页面级残留错误', page.data.error === '' && page.data.medicalSheetOpen === true)
+  }
+  {
+    // companion 失败 → companionError，与页面级互不影响
+    const { page, dispatches } = bootMe({
+      profile: profileView({ companions: [{ id: 'c1', person: { name: '李四', phone: '13900000000', emergency: { name: '', phone: '' }, medical: '' } }] }),
+      dispatchPlan: [new Error('请先保存当前账号资料。')],
+    })
+    await settle(page)
+    page.onEditCompanion(tapId('c1'))
+    await waitFor(() => page.data.companionOpen === true)
+    page.onCompanionSave()
+    await waitFor(() => page.data.companionError !== '')
+    check('同行人保存失败：错误落在 companionError（弹层内，P0-4 位置），页面级 error 为空',
+      page.data.companionError === '请先保存当前账号资料。' && page.data.error === '',
+      JSON.stringify({ c: page.data.companionError, p: page.data.error }))
+    check('同行人失败不发第一条计划外命令', dispatches.length === 1, String(dispatches.length))
+  }
+}
+
+// 10. utils/me-view 纯函数：统计口径与最近活动排序（固定时钟，确定性断言）
+async function scenario10() {
+  section('10. me-view 纯函数：统计口径 / 最近活动排序')
+  const NOW = Date.parse('2026-10-05T09:00:00+08:00')
+  const acts = [
+    { id: 'a1', title: '行前A', phase: 'published', startAt: '2026-10-12T08:00:00+08:00', meta: { owner: true, joined: false } },
+    { id: 'a2', title: '归档B', phase: 'archived', startAt: '2026-09-20T08:00:00+08:00', meta: { owner: false, joined: true } },
+    { id: 'a3', title: '集合C', phase: 'gathering', startAt: '2026-10-01T08:00:00+08:00', meta: { owner: false, joined: true } },
+    { id: 'a4', title: '草稿D', phase: 'draft', startAt: '', meta: { owner: true, joined: false } },
+    { id: 'a5', title: '取消E', phase: 'cancelled', startAt: '2026-10-03T08:00:00+08:00', meta: { owner: true, joined: false } },
+  ]
+  {
+    const stats = meView.deriveMeStats(acts)
+    check('口径：进行中 = published/gathering/active/closing 且（owner‖joined）→ a1,a3',
+      stats.ongoing === 2, JSON.stringify(stats))
+    check('口径：已完成 = archived 且（owner‖joined）→ a2', stats.finished === 1, JSON.stringify(stats))
+    check('口径：发起 = meta.owner → a1,a4,a5（cancelled 仍算发起过）',
+      stats.organized === 3, JSON.stringify(stats))
+    check('非数组输入 → null（页面隐藏指标行）', meView.deriveMeStats(null) === null)
+    check('空数组 → 全 0', (() => { const s = meView.deriveMeStats([]); return s.ongoing === 0 && s.finished === 0 && s.organized === 0 })())
+  }
+  {
+    const recent = meView.pickRecent(acts, NOW, 3)
+    check('最近活动：进行中优先（a1,a3 在前），其余按 |startAt-now| 距离排（a5 取消但有近 startAt）',
+      recent[0].id === 'a3' && recent[1].id === 'a1' && recent[2].id === 'a5',
+      JSON.stringify(recent))
+    check('最近活动行是 slim 形状（无 routeSnapshot/meta）',
+      recent.every(r => JSON.stringify(Object.keys(r).sort()) === JSON.stringify(['id', 'phase', 'startAt', 'title'])),
+      JSON.stringify(recent.map(r => Object.keys(r))))
+    check('limit 截断', meView.pickRecent(acts, NOW, 2).length === 2)
+    check('cancelled/普通归档不出现在进行中优先队列头部（a2 按距离排在 a4 之前或之后，但不在 a1/a3 前）',
+      meView.pickRecent(acts, NOW, 5).slice(0, 2).map(r => r.id).indexOf('a2') === -1,
+      JSON.stringify(meView.pickRecent(acts, NOW, 5)))
+  }
+  {
+    // 页面级装配：冻结时钟断言 stats/recent 进入 data
+    const realNow = Date.now
+    Date.now = () => NOW
+    try {
+      const { page } = bootMe({
+        home: homeView(acts),
+        profile: profileView(),
+      })
+      await settle(page)
+      check('页面装配：stats 三计数进 data',
+        JSON.stringify(page.data.stats) === JSON.stringify({ ongoing: 2, finished: 1, organized: 3 }),
+        JSON.stringify(page.data.stats))
+      check('页面装配：recent 首位是最近的进行中活动（a3）并带展示文案',
+        page.data.recent[0].id === 'a3' && !!page.data.recent[0].dateText && !!page.data.recent[0].phaseText,
+        JSON.stringify(page.data.recent))
+    } finally {
+      Date.now = realNow
+    }
+  }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

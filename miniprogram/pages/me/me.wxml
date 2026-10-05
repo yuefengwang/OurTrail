@@ -1,21 +1,14 @@
+<wxs src="../../wxs/me.wxs" module="tools" />
 <view class="page">
   <status-panel wx:if="{{denied}}" kind="denied" title="资料暂不可用" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取常用资料。" />
   </block>
   <view wx:else class="stack">
-    <view>
-      <text class="eyebrow">我的同行资料</text>
-      <text class="page-title" style="display:block;margin-top:4px;">下次出发，少填一点。</text>
-      <text class="muted" style="display:block;margin-top:4px;">点头像和昵称直接用微信信息，其余修改后自动保存。</text>
-    </view>
-
-    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
-    <view wx:if="{{hint}}" class="callout warning">{{hint}}</view>
-
-    <!-- 我的资料：身份行（头像+昵称是一组） + 手机号手填为主、一键获取为可选捷径 -->
+    <!-- A 身份头卡：头像 + 昵称 + 统计（编辑同位，样式沿用原「我的资料」身份行） -->
     <view class="card">
-      <text class="card-label">我的资料</text>
+      <text class="eyebrow">OURTRAIL · 我的</text>
+      <text class="page-title" style="display:block;margin-top:4px;">同行资料与身份。</text>
       <view class="wx-row">
         <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" hover-class="button-hover">
           <image wx:if="{{person.avatar}}" class="avatar-img" src="{{person.avatar}}" mode="aspectFill" />
@@ -35,50 +28,106 @@
             bindinput="onField"
             bindblur="onBlurSave"
           />
-          <text class="small muted">点头像换微信头像 · 点昵称可用微信键盘快捷填入</text>
+          <text wx:if="{{!activated}}" class="badge warning" style="align-self:flex-start;">同行资料待完善</text>
         </view>
       </view>
-      <view class="field">
-        <view class="field-head">
-          <text class="field-label">手机号</text>
-          <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onPhoneCode" hover-class="button-hover">微信一键获取（可选）</button>
+      <view wx:if="{{stats}}" class="metrics">
+        <view class="metric">
+          <text class="metric-value">{{stats.ongoing}}</text>
+          <text class="metric-label">进行中</text>
         </view>
-        <input class="input" type="number" maxlength="11" value="{{person.phone}}" placeholder="11 位手机号" data-key="phone" bindinput="onField" bindblur="onBlurSave" />
-        <text class="small muted">用于活动联络与安全应急。未开通微信快捷取号时，手动填写即可。</text>
+        <view class="metric">
+          <text class="metric-value">{{stats.finished}}</text>
+          <text class="metric-label">已完成</text>
+        </view>
+        <view class="metric">
+          <text class="metric-value">{{stats.organized}}</text>
+          <text class="metric-label">发起</text>
+        </view>
       </view>
     </view>
 
-    <!-- 紧急联系与安全备注：一行两列 + 备注折叠，失焦自动保存 -->
+    <!-- B 反馈区：页面级 error/hint + 本机未保存横幅（12 §5/§4） -->
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view wx:if="{{hint}}" class="callout warning">{{hint}}</view>
+    <view wx:if="{{draftPending}}" class="callout warning">
+      <view class="callout-title">本机有未保存的修改{{draftSavedAt ? '（' + draftSavedAt + '）' : ''}}</view>
+      <text class="small muted">已按服务端要求等待补全或保存；服务端已保存的内容不受影响。</text>
+      <view class="cluster" style="margin-top:8px;gap:8px;">
+        <view class="button text" hover-class="button-hover" bindtap="onSaveDraftNow">立即保存</view>
+        <view class="button text" hover-class="button-hover" bindtap="onAskDiscard">放弃本机修改</view>
+      </view>
+    </view>
+
+    <!-- 激活引导卡（非模态，04 §3）：未激活时出现在最前，点开激活 sheet -->
+    <view wx:if="{{!activated}}" class="card" hover-class="button-hover" bindtap="onOpenOnboarding">
+      <view class="cluster" style="justify-content:space-between;gap:12px;">
+        <view class="stack" style="gap:4px;">
+          <text class="card-label" style="margin-bottom:0;">完善同行资料</text>
+          <text class="small muted">点头像用微信头像，昵称可一键填入；补全姓名与手机号，报名和协作授权就都通了。</text>
+        </view>
+        <text class="muted">›</text>
+      </view>
+    </view>
+
+    <!-- C 最近活动 -->
     <view class="card stack-gap3">
-      <text class="card-label">紧急联系与安全备注</text>
-      <view class="field">
-        <text class="field-label">紧急联系人</text>
-        <view class="cluster" style="gap:12px;">
-          <input class="input" style="flex:1.2;" value="{{person.emergency.name}}" maxlength="80" placeholder="姓名" data-key="ename" bindinput="onField" bindblur="onBlurSave" />
-          <input class="input" style="flex:1;" type="number" maxlength="11" value="{{person.emergency.phone}}" placeholder="电话" data-key="ephone" bindinput="onField" bindblur="onBlurSave" />
+      <text class="card-label">最近活动</text>
+      <view
+        wx:for="{{recent}}"
+        wx:key="id"
+        class="list-row"
+        hover-class="button-hover"
+        data-id="{{item.id}}"
+        bindtap="onOpenRecent"
+      >
+        <view class="list-main">
+          <text>{{item.title}}</text>
+          <text class="list-sub">{{item.dateText}} · {{item.phaseText}}</text>
         </view>
+        <text class="muted">›</text>
       </view>
-      <view class="cluster" style="justify-content:space-between;min-height:32px;" hover-class="button-hover" bindtap="toggleMedical">
-        <text class="field-label">健康与用药备注（可选）</text>
-        <view class="cluster" style="gap:8px;">
-          <text wx:if="{{person.medical}}" class="badge success">已填写</text>
-          <text class="muted">{{medicalOpen ? '▾' : '›'}}</text>
-        </view>
-      </view>
-      <textarea
-        wx:if="{{medicalOpen}}"
-        class="textarea slim"
-        value="{{person.medical}}"
-        maxlength="2000"
-        placeholder="过敏、慢性病、常用药等，仅用于本次活动的必要安全协作"
-        data-key="medical"
-        bindinput="onField"
-        bindblur="onBlurSave"
+      <status-panel
+        wx:if="{{!recent.length}}"
+        kind="empty"
+        title="还没有同行记录"
+        detail="从首页的「发现活动」开始，或自己发起一场。"
       />
-      <text class="small muted">{{saving ? '正在保存…' : '以上内容修改后自动保存'}}</text>
     </view>
 
-    <!-- 常用同行人 -->
+    <!-- D 同行与安全：摘要行只读，编辑进 sheet（09 §3） -->
+    <view class="card stack-gap3">
+      <view class="card-header">
+        <text class="card-label">同行与安全</text>
+        <text wx:if="{{draftPending}}" class="badge warning">待保存</text>
+      </view>
+      <view class="list-row" hover-class="button-hover" bindtap="onOpenPhone">
+        <view class="list-main">
+          <text>手机号{{person.phone ? '' : '（未绑定）'}}</text>
+          <text class="list-sub">{{person.phone ? tools.maskPhone(person.phone) : '用于活动联络与安全应急联系'}}</text>
+        </view>
+        <text class="muted">›</text>
+      </view>
+      <view class="list-row" hover-class="button-hover" bindtap="onOpenEmergency">
+        <view class="list-main">
+          <text>紧急联系人</text>
+          <text class="list-sub">{{person.emergency.name ? person.emergency.name + (person.emergency.phone ? ' · ' + tools.maskPhone(person.emergency.phone) : '') : '未填写（报名时会要求填写）'}}</text>
+        </view>
+        <text class="muted">›</text>
+      </view>
+      <view class="list-row" hover-class="button-hover" bindtap="onOpenMedical">
+        <view class="list-main">
+          <view class="cluster" style="gap:8px;">
+            <text>健康与用药备注</text>
+            <text wx:if="{{person.medical}}" class="badge success">已填写</text>
+          </view>
+          <text class="list-sub">{{person.medical ? '作为报名默认值，随每次报名带出' : '选填；不填写不影响报名'}}</text>
+        </view>
+        <text class="muted">›</text>
+      </view>
+    </view>
+
+    <!-- E 常用同行人 -->
     <view class="card stack-gap3">
       <view class="card-header">
         <text class="card-label">常用同行人</text>
@@ -100,24 +149,24 @@
           <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRemoveAsk">移除</view>
         </view>
       </view>
-      <text wx:if="{{!companions.length}}" class="small muted">给家人朋友存一份资料，报名时直接勾选。</text>
+      <text wx:if="{{!companions.length}}" class="small muted">报名时直接勾选，不用再填一遍。</text>
       <text class="small muted">保存条目不等于代办授权；每次报名仍需逐人同意。</text>
     </view>
 
-    <!-- 协作身份码 -->
+    <!-- F 我的协作码（10 §4）：缩略展示，完整值只通过复制离场 -->
     <view class="card stack-gap3">
-      <text class="card-label">协作身份码</text>
+      <text class="card-label">我的协作码</text>
       <view class="who">
-        <text class="code-text" user-select>{{identity}}</text>
+        <text class="code-text" user-select>{{displayIdentity}}</text>
         <view class="button text" hover-class="button-hover" bindtap="onCopyIdentity">
           <icon name="copy" size="16" color="#163E35" />
           <text>复制</text>
         </view>
       </view>
-      <text class="small muted">组织者把它填进「协作授权」，你才能看到对应任务。</text>
+      <text class="small muted">组织者把它填进「协作授权」，你才能看到对应任务。{{activated ? '' : '完善资料后，组织者即可凭码授权你。'}}</text>
     </view>
 
-    <!-- 位置授权撤回 -->
+    <!-- G 位置授权（条件渲染，说明句一字不改） -->
     <view wx:if="{{positionRows.length}}" class="card stack-gap3">
       <text class="card-label">位置授权</text>
       <view wx:for="{{positionRows}}" wx:key="signupId" class="list-row">
@@ -131,10 +180,101 @@
     </view>
   </view>
 
+  <!-- 激活 sheet（04 §4）：头像 + 昵称 + 手机号，完成 = 首次 profile.save -->
+  <overlay open="{{onboardingOpen}}" kind="sheet" title="完善同行资料" bind:close="onCloseSheet">
+    <view class="stack">
+      <view wx:if="{{sheetError}}" class="callout danger">{{sheetError}}</view>
+      <view wx:if="{{sheetHint}}" class="callout warning">{{sheetHint}}</view>
+      <form-field label="头像" hint="点一下，用微信头像；也可以不上传。">
+        <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" hover-class="button-hover">
+          <image wx:if="{{person.avatar}}" class="avatar-img" src="{{person.avatar}}" mode="aspectFill" />
+          <view wx:else class="avatar-fallback">
+            <text>{{person.name ? person.name[0] : '我'}}</text>
+          </view>
+        </button>
+      </form-field>
+      <form-field label="昵称">
+        <input
+          class="input"
+          type="nickname"
+          value="{{person.name}}"
+          maxlength="80"
+          placeholder="填写昵称"
+          placeholder-class="input-placeholder"
+          data-key="name"
+          data-scope="onboarding"
+          bindinput="onField"
+          bindblur="onBlurSave"
+        />
+      </form-field>
+      <form-field label="手机号" hint="用于活动联络与安全应急联系。手动填写，或点右侧按钮用微信手机号。">
+        <view class="cluster" style="gap:12px;">
+          <input class="input" style="flex:1;" type="number" maxlength="11" value="{{person.phone}}" placeholder="11 位手机号" data-key="phone" data-scope="onboarding" bindinput="onField" bindblur="onBlurSave" />
+          <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onPhoneCode" hover-class="button-hover">用微信手机号</button>
+        </view>
+      </form-field>
+      <view class="button primary block" hover-class="button-hover" bindtap="onCompleteOnboarding">{{saving ? '正在保存…' : '完成，开始用 OurTrail'}}</view>
+      <view class="button text block" hover-class="button-hover" bindtap="onCloseSheet">先跳过，随时可回来补</view>
+    </view>
+  </overlay>
+
+  <!-- D-1 手机号 sheet -->
+  <overlay open="{{phoneSheetOpen}}" kind="sheet" title="手机号" bind:close="onCloseSheet">
+    <view class="stack">
+      <view wx:if="{{sheetError}}" class="callout danger">{{sheetError}}</view>
+      <view wx:if="{{sheetHint}}" class="callout warning">{{sheetHint}}</view>
+      <form-field label="手机号" hint="用于活动联络与安全应急联系。手动填写，或用微信手机号一键带入。">
+        <view class="cluster" style="gap:12px;">
+          <input class="input" style="flex:1;" type="number" maxlength="11" value="{{person.phone}}" placeholder="11 位手机号" data-key="phone" data-scope="phone" bindinput="onField" bindblur="onBlurSave" />
+          <button class="phone-btn" open-type="getPhoneNumber" bindgetphonenumber="onPhoneCode" hover-class="button-hover">用微信手机号</button>
+        </view>
+      </form-field>
+      <text class="small muted">{{saving ? '正在保存…' : '修改后自动保存'}}</text>
+    </view>
+  </overlay>
+
+  <!-- D-2 紧急联系人 sheet -->
+  <overlay open="{{emergencySheetOpen}}" kind="sheet" title="紧急联系人" bind:close="onCloseSheet">
+    <view class="stack">
+      <view wx:if="{{sheetError}}" class="callout danger">{{sheetError}}</view>
+      <form-field label="姓名">
+        <input class="input" value="{{person.emergency.name}}" maxlength="80" placeholder="紧急联系人姓名" data-key="ename" data-scope="emergency" bindinput="onField" bindblur="onBlurSave" />
+      </form-field>
+      <form-field label="电话">
+        <input class="input" type="number" maxlength="11" value="{{person.emergency.phone}}" placeholder="11 位手机号" data-key="ephone" data-scope="emergency" bindinput="onField" bindblur="onBlurSave" />
+      </form-field>
+      <text class="small muted">紧急情况下用于由活动授权人员联络；报名时必须填写，这里保存的是默认值。</text>
+      <text class="small muted">{{saving ? '正在保存…' : '修改后自动保存'}}</text>
+    </view>
+  </overlay>
+
+  <!-- D-3 健康与用药备注 sheet（三条 hint = 09 §3.2 的三层模型说明） -->
+  <overlay open="{{medicalSheetOpen}}" kind="sheet" title="健康与用药备注" bind:close="onCloseSheet">
+    <view class="stack">
+      <view wx:if="{{sheetError}}" class="callout danger">{{sheetError}}</view>
+      <form-field label="备注">
+        <textarea
+          class="textarea slim"
+          value="{{person.medical}}"
+          maxlength="2000"
+          placeholder="过敏、慢性病、常用药等，仅用于本次活动的必要安全协作"
+          data-key="medical"
+          data-scope="medical"
+          bindinput="onField"
+          bindblur="onBlurSave"
+        />
+      </form-field>
+      <text class="small muted">作为报名默认值；每次报名以报名资料为准。</text>
+      <text class="small muted">仅授权人员在活动期间按用途查看；活动结束后不可再查看。</text>
+      <text class="small muted">选填。不填写不影响报名。</text>
+      <text class="small muted">{{saving ? '正在保存…' : '修改后自动保存'}}</text>
+    </view>
+  </overlay>
+
+  <!-- E 同行人编辑 overlay：错误必须在弹层内（P0-4 修复，不得回退） -->
   <overlay open="{{companionOpen}}" kind="sheet" title="常用同行人资料" bind:close="onCompanionClose">
     <view class="stack">
-      <!-- 错误提示必须在弹层内：页面顶部的 error 会被全屏遮罩盖住（2026-09-30 实测复现） -->
-      <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+      <view wx:if="{{companionError}}" class="callout danger">{{companionError}}</view>
       <form-field label="姓名">
         <input class="input" value="{{companionPerson.name}}" maxlength="80" data-key="name" bindinput="onCompanionField" />
       </form-field>
@@ -154,10 +294,19 @@
     </view>
   </overlay>
 
+  <!-- E 移除确认 -->
   <overlay open="{{!!removeId}}" kind="dialog" title="移除常用同行人" bind:close="onRemoveCancel">
     <view class="stack">
       <text>只移除常用条目，已提交的报名与安全记录会保留。</text>
       <view class="button danger block" hover-class="button-hover" bindtap="onRemoveConfirm">确认移除常用条目</view>
+    </view>
+  </overlay>
+
+  <!-- B 横幅：放弃本机修改确认 -->
+  <overlay open="{{discardAsk}}" kind="dialog" title="放弃本机未保存的修改" bind:close="onDiscardCancel">
+    <view class="stack">
+      <text>将清除本机暂存的未落库修改；服务端已保存的内容不受影响。</text>
+      <view class="button danger block" hover-class="button-hover" bindtap="onDiscardConfirm">放弃本机修改</view>
     </view>
   </overlay>
 </view>
