@@ -17,6 +17,7 @@ Page({
     denied: '',
     mode: 'new', // new | edit
     purposeGate: false,
+    profileGate: false,
     purpose: '',
     activityTitle: '',
     remaining: 0,
@@ -69,15 +70,19 @@ Page({
       const v = res.view
       this.view = v
       const profile = profileRes.view.profile
+      // 账号段回填（12-state-and-error-spec.md §3）：draft.setOpenId 此前全库无人调用，
+      // 报名/编辑器草稿键的账号段恒为空——同机多账号会互串。profile.id 就是 openid。
+      draft.setOpenId(profile.id)
       // 档案快照：报名表回填（草稿可能早于「我的」的最新资料）与提交后回写都以它为基准
       this.profilePerson = JSON.parse(JSON.stringify(profile.person))
       this.profileCompanions = JSON.parse(JSON.stringify(profile.companions))
       if (this.mode === 'new' && v.permittedActions.indexOf('signup.submit') === -1) {
-        this.setData({ loading: false, denied: '活动尚未开放、已截止或没有报名权限。已有安排不会改变。' })
+        this.setData({ loading: false, denied: '活动尚未开放、已截止或没有报名权限。已有安排不会改变。', profileGate: false })
         return
       }
       if (this.mode === 'new' && !profile.person.name) {
-        this.setData({ loading: false, denied: '请先到「我的」保存姓名与联系电话，再来报名。' })
+        // 档案未激活：给直达出口（与编辑器 profileGate 同型，editor.wxml 的范式）
+        this.setData({ loading: false, denied: '请先完善姓名与联系电话，再来报名——大约 30 秒，报名表会自动带出这些信息。', profileGate: true })
         return
       }
       const own = {
@@ -384,6 +389,9 @@ Page({
 
   onWaitlist() { this.submit('waitlist') },
 
+  // 档案未激活时的直达出口：去「我的」补全（编辑器 profileGate 同型；报名草稿在本机，回来接着填）
+  onGoProfile() { wx.switchTab({ url: '/pages/me/me' }) },
+
   // ---- 编辑模式 ----
   onPurpose(e) { this.setData({ purpose: e.detail.value }) },
 
@@ -399,6 +407,8 @@ Page({
       this.revision = res.revision
       this.now = res.now
       if (res.view.kind === 'profile') {
+        // 编辑模式同样回填草稿账号段（与 reload 的 new 模式路径同修）
+        draft.setOpenId(res.view.profile.id)
         this.profilePerson = JSON.parse(JSON.stringify(res.view.profile.person))
         this.profileCompanions = JSON.parse(JSON.stringify(res.view.profile.companions))
       }
