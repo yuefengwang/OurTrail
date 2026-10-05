@@ -11,6 +11,9 @@ Component({
   properties: {
     activityId: { type: String, value: '' },
     perspective: { type: String, value: 'organizer' },
+    // 宿主页面每次读到的「phase@revision」：后端状态一变就换，面板据此判断自己是不是读旧了。
+    // 保留面板常驻（切区不丢搜索词/勾选/表单），又不让它拿旧 phase 装配动作表。
+    syncKey: { type: String, value: '' },
   },
   data: {
     loading: true,
@@ -34,12 +37,16 @@ Component({
     pointLabels: [],
     error: '',
     message: '',
+    sheetHint: '',
     busy: false,
   },
 
   observers: {
     'activityId, perspective': function () {
       this.reload()
+    },
+    syncKey: function (key) {
+      if (key && key !== this._readKey) this.reload()
     },
   },
 
@@ -82,6 +89,7 @@ Component({
           stale: p.stale,
         }))
         this._loading = false
+        this._readKey = phase + '@' + res.revision
         this.setData({
           loading: false,
           denied: '',
@@ -122,9 +130,14 @@ Component({
           acts.push({ label: '确认现场签到', type: 'attendance.checkin', needNote: true })
         }
         if (permitted.indexOf('attendance.departure') !== -1) {
-          acts.push({ label: '核实已随队出发', type: 'attendance.departure', outcome: 'joined' })
-          acts.push({ label: '核实未出发', type: 'attendance.departure', outcome: 'not_departed', needNote: true })
-          acts.push({ label: '标记迟到协调', type: 'attendance.departure', outcome: 'coordinating', needNote: true })
+          // 按钮只在该行真的能成立时才给：服务端 joined 门（field.js）要「已签到 +（拼车乘客）去程已上车」，
+          // 缺事实时点下去只会换来一句红字，而正确入口在车长任务页（attendance.board）。
+          const joinedReady = row.checkedIn && !row.needsOutboundBoarding
+          if (joinedReady) acts.push({ label: '核实已随队出发', type: 'attendance.departure', outcome: 'joined' })
+          if (!row.outboundBoarded) {
+            acts.push({ label: '核实未出发', type: 'attendance.departure', outcome: 'not_departed', needNote: true })
+            acts.push({ label: '标记迟到协调', type: 'attendance.departure', outcome: 'coordinating', needNote: true })
+          }
         }
       }
       if (phase === 'closing' && row.departure === 'joined' && !row.home && permitted.indexOf('attendance.home') !== -1) {
@@ -144,7 +157,15 @@ Component({
       }
       const nodeEnabled = phase === 'active' && row.departure === 'joined' && permitted.indexOf('attendance.node') !== -1
       if (nodeEnabled) acts.push({ label: '确认到达此节点', type: 'attendance.node', needNote: true, needPoint: true })
+      // 少了「核实已随队出发」时必须说清缺哪一步、去哪儿补，否则组织者只会对着空动作表猜。
+      let sheetHint = ''
+      if ((phase === 'gathering' || lateArrival) && permitted.indexOf('attendance.departure') !== -1
+        && acts.every(a => a.type !== 'attendance.departure' || a.outcome === 'not_departed' || a.outcome === 'coordinating')) {
+        sheetHint = !row.checkedIn ? '请先完成现场签到，再核实是否随队出发。'
+          : '此人拼车随队：请先在车长任务页点「确认上车」，回来才能核实已随队出发。'
+      }
       this.setData({
+        sheetHint,
         sheetOpen: true,
         sel: { signupId: row.signupId, name: row.name },
         actions: acts,

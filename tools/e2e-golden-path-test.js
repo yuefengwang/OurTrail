@@ -88,6 +88,7 @@ async function main() {
   let reconnected = false
   let page = null
   let AID = ''
+  let myUserId = ''   // 本轮登录身份的 userId（read{profile} 回读，用作 organizer 一致性的判据）
   let vehicleId = ''
   let seatViaUi = false
   // 本轮真正要代报的那位同行人（按 id 锁定，不按候选顺序——账号里可能有别的遗留同行人）
@@ -194,6 +195,7 @@ async function main() {
   // 两次尝试都单独记账：第一次被拒是事实，不是可以藏起来的噪声。
   const phaseAdvance = async (label, reasonText) => {
     await overview()
+    await waitIdle()   // 阶段按钮同样受 busy 条件绑定，busy=true 时点下去不触发任何 handler
     const go = await byText(page, label)
     const okGo = await tapEl(go)
     tap('点「' + label + '」', okGo, 'tap 阶段按钮@ workspace 总览（文案=进入+PHASE_LABELS[next]）')
@@ -219,13 +221,15 @@ async function main() {
     const confirm = await byText(page, '确认变更，不跳过检查')
     const okConfirm = await tapEl(confirm)
     tap('点「确认变更，不跳过检查」（第 1 次）', okConfirm, 'tap 确认变更')
-    await page.waitFor(3000)
-    let st = await page.data()
+    // 确认后页面要跑一次云端往返再 setData(transitionOpen:false)，固定 3 秒判读会把已经成功的推进
+    // 误报成「按钮没生效」（本轮普查：9 次里 3 次踩到，回读 phase 其实已经变了）。
+    const judged = await settle(async () => page.data(), d => !!d && (d.transitionOpen === false || !!d.error), 10)
+    let st = judged.v
     const stillOpen = !!(st && st.transitionOpen)
     let firstErr = st && st.error ? String(st.error) : ''
     if (stillOpen && !firstErr) {
       u('第 1 次确认没生效：弹层仍开着且无红字（按钮 disabled，原因未落地）', false,
-        JSON.stringify({ stillOpen, reason: (st && st.reason) || '', usedIdx: r1.idx }))
+        JSON.stringify({ stillOpen, reason: (st && st.reason) || '', usedIdx: r1.idx, 等待次数: judged.waited }))
       return { error: '（确认未生效）', sheetOpen: stillOpen, triedTwice: false }
     }
     if (firstErr) {
@@ -261,6 +265,29 @@ async function main() {
     }
     return { error: (st && st.error) || '', sheetOpen: !!(st && st.transitionOpen), triedTwice: !!firstErr }
   }
+  // 面板的失效重读是一次异步读：立刻判读会把「还没回来」误诊成「没重读」。
+  // 这里是轮询到目标 phase 落地，并把等待次数记进证据；等不到就是 FAIL，不放宽。
+  const waitPanelPhase = async (fp, want) => {
+    let d = null
+    for (let i = 0; i < 10; i++) {
+      d = fp ? await dataOf(fp) : null
+      if (d && d.phase === want) return { d, waited: i }
+      await sleep(800)
+    }
+    return { d, waited: -1 }
+  }
+  // 面板/后端的落库与重渲染都是异步的：一次性判读会把「还没回来」误诊成「没做到」。
+  // settle 轮询到目标成立为止（等不到返回 -1），断言仍照原样判 —— 只是不再靠运气。
+  const settle = async (read, pred, tries) => {
+    let v = null
+    for (let i = 0; i < (tries || 10); i++) {
+      v = await read()
+      if (pred(v)) return { v, waited: i }
+      await sleep(800)
+    }
+    return { v, waited: -1 }
+  }
+  const waitIdle = tries => settle(async () => page.data(), d => !!d && d.busy === false, tries || 8)
   const currentRoute = () => mp.evaluate(new Function('return getCurrentPages().slice(-1)[0].route'))
   const cloud = (name, action, data) => {
     const call = () => mp.evaluate(
@@ -421,17 +448,22 @@ async function main() {
     const typed = await page.data()
     ue('新介绍落到表单状态（form.description 等于所填）', !!typed && typed.form.description === note,
       JSON.stringify({ description: ((typed && typed.form.description) || '').slice(0, 30) }))
+    await waitIdle()   // 编辑器的「保存草稿」在 busy 期间没有 handler，抢点等于没点
     const save = await byText(page, '保存草稿')
     const okSave = await tapEl(save)
     tap('点「保存草稿」提交修改', okSave, 'tap .button.secondary「保存草稿」@ editor（phase=draft 时的文案）')
-    await page.waitFor(3500)
-    const after = await orgView()
-    const act = after.activity
+    // 编辑器保存要走两次往返（先读档案再下发），一次固定等待会误诊成「没落库」
+    const got = await settle(orgView, v => v.activity.description === note && v.revision === revBefore + 1, 12)
+    const edNow = (await page.data()) || {}
+    const edRev = String(await mp.evaluate(new Function('return getCurrentPages().slice(-1)[0].revision')))
+    const now = got.v
+    const act = now.activity
     b('activity.edit 回读：说明已改变，其它字段没被覆盖，revision 恰好 +1',
       act.description === note && act.title === FIXTURE.title && act.capacity === FIXTURE.capacity
       && act.routeSnapshot.points.length === FIXTURE.routeSnapshot.points.length
-      && after.revision === revBefore + 1,
-      JSON.stringify({ revBefore, revAfter: after.revision, title: act.title, capacity: act.capacity, desc: (act.description || '').slice(0, 20) }))
+      && now.revision === revBefore + 1,
+      JSON.stringify({ revBefore, revAfter: now.revision, 等待次数: got.waited, editorPageRevision: edRev,
+        failure: edNow.failure || '', busy: !!edNow.busy, desc: (act.description || '').slice(0, 24), capacity: act.capacity }))
   }, uiGate('编辑要经真实表单，元素通道退化时无法验证'))
 
   // ============================================================
@@ -448,17 +480,21 @@ async function main() {
     const pubIntent = await byText(page, '发布活动')
     const okIntent = await tapEl(pubIntent)
     tap('点「发布活动」打开发布弹层', okIntent, 'tap .button.primary「发布活动」@ editor')
-    await page.waitFor(1800)
-    const sheetBtn = await byText(page, '确认发布')
+    // onPublishIntent 会先静默保存（一次完整往返）再开层：慢一点云就会「按钮还没落位」，
+    // 固定 1800ms 判读会把这条钉成假红（本轮 run 4 实测）。改为等按钮真的出现，等不到才算红。
+    const sheetG = await settle(async () => byText(page, '确认发布'), b => !!b, 10)
+    const sheetBtn = sheetG.v
     const sheet = await page.data()
     ue('发布弹层已打开（弹层内的「确认发布」按钮可被查到）', !!sheetBtn,
-      '「确认发布」命中=' + !!sheetBtn + '；publishOpen 读数=' + (sheet && sheet.publishOpen) + '（onPublishIntent 会先静默保存再开层，flags 读数会滞后）')
-    const confirm = await byText(page, '确认发布')
+      '「确认发布」命中=' + !!sheetBtn + '；等待 ' + sheetG.waited + ' 次；publishOpen 读数=' + (sheet && sheet.publishOpen) + '（onPublishIntent 会先静默保存再开层，flags 读数会滞后）')
+    const confirm = sheetBtn
     const okPublish = await tapEl(confirm)
     tap('点弹层内「确认发布」', okPublish, 'tap .button.primary.block「确认发布」')
-    await page.waitFor(3500)
-    const v1 = await orgView()
-    b('发布后 phase=published', v1.activity.phase === 'published', JSON.stringify({ phase: v1.activity.phase }))
+    const pubG = await settle(orgView, x => x.activity.phase === 'published', 10)
+    const v1 = pubG.v
+    const publishedSnapshot = JSON.stringify(v1.activity)
+    b('发布后 phase=published', v1.activity.phase === 'published',
+      JSON.stringify({ phase: v1.activity.phase, 等待次数: pubG.waited }))
     b('发布未勾选「我本人也参加」⇒ 名单为空（发布与报名是两件事）',
       (v1.rows || []).length === 0, JSON.stringify({ rows: (v1.rows || []).length }))
     // 发布成功后产品会把用户送到活动页：编辑器句柄随之销毁，
@@ -469,17 +505,23 @@ async function main() {
       '发布后所在页=' + page.path + '；查找「发布活动」：' + (again === null ? '已消失' : '仍存在'))
     const dup = await dispatch({ type: 'activity.publish', activityId: AID }, v1.revision)
     const v2 = await orgView()
-    b('服务端拒绝重复发布且状态零变化（phase 与 revision 未动）',
+    // 「零副作用」的判据必须是**这场活动本身**：`revision` 是全局 CAS 计数（store.js:115），
+    // 这套 ot_* 集合被多条链路共用，别人的一次写入就会把它推进 —— 拿它当本活动的副作用判据是错的 oracle，
+    // 不是更严。这里改成逐字段比对活动快照（比原来只比 phase 更强），全局 revision 只作为证据记录。
+    b('服务端拒绝重复发布且这场活动逐字段零变化',
       dup && dup.ok === false && ['WRONG_PHASE', 'INVALID_INPUT', 'CONFLICT'].indexOf(dup.error.code) !== -1
-      && v2.activity.phase === 'published' && v2.revision === v1.revision,
-      JSON.stringify({ err: (dup && dup.error && dup.error.code) || '居然成功了', phase: v2.activity.phase, rev: v2.revision }))
+      && v2.activity.phase === 'published'
+      && JSON.stringify(v2.activity) === publishedSnapshot,
+      JSON.stringify({ err: (dup && dup.error && dup.error.code) || '居然成功了', phase: v2.activity.phase,
+        本活动逐字段一致: JSON.stringify(v2.activity) === publishedSnapshot,
+        全局revision: { before: v1.revision, after: v2.revision, 说明: '共享云的 CAS 计数，可能被他人写入推进，不作判据' } }))
   }, uiGate('发布链要经真实按钮'))
 
   // ============================================================
   // GP-04 发现：普通用户从「发现活动」列表点进详情
   // ============================================================
   node('GP-04', 'Discover 发现活动')
-  await L.block('GP-04 发现列表 → 详情', 6, async () => {
+  await L.block('GP-04 发现列表 → 详情（精确身份链）', 10, async () => {
     page = await open('/pages/home/home')
     await probeChannel(page)
     const disc = await byText(page, '发现活动')
@@ -489,34 +531,66 @@ async function main() {
     const route = await currentRoute()
     ue('真实导航落到发现页', String(route) === 'pages/discover/discover', '当前页=' + route)
     page = await mp.currentPage()
-    const dd = await page.data()
-    const listed = ((await read({ kind: 'discover' })).data.view.activities || []).filter(a => a.id === AID)
-    u('刚发布的活动在发现列表里可见（不是靠 id 直达进详情，而是列表里确有它）',
-      !!dd && dd.loading === false && listed.length === 1 && listed[0].phase === 'published',
-      JSON.stringify({ cards: (dd.cards || []).length, mine: listed.map(a => a.phase) }))
-    const comp = await queryAll(page, 'activity-card')
-    // 按卡片标题文本定位本轮这场（标题含唯一 RUN_TAG，不会被上一轮同名活动抢先）
+    // 发现页的 cards 也是异步装配的：拿一次空快照再回头用它核对下标，会把对的卡判成错的（普查 run 4 实测）。
+    // 先等页面数据里确实只有这一场，再往下做「渲染元素 ↔ 页面数据下标」的绑定。
+    const ddG = await settle(async () => page.data(), c => !!c && c.loading === false
+      && (c.cards || []).filter(x => x.id === AID).length === 1, 10)
+    let dd = ddG.v
     const want = FIXTURE.title
+    const all = ((await read({ kind: 'discover' })).data.view.activities || [])
+    const listed = all.filter(a => a.id === AID)
+    // 期望值全部来自 fixture 与创建时的返回值：AID 是 activity.create 的结果，want/organizerIntro 是我填的文案
+    b('发现流里 id=AID 的活动恰好一条，且 phase=published、标题与 organizerIntro 等于 fixture 输入',
+      listed.length === 1 && listed[0].phase === 'published' && listed[0].title === want
+      && listed[0].organizerIntro === FIXTURE.organizerIntro,
+      JSON.stringify({ hits: listed.map(a => ({ id: a.id, phase: a.phase, title: a.title })) }))
+    u('列表页确实渲染出这一张卡（不是靠 id 直达详情）',
+      !!dd && dd.loading === false && (dd.cards || []).filter(c => c.id === AID).length === 1
+      && (dd.cards || []).filter(c => c.title === want).length === 1,
+      JSON.stringify({ cards: (dd.cards || []).length, byId: (dd.cards || []).filter(c => c.id === AID).length, byTitle: (dd.cards || []).filter(c => c.title === want).length }))
+    const comp = await queryAll(page, 'activity-card')
+    // 按渲染出来的标题文本定位卡片（标题含唯一 RUN_TAG，历史轮不会撞名）
     let target = null
     let targetIndex = -1
     for (let i = 0; i < comp.length; i++) {
       const t = await comp[i].$('.activity-card__title')
       if (t && String(await t.text() || '').trim() === want) { target = comp[i]; targetIndex = i; break }
     }
-    u('按标题定位到本轮活动的卡片元素（页面上恰好渲染 ' + comp.length + ' 张卡）', !!target,
-      '命中索引=' + targetIndex + '；卡数=' + comp.length)
+    // 绑定必须在「扫完 DOM 之后」重新取一次页面数据：中间若列表又刷新过一次，旧快照的下标就是错的
+    dd = (await page.data()) || dd
+    u('命中的那张卡按 wx:for 下标回读页面数据，其 id 必须等于本轮 AID',
+      !!target && targetIndex >= 0 && !!dd && (dd.cards || [])[targetIndex] && (dd.cards || [])[targetIndex].id === AID,
+      JSON.stringify({ targetIndex, cardId: ((dd.cards || [])[targetIndex] || {}).id, AID, 卡数: comp.length }))
+    const cardText = target ? String(await target.text() || '') : ''
+    u('卡片文案自证 organizer 关系：服务端算出的 owner 标志渲染成「我组织的」',
+      cardText.indexOf('我组织的') !== -1, '卡片可见文本=' + cardText.slice(0, 120))
     // 真正可点的是组件内 <article bindtap="onTap">；点宿主组件节点不触发（本轮实测）
     const inner = target ? await target.$('article') : null
     const okCard = await tapEl(inner || target)
     tap('点该活动卡片', okCard, 'tap activity-card > article')
-    await page.waitFor(3000)
+    await page.waitFor(2000)
     const route2 = await currentRoute()
     ue('点卡片后落到活动详情', String(route2) === 'pages/activity/activity', '当前页=' + route2)
+    // 详情页自己是异步读装配的：固定等待会读到 loading=true 的空壳（普查中真发生过 title="" 误报）
+    const detailG = await settle(async () => {
+      const cur = await mp.currentPage()
+      return cur ? await cur.data() : null
+    }, d => !!d && d.loading === false && !d.denied && !!d.title, 10)
     page = await mp.currentPage()
-    const ad = await page.data()
-    u('详情内容正确（标题一致、非 denied）',
-      !!ad && ad.loading === false && !ad.denied && String(ad.title || '') === FIXTURE.title && !!ad.stateTitle,
-      JSON.stringify({ title: ad && ad.title, stateTitle: ad && ad.stateTitle }))
+    const ad = detailG.v
+    u('详情内容正确（标题一致、非 denied、带队介绍就是我填的那句）',
+      !!ad && String(ad.title || '') === want
+      && String(ad.organizerIntro || '') === FIXTURE.organizerIntro && !!ad.stateTitle,
+      JSON.stringify({ title: ad && ad.title, organizerIntro: ad && ad.organizerIntro, stateTitle: ad && ad.stateTitle, 等待次数: detailG.waited }))
+    const prof = await read({ kind: 'profile' })
+    myUserId = prof.data.view.profile.id
+    const det = await read({ kind: 'activity', activityId: AID, perspective: 'participant' })
+    const da = det.data.view.activity
+    b('后端权威态对齐：详情记录 id=AID，ownerId 等于本轮登录身份（= activity.create 的下发者）',
+      da.id === AID && da.ownerId === myUserId && da.phase === 'published',
+      JSON.stringify({ detailId: da.id, ownerId: da.ownerId, myUserId, phase: da.phase }))
+    b('发现流那一条与详情是同一条记录（不是同名活动）', da.title === want && listed[0].id === da.id,
+      JSON.stringify({ discoverId: listed[0].id, detailId: da.id }))
   }, uiGate('发现页要经真实卡片点击'))
 
   // ============================================================
@@ -603,13 +677,14 @@ async function main() {
     tap('点「提交报名」', okSubmit, 'tap 「提交报名」@ signup')
     await page.waitFor(4000)
     // 提交成功后页面跳走（本轮实测 page destroyed）——判定用回读，不用页面状态
-    const v = await orgView()
+    const subG = await settle(orgView, v => (v.rows || []).filter(r => r.status === 'pending').length === 2, 10)
+    const v = subG.v
     const pend = (v.rows || []).filter(r => r.status === 'pending')
     const mineName = (await read({ kind: 'profile' })).data.view.profile.person.name
     // 期望值来自 fixture：本人那条 + 按 id 锁定的那位同行人，与页面上「碰巧」勾选到谁无关
     b('报名落库：两条 pending（本人 + ' + companionRef.name + '）',
       pend.length === 2 && pend.map(r => r.name).sort().join(',') === [mineName, companionRef.name].sort().join(','),
-      JSON.stringify({ rows: (v.rows || []).map(r => r.name + '/' + r.status), expect: [mineName, companionRef.name] }))
+      JSON.stringify({ 等待次数: subG.waited, rows: (v.rows || []).map(r => r.name + '/' + r.status), expect: [mineName, companionRef.name] }))
     b('整组语义：两条报名挂在同一个报名组', new Set(pend.map(r => r.groupId)).size === 1,
       JSON.stringify({ groups: Array.from(new Set(pend.map(r => r.groupId))) }))
   }, uiGate('报名必须经真实勾选与提交'))
@@ -660,9 +735,10 @@ async function main() {
     const go = await byText(await page.$('roster-panel'), '确认仅处理这 ' + ((rpOpen && rpOpen.selectedCount) || 0) + ' 人')
     const okGo = await tapEl(go)
     tap('点「确认仅处理这 N 人」下发 signup.review', okGo, '命中：' + !!go)
-    await page.waitFor(3500)
-    const v = await orgView()
-    b('审核后 confirmed=2 且待审核归零', v.counters.confirmed === 2 && v.counters.pending === 0, JSON.stringify(v.counters))
+    const rvG = await settle(orgView, x => x.counters.confirmed === 2 && x.counters.pending === 0, 10)
+    const v = rvG.v
+    b('审核后 confirmed=2 且待审核归零', v.counters.confirmed === 2 && v.counters.pending === 0,
+      JSON.stringify({ counters: v.counters, 等待次数: rvG.waited }))
   }, uiGate('审核要经名单勾选与按钮'))
 
   // ============================================================
@@ -673,16 +749,16 @@ async function main() {
     const segs = await queryAll(page, '.seg')
     const okT = await tapEl(segs[2])
     tap('点「分车」分区', okT, 'tap .seg[2]')
-    await page.waitFor(1500)
+    // 面板是自取数据的：loading 未完就点「添加车辆」会点到一个还没装配好的控件（本轮实测偶发开不出弹层）
+    const loaded = await settle(async () => dataOf(await page.$('transport-panel')), d => !!d && d.loading === false, 8)
     const tp = await page.$('transport-panel')
-    const addBtn = tp ? (await tp.$$('.button.text'))[0] : null
+    const addBtn = await byText(tp, '添加车辆')
     const okAdd = await tapEl(addBtn)
-    tap('点「添加车辆」', okAdd, 'tap .button.text「添加车辆」@ transport-panel')
-    await page.waitFor(2000)
-    const tp2 = await page.$('transport-panel')
-    const opened = await dataOf(tp2)
+    tap('点「添加车辆」', okAdd, 'tap 按文案命中「添加车辆」@ transport-panel（面板 loading=false，等待 ' + loaded.waited + ' 次）')
+    const openedG = await settle(async () => dataOf(await page.$('transport-panel')), d => !!d && d.editorOpen === true, 8)
+    const opened = openedG.v
     ue('车辆编辑弹层打开（editorOpen=true）', !!opened && opened.editorOpen === true,
-      'editorOpen=' + (opened && opened.editorOpen) + '；vform 已在=' + !!(opened && opened.vform))
+      'editorOpen=' + (opened && opened.editorOpen) + '；等待 ' + openedG.waited + ' 次；vform 已在=' + !!(opened && opened.vform))
     // 「司机名单」初始为空（vform.drivers=[]）⇒ 必须像真实用户那样先点「添加司机」
     const addDriver = await byText(tp, '添加司机')
     const okAddDriver = await tapEl(addDriver)
@@ -855,11 +931,12 @@ async function main() {
     const preview = await byText(tp, '预览自动分车方案')
     const okP = await tapEl(preview)
     tap('点「预览自动分车方案」', okP, 'tap 「预览自动分车方案」@ transport-panel')
-    await page.waitFor(2500)
-    const planBefore = await dataOf(await page.$('transport-panel'))
-    const planRows = (planBefore && planBefore.planChanged || []).length
+    // 预览是一次云调用，面板要等结果回来才排差异行；固定等待会偶发读到 changed=0（本轮实测）
+    const planG = await settle(async () => dataOf(await page.$('transport-panel')), d => !!d && (d.planChanged || []).length === 2, 10)
+    const planBefore = planG.v
+    const planRows = planBefore ? (planBefore.planChanged || []).length : 0
     ue('预览产出的方案含 2 条新增（面板 planChanged 读数）', planRows === 2,
-      JSON.stringify({ planCounts: planBefore && planBefore.planCounts, changed: planRows }))
+      JSON.stringify({ changed: planRows, counts: planBefore && planBefore.planCounts, 等待次数: planG.waited }))
     const commit = await byText(tp, '明确确认并提交此方案')
     const okC = await tapEl(commit)
     tap('点「明确确认并提交此方案」', okC, '命中：' + (commit ? '是' : '否') + '；面板按钮=' + JSON.stringify(await textsOf(tp, '.button')).slice(0, 200))
@@ -874,10 +951,15 @@ async function main() {
       JSON.stringify({ asg: asg.map(a => ({ s: String(a.signupId).slice(-4), seat: a.seatLabel })), expect: SEAT_LABELS }))
     b('整组同车：两条安排挂同一辆车（keepTogether 语义）',
       new Set(asg.map(a => a.vehicleId)).size === 1 && asg.length === 2, JSON.stringify({ cars: Array.from(new Set(asg.map(a => a.vehicleId))) }))
-    const seats = tp ? await queryAll(tp, '.seat') : []
-    let occ = 0
-    for (const s of seats) if (String((await s.attribute('class')) || '').indexOf('occupied') !== -1) occ++
-    ue('座位示意把两个座位都显示为已占', occ === 2, JSON.stringify({ seats: seats.length, occupied: occ }))
+    // 提交方案后面板会重读并重排座位格；立刻读渲染会把「还没重排完」误判成「渲染没跟上」
+    const seatG = await settle(async () => {
+      const list = tp ? await queryAll(tp, '.seat') : []
+      let n = 0
+      for (const s of list) if (String((await s.attribute('class')) || '').indexOf('occupied') !== -1) n++
+      return { seats: list.length, occupied: n }
+    }, r => r.occupied === 2, 8)
+    ue('座位示意把两个座位都显示为已占', seatG.v.occupied === 2,
+      JSON.stringify({ seats: seatG.v.seats, occupied: seatG.v.occupied, 等待次数: seatG.waited }))
   }, uiGate('分车预览与提交要经真实按钮'))
 
   // ============================================================
@@ -888,26 +970,34 @@ async function main() {
     page = await open('/pages/workspace/workspace?id=' + AID)
     await probeChannel(page)
     const st = await phaseAdvance(PHASE_BTN.published, '按期集合，全队到齐')
-    const v = await orgView()
+    const gG = await settle(orgView, x => x.activity.phase === 'gathering', 10)
+    const v = gG.v
     b('phase=gathering（回读阶段）', v.activity.phase === 'gathering',
-      '用户可见红字=' + JSON.stringify({ error: st.error, sheetOpen: st.sheetOpen }) + '；回读 ' + JSON.stringify({ phase: v.activity.phase }))
+      '用户可见红字=' + JSON.stringify({ error: st.error, sheetOpen: st.sheetOpen }) + '；回读 ' + JSON.stringify({ phase: v.activity.phase, 等待次数: gG.waited }))
   }, uiGate('阶段推进要经真实按钮与原因输入'))
 
-  await L.block('GP-09 面板陈旧缺陷取证（不许绕过）', 2, async () => {
+  await L.block('GP-09 面板随阶段自行重读（BUG-1 修复验证）', 3, async () => {
     const segs = await queryAll(page, '.seg')
-    await tapEl(segs[3])
+    const okF = await tapEl(segs[3])
+    tap('阶段推进后直接点「现场」分区（不退出重进）', okF, 'tap .seg[3]@ workspace')
     await page.waitFor(1500)
     const fp = await page.$('field-panel')
-    const fpd = fp ? await dataOf(fp) : null
-    u('阶段推进后已挂载的现场面板自行重读（产品缺陷取证）',
+    const got = await waitPanelPhase(fp, 'gathering')
+    const fpd = got.d
+    u('已挂载的现场面板把 phase 重读到 gathering',
       !!fpd && fpd.phase === 'gathering',
-      JSON.stringify({ panelPhase: fpd && fpd.phase, cloudPhase: 'gathering' }) + '——真实用户会看到空动作表，只能退出重进')
+      JSON.stringify({ panelPhase: fpd && fpd.phase, panelSyncKey: fpd && fpd.syncKey, 等待次数: got.waited, cloudPhase: 'gathering', syncKey: ((await page.data()) || {}).syncKey }))
+    const rowsNow = (fpd && fpd.rows) || []
+    ue('重读后的名单是新的（两位已确认参与者都在，且标着未签到）',
+      rowsNow.length === 2 && rowsNow.every(r => String(r.subtitle).indexOf('未签到') !== -1),
+      JSON.stringify(rowsNow.map(r => ({ n: r.name, s: r.subtitle }))))
     const btns = fp ? await queryAll(fp, '.button.text') : []
-    await tapEl(btns[0])
+    const okOpen = await tapEl(btns[0])
+    tap('点开第一行的「现场记录」', okOpen, 'tap .button.text[0]')
     await page.waitFor(1500)
     const fpd2 = fp ? await dataOf(fp) : null
-    u('弹层动作表非空（陈旧 phase 会让动作全消失）',
-      !!(fpd2 && (fpd2.actions || []).length > 0),
+    ue('弹层动作表按新阶段装配（不再全空）',
+      !!(fpd2 && (fpd2.actions || []).some(a => a.label === '确认现场签到')),
       JSON.stringify({ sheetOpen: fpd2 && fpd2.sheetOpen, actions: (fpd2 && fpd2.actions || []).map(a => a.label) }))
   }, uiGate('现场面板需要元素通道'))
 
@@ -950,13 +1040,16 @@ async function main() {
       const cBtn = await byText(fpNow, '确认现场签到')
       const okCheckin = await tapEl(cBtn)
       tap('点「确认现场签到」（' + need[0].name + '）', okCheckin, '命中：' + !!cBtn + '；面板按钮=' + JSON.stringify(await textsOf(fpNow, '.button')).slice(0, 160))
-      await page.waitFor(3000)
+      // 逐人循环都必须等「这一个」落库再算下一个缺口，否则会重复点同一个人（普查 run 8 的上车段实测）
+      await settle(orgView, x => (x.rows || []).some(r => r.signupId === need[0].signupId && r.checkedIn === true), 8)
     }
-    const v = await orgView()
+    const ciG = await settle(orgView, v => (v.rows || []).filter(r => r.status === 'confirmed').length === 2
+      && (v.rows || []).filter(r => r.status === 'confirmed').every(r => r.checkedIn === true), 10)
+    const v = ciG.v
     const conf = (v.rows || []).filter(r => r.status === 'confirmed')
     b('两位乘客都 checkedIn=true（签到是上车与出发的前置，全部经真实弹层点击）',
       conf.length === 2 && conf.every(r => r.checkedIn === true),
-      JSON.stringify(conf.map(r => ({ n: r.name, c: r.checkedIn }))))
+      JSON.stringify({ people: conf.map(r => ({ n: r.name, c: r.checkedIn })), 等待次数: ciG.waited }))
     b('签到对象包含那位同行人（后续上车与出发取证的主体一致）',
       conf.some(r => r.signupId === sharedSignupId && r.checkedIn === true), JSON.stringify({ sharedSignupId }))
   }, uiGate('签到必须经真实弹层控件'))
@@ -965,24 +1058,31 @@ async function main() {
   // GP-10 出发：先取证死按钮，再走真正的上车入口，最后核实出发
   // ============================================================
   node('GP-10', 'Departure 出发')
-  await L.block('GP-10 未上车就核实出发（产品缺陷取证）', 2, async () => {
+  await L.block('GP-10 未上车者不给死按钮（修复验证）', 3, async () => {
+    page = await open('/pages/workspace/workspace?id=' + AID)
+    await probeChannel(page)
+    const segs0 = await queryAll(page, '.seg')
+    const okTab = await tapEl(segs0[3])
+    tap('点「现场」分区', okTab, 'tap .seg[3]@ workspace')
+    await page.waitFor(1500)
     const fp = await page.$('field-panel')
     const fpRows0 = ((await dataOf(fp)) || {}).rows || []
     const idx0 = Math.max(0, fpRows0.findIndex(r => r.signupId === sharedSignupId))
     const btns = fp ? await queryAll(fp, '.button.text') : []
     const okOpen = await tapEl(btns[idx0])
-    tap('再次点开该乘客（需上车者）的「现场记录」', okOpen, 'tap .button.text[' + idx0 + ']')
+    tap('点开该乘客（需上车者）的「现场记录」', okOpen, 'tap .button.text[' + idx0 + ']')
     await page.waitFor(1800)
-    const dep = await byText(fp, '核实已随队出发')
-    u('现场面板对「未上车的拼车乘客」提供出发核实按钮（缺陷取证点）', !!dep,
-      '按钮存在=' + !!dep + '；面板按钮清单=' + JSON.stringify(await textsOf(fp, '.button')).slice(0, 200))
-    await tapEl(dep)
-    await page.waitFor(3000)
+    const fpd = (await dataOf(fp)) || {}
+    u('面板不再对「未上车的拼车乘客」提供「核实已随队出发」',
+      (fpd.actions || []).every(a => a.outcome !== 'joined'),
+      JSON.stringify({ actions: (fpd.actions || []).map(a => a.label), hint: fpd.sheetHint }))
+    ue('缺的事实被说清楚并把用户指向车长任务页',
+      String(fpd.sheetHint || '').indexOf('车长任务页') !== -1, JSON.stringify({ hint: fpd.sheetHint }))
     const v = await orgView()
     const shared = (v.rows || []).find(r => r.signupId === sharedSignupId)
-    b('服务端拒绝未上车者的 joined 出发（departure 仍 unknown；缺陷在于面板照样给了这个按钮）',
+    b('没有可点的死按钮 ⇒ 也没有误下发的出发记录（departure 仍 unknown，零副作用）',
       !!shared && shared.departure === 'unknown', JSON.stringify({ name: shared && shared.name, departure: shared && shared.departure }))
-  }, uiGate('出发取证需要弹层'))
+  }, uiGate('出发入口可用性需要弹层'))
 
   await L.block('GP-10 车长页真实上车', 4, async () => {
     page = await open('/pages/vehicle/vehicle?id=' + AID)
@@ -990,10 +1090,11 @@ async function main() {
     const vd = await page.data()
     u('车长任务页对本人可进（车辆联络授权生效）',
       !!vd && vd.loading === false && !vd.denied, JSON.stringify({ loading: vd && vd.loading, denied: vd && vd.denied }))
-    // 每次点完都要重新查一遍：上车一条落库后车长页会重渲染，旧句柄点下去是「成功但没作用」的空点击
+    // 每次点完都要重新查一遍：上车一条落库后车长页会重渲染，旧句柄点下去是「成功但没作用」的空点击。
+    // 更要等「刚点的那一个人的事实真的落库」再算下一个缺口——否则回读还是旧的，会把同一个人点两次
+    // 而第二个人永远没点（本轮普查 run 8 实测：boarded 只有 1 人，active 因此整段推不动）。
     const wantBoard = (((await orgView()).rows) || []).filter(r => r.status === 'confirmed').map(r => r.signupId)
-    let taps = 0
-    for (let round = 0; round < 5 && taps < wantBoard.length; round++) {
+    for (let round = 0; round < 6; round++) {
       const vNow = await orgView()
       const done = new Set((vNow.rows || []).filter(r => r.outboundBoarded === true).map(r => r.signupId))
       const missing = (vNow.rows || []).filter(r => r.status === 'confirmed' && !done.has(r.signupId))
@@ -1001,24 +1102,28 @@ async function main() {
       const btns = (await page.$$('.button.secondary')) || []
       let hit = null
       let hitName = ''
+      let hitId = ''
       for (const el of btns) {
         if (String((await el.text()) || '').trim() !== '确认上车') continue
         const did = String((await el.attribute('data-id')) || '')
         if (did !== missing[0].signupId) continue
         hit = el
         hitName = missing[0].name
+        hitId = did
         break
       }
       if (!hit) { await page.waitFor(1500); continue }
+      await waitIdle()   // 车页「确认上车」也是 busy 条件绑定，busy 期间点下去没有 handler
       const ok = await tapEl(hit)
-      taps++
-      tap('点「确认上车」（' + hitName + '）', ok, '按 data-id 点名：' + (hitName || '') + '/' + missing[0].signupId.slice(-6))
-      await page.waitFor(3000)
+      tap('点「确认上车」（' + hitName + '）', ok, '按 data-id 点名：' + (hitName || '') + '/' + hitId.slice(-6))
+      // 等这一位的事实落库，再进入下一轮算缺口
+      await settle(orgView, x => (x.rows || []).some(r => r.signupId === hitId && r.outboundBoarded === true), 8)
     }
-    const v = await orgView()
+    const brdG = await settle(orgView, x => (x.rows || []).filter(r => r.status === 'confirmed' && r.outboundBoarded === true).length === 2, 10)
+    const v = brdG.v
     const boarded = (v.rows || []).filter(r => r.status === 'confirmed' && r.outboundBoarded === true)
     b('两位乘客去程上车落库（outboundBoarded=true，经车长页真实点击「确认上车」）',
-      boarded.length === 2, JSON.stringify({ boarded: boarded.map(r => r.name), rows: (v.rows || []).map(r => r.name + ':' + r.outboundBoarded) }))
+      boarded.length === 2, JSON.stringify({ boarded: boarded.map(r => r.name), 等待次数: brdG.waited, rows: (v.rows || []).map(r => r.name + ':' + r.outboundBoarded) }))
     b('上车对象包含那位同行人（后续出发核实的主体一致）',
       boarded.some(r => r.signupId === sharedSignupId), JSON.stringify({ sharedSignupId }))
   }, uiGate('上车必须在车长页真实点击'))
@@ -1029,27 +1134,36 @@ async function main() {
     const segs = await queryAll(page, '.seg')
     await tapEl(segs[3])
     await page.waitFor(1500)
-    const fp = await page.$('field-panel')
-    for (let i = 0; i < 2; i++) {
-      const btns = fp ? await queryAll(fp, '.button.text') : []
-      const okOpen = await tapEl(btns[i])
-      tap('点开第 ' + (i + 1) + ' 位的「现场记录」', okOpen, 'tap .button.text[' + i + ']')
+    // 与到家核实同构：按 signupId 点名待核实的人，落库后面板重排也不会重复点同一行
+    for (let round = 0; round < 4; round++) {
+      const vNow = await orgView()
+      const need = (vNow.rows || []).filter(r => r.status === 'confirmed' && r.departure !== 'joined')
+      if (!need.length) break
+      const fpNow = await page.$('field-panel')
+      const rowsNow = ((await dataOf(fpNow)) || {}).rows || []
+      const idx = rowsNow.findIndex(r => r.signupId === need[0].signupId)
+      const btns = fpNow ? await queryAll(fpNow, '.button.text') : []
+      const okOpen = await tapEl(btns[idx])
+      tap('点开「' + need[0].name + '」的现场记录（待核实出发）', okOpen,
+        'tap .button.text[' + idx + ']，本轮待办 ' + need.length + ' 人')
       await page.waitFor(1800)
-      const dep = await byText(fp, '核实已随队出发')
+      const dep = await byText(fpNow, '核实已随队出发')
       const okDep = await tapEl(dep)
-      tap('点「核实已随队出发」（第 ' + (i + 1) + ' 位）', okDep, '命中：' + (dep ? '是' : '否'))
-      await page.waitFor(3000)
+      tap('点「核实已随队出发」（' + need[0].name + '）', okDep, '命中：' + (dep ? '是' : '否'))
+      await settle(orgView, x => (x.rows || []).some(r => r.signupId === need[0].signupId && r.departure === 'joined'), 8)
     }
-    const v = await orgView()
-    const conf = (v.rows || []).filter(r => r.status === 'confirmed')
+    const depG = await settle(orgView, v => (v.rows || []).filter(r => r.status === 'confirmed').length === 2
+      && (v.rows || []).filter(r => r.status === 'confirmed').every(r => r.departure === 'joined'), 10)
+    const conf = (depG.v.rows || []).filter(r => r.status === 'confirmed')
     b('两人 departure=joined（签到 + 去程上车齐备后服务端才放行）',
       conf.length === 2 && conf.every(r => r.departure === 'joined'),
-      JSON.stringify(conf.map(r => ({ n: r.name, d: r.departure }))))
+      JSON.stringify({ people: conf.map(r => ({ n: r.name, d: r.departure })), 等待次数: depG.waited }))
     const st = await phaseAdvance(PHASE_BTN.gathering, '全员到齐发车')
-    const v2 = await orgView()
+    const actG = await settle(orgView, x => x.activity.phase === 'active', 10)
+    const v2 = actG.v
     b('gathering→active 成功（出发核实硬门通过）', v2.activity.phase === 'active',
       '用户可见红字=' + JSON.stringify({ error: st.error, sheetOpen: st.sheetOpen, triedTwice: st.triedTwice })
-      + '；回读 ' + JSON.stringify({ phase: v2.activity.phase }))
+      + '；回读 ' + JSON.stringify({ phase: v2.activity.phase, 等待次数: actG.waited }))
   }, uiGate('出发核实需要弹层'))
 
   // ============================================================
@@ -1062,19 +1176,43 @@ async function main() {
     const depart = await byText(page, '确认本程发车')
     const okDepart = await tapEl(depart)
     tap('点「确认本程发车」', okDepart, 'tap 「确认本程发车」@ vehicle')
-    await page.waitFor(3000)
-    let tv = await transport()
+    // 「完成本程行驶」只有在车长页把发车事实读回来之后才是可用按钮；读早了就是点了个 disabled
+    const depG = await settle(transport, t => (t.vehicles || [])[0] && (t.vehicles || [])[0].legs.outbound.departed, 10)
+    let tv = depG.v
     let vs = tv.vehicles || []
     b('去程已发车（vehicle.depart 落库，发车证据由服务端覆写）',
-      vs.length === 1 && !!vs[0].legs.outbound.departed, JSON.stringify({ departed: vs[0] && vs[0].legs.outbound.departed }))
-    const complete = await byText(page, '完成本程行驶')
-    const okComplete = await tapEl(complete)
-    tap('点「完成本程行驶」', okComplete, 'tap 「完成本程行驶」@ vehicle')
-    await page.waitFor(3000)
-    tv = await transport()
-    vs = tv.vehicles || []
+      vs.length === 1 && !!vs[0].legs.outbound.departed,
+      JSON.stringify({ departed: vs[0] && vs[0].legs.outbound.departed, 等待次数: depG.waited }))
+    // 车页的两个按钮是条件绑定的：`完成本程行驶` 只在 busy=false 且 departed=true 时才真的挂了 handler
+    // （vehicle.wxml:43）。云端回读到了不代表页面已经重渲染，抢点就是点了个空按钮（本轮 run 4 实测）。
+    const legG = await settle(async () => page.data(), d => !!d && d.busy === false && d.departed === true, 12)
+    const completeBtn = await byText(page, '完成本程行驶')
+    const okComplete = await tapEl(completeBtn)
+    tap('点「完成本程行驶」', okComplete, 'tap 「完成本程行驶」@ vehicle（页面 busy=false/departed=true 等待 ' + legG.waited + ' 次）')
+    const compG = await settle(transport, t => (t.vehicles || [])[0] && (t.vehicles || [])[0].legs.outbound.completed, 10)
+    // 没落地就把页面当时的红字读出来：车页的两个动作都走 dispatchAndSync，CONFLICT 时产品只重读页面不代重发，
+    // 真实用户的下一步就是「照提示再点一次」——两次尝试都单独记账。
+    let legErr = ''
+    let retried = false
+    if (compG.waited === -1) {
+      const pd = (await page.data()) || {}
+      legErr = String(pd.error || '')
+      if (legErr) {
+        u('第 1 次「完成本程行驶」被页面红字拒住（' + legErr.slice(0, 40) + '）', legErr.length > 0,
+          JSON.stringify({ error: legErr, busy: !!pd.busy, departed: !!pd.departed }))
+        await waitIdle()
+        const retry = await byText(page, '完成本程行驶')
+        const okRetry = await tapEl(retry)
+        tap('按提示再点一次「完成本程行驶」', okRetry, 'tap 「完成本程行驶」（第 2 次）；红字=' + legErr)
+        retried = true
+        await settle(transport, t => (t.vehicles || [])[0] && (t.vehicles || [])[0].legs.outbound.completed, 10)
+      }
+    }
+    const compNow = await transport()
+    vs = compNow.vehicles || []
     b('去程行驶完成（到达的运力事实）', !!vs[0] && !!vs[0].legs.outbound.completed,
-      JSON.stringify({ completed: vs[0] && vs[0].legs.outbound.completed }))
+      JSON.stringify({ completed: vs[0] && vs[0].legs.outbound.completed, 等待次数: compG.waited,
+        页面红字: legErr, 再点一次: retried }))
     // 路线节点确认：动作按钮在，但选点是原生 picker ⇒ 只能记未验证（不做后端代发冒充 UI）
     const wsPage = await open('/pages/workspace/workspace?id=' + AID)
     await probeChannel(wsPage)
@@ -1100,40 +1238,51 @@ async function main() {
     page = await open('/pages/workspace/workspace?id=' + AID)
     await probeChannel(page)
     const st = await phaseAdvance(PHASE_BTN.active, '全队返程，逐人确认到家')
-    const v = await orgView()
+    const clG = await settle(orgView, x => x.activity.phase === 'closing', 10)
+    const v = clG.v
     b('phase=closing', v.activity.phase === 'closing',
       '用户可见红字=' + JSON.stringify({ error: st.error, sheetOpen: st.sheetOpen, triedTwice: st.triedTwice })
-      + '；回读 ' + JSON.stringify({ phase: v.activity.phase }))
-    // 面板陈旧缺陷在 closing 段复发：仍挂载的现场面板停在旧 phase，弹层里就没有「核实安全到家」。
-    // 先取证（不许把它算成 UI 通过），再用真实用户的补救动作「退出重进」继续往下走。
-    const staleFp = await page.$('field-panel')
-    const staleData = staleFp ? await dataOf(staleFp) : null
-    u('阶段已是 closing，但挂载中的现场面板 phase 未自行重读（产品缺陷复发取证）',
-      !!staleData && staleData.phase === 'closing',
-      JSON.stringify({ panelPhase: staleData && staleData.phase, cloudPhase: 'closing' }))
-    page = await open('/pages/workspace/workspace?id=' + AID)
-    await probeChannel(page)
+      + '；回读 ' + JSON.stringify({ phase: v.activity.phase, 等待次数: clG.waited }))
+    // BUG-1 修复的第二处验证：阶段刚变 closing，常驻面板必须自己跟上，否则「核实安全到家」这个按钮根本不会出现。
+    // 这里不再用「退出重进」绕过——绕过去就等于没测到失效机制。
     const segs = await queryAll(page, '.seg')
     const okF = await tapEl(segs[3])
-    tap('重进后点「现场」分区做家核实', okF, 'tap .seg[3]（退出重进之后）')
+    tap('推进 closing 后直接点「现场」分区（不退出重进）', okF, 'tap .seg[3]@ workspace')
     await page.waitFor(1500)
+    const staleFp = await page.$('field-panel')
+    const gotClose = await waitPanelPhase(staleFp, 'closing')
+    const staleData = gotClose.d
+    u('面板 phase 已随 syncKey 重读到 closing',
+      !!staleData && staleData.phase === 'closing',
+      JSON.stringify({ panelPhase: staleData && staleData.phase, 等待次数: gotClose.waited, cloudPhase: 'closing' }))
     const fp = await page.$('field-panel')
-    for (let i = 0; i < 2; i++) {
-      const btns = fp ? await queryAll(fp, '.button.text') : []
-      const okOpen = await tapEl(btns[i])
-      tap('点开第 ' + (i + 1) + ' 位的「现场记录」', okOpen, 'tap .button.text[' + i + ']@ closing')
+    // 到家核实逐人做，按 signupId 点名（不是按数组下标）：第一条落库后面板会重读重排，
+    // 用下标点第二行会点到同一个已办的人，第二个人就永远没被核实（本轮实测过一次）。
+    for (let round = 0; round < 4; round++) {
+      const vNow = await orgView()
+      const need = (vNow.rows || []).filter(r => r.status === 'confirmed' && r.home !== true)
+      if (!need.length) break
+      const fpNow = await page.$('field-panel')
+      const rowsNow = ((await dataOf(fpNow)) || {}).rows || []
+      const idx = rowsNow.findIndex(r => r.signupId === need[0].signupId)
+      const btns = fpNow ? await queryAll(fpNow, '.button.text') : []
+      const okOpen = await tapEl(btns[idx])
+      tap('点开「' + need[0].name + '」的现场记录（待到家）', okOpen,
+        'tap .button.text[' + idx + ']@ closing，目标 signupId=' + need[0].signupId + '，本轮待办 ' + need.length + ' 人')
       await page.waitFor(1800)
-      const areas = fp ? await queryAll(fp, '.textarea') : []
-      await inputEl(areas[areas.length - 1], '黄金路径到家核实：第 ' + (i + 1) + ' 位本人报平安')
-      const homeBtn = await byText(fp, '核实安全到家')
+      const areas = fpNow ? await queryAll(fpNow, '.textarea') : []
+      const okNote = await inputEl(areas[areas.length - 1], '黄金路径到家核实：' + need[0].name + ' 本人报平安')
+      tap('为「' + need[0].name + '」填写到家依据', okNote, 'input 弹层最后一个 .textarea（逐人核实依据）')
+      const homeBtn = await byText(fpNow, '核实安全到家')
       const okH = await tapEl(homeBtn)
-      tap('点「核实安全到家」（第 ' + (i + 1) + ' 位）', okH, '命中：' + (homeBtn ? '是' : '否'))
-      await page.waitFor(3000)
+      tap('点「核实安全到家」（' + need[0].name + '）', okH, '命中：' + (homeBtn ? '是' : '否'))
+      await settle(orgView, x => (x.rows || []).some(r => r.signupId === need[0].signupId && r.home === true), 8)
     }
-    const v2 = await orgView()
-    const conf = (v2.rows || []).filter(r => r.status === 'confirmed')
+    const homeG = await settle(orgView, v => (v.rows || []).filter(r => r.status === 'confirmed').length === 2
+      && (v.rows || []).filter(r => r.status === 'confirmed').every(r => r.home === true), 10)
+    const conf = (homeG.v.rows || []).filter(r => r.status === 'confirmed')
     b('两人 home=true（安全闭环完成）', conf.length === 2 && conf.every(r => r.home === true),
-      JSON.stringify(conf.map(r => ({ n: r.name, home: r.home }))))
+      JSON.stringify({ people: conf.map(r => ({ n: r.name, home: r.home })), 等待次数: homeG.waited }))
   }, uiGate('到家核实需要现场弹层'))
 
   // ============================================================
@@ -1142,10 +1291,11 @@ async function main() {
   node('GP-13', 'Complete 归档收尾')
   await L.block('GP-13 归档', 4, async () => {
     const st = await phaseAdvance(PHASE_BTN.closing, '全员到家，结档')
-    const v = await orgView()
+    const arcG = await settle(orgView, x => x.activity.phase === 'archived', 10)
+    const v = arcG.v
     b('phase=archived（人人安全闭环后归档成功）', v.activity.phase === 'archived',
       '用户可见红字=' + JSON.stringify({ error: st.error, sheetOpen: st.sheetOpen, triedTwice: st.triedTwice })
-      + '；回读 ' + JSON.stringify({ phase: v.activity.phase }))
+      + '；回读 ' + JSON.stringify({ phase: v.activity.phase, 等待次数: arcG.waited }))
     const pv = await read({ kind: 'activity', activityId: AID, perspective: 'participant' })
     b('归档后参与者视角 detailState=finished', pv.data.view.detailState === 'finished', JSON.stringify({ state: pv.data.view.detailState }))
     const exp = await cloud('trailApi', 'readExport', { activityId: AID, signupIds: (v.rows || []).map(r => r.signupId), mode: 'sensitive', purpose: '归档后补导出（应被拒）' })

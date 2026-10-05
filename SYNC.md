@@ -258,3 +258,22 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
   **覆盖增量（口径写清，不与旧数混算）**：命令全集 39（`schema.js` 的 `specObj` 计数实测）。源码直发并集 A∪B 16 → **18**（GP 新增 `membership.save`、`signup.edit`）；含「UI 状态反证」口径 → **21**，零 E2E 由 23 降到 **18**。`vehicle.depart` / `vehicle.complete` 第一次出现在任何 E2E 层，`attendance.board` 第一次经车长页真实点击。矩阵见 `docs/testing/e2e-coverage-matrix.md` §六，逐节点账本、失败定性与十连跑见 `docs/testing/golden-path-v1.md`。B 层复跑读数不变（63 项 / 2 红，两条仍是同一对产品缺陷）⇒ `tools/e2e-result.js` 的改动对既有两层零回归；A 层 62/0、26 个门禁套件与 `check.js`/`check-handlers.js` 全绿。
 
   **是否需要重新部署 trailApi：不需要**（本轮 `cloudfunctions/` 与 `miniprogram/` 零改动，只动 `tools/`、`docs/` 与 SYNC）。
+- 2026-10-05（**Phase 3 主修复：两个真实产品 bug + Discover 身份链 + 测试完整性不退化**）：任务书限定只做三件事，产品代码优先，不放宽任何断言。
+
+  **BUG-1 面板停在旧 phase（`panelPhase=published` vs `cloudPhase=gathering`）**。根因：三个自取数据的面板（roster/transport/field）是「保持挂载、用类名隐藏」的（`workspace.wxml:27-31`，为的是切区不丢搜索词/勾选/车辆表单），它们只在 `attached` 与 `activityId` 变化时读；`workspace.js:111 onTab` 切区只 `setData({tab})`，页面 `reload()` 也不通知面板 ⇒ 阶段变了面板仍按旧 phase 装配弹层动作表（用户看到空动作表，只能退出重进；同一缺陷在 closing 段复发，「核实安全到家」按钮查无）。修法：**保留常驻 + 明确失效**——页面每次成功读到权威态后把 `phase@revision` 作为 `sync-key` 下发，面板 observer 只在「下发的键 ≠ 自己上次实际读到的」（`this._readKey`）时重读；`revision` 是服务端 CAS 计数，任何写入都会推进，所以它是权威失效信号而不是前端猜测；切区不产生额外全量读（`loadState` 每次读 15 个集合是真实的扩展墙，不能白烧）。文件：`pages/workspace/workspace.{js,wxml}` + 三个面板组件。
+
+  **BUG-2 出发核实死入口**。先考古不假设：`permissions.js:204` 是 `owner || cap('checkin')` ⇒ **组织者本来就有资格**，缺的不是角色而是**事实**（`field.js` 要求 joined 必须「已签到 +（拼车乘客且非参与者司机）去程已上车」，而上车入口只在车长任务页）。因此既不降权限也不改 invariant，而是把**按钮可见性收到与服务端同一条规则一致**：规则收敛成单一出处 `permissions.needsOutboundBoarding(state, signup)`（此前 `field.js:85` 与 `activity.js` 各写了一遍），`field.js` 的门与 `selectors.rowView.needsOutboundBoarding` 都读它；`field-panel.openSheet` 仅在 `row.checkedIn && !row.needsOutboundBoarding` 时给「核实已随队出发」，已有上车事实时也不再给 `not_departed/coordinating`（服务端同样会拒），按钮被收掉时弹层打印指路文案（缺签到 / 缺上车→车长任务页）。文件：`domain/{permissions,field,selectors}.js`、`components/field-panel/field-panel.{js,wxml}`、`trailApiLab` 同步副本（`node tools/sync-lab.js`）。**已重新部署 trailApi（22 文件）与 trailApiLab（19 文件），trailApi 超时复核仍为 20 秒；lab 部署后回到 3 秒（CLI 已知不继承，脚本按幂等收敛设计，非本轮引入）。**
+
+  **BUG-3 Discover 精确身份链**。补齐为：`activity.create` 返回的 AID → 发现流里 `id===AID` 恰好一条且 phase/标题/organizerIntro 等于 fixture → 按渲染标题命中卡片后用 `wx:for` 下标回读页面数据证明那张卡 `id===AID` → 卡片文案含服务端算出的 `owner` 标志「我组织的」 → 落到详情页 → 详情页标题与 `organizerIntro` 等于 fixture → 云端回读 `activity.id===AID` 且 `ownerId === read{profile}.profile.id`。期望值全部来自 fixture 与创建返回值，无一处「读回来当期望」。
+
+  **B 层两处红的处置**：`api.dispatchAndSync` 的 CONFLICT 分支是 fire-and-forget 重读页面、不代重发，所以第二次「确认变更」必须由用户再点一次；B 层的阶段推进原先走云命令，页面根本不知道状态变了——那条「面板随 syncKey 重读」断言在当时流程里**不可能成立**，故把该步改为真实工作台点击推进（新增 `advanceViaUI`：点总览 → 阶段按钮 → 回读 `data.reason` 才算填对 → 点确认），失效机制这才真的被测到。另外 B 层开头依赖「首页恰好有活动」拿 id，而我这轮 GP 把活动都走成归档后首页为空，整条链从第一跳错位——改为只断言首页渲染自洽，详情页那一步改用本层自建沙盒 id。
+
+  **十连跑普查（修复后构建）暴露并修掉三类测试侧竞态**（都不是靠加重试掩盖）：①确认后固定 3 秒判读把已成功的推进误报成「按钮没生效」（页面要跑一轮云端往返才关层）→ 轮询到「层关闭或出现红字」；②点卡片后详情页异步装配 → 轮询到 `loading=false && title`；③**逐人循环自竞态**（普查一轮 32 条大面积红）：下一轮的「还缺谁」用云端回读算，而上一次点击还没落库 ⇒ 同一个人被点两次、第二个人永远没点，`active` 之后整段推不动 → 每点一个人都等他本人事实落库再算下一个缺口（签到/上车/出发核实/到家四段同改），并去掉「按点击次数封顶」的错误循环条件。另在 `phaseAdvance`／车页「确认上车」／编辑器「保存草稿」前先等页面 `busy===false`（这些按钮 busy 期间 `bindtap` 绑空串，点了什么都不发生）。
+
+  **环境纪律（两轮垃圾读数换来）**：串接的链被 kill 时子循环不会死，会与新循环抢同一个 9420 端口，之后每轮读数都是垃圾（编辑器 `.seg=0`、`page destroyed`、面板元素查无）；恢复只有 `cli quit`+`open`（`close` 不够）。十连跑脚本已内置「每轮重启 + `preflight.js` 体检（首页装配→真点「发起活动」→编辑器三步齐全），体检不过重启最多三次，三次仍不过该轮记 ENV-ABORT」。
+
+  **新增 3 条 A 层契约断言（62 → 65）**：`needsOutboundBoarding` 必须与 `field.js` 的 joined 门同向——已上车乘客 `false`、参与者司机 `false`、已签到未上车乘客 `true`，且上车落库后翻回 `false`。这条契约是 BUG-2 的地基：视图说错，界面按钮就会要么该有没有、要么不该有却有。
+
+  **读数（终跑定版数字未记录在案：修复后普查 10 轮暴露并修掉三类测试侧竞态，修后终跑的逐轮读数未及落档——过程与定性见 `docs/testing/golden-path-v1.md` §10-4/10-5；本条目提交前由合流方如实标注，待补跑后回填）**。范围外的三条 GP-07 产品缺陷仍在（`transport-panel.wxml:206` 的 `pickupIds.indexOf(...)` 恒真绑定、`transport-panel.wxml:212` 裸 checkbox、`roster-panel` 的 `roleOptions/scopeOptions` 未挂 data），因此 Golden Path 的 OVERALL 仍不是 PASS：这五条按任务书 §五 不在本轮可改范围，且即便修掉，原生 `<picker>` 驱不动与单登录身份仍会让 4 个节点的 UI 停在 INCONCLUSIVE——「10/10 PASS」在当前平台条件下不可达，不是测试放宽能解决的事。
+
+  **是否需要重新部署 trailApi：已经部署过**（domain 三个文件有改动，见上）。

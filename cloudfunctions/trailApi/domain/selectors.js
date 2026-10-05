@@ -3,7 +3,7 @@
 
 const {
   authRequired, canExecute, canReadNotice, canReadSensitive, hasProxyConsent, isCurrentSignup,
-  isOwnSignup, isOwner, isSelfSignup, permissionDenied, requireActivity, requireSignups,
+  isOwnSignup, isOwner, isSelfSignup, needsOutboundBoarding, permissionDenied, requireActivity, requireSignups,
   staffCan, vehicleCan, workDataAvailable,
 } = require('./permissions')
 
@@ -121,6 +121,9 @@ function rowView(state, signup) {
     checkedIn: !!(attendance && attendance.checkIn),
     outboundBoarded: !!(attendance && attendance.boardingByLeg.outbound),
     returnBoarded: !!(attendance && attendance.boardingByLeg.return),
+    // 「核实已随队出发」按 field.js 的同一条规则给出可用性：拼车乘客没有去程上车事实时，
+    // 服务端必拒 —— 与其给一个点下去只换来红字的按钮，不如在投影里说清楚缺哪一步。
+    needsOutboundBoarding: needsOutboundBoarding(state, signup),
     returnPlan: attendance ? attendance.returnPlan.kind : 'assigned',
     departure: attendance && attendance.departure ? attendance.departure.kind : 'unknown',
     home: !!(attendance && attendance.home),

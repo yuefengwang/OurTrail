@@ -47,6 +47,19 @@ function vehicleCan(state, actor, activityId, vehicleId, now) {
       && m.activityId === activityId && m.vehicleId === vehicleId && Date.parse(now) < Date.parse(m.expiresAt))
 }
 
+/** 「已随队出发」这类核实对拼车乘客有额外前置：必须先有去程上车事实（司机本人随队开车，不需要上车记录）。
+ *  field.js 的 joined 门与工作台的按钮可用性都读这里，避免同一条规则在两处各写一遍而漂移。 */
+function needsOutboundBoarding(state, signup) {
+  if (signup.trip.mode !== 'shared') return false
+  const isParticipantDriver = state.vehicles.some(v => v.activityId === signup.activityId
+    && v.drivers.some(d => d.kind === 'participant' && d.signupId === signup.id))
+  if (isParticipantDriver) return false
+  const assignment = state.assignments.find(a => a.signupId === signup.id)
+  if (!assignment) return true
+  const record = state.attendance.find(a => a.signupId === signup.id)
+  return !(record && record.boardingByLeg && record.boardingByLeg.outbound)
+}
+
 function requireActivity(state, activityId) {
   return state.activities.some(a => a.id === activityId) ? allowed() : missing()
 }
@@ -265,6 +278,6 @@ function canExecute(state, actor, payload, now) {
 module.exports = {
   permissionDenied, missing, consentRequired, allowed, authRequired,
   isOwnSignup, isSelfSignup, isOwner, hasProxyConsent, isCurrentSignup, workDataAvailable,
-  staffCan, vehicleCan, requireActivity, requireSignups, requireVehicles,
+  staffCan, vehicleCan, needsOutboundBoarding, requireActivity, requireSignups, requireVehicles,
   canReadSensitive, canReadNotice, canExecute,
 }

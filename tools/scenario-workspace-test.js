@@ -182,17 +182,25 @@ function row(id, name, status, over) {
     signupId: id, groupId: 'g1', name, status, avatar: '',
     pickup: '东门集合点', vehicle: '', seat: null,
     checkedIn: false, outboundBoarded: false, returnBoarded: false,
+    // 服务端 rowView 的字段：拼车乘客没有去程上车事实时为 true（field.js 的 joined 门同一出处）
+    needsOutboundBoarding: false,
     returnPlan: 'assigned', departure: 'unknown', home: false,
   }, over || {})
 }
 const ROWS = [
   row('s1', '张三', 'pending'),
-  row('s2', '李四', 'confirmed', { vehicle: '1号车', seat: '01' }),
+  row('s2', '李四', 'confirmed', { vehicle: '1号车', seat: '01', needsOutboundBoarding: true }),
   row('s3', '王五', 'confirmed', { pickup: '西门停车区', vehicle: '1号车', seat: '02', checkedIn: true, departure: 'joined' }),
   row('s4', '赵六', 'waitlisted', { pickup: '西门停车区' }),
   row('s5', '孙七', 'confirmed', { pickup: '西门停车区' }),
-  row('s6', '周八', 'confirmed', { pickup: '西门停车区' }),
+  row('s6', '周八', 'confirmed', { pickup: '西门停车区', checkedIn: true, needsOutboundBoarding: true }),
 ]
+// 弹层动作按文案点名再点：动作表会随该行事实（签到/上车）增减，写死下标就是在替产品背一个过期契约。
+function tapAction(comp, label) {
+  const i = comp.data.actions.findIndex(a => a.label === label)
+  comp.onAction({ currentTarget: { dataset: { index: String(i) } } })
+  return i
+}
 const ORGANIZER_ACTIONS = ['activity.transition', 'activity.edit', 'signup.review', 'signup.promote',
   'vehicle.save', 'vehicle.remove', 'assignment.commit', 'assignment.set', 'assignment.remove', 'assignment.swap',
   'membership.save', 'membership.revoke', 'export.record', 'notice.publish', 'notice.delivery']
@@ -642,17 +650,35 @@ async function scenario6() {
     check('gathering 收尾标语为现场事实', comp.data.headline === '现场事实，逐项确认')
 
     comp.openSheet({ currentTarget: { dataset: { id: 's2' } } })
-    check('gathering 可发动作：签到/出发三态/两类异常',
+    // s2 = 未签到 + 拼车乘客且还没有去程上车事实：joined 按钮点了必被 field.js 拒，所以不该出现
+    check('gathering 可发动作：签到/未出发/迟到/两类异常，缺前置的「已随队出发」不渲染',
       JSON.stringify(comp.data.actions.map(a => a.label)) === JSON.stringify(
-        ['确认现场签到', '核实已随队出发', '核实未出发', '标记迟到协调', '记录下撤报备', '记录其他异常']),
+        ['确认现场签到', '核实未出发', '标记迟到协调', '记录下撤报备', '记录其他异常']),
       JSON.stringify(comp.data.actions.map(a => [a.type, a.outcome || a.kind || ''])))
+    check('少了 joined 必须说明缺哪一步（此处缺签到）',
+      comp.data.sheetHint === '请先完成现场签到，再核实是否随队出发。', JSON.stringify(comp.data.sheetHint))
+    // 同一面板换人开层：事实齐的行要给按钮，缺上车的行要给指路文案 —— 按钮可用性跟着行事实走，不是全局开关
+    comp.openSheet({ currentTarget: { dataset: { id: 's3' } } })
+    check('已签到且不再需要上车的行（s3）仍然给出「核实已随队出发」',
+      comp.data.actions.some(a => a.label === '核实已随队出发' && a.outcome === 'joined') && comp.data.sheetHint === '',
+      JSON.stringify({ actions: comp.data.actions.map(a => a.label), hint: comp.data.sheetHint }))
+    comp.openSheet({ currentTarget: { dataset: { id: 's6' } } })
+    check('已签到但缺去程上车的行（s6）不给 joined，并把用户指向车长任务页',
+      !comp.data.actions.some(a => a.outcome === 'joined')
+      && comp.data.sheetHint === '此人拼车随队：请先在车长任务页点「确认上车」，回来才能核实已随队出发。',
+      JSON.stringify({ actions: comp.data.actions.map(a => a.label), hint: comp.data.sheetHint }))
     check('动作不含上车与位置上报（上车在车长任务页、位置上报是参与者本人自助）',
       comp.data.actions.every(a => a.type !== 'attendance.board' && a.type !== 'position.report'))
-    comp.onAction({ currentTarget: { dataset: { index: '0' } } })
+    // 换人开过层之后要回到本段主角：openSheet 会复位依据/错误，等于用户重新点开这一行
+    comp.openSheet({ currentTarget: { dataset: { id: 's2' } } })
+    check('回到 s2 开层：动作表与缺签到文案一致（面板不是只算一次）',
+      comp.data.actions[0].label === '确认现场签到' && comp.data.note === '' && comp.data.error === '',
+      JSON.stringify({ first: (comp.data.actions[0] || {}).label, note: comp.data.note, error: comp.data.error }))
+    comp.onAction({ currentTarget: { dataset: { index: String(comp.data.actions.findIndex(a => a.label === '确认现场签到')) } } })
     check('未填逐人核实依据被拦：不发命令',
       env.cmds.length === 0 && comp.data.error === '请先在上方填写逐人核实的依据。' && comp.data.busy === false)
     comp.onNote({ detail: { value: '本人已到东门集合点，当面核实' } })
-    comp.onAction({ currentTarget: { dataset: { index: '0' } } })
+    tapAction(comp, '确认现场签到')
     await waitFor(() => env.cmds.length === 1 && !comp.data.busy)
     const c0 = env.cmds[0]
     check('签到 payload：checkIn.method=manual，evidence 只带 note（at/by 留空待服务端覆写，不伪造）',
@@ -669,7 +695,7 @@ async function scenario6() {
 
     comp.openSheet({ currentTarget: { dataset: { id: 's2' } } })
     comp.onNote({ detail: { value: '电话核实，明日自行到西门停车区汇合' } })
-    comp.onAction({ currentTarget: { dataset: { index: '2' } } }) // 核实未出发
+    tapAction(comp, '核实未出发')
     await waitFor(() => env.cmds.length === 2 && !comp.data.busy)
     check('出发核实 payload：outcome.kind=not_departed + evidence（同样只带 note）',
       env.cmds[1].payload.type === 'attendance.departure'
@@ -681,7 +707,7 @@ async function scenario6() {
 
     comp.openSheet({ currentTarget: { dataset: { id: 's2' } } })
     comp.onNote({ detail: { value: '膝盖不适，申请下撤' } })
-    comp.onAction({ currentTarget: { dataset: { index: '4' } } }) // 记录下撤报备
+    tapAction(comp, '记录下撤报备')
     await waitFor(() => env.cmds.length === 3 && !comp.data.busy)
     check('下撤报备发 incident.report {signupIds,kind:withdrawal,description}',
       env.cmds[2].payload.type === 'incident.report' && env.cmds[2].payload.kind === 'withdrawal'

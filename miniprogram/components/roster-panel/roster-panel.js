@@ -22,6 +22,8 @@ Component({
   options: { styleIsolation: 'apply-shared' },
   properties: {
     activityId: { type: String, value: '' },
+    // 宿主页读到的「phase@revision」：后端一变就重读，避免面板常驻却停在旧阶段（workspace 曾因此名单计数与弹层全旧）。
+    syncKey: { type: String, value: '' },
   },
   data: {
     loading: true,
@@ -64,6 +66,7 @@ Component({
 
   observers: {
     activityId() { this.reload() },
+    syncKey(key) { if (key && key !== this._readKey) this.reload() },
   },
   lifetimes: {
     attached() { this.reload() },
@@ -83,6 +86,7 @@ Component({
         this.now = res.now
         this.view = res.view
         this._loading = false
+        this._readKey = res.view.activity.phase + '@' + res.revision
         this.setData({ loading: false, denied: '' })
         this.render()
         this.loadTransport()

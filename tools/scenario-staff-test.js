@@ -174,10 +174,11 @@ function scenario3() {
     JSON.stringify(STAFF_JSON.usingComponents || {}))
   check('导航栏标题「协作任务」', STAFF_JSON.navigationBarTitleText === '协作任务', STAFF_JSON.navigationBarTitleText)
   const cfg = compConfig(FIELD_PATH)
-  check('field-panel 声明的 properties 覆盖页面传入的两个属性（activityId/perspective，String 型）',
+  check('field-panel 声明覆盖 staff 页传入的两个属性（activityId/perspective，均 String 型）；syncKey 是可选项，staff 不传即不自触发',
     cfg.properties && cfg.properties.activityId && cfg.properties.activityId.type === String
     && cfg.properties.perspective && cfg.properties.perspective.type === String
-    && Object.keys(cfg.properties).sort().join(',') === 'activityId,perspective',
+    && (!cfg.properties.syncKey || cfg.properties.syncKey.type === String)
+    && ['activityId', 'perspective'].every(k => Object.keys(cfg.properties || {}).indexOf(k) !== -1),
     JSON.stringify(Object.keys(cfg.properties || {})))
   check('头部说明承诺「授权变更后立即生效」的作用域文案在场',
     STAFF_WXML.indexOf('现场协作') !== -1 && STAFF_WXML.indexOf('照顾好这一小队。') !== -1

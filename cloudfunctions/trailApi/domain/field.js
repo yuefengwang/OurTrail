@@ -2,7 +2,7 @@
 'use strict'
 
 const { failure } = require('./contracts')
-const { isSelfSignup } = require('./permissions')
+const { isSelfSignup, needsOutboundBoarding } = require('./permissions')
 
 function handleField(state, command, context) {
   const p = command.payload
@@ -82,7 +82,7 @@ function handleField(state, command, context) {
       const kind = p.outcome.kind
       if (record.departure && record.departure.kind === 'joined' && kind !== 'joined') return failure('WRONG_PHASE', '已出行者须继续安全收尾，不能改成未出发。')
       if (kind !== 'joined' && (!p.outcome.evidence.note.trim() || record.boardingByLeg.outbound)) return failure('UNRESOLVED_DEPARTURE', '未出发或协调状态需要依据，且不能与已上车事实矛盾。')
-      if (kind === 'joined' && (!record.checkIn || (signup.trip.mode === 'shared' && !participantDriver && (!assignment || !record.boardingByLeg.outbound)))) return failure('UNRESOLVED_DEPARTURE', '请先核实签到及必要的去程上车。')
+      if (kind === 'joined' && (!record.checkIn || needsOutboundBoarding(state, signup))) return failure('UNRESOLVED_DEPARTURE', '请先核实签到及必要的去程上车。')
       record.departure = { kind, evidence: evidence(p.outcome.evidence.note) }
       return done([signup.id])
     }

@@ -24,7 +24,7 @@ assets/markers/  generated PNGs — map marker.iconPath rejects base64
 
 ## PAGES (14)
 
-`home`(157, tab) · `notices`(7, tab) · `me`(221, tab) · `activity`(548) · `discover`(95) · `signup`(352) · `editor`(798) · `workspace`(142) · `staff`(10) · `vehicle`(156) · `weather`(465) · `weather-chart`(120) · `anotices`(7) · `privacy`(1)
+`home`(157, tab) · `notices`(7, tab) · `me`(221, tab) · `activity`(548) · `discover`(95) · `signup`(352) · `editor`(798) · `workspace`(159) · `staff`(10) · `vehicle`(156) · `weather`(465) · `weather-chart`(120) · `anotices`(7) · `privacy`(1)
 
 - **`notices` / `anotices` are 7 lines each** — both wrap the factory `utils/notices-page.js`: `Page(makeNoticesPage(() => null))` and `Page(makeNoticesPage(function () { return this._options ? this._options.id : null }))`. **Copy this pattern for new shared page logic.**
 - **`staff` is a 10-line shim** — header + `<field-panel perspective="staff"/>`. A thin link-target page is an accepted pattern.
@@ -33,17 +33,19 @@ assets/markers/  generated PNGs — map marker.iconPath rejects base64
 
 ## COMPONENTS (11)
 
-Three of them are **self-fetching business panels** — the only prop is `activityId` and they load in `attached` plus an observer on that prop, guarded by a `this._loading` re-entrancy flag:
+Three of them are **self-fetching business panels** — they load in `attached` plus on a prop observer, guarded by a `this._loading` re-entrancy flag:
 
 | Component | LOC | Role |
 |---|---|---|
-| `roster-panel` | 381 | 名单: bulk approve/waitlist/cancel, TSV/CSV export + audit, sensitive data, companion groups, collaboration grants |
-| `transport-panel` | 445 | 分车: vehicles, auto-assign preview/commit, manual assign/swap, seat map |
-| `field-panel` | 224 | 现场: check-in / departure verify / nodes / home-safe / incidents / position. The `perspective` prop serves both `workspace` (organizer) and `staff` |
+| `roster-panel` | 385 | 名单: bulk approve/waitlist/cancel, TSV/CSV export + audit, sensitive data, companion groups, collaboration grants |
+| `transport-panel` | 461 | 分车: vehicles, auto-assign preview/commit, manual assign/swap, seat map |
+| `field-panel` | 245 | 现场: check-in / departure verify / nodes / home-safe / incidents / position. The `perspective` prop serves both `workspace` (organizer) and `staff`. Action buttons are gated by **per-row facts** from `rowView` (`checkedIn`, `needsOutboundBoarding`, `outboundBoarded`) so a row whose server-side precondition is unmet never shows a doomed button; when 「核实已随队出发」 is hidden the sheet prints where to go instead (车长任务页) |
 | `meteogram` | 507+92 | canvas 2d 天相 time-coordinate chart |
 | `icon` | 121 | SVG data-URI map; the only leaf component |
 | `overlay` / `status-panel` / `form-field` / `person-row` / `activity-card` | 27/19/12/19/16 | presentational |
 | `privacy-popup` | 49 | **dead code** — unregistered |
+
+The three self-fetching panels also take **`sync-key`** (`phase@revision`, supplied by `workspace.js` after each of its own reads). They stay mounted across tab switches (so search text / checkboxes / vehicle form survive), which is why they need an explicit invalidation signal: the observer re-reads **only when the key differs from what that panel actually last read** (`this._readKey`), so no tab switch costs an extra full-state read, but a phase change refreshes every mounted panel by itself. Pages that don't pass `sync-key` (e.g. `staff`) keep the old attach-only behaviour — and must not be trusted to show a fresh phase.
 
 The auto-assign algorithm is **server-side** (`domain/allocation.js`). `transport-panel` only diffs and labels the returned plan; it never re-sorts.
 

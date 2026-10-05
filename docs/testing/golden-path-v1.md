@@ -64,14 +64,14 @@
    `{{roleOptions}}/{{scopeOptions}}`，而组件 data 实测 = `{"roleOptions":null,"scopeOptions":null}`
    （JS 只有模块常量 `ROLE_OPTIONS`/`SCOPE_OPTIONS`）。后果：车长页进不去 ⇒ 上车这一步在真实用户路径上断链
    （本轮用 `membership.save` 自授以让下游节点可测，UI 侧记 FAIL + 未验证）。
-4. **工作台面板挂载后不重读**（`workspace.js:111 onTab` 只 `setData({tab})`）：实测阶段推到集合后，
+4. **工作台面板挂载后不重读** —— **Phase 3 已修（§10）**。修前实测：阶段推到集合后，
    仍挂着的现场面板 `phase` 停在 `published`，弹层 `actions` 为**空数组** —— 组织者看到的是「点开弹层什么按钮都没有」，
-   只能退出重进。本轮 Golden Path 把它作为 UI FAIL 钉住，并在下一步用「退出重进」这个真实用户补救动作继续。
+   只能退出重进；同一缺陷在 closing 段复发（`panelPhase=active` vs `cloudPhase=closing`，「核实安全到家」按钮查无）。
    同源的第二条后果更隐蔽：面板保持挂载（`workspace.wxml:27-31` 明文写明是故意的）使页面里同时存在
    多个 `.textarea`，第一次「进入正在同行」的确认就是因为原因填进了现场面板的备注框而点了个
    disabled 的空按钮 —— 产品没坏，但任何按页面级 selector 找输入框的实现（包括自动化）都会踩。
-5. **现场面板给未上车的拼车乘客提供「核实已随队出发」**：真机点下去服务端拒（`departure` 仍 `unknown`），
-   而上车入口只在车长页 —— 与交叉审计 §5-3 一致，本轮第一次由端到端复现。
+5. **现场面板给未上车的拼车乘客提供「核实已随队出发」** —— **Phase 3 已修（§10）**。修前真机点下去服务端拒
+   （`departure` 仍 `unknown`），而上车入口只在车长页 —— 与交叉审计 §5-3 一致，端到端复现过两次。
 
 ## 4. 平台限制（记 INCONCLUSIVE，不记 FAIL，也不算通过）
 
@@ -191,6 +191,16 @@ node tools/e2e-golden-path-test.js      # 逐节点账本 + VERDICT；退出码 
 每轮会在真实云端建一个 `[GP·黄金路径] …·<RUN_TAG>` 活动并走完到归档（归档后自动退出发现列表）。
 中途中断会留下 published/gathering 状态的同名前缀沙盒 —— 带报名的活动按域规则取消不掉，需人工在预演面板清理。
 
+**环境纪律（Phase 3 用两轮垃圾读数换来的，务必照做）**：
+
+1. **同一时刻只允许一个循环持有开发者工具会话。** 串接的链被 kill 时子循环不会死，它会和新起的循环抢同一个
+   9420 端口，之后每轮读数都是垃圾（实测：编辑器 `.seg=0`、`page destroyed`、面板元素查无、大面积红）。
+   看到「大面积红」先怀疑会话，不要怀疑产品，更不要拿它当产品结论。
+2. 恢复手段只有 `cli quit` + `cli open`（`close` 不够）；`auto` 偶尔要等窗口起来，失败就再跑一次 `auto`。
+3. 每轮开工前先跑 **`~/.ourtrail-e2e/preflight.js`**：首页装配 → 真点「发起活动」→ 编辑器三步齐全。
+   体检不过就重启再来（最多三次）；三次仍不过该轮记 `ENV-ABORT`，绝不拿垃圾读数充当结果。
+   `p3-stability.sh` 已把这三条写进循环。
+
 ## 8. 测试侧纪律（本轮踩实后已写进代码注释）
 
 1. `page.$()` 恒返回单元素，数组一律 `$$`；
@@ -217,14 +227,13 @@ node tools/e2e-golden-path-test.js      # 逐节点账本 + VERDICT；退出码 
 1. `transport-panel.wxml:206` 的 `pickupIds.indexOf(item.id)` 恒真绑定 —— 组织者在界面上造不出任何一辆车，
    这是唯一把主链路彻底断掉的缺陷（改法：预先算好 `pickupOptions[i].checked` 或引 WXS，一行级改动）；
 2. `roster-panel` 把 `ROLE_OPTIONS`/`SCOPE_OPTIONS` 挂进 `data` —— 否则车辆联络无法经 UI 授予，车长页永远进不去；
-3. `workspace.js:111 onTab` / 面板 `phase` 陈旧 —— 阶段推进后已挂载面板应重读（或改为 `wx:if` 挂载），
-   否则用户看到的是空动作表，只能在红字「请重试」里反复点；
+3. ~~`workspace.js:111 onTab` / 面板 `phase` 陈旧~~ —— **Phase 3 已修**（§10）；
 4. 7 处裸 `<checkbox bindchange>`（已进 `check.js` 白名单，只允许变少）——`editor.wxml:469/489` 优先，
    它挡住的是「发布时顺便给自己报名」；
-5. `field-panel.js:125` 对未上车拼车乘客仍提供「核实已随队出发」：要么按钮按上车事实收敛，要么把上车入口搬进面板。
+5. ~~`field-panel.js:125` 对未上车拼车乘客仍提供「核实已随队出发」~~ —— **Phase 3 已修**（§10）。
 
-修好 1/2/3 后，本套件的 8 条 `unv()` 里能立刻摘掉 3 条（座号、协作授权、车辆经 UI 创建），
-座位与上车节点才第一次真正「全程 UI 可走」。
+修好 1/2 后，本套件的 8 条 `unv()` 里能立刻摘掉 2 条（车辆经 UI 创建、协作授权经 UI 授予）；
+座号那条要等 §3-2 的裸 checkbox 修掉才能摘。
 
 **测试侧 v2**：
 
@@ -239,3 +248,77 @@ node tools/e2e-golden-path-test.js      # 逐节点账本 + VERDICT；退出码 
 `pages/activity/activity`」「详情标题与 `stateTitle` 正确」四项，**没有断言 `organizerIntro`**
 （该字段就在详情页 data 里，`activity.js:279`）。补法是一行 `u(...)`；没有补的原因是没有跑第 11 轮，
 不愿用一次未经十连跑验证的改动去替换已定版的构建。
+**→ Phase 3 已补齐并按十连跑定版，见 §10-3。**
+
+## 10. Phase 3 修复记录（2026-10-05）
+
+任务书只给三件事：BUG-1 面板陈旧、BUG-2 出发核实死入口、BUG-3 Discover 身份链。三条都改的是**产品可达性**，
+没有放宽任何断言，也没有为了让路径变绿而绕开控件。
+
+### 10-1 BUG-1 面板停在旧 phase
+
+- 根因：三个面板（`roster-panel` / `transport-panel` / `field-panel`）是「保持挂载、用类名隐藏」的
+  （`workspace.wxml:27-31`，为的是保住搜索词/勾选/表单），它们只在 `attached` 与 `activityId` 变化时自读；
+  `workspace.js:111 onTab` 切区只 `setData({tab})`，页面 `onShow/reload` 也不会通知面板 ⇒
+  阶段变了，面板仍按旧 `phase` 装配弹层动作表。
+- 修法（保留缓存 + 明确失效）：页面每次成功读到权威态后把 `phase@revision` 作为 `sync-key` 下发给三个面板；
+  面板的 `syncKey` observer 只在**下发的键与自己上次实际读到的不一致**时才重读（`this._readKey` 记录后者），
+  所以既不会停在旧阶段，也不会每次切区都全量重读（`loadState` 每次读 15 个集合，成本是真实的）。
+  `revision` 是服务端 CAS 计数，任何一次写入都会推进 ⇒ 它就是权威失效信号，不是前端猜的。
+- 文件：`miniprogram/pages/workspace/workspace.js`（data.syncKey + reload 内下发）、`workspace.wxml`（三处 `sync-key`）、
+  三个面板各加 `syncKey` property + observer + `_readKey`。
+- 验证：B 层「阶段推进后已挂载的现场面板随 syncKey 重读到新 phase」；GP-09 断言 `panelPhase=gathering`
+  且重读后名单/弹层动作表是新的；GP-12 断言 closing 段同样自失效（不再靠「退出重进」绕过——绕过去就等于没测到机制）。
+
+### 10-2 BUG-2 「核实已随队出发」的可达性
+
+- 先答疑「这该由谁操作」：**权限上组织者就有资格**（`permissions.js:204` `owner || cap('checkin')`），
+  车长（`cap('checkin')` 的车辆联络）也有；缺的不是角色而是**事实**——`field.js` 要求 joined 必须
+  「已签到 +（拼车乘客且非参与者司机）去程已上车」，而上车入口在车长任务页（`attendance.board`）。
+  所以既没有降低后端权限，也没有改 invariant，而是把按钮的**可见性**收到与服务端同一条规则一致。
+- 修法：规则收敛成单一出处 `permissions.needsOutboundBoarding(state, signup)`，`field.js` 的 joined 门与
+  `selectors.rowView` 的 `needsOutboundBoarding` 都读它；`field-panel.openSheet` 只在
+  `row.checkedIn && !row.needsOutboundBoarding` 时才给「核实已随队出发」，`not_departed/coordinating`
+  在已有上车事实时也不再给（那时服务端同样会拒）；被收掉的按钮配一句指路文案
+  （缺签到 → 「请先完成现场签到」；缺上车 → 「请先在车长任务页点『确认上车』」）。
+- 文件：`domain/permissions.js`、`domain/field.js`、`domain/selectors.js`、`components/field-panel/field-panel.{js,wxml}`、
+  `trailApiLab` 的 domain 同步副本（`node tools/sync-lab.js`）。**需重新部署 trailApi —— 已部署，timeout 仍为 20 秒。**
+- 验证：GP-10 断言未上车行「不再提供该按钮 + 文案指路」并回读 `departure` 仍 `unknown`（零副作用）；
+  上车经车长页真实点击后，出发核实按钮出现、真实点击落库 `departure=joined`；B 层同理走「先补事实再点按钮」的真实顺序。
+
+### 10-3 BUG-3 Discover 的精确身份链
+
+补齐成链：`activity.create` 返回的 `AID` → 发现流里 `id===AID` 的活动恰好一条且 `phase=published`、
+标题与 `organizerIntro` 等于 fixture 输入 → 按**渲染出来的标题文本**命中卡片，再用 `wx:for` 下标回读页面数据
+证明那张卡的 `id === AID` → 卡片文案含服务端算出的 `owner` 标志「我组织的」 → 点卡落到
+`pages/activity/activity` → 详情标题与 `organizerIntro` 等于 fixture → 云端回读 `activity.id === AID` 且
+`activity.ownerId === read{profile}.profile.id`（本轮登录身份，即 `activity.create` 的下发者）。
+期望值全部来自 fixture 与创建时的返回值，没有任何一处「读回来再当期望」。
+
+### 10-4 顺带修掉的测试侧时序脆弱（不是放宽，是等权威态落地）
+
+普查跑（修复后构建，10 轮）暴露三类，全部在代码里修掉而不是加重试：
+
+| 现象 | 根因 | 修法 |
+|---|---|---|
+| 「第 1 次确认没生效：弹层仍开着且无红字」但 `phase` 其实已经推进 | 确认后页面要跑一次云端往返才 `setData(transitionOpen:false)`，固定 3 秒判读读到的是过渡态 | 判读改为轮询到「弹层关闭 或 出现红字」为止；两者都不来才记 FAIL |
+| 「详情内容正确」读到 `title=""` | 点卡片后详情页自己异步读装配 | 轮询到 `loading=false && title` 非空再断言 |
+| run 8 大面积红（32 条）：两位乘客只有一位 `outboundBoarded=true` | **逐人循环的自竞态**：下一轮的「还缺谁」用云端回读算，而上一次点击刚刚那条还没落库 ⇒ 同一个人被点两次，第二个人永远没点，`active` 之后整段推不动 | 每点一个人都等他本人的事实落库再算下一个缺口（签到/上车/出发核实/到家四段循环同改）；顺带去掉了「按点击次数封顶」的错误循环条件 |
+
+另外把「按钮是条件绑定」这类空点击挡在前面：`phaseAdvance`、车页「确认上车」、编辑器「保存草稿」之前都先等
+页面 `busy===false`（这些按钮在 busy 期间 `bindtap` 绑的是空串，点了什么也不会发生）。
+
+还补了 3 条 A 层契约断言（A 层 62 → **65**）：`needsOutboundBoarding` 必须与 `field.js` 的 joined 门同向 ——
+已上车的拼车乘客 `false`、参与者司机 `false`、已签到但未上车的乘客 `true`，且上车落库后翻回 `false`。
+这条契约是 BUG-2 修复的地基：视图说错，界面上的按钮就会要么该有没有、要么不该有却有。
+
+### 10-5 两处「oracle 本身错了」的修正（不是放宽）
+
+1. **重复发布的零副作用判据**。原来比较的是**全局** `revision`，但 `revision` 是 `ot_meta/main` 上的单一 CAS 计数
+   （`store.js:115`），这套 `ot_*` 集合被多条链路共用 —— 别人的一次写入就会把它推进，于是十连跑里出现
+   「服务端确实拒了重复发布（`INVALID_INPUT`）、这场活动一点没变，但断言红了」。
+   改成**逐字段比对这场活动的快照**（`JSON.stringify(v2.activity) === 发布后的快照`），比原来只比 `phase` 更强；
+   全局 revision 的 before/after 仍然记进证据并标明「共享云 CAS 计数，不作判据」。
+2. **「完成本程行驶」没落地时先读红字**。车页两个动作同样走 `dispatchAndSync`，CONFLICT 时产品只重读页面不代重发；
+   原来的断言只回读 `legs.outbound.completed`，红字没进证据就成了无法定性的一条红。现在：落地失败就读页面红字，
+   有红字则按用户的做法再点一次（两次尝试各自记账），最终读数把 `页面红字 / 再点一次` 一并写进证据。

@@ -67,6 +67,7 @@ Growth caps at `commands.js:89-136` **silently truncate history**: receipts ≤ 
 
 - `staffCan(state, actor, activityId, capability, signupIds, now)` = `StaffScope` ∩ `Capability[]` ∩ unexpired. **The expiry boundary is strict less-than: `expiresAt === now` is already expired.**
 - `vehicleCan` never grants roster / field / sensitive capability.
+- `needsOutboundBoarding(state, signup)` is the **single source** for "this person must have an outbound boarding record before 随队出发 can be verified" (shared passenger, not a participant-driver, assigned but not boarded). `field.js`'s `joined` gate and `selectors.rowView.needsOutboundBoarding` both read it — the client uses that flag to decide whether the 「核实已随队出发」 button exists at all, so a row whose facts are missing no longer offers an action the server must reject. Do not re-derive the rule anywhere else.
 - `isOwnSignup` includes the submitter, not just the person — that is what makes 代报 (proxy signup) work.
 - `hasProxyConsent` gates reading another person's contact data and filing position/home for them, via `Consent.proxyAuthority` / `Consent.proxyHome`.
 

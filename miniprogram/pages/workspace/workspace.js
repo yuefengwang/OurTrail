@@ -40,6 +40,9 @@ Page({
     nextPhaseLabel: '',
     canCancel: false,
     canEdit: false,
+    // 三个面板常驻（切区不丢勾选/表单），所以由页面把「我这次读到的后端状态」下发给它们：
+    // 面板只在 phase@revision 与自己上次读的不一致时才重读，既不会停在旧阶段，也不会每次切区全量重读。
+    syncKey: '',
     // 弹层
     transitionOpen: false,
     transitionNext: '',
@@ -98,6 +101,7 @@ Page({
         thirdValue: inField ? v.counters.unchecked : v.counters.pendingHome,
         thirdLabel: inField ? '待签到' : '待到家',
         phaseTimeline: timeline,
+        syncKey: phase + '@' + res.revision,
         canTransition: !!next && v.permittedActions.indexOf('activity.transition') !== -1,
         nextPhaseLabel: next ? F.PHASE_LABELS[next] : '',
         canCancel: v.permittedActions.indexOf('activity.transition') !== -1

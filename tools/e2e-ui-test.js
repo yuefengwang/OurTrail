@@ -91,6 +91,8 @@ async function main() {
   let reconnected = false
 
   // —— 助手：元素查询一律走 $$（$ 恒返回单个 Element，按数组用就永远查不到，历史上 tap 因此静默不发生）——
+  // 默认 4 次保持不变（元素密集段前有 hardReconnect，全局拉长轮询会把会话拖到断开——本轮实测）；
+  // 面板内容需要更久的等待时在调用点显式传 tries，谁在等什么写清楚。
   const queryAll = async (scope, sel, tries) => {
     for (let i = 0; i < (tries || 4); i++) {
       const els = await scope.$$(sel)
@@ -178,7 +180,7 @@ async function main() {
     return open(url)
   }
 
-  // ===== 2. 首页装配（真实渲染 + 找一个可驱动详情的活动 id）=====
+  // ===== 2. 首页装配（渲染自洽；详情页要用到活动 id，改由本层自建沙盒提供）=====
   let page = await open('/pages/home/home')
   await probeChannel(page)
   await L.block('首页装配', 2, async () => {
@@ -187,23 +189,14 @@ async function main() {
       !!homeData && homeData.loading === false && !homeData.denied,
       JSON.stringify({ loading: homeData && homeData.loading, denied: homeData && homeData.denied }))
     const cards = (homeData && homeData.cards) || []
-    L.u('首页可见至少一个活动（详情/报名页要拿它的 id）', cards.length > 0, JSON.stringify(cards.map(c => c.title)).slice(0, 200))
+    // 「首页恰好有活动」不是被测事实，依赖它会让整条链从第一跳就错位（本轮实测：GP 把活动都走成归档后首页为空）。
+    // 这里只断言渲染自洽；详情页那一步改用本层自己建的沙盒 id，确定可控。
+    L.u('首页卡片渲染自洽（每张卡都有 id 与标题）',
+      cards.every(c => !!c.id && !!c.title), JSON.stringify({ n: cards.length, titles: cards.map(c => String(c.title).slice(0, 16)) }))
   }, uiGate())
-  const homeData = await page.data()
-  const cards = (homeData && homeData.cards) || []
-  const activityId = ((cards || []).filter(c => c.title !== '[预演] 工作台E2E' && c.title !== '[预演] 报名E2E' && c.title !== '[预演] 勾选取证E2E')[0] || {}).id || ''
   await shot('01-home')
 
-  // ===== 3. 活动详情页装配 =====
-  if (activityId) {
-    page = await open('/pages/activity/activity?id=' + activityId)
-    await L.block('活动详情页装配', 1, async () => {
-      const d = await page.data()
-      L.u('活动详情页装配（非 denied / 非 loading）', !!d && d.loading === false && !d.denied,
-        JSON.stringify({ loading: d && d.loading, denied: d && d.denied }))
-    }, uiGate())
-    await shot('02-activity')
-  }
+  // ===== 3. 活动详情页装配：用下面自建的沙盒 id（见「沙盒建档与发布」之后）=====
 
   // ===== 4. 工作台全链（[预演] 沙盒，沿用 trailApiLab 能力）=====
   // 沙盒建/发与 lab 演员报名是本层的测试环境准备 ⇒ 记 BUSINESS；
@@ -234,6 +227,20 @@ async function main() {
     const published = me ? await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me.id }, participant: me.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } }) : { ok: false, err: '没有档案' }
     L.b('发布（发布即报名本人）', published.ok === true, JSON.stringify(published.error || published.err || 'ok').slice(0, 200))
   }, () => ({ ok: true }))
+
+  // 详情页装配用自建沙盒的 id：不再从首页「碰巧有的一条」里抓（那是数据依赖，不是被测事实）
+  if (sandboxId) {
+    page = await open('/pages/activity/activity?id=' + sandboxId)
+    await L.block('活动详情页装配（自建沙盒）', 1, async () => {
+      const d = await page.data()
+      L.u('详情页装配（非 denied / 非 loading，且标题就是这场沙盒）',
+        !!d && d.loading === false && !d.denied && String(d.title || '') === sandboxInput.title,
+        JSON.stringify({ loading: d && d.loading, denied: d && d.denied, title: d && d.title }))
+    }, uiGate())
+    await shot('02-activity')
+  } else {
+    L.skip(UI, '活动详情页装配', '沙盒没建起来（见上条 BUSINESS 失败），详情页无处可开——不静默跳过')
+  }
 
   let rows0 = []
   let pending0 = []
@@ -306,6 +313,42 @@ async function main() {
       const v = await readOrg()
       return { ok: r.ok === true, phase: (v && v.ok && v.data.view.kind === 'activity' && v.data.view.activity.phase) || '', err: r.error || r.err || '' }
     }
+    // 阶段推进走真实工作台：总览 → 阶段按钮 → 填原因 → 确认。
+    // 只有让「页面自己」观察到状态变化，挂载中的面板才会收到新的 syncKey ——
+    // 用云命令推阶段的话，面板压根不知道世界变了，那条重读断言就变成不可能成立的假考题。
+    const advanceViaUI = async (label, reasonText) => {
+      const segs0 = await queryAll(page, '.seg')
+      await tapEl(segs0[0])
+      await page.waitFor(1200)
+      const go = await findButtonByText(page, label)
+      const okGo = await tapEl(go)
+      L.uiTap('点「' + label + '」', okGo, (go ? '命中' : '未找到') + '；屏上按钮=' + JSON.stringify(await buttonLabels(page)).slice(0, 200))
+      await page.waitFor(1500)
+      let opened = null
+      for (let i = 0; i < 6; i++) {
+        opened = await page.data()
+        if (opened && opened.transitionOpen === true) break
+        await page.waitFor(800)
+      }
+      L.uEffect('阶段确认弹层打开', !!(opened && opened.transitionOpen === true), 'transitionOpen=' + (opened && opened.transitionOpen))
+      // 工作台四个面板保持挂载，页面里同时有现场备注框与弹层原因框：填完必须回读 data.reason 才算填对
+      const areas = await queryAll(page, '.textarea')
+      let okReason = false
+      let usedIdx = -1
+      for (let i = 0; i < areas.length; i++) {
+        if (!await inputEl(areas[i], reasonText)) continue
+        const d = await page.data()
+        if (d && String(d.reason || '') === reasonText) { okReason = true; usedIdx = i; break }
+      }
+      L.uiInput('填写阶段变更原因（落到 data.reason）', okReason,
+        '页面 ' + areas.length + ' 个 .textarea，落到 data.reason 的是第 ' + usedIdx + ' 个')
+      const confirm = await findButtonByText(page, '确认变更，不跳过检查')
+      const okC = await tapEl(confirm)
+      L.uiTap('点「确认变更，不跳过检查」', okC, (confirm ? '命中' : '未找到'))
+      await page.waitFor(2500)
+      const v = await readOrg()
+      return { phase: (v && v.ok && v.data.view.activity.phase) || '' }
+    }
     // 按文案命中按钮必须反复重查直到匹配：面板正文本来就有 .button，
     // 查一次非空就返回会永远漏掉随后才落位的弹层动作按钮（本轮实测踩过）。
     const buttonLabels = async scope => {
@@ -352,7 +395,7 @@ async function main() {
       const rosterEl = await page.$('roster-panel')
       const rosterCls = rosterEl ? String((await rosterEl.attribute('class')) || '') : '(查无 roster-panel)'
       L.u('名单面板可见（hide 类已摘除——类名方案的真机回归点）', !!rosterEl && rosterCls.indexOf('hide') === -1, 'class=' + rosterCls)
-      const rosterRows = rosterEl ? await rosterEl.$$('person-row') : []
+      const rosterRows = rosterEl ? await queryAll(rosterEl, 'person-row', 10) : []
       L.u('名单行数与云端一致（面板真实渲染报名数据）', rosterRows.length === rows0.length,
         JSON.stringify({ ui: rosterRows.length, cloud: rows0.length }))
       await shot('03-workspace-roster')
@@ -444,7 +487,7 @@ async function main() {
       L.uiTap('回到「分车」分区看座位示意', okSeat, 'tap .seg[2]')
       await page.waitFor(1500)
       const tpSeats = await page.$('transport-panel')
-      const seatEls = tpSeats ? await queryAll(tpSeats, '.seat') : []
+      const seatEls = tpSeats ? await queryAll(tpSeats, '.seat', 10) : []
       let occupied = 0
       for (const seat of seatEls) {
         if (String((await seat.attribute('class')) || '').indexOf('occupied') !== -1) occupied++
@@ -455,18 +498,24 @@ async function main() {
 
     let gath
     await L.block('推进 gathering', 2, async () => {
-      gath = await advance('gathering', '按期集合')
-      L.b('推进 gathering 并回读到阶段值', gath.ok && gath.phase === 'gathering', JSON.stringify(gath).slice(0, 160))
-      // 已知 P1 的真机证据：工作台切区只 setData，面板挂载后不再重读（workspace.js:111 onTab）。
-      // 后果不是抽象的——阶段推到集合后，仍挂着的现场面板按旧 phase 算动作表，弹层里一个动作都没有，
-      // 组织者只能退出重进才能签到/核出发。这条断言在产品修好之前会一直红。
+      gath = await advanceViaUI('进入正在集合', '按期集合')
+      L.b('推进 gathering 并回读到阶段值（经真实工作台按钮）', gath.phase === 'gathering', JSON.stringify(gath).slice(0, 160))
+      // BUG-1 的验证点：工作台切区只 setData，面板靠页面下发的 syncKey（phase@revision）自失效重读。
+      // 阶段推到集合后，仍挂着的现场面板必须已经是新 phase，弹层动作表才不会是空的。
       const fpStale = await page.$('field-panel')
-      const staleData = fpStale ? await fpStale.data() : null
-      L.u('阶段推进后已挂载的现场面板自行重读（面板不重读＝已知 P1，本轮真机坐实）',
+      // 失效重读是异步的：轮询到落地为止（等不到才算红），把等待次数一并记进证据
+      let staleData = null
+      let waited = -1
+      for (let i = 0; i < 10; i++) {
+        staleData = fpStale ? await fpStale.data() : null
+        if (staleData && staleData.phase === 'gathering') { waited = i; break }
+        await page.waitFor(800)
+      }
+      L.u('阶段推进后已挂载的现场面板随 syncKey 重读到新 phase',
         !!staleData && staleData.phase === 'gathering',
-        JSON.stringify({ panelPhase: staleData && staleData.phase, cloudPhase: gath.phase }))
+        JSON.stringify({ panelPhase: staleData && staleData.phase, cloudPhase: gath.phase, waited }))
     }, uiGate('需要读到已挂载面板的 phase', 0))
-    // 重挂载面板，让后续弹层动作表按最新阶段装配（否则动作表恒空，链路无法继续）
+    // 面板已随 syncKey 自失效重读（上面那条断言钉住），这里重开页面只是为了拿新鲜句柄
     page = await open('/pages/workspace/workspace?id=' + sandboxId)
     await probeChannel(page)
 
@@ -481,10 +530,10 @@ async function main() {
       L.uiTap('点「现场」分区 tab', okField, 'tap .seg[3]')
       await page.waitFor(1500)
       const fp = await page.$('field-panel')
-      const fieldRows = fp ? await queryAll(fp, 'person-row') : []
+      const fieldRows = fp ? await queryAll(fp, 'person-row', 10) : []
       L.u('现场区渲染已确认名单', fieldRows.length === confirmedRowsAll.length,
         JSON.stringify({ ui: fieldRows.length, cloud: confirmedRowsAll.length }))
-      const sheetBtns = fp ? await queryAll(fp, '.button.text') : []
+      const sheetBtns = fp ? await queryAll(fp, '.button.text', 10) : []
       const okOpen = await tapEl(sheetBtns[0])
       L.uiTap('点第一名参与者的「现场记录」', okOpen, 'tap .button.text @ field-panel，命中 ' + sheetBtns.length + ' 个')
       let fpData = null
@@ -514,9 +563,23 @@ async function main() {
     const tr0 = await cloudCall('trailApi', 'readTransport', { activityId: sandboxId })
     const assignsMid0 = (tr0 && tr0.ok && tr0.data.ok !== false && tr0.data.value.assignments) || []
     const vehiclesMid0 = (tr0 && tr0.ok && tr0.data.value.vehicles) || []
+    // 顺序按产品真实语义走：拼车乘客的「去程上车」入口在车长任务页，没有这个事实，
+    // field.js:85 就会拒 joined —— 所以先补事实（此步只证业务，UI 侧显式记未验证），再回工作台点真按钮。
+    if (uiTarget) {
+      const asgUi = assignsMid0.find(a => a.signupId === uiTarget.signupId)
+      const drvUi = vehiclesMid0.some(v => v.drivers.some(d => d.kind === 'participant' && d.signupId === uiTarget.signupId))
+      if (asgUi && !drvUi) {
+        const brd = await robustDispatch({ type: 'attendance.board', activityId: sandboxId, signupId: uiTarget.signupId, leg: 'outbound', boarded: true, note: '自动化清点上车' })
+        L.b('拼车乘客去程上车（经命令补齐，只证业务）', brd.ok === true, JSON.stringify(brd.error || brd.err || 'ok').slice(0, 160))
+        L.uiUnverified('「去程上车经车长任务页真实点击完成」', '本沙盒未授予车长协作身份，pages/vehicle 不可进；上车只在车长任务页有入口，此处用命令补齐事实，不充当 UI 证据')
+        // 命令不经过页面，面板不会自己知道；真实用户是「从车长页退回工作台」——这里重开页面等效
+        page = await open('/pages/workspace/workspace?id=' + sandboxId)
+        await probeChannel(page)
+      }
+    }
     await L.block('现场弹层出发核实（真实用户路径）', 4, async () => {
       const fp = await page.$('field-panel')
-      const sheetBtns = fp ? await queryAll(fp, '.button.text') : []
+      const sheetBtns = fp ? await queryAll(fp, '.button.text', 10) : []
       const okOpen = await tapEl(sheetBtns[0])
       L.uiTap('再次点开「现场记录」弹层', okOpen, 'tap .button.text，命中 ' + sheetBtns.length + ' 个')
       let fpData = null
@@ -538,15 +601,7 @@ async function main() {
       L.b('弹层出发核实经服务端落库（departure=joined）', uiDone.departure, JSON.stringify({ departure: targetRow.departure }))
     }, uiGate('现场弹层需要元素通道', 1))
 
-    // 上车动作不在现场面板（在产品里只有车长任务页有入口）：拼车乘客经命令补齐，否则 active 硬门过不去。
-    if (uiTarget) {
-      const asgUi = assignsMid0.find(a => a.signupId === uiTarget.signupId)
-      const drvUi = vehiclesMid0.some(v => v.drivers.some(d => d.kind === 'participant' && d.signupId === uiTarget.signupId))
-      if (asgUi && !drvUi) {
-        const brd = await robustDispatch({ type: 'attendance.board', activityId: sandboxId, signupId: uiTarget.signupId, leg: 'outbound', boarded: true, note: '自动化清点上车' })
-        L.b('拼车乘客去程上车（UI 无入口，经命令补齐——现场面板死按钮在案）', brd.ok === true, JSON.stringify(brd.error || brd.err || 'ok').slice(0, 160))
-      }
-    }
+    // 上车已在本段之前补齐（见「现场弹层签到」之后那段），此处不再重复。
 
     // 批量兜底：签到 →（拼车乘客）上车 → 出发核实。
     // 判「已办」必须排除 departure==='unknown'（selectors.js:125 无记录时就是 'unknown'，按真值判断会把没办的人当办完）。
@@ -597,7 +652,7 @@ async function main() {
     let uiHomeDone = false
     await L.block('现场弹层到家核实（真实用户路径）', 4, async () => {
       const fp2 = await page.$('field-panel')
-      const homeBtns = fp2 ? await queryAll(fp2, '.button.text') : []
+      const homeBtns = fp2 ? await queryAll(fp2, '.button.text', 10) : []
       const okHome = await tapEl(homeBtns[0])
       L.uiTap('点第一名参与者的「现场记录」（closing 阶段）', okHome, 'tap .button.text，命中 ' + homeBtns.length + ' 个')
       let fp2Data = null

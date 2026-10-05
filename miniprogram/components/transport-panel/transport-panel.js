@@ -8,6 +8,8 @@ Component({
   options: { styleIsolation: 'apply-shared' },
   properties: {
     activityId: { type: String, value: '' },
+    // 宿主页读到的「phase@revision」：后端一变就重读，面板常驻也不再停在旧阶段。
+    syncKey: { type: String, value: '' },
   },
   data: {
     loading: true,
@@ -46,6 +48,7 @@ Component({
 
   observers: {
     activityId() { this.reload() },
+    syncKey(key) { if (key && key !== this._readKey) this.reload() },
   },
   lifetimes: {
     attached() { this.reload() },
@@ -67,6 +70,7 @@ Component({
         this.revision = res.revision
         this.now = res.now
         this.view = res.view
+        this._readKey = res.view.activity.phase + '@' + res.revision
         const v = res.view
         const transport = tr
         const pickupNames = {}

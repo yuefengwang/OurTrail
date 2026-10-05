@@ -92,6 +92,7 @@
       data-index="{{index}}"
       bindtap="{{busy ? '' : 'onAction'}}"
     >{{item.label}}</view>
+    <text wx:if="{{sheetHint}}" class="small muted">{{sheetHint}}</text>
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
   </view>

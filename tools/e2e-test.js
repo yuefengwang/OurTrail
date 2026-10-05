@@ -246,6 +246,15 @@ async function main() {
     check('司机签到 ok', r.ok === true, JSON.stringify(r.error || ''))
     r = await depart(ids['陈屿'], '本人驾车随队')
     check('司机出发核实 ok', r.ok === true, JSON.stringify(r.error || ''))
+    // 视图必须把「这一行的 joined 还差什么」如实说出来：field-panel 的按钮可用性直接读它，
+    // 而它与 field.js 的 joined 门共用 needsOutboundBoarding 这一个出处 —— 这里钉住三种行形状。
+    const flagRows = ((await lin.read({ kind: 'activity', activityId, perspective: 'organizer' })).data.view.rows)
+    const flagOf = name => (flagRows.find(x => x.name === name) || {}).needsOutboundBoarding
+    check('needsOutboundBoarding：已上车的拼车乘客=false、参与者司机=false',
+      flagOf('林溪') === false && flagOf('陈屿') === false,
+      JSON.stringify(flagRows.map(x => ({ n: x.name, need: x.needsOutboundBoarding, boarded: x.outboundBoarded }))))
+    check('needsOutboundBoarding：已签到但还没上车的拼车乘客=true（服务端会拒 joined，按钮就不该出现）',
+      flagOf('王五') === true, JSON.stringify({ wangwu: flagOf('王五') }))
     r = await lin.dispatch({ type: 'activity.transition', activityId, next: 'active', reason: '全员到齐发车' }, await rev())
     check('未核实完就推进 active → UNRESOLVED_DEPARTURE（还差王五）',
       r.ok === false && r.error.code === 'UNRESOLVED_DEPARTURE', JSON.stringify(r.error || r))
@@ -253,6 +262,10 @@ async function main() {
     check('王五签到 ok', r.ok === true, JSON.stringify(r.error || ''))
     r = await board(ids['王五'], '清点上车')
     check('王五上车 ok', r.ok === true, JSON.stringify(r.error || ''))
+    const afterBoard = ((await lin.read({ kind: 'activity', activityId, perspective: 'organizer' })).data.view.rows)
+    check('上车事实落库后 needsOutboundBoarding 翻回 false（视图与门同向，不会指错路）',
+      (afterBoard.find(x => x.name === '王五') || {}).needsOutboundBoarding === false,
+      JSON.stringify((afterBoard.find(x => x.name === '王五') || {})))
     r = await depart(ids['王五'], '随队出发')
     check('王五出发核实 ok', r.ok === true, JSON.stringify(r.error || ''))
     r = await lin.dispatch({ type: 'activity.transition', activityId, next: 'active', reason: '全员到齐发车' }, await rev())
