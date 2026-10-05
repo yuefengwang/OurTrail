@@ -4,7 +4,7 @@
 
 const { reduceCommand, genId } = require('./domain/commands')
 const { assertInvariants } = require('./domain/invariants')
-const { selectView, selectTransport, getDetailState } = require('./domain/selectors')
+const { selectView, selectTransport, getDetailState, selectSensitive, selectContact } = require('./domain/selectors')
 const { planAssignments } = require('./domain/allocation')
 const { canonicalPayload } = require('./domain/contracts')
 const W = require('./lib/weather')
@@ -394,6 +394,291 @@ function run() {
     check('投影无遗留 hours 字段', body && !('hours' in body))
     check('tooEarly → null（转 out_of_range）', W.pointResponse({ tooEarly: true, days: [], detail: [] }) === null)
     check('当日无数据 → null', W.pointResponse({ elevation: 1, days: [], detail: [], series: [] }) === null)
+  }
+
+  /* ================= 第 16 节：Profile 域补洞（docs/product/profile/13-testing-strategy §4） =================
+   * 此前零覆盖：me 视图口径 / membership.save 错误路径 / membership.revoke / companion.remove 域 /
+   * position.revoke 域 / profile.save 服务端拒绝 / canReadSensitive+readContact 直测 / export.record 命令。 */
+  section('16. Profile 域补洞：me 视图 / membership / companion / position.revoke / 拒绝路径 / 敏感读')
+  const ME = 'o-me-openid'
+  const OTHER = 'o-other-openid'
+  const personOf = (name, phone) => ({ name, phone, emergency: { name: '紧急人', phone: '13000000000' }, medical: '' })
+  {
+    // ---- 16a. me 视图（kind:'me' 复合投影）----
+    let st = emptyState()
+    let r = dispatch(st, ME, { type: 'profile.save', person: personOf('墨白', '13800000001') })
+    check('16a 前置：profile.save 落库', r.ok, r.error)
+    st = r.value.state
+    const me0 = selectView(st, { userId: ME }, { kind: 'me' }, ctx().now)
+    check('me 视图 kind=me 且 person 回读', me0.kind === 'me' && me0.profile.person.name === '墨白'
+      && me0.profile.person.phone === '13800000001', JSON.stringify(me0.profile && me0.profile.person))
+    check('me 视图：无活动时 stats 全 0、recent 空、positionRows 空',
+      me0.stats.ongoing === 0 && me0.stats.finished === 0 && me0.stats.organized === 0
+      && me0.recent.length === 0 && me0.positionRows.length === 0, JSON.stringify(me0.stats))
+    check('me 视图：无账号 AUTH_REQUIRED',
+      selectView(st, { userId: null }, { kind: 'me' }, ctx().now).code === 'AUTH_REQUIRED')
+    const meShell = selectView(st, { userId: OTHER }, { kind: 'me' }, ctx().now)
+    check('me 视图：无档案用户回空壳不炸（id=自身，person 空，不含他人数据）',
+      meShell.kind === 'me' && meShell.profile.id === OTHER && meShell.profile.person.name === ''
+      && meShell.profile.companions.length === 0, JSON.stringify(meShell.profile))
+
+    // 造一场「发布 + 本人已确认参加」（发布即报名，smoke §3 同款路径）
+    const joinParticipation = {
+      personRef: { kind: 'user', userId: ME },
+      participant: personOf('墨白', '13800000001'),
+      trip: { mode: 'self' },
+      consent: { dataUse: true, proxyAuthority: false, proxyHome: false },
+    }
+    r = dispatch(st, ME, { type: 'activity.create', input: fullActivityInput() })
+    check('16a 前置：活动草稿创建', r.ok, r.error)
+    st = r.value.state
+    const actMe = r.value.targetIds[0]
+    r = dispatch(st, ME, { type: 'activity.publish', activityId: actMe, participation: joinParticipation })
+    check('16a 前置：发布并本人参加（confirmed）', r.ok, r.error)
+    st = r.value.state
+    const me1 = selectView(st, { userId: ME }, { kind: 'me' }, ctx().now)
+    check('me 视图口径：published+owner → ongoing=1、organized=1',
+      me1.stats.ongoing === 1 && me1.stats.organized === 1 && me1.stats.finished === 0, JSON.stringify(me1.stats))
+    check('me 视图：recent ≤3 且 slim 行带 role（owner）',
+      me1.recent.length === 1 && me1.recent[0].id === actMe && me1.recent[0].role === 'owner'
+      && JSON.stringify(Object.keys(me1.recent[0]).sort()) === JSON.stringify(['id', 'phase', 'role', 'startAt', 'title']),
+      JSON.stringify(me1.recent))
+    check('me 视图与 home 视图对同一人不互相泄露：me 不带 activityView/routeSnapshot',
+      me1.activities === undefined && me1.profile.person.medical !== undefined, '')
+
+    // JSON 手术造「归档」「第二场活动」「有效位置」——投影是纯函数，不要求手术态过 invariants
+    const surgery = JSON.parse(JSON.stringify(st))
+    const act2 = JSON.parse(JSON.stringify(surgery.activities.find(a => a.id === actMe)))
+    act2.id = 'act-me-2'
+    act2.phase = 'archived'
+    act2.startAt = '2026-09-01T08:00:00+08:00'
+    surgery.activities.push(act2)
+    const signupId = surgery.signups.find(s => s.activityId === actMe && s.personRef.kind === 'user').id
+    surgery.positions.push({
+      signupId, coordinates: { lat: 30.9, lng: 103.4 }, reportedAt: '2026-09-26T06:00:00+08:00',
+      consentExpiresAt: '2026-10-01T18:00:00+08:00', revokedAt: null,
+    })
+    const me2 = selectView(surgery, { userId: ME }, { kind: 'me' }, ctx().now)
+    check('me 视图口径：archived+ownRows → finished=1、organized=2',
+      me2.stats.finished === 1 && me2.stats.organized === 2 && me2.stats.ongoing === 1, JSON.stringify(me2.stats))
+    check('me 视图：recent 进行中优先（published 在 archived 前）且 ≤3',
+      me2.recent.length === 2 && me2.recent[0].id === actMe && me2.recent[1].id === 'act-me-2',
+      JSON.stringify(me2.recent))
+    check('me 视图：positionRows 出现本人有效位置行',
+      me2.positionRows.length === 1 && me2.positionRows[0].signupId === signupId
+      && me2.positionRows[0].activityId === actMe, JSON.stringify(me2.positionRows))
+    const homeConsistency = selectView(surgery, { userId: ME }, { kind: 'home', perspective: 'participant', openedActivityIds: [] }, ctx().now)
+    const homeRows = homeConsistency.activities.map(a => (a.meta.positionRows || []).length).reduce((x, y) => x + y, 0)
+    check('me 与 home 的 positionRows 同源同数（重构后行为一致）',
+      homeRows === me2.positionRows.length, JSON.stringify({ home: homeRows, me: me2.positionRows.length }))
+  }
+  {
+    // ---- 16b. membership.save / membership.revoke（此前唯一覆盖是 golden-path 自授成功路径）----
+    let st = emptyState()
+    let r = dispatch(st, ME, { type: 'profile.save', person: personOf('墨白', '13800000001') })
+    st = r.value.state
+    r = dispatch(st, LIN, { type: 'profile.save', person: personOf('林舟', '13800000002') })
+    check('16b 前置：LIN 档案落库', r.ok, r.error)
+    st = r.value.state
+    r = dispatch(st, ME, { type: 'activity.create', input: fullActivityInput() })
+    st = r.value.state
+    const act = r.value.targetIds[0]
+    r = dispatch(st, ME, { type: 'activity.publish', activityId: act, participation: null })
+    st = r.value.state
+    const membership = over => Object.assign({
+      role: 'staff', id: 'membership-smoke-1', activityId: act, userId: LIN,
+      expiresAt: '2026-12-31T23:59:59+08:00', scope: { kind: 'all' }, capabilities: ['roster'],
+    }, over)
+    r = dispatch(st, LIN, { type: 'membership.save', activityId: act, membership: membership() })
+    check('非组织者授予协作授权 → FORBIDDEN', !r.ok && r.error.code === 'FORBIDDEN', r.error)
+    r = dispatch(st, ME, { type: 'membership.save', activityId: act, membership: membership({ userId: 'o-ghost-openid' }) })
+    check('身份码（profile.id）不存在 → NOT_FOUND 且文案指路对方完善资料',
+      !r.ok && r.error.code === 'NOT_FOUND' && r.error.message.indexOf('身份码') !== -1, r.error)
+    r = dispatch(st, ME, { type: 'membership.save', activityId: act, membership: membership({ expiresAt: '2026-01-01T00:00:00+08:00' }) })
+    check('授权截止时间早于当前 → INVALID_INPUT', !r.ok && r.error.code === 'INVALID_INPUT', r.error)
+    r = dispatch(st, ME, { type: 'membership.save', activityId: act, membership: membership({ capabilities: [] }) })
+    check('staff 无工作能力 → INVALID_INPUT', !r.ok && r.error.code === 'INVALID_INPUT', r.error)
+    r = dispatch(st, ME, { type: 'membership.save', activityId: act, membership: membership({ scope: { kind: 'selected', signupIds: [] } }) })
+    check('scope.selected 空名单 → INVALID_INPUT', !r.ok && r.error.code === 'INVALID_INPUT', r.error)
+    r = dispatch(st, ME, { type: 'membership.save', activityId: act, membership: membership() })
+    check('合法 staff 授权 → ok', r.ok, r.error)
+    st = r.value.state
+    r = dispatch(st, ME, { type: 'membership.revoke', activityId: act, membershipId: 'membership-smoke-1' })
+    check('撤销协作授权 → ok', r.ok, r.error)
+    st = r.value.state
+    r = dispatch(st, ME, { type: 'membership.revoke', activityId: act, membershipId: 'membership-smoke-1' })
+    check('重复撤销 → NOT_FOUND', !r.ok && r.error.code === 'NOT_FOUND', r.error)
+  }
+  {
+    // ---- 16c. companion 域（此前只有 me 页 UI 层覆盖）----
+    let st = emptyState()
+    let r = dispatch(st, ME, { type: 'profile.save', person: personOf('墨白', '13800000001') })
+    st = r.value.state
+    const companionPerson = personOf('同伴甲', '13900000001')
+    r = dispatch(st, ME, { type: 'companion.save', companionId: null, person: companionPerson })
+    check('companion.save 新增 → ok', r.ok, r.error)
+    st = r.value.state
+    const cid = r.value.targetIds[0]
+    r = dispatch(st, ME, { type: 'companion.save', companionId: cid, person: personOf('同伴甲改', '13900000001') })
+    check('companion.save 同 id 更新 → ok 且条目数不变',
+      r.ok && st.profiles.find(p => p.id === ME).companions.length === 1, r.error)
+    st = r.value.state
+    check('更新后内容生效', st.profiles.find(p => p.id === ME).companions[0].person.name === '同伴甲改')
+    r = dispatch(st, OTHER, { type: 'companion.save', companionId: cid, person: companionPerson })
+    check('他人引用我的 companionId → FORBIDDEN', !r.ok && r.error.code === 'FORBIDDEN', r.error)
+    r = dispatch(st, ME, { type: 'companion.save', companionId: null, person: personOf('', '') })
+    check('缺姓名电话 → INVALID_INPUT 且 fieldErrors 点名',
+      !r.ok && r.error.code === 'INVALID_INPUT' && r.error.fieldErrors && r.error.fieldErrors.name, r.error)
+    r = dispatch(st, ME, { type: 'companion.remove', companionId: cid })
+    check('companion.remove → ok', r.ok, r.error)
+    st = r.value.state
+    check('移除后条目消失', st.profiles.find(p => p.id === ME).companions.length === 0)
+    r = dispatch(st, ME, { type: 'companion.remove', companionId: cid })
+    check('重复移除已被 canExecute 拒绝（FORBIDDEN）——与设计文档 SF-4 记录不符，以代码为准并在实施日志记录',
+      !r.ok && r.error.code === 'FORBIDDEN', r.error)
+    const otherSave = dispatch(emptyState(), OTHER, { type: 'companion.save', companionId: null, person: companionPerson })
+    check('无档案账号 companion.save → NOT_FOUND（请先保存当前账号资料）',
+      !otherSave.ok && otherSave.error.code === 'NOT_FOUND', otherSave.error)
+  }
+  {
+    // ---- 16d. profile.save 服务端拒绝路径（此前只发合法 payload）----
+    const st = emptyState()
+    let r = dispatch(st, ME, { type: 'profile.save', person: personOf('', '13800000001') })
+    check('缺姓名 → INVALID_INPUT + fieldErrors.name',
+      !r.ok && r.error.code === 'INVALID_INPUT' && r.error.fieldErrors && r.error.fieldErrors.name === '请填写姓名', r.error)
+    r = dispatch(st, ME, { type: 'profile.save', person: personOf('墨白', '') })
+    check('缺电话 → INVALID_INPUT + fieldErrors.phone',
+      !r.ok && r.error.code === 'INVALID_INPUT' && r.error.fieldErrors && r.error.fieldErrors.phone === '请填写联系电话', r.error)
+    const stray = Object.assign(personOf('墨白', '13800000001'), { strayKey: 'x' })
+    r = dispatch(st, ME, { type: 'profile.save', person: stray })
+    check('emergency 之外的杂散键被严格 schema 拒收（注释里的坑变成断言）',
+      !r.ok && r.error.code === 'INVALID_INPUT', r.error)
+  }
+  {
+    // ---- 16e. position.revoke 域行为 ----
+    let st = emptyState()
+    let r = dispatch(st, ME, { type: 'profile.save', person: personOf('墨白', '13800000001') })
+    st = r.value.state
+    r = dispatch(st, ME, { type: 'activity.create', input: fullActivityInput() })
+    st = r.value.state
+    const act = r.value.targetIds[0]
+    r = dispatch(st, ME, {
+      type: 'activity.publish', activityId: act,
+      participation: {
+        personRef: { kind: 'user', userId: ME }, participant: personOf('墨白', '13800000001'),
+        trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false },
+      },
+    })
+    check('16e 前置：发布并本人参加', r.ok, r.error)
+    st = r.value.state
+    const mySignupId = st.signups.find(s => s.activityId === act).id
+    // 位置上报要求 active 阶段——手术注入一条有效位置（与 16a 同法），只测 revoke 的域行为
+    const surgery = JSON.parse(JSON.stringify(st))
+    surgery.activities.find(a => a.id === act).phase = 'active'
+    surgery.positions.push({
+      signupId: mySignupId, coordinates: { lat: 30.9, lng: 103.4 }, reportedAt: '2026-09-26T06:00:00+08:00',
+      consentExpiresAt: '2026-10-01T18:00:00+08:00', revokedAt: null,
+    })
+    st = surgery
+    r = dispatch(st, OTHER, { type: 'position.revoke', activityId: act, signupId: mySignupId })
+    check('无关他人撤回他人位置 → FORBIDDEN', !r.ok && r.error.code === 'FORBIDDEN', r.error)
+    r = dispatch(st, ME, { type: 'position.revoke', activityId: act, signupId: mySignupId })
+    check('本人撤回自己的位置 → ok 且 revokedAt 落库（读 dispatch 后的 state）', r.ok
+      && r.value.state.positions.find(p => p.signupId === mySignupId).revokedAt === ctx().now, r.error)
+    st = r.value.state
+    r = dispatch(st, ME, { type: 'position.revoke', activityId: act, signupId: mySignupId })
+    check('重复撤回（已无有效位置）幂等 → ok', r.ok, r.error)
+    r = dispatch(st, ME, { type: 'position.revoke', activityId: act, signupId: 'signup-ghost' })
+    check('不存在的报名撤回 → NOT_FOUND（canExecute requireSignups）', !r.ok && r.error.code === 'NOT_FOUND', r.error)
+  }
+  {
+    // ---- 16f. canReadSensitive / selectContact 直测（此前只经 readForm/readExport 间接走到）----
+    // 关键：owner 读「本人」会走 self 分支绕过 purpose 门槛——owner 读门槛必须用「他人的报名」测
+    let st = emptyState()
+    let r = dispatch(st, ME, { type: 'profile.save', person: personOf('墨白', '13800000001') })
+    st = r.value.state
+    r = dispatch(st, LIN, { type: 'profile.save', person: personOf('林舟', '13800000002') })
+    st = r.value.state
+    r = dispatch(st, LIN, { type: 'activity.create', input: fullActivityInput() })
+    st = r.value.state
+    const act = r.value.targetIds[0]
+    r = dispatch(st, LIN, {
+      type: 'activity.publish', activityId: act,
+      participation: {
+        personRef: { kind: 'user', userId: LIN }, participant: personOf('林舟', '13800000002'),
+        trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false },
+      },
+    })
+    st = r.value.state
+    r = dispatch(st, ME, {
+      type: 'signup.submit', activityId: act, keepTogether: false, mode: 'apply',
+      participants: [{
+        personRef: { kind: 'user', userId: ME }, participant: personOf('墨白', '13800000001'),
+        trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false },
+      }],
+    })
+    check('16f 前置：他人（ME）自报 → pending', r.ok, r.error)
+    st = r.value.state
+    const linSignup = st.signups.find(s => s.activityId === act && s.personRef.userId === LIN).id
+    const meSignup = st.signups.find(s => s.activityId === act && s.personRef.userId === ME).id
+    const now = ctx().now
+    check('本人读自己敏感资料 → ok（无条件，无 purpose 也放行）',
+      selectSensitive(st, { userId: LIN }, act, linSignup, '', now).ok)
+    check('owner 无用途读他人（ME 的报名）→ FORBIDDEN（purpose 硬门槛）',
+      !selectSensitive(st, { userId: LIN }, act, meSignup, '', now).ok
+      && selectSensitive(st, { userId: LIN }, act, meSignup, '', now).error.code === 'FORBIDDEN',
+      JSON.stringify(selectSensitive(st, { userId: LIN }, act, meSignup, '', now)))
+    const ownerView = selectSensitive(st, { userId: LIN }, act, meSignup, '核实名单', now)
+    check('owner 带用途读他人 → ok 且只含 emergency/medical（无 phone 泄露面扩大）',
+      ownerView.ok && ownerView.value.emergency && ownerView.value.medical !== undefined
+      && ownerView.value.phone === undefined, JSON.stringify(ownerView.value))
+    check('路人（OTHER）读他人敏感资料 → FORBIDDEN',
+      !selectSensitive(st, { userId: OTHER }, act, linSignup, '核实名单', now).ok
+      && selectSensitive(st, { userId: OTHER }, act, linSignup, '核实名单', now).error.code === 'FORBIDDEN',
+      JSON.stringify(selectSensitive(st, { userId: OTHER }, act, linSignup, '核实名单', now)))
+    const archived = JSON.parse(JSON.stringify(st))
+    archived.activities.find(a => a.id === act).phase = 'archived'
+    check('归档后 owner 带用途读他人敏感 → FORBIDDEN（workDataAvailable 关闭，e2e 同款结论的域级锚点）',
+      !selectSensitive(archived, { userId: LIN }, act, meSignup, '核实名单', now).ok,
+      JSON.stringify(selectSensitive(archived, { userId: LIN }, act, meSignup, '核实名单', now)))
+    check('readContact：本人读自己 → ok',
+      selectContact(st, { userId: LIN }, act, linSignup, now).ok)
+    check('readContact：owner 读已报名他人 → ok（roster 工作许可）',
+      selectContact(st, { userId: LIN }, act, meSignup, now).ok)
+    check('readContact：路人 → FORBIDDEN',
+      !selectContact(st, { userId: OTHER }, act, linSignup, now).ok)
+    check('readContact：归档后 owner → FORBIDDEN（工作侧关闭）',
+      !selectContact(archived, { userId: LIN }, act, meSignup, now).ok)
+  }
+  {
+    // ---- 16g. export.record 命令（此前零调度覆盖，只有 readExport 权限门）----
+    let st = emptyState()
+    let r = dispatch(st, ME, { type: 'profile.save', person: personOf('墨白', '13800000001') })
+    st = r.value.state
+    r = dispatch(st, ME, { type: 'activity.create', input: fullActivityInput() })
+    st = r.value.state
+    const act = r.value.targetIds[0]
+    r = dispatch(st, ME, {
+      type: 'activity.publish', activityId: act,
+      participation: {
+        personRef: { kind: 'user', userId: ME }, participant: personOf('墨白', '13800000001'),
+        trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false },
+      },
+    })
+    st = r.value.state
+    const mySignupId = st.signups.find(s => s.activityId === act).id
+    r = dispatch(st, LIN, { type: 'export.record', activityId: act, signupIds: [mySignupId], mode: 'ordinary', purpose: 'x' })
+    check('export.record 非组织者 → FORBIDDEN', !r.ok && r.error.code === 'FORBIDDEN', r.error)
+    r = dispatch(st, ME, { type: 'export.record', activityId: act, signupIds: [mySignupId], mode: 'ordinary', purpose: 'x' })
+    check('普通导出 → ok 且事件账记录「普通名单导出」（读 dispatch 后的 state）',
+      r.ok && r.value.state.events.some(e => e.kind === 'export.record' && e.summary.indexOf('普通名单导出') !== -1), r.error)
+    st = r.value.state
+    r = dispatch(st, ME, { type: 'export.record', activityId: act, signupIds: [mySignupId], mode: 'sensitive', purpose: '  ' })
+    check('敏感导出空用途 → FORBIDDEN', !r.ok && r.error.code === 'FORBIDDEN', r.error)
+    r = dispatch(st, ME, { type: 'export.record', activityId: act, signupIds: [mySignupId], mode: 'sensitive', purpose: '紧急联络卡打印' })
+    check('敏感导出带用途 → ok 且事件账记录用途',
+      r.ok && r.value.state.events.some(e => e.summary.indexOf('敏感名单导出：紧急联络卡打印') !== -1), r.error)
+    st = r.value.state
   }
 
   console.log('')

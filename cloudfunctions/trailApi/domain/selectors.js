@@ -246,6 +246,32 @@ function validCoordinates(lat, lng) {
 
 // ---------- 主投影 ----------
 
+// ---------- 共享投影助手（home 与 me 视图同源，06-api-and-selector-design.md §2） ----------
+
+// 参与者视角可见活动：owner ∪ 本人报名 ∪ 协作/车辆授权 ∪ 最近打开（draft 仅 owner）
+function visibleActivitiesFor(state, actor, perspective, openedIds, now) {
+  const opened = Array.isArray(openedIds) ? openedIds : []
+  return state.activities.filter(a => {
+    const owner = isOwner(state, actor, a.id)
+    if (a.phase === 'draft') return owner
+    const own = state.signups.some(s => s.activityId === a.id && isOwnSignup(s, actor))
+    const membership = perspective === 'staff' ? hasStaffMembership(state, actor, a.id, now)
+      : (perspective === 'vehicle' && state.vehicles.some(v => vehicleCan(state, actor, a.id, v.id, now)))
+    return owner || own || membership || opened.indexOf(a.id) !== -1
+  })
+}
+
+// 「我的」页的位置授权撤回入口：本人或有效代报的、仍有有效位置上报、且本人可撤回的报名
+function positionRowsFor(state, actor, activity, ownRows, now) {
+  return ownRows
+    .filter(s => s.status === 'confirmed' && state.positions.some(p => p.signupId === s.id && p.revokedAt === null))
+    .filter(s => canExecute(state, actor, { type: 'position.revoke', activityId: activity.id, signupId: s.id }, now).ok)
+    .map(s => ({ activityId: activity.id, activityTitle: activity.title, signupId: s.id, name: s.participant.name }))
+}
+
+// me 视图的活动口径（03-information-architecture.md §3.2 的服务端精确版）
+const ME_ONGOING_PHASES = ['published', 'gathering', 'active', 'closing']
+
 function selectView(state, actor, request, now) {
   if (request.kind === 'profile') {
     if (actor.userId === null) return deniedView('AUTH_REQUIRED', '请先选择当前账号。')
@@ -256,16 +282,44 @@ function selectView(state, actor, request, now) {
     }
     return { kind: 'profile', profile: { id: profile.id, person: personView(profile.person), companions: profile.companions.map(c => ({ id: c.id, person: personView(c.person) })) } }
   }
+  if (request.kind === 'me') {
+    // 「我的」页专用复合视图（06 §2）：profile + 统计 + 最近活动 + positionRows，
+    // 一次 read 出齐——消除「为 positionRows 拉全量 home（含轨迹折线）」的读取浪费。
+    if (actor.userId === null) return deniedView('AUTH_REQUIRED', '请先选择当前账号。')
+    const profile = state.profiles.find(p => p.id === actor.userId)
+    const meProfile = profile
+      ? { id: profile.id, person: personView(profile.person), companions: profile.companions.map(c => ({ id: c.id, person: personView(c.person) })) }
+      : { id: actor.userId, person: personView({ name: '', phone: '', emergency: { name: '', phone: '' }, medical: '' }), companions: [] }
+    const activities = visibleActivitiesFor(state, actor, 'participant', [], now)
+    const nowMs = Date.parse(now)
+    let ongoing = 0
+    let finished = 0
+    let organized = 0
+    const ongoingPool = []
+    const restPool = []
+    const positionRows = []
+    for (const activity of activities) {
+      const owner = isOwner(state, actor, activity.id)
+      if (owner) organized += 1
+      const ownRows = state.signups.filter(s => s.activityId === activity.id && isOwnSignup(s, actor))
+      const ownCurrent = ownRows.some(s => isCurrentSignup(s))
+      if (ME_ONGOING_PHASES.indexOf(activity.phase) !== -1 && (owner || ownCurrent)) ongoing += 1
+      if (activity.phase === 'archived' && (owner || ownRows.length)) finished += 1
+      positionRows.push.apply(positionRows, positionRowsFor(state, actor, activity, ownRows, now))
+      // 最近活动：进行中优先，其余按 |startAt - now| 由近到远（与客户端 me-view.js 同口径）
+      const slim = { id: activity.id, title: activity.title, startAt: activity.startAt, phase: activity.phase, role: owner ? 'owner' : 'participant' }
+      const pool = ME_ONGOING_PHASES.indexOf(activity.phase) !== -1 && (owner || ownCurrent) ? ongoingPool : restPool
+      pool.push({ slim, dist: activity.startAt && Number.isFinite(Date.parse(activity.startAt)) ? Math.abs(Date.parse(activity.startAt) - nowMs) : Infinity })
+    }
+    const byDist = (a, b) => a.dist - b.dist
+    ongoingPool.sort(byDist)
+    restPool.sort(byDist)
+    const recent = ongoingPool.concat(restPool).slice(0, 3).map(x => x.slim)
+    return { kind: 'me', profile: meProfile, stats: { ongoing, finished, organized }, recent, positionRows }
+  }
   if (request.kind === 'home') {
-    const openedIds = Array.isArray(request.openedActivityIds) ? request.openedActivityIds : []
-    const activities = state.activities.filter(a => {
-      const owner = isOwner(state, actor, a.id)
-      if (a.phase === 'draft') return owner
-      const own = state.signups.some(s => s.activityId === a.id && isOwnSignup(s, actor))
-      const membership = request.perspective === 'staff' ? hasStaffMembership(state, actor, a.id, now)
-        : (request.perspective === 'vehicle' && state.vehicles.some(v => vehicleCan(state, actor, a.id, v.id, now)))
-      return owner || own || membership || openedIds.indexOf(a.id) !== -1
-    }).map(activityView)
+    const activities = visibleActivitiesFor(state, actor, request.perspective, request.openedActivityIds, now)
+      .map(activityView)
     // 附加首页汇总（原型在客户端逐个 read 计算；这里一次算好）
     for (const activity of activities) {
       const roster = state.signups.filter(s => s.activityId === activity.id)
@@ -280,11 +334,7 @@ function selectView(state, actor, request, now) {
         pending: roster.filter(s => s.status === 'pending').length,
         capacity: activity.capacity,
       }
-      // 「我的」页的位置授权撤回入口：本人或有效代报的、仍有有效位置上报的报名
-      meta.positionRows = ownRows
-        .filter(s => s.status === 'confirmed' && state.positions.some(p => p.signupId === s.id && p.revokedAt === null))
-        .filter(s => canExecute(state, actor, { type: 'position.revoke', activityId: activity.id, signupId: s.id }, now).ok)
-        .map(s => ({ activityId: activity.id, activityTitle: activity.title, signupId: s.id, name: s.participant.name }))
+      meta.positionRows = positionRowsFor(state, actor, activity, ownRows, now)
       activity.meta = meta
     }
     return { kind: 'home', activities }
