@@ -121,6 +121,17 @@ function weatherPhrase(code) {
   return { label: item.label, tone: item.tone }
 }
 
+// 风向（度，自北顺时针）→ 八向文案（V2 Timeline 浮条与 Numbers 用）。
+// 缺失/非法返回 null，调用方显示 '—'——单字段缺失不致整页失败。
+// 注意 Number(null)=0、Number('')=0，必须先判空再转数字，否则「缺数据」会被读成「北风」。
+const WIND_DIR_NAMES = ['北', '东北', '东', '东南', '南', '西南', '西', '西北']
+function windDirText(deg) {
+  if (deg === null || deg === undefined || deg === '') return null
+  const d = Number(deg)
+  if (!Number.isFinite(d)) return null
+  return WIND_DIR_NAMES[Math.round((((d % 360) + 360) % 360) / 45) % 8] + '风'
+}
+
 /**
  * 自 00:00 起的分钟数 → 'HH:mm'。
  *
@@ -138,5 +149,5 @@ function minutesLabel(mins) {
 module.exports = {
   pad, WEEK, cnParts, dateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
   minutesLabel, relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
-  UNASSIGNED_LABELS, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase,
+  UNASSIGNED_LABELS, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase, windDirText,
 }

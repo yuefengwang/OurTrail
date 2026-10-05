@@ -17,43 +17,78 @@ const chartStore = require('../../utils/chart-store')
 const F = require('../../utils/format')
 const A = require('../../utils/astro')
 const sky = require('../../utils/sky')
+const agenda = require('../../utils/agenda')
+const cond = require('../../utils/conditions')
 const RS = require('../../utils/route-schedule')
 const WP = require('../../utils/watch-points')
 
 const wpStore = WP.createWatchPoints(draft.wxStorage)
 
-const SLOTS = ['06', '08', '10', '12', '14', '16', '18', '20']
+// V2 视图：页面主图默认 24h 一屏（11.5px/列 × 24 + 左刻度 52 + 右留白 8 = 336 ≤ 343 内容宽），
+// 48/72h 同列宽横向滚动——同一字号，不为塞下更多小时缩字（实现方案 §关键决定 1）。
+const VIEW_HW = 11.5
 const CHART_DAYS = 7
 // 云函数只认 'YYYY-MM-DD'，任何进 getWeather 的日期都先过这道闸
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
-// 当日徒步提示：按优先级最多 2 条（规则表见设计文档 §5.2）
-function buildCallouts(day, detail, elev) {
-  const out = []
-  if (Number(day.code) >= 95 || detail.some(h => Number(h.code) >= 95)) {
-    out.push({ tone: 'danger', title: '有雷暴概率，不建议安排上山' })
-  }
-  const snowCode = Number(day.code) >= 71 && Number(day.code) <= 86
-  if (snowCode || detail.some(h => Number.isFinite(h.freezing) && Number.isFinite(elev) && h.freezing < elev)) {
-    out.push({ tone: 'danger', title: '0℃ 层低于此点，降水可能为雪' })
-  }
-  const inCloud = detail.some(h => h.band && Number.isFinite(elev) && h.band.base <= elev && elev <= h.band.top)
-  if (detail.some(h => Number.isFinite(h.visibility) && h.visibility < 1) || inCloud) {
-    out.push({ tone: 'warning', title: '此点可能入云（雾），观景窗口有限' })
-  }
-  // 云海窗口：清晨时段云层带压在低处、观景点在带顶之上、高层干净（准确率定位见设计文档 §5.3）
-  const sea = detail.some(h => h.t <= '10' && h.band && Number.isFinite(elev)
-    && elev > h.band.top && h.band.cover >= 80 && Number.isFinite(h.cloud.high) && h.cloud.high < 30)
-  if (sea) out.push({ tone: 'success', title: '清晨云海概率较大' })
-  const afternoonRain = day.precipProbMax >= 60
-    && detail.some(h => h.t >= '12' && (h.pop >= 50 || Number(h.showers) > 0))
-  if (afternoonRain) out.push({ tone: 'warning', title: '午后阵雨概率高，建议早点出发' })
-  return out.slice(0, 2)
-}
+// （V2）当日安全提示与评级装配已迁至 utils/conditions.js：buildCallouts（含 WMO 雪码修复）
+// 与 overallGrade/starsFor。本页只消费其产出，不再持有安全规则的字面副本。
+
 
 // 海拔来源标签：活动模式沿用「GPX 记录」；自由查询按 eleSource 如实标注
 function elevLabel(eleSource) {
   return eleSource === 'gpx' ? 'GPX 记录' : eleSource === 'picked' ? '地图选点' : '手动填写'
+}
+
+/* ---------- V2 图表装配（纯函数，wx-free；weather-v2-test 直接覆盖） ---------- */
+
+// 某分钟的日照相位：night（天文暗夜）/ astro（暮光）/ blue / golden / ''（白昼）。
+// 窄窗口（黄金/蓝调）按 inWindow 区间判定——与 sky.hourMarks 的「相交判定」同一手势，
+// 整点采样会漏掉十几分钟的窗口。sun/win 来自 astro.sunTimes / photoWindows。
+function sunBandAt(m, sun, win) {
+  const astroDawn = sky.hourMin(sun.astroDawn)
+  const astroDusk = sky.hourMin(sun.astroDusk)
+  if (Number.isFinite(astroDawn) && Number.isFinite(astroDusk) && (m < astroDawn || m > astroDusk)) return 'night'
+  const civilDawn = sky.hourMin(sun.civilDawn)
+  const civilDusk = sky.hourMin(sun.civilDusk)
+  if (Number.isFinite(civilDawn) && Number.isFinite(civilDusk) && (m < civilDawn || m > civilDusk)) return 'astro'
+  const bluePairs = [win.dawnBlue, win.duskBlue]
+  const goldenPairs = [win.morningGolden, win.eveningGolden]
+  for (const w of bluePairs) {
+    if (w && sky.inWindow(m, sky.hourMin(w.from), sky.hourMin(w.to))) return 'blue'
+  }
+  for (const w of goldenPairs) {
+    if (w && sky.inWindow(m, sky.hourMin(w.from), sky.hourMin(w.to))) return 'golden'
+  }
+  return ''
+}
+
+// 逐时日照相位表 {'dateTHH:mm': phase}，供 meteogram 轴带绘制
+function buildSunBands(series, coords, elevation) {
+  const out = {}
+  const byDate = {}
+  for (const h of series) (byDate[h.d] = byDate[h.d] || []).push(h)
+  Object.keys(byDate).forEach(d => {
+    const sun = A.sunTimes(d, coords.lat, coords.lng, elevation)
+    const win = A.photoWindows(d, coords.lat, coords.lng, elevation)
+    byDate[d].forEach(h => {
+      const phase = sunBandAt(sky.hourMin(h.t), sun, win)
+      if (phase) out[d + 'T' + h.t] = phase
+    })
+  })
+  return out
+}
+
+// 逐日日出日落 { date: { rise, set } }，供 meteogram 轴上虚线（本地天文按海拔修正，与日卡同源）
+function buildSunLines(series, coords, elevation) {
+  const out = {}
+  const byDate = {}
+  for (const h of series) (byDate[h.d] = byDate[h.d] || []).push(h)
+  Object.keys(byDate).forEach(d => {
+    const sun = A.sunTimes(d, coords.lat, coords.lng, elevation)
+    out[d] = { rise: sun.sunrise || '', set: sun.sunset || '' }
+  })
+  return out
 }
 
 Page({
@@ -65,11 +100,11 @@ Page({
     pointIndex: 0,
     date: '',
     dayCards: [],
-    slots: [],
     callouts: [],
     detailRows: [],
     showDetail: false,
     updatedAt: '',
+    providerLabel: '',
     emptyTitle: '',
     emptyDetail: '',
     isOwner: false,
@@ -82,6 +117,17 @@ Page({
     chartMarks: {},
     chartNight: {},
     chartSelected: {},
+    // V2 视图：24/48/72h 切窗 + 小时浮条 + 日照轴/云带剖面的装配结果
+    viewSpan: 24,
+    viewHW: VIEW_HW,
+    chartView: [],
+    chartSunBands: {},
+    chartSunLines: {},
+    chartNow: null,
+    chartElev: null,
+    chartPick: null,
+    hourChip: null,
+    agenda: [],
     // 时空天相图（P4）。spaceNodes 只含可信抵达时刻的节点，见 setData 处的注释。
     spaceSeries: [],
     // sky.js 的「前日有降水」依据。dayCards 是转换后的展示形状，不能直接喂给 sky.js
@@ -92,10 +138,10 @@ Page({
     // 抵达节点（观景位）的海拔与时刻，作为图的参考线输入
     spaceObsAlt: null,
     spaceArriveT: '',
-    // 天相结论
-    conclusions: [],
-    skyMoon: null,
-    elevSource: '',
+    // V2 户外条件：总评 + 评级卡（Evidence 锚点在 Phase 4 由 factsFor 注入）
+    condOverall: null,
+    condCards: [],
+    openEvidence: {},
     // 自由查询单点：静态点卡替代节点 picker（P3 §5.1）
     pointCard: null,
     showSave: false,
@@ -253,7 +299,6 @@ Page({
       }
       const points = ctx.points
       this._localPoints = this.mode === 'local' ? points : null
-      this._elevLabel = this.mode === 'activity' ? 'GPX 记录' : elevLabel((points[0] || {}).eleSource)
       // 日期必须在这一轮 setData 里一并落定。setData 的回调是异步的：若把日期放到回调里再设，
       // 紧随其后的 fetchWeather 会读到上一次的空日期，发出 date:''，云函数回"日期无效"。
       // 同理请求也放进回调，确保 this.data.date 已是最终值。
@@ -361,9 +406,11 @@ Page({
     const point = points[this.data.pointIndex]
     if (!point) return
     const reset = {
-      loadingWeather: true, dayCards: [], slots: [], callouts: [], metrics: null,
+      loadingWeather: true, dayCards: [], callouts: [],
       detailRows: [], chartSeries: [], chartMarks: {}, chartNight: {},
-      conclusions: [], skyMoon: null,
+      chartView: [], chartSunBands: {}, chartSunLines: {}, chartNow: null, chartElev: null,
+      chartPick: null, hourChip: null, agenda: [],
+      condOverall: null, condCards: [], openEvidence: {},
     }
     // 兜底：日期尚未落定时不外呼（云函数会回"日期无效"，那句话对用户没意义）。
     // resolveDate 兜底链必然产出合法日期，收敛一次即可，不会循环。
@@ -426,12 +473,37 @@ Page({
     const chartMarks = this.buildChartMarks(series, point.coordinates, elevation, elevOK, result.days || [])
     const chartNight = this.buildNightMap(series, point.coordinates, elevation)
     const chartSelected = { [this.data.date]: true }
+    // V2 装配：日照轴带/日出日落线/现在线/云带剖面海拔——全部纯函数，wx-free（可 node 测）
+    const chartSunBands = buildSunBands(chartSeries, point.coordinates, elevation)
+    const chartSunLines = buildSunLines(chartSeries, point.coordinates, elevation)
+    const chartNow = this.buildNowMarker()
+    // V2 今日户外时间轴：天文/天气（L1）+ hourMarks 簇（L2，云海已做可见性交集），
+    // 评级与星级按 key 关联 summarize 的同 key 结论——三处（图/日程/卡）同源不打架
+    const win = A.photoWindows(this.data.date, point.coordinates.lat, point.coordinates.lng, elevation)
+    const agendaEvents = agenda.buildDayAgenda({
+      date: this.data.date, detail, marks: chartMarks,
+      sun: skyOut ? skyOut.sun : null, win,
+    })
+    const itemByKey = {}
+    if (skyOut) skyOut.items.forEach(it => { itemByKey[it.key] = it })
+    const agendaView = agendaEvents.map(ev => {
+      if (!ev.l2) return ev
+      const it = itemByKey[ev.key]
+      const score = it ? it.score : 0
+      const filled = score >= 70 ? 4 : score >= 45 ? 3 : 2
+      return Object.assign({}, ev, {
+        tone: it ? it.tone : 'neutral',
+        gradeLabel: it ? it.label : '条件较差',
+        stars: '★★★★★'.slice(0, filled) + '☆☆☆☆☆'.slice(0, 5 - filled),
+      })
+    })
     // 时空天相图要**完整** series，不是 chartSeries 那个从所选日起的 7 天切片——
     // 多日线路的后续节点常落在切片之外，节点会静默拿不到天相。
     // 这里多传一份完整序列是有意的取舍；若日后性能吃紧，可裁到
     // 「spaceNodes 涉及的日期 ±1 天」而不是整条 168 小时。
     const spaceSeries = series
     // 交给「全图展示」横屏页：那一页在页面栈上方，直接读内存即可，不必把 168 小时序列塞 URL
+    // （7 天语义是缓存契约与全屏页依赖，页面主图的 24/48/72h 切窗走 buildViewSeries，不在这里）
     chartStore.set({
       series: chartSeries, marks: chartMarks, night: chartNight, selected: chartSelected,
       pointName: this.displayPointName(point), date: this.data.date,
@@ -441,21 +513,85 @@ Page({
       emptyTitle: '',
       emptyDetail: '',
       updatedAt: F.dtFull(result.updatedAt),
+      providerLabel: (result.provider && result.provider.label) || 'Open-Meteo',
       dayCards: this.buildDayCards(result.days || [], point.coordinates),
-      slots: this.buildSlots(detail),
-      callouts: buildCallouts(day, detail, elevation),
-      metrics: this.buildMetricsCard(detail, day, elevation, skyOut),
+      callouts: cond.buildCallouts(day, detail, elevation),
       detailRows: this.buildDetailRows(detail),
-      elevSource: elevOK ? (this._elevLabel || 'GPX 记录') : '模型降尺度（±300-600 m）',
-      conclusions: skyOut ? skyOut.items : [],
-      skyMoon: skyOut ? skyOut.moon : null,
+      condOverall: skyOut ? cond.overallGrade(skyOut.items) : null,
+      condCards: this.buildCondCards(skyOut, {
+        date: this.data.date,
+        detail,
+        days: result.days || [],
+        elevation,
+        sun: skyOut ? skyOut.sun : null,
+        moon: skyOut ? skyOut.moon : null,
+      }),
       chartSeries,
       chartMarks,
       chartNight,
       chartSelected,
+      chartSunBands,
+      chartSunLines,
+      chartNow,
+      chartElev: Number.isFinite(elevation) ? elevation : null,
+      chartView: this.buildViewSeries(chartSeries, this.data.viewSpan),
+      agenda: agendaView,
       spaceSeries,
       spaceDays: result.days || [],
     }))
+  },
+
+  // 「现在」标记：仅当日所选日期 = 北京时间今天时给（查看未来日期没有"现在"可言）
+  buildNowMarker() {
+    const nowIso = new Date(Date.now() + 8 * 3600000).toISOString()
+    const date = nowIso.slice(0, 10)
+    const t = nowIso.slice(11, 16)
+    return date === this.data.date ? { date, t } : null
+  },
+
+  // V2 户外条件卡：sky.summarize 的产出原样换容器（文案/时段/往哪看零重写），
+  // 只新增评级语言（starsOf）与 Evidence 事实清单（factsFor，全部图上可核对的事实）。
+  // 客观时刻（light）不进卡片——黄金/蓝调/日出日落是事实，由日照轴与 Agenda 表达。
+  buildCondCards(skyOut, ctx) {
+    if (!skyOut) return []
+    const cards = skyOut.items
+      .filter(it => it.key !== 'light')
+      .map(it => ({
+        key: it.key,
+        title: it.title,
+        window: it.window || '',
+        text: it.text,
+        look: it.look || '',
+        tone: it.tone,
+        gradeLabel: it.label,
+        stars: cond.starsOf(it.score),
+        featured: it.key === 'cloudSea',
+        evidence: cond.factsFor(it.key, ctx),
+      }))
+    cards.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
+    return cards
+  },
+
+  // Evidence 开合（「为什么？」）
+  onToggleEvidence(e) {
+    const key = e.currentTarget.dataset.key
+    if (!key) return
+    const next = Object.assign({}, this.data.openEvidence)
+    if (next[key]) delete next[key]; else next[key] = true
+    this.setData({ openEvidence: next })
+  },
+
+  // Evidence「看图 ↗」：真正能验证的回跳——高亮锚定小时列 + 打开浮条 + 滚回时间轴
+  onEvidenceJump(e) {
+    const at = e.currentTarget.dataset.at
+    if (!at) return
+    const view = this.data.chartView || []
+    const h = view.find(x => x.t === at) || view[0]
+    if (!h) return
+    this.selectHour(h.d, h.t)
+    if (typeof wx !== 'undefined' && wx.pageScrollTo) {
+      wx.pageScrollTo({ selector: '.timeline-card', duration: 300, fail: () => {} })
+    }
   },
 
   // 节点的前进/山脊走向（用前后节点连线求方位角），供日照金山"往哪看"粗判
@@ -528,47 +664,13 @@ Page({
         tMax: day.tMax,
         tMin: day.tMin,
         precipProbMax: day.precipProbMax,
-        // 逐日的日出日落用本地天文算（按节点海拔修正），比模型日值更贴合观感
-        sunrise: A.sunTimes(day.date, coords.lat, coords.lng, this.nodeElevation()).sunrise || day.sunrise,
+        // 逐日的日出日落已由日照轴与 Agenda 表达（V2 去重）；日条只负责选哪一天
         selected: day.date === this.data.date,
       }
     })
   },
 
-  // 客观指标卡：只放数字，不做判断（判断统一交给下面的天相结论卡，避免两处口径打架）
-  // 日出日落/暮光用本地天文算并按节点海拔修正；云量与云层带用云函数的气压层剖面结果。
-  buildMetricsCard(detail, day, elev, skyOut) {
-    const withBand = detail.filter(h => h.band && Number.isFinite(h.band.base) && Number.isFinite(h.band.top) && h.band.cover >= 80)
-    let bandText = '无成层云带'
-    if (withBand.length) {
-      const baseMin = Math.min.apply(null, withBand.map(h => h.band.base))
-      const topMax = Math.max.apply(null, withBand.map(h => h.band.top))
-      bandText = '约 ' + Math.round(baseMin) + '–' + Math.round(topMax) + ' m'
-    }
-    const inBand = withBand.some(h => Number.isFinite(elev) && h.band.base <= elev && elev <= h.band.top)
-    const sun = skyOut ? skyOut.sun : null
-    const moon = skyOut ? skyOut.moon : null
-    const dawn = (sun && sun.astroDawn) || '--'
-    const dusk = (sun && sun.astroDusk) || '--'
-    // 天文暗夜是**跨零点**的：傍晚天文暮光终 → 次日天文晨光始。
-    // 原来按 dawn–dusk 顺序渲染，屏幕上读成"银河窗口 05:49–20:17"＝白天，
-    // 与 meteogram 上按 m<dawn||m>dusk 画的夜间底色当场矛盾。
-    const nightWindow = (dawn === '--' || dusk === '--') ? '--' : dusk + ' – 次日 ' + dawn
-    return {
-      sunrise: (sun && sun.sunrise) || day.sunrise || '--',
-      sunset: (sun && sun.sunset) || day.sunset || '--',
-      nightWindow,
-      low: day.cloud ? day.cloud.low : '--',
-      mid: day.cloud ? day.cloud.mid : '--',
-      high: day.cloud ? day.cloud.high : '--',
-      bandText,
-      inBand,
-      moon: moon ? moon.name + ' · 月照 ' + moon.illumination + '%' : '--',
-      elev: Number.isFinite(elev) ? Math.round(elev) : null,
-    }
-  },
-
-  // 当前节点的可信海拔（真实高程优先），供逐日日出日落与图上标记复用
+  // 当前节点的可信海拔（真实高程优先），供日照轴/云带剖面的海拔线复用
   nodeElevation() {
     const p = this.getPoints()[this.data.pointIndex]
     return p && Number.isFinite(p.ele) ? p.ele : null
@@ -578,26 +680,49 @@ Page({
     return new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10)
   },
 
-  buildSlots(detail) {
-    return detail
-      .filter(h => SLOTS.indexOf(h.t) !== -1)
-      .map(h => ({
-        t: h.t,
-        phrase: F.weatherPhrase(h.code),
-        temp: Math.round(h.temp),
-        pop: h.pop == null ? 0 : h.pop,
-        wind: h.wind == null ? '—' : Math.round(h.wind),
-      }))
+  // V2 视图切片：chartSeries 恒定锚定所选日（buildChartSeries 的 7 天语义是缓存与全屏页契约），
+  // 页面主图只取前 span 小时——24h 一屏、48/72h 横滚，同一字号。
+  // span 单位是**小时**（24/48/72），非法值回落 24。
+  buildViewSeries(chartSeries, span) {
+    const hours = span === 48 || span === 72 ? span : 24
+    return (chartSeries || []).slice(0, hours)
+  },
+
+  // 24/48/72h 切窗：纯客户端切片（窗口内复用已保证 chartSeries 在手），零外呼
+  onSpanToggle(e) {
+    const span = Number(e.currentTarget.dataset.span)
+    if (span !== 24 && span !== 48 && span !== 72) return
+    this.setData({
+      viewSpan: span,
+      chartView: this.buildViewSeries(this.data.chartSeries, span),
+      chartPick: null,
+      hourChip: null,
+    })
+  },
+
+  // 关闭小时浮条
+  onChipClose() {
+    this.setData({ chartPick: null, hourChip: null })
   },
 
   buildDetailRows(detail) {
+    // V2 Numbers：全字段折叠表。optional 字段（体感/风向/气压/露点/云带）缺失时显示 '—'，
+    // 不得因旧返回体没有这些键而失败（新客户端配旧云函数是常态）。
     return detail.map(h => ({
       t: h.t,
       phrase: F.weatherPhrase(h.code),
-      temp: Math.round(h.temp),
+      temp: h.temp == null ? '—' : Math.round(h.temp),
+      feels: h.feels == null ? '—' : Math.round(h.feels),
       pop: h.pop == null ? 0 : h.pop,
+      precip: ((h.precip || 0) + (h.showers || 0)).toFixed(1),
       wind: h.wind == null ? '—' : Math.round(h.wind),
+      windDir: F.windDirText(h.windDir) || '—',
+      rh: h.rh == null ? '—' : Math.round(h.rh),
+      pressure: h.pressure == null ? '—' : Math.round(h.pressure),
       visibility: h.visibility == null ? '—' : h.visibility,
+      uv: h.uv == null ? '—' : h.uv,
+      dewPoint: h.dewPoint == null ? '—' : Math.round(h.dewPoint),
+      band: h.band && Number.isFinite(h.band.base) ? h.band.base + '–' + h.band.top : '—',
     }))
   },
 
@@ -627,16 +752,41 @@ Page({
     }, () => this.fetchWeather())
   },
 
-  // meteogram 上点某小时 = 切到那一天
+  // meteogram 上点某小时（V2）= 选中该小时：高亮列 + 浮条展示该小时的数字与天相归属。
+  // 切日走 7 日条（onDayTap）；本 handler 只做选中，不再切日——图与卡的窗口由日条统一。
   onChartPickHour(e) {
-    const date = e.detail && e.detail.date
-    if (!date || date === this.data.date) return
-    this.userPickedDate = true
+    const d = (e && e.detail) || {}
+    if (d.date && d.t) this.selectHour(d.date, d.t)
+  },
+
+  // 选中某小时（点图与 Evidence「看图↗」共用）
+  selectHour(date, t) {
+    const h = (this.data.chartView || []).find(x => x.d === date && x.t === t)
+    if (!h) return
+    const list = this.data.chartMarks[date + 'T' + t] || []
+    // 天相标签与图上标记/结论卡同源（marks），inCloud 是减分项单独提示
+    const tagNames = {
+      cloudSea: '云海窗口', alpenglow: '光染可能', golden: '黄金时刻',
+      blueHour: '蓝调时刻', rainbow: '彩虹可能', star: '星空', galaxy: '银河',
+    }
     this.setData({
-      date,
-      chartSelected: { [date]: true },
-      dayCards: this.data.dayCards.map(c => Object.assign({}, c, { selected: c.date === date })),
-    }, () => this.fetchWeather())
+      chartPick: { date, t },
+      hourChip: {
+        t,
+        phrase: F.weatherPhrase(h.code),
+        temp: h.temp == null ? '—' : Math.round(h.temp),
+        feels: h.feels == null ? '—' : Math.round(h.feels),
+        pop: h.pop == null ? 0 : h.pop,
+        precip: (((h.precip || 0) + (h.showers || 0)) * 10).toFixed(1) / 1,
+        wind: h.wind == null ? '—' : Math.round(h.wind),
+        windDir: F.windDirText(h.windDir),
+        rh: h.rh == null ? '—' : Math.round(h.rh),
+        pressure: h.pressure == null ? '—' : Math.round(h.pressure),
+        band: h.band && Number.isFinite(h.band.base) ? h.band.base + '–' + h.band.top + ' m' : '',
+        tags: list.filter(k => k !== 'inCloud').map(k => tagNames[k] || k),
+        inCloud: list.indexOf('inCloud') !== -1,
+      },
+    })
   },
 
   toggleDetail() {

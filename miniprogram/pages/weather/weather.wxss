@@ -1,22 +1,22 @@
-/* 天气页：7 日概览条（设计文档 §5.1） */
+/* 天气页 V2：7 日概览条（降权——只负责选哪一天，非视觉主角） */
 .day-strip { display: flex; white-space: nowrap; }
 .day-card {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  min-width: 84px;
-  padding: 12px 10px;
-  margin-right: 8px;
-  border-radius: 14px;
+  gap: 2px;
+  min-width: 64px;
+  padding: 8px 6px;
+  margin-right: 6px;
+  border-radius: 12px;
   background: var(--surface);
   border: 1px solid var(--line);
 }
-.day-card.on { border-color: var(--forest); border-width: 2px; padding: 11px 9px; }
+.day-card.on { border-color: var(--forest); border-width: 2px; padding: 7px 5px; background: var(--forest-soft); }
 .day-label { font-size: var(--text-caption); color: var(--muted); font-weight: 600; }
 .day-date { font-size: 10px; color: var(--muted); line-height: 12px; }
-.day-temp { font-size: var(--text-body); font-weight: 600; color: var(--ink); }
-.day-rain { font-size: var(--text-caption); color: var(--info); }
+.day-temp { font-size: var(--text-caption); font-weight: 600; color: var(--ink); }
+.day-rain { font-size: 10px; color: var(--info); }
 
 /* WMO 简字徽标 tone（文字承载语义） */
 .day-phrase { font-size: var(--text-caption); font-weight: 600; }
@@ -24,7 +24,88 @@
 .day-phrase.warning { color: var(--warning); }
 .day-phrase.danger { color: var(--danger); }
 .day-phrase.neutral { color: var(--muted); }
-.day-sun { font-size: 10px; color: var(--muted); }
+
+/* V2 时间轴卡：切换开关 + 浮条 + 图注 */
+.tl-viewseg { display: flex; gap: 6px; margin: 4px 0 8px; }
+.seg-btn {
+  flex: 1; text-align: center; font-size: var(--text-caption); line-height: 26px; height: 26px;
+  border-radius: 8px; background: var(--forest-soft); color: var(--muted); font-weight: 600;
+}
+.seg-btn.on { background: var(--forest); color: var(--surface); }
+.timeline-card { display: block; }
+.chart-caption { display: block; margin-top: 6px; }
+
+/* 小时浮条：点图上某小时后的数字与窗口归属（L1 事实 + L2 归属同条） */
+.hour-chip {
+  margin-top: 8px; border-radius: 10px; background: var(--forest-soft); padding: 8px 12px;
+}
+.chip-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.chip-time { font-size: var(--text-body); font-weight: 700; color: var(--forest); }
+.chip-main { font-size: var(--text-caption); font-weight: 600; flex: 1; }
+.chip-close { font-size: 11px; color: var(--muted); }
+.chip-sub { margin-top: 2px; font-size: 11px; line-height: 17px; color: var(--ink); }
+.chip-tags { margin-top: 4px; }
+.chip-tag {
+  font-size: 10px; line-height: 16px; padding: 0 7px; border-radius: 5px;
+  background: var(--surface); color: var(--forest); font-weight: 600;
+}
+.chip-tag.warn { background: var(--warning-soft); color: var(--warning); }
+
+/* V2 Numbers：全字段横滚表（默认折叠，专业用户深度数据） */
+.num-sheet { padding: 0; overflow: hidden; }
+.num-table { min-width: 760px; }
+.num-row { display: flex; border-bottom: 1px solid var(--line); }
+.num-row:last-child { border-bottom: none; }
+.num-head { background: var(--forest-soft); position: sticky; }
+.nc {
+  flex: 0 0 54px; padding: 6px 6px; font-size: 11px; line-height: 16px;
+  text-align: right; color: var(--ink); white-space: nowrap;
+}
+.nc-time { flex: 0 0 48px; text-align: left; font-weight: 700; }
+.num-head .nc { color: var(--muted); font-weight: 600; }
+.nc.success { color: var(--success); }
+.nc.warning { color: var(--warning); }
+.nc.danger { color: var(--danger); }
+.nc.neutral { color: var(--muted); }
+
+/* V2 今日户外时间轴（Agenda）：天文/天气事实（灰点）+ OurTrail 窗口（绿点+评级） */
+.agenda { padding: 14px 14px 10px; }
+.agenda-item { display: flex; gap: 10px; position: relative; padding-bottom: 14px; }
+.agenda-item:last-child { padding-bottom: 2px; }
+.ag-time { flex: 0 0 44px; font-size: var(--text-caption); color: var(--muted); padding-top: 1px; }
+.ag-line { flex: 0 0 14px; position: relative; }
+.ag-line::before {
+  content: ""; position: absolute; left: 6px; top: 14px; bottom: -2px;
+  width: 1.5px; background: var(--line);
+}
+.agenda-item:last-child .ag-line::before { display: none; }
+.ag-dot {
+  position: absolute; left: 2px; top: 3px; width: 9px; height: 9px; border-radius: 50%;
+  border: 2px solid var(--surface);
+}
+.ag-dot.l1 { background: var(--control-line); }
+.ag-dot.l2 { background: var(--forest); }
+.ag-body { flex: 1; min-width: 0; }
+.ag-src { font-size: 10px; color: var(--muted); letter-spacing: 0.4px; display: block; }
+.ag-title { font-size: 13px; font-weight: 600; line-height: 20px; color: var(--ink); }
+.ag-title-l1 { font-weight: 600; }
+.ag-sub { font-size: var(--text-caption); color: var(--muted); line-height: 18px; }
+.ag-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ag-stars { color: var(--golden); font-size: 12px; letter-spacing: 1px; white-space: nowrap; }
+.ag-item-card {
+  margin-top: 5px; border-radius: 10px; padding: 8px 11px;
+  background: var(--forest-soft);
+}
+.ag-item-card.success { background: var(--success-soft); }
+.ag-item-card.warning { background: var(--warning-soft); }
+.ag-item-card.neutral { background: var(--forest-soft); }
+.ag-meta { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+.ag-window { font-size: var(--text-caption); font-weight: 600; color: var(--ink); }
+.ag-grade { font-size: var(--text-caption); font-weight: 600; }
+.ag-grade.success { color: var(--success); }
+.ag-grade.warning { color: var(--warning); }
+.ag-grade.neutral { color: var(--muted); }
+.ag-empty { padding: 4px 0 8px; }
 
 /* 区块标题：把页面分成"客观指标"与"结论"两段（用户需求 2 的信息架构） */
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
@@ -32,10 +113,43 @@
 .section-title { font-size: var(--text-body); font-weight: 700; color: var(--ink); }
 .section-sub { font-size: var(--text-caption); color: var(--muted); }
 
-/* 天相结论卡：结论 + 依据 + 往哪看/时段 */
-.sky-card { display: flex; flex-direction: column; gap: 8px; }
-.sky-title { font-size: var(--text-body); font-weight: 700; color: var(--ink); }
-.sky-text { font-size: var(--text-body); line-height: 22px; color: var(--ink); }
+/* V2 户外条件卡：总评 + 评级卡（与事实层用同款卡片语言，靠文案与星级承载差异） */
+.cond-card { border-left: 3px solid var(--forest); }
+.cond-pheno { display: flex; flex-direction: column; gap: 6px; }
+.cond-pheno.featured { border-left: 3px solid var(--info); }
+.cond-main { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.cond-label { font-size: 15px; font-weight: 700; color: var(--ink); }
+.cond-grade { display: inline-flex; align-items: baseline; gap: 6px; }
+.cond-stars { color: var(--golden); font-size: 13px; letter-spacing: 1px; }
+.pheno-window { font-size: var(--text-body); font-weight: 600; color: var(--ink); }
+.pheno-text { font-size: var(--text-caption); line-height: 19px; color: var(--muted); }
+.pheno-disclaimer { line-height: 17px; }
+.pheno-advice {
+  font-size: var(--text-caption); background: var(--info-soft);
+  border-radius: 8px; padding: 6px 10px; color: var(--ink);
+}
+
+/* Evidence（V2）：结论 → 事实清单 → 看图回跳 */
+.cond-why {
+  font-size: var(--text-caption); font-weight: 600; color: var(--forest);
+  padding: 2px 0;
+}
+.reason-panel {
+  margin: 2px -14px 0; padding: 10px 14px 12px; background: var(--forest-soft);
+  border-radius: 0 0 14px 14px; display: flex; flex-direction: column; gap: 4px;
+}
+.reason-title {
+  font-weight: 700; color: var(--muted); font-size: 11px;
+  letter-spacing: 0.5px; margin-bottom: 2px;
+}
+.reason-item { display: flex; gap: 6px; align-items: baseline; }
+.reason-mark { font-weight: 700; color: var(--success); flex: 0 0 auto; }
+.reason-fact { color: var(--ink); flex: 1 1 auto; min-width: 0; font-size: var(--text-caption); line-height: 20px; }
+.reason-link {
+  color: var(--info); font-size: 11px; cursor: pointer; white-space: nowrap; flex: 0 0 auto;
+  font-weight: 600;
+}
+.reason-note { margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 17px; }
 .sky-look {
   display: flex;
   gap: 8px;

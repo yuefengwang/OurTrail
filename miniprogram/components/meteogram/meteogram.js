@@ -11,7 +11,8 @@
 // 几何与天相标记配色放在 layout.js：让"刻度栏装不下标签""两行刻度抢位"这类问题
 // 能被测试直接断言，也让全屏横屏页可以复用同一套几何。
 const {
-  HOUR_W, PAD_L, PAD_R, ROW, CHART_H, AXIS_DAY_DY, AXIS_HOUR_DY,
+  HOUR_W, PAD_L, PAD_R, ROW, CHART_H, AXIS_DAY_DY, AXIS_HOUR_DY, AXIS_SUN_BAND_H,
+  BAND_ALT_MAX, bandAltY, SUN_BAND_COLORS,
   MARK_STYLE, MARK_LANES, LEGEND_KEYS,
   MARK_LANE_H, MARK_LANE_GAP, MARK_FONT_PX, inkOn, tapColumn,
 } = require('./layout')
@@ -41,11 +42,21 @@ const C = {
   selEdge: 'rgba(22,62,53,0.35)',   // forest 35%
   now: '#163E35',         // = --forest（= MARK_STYLE.galaxy）
   warn: '#8C5A12',        // = --warning（= MARK_STYLE.rainbow）
+  // V2 云层带剖面的状态底（与结论卡/Agenda 同源的语义色，浅底字面量按 design-system 预算）：
+  seaTint: 'rgba(39,97,69,0.12)',      // = --success 12%（云在脚下 = 云海窗口）
+  inCloudTint: 'rgba(140,90,18,0.14)', // = --warning 14%（云层罩住此点 = 入云）
 }
 
 const WEEK = ['日', '一', '二', '三', '四', '五', '六']
 
 function hourKey(d, t) { return d + 'T' + t }
+
+// 'HH:mm' → 分钟数（V2 轴上日出日落/现在线定位用）。非法输入返回 NaN，由调用方守卫。
+function minuteOfT(t) {
+  const s = String(t || '')
+  if (s.length < 5) return NaN
+  return Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5))
+}
 
 Component({
   options: { styleIsolation: 'apply-shared' },
@@ -66,6 +77,17 @@ Component({
     hourWidth: { type: Number, value: HOUR_W },
     // 图例右侧提示语。横屏页与天气页说的话不一样，所以由外部给。
     tip: { type: String, value: '' },
+    // ---- V2 optional 入参（全屏页/旧调用方不传即得旧行为，全部渐进增强）----
+    // 此点海拔（m，可信高程优先）：云层带剖面行的虚线；null/缺省不画线。
+    elevation: { type: null, value: null },
+    // 日照相位 {'dateTHH:mm': 'golden'|'blue'|'astro'|'night'}：轴顶分色带，页面按 astro 算好传入
+    sunBands: { type: Object, value: {} },
+    // 逐日日出日落 { date: { rise:'HH:mm', set:'HH:mm' } }：轴上的日出日落虚线
+    sunLines: { type: Object, value: {} },
+    // 「现在」{ date, t }：竖线；null 不画
+    now: { type: null, value: null },
+    // 点选/看图锚定列 { date, t }：整列淡墨高亮；null 不画
+    pick: { type: null, value: null },
   },
 
   data: {
@@ -78,7 +100,7 @@ Component({
   },
 
   observers: {
-    'series, marks, night, selectedDates, hourWidth': function () {
+    'series, marks, night, selectedDates, hourWidth, elevation, sunBands, sunLines, now, pick': function () {
       if (this._ready) this.scheduleDraw()
     },
   },
@@ -196,6 +218,15 @@ Component({
         ctx.fillStyle = C.now
         ctx.fillRect(x(i), 0, hw, 2)
       })
+      // V2 点选/看图锚定列：整列淡墨（Evidence「看图↗」与本页点小时共用）
+      const pick = this.data.pick
+      if (pick && pick.date && pick.t) {
+        const pi = series.findIndex(h => h.d === pick.date && h.t === pick.t)
+        if (pi >= 0) {
+          ctx.fillStyle = C.tempFill
+          ctx.fillRect(x(pi), 0, hw, BODY_H)
+        }
+      }
       // 2) 日分隔线
       ctx.strokeStyle = C.selEdge
       ctx.lineWidth = 1
@@ -215,6 +246,8 @@ Component({
       this.drawTemp(ctx, series, x, cx)
       this.drawRain(ctx, series, x, cx)
       this.drawCloud(ctx, series, x, cx)
+      this.drawBandProfile(ctx, series, x)
+      this.drawWind(ctx, series, cx)
       this.drawCode(ctx, series, cx)
       this.drawAxis(ctx, series, x, cx)
     },
@@ -326,6 +359,20 @@ Component({
       ctx.lineWidth = 1.5
       ctx.stroke()
 
+      // 极值标注（V2）：只在曲线最高/最低两点写数字，窄列（全览 hw<8）省略防叠。
+      // 标签写在各自点上方——极值点上方必是空区，不会压到降水行。
+      if (this.hw >= 8) {
+        const iMax = temps.indexOf(hi)
+        const iMin = temps.indexOf(lo)
+        ctx.font = '700 9px sans-serif'
+        ctx.fillStyle = C.temp
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'alphabetic'
+        ctx.fillText(Math.round(hi) + '°', cx(iMax), ty(hi) - 4)
+        ctx.fillStyle = C.axisText
+        ctx.fillText(Math.round(lo) + '°', cx(iMin), ty(lo) - 4)
+      }
+
       // 左栏三档刻度（带°，让刻度栏一眼看出这是温度）
       // textBaseline 必须显式指定：markRect 里用了 middle，不复位会把刻度整体抬高半个字高
       ctx.font = '9px sans-serif'
@@ -349,6 +396,14 @@ Component({
         Math.max.apply(null, series.map(h => Math.max(numOr(h.precip, 0), numOr(h.showers, 0))))
       )
       const bot = ROW.rain.y + ROW.rain.h
+      // 降水概率底带（V2）：pop≥50 的整列铺淡 info 底——"可能下雨"先于具体毫米被看见
+      series.forEach((h, i) => {
+        if (numOr(h.pop, 0) < 50) return
+        ctx.fillStyle = C.rain
+        ctx.globalAlpha = 0.10
+        ctx.fillRect(x(i), ROW.rain.y - 2, hw, ROW.rain.h + 3)
+        ctx.globalAlpha = 1
+      })
       series.forEach((h, i) => {
         const p = numOr(h.precip, 0)
         const s = numOr(h.showers, 0)
@@ -427,6 +482,94 @@ Component({
       ctx.textBaseline = 'alphabetic'
     },
 
+    // 云层带剖面（V2）：0–6000 m 压缩条。band{base,top,cover} 色块 + 此点海拔虚线 +
+    // 云海/入云状态底。数据全部来自服务端 cloudBandAt（series[].band）与页面级 marks
+    // （cloudSea/inCloud，与结论卡同源）——这里只做形状映射，**不含任何新阈值**。
+    drawBandProfile(ctx, series, x) {
+      const hw = this.hw
+      const row = ROW.bandProfile
+      const marks = this.data.marks || {}
+      series.forEach((h, i) => {
+        const list = marks[hourKey(h.d, h.t)] || []
+        // 状态底（互斥：云海优先于入云，两者由 sky.js 判定本就不会同时成立）
+        if (list.indexOf('cloudSea') !== -1) {
+          ctx.fillStyle = C.seaTint
+          ctx.fillRect(x(i), row.y, hw, row.h)
+        } else if (list.indexOf('inCloud') !== -1) {
+          ctx.fillStyle = C.inCloudTint
+          ctx.fillRect(x(i), row.y, hw, row.h)
+        }
+        const band = h.band
+        if (band && band.cover >= 80 && Number.isFinite(band.base) && Number.isFinite(band.top)) {
+          const yTop = bandAltY(band.top, row)
+          const yBase = bandAltY(band.base, row)
+          ctx.fillStyle = C.cloudLow
+          ctx.globalAlpha = 0.25 + 0.6 * (Math.max(0, Math.min(100, band.cover)) / 100)
+          ctx.fillRect(x(i) + 0.5, yTop, Math.max(1, hw - 1), Math.max(2, yBase - yTop))
+          ctx.globalAlpha = 1
+        }
+      })
+      // 此点海拔虚线：band 顶在虚线下方 = 云在脚下；虚线穿带 = 罩住自己；带在虚线上方 = 头顶
+      const elev = this.data.elevation
+      if (Number.isFinite(elev)) {
+        const py = Math.round(bandAltY(elev, row)) + 0.5
+        ctx.strokeStyle = C.now
+        ctx.lineWidth = 1
+        ctx.setLineDash([3, 2])
+        ctx.beginPath()
+        ctx.moveTo(PAD_L, py)
+        ctx.lineTo(this.cssW - PAD_R, py)
+        ctx.stroke()
+        ctx.setLineDash([])
+      }
+      ctx.font = '9px sans-serif'
+      ctx.fillStyle = C.axisText
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('带', PAD_L - 4, row.y + row.h / 2)
+      ctx.textBaseline = 'alphabetic'
+    },
+
+    // 风行（V2）：风向箭头 + 风速数字，每 3 小时一档（24 个箭头是噪声）。
+    // windDir 缺失（旧返回体/未部署新云函数）时只画数值——单字段缺失不致整图失败。
+    drawWind(ctx, series, cx) {
+      const row = ROW.wind
+      for (let i = 0; i < series.length; i += 3) {
+        const h = series[i]
+        const px = cx(i)
+        if (Number.isFinite(h.windDir)) {
+          const dir = (((h.windDir % 360) + 360) % 360 + 180) % 360 // 箭头指向风吹去的方向
+          ctx.save()
+          ctx.translate(px, row.y + 5)
+          ctx.rotate(dir * Math.PI / 180)
+          ctx.strokeStyle = C.axisText
+          ctx.lineWidth = 1.1
+          ctx.beginPath()
+          ctx.moveTo(0, 4)
+          ctx.lineTo(0, -2)
+          ctx.moveTo(0, -2)
+          ctx.lineTo(-2.4, 0.6)
+          ctx.moveTo(0, -2)
+          ctx.lineTo(2.4, 0.6)
+          ctx.stroke()
+          ctx.restore()
+        }
+        if (Number.isFinite(h.wind)) {
+          ctx.font = '9px sans-serif'
+          ctx.fillStyle = C.axisText
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'alphabetic'
+          ctx.fillText(String(Math.round(h.wind)), px, row.y + row.h - 1)
+        }
+      }
+      ctx.font = '9px sans-serif'
+      ctx.fillStyle = C.axisText
+      ctx.textAlign = 'right'
+      ctx.textBaseline = 'middle'
+      ctx.fillText('风', PAD_L - 4, row.y + row.h / 2)
+      ctx.textBaseline = 'alphabetic'
+    },
+
     // 天气简字：标准宽度每 3 小时标一次；全览（窄列）时每 3 小时会叠成一团字，
     // 改成每天正午一词，读作"这天什么天气"。
     drawCode(ctx, series, cx) {
@@ -482,6 +625,62 @@ Component({
           ctx.fillText(h.t, x(i) + 2, y + AXIS_HOUR_DY)
         }
       })
+
+      // 日照轴带（V2）：黄金/蓝调/暮光/夜分色条，贴在轴行**底部**——顶部是日期行文字，
+      // 画在上面会把「周六 9/28」糊掉（位置由布局不变量测试钉住）。
+      // 数据由页面按 astro 逐时算好传入（sunBands）；不传（全屏页旧行为）则整段跳过。
+      const bands = this.data.sunBands || {}
+      if (Object.keys(bands).length) {
+        const by = y + ROW.axis.h - AXIS_SUN_BAND_H - 1
+        series.forEach((h, i) => {
+          const color = SUN_BAND_COLORS[bands[hourKey(h.d, h.t)]]
+          if (!color) return
+          ctx.fillStyle = color
+          ctx.fillRect(x(i), by, hw, AXIS_SUN_BAND_H)
+        })
+      }
+      // 日出日落虚线（V2）：按天文时刻在所属小时列内插值定位
+      const sunLines = this.data.sunLines || {}
+      if (hw >= 8 && Object.keys(sunLines).length) {
+        ctx.strokeStyle = MARK_STYLE.golden.color
+        ctx.lineWidth = 1
+        ctx.setLineDash([2, 2])
+        series.forEach((h, i) => {
+          const s = sunLines[h.d]
+          if (!s) return
+          const colMin = minuteOfT(h.t)
+          if (!Number.isFinite(colMin)) return
+          ;[s.rise, s.set].forEach(t => {
+            const mm = minuteOfT(t)
+            if (!Number.isFinite(mm) || mm < colMin || mm >= colMin + 60) return
+            const px = Math.round(x(i) + hw * (mm - colMin) / 60) + 0.5
+            ctx.beginPath()
+            ctx.moveTo(px, 4)
+            ctx.lineTo(px, y + ROW.axis.h)
+            ctx.stroke()
+          })
+        })
+        ctx.setLineDash([])
+      }
+      // 「现在」线（V2）：{ date, t }，实线 + 顶部圆点
+      const now = this.data.now
+      if (now && now.date && now.t) {
+        const nm = minuteOfT(now.t)
+        const ni = series.findIndex(h => h.d === now.date
+          && Number.isFinite(nm) && nm >= minuteOfT(h.t) && nm < minuteOfT(h.t) + 60)
+        if (ni >= 0) {
+          ctx.strokeStyle = C.now
+          ctx.lineWidth = 1.5
+          ctx.beginPath()
+          ctx.moveTo(x(ni), 2)
+          ctx.lineTo(x(ni), y + ROW.axis.h)
+          ctx.stroke()
+          ctx.fillStyle = C.now
+          ctx.beginPath()
+          ctx.arc(x(ni), 4, 2.2, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
     },
 
     // 点击定位到某小时 → 通知页面切日。

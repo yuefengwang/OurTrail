@@ -25,15 +25,23 @@ const ROW = {
   temp: { y: 38, h: 46 },
   rain: { y: 86, h: 30 },
   cloud: { y: 118, h: 18 },
-  code: { y: 138, h: 16 },
-  // 时间轴拆成上下两行：上行日期（周六 9/28），下行小时刻度（00:00/06:00…）。
+  // V2：云层带剖面（0–6000 m 压缩条）——band{base,top,cover} 色块 + 此点海拔虚线。
+  // 「云在脚下 / 罩住我 / 在头顶」三态的读图区，数据来自服务端 cloudBandAt（零新增算法）。
+  bandProfile: { y: 140, h: 30 },
+  // V2：风行——风向箭头（windDir 缺失时只画数值）+ 每 3 小时风速数字。
+  // h=18：箭头占 y+3..y+9、数字基线 y+17，两段不叠。
+  wind: { y: 174, h: 18 },
+  code: { y: 196, h: 16 },
+  // 时间轴拆成上下两行：上行日期（周几 M/D），下行小时刻度（00:00/06:00…）。
   // 原来两行都写在 y+14、同一个 x 起点，日分隔格必然双重曝光。
-  axis: { y: 156, h: 36 },
+  axis: { y: 216, h: 36 },
 }
 const AXIS_DAY_DY = 2   // 轴内：日期行距轴顶
 const AXIS_HOUR_DY = 19 // 轴内：小时行距轴顶（与日期行至少差 10px 才不叠）
+// 日照轴带：昼夜/黄金/蓝调/暮光分色条（页面按 astro 算好 sunBands 传入），贴在轴行顶部
+const AXIS_SUN_BAND_H = 6
 
-const CHART_H = 202 // ≥ ROW.axis.y + ROW.axis.h，余量留给底部留白
+const CHART_H = 256 // ≥ ROW.axis.y + ROW.axis.h，余量留给底部留白（V2 加两行后 202→256）
 const MARK_LANE_H = 9      // 单条泳道高
 const MARK_LANE_GAP = 1.5  // 泳道间隙
 const MARK_FONT_PX = 8
@@ -60,6 +68,26 @@ const MARK_LANES = [
 
 // 图例只列徒步者真正会追的窗口（入云不单列，它在图上是"变差"信号）
 const LEGEND_KEYS = ['cloudSea', 'alpenglow', 'golden', 'blueHour', 'rainbow', 'star', 'galaxy']
+
+/* ---------- 云层带剖面的海拔映射（V2） ---------- */
+
+const BAND_ALT_MIN = 0      // 剖面纵轴下限（m ASL）
+const BAND_ALT_MAX = 6000   // 剖面纵轴上限（m ASL）
+
+// 海拔 → 剖面行内 y（row = ROW.bandProfile）。纯函数，测试直接断言。
+function bandAltY(alt, row) {
+  const h = row.h - 4
+  const clamped = Math.max(BAND_ALT_MIN, Math.min(BAND_ALT_MAX, Number(alt) || 0))
+  return row.y + 2 + (1 - (clamped - BAND_ALT_MIN) / (BAND_ALT_MAX - BAND_ALT_MIN)) * h
+}
+
+// 日照相位 → 轴带颜色（页面 sunBands 的值域）。day 不画（纸面底透出）。
+const SUN_BAND_COLORS = {
+  golden: '#D6A33C',   // = --golden（= MARK_STYLE.golden）
+  blue: '#6C7C93',     // = --blue-hour（= MARK_STYLE.blueHour）
+  astro: '#8C9791',    // = --control-line（暮光，= MARK_STYLE.inCloud）
+  night: '#F0F1EC',    // = canvas 夜色（无 token）
+}
 
 /* ---------- 文本宽度估算（用于断言刻度栏装得下标签） ---------- */
 
@@ -96,7 +124,8 @@ function tapColumn(pageX, canvasLeft, hourWidth) {
 }
 
 module.exports = {
-  HOUR_W, PAD_L, PAD_R, ROW, CHART_H, AXIS_DAY_DY, AXIS_HOUR_DY,
+  HOUR_W, PAD_L, PAD_R, ROW, CHART_H, AXIS_DAY_DY, AXIS_HOUR_DY, AXIS_SUN_BAND_H,
+  BAND_ALT_MIN, BAND_ALT_MAX, bandAltY, SUN_BAND_COLORS,
   MARK_STYLE, MARK_LANES, LEGEND_KEYS,
   MARK_LANE_H, MARK_LANE_GAP, MARK_FONT_PX,
   GUTTER_FONT_PX, textWidth, inkOn, tapColumn,

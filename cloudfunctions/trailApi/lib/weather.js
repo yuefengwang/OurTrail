@@ -10,6 +10,9 @@ const HOURLY = [
   'weather_code', 'wind_speed_10m', 'wind_gusts_10m', 'relative_humidity_2m',
   'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high',
   'uv_index', 'visibility', 'freezing_level_height',
+  // V2 additive（2026-10）：风向（Timeline 风行箭头）/ 气压与露点（Numbers 折叠表）。
+  // 三者均为 optional：旧客户端忽略，新客户端对缺失降级（'—'/不画箭头），不得因单字段缺失失败。
+  'wind_direction_10m', 'surface_pressure', 'dew_point_2m',
 ]
 const CLOUD_LEVELS = [1000, 975, 950, 925, 900, 850, 800, 700, 600]
 // 气压层剖面：云量（相对湿度近似）+ 位势高度（换算层海拔 m ASL）
@@ -187,7 +190,9 @@ async function fetchForecast(lat, lng, date) {
   return { elevation: Math.round(j.elevation), days: daysOut, detail, series }
 }
 
-// 单小时投影（detail/series 共用）：t 保持 'HH:mm'（既有消费者依赖），d 为所属日期
+// 单小时投影（detail/series 共用）：t 保持 'HH:mm'（既有消费者依赖），d 为所属日期。
+// windDir/pressure/dewPoint 为 V2 additive：Open-Meteo 请求里带了就有、没带（旧返回体/测试桩）就是
+// undefined——消费方必须按缺失降级，不得假设存在。
 function hourView(times, h, i) {
   return {
     t: times[i].slice(11, 16),
@@ -200,8 +205,11 @@ function hourView(times, h, i) {
     code: (h.weather_code || [])[i],
     wind: (h.wind_speed_10m || [])[i],
     gust: (h.wind_gusts_10m || [])[i],
+    windDir: (h.wind_direction_10m || [])[i],
     // 相对湿度：彩虹/雾/露的水分信号（降水为 0 时高湿仍可能有雾或虹）
     rh: (h.relative_humidity_2m || [])[i],
+    pressure: (h.surface_pressure || [])[i],
+    dewPoint: (h.dew_point_2m || [])[i],
     cloud: {
       low: (h.cloud_cover_low || [])[i],
       mid: (h.cloud_cover_mid || [])[i],
@@ -213,6 +221,10 @@ function hourView(times, h, i) {
     band: cloudBandAt(h, i),
   }
 }
+
+// Provider 元信息（V2 最小 interface）：响应体携带数据源标识，页脚/页头署名据此渲染，
+// 未来切换 Meteoblue 时只改这里与 fetchForecast 的外呼，UI 与天相分析零改动。
+const PROVIDER = { id: 'open-meteo', label: 'Open-Meteo', attribution: 'Open-Meteo.com（CC BY 4.0）' }
 
 /* ---------- P3 独立天气模块：按点自由查询的纯逻辑 ---------- */
 // index.js 只做编排（缓存读写、响应组装），校验/窗口判定/坐标纠偏/返回体投影都在这里，
@@ -274,6 +286,6 @@ function pointResponse(forecast) {
 }
 
 module.exports = {
-  fetchForecast, cnToday, gcjToWgs, cloudBandAt, hourView,
+  fetchForecast, cnToday, gcjToWgs, cloudBandAt, hourView, PROVIDER,
   isWeatherFreeAction, weatherCacheKey, resolvePointQuery, pointResponse,
 }
