@@ -17,7 +17,6 @@
 const api = require('../../utils/api')
 const draftUtil = require('../../utils/draft')
 const { PHASE_LABELS, dateLabel } = require('../../utils/format')
-const meView = require('../../utils/me-view')
 
 const AUTO_SAVE_MS = 800
 const DRAFT_KEY_V1 = 'ourtrail.draft.me.person.v1'
@@ -157,11 +156,11 @@ Page({
   },
 
   reload() {
-    return Promise.all([
-      api.read({ kind: 'profile' }),
-      api.read({ kind: 'home', perspective: 'participant', openedActivityIds: [] }),
-    ]).then(([res, home]) => {
-      if (res.view.kind !== 'profile') {
+    // 单读 kind:'me'（06-api-and-selector-design.md §2）：profile + 统计 + 最近活动 + positionRows
+    // 一次 read 出齐，消除「为 positionRows 拉全量 home（含轨迹折线）」的读取浪费。
+    // 部署顺序约束：本页依赖云端 me 视图，必须晚于 trailApi 部署上线（14-migration-plan §3）。
+    return api.read({ kind: 'me' }).then(res => {
+      if (res.view.kind !== 'me') {
         this.setData({ loading: false, denied: res.view.kind === 'denied' ? res.view.message : '资料不可用' })
         return
       }
@@ -175,15 +174,10 @@ Page({
       // 草稿存在时两者恒等，草稿在每次 reload 后都被清掉，未落库输入只能活一轮往返；
       // 这里改为与真正的服务端值比较，同时承担横幅条件与清理条件。
       const pending = !!(draft && !sameFields(draft.fields, draftableOf(serverPerson)))
-      const activities = home.view.kind === 'home' ? home.view.activities : null
-      const positionRows = []
-      if (activities) {
-        for (const a of activities) {
-          for (const row of a.meta.positionRows || []) {
-            positionRows.push(Object.assign({}, row, { label: a.title + ' · ' + row.name }))
-          }
-        }
-      }
+      const positionRows = (res.view.positionRows || []).map(row => ({
+        activityId: row.activityId, signupId: row.signupId,
+        label: row.activityTitle + ' · ' + row.name,
+      }))
       this.revision = res.revision
       this.setData({
         loading: false,
@@ -194,8 +188,8 @@ Page({
         activated: !!(person.name && person.name.trim() && person.phone && person.phone.trim()),
         companions: res.view.profile.companions.map(c => ({ id: c.id, name: c.person.name, avatar: c.person.avatar || '' })),
         positionRows,
-        stats: meView.deriveMeStats(activities),
-        recent: meView.pickRecent(activities, Date.now()).map(a => ({
+        stats: res.view.stats || null,
+        recent: (res.view.recent || []).map(a => ({
           id: a.id, title: a.title, startAt: a.startAt, phase: a.phase,
           dateText: dateLabel(a.startAt), phaseText: PHASE_LABELS[a.phase] || a.phase,
         })),

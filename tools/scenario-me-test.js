@@ -17,7 +17,6 @@
 const ME_PATH = require.resolve('../miniprogram/pages/me/me.js')
 const DRAFT_PATH = require.resolve('../miniprogram/utils/draft.js')
 const api = require('../miniprogram/utils/api')
-const meView = require('../miniprogram/utils/me-view')
 
 let passed = 0
 let failed = 0
@@ -149,8 +148,30 @@ function bootMe(opts) {
   api.read = req => {
     reads.push(req)
     if (opts.readFail) return Promise.reject(new Error('网络异常'))
-    if (req.kind === 'profile') return Promise.resolve(opts.profile || profileView())
-    if (req.kind === 'home') return Promise.resolve(opts.home || homeView())
+    if (req.kind === 'me' || req.kind === 'profile') {
+      const prof = opts.profile || profileView()
+      if (prof.view.kind !== 'profile') return Promise.resolve(prof) // denied 等异常视图原样透传
+      if (req.kind === 'profile') return Promise.resolve(prof) // onEditCompanion 的回查读
+      // 单读 me 视图（06 §2）：profile + stats + recent + positionRows 一次出齐。
+      // stats/recent 是服务端口径（smoke §16a 钉死），这里用显式 fixtures 模拟服务端返回，
+      // 不在桩里复算口径（避免把服务端逻辑镜像进测试——SYNC.md:162 教训）。
+      const home = opts.home || homeView()
+      const activities = home.view.kind === 'home' ? (home.view.activities || []) : []
+      const positionRows = []
+      for (const a of activities) {
+        for (const row of (a.meta && a.meta.positionRows) || []) positionRows.push(row)
+      }
+      return Promise.resolve({
+        view: {
+          kind: 'me',
+          profile: prof.view.profile,
+          stats: opts.stats !== undefined ? opts.stats : { ongoing: 0, finished: 0, organized: 0 },
+          recent: opts.recent !== undefined ? opts.recent : [],
+          positionRows,
+        },
+        revision: prof.revision, now: prof.now,
+      })
+    }
     return Promise.resolve({ view: { kind: 'denied', message: '无权访问' }, revision: 1, now: '' })
   }
   api.dispatchAndSync = (payload, revision, page) => {
@@ -176,11 +197,8 @@ async function scenario1() {
     const { page, reads, env } = bootMe({ profile: emptyProfileView() })
     check('onShow 即触发 reload（无 onLoad）', reads.length > 0)
     await settle(page)
-    check('读取顺序：先档案后首页，首页带 participant 视角与空 openedActivityIds',
-      reads.length === 2 && reads[0].kind === 'profile'
-      && reads[1].kind === 'home' && reads[1].perspective === 'participant'
-      && JSON.stringify(reads[1].openedActivityIds) === '[]',
-      JSON.stringify(reads))
+    check('单读 me 视图（profile+stats+recent+positionRows 一次出齐）',
+      reads.length === 1 && reads[0].kind === 'me', JSON.stringify(reads))
     check('空壳档案不炸：loading 收尾、无 denied', page.data.loading === false && page.data.denied === '',
       JSON.stringify({ loading: page.data.loading, denied: page.data.denied }))
     check('空档案展示：identity 取 profile.id、姓名电话为空',
@@ -207,11 +225,11 @@ async function scenario1() {
       page.data.denied)
   }
   {
-    // 首页视图不可用（如 denied）：统计隐藏、最近活动空态，页面不炸
-    const { page } = bootMe({ home: homeView([], 'denied') })
+    // me 视图未带 stats/recent（理论不发生，防御）：页面隐藏指标行、最近活动空态，不炸
+    const { page } = bootMe({ stats: null, recent: null })
     await settle(page)
-    check('home 不可用：stats 为 null（页面隐藏指标行）', page.data.stats === null, JSON.stringify(page.data.stats))
-    check('home 不可用：recent 为空（空态组件接管）', page.data.recent.length === 0)
+    check('me 视图缺 stats：页面置 null（隐藏指标行）', page.data.stats === null, JSON.stringify(page.data.stats))
+    check('me 视图缺 recent：recent 为空（空态组件接管）', page.data.recent.length === 0)
   }
   {
     const { page } = bootMe({
@@ -760,8 +778,8 @@ async function scenario7() {
       JSON.stringify(person))
     check('同行人保存反馈 + 弹层收起',
       page.data.companionOpen === false && page.data.companionError === '', JSON.stringify(page.data))
-    await waitFor(() => reads.length === before + 2)
-    check('同行人保存后重读档案与首页（回填列表）', reads.length === before + 2, String(reads.length))
+    await waitFor(() => reads.length === before + 1)
+    check('同行人保存后重读（me 单读回填列表）', reads.length === before + 1, String(reads.length))
   }
   {
     const { page, dispatches } = bootMe({
@@ -806,8 +824,8 @@ async function scenario7() {
       JSON.stringify(dispatches[0] && dispatches[0].payload))
     check('移除反馈 + 确认态复位', env.rec.toasts.indexOf('已移除常用条目') !== -1 && page.data.removeId === '',
       JSON.stringify(env.rec.toasts))
-    await waitFor(() => reads.length === before + 2)
-    check('移除后重读回填列表', reads.length === before + 2, String(reads.length))
+    await waitFor(() => reads.length === before + 1)
+    check('移除后重读回填列表', reads.length === before + 1, String(reads.length))
   }
   {
     // 同行人弹层内的紧急联系人字段同样映射到 emergency.name/phone
@@ -855,8 +873,8 @@ async function scenario8() {
       && dispatches[0].payload.signupId === 's1',
       JSON.stringify(dispatches[0] && dispatches[0].payload))
     check('撤回反馈', env.rec.toasts.indexOf('位置授权已撤回') !== -1, JSON.stringify(env.rec.toasts))
-    await waitFor(() => reads.length === before + 2)
-    check('撤回后重读回填', reads.length === before + 2, String(reads.length))
+    await waitFor(() => reads.length === before + 1)
+    check('撤回后重读回填', reads.length === before + 1, String(reads.length))
   }
   {
     const { page, reads, env } = bootMe({})
@@ -864,7 +882,7 @@ async function scenario8() {
     const before = reads.length
     page.onPullDownRefresh()
     await waitFor(() => env.rec.pulls > 0)
-    check('下拉刷新：重新读取档案与首页', reads.length === before + 2, String(reads.length - before))
+    check('下拉刷新：重读 me 视图', reads.length === before + 1, String(reads.length - before))
     check('刷新完成收尾 stopPullDownRefresh', env.rec.pulls === 1, String(env.rec.pulls))
   }
   {
@@ -920,59 +938,32 @@ async function scenario9() {
   }
 }
 
-// 10. utils/me-view 纯函数：统计口径与最近活动排序（固定时钟，确定性断言）
+// 10. me 视图数据装配：stats/recent fixtures 进 data + 客户端只做展示文案映射（PHASE_LABELS/dateLabel）
+//     ——服务端口径矩阵已上移到 smoke §16a（服务端是口径的唯一权威，客户端不再复算）
 async function scenario10() {
-  section('10. me-view 纯函数：统计口径 / 最近活动排序')
-  const NOW = Date.parse('2026-10-05T09:00:00+08:00')
-  const acts = [
-    { id: 'a1', title: '行前A', phase: 'published', startAt: '2026-10-12T08:00:00+08:00', meta: { owner: true, joined: false } },
-    { id: 'a2', title: '归档B', phase: 'archived', startAt: '2026-09-20T08:00:00+08:00', meta: { owner: false, joined: true } },
-    { id: 'a3', title: '集合C', phase: 'gathering', startAt: '2026-10-01T08:00:00+08:00', meta: { owner: false, joined: true } },
-    { id: 'a4', title: '草稿D', phase: 'draft', startAt: '', meta: { owner: true, joined: false } },
-    { id: 'a5', title: '取消E', phase: 'cancelled', startAt: '2026-10-03T08:00:00+08:00', meta: { owner: true, joined: false } },
-  ]
+  section('10. me 视图装配：stats/recent fixtures → data + 展示文案映射')
   {
-    const stats = meView.deriveMeStats(acts)
-    check('口径：进行中 = published/gathering/active/closing 且（owner‖joined）→ a1,a3',
-      stats.ongoing === 2, JSON.stringify(stats))
-    check('口径：已完成 = archived 且（owner‖joined）→ a2', stats.finished === 1, JSON.stringify(stats))
-    check('口径：发起 = meta.owner → a1,a4,a5（cancelled 仍算发起过）',
-      stats.organized === 3, JSON.stringify(stats))
-    check('非数组输入 → null（页面隐藏指标行）', meView.deriveMeStats(null) === null)
-    check('空数组 → 全 0', (() => { const s = meView.deriveMeStats([]); return s.ongoing === 0 && s.finished === 0 && s.organized === 0 })())
-  }
-  {
-    const recent = meView.pickRecent(acts, NOW, 3)
-    check('最近活动：进行中优先（a1,a3 在前），其余按 |startAt-now| 距离排（a5 取消但有近 startAt）',
-      recent[0].id === 'a3' && recent[1].id === 'a1' && recent[2].id === 'a5',
-      JSON.stringify(recent))
-    check('最近活动行是 slim 形状（无 routeSnapshot/meta）',
-      recent.every(r => JSON.stringify(Object.keys(r).sort()) === JSON.stringify(['id', 'phase', 'startAt', 'title'])),
-      JSON.stringify(recent.map(r => Object.keys(r))))
-    check('limit 截断', meView.pickRecent(acts, NOW, 2).length === 2)
-    check('cancelled/普通归档不出现在进行中优先队列头部（a2 按距离排在 a4 之前或之后，但不在 a1/a3 前）',
-      meView.pickRecent(acts, NOW, 5).slice(0, 2).map(r => r.id).indexOf('a2') === -1,
-      JSON.stringify(meView.pickRecent(acts, NOW, 5)))
-  }
-  {
-    // 页面级装配：冻结时钟断言 stats/recent 进入 data
-    const realNow = Date.now
-    Date.now = () => NOW
-    try {
-      const { page } = bootMe({
-        home: homeView(acts),
-        profile: profileView(),
-      })
-      await settle(page)
-      check('页面装配：stats 三计数进 data',
-        JSON.stringify(page.data.stats) === JSON.stringify({ ongoing: 2, finished: 1, organized: 3 }),
-        JSON.stringify(page.data.stats))
-      check('页面装配：recent 首位是最近的进行中活动（a3）并带展示文案',
-        page.data.recent[0].id === 'a3' && !!page.data.recent[0].dateText && !!page.data.recent[0].phaseText,
-        JSON.stringify(page.data.recent))
-    } finally {
-      Date.now = realNow
-    }
+    const { page } = bootMe({
+      stats: { ongoing: 2, finished: 1, organized: 3 },
+      recent: [
+        { id: 'a3', title: '集合C', startAt: '2026-10-01T08:00:00+08:00', phase: 'gathering', role: 'participant' },
+        { id: 'a1', title: '行前A', startAt: '2026-10-12T08:00:00+08:00', phase: 'published', role: 'owner' },
+        { id: 'a5', title: '取消E', startAt: '2026-10-03T08:00:00+08:00', phase: 'cancelled', role: 'owner' },
+      ],
+    })
+    await settle(page)
+    check('页面装配：stats 三计数原样进 data（服务端口径，客户端不复算）',
+      JSON.stringify(page.data.stats) === JSON.stringify({ ongoing: 2, finished: 1, organized: 3 }),
+      JSON.stringify(page.data.stats))
+    check('页面装配：recent 顺序保持服务端排序（≤3 条）',
+      page.data.recent.length === 3 && page.data.recent[0].id === 'a3' && page.data.recent[2].id === 'a5',
+      JSON.stringify(page.data.recent))
+    check('展示文案映射：dateText（北京时间 MM/DD 周X）与 phaseText（PHASE_LABELS）',
+      page.data.recent[0].dateText === '10/01 周四' && page.data.recent[0].phaseText === '正在集合'
+      && page.data.recent[2].phaseText === '已取消',
+      JSON.stringify(page.data.recent.map(r => ({ d: r.dateText, p: r.phaseText }))))
+    check('slim 行不携带 routeSnapshot/meta',
+      page.data.recent.every(r => !r.meta && !r.routeSnapshot), '')
   }
 }
 
