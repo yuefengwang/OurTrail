@@ -109,7 +109,13 @@ function dispatch(payload, expectedRevision, requestId) {
  * page 需提供 reload()。
  */
 function dispatchAndSync(payload, expectedRevision, page) {
-  return dispatch(payload, expectedRevision).catch(e => {
+  return dispatch(payload, expectedRevision).then(res => {
+    // 写成功会推进全局 revision：通知宿主页面重读并下发新 sync-key，其余常驻面板才会
+    // 带着新 revision 发下一次命令（否则「名单审核完、切去分车造车」的第一次保存必撞
+    // CAS CONFLICT——Phase 4 GP-07 实测定案）。Page 实例没有 triggerEvent，守卫跳过。
+    if (page && typeof page.triggerEvent === 'function') page.triggerEvent('written')
+    return res
+  }).catch(e => {
     if (e && e.needRefresh && page && typeof page.reload === 'function') {
       toast('安排已被他人更新，已刷新，请重试')
       Promise.resolve(page.reload()).catch(() => {})

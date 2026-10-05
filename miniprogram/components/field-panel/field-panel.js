@@ -115,7 +115,7 @@ Component({
     },
 
     onSearch(e) { this.setData({ search: e.detail.value }, () => this.reload()) },
-    onUnresolvedOnly(e) { this.setData({ unresolvedOnly: e.detail.value }, () => this.reload()) },
+    onUnresolvedOnly(e) { this.setData({ unresolvedOnly: e.detail.value.length > 0 }, () => this.reload()) },
 
     openSheet(e) {
       const id = e.currentTarget.dataset.id

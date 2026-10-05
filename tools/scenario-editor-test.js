@@ -502,7 +502,7 @@ async function scenario7() {
     page.setData({ participate: true })
     page.publish()
     check('本人参加需独立勾选资料使用授权', page.data.failure === '本人参加需要独立确认资料使用授权。' && cmds.length === 1, page.data.failure)
-    page.onDataUse({ detail: { value: true } })
+    page.onDataUse({ detail: { value: ['on'] } })
     page.onTripChange({ detail: { value: 'pickup' } })
     page.onTripPickup({ detail: { value: 0 } })
     page.publish()

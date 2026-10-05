@@ -711,7 +711,7 @@ async function scenario6() {
     env.page.onPosReport()
     await sleep(20)
     check('展开了但没勾授权同样不发', env.cmds.length === 0)
-    env.page.onSelConsent({ detail: { value: true } })
+    env.page.onSelConsent({ detail: { value: ['on'] } })
     env.page.onPosReport()
     await settleRun(env.page, env, 1, 2)
     const c0 = env.cmds[0]
@@ -747,7 +747,7 @@ async function scenario6() {
     })
     await settle(env.page)
     env.page.onSelfSheet()
-    env.page.onSelConsent({ detail: { value: true } })
+    env.page.onSelConsent({ detail: { value: ['on'] } })
     env.page.onPosReport()
     await sleep(20)
     check('拒绝定位授权：透出指引文案、不发命令、busy 复位',

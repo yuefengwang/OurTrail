@@ -17,10 +17,12 @@
       <text class="field-label">查找现场人员</text>
       <input class="input" value="{{search}}" placeholder="输入姓名" bindinput="onSearch" />
     </view>
-    <label class="check-label">
-      <checkbox color="#163E35" checked="{{unresolvedOnly}}" bindchange="onUnresolvedOnly" />
-      <text class="check-text">只看去向或到家待核实人员</text>
-    </label>
+    <checkbox-group bindchange="onUnresolvedOnly">
+      <label class="check-label">
+        <checkbox color="#163E35" value="on" checked="{{unresolvedOnly}}" />
+        <text class="check-text">只看去向或到家待核实人员</text>
+      </label>
+    </checkbox-group>
 
     <view class="person-list">
       <person-row

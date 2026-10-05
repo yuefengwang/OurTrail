@@ -244,7 +244,7 @@ Page({
     this.setForm({ approvalMode: ['manual', 'automatic'][Number(e.detail.value) || 0] })
   },
   onAccepting(e) {
-    this.setForm({ acceptingSignups: e.detail.value })
+    this.setForm({ acceptingSignups: e.detail.value.length > 0 })
   },
   setForm(patch) {
     const form = Object.assign({}, this.data.form, patch)
@@ -780,9 +780,9 @@ Page({
   },
   onPublishClose() { this.setData({ publishOpen: false }) },
   onParticipate(e) {
-    this.setData({ participate: e.detail.value, dataUse: false })
+    this.setData({ participate: e.detail.value.length > 0, dataUse: false })
   },
-  onDataUse(e) { this.setData({ dataUse: e.detail.value }) },
+  onDataUse(e) { this.setData({ dataUse: e.detail.value.length > 0 }) },
   onTripChange(e) { this.setData({ tripSelf: e.detail.value === 'self' }) },
   onTripPickup(e) { this.setData({ tripPickupIndex: Number(e.detail.value) }) },
 

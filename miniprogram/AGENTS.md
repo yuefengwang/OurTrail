@@ -47,6 +47,8 @@ Three of them are **self-fetching business panels** — they load in `attached` 
 
 The three self-fetching panels also take **`sync-key`** (`phase@revision`, supplied by `workspace.js` after each of its own reads). They stay mounted across tab switches (so search text / checkboxes / vehicle form survive), which is why they need an explicit invalidation signal: the observer re-reads **only when the key differs from what that panel actually last read** (`this._readKey`), so no tab switch costs an extra full-state read, but a phase change refreshes every mounted panel by itself. Pages that don't pass `sync-key` (e.g. `staff`) keep the old attach-only behaviour — and must not be trusted to show a fresh phase.
 
+A panel **write** also invalidates its siblings: `api.dispatchAndSync` fires `written` on the calling component on success, and `workspace` listens (`bind:written="onPanelSync"`) by re-reading once and re-keying all panels. Without this loop the sibling panels keep the pre-write revision and their next command deterministically hits CAS CONFLICT (「名单里审核完、切去分车造车」的第一次保存必红——Phase 4 GP-07 实测定案). Any page hosting these panels that can also receive writes from them should bind `written` the same way.
+
 The auto-assign algorithm is **server-side** (`domain/allocation.js`). `transport-panel` only diffs and labels the returned plan; it never re-sorts.
 
 ## CANONICAL PAGE SHAPE

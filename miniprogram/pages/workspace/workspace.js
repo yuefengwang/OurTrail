@@ -118,6 +118,10 @@ Page({
     if (typeof wx.pageScrollTo === 'function') wx.pageScrollTo({ scrollTop: 0, duration: 0, fail: () => {} })
   },
 
+  // 任一常驻面板写库成功（api.dispatchAndSync 触发 written 事件）后，页面重读一次并下发新
+  // sync-key：面板写推进了全局 revision，兄弟面板不跟着重读，下一次命令必撞 CAS CONFLICT。
+  onPanelSync() { this.reload() },
+
   goRoster() { this.setData({ tab: 1 }) },
   goTransport() { this.setData({ tab: 2 }) },
   goField() { this.setData({ tab: 3 }) },

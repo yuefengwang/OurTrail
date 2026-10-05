@@ -331,7 +331,11 @@ Component({
           editorOpen: true,
           editingVehicleId: id,
           vform: form,
-          pickupOptions: this.view.activity.pickupPoints.map(p => ({ id: p.id, name: p.name })),
+          // checked 标志在这里与 onPickupToggle 各算一次：WXML 绑定调不了 indexOf，
+          // 勾选框的选中态只能由 JS 预计算（编辑既有车辆时回显已勾的集合点）。
+          pickupOptions: this.view.activity.pickupPoints.map(p => ({
+            id: p.id, name: p.name, checked: form.pickupIds.indexOf(p.id) !== -1,
+          })),
           error: '',
         })
       }).catch(e => this.setData({ error: api.errorText(e) }))
@@ -344,9 +348,11 @@ Component({
       this.setData({ vform })
     },
     onSeatLabelsOn(e) {
+      // checkbox-group 的 detail.value 是「已勾选项的 value 数组」，不是布尔
+      const on = (e.detail.value || []).indexOf('on') !== -1
       const vform = Object.assign({}, this.data.vform)
-      vform.seatLabelsOn = e.detail.value
-      if (e.detail.value && !vform.seatLabelsText) {
+      vform.seatLabelsOn = on
+      if (on && !vform.seatLabelsText) {
         const usable = Math.max(0, (Number(vform.legal) || 0) - vform.drivers.length - (Number(vform.blocked) || 0))
         vform.seatLabelsText = Array.from({ length: usable }, (_, i) => String(i + 1).padStart(2, '0')).join(',')
       }
@@ -394,7 +400,13 @@ Component({
     onPickupToggle(e) {
       const vform = Object.assign({}, this.data.vform)
       vform.pickupIds = (e.detail.value || []).slice()
-      this.setData({ vform })
+      // 勾选框选中态与 vform.pickupIds 同步重算（checked 绑定读 item.checked，见 wxml 注释）
+      const picked = {}
+      for (const pid of vform.pickupIds) picked[pid] = true
+      this.setData({
+        vform,
+        pickupOptions: (this.data.pickupOptions || []).map(o => Object.assign({}, o, { checked: !!picked[o.id] })),
+      })
     },
     onVehicleSave() {
       const f = this.data.vform

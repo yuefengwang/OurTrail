@@ -342,3 +342,38 @@ node tools/e2e-golden-path-test.js      # 逐节点账本 + VERDICT；退出码 
 2. **「完成本程行驶」没落地时先读红字**。车页两个动作同样走 `dispatchAndSync`，CONFLICT 时产品只重读页面不代重发；
    原来的断言只回读 `legs.outbound.completed`，红字没进证据就成了无法定性的一条红。现在：落地失败就读页面红字，
    有红字则按用户的做法再点一次（两次尝试各自记账），最终读数把 `页面红字 / 再点一次` 一并写进证据。
+
+## 11. Phase 4 定版读数（2026-10-05 深夜，win/vehicle-ui-recovery）
+
+任务书只允许修三件事：`transport-panel.wxml:206` 的 pickupIds 恒真绑定、`:212` 裸 checkbox、
+`roster-panel` 的 roleOptions/scopeOptions 未挂 data，以及同根裸 checkbox 存量 7 处。修复过程中
+checkbox 通了之后暴露出**第四个根因**：面板写推进全局 revision，但宿主页 `syncKey` 只随页面自己的读更新，
+兄弟面板（transport）拿旧 revision 发命令，GP-07 的 `vehicle.save` 每轮必撞 `CONFLICT` ——
+昨日 §5 的 UI 保存被「请至少勾选一个集合上车点」挡在云端之前，所以十连跑从未测到这条路径。
+修复：`api.dispatchAndSync` 成功后 `triggerEvent('written')`，workspace `bind:written="onPanelSync"`
+重读一次并重发 sync-key（详见 SYNC.md Phase 4 条目）。
+
+### 定版十连跑（23:12–00:23，同一健康会话顺序连跑、轮间零干预）
+
+| run | exit | OVERALL | passed/failed/unverified | 失败条数 |
+|---|---|---|---|---|
+| 1–10 | 2 | INCONCLUSIVE | 187 / **0** / 7 | **0**（十轮全空） |
+
+另加此前 3 连跑（21:08 起）共 **13 轮连续 0 失败**；未验证集合 9 轮逐字节相同，run 1 多一条
+`[忽略] 截图失败`（环境噪声，非断言）。BUSINESS 维 37/0 全 PASS：
+draft→published→gathering→active→closing→archived 全链 + 车辆经 UI 落库（pickupPointIds/seatLabels 回读）+
+协作授权（membership.save→readAccess）+ 车长页真实上车（outboundBoarded）+ 重复发布零副作用（逐字段快照）。
+
+### 7 条未验证（全部是平台限制，逐条带实测证据；按任务书 §5 如实记 INCONCLUSIVE，不伪装）
+
+1. GP-01 原生 `<picker mode=date/time>` 驱动出发时间（tap 后值不变）
+2. GP-01 「出发时间由用户亲手选定」真实路径（同上，草稿由业务命令补齐）
+3. GP-05 参与者从他人活动点进报名页（单登录身份，报名 CTA 归他人）
+4. GP-07 点把手关闭车辆编辑弹层（遮罩/X 在 `<overlay>` 组件内部模板，元素通道不可查）
+5. GP-07 组织者经授权弹层角色 picker 授予车辆联络（原生 picker 弹层；picker 数据源已修复在案，A 层 4b 钉保存链）
+6. GP-08 乘客在报名页选「按上车点集合」（原生 picker，改由业务命令落，只记 BUSINESS）
+7. GP-11 参与者抵达路线节点经 UI 确认（原生 picker 选点）
+
+picker 弹层不可自动化的探针证据：`element.tap()` 后 `.wx-picker` / `picker-view` / `.wx-picker-hd`
+在可查询树全部 0 命中，截图无弹层（`%TEMP%/picker-probe.png`）。**OVERALL PASS（exit 0）在
+DevTools 自动化通道下结构性不可达**——这是事实陈述，不是放宽判据能消除的东西；需要人工真机走查兜底。

@@ -42,6 +42,7 @@ function as(openid) {
     read: request => call('read', { request }),
     readForm: (activityId, signupId, purpose) => call('readForm', { activityId, signupId, purpose }),
     readTransport: activityId => call('readTransport', { activityId }),
+    readAccess: activityId => call('readAccess', { activityId }),
     readExport: (activityId, signupIds, mode, purpose) => call('readExport', { activityId, signupIds, mode, purpose }),
     previewAssignments: activityId => call('previewAssignments', { activityId }),
     dispatch: (payload, expectedRevision, requestId) => call('dispatch', { payload, expectedRevision, requestId }),
@@ -223,6 +224,43 @@ async function main() {
     check('SEAT_TAKEN 拒绝后零副作用（王五仍在 ' + FREE_SEAT + ' 座）',
       (tr.data.value.assignments.find(a => a.signupId === wangSignupId) || {}).seatLabel === FREE_SEAT,
       JSON.stringify(tr.data.value.assignments))
+  }
+
+  section('4b. 协作授权链：membership.save（车辆联络 / 现场协作）→ readAccess 回读（roster-panel 授权弹层的域契约）')
+  {
+    // 车辆联络授予是 Phase 4 三缺陷中 BUG-3 的域层地基：picker 数据修好后，弹层保存走的
+    // 就是这条命令链。这里钉住「保存 → 回读 → 再打开仍在」的字段保真，UI 层由 B 层/GP 证明。
+    const v1 = (await lin.readTransport(activityId)).data.value.vehicles.find(v => v.label === '1号车')
+    const rev = async () => (await lin.read({ kind: 'activity', activityId, perspective: 'organizer' })).data.revision
+    const expires = '2027-03-15T23:59:59+08:00'
+    let r = await lin.dispatch({ type: 'membership.save', activityId, membership: {
+      id: 'e2e-veh-contact', role: 'vehicle_contact', activityId, userId: CHEN, vehicleId: v1.id, expiresAt: expires } }, await rev())
+    check('membership.save 授予车辆联络（绑定 1号车）ok', r.ok === true, JSON.stringify(r.error || ''))
+    let acc = (await lin.readAccess(activityId)).data.value.memberships
+    const vehContact = acc.find(m => m.userId === CHEN && m.role === 'vehicle_contact')
+    check('readAccess 回读：车辆联络在案、绑定 1号车、截止时间原样落库（车长任务页准入的数据基础）',
+      !!vehContact && vehContact.vehicleId === v1.id && vehContact.expiresAt === expires, JSON.stringify(acc))
+    const wangId = ((await lin.read({ kind: 'activity', activityId, perspective: 'organizer' })).data.view.rows.find(x => x.name === '王五') || {}).signupId
+    r = await lin.dispatch({ type: 'membership.save', activityId, membership: {
+      id: 'e2e-staff', role: 'staff', activityId, userId: CHEN, expiresAt: expires,
+      scope: { kind: 'selected', signupIds: [wangId] }, capabilities: ['roster', 'checkin'] } }, await rev())
+    check('membership.save 授予现场协作（明确范围 + 能力清单）ok', r.ok === true, JSON.stringify(r.error || ''))
+    acc = (await lin.readAccess(activityId)).data.value.memberships
+    const staffRow = acc.find(m => m.id === 'e2e-staff')
+    check('readAccess 回读：现场协作 scope=selected（signupIds 原样）且 capabilities 原样',
+      !!staffRow && staffRow.scope.kind === 'selected' && staffRow.scope.signupIds.length === 1
+      && staffRow.scope.signupIds.indexOf(wangId) !== -1
+      && staffRow.capabilities.length === 2 && staffRow.capabilities.indexOf('checkin') !== -1, JSON.stringify(staffRow || acc))
+    r = await lin.dispatch({ type: 'membership.save', activityId, membership: {
+      id: 'e2e-expired', role: 'vehicle_contact', activityId, userId: CHEN, vehicleId: v1.id,
+      expiresAt: '2020-01-01T00:00:00+08:00' } }, await rev())
+    check('授权截止时间早于当前 → INVALID_INPUT（弹层日期/时间必填的域规则依据）',
+      r.ok === false && r.error.code === 'INVALID_INPUT', JSON.stringify(r.error || r))
+    r = await lin.dispatch({ type: 'membership.save', activityId, membership: {
+      id: 'e2e-staff-nocaps', role: 'staff', activityId, userId: CHEN, expiresAt: expires,
+      scope: { kind: 'all' }, capabilities: [] } }, await rev())
+    check('现场协作零能力 → INVALID_INPUT（能力勾选至少一项的域规则依据）',
+      r.ok === false && r.error.code === 'INVALID_INPUT', JSON.stringify(r.error || r))
   }
 
   section('5. 现场链：逐人签到/上车/出发核实（域规则：joined 乘客需签到+上车，参与者司机免上车）；证据由服务端覆写')

@@ -31,6 +31,10 @@ Component({
     countersLine: '',
     search: '',
     statusOptions: STATUS_OPTIONS,
+    // 协作授权弹层的两个 picker 数据源：常量此前只存在模块作用域、从未挂进 data，
+    // picker 的 range 取到 undefined（弹层能开、下拉恒为空，车辆联络授不出去）。
+    roleOptions: ROLE_OPTIONS,
+    scopeOptions: SCOPE_OPTIONS,
     statusIndex: 0,
     rows: [],
     selected: {},
