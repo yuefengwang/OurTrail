@@ -346,7 +346,16 @@ async function scenario1() {
       g1.page.data.denied)
     const g2 = bootSignup({ options: { id: 'a1' }, profile: profileView({ profile: { person: { name: '', phone: '' } } }) })
     await settle(g2.page)
-    check('档案没姓名：指引先完善资料', g2.page.data.denied === '请先到「我的」保存姓名与联系电话，再来报名。', g2.page.data.denied)
+    check('档案没姓名：指引先完善资料（Identity Hub 直达文案，04-onboarding §3）',
+      g2.page.data.denied === '请先完善姓名与联系电话，再来报名——大约 30 秒，报名表会自动带出这些信息。', g2.page.data.denied)
+    check('档案没姓名：profileGate 亮起（拦截卡带直达按钮）', g2.page.data.profileGate === true,
+      String(g2.page.data.profileGate))
+    check('档案读到手即回填草稿账号段（draft.setOpenId，12 §3）',
+      g2.env.store['ourtrail.openid'] === 'p1', String(g2.env.store['ourtrail.openid']))
+    check('onGoProfile 跳「我的」Tab（switchTab）', (() => {
+      g2.page.onGoProfile()
+      return g2.env.rec.nav.indexOf('/pages/me/me') !== -1
+    })(), JSON.stringify(g2.env.rec.nav))
     const g3 = bootSignup({ options: { id: 'a1' }, activity: { kind: 'denied', message: '活动信息不可用' } })
     await settle(g3.page)
     check('denied 视图透出原文', g3.page.data.denied === '活动信息不可用', g3.page.data.denied)

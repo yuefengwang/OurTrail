@@ -1,0 +1,11 @@
+// 「我的」页摘要脱敏（09-safety-data-design.md §3.3）：Tab 根页是截屏/演示高发区，
+// 摘要行只显示掩码；编辑 sheet 内显示全值（用户在主动操作自己的数据）。
+function maskPhone(phone) {
+  var s = phone === null || phone === undefined ? '' : '' + phone
+  if (!s || s.length < 7) return s
+  return s.slice(0, 3) + '****' + s.slice(-4)
+}
+
+module.exports = {
+  maskPhone: maskPhone,
+}

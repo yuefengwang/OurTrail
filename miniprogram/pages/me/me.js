@@ -1,22 +1,47 @@
-// 我的：微信资料同步（头像/昵称/手机号，点了就覆盖并自动保存）+ 紧急联系 + 同行人。
-// 自动保存规则：**输入停止 800ms 即自动落库**（不再只靠 blur，所以不必点别处才触发）；
-// 微信资料同步成功立即落库。
+// 我的：Identity Hub（docs/product/profile/03-information-architecture.md）。
+// 结构：A 身份头卡（头像/昵称/统计） B 反馈区（含本机未保存横幅） C 最近活动
+//       D 同行与安全（摘要行 + 编辑 sheet） E 常用同行人 F 我的协作码 G 位置授权。
+// 自动保存规则不变：输入停止 800ms 即自动落库，blur 兜底（scenario-me 钉死的契约）。
+// 保留的一致性契约（12-state-and-error-spec.md §1）：revision CAS、_saving 防重入、
+// 草稿先行、CONFLICT 自动重读、onUnload 清定时器、avatar 永取服务端值。
 //
-// ⚠ 为什么有本地草稿（曾出现过的真实数据丢失）：
-// 服务端 `profile.save` **硬性要求姓名+手机号齐全**（cloudfunctions/trailApi/domain/profile.js:36，
-// 缺任一返回 VALIDATION 并指明哪个字段没填）。这是有意的业务规则——名单与报名依赖姓名+电话。
-// 但**紧急联系人与健康备注和这个门槛毫无关系**。用户先填紧急联系人、姓名还没填完就切走时，
-// 旧实现里 `onShow → reload()` 会用服务端的空 person 整个覆盖 data.person，
-// 用户实测过「切到别的页面再回来，这些信息又丢了」。草稿让未落库的输入活过一次会话。
+// 本地草稿 v2（05 §6 / 12 §3）：
+//   键 ourtrail.draft.me.person.<openid>，结构 { fields, savedAt }；
+//   v1（ourtrail.draft.me.person.v1，无账号段无时间戳）只读兼容，保存成功后清除；
+//   profile.id 到手即 draftUtil.setOpenId 回填——修复 setOpenId 全库无人调用、
+//   同机多账号共享草稿的历史缺陷。
+//
+// 错误作用域（12 §5）：error=页面级；sheetError=D 组编辑 sheet/onboarding 内；
+// companionError=同行人弹层内。错误只在其产生的作用域渲染。
 'use strict'
 const api = require('../../utils/api')
 const draftUtil = require('../../utils/draft')
+const { PHASE_LABELS, dateLabel } = require('../../utils/format')
+
+const AUTO_SAVE_MS = 800
+const DRAFT_KEY_V1 = 'ourtrail.draft.me.person.v1'
 
 const emptyPerson = () => ({ name: '', phone: '', emergency: { name: '', phone: '' }, medical: '', avatar: '' })
 
-// 资料表单不是活动作用域，所以不走 draftUtil.getDraft(activityId, form)，用通用适配器 + 专用键。
-const DRAFT_KEY = 'ourtrail.draft.me.person.v1'
-const AUTO_SAVE_MS = 800
+// openid 已回填则用账号键；未回填（首访极早期输入）回落 v1 键，行为与旧版一致
+function draftKey() {
+  const openid = draftUtil.wxOpenId()
+  return openid ? 'ourtrail.draft.me.person.' + openid : DRAFT_KEY_V1
+}
+
+// v2 优先；v1（裸五字段）作为迁移来源，savedAt 记空（横幅只显示「未保存的修改」，不显示时间）
+function readDraft() {
+  const v2 = draftUtil.wxStorage.get(draftKey())
+  if (v2 && v2.fields && v2.fields.emergency) return v2
+  const legacy = draftUtil.wxStorage.get(DRAFT_KEY_V1)
+  if (legacy && legacy.emergency) return { fields: legacy, savedAt: '' }
+  return null
+}
+
+function clearDrafts() {
+  draftUtil.wxStorage.set(draftKey(), null)
+  if (draftKey() !== DRAFT_KEY_V1) draftUtil.wxStorage.set(DRAFT_KEY_V1, null)
+}
 
 // 只把「用户手输的字段」写进草稿。avatar 是云存储 fileID，由 onChooseAvatar 单独落库，
 // 混进草稿会在 reload 时把一个还没上传完的临时值带回去。
@@ -38,10 +63,10 @@ function sameFields(a, b) {
 }
 
 // 服务端值 + 草稿（草稿优先）。avatar 永远取服务端值。
-function mergeDraft(server) {
+function mergeDraft(server, draft) {
   const base = Object.assign({ avatar: '' }, server)
-  const d = draftUtil.wxStorage.get(DRAFT_KEY)
-  if (!d || !d.emergency) return base
+  if (!draft || !draft.fields || !draft.fields.emergency) return base
+  const d = draft.fields
   return {
     name: d.name || '',
     phone: d.phone || '',
@@ -51,22 +76,55 @@ function mergeDraft(server) {
   }
 }
 
+// 横幅时间戳：北京时间 MM-DD HH:mm
+function nowStamp() {
+  const t = new Date(Date.now() + 8 * 3600000)
+  const p = n => (n < 10 ? '0' + n : '' + n)
+  return p(t.getUTCMonth() + 1) + '-' + p(t.getUTCDate()) + ' ' + p(t.getUTCHours()) + ':' + p(t.getUTCMinutes())
+}
+
+// 协作码缩略：前 4 + … + 后 4（短码原样）。完整值只通过复制出口离场（10 §4）
+function abbreviate(code) {
+  const s = String(code || '')
+  if (s.length <= 12) return s
+  return s.slice(0, 4) + '…' + s.slice(-4)
+}
+
+// 错误作用域 → data 字段（12 §5）。onboarding 复用 sheetError（同一时刻只有一个编辑面打开）
+function scopeErrorField(scope) {
+  return (scope === 'phone' || scope === 'emergency' || scope === 'medical' || scope === 'onboarding')
+    ? 'sheetError' : 'error'
+}
+
 Page({
   data: {
     loading: true,
     denied: '',
     identity: '',
+    displayIdentity: '',
     person: emptyPerson(),
     companions: [],
     positionRows: [],
+    stats: null,
+    recent: [],
+    activated: false,
+    onboardingOpen: false,
+    phoneSheetOpen: false,
+    emergencySheetOpen: false,
+    medicalSheetOpen: false,
+    draftPending: false,
+    draftSavedAt: '',
+    discardAsk: false,
+    error: '',
+    sheetError: '',
+    sheetHint: '',
+    companionError: '',
+    hint: '',
+    saving: false,
     companionOpen: false,
     companionId: null,
     companionPerson: emptyPerson(),
     removeId: '',
-    error: '',
-    hint: '',
-    saving: false,
-    medicalOpen: false,
   },
 
   onShow() {
@@ -88,8 +146,7 @@ Page({
     this._hintClear = null
   },
 
-  // 「已保存」只停一会儿：既给静默自动保存一个确认（否则用户不知道自己有没有存上，
-  // 这正是「体验不好」的一部分），又不会像催填提示那样一直挂着。
+  // 「已保存」只停一会儿：静默自动保存的确认（体验不好的一半是不知道存没存上）。
   flashSaved() {
     clearTimeout(this._hintClear)
     this._hintClear = setTimeout(() => {
@@ -99,70 +156,127 @@ Page({
   },
 
   reload() {
-    return Promise.all([
-      api.read({ kind: 'profile' }),
-      api.read({ kind: 'home', perspective: 'participant', openedActivityIds: [] }),
-    ]).then(([res, home]) => {
-      if (res.view.kind !== 'profile') {
+    // 单读 kind:'me'（06-api-and-selector-design.md §2）：profile + 统计 + 最近活动 + positionRows
+    // 一次 read 出齐，消除「为 positionRows 拉全量 home（含轨迹折线）」的读取浪费。
+    // 部署顺序约束：本页依赖云端 me 视图，必须晚于 trailApi 部署上线（14-migration-plan §3）。
+    return api.read({ kind: 'me' }).then(res => {
+      if (res.view.kind !== 'me') {
         this.setData({ loading: false, denied: res.view.kind === 'denied' ? res.view.message : '资料不可用' })
         return
       }
-      const profile = res.view.profile
-      const positionRows = []
-      if (home.view.kind === 'home') {
-        for (const a of home.view.activities) {
-          for (const row of a.meta.positionRows || []) {
-            positionRows.push(Object.assign({}, row, { label: a.title + ' · ' + row.name }))
-          }
-        }
-      }
+      // 账号段回填：draft.setOpenId 此前全库无人调用，草稿键的账号段恒为空（12 §3）。
+      // profile.id 就是 openid，数据在手上，零额外请求。
+      draftUtil.setOpenId(res.view.profile.id)
+      const serverPerson = Object.assign({ avatar: '' }, res.view.profile.person)
+      const draft = readDraft()
+      const person = mergeDraft(serverPerson, draft)
+      // 横幅条件 = 草稿与服务端不一致（12 §4）。⚠ 旧实现的 pruneDraft 把「合并值」当比较基准——
+      // 草稿存在时两者恒等，草稿在每次 reload 后都被清掉，未落库输入只能活一轮往返；
+      // 这里改为与真正的服务端值比较，同时承担横幅条件与清理条件。
+      const pending = !!(draft && !sameFields(draft.fields, draftableOf(serverPerson)))
+      const positionRows = (res.view.positionRows || []).map(row => ({
+        activityId: row.activityId, signupId: row.signupId,
+        label: row.activityTitle + ' · ' + row.name,
+      }))
       this.revision = res.revision
-      // ⚠ 这里曾直接 `person: Object.assign({avatar:''}, profile.person)` ——
-      //   服务端值整个覆盖 data.person，未落库的输入在 onShow 时被抹掉（用户实测复现）。
-      //   现在把本地草稿合在服务端值之上。
-      const person = mergeDraft(Object.assign({ avatar: '' }, profile.person))
       this.setData({
         loading: false,
         denied: '',
-        identity: profile.id,
+        identity: res.view.profile.id,
+        displayIdentity: abbreviate(res.view.profile.id),
         person,
-        companions: profile.companions.map(c => ({ id: c.id, name: c.person.name, avatar: c.person.avatar || '' })),
+        activated: !!(person.name && person.name.trim() && person.phone && person.phone.trim()),
+        companions: res.view.profile.companions.map(c => ({ id: c.id, name: c.person.name, avatar: c.person.avatar || '' })),
         positionRows,
+        stats: res.view.stats || null,
+        recent: (res.view.recent || []).map(a => ({
+          id: a.id, title: a.title, startAt: a.startAt, phase: a.phase,
+          dateText: dateLabel(a.startAt), phaseText: PHASE_LABELS[a.phase] || a.phase,
+        })),
+        draftPending: pending,
+        draftSavedAt: draft ? (draft.savedAt || '') : '',
       })
-      // 草稿与服务端已一致就没必要留着，下次编辑从干净状态开始
-      this.pruneDraft(person)
+      // 草稿与服务端一致就没必要留着，下次编辑从干净状态开始
+      if (draft && !pending) clearDrafts()
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
   },
 
-  // 草稿和服务端字段完全一致 → 清掉，避免留一份永远用不到的历史
-  pruneDraft(person) {
-    const d = draftUtil.wxStorage.get(DRAFT_KEY)
-    if (d && d.emergency && sameFields(d, draftableOf(person))) {
-      draftUtil.wxStorage.set(DRAFT_KEY, null)
+  // ---- 打开/关闭编辑面：进入任一编辑面时清空其余作用域的残留反馈（12 §5） ----
+  openSheet(scope) {
+    this.setData({
+      error: '', sheetError: '', companionError: '', sheetHint: '', hint: '',
+      phoneSheetOpen: scope === 'phone',
+      emergencySheetOpen: scope === 'emergency',
+      medicalSheetOpen: scope === 'medical',
+      onboardingOpen: scope === 'onboarding',
+    })
+  },
+  onOpenPhone() { this.openSheet('phone') },
+  onOpenEmergency() { this.openSheet('emergency') },
+  onOpenMedical() { this.openSheet('medical') },
+  onOpenOnboarding() { this.openSheet('onboarding') },
+  onCloseSheet() {
+    this.setData({ phoneSheetOpen: false, emergencySheetOpen: false, medicalSheetOpen: false, onboardingOpen: false })
+  },
+
+  // ---- 激活（onboarding）：完成 = name+phone 齐即落库；跳过不发生任何写（04 §4） ----
+  onCompleteOnboarding() {
+    const p = this.data.person
+    const missing = []
+    if (!p.name || !p.name.trim()) missing.push('姓名')
+    if (!p.phone || !p.phone.trim()) missing.push('手机号')
+    if (missing.length) {
+      this.setData({ sheetError: '还差：' + missing.join('、') + '。补全后点「完成」；或点「先跳过」，随时可回来补。' })
+      return
     }
+    this.persistPerson({ scope: 'onboarding', onSuccess: () => this.onCloseSheet() })
+  },
+
+  // ---- 本机未保存横幅（12 §4） ----
+  onSaveDraftNow() {
+    this.persistPerson({ scope: 'page' })
+  },
+  onAskDiscard() { this.setData({ discardAsk: true }) },
+  onDiscardCancel() { this.setData({ discardAsk: false }) },
+  onDiscardConfirm() {
+    // 放弃 = 终止一切未落库意图：必须先取消待触发的防抖自动保存——它不经过 persistPerson，
+    // 若不取消，会在最后一次输入的 800ms 后把刚被放弃的草稿原样写回甚至落库。
+    // （persistPerson 顶部的取消只保护显式保存路径；放弃是唯一的例外路径，审计期补修。）
+    clearTimeout(this._autoSave)
+    this._autoSave = null
+    clearDrafts()
+    this.setData({ discardAsk: false, draftPending: false, draftSavedAt: '', error: '', sheetError: '', sheetHint: '' })
+    this.reload()
   },
 
   // ---- 自动保存：输入停止 AUTO_SAVE_MS 即尝试落库 ----
-  // 旧实现只在 bindblur 上挂，**必须点别处才触发**（用户反馈体验差）。
-  // 现在输入停顿 800ms 自动存；blur 仍保留作兜底（用户点「保存」或键盘收起时立即试一次）。
-  scheduleAutoSave() {
+  // 输入停顿 800ms 自动存；blur 仍保留作兜底。scope 记录触发输入所在的编辑面，
+  // 保存失败时错误只出现在那个作用域里。
+  scheduleAutoSave(scope) {
     clearTimeout(this._autoSave)
     this._autoSave = setTimeout(() => {
       this._autoSave = null
-      this.persistPerson({ silent: true })
+      this.persistPerson({ silent: true, scope })
     }, AUTO_SAVE_MS)
   },
 
   /**
-   * @param opts.silent 自动保存时不弹 toast（避免每敲一个字弹一次），
-   *                     只用 hint 静默告知。显式操作（微信资料同步）传 false。
+   * @param opts.silent 自动保存时不弹 toast，只用 hint 静默告知。
+   * @param opts.scope  失败反馈落在哪个作用域（page/phone/emergency/medical/onboarding）。
+   * @param opts.onSuccess 保存成功后的回调（激活 sheet 用它关闭自己）。
    */
   persistPerson(opts) {
     const silent = !!(opts && opts.silent)
+    const scope = (opts && opts.scope) || 'page'
+    // 本次保存使已排期的防抖自动保存过时：显式动作（blur/完成/立即保存/放弃/微信资料同步）
+    // 到来时取消它，避免「放弃本机修改」后定时器又把草稿原样写回、或对同一内容双重落库
+    clearTimeout(this._autoSave)
+    this._autoSave = null
     const person = this.data.person
     const fields = draftableOf(person)
     // 草稿先落盘：即使下面因为门槛没存成，切走再回来也还在
-    draftUtil.wxStorage.set(DRAFT_KEY, fields)
+    draftUtil.wxStorage.set(draftKey(), { fields, savedAt: nowStamp() })
+    this.setData({ draftPending: true, draftSavedAt: this.data.draftSavedAt || nowStamp() })
 
     const nameOk = !!(person.name && person.name.trim())
     const phoneOk = !!(person.phone && person.phone.trim())
@@ -176,53 +290,61 @@ Page({
       this.setData({
         hint: '补全姓名与手机号后自动保存'
           + (waiting.length ? '（' + waiting.join('') + '，会一起保存）' : ''),
+        draftSavedAt: nowStamp(),
       })
       return Promise.resolve()
     }
     if (this._saving) return Promise.resolve()
     this._saving = true
-    this.setData({ saving: true, hint: '', error: '' })
+    this.setData({ saving: true, hint: '', error: '', sheetError: '' })
     return api.dispatchAndSync({ type: 'profile.save', person }, this.revision, this)
       .then(res => {
         this._saving = false
         this.revision = res.revision
         // 存成了才清草稿：清早了会在 dispatch 失败时丢掉用户的输入
-        draftUtil.wxStorage.set(DRAFT_KEY, null)
-        this.setData({ saving: false, hint: '已保存' })
+        clearDrafts()
+        const savedPerson = this.data.person
+        this.setData({
+          saving: false, hint: '已保存', draftPending: false, draftSavedAt: '',
+          activated: !!(savedPerson.name && savedPerson.name.trim() && savedPerson.phone && savedPerson.phone.trim()),
+        })
         if (silent) this.flashSaved()
         else api.toast('资料已保存')
+        if (opts && typeof opts.onSuccess === 'function') opts.onSuccess()
       })
       .catch(e => {
         this._saving = false
-        // 失败**保留草稿**，并说明原因——否则用户会以为填的东西没了
-        this.setData({ saving: false, error: api.errorText(e) })
+        // 失败**保留草稿**，并只在与触发输入相同的作用域说明原因
+        const patch = { saving: false }
+        patch[scopeErrorField(scope)] = api.errorText(e)
+        this.setData(patch)
       })
   },
 
   onField(e) {
     const key = e.currentTarget.dataset.key
+    const scope = e.currentTarget.dataset.scope || 'page'
     const person = JSON.parse(JSON.stringify(this.data.person))
     if (key === 'name' || key === 'phone' || key === 'medical') person[key] = e.detail.value
     else if (key === 'ename' || key === 'ephone') {
-      // WXML 紧急联系两列的 data-key 是 ename/ephone，映射到 emergency.name/phone（杂散键会被服务端严格 schema 拒收）
+      // 紧急联系两列的 data-key 是 ename/ephone，映射到 emergency.name/phone（杂散键会被服务端严格 schema 拒收）
       const emergency = Object.assign({ name: '', phone: '' }, person.emergency)
       emergency[key === 'ename' ? 'name' : 'phone'] = e.detail.value
       person.emergency = emergency
     }
     this.setData({ person, hint: '' })
     // 写草稿 + 触发防抖自动保存：不必点别处
-    draftUtil.wxStorage.set(DRAFT_KEY, draftableOf(person))
-    this.scheduleAutoSave()
+    draftUtil.wxStorage.set(draftKey(), { fields: draftableOf(person), savedAt: nowStamp() })
+    this.setData({ draftPending: true, draftSavedAt: nowStamp() })
+    this.scheduleAutoSave(scope)
   },
-  onBlurSave() {
+  onBlurSave(e) {
     clearTimeout(this._autoSave)
     this._autoSave = null
     // blur 是**用户动作**，不是后台自动保存 → 出 toast。
-    // 只有下面防抖触发的自动保存才静默，否则每敲一个字弹一次。
-    this.persistPerson()
-  },
-  toggleMedical() {
-    this.setData({ medicalOpen: !this.data.medicalOpen })
+    // 只有防抖触发的自动保存才静默，否则每敲一个字弹一次。
+    const scope = (e && e.currentTarget && e.currentTarget.dataset.scope) || 'page'
+    this.persistPerson({ scope })
   },
 
   // ---- 微信资料同步：获取即覆盖对应字段，随后自动保存 ----
@@ -231,7 +353,9 @@ Page({
     const tempPath = e.detail && e.detail.avatarUrl
     if (!tempPath) return
     if (!wx.cloud) {
-      this.setData({ error: '云能力不可用，无法保存头像。' })
+      // 头像按钮同时存在于页面头卡与激活 sheet，错误跟着当前打开面走
+      if (this.data.onboardingOpen) this.setData({ sheetError: '云能力不可用，无法保存头像。' })
+      else this.setData({ error: '云能力不可用，无法保存头像。' })
       return
     }
     wx.cloud.uploadFile({
@@ -244,14 +368,18 @@ Page({
         const person = Object.assign(JSON.parse(JSON.stringify(this.data.person)), { avatar: res.fileID })
         this.setData({ person })
         api.toast('已使用微信头像')
-        this.persistPerson()
+        this.persistPerson({ scope: this.data.onboardingOpen ? 'onboarding' : 'page' })
       },
-      fail: () => this.setData({ error: '头像上传失败，请重试。' }),
+      fail: () => {
+        if (this.data.onboardingOpen) this.setData({ sheetError: '头像上传失败，请重试。' })
+        else this.setData({ error: '头像上传失败，请重试。' })
+      },
     })
   },
 
   // 手机号：open-type=getPhoneNumber 的 code 由服务端换取真实号码，无验证码。
   // 失败不再静默：区分取消 / 无权限 / 开发者工具，给出可操作的提示。
+  // 提示落在手机号编辑面内（sheetError / sheetHint），页面头卡不再被打断。
   onPhoneCode(e) {
     const d = e.detail || {}
     if (d.code) {
@@ -260,38 +388,38 @@ Page({
         const person = Object.assign(JSON.parse(JSON.stringify(this.data.person)), { phone: res.phone })
         this.setData({ person })
         api.toast('已使用微信手机号')
-        this.persistPerson()
-      }).catch(err => this.setData({ error: api.errorText(err) }))
+        this.persistPerson({ scope: this.data.onboardingOpen ? 'onboarding' : 'phone' })
+      }).catch(err => this.setData({ sheetError: api.errorText(err) }))
       return
     }
     const msg = String(d.errMsg || d.errmsg || '')
     if (/cancel|取消/i.test(msg)) {
-      // 取消不是错误，但要给一句提示（与下方无权限/开发者工具分支同级，不静默）
-      this.setData({ hint: '已取消获取微信手机号，可手动填写。' })
+      // 取消不是错误，但要给一句提示（不静默）
+      this.setData({ sheetHint: '已取消获取微信手机号，可手动填写。' })
       return
     }
     if (/privacy agreement|privacy|隐私/i.test(msg)) {
-      this.setData({ error: '小程序后台的《用户隐私保护指引》还没有声明「手机号」：请登录 mp.weixin.qq.com → 设置 → 基本设置 → 服务内容声明 → 用户隐私保护指引 → 增加「手机号」（用途：活动报名联络与安全应急联系）并提交，生效后此按钮即可用。在此之前请手动填写。' })
+      this.setData({ sheetError: '小程序后台的《用户隐私保护指引》还没有声明「手机号」：请登录 mp.weixin.qq.com → 设置 → 基本设置 → 服务内容声明 → 用户隐私保护指引 → 增加「手机号」（用途：活动报名联络与安全应急联系）并提交，生效后此按钮即可用。在此之前请手动填写。' })
     } else if (/1400001|permission|无权限|权限/i.test(msg)) {
-      this.setData({ error: '本小程序尚未开通「手机号快速验证」权限（需认证主体），请手动填写手机号。' })
+      this.setData({ sheetError: '本小程序尚未开通「手机号快速验证」权限（需认证主体），请手动填写手机号。' })
     } else if (/developer|tourist|模拟/i.test(msg)) {
-      this.setData({ error: '开发者工具不支持手机号授权，请用真机预览，或手动填写。' })
+      this.setData({ sheetError: '开发者工具不支持手机号授权，请用真机预览，或手动填写。' })
     } else {
-      this.setData({ error: '获取微信手机号失败' + (msg ? '：' + msg : '') + '，请手动填写。' })
+      this.setData({ sheetError: '获取微信手机号失败' + (msg ? '：' + msg : '') + '，请手动填写。' })
     }
   },
 
   // ---- 常用同行人 ----
   onAddCompanion() {
     // 服务端 companion.save 要求先有本人档案；新账号不预检的话，保存失败只会在
-    // 弹层遮罩后面报错（error 渲染在页面顶部），用户看到的是"点保存没反应"。
+    // 弹层遮罩后面报错，用户看到的是"点保存没反应"（P0-4 教训）。
     const p = this.data.person || {}
     if (!p.name || !p.phone) {
-      this.setData({ error: '先补全上方「我的资料」的姓名与手机号（填齐自动保存），再添加同行人。' })
+      this.setData({ error: '先补全「同行与安全」里的姓名与手机号（填齐自动保存），再添加同行人。' })
       api.toast('先补全本人姓名与手机号，再添加同行人')
       return
     }
-    this.setData({ companionOpen: true, companionId: null, companionPerson: emptyPerson(), error: '' })
+    this.setData({ companionOpen: true, companionId: null, companionPerson: emptyPerson(), companionError: '' })
   },
   onEditCompanion(e) {
     const id = e.currentTarget.dataset.id
@@ -299,7 +427,7 @@ Page({
       if (res.view.kind !== 'profile') return
       const c = res.view.profile.companions.find(x => x.id === id)
       // 深拷贝：companion.person.emergency 是嵌套对象，浅拷贝会共享引用
-      if (c) this.setData({ companionOpen: true, companionId: id, companionPerson: Object.assign(JSON.parse(JSON.stringify(c.person)), { avatar: c.person.avatar || '' }) })
+      if (c) this.setData({ companionOpen: true, companionId: id, companionError: '', companionPerson: Object.assign(JSON.parse(JSON.stringify(c.person)), { avatar: c.person.avatar || '' }) })
     })
   },
   onCompanionField(e) {
@@ -318,17 +446,17 @@ Page({
   onCompanionSave() {
     const p = this.data.companionPerson
     if (!p.name.trim() || !p.phone.trim()) {
-      this.setData({ error: '请填写同行人姓名与联系电话。' })
+      this.setData({ companionError: '请填写同行人姓名与联系电话。' })
       return
     }
     api.dispatchAndSync({ type: 'companion.save', companionId: this.data.companionId, person: p }, this.revision, this)
       .then(res => {
         this.revision = res.revision
-        this.setData({ companionOpen: false, error: '' })
+        this.setData({ companionOpen: false, companionError: '' })
         api.toast('常用同行人已保存')
         this.reload()
       })
-      .catch(e => this.setData({ error: api.errorText(e) }))
+      .catch(e => this.setData({ companionError: api.errorText(e) }))
   },
   onRemoveAsk(e) { this.setData({ removeId: e.currentTarget.dataset.id }) },
   onRemoveCancel() { this.setData({ removeId: '' }) },
@@ -341,16 +469,25 @@ Page({
         api.toast('已移除常用条目')
         this.reload()
       })
-      .catch(e => this.setData({ error: api.errorText(e), removeId: '' }))
+      .catch(e => this.setData({ companionError: api.errorText(e), removeId: '' }))
   },
 
+  // ---- 我的协作码 ----
   onCopyIdentity() {
     wx.setClipboardData({
       data: this.data.identity,
-      success: () => api.toast('身份码已复制'),
+      success: () => api.toast('协作码已复制'),
     })
   },
 
+  // ---- 最近活动 ----
+  onOpenRecent(e) {
+    const id = e.currentTarget.dataset.id
+    if (!id) return
+    wx.navigateTo({ url: '/pages/activity/activity?id=' + id })
+  },
+
+  // ---- 位置授权撤回 ----
   onRevoke(e) {
     const { activityId, signupId } = e.currentTarget.dataset
     api.dispatchAndSync({ type: 'position.revoke', activityId, signupId }, this.revision, this)
