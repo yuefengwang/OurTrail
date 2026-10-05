@@ -241,10 +241,12 @@
         </view>
         <view wx:if="{{showPosBox}}" class="stack-gap3">
           <text class="small muted">仅本次主动上报一个位置点，不后台追踪；授权随活动结束失效，也可随时撤回。</text>
-          <label class="check-label">
-            <checkbox color="#163E35" checked="{{selConsent}}" bindchange="onSelConsent" />
-            <text class="check-text">同意本次活动授权人员查看这次上报的位置，活动结束后失效</text>
-          </label>
+          <checkbox-group bindchange="onSelConsent">
+            <label class="check-label">
+              <checkbox color="#163E35" value="on" checked="{{selConsent}}" />
+              <text class="check-text">同意本次活动授权人员查看这次上报的位置，活动结束后失效</text>
+            </label>
+          </checkbox-group>
           <view class="button secondary {{busy || !selConsent ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !selConsent ? '' : 'onPosReport'}}">上报当前位置</view>
           <view wx:if="{{canPosRevoke}}" class="button text" hover-class="button-hover" bindtap="{{busy ? '' : 'onPosRevoke'}}">撤回位置共享</view>
         </view>

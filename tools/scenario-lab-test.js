@@ -177,7 +177,7 @@ async function main() {
     page.onCleanupConfirm()
     check('未勾选时确认 no-op（不发 cleanup）', page.data.cleanupOpen === true
       && env.calls.filter(c => c.action === 'cleanup').length === 0, '')
-    page.onCleanupArm({ detail: { value: true } })
+    page.onCleanupArm({ detail: { value: ['on'] } })
     page.onCleanupConfirm()
     await waitFor(() => page.data.cleanupOpen === false)
     check('勾选后执行 → 清理计数进 message、弹层关闭',

@@ -349,10 +349,12 @@
           </picker>
         </form-field>
       </view>
-      <label class="check-label">
-        <checkbox color="#163E35" checked="{{form.acceptingSignups}}" bindchange="onAccepting" />
-        <text class="check-text">发布后开放报名</text>
-      </label>
+      <checkbox-group bindchange="onAccepting">
+        <label class="check-label">
+          <checkbox color="#163E35" value="on" checked="{{form.acceptingSignups}}" />
+          <text class="check-text">发布后开放报名</text>
+        </label>
+      </checkbox-group>
 
       <view class="cluster" style="justify-content:space-between;">
         <text class="section-title">风险提示</text>
@@ -465,10 +467,12 @@
   <overlay open="{{publishOpen}}" kind="dialog" title="准备好发布了吗？" bind:close="onPublishClose">
     <view class="stack">
       <text>发布后参与者即可报名。报名、同行人和车辆数据不会自动创建。</text>
-      <label class="check-label">
-        <checkbox color="#163E35" checked="{{participate}}" bindchange="onParticipate" />
-        <text class="check-text">我本人也参加（发布后自动为我报名）</text>
-      </label>
+      <checkbox-group bindchange="onParticipate">
+        <label class="check-label">
+          <checkbox color="#163E35" value="on" checked="{{participate}}" />
+          <text class="check-text">我本人也参加（发布后自动为我报名）</text>
+        </label>
+      </checkbox-group>
       <block wx:if="{{participate}}">
         <text class="small muted">发布后以你的常用资料报名。请先在「我的」检查本人及紧急联络信息。</text>
         <form-field label="本人出行方式">
@@ -485,10 +489,12 @@
             </view>
           </picker>
         </form-field>
-        <label class="check-label">
-          <checkbox color="#163E35" checked="{{dataUse}}" bindchange="onDataUse" />
-          <text class="check-text">独立同意本次活动使用我的报名与安全联络资料</text>
-        </label>
+        <checkbox-group bindchange="onDataUse">
+          <label class="check-label">
+            <checkbox color="#163E35" value="on" checked="{{dataUse}}" />
+            <text class="check-text">独立同意本次活动使用我的报名与安全联络资料</text>
+          </label>
+        </checkbox-group>
       </block>
       <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
       <view class="button primary block {{busy || (participate && !dataUse) ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || (participate && !dataUse) ? '' : 'publish'}}">

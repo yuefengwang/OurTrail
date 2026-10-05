@@ -80,10 +80,12 @@
   <overlay open="{{cleanupOpen}}" kind="dialog" title="清理预演数据？" bind:close="onCleanupClose">
     <view class="stack" catchtap="noop">
       <text>将删除全部 [预演] 活动及其报名、签到、通知等记录，并移除演员档案。此操作不可恢复。</text>
-      <label class="check-label">
-        <checkbox color="#163E35" checked="{{cleanupArmed}}" bindchange="onCleanupArm" />
-        <text class="check-text">我理解将删除以上预演数据</text>
-      </label>
+      <checkbox-group bindchange="onCleanupArm">
+        <label class="check-label">
+          <checkbox color="#163E35" value="on" checked="{{cleanupArmed}}" />
+          <text class="check-text">我理解将删除以上预演数据</text>
+        </label>
+      </checkbox-group>
       <view class="button danger block {{cleanupArmed ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{cleanupArmed ? 'onCleanupConfirm' : ''}}">确认清理</view>
     </view>
   </overlay>

@@ -278,3 +278,24 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
 
   **是否需要重新部署 trailApi：已经部署过**（domain 三个文件有改动，见上）。
 - 2026-10-05（**Profile /「我的」第一阶段设计包落档**）：只调查与设计，不改生产代码。基线 master `15cafdb`。交付 `docs/product/profile/` 17 份（README 12 问 + 01 现状架构图 / 02 产品原则 / 03 信息架构 / 04 onboarding / 05 数据模型 / 06 API 与 selector / 07 安全矩阵 / 08 companion / 09 safety / 10 协作身份码 / 11 UI 规格 / 12 状态与错误 / 13 测试策略 / 14 迁移 / 15 实施计划 / implementation-checklist）。关键裁决：`profile.save` 的 name+phone 门槛保留并重定义为「档案激活」；medical/emergency 维持「档案默认值 → 报名快照 → 用途门槛读取」三层不动；「协作身份码」确认即 openid，展示名改「我的协作码」；「我的」页从表单改 Identity Hub（P0 纯前端，P1 新增 read `kind:'me'` 需重部署）；草稿 v2 + `draft.setOpenId` 回填修复多账号草稿互串；Profile Security Matrix 逐格核对零放松。审计副产物：membership.revoke / companion.remove / position.revoke 域级与 membership.save 错误路径在测试体系中零覆盖（13-testing-strategy §4 给出补洞清单）。**是否需要重新部署 trailApi：不需要**（设计阶段零代码改动）。
+- 2026-10-05（**Phase 4：Vehicle / Collaboration UI Recovery——阻塞真实 UI Golden Path 的三条产品缺陷清零**）：任务书钉死范围（只修车辆/协作三缺陷与同根 checkbox，禁权限/安全/框架重构）；独立 worktree `D:/OurTrail-vehicle-ui`（分支 `win/vehicle-ui-recovery`，基线 `fbdf6f7`）。
+
+  **BUG-1 `transport-panel.wxml:206`（组织者经 UI 造不出车的根因）**：`checked="{{vform.pickupIds.indexOf(item.id) !== -1}}"` —— WXML 绑定不支持方法调用，`indexOf` 求值 `undefined`、`undefined !== -1` **恒真**：勾选框恒显示已选、勾选永远落不进 `vform.pickupIds`（GP 实测 `renderedChecked=true, afterIds=[]`），保存被「请至少勾选一个集合上车点」的前端校验挡死。修复：选中态由 JS 预计算进 `item.checked`（`onEditorOpen` 装配与 `onPickupToggle` 两处同步），wxml 只做字段访问。
+
+  **BUG-2 `transport-panel.wxml:212`（明确座号开关）**：裸 `<checkbox bindchange>` 真机永不触发 change，且 handler 把 `e.detail.value` 当布尔（数组为真值，即使触发也是错的）。修复：包进 `checkbox-group`（value="on"），handler 改数组语义；座号自动填充保持。
+
+  **BUG-3 `roster-panel`（车辆联络授权 UI 死路）**：`ROLE_OPTIONS`/`SCOPE_OPTIONS` 常量只在模块作用域、从未挂进 `data`，协作授权弹层两个 picker 的 `range` 取 undefined（弹层能开、下拉恒空，GP-07 实测 `roleOptions=null`）。修复：挂进 data；授权保存链（`onAccessSave` → `membership.save`）本就完整，A 层 4b 钉住其字段保真。
+
+  **同根 bare checkbox 全仓 7 处清零**（field-panel:21 只看待核实、activity:245 位置上报授权、editor:353 接受报名、editor:469 我也参加、editor:489 资料使用授权、lab:84 清理确认、transport:212），统一改为 checkbox-group 载体 + `detail.value` 数组语义；`tools/check.js` 的 `KNOWN_BARE_CHECKBOX` 登记清单清空，规则从「存量登记」升级为硬门禁「**不再有裸 checkbox 绑 change**」。
+
+  **checkbox 修复暴露的第四个根因（面板写后兄弟面板 revision 失效，GP-07 必撞 CAS CONFLICT）**：UI 保存第一次真正发到云端后，GP-07 的 `vehicle.save` 每轮必吃 `CONFLICT`——面板写（GP-06 名单审核）推进全局 revision，但宿主页面的 `syncKey` 只随**页面自己的读**更新，切区不重读 ⇒ transport 面板拿着旧 revision 发命令（B 层与 GP-08 因先重开页面而幸免，昨日十连的 UI 保存被前端校验挡下根本没走到云端，故从未暴露）。修复：`api.dispatchAndSync` 成功后对调用组件 `triggerEvent('written')`（单一漏斗覆盖全部面板写），`workspace` 以 `bind:written="onPanelSync"` 重读一次并重发 sync-key，兄弟面板带着新 revision 发下一次命令。GP-07 保存即转绿；Page 实例无 `triggerEvent`（守卫跳过），`staff` 页无监听不受影响。文件：`utils/api.js`、`pages/workspace/workspace.{js,wxml}`、`miniprogram/AGENTS.md`（契约补一段）。
+
+  **测试配套（全部为对齐新事件形状或加严，零放宽）**：A 层新增 §4b 协作授权链 6 条（`membership.save` 车辆联络/现场协作 → `readAccess` 字段保真回读 + 过期授权/零能力两条 `INVALID_INPUT` 负例，65 → **71/0**）；B 层车辆建档整块改为**真实 UI 表单全链**（勾选→vform→保存→readTransport 回读 pickupPointIds/seatLabels→重开回显，19 条断言，计划 19 实记 19）+ 拼车乘客上车改**车长任务页真实点击**（授权本体经命令、`uiUnverified` 如实留痕）；GP-07 的勾选/座号断言与选择器对齐 checkbox-group 新结构、roleOptions 断言转正、unv 理由更新为「picker 弹层不可自动化（探针实测）」；scenario-activity/editor/lab 共 4 处事件桩对齐 checkbox-group 形状（`{value:['on']}`）。
+
+  **读数（定版十连跑 23:12–00:23，同一健康会话顺序连跑、轮间零干预）**：Golden Path **10/10 轮 0 失败**（每轮 `passed=187 failed=0 unverified=7`，含此前 3 连跑共 13 轮连续 0 失败；失败集合恒为空，未验证集合 9 轮逐字节相同、run 1 多一条 `[忽略] 截图失败` 环境噪声）。OVERALL=**INCONCLUSIVE**（exit 2）：7 条未验证全部是带实测证据的平台限制——原生 `<picker>` 弹层 ×4（GP-01 出发时间 / GP-07 角色、GP-08 出行方式 / GP-11 路线节点；探针实测 tap 后 `.wx-picker`/`picker-view` 在可查询树全 0 命中、截图无弹层）、单登录身份 ×1（GP-05 他人活动报名入口）、overlay 组件内部模板不可查 ×1（GP-07 关闭把手）、GP-07 授权 tap-through ×1。**「OVERALL PASS（exit 0）」在 DevTools 自动化通道下结构性不可达**——按任务书 §5 如实记 INCONCLUSIVE，不伪装、不降级。BUSINESS 维 37/0 全 PASS（状态机 draft→archived 全链 + 车辆/授权/上车落库回读）。
+  B 层：车辆表单真实 UI 全链 19 条断言全绿（含 readTransport 落库回读与重开回显）；完整 B 层账本被 **trailApiLab 云函数超时 3 秒**挡住沙盒演员建档（`-504003`，Phase 3 部署时「CLI 不继承控制台超时」的既知状态，非本轮引入）⇒ 控制台把 trailApiLab 超时调回 20 秒后补跑即可。
+  其余门禁：check.js（含新硬门禁）/ check-handlers（workspace 12 handlers）/ smoke 106/0 / fault probes 34/0 / 全部 11 个 scenario 套件 0 失败 / A 层 71/0。
+
+  **Out of scope / Follow-up（本轮记录不修）**：① `membership.save` 对 `vehicleId` 不做存在性校验（domain/profile.js 只查 profile 与过期时间）——域级校验缺口；② `pages/staff` 宿主的 field-panel 不传 sync-key 也无 written 监听，staff 视角的阶段新鲜度仍依赖进入时机；③ 车辆编辑弹层关闭把手在 `<overlay>` 组件内部，自动化通道不可查（已知通道限制）；④ 原生 picker 的 4 条 UI 真实路径需人工在真机走查兜底。
+
+  **是否需要重新部署 trailApi：不需要**（本轮 `cloudfunctions/` 零改动）。**trailApiLab 需人工在控制台把超时调回 20 秒**（否则 B 层/预演沙盒的演员建档继续超时）。

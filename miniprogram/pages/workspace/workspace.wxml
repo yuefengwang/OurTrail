@@ -25,10 +25,11 @@
     </view>
 
     <!-- 面板保持挂载、用类名隐藏：自定义组件宿主上 hidden 属性不生效（曾导致四区内容全部平铺）；
-         不用 wx:if 是为了保住各面板内的搜索词、勾选与车辆表单状态 -->
-    <roster-panel class="{{tab === 1 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" />
-    <transport-panel class="{{tab === 2 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" />
-    <field-panel class="{{tab === 3 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" perspective="organizer" sync-key="{{syncKey}}" />
+         不用 wx:if 是为了保住各面板内的搜索词、勾选与车辆表单状态。
+         bind:written：任一面板写库成功后宿主重读并下发新 sync-key，兄弟面板才不会拿旧 revision 发命令 -->
+    <roster-panel class="{{tab === 1 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
+    <transport-panel class="{{tab === 2 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
+    <field-panel class="{{tab === 3 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" perspective="organizer" sync-key="{{syncKey}}" bind:written="onPanelSync" />
 
     <block wx:if="{{tab === 0}}">
       <view class="stack" style="gap:0;">

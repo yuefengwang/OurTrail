@@ -192,17 +192,10 @@ console.log('== require 可解析 ==')
 
 // 6. 裸 checkbox 上绑 bindchange —— 微信只定义了 checkbox-group 的 change 语义，
 // 直接绑在 <checkbox> 上的 handler 在真机永不触发（2026-10-04 真机实测：tap 后 data 不翻转）。
-// 已知未修的 7 处登记在下面，只允许变少不允许变多：修掉一处就从清单里删掉，删空后此规则即为硬门禁。
+// 已知未修的登记在下面，只允许变少不允许变多：修掉一处就从清单里删掉，删空后此规则即为硬门禁。
+// Phase 4（2026-10-05）已把存量 7 处全部改为 checkbox-group 载体，清单清零——此后新增即 FAIL。
 console.log('== 勾选框事件载体 ==')
-const KNOWN_BARE_CHECKBOX = new Set([
-  'pages/activity/activity.wxml:245',
-  'pages/editor/editor.wxml:353',
-  'pages/editor/editor.wxml:469',
-  'pages/editor/editor.wxml:489',
-  'pages/lab/lab.wxml:84',
-  'components/field-panel/field-panel.wxml:21',
-  'components/transport-panel/transport-panel.wxml:212',
-])
+const KNOWN_BARE_CHECKBOX = new Set([])
 {
   const bare = []
   for (const f of files.filter(f => f.endsWith('.wxml'))) {

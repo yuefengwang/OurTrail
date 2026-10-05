@@ -120,7 +120,7 @@ Page({
     this.setData({ cleanupOpen: false, cleanupArmed: false })
   },
   onCleanupArm(e) {
-    this.setData({ cleanupArmed: !!e.detail.value })
+    this.setData({ cleanupArmed: e.detail.value.length > 0 })
   },
   onCleanupConfirm() {
     if (!this.data.cleanupArmed) return

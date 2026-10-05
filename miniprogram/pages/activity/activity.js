@@ -428,7 +428,7 @@ Page({
   onSelNote(e) { this.setData({ selNote: e.detail.value }) },
   onSelPoint(e) { this.setData({ selPointIndex: Number(e.detail.value) }) },
   onSelKind(e) { this.setData({ selKindIndex: Number(e.detail.value) }) },
-  onSelConsent(e) { this.setData({ selConsent: e.detail.value }) },
+  onSelConsent(e) { this.setData({ selConsent: e.detail.value.length > 0 }) },
   onSelPurpose(e) {
     this.setData({ selPurpose: e.detail.value, selSensitive: null })
   },

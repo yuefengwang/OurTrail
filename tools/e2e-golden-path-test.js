@@ -800,17 +800,18 @@ async function main() {
     const idsNow = (stPk && stPk.vform && stPk.vform.pickupIds) || []
     u('勾选落到 vform.pickupIds（含 pk-1）', idsNow.indexOf('pk-1') !== -1,
       JSON.stringify({ renderedChecked, beforeIds: (pre && pre.vform && pre.vform.pickupIds) || [], afterIds: idsNow })
-        + '——渲染态 checked=' + renderedChecked + ' 而数据 pickupIds 为空 ⇒ WXML 里 pickupIds.indexOf(item.id) 这类表达式不可用，勾选框恒显示已勾，用户点一下反而把它取消')
-    // 明确座号：这一位是裸 <checkbox bindchange>（不在 checkbox-group 里）
-    const bareBoxes = (await tp.$$('checkbox')) || []
-    const seatToggle = bareBoxes[bareBoxes.length - 1] || null
+        + '——Phase 4 已把选中态改为 JS 预计算（wxml 绑不了 indexOf）；若此处仍红说明回退或回归')
+    // 明确座号：change 载体已改为 checkbox-group（与上车点同一模式；裸 <checkbox bindchange> 真机永不触发）
+    const boxGroups = (await tp.$$('checkbox-group')) || []
+    const seatGroup = boxGroups[1] || null
+    const seatToggle = seatGroup ? (await seatGroup.$$('checkbox'))[0] : null
     const okSeat = await tapEl(seatToggle)
-    tap('勾选「使用明确座号」', okSeat, 'tap 裸 checkbox@ 「使用明确座号」')
+    tap('勾选「使用明确座号」', okSeat, 'tap 第 2 个 checkbox-group 的 checkbox@ 「使用明确座号」（组数=' + boxGroups.length + '）')
     await page.waitFor(1500)
     const st2 = await dataOf(tp)
     seatViaUi = !!(st2 && st2.vform && st2.vform.seatLabelsOn === true)
-    u('「使用明确座号」勾选生效（裸 checkbox 的 change 是否可达）', seatViaUi,
-      JSON.stringify({ seatLabelsOn: st2 && st2.vform && st2.vform.seatLabelsOn, boxes: bareBoxes.length }))
+    u('「使用明确座号」勾选生效（checkbox-group 载体的 change 可达）', seatViaUi,
+      JSON.stringify({ seatLabelsOn: st2 && st2.vform && st2.vform.seatLabelsOn, groups: boxGroups.length, autoText: st2 && st2.vform && st2.vform.seatLabelsText }))
     if (seatViaUi) {
       const seatInput = (await tp.$$('[data-key="seatLabelsText"]'))[0] || null
       const okSeats = await inputEl(seatInput, SEAT_LABELS.join(','))
@@ -880,7 +881,8 @@ async function main() {
     const scopeOptions = (rpData && rpData.scopeOptions) || null
     u('协作授权弹层的角色 picker 有数据（车辆联络能否经 UI 授予）',
       !!roleOptions && roleOptions.length > 0,
-      'WXML:161/181 绑 {{roleOptions}}/{{scopeOptions}}，组件 data 实测 = ' + JSON.stringify({ roleOptions, scopeOptions }) + '（模块常量 ROLE_OPTIONS 未挂进 data）')
+      'WXML:161/181 绑 {{roleOptions}}/{{scopeOptions}}，组件 data 实测 = ' + JSON.stringify({ roleOptions, scopeOptions })
+      + '（Phase 4 已把 ROLE_OPTIONS/SCOPE_OPTIONS 挂进 data；为 null 即回归）')
     let grantErr = 'ok'
     const v = await orgView()
     const prof = await read({ kind: 'profile' })
@@ -890,7 +892,9 @@ async function main() {
       vehicleId, expiresAt: '2027-03-15T23:59:59+08:00' } }, v.revision)
     grantErr = JSON.stringify(m.error || m.err || 'ok').slice(0, 200)
     b('环境准备：membership.save 自授车辆联络（只为让车长页可进，不充当 UI 证据）', m.ok === true, grantErr)
-    unv('「组织者在名单面板经授权弹层授予车辆联络」这条真实路径', '角色 picker 无数据（上一条 UI FAIL）+ 原生 picker 不可驱动 ⇒ 车辆联络无法经 UI 创建')
+    unv('「组织者在名单面板经授权弹层授予车辆联络」的 tap-through',
+      '角色/范围/授权截止时间是原生 <picker>：tap 后弹层不在可查询树（探针实测 .wx-picker/picker-view 全 0 命中、截图无弹层）⇒ 选角色这步无法自动化；'
+      + 'picker 数据源已修复（上一条 UI 断言），保存链契约由 A 层 4b 钉住，上车走车长页真实点击（GP-10）')
   }, uiGate('协作授权弹层需要元素通道'))
 
   // ============================================================

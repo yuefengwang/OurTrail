@@ -411,32 +411,124 @@ async function main() {
       L.u('审核后工作台指标归零（页面响应环境变化）', !!ws && ws.pending === 0, JSON.stringify({ ui: ws && ws.pending }))
     }, () => ({ ok: true }))
 
-    await L.block('参与者司机车辆与分车面板', 4, async () => {
+    await L.block('真实 UI 表单添加车辆（pickup 勾选 + 明确座号）', 19, async () => {
       const profNow = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
       const meName = (profNow && profNow.ok && profNow.data.view.profile.person.name) || ''
       const rows1 = ((await readOrg()).data.view.rows) || []
-      const confirmedRows = rows1.filter(r => r.status === 'confirmed' && r.name !== meName)
-      const driverRow = confirmedRows[0]
-      const vSave = await cloudCall('trailApi', 'dispatch', { expectedRevision: await revNow(), payload: { type: 'vehicle.save', activityId: sandboxId, vehicleId: null, input: { label: '1号车', plate: '川A·E2E', legalCapacity: 9, blockedSeats: 0, drivers: driverRow ? [{ kind: 'participant', signupId: driverRow.signupId }] : [{ kind: 'service', name: '服务司机', phone: '00000000009', userId: null }], seatLabels: ['01', '02', '03', '04', '05', '06', '07', '08'], pickupPointIds: ['pk-1', 'pk-2'] } } })
-      L.b('添加车辆（参与者司机=' + (driverRow ? driverRow.name : '服务司机') + '）', vSave.ok === true, JSON.stringify(vSave.error || vSave.err || 'ok').slice(0, 200))
-      // 面板只在挂载时读数：云端直写对已挂载面板不可见，必须重开页面重新挂载
+      const confirmedCount = rows1.filter(r => r.status === 'confirmed' && r.name !== meName).length
+      L.b('已确认乘客在案（车辆表单的前提）', confirmedCount > 0, JSON.stringify({ confirmed: confirmedCount }))
       page = await open('/pages/workspace/workspace?id=' + sandboxId)
       await page.waitFor(1500)
       const segsPrev = await queryAll(page, '.seg')
       const okTab = await tapEl(segsPrev[2])
       L.uiTap('点「分车」分区 tab', okTab, 'tap .seg[2]')
       await page.waitFor(1200)
-      const ws = await page.data()
-      L.u('切到分车区（tab=2 落到页面数据）', !!ws && ws.tab === 2, 'tab=' + (ws && ws.tab))
       const tp = await page.$('transport-panel')
-      let vehicleCard = null
-      for (let t = 0; t < 6 && !vehicleCard; t++) {
-        const cards2 = tp ? await tp.$$('.card') : []
-        vehicleCard = cards2[0] || null
-        if (!vehicleCard) await page.waitFor(1500)
+      // 面板是自取数据的：loading 未完就点「添加车辆」会开不出弹层（GP-07 同款教训）
+      let loaded = false
+      for (let t = 0; t < 8 && !loaded; t++) {
+        const d = tp ? await tp.data() : null
+        if (d && d.loading === false) loaded = true
+        else await page.waitFor(1000)
       }
-      L.u('分车面板渲染出车辆卡（新挂载读到上一步的写入）', !!vehicleCard, 'transport-panel .card ' + (vehicleCard ? '命中' : '为空'))
-    }, uiGate('分车面板需要元素通道', 1))
+      const addBtn = tp ? await findButtonByText(tp, '添加车辆') : null
+      const okAdd = await tapEl(addBtn)
+      L.uiTap('点「添加车辆」打开编辑弹层', okAdd, 'tap 「添加车辆」@ transport-panel（面板 loading=' + (loaded ? 'false' : '超时') + '）')
+      let opened = null
+      for (let t = 0; t < 6 && !opened; t++) {
+        const d = tp ? await tp.data() : null
+        if (d && d.editorOpen === true && d.vform) opened = d
+        else await page.waitFor(1000)
+      }
+      L.uEffect('车辆编辑弹层打开（editorOpen=true 且 vform 就绪）', !!opened, 'editorOpen=' + (opened && opened.editorOpen))
+      const addDriverBtn = tp ? await findButtonByText(tp, '添加司机') : null
+      const okDriver = await tapEl(addDriverBtn)
+      L.uiTap('点「添加司机」（默认服务司机，不踩 picker）', okDriver, 'tap 「添加司机」')
+      await page.waitFor(1000)
+      const ins = tp ? await queryAll(tp, '.input') : []
+      L.u('表单渲染出名称/车牌/核载/预留/司机姓名/电话输入位', ins.length >= 6, '.input ' + ins.length + ' 个')
+      await inputEl(ins[0], '1号车')
+      await inputEl(ins[1], '川A·E2E')
+      await inputEl(ins[2], '9')
+      await inputEl(ins[3], '0')
+      await inputEl(ins[4], '服务司机')
+      await inputEl(ins[5], '00000000009')
+      const stF = tp ? await tp.data() : null
+      const vf = (stF && stF.vform) || {}
+      L.uEffect('表单字段落到 vform（名称/核载/司机姓名）', vf.label === '1号车' && String(vf.legal) === '9'
+        && vf.drivers && vf.drivers[0] && vf.drivers[0].name === '服务司机',
+        JSON.stringify({ label: vf.label, legal: vf.legal, drivers: (vf.drivers || []).length }))
+      // —— Case A：上车点勾选。渲染态与数据双读：只信「点了之后 vform.pickupIds 真的接住」。 ——
+      const groups = tp ? await tp.$$('checkbox-group') : []
+      const pkGroup = groups[0] || null
+      const pkBox = pkGroup ? (await pkGroup.$$('checkbox'))[0] : null
+      const pkValue = pkBox ? String((await pkBox.attribute('value')) || '') : ''
+      const checkedBefore = pkBox ? await pkBox.property('checked') : null
+      const okPk = await tapEl(pkBox)
+      L.uiTap('点「覆盖的上车点」第 1 项（真实勾选）', okPk, 'tap checkbox-group[0]>checkbox[0] value=' + pkValue + '；渲染态 before=' + checkedBefore)
+      await page.waitFor(1500)
+      const stPk = tp ? await tp.data() : null
+      const idsNow = ((stPk && stPk.vform) || {}).pickupIds || []
+      L.uEffect('勾选落到 vform.pickupIds（UI 操作 → 组件状态，BUG-1 修复验证）',
+        idsNow.indexOf(pkValue) !== -1 && idsNow.length === 1,
+        JSON.stringify({ pkValue, beforeIds: (opened && opened.vform && opened.vform.pickupIds) || [], afterIds: idsNow }))
+      // —— Case B：明确座号。change 载体已改为 checkbox-group（裸 <checkbox bindchange> 真机永不触发）。 ——
+      const seatGroup = groups[1] || null
+      const seatBox = seatGroup ? (await seatGroup.$$('checkbox'))[0] : null
+      const okSeat = await tapEl(seatBox)
+      L.uiTap('勾选「使用明确座号」', okSeat, 'tap checkbox-group[1]>checkbox[0]')
+      await page.waitFor(1500)
+      const stSeat = tp ? await tp.data() : null
+      L.uEffect('「使用明确座号」勾选生效（BUG-2 修复验证）',
+        !!((stSeat && stSeat.vform) || {}).seatLabelsOn,
+        JSON.stringify({ seatLabelsOn: stSeat && stSeat.vform && stSeat.vform.seatLabelsOn, autoText: stSeat && stSeat.vform && stSeat.vform.seatLabelsText }))
+      const seatInput = tp ? (await tp.$$('[data-key="seatLabelsText"]'))[0] || null : null
+      L.u('座号配置区随勾选出现（wx:if 生效）', !!seatInput, 'seatLabelsText 输入位 ' + (seatInput ? '命中' : '缺失'))
+      const saveBtn = tp ? await findButtonByText(tp, '保存车辆安排') : null
+      const okSave = await tapEl(saveBtn)
+      L.uiTap('点「保存车辆安排」', okSave, 'tap 「保存车辆安排」')
+      let savedErr = '(超时未关闭)'
+      for (let t = 0; t < 8; t++) {
+        await page.waitFor(1500)
+        const d = tp ? await tp.data() : null
+        if (d && d.editorOpen === false) { savedErr = d.error || ''; break }
+        if (d && d.error) { savedErr = d.error; break }
+      }
+      L.uEffect('保存后面板无报错且弹层关闭（前端校验放行 → 命令下发）', savedErr === '', JSON.stringify({ error: savedErr }))
+      // —— Case A/B 落库回读（backend readback）——
+      const trV = await cloudCall('trailApi', 'readTransport', { activityId: sandboxId })
+      const v0 = trV && trV.ok && trV.data.ok !== false ? (trV.data.value.vehicles || [])[0] || null : null
+      L.b('readTransport 回读：车辆在案且 pickupPointIds 含所勾集合点（UI → 后端）',
+        !!v0 && (v0.pickupPointIds || []).indexOf(pkValue) !== -1,
+        JSON.stringify(v0 ? { label: v0.label, pickups: v0.pickupPointIds, seats: v0.seatLabels } : trV && trV.data))
+      L.b('readTransport 回读：seatLabels 与 UI 自动填充一致（8 个唯一座号）',
+        !!v0 && !!v0.seatLabels && v0.seatLabels.length === 8 && new Set(v0.seatLabels).size === 8,
+        JSON.stringify(v0 && v0.seatLabels))
+      // —— Case A/B 重开回显（UI reload 一致性）——
+      const editBtn = tp ? await findButtonByText(tp, '编辑车辆与司机') : null
+      const okEdit = await tapEl(editBtn)
+      L.uiTap('重开车辆编辑（回显验证入口）', okEdit, 'tap 车辆卡上的「编辑车辆与司机」')
+      await page.waitFor(2000)
+      const stRe = tp ? await tp.data() : null
+      const groupsRe = tp ? await tp.$$('checkbox-group') : []
+      const pkBoxRe = groupsRe[0] ? (await groupsRe[0].$$('checkbox'))[0] : null
+      const checkedRe = pkBoxRe ? await pkBoxRe.property('checked') : null
+      L.u('重开弹层：pickupIds 回显含所勾集合点、座号开关仍开、渲染态 checked=true',
+        !!stRe && !!stRe.vform && stRe.vform.pickupIds.indexOf(pkValue) !== -1
+        && stRe.vform.seatLabelsOn === true && checkedRe === true,
+        JSON.stringify({ pickupIds: stRe && stRe.vform && stRe.vform.pickupIds, seatLabelsOn: stRe && stRe.vform && stRe.vform.seatLabelsOn, renderedChecked: checkedRe }))
+      // 关弹层不依赖查不到的 overlay 把手：再点一次保存（幂等）
+      const save2 = tp ? await findButtonByText(tp, '保存车辆安排') : null
+      await tapEl(save2)
+      await page.waitFor(2000)
+      let cardSeen = false
+      for (let t = 0; t < 6 && !cardSeen; t++) {
+        const cards2 = tp ? await tp.$$('.card') : []
+        cardSeen = cards2.length > 0
+        if (!cardSeen) await page.waitFor(1500)
+      }
+      L.uEffect('分车面板渲染出车辆卡（保存后面板自重读）', cardSeen, 'transport-panel .card ' + (cardSeen ? '命中' : '为空'))
+    }, uiGate('车辆表单要经真实输入与保存', 1))
 
     // 分车提交：UI 通道与云侧降级是两个不同结论——降级只证服务链路，UI 维度必须记未验证。
     let uiCommitted = false
@@ -564,15 +656,48 @@ async function main() {
     const assignsMid0 = (tr0 && tr0.ok && tr0.data.ok !== false && tr0.data.value.assignments) || []
     const vehiclesMid0 = (tr0 && tr0.ok && tr0.data.value.vehicles) || []
     // 顺序按产品真实语义走：拼车乘客的「去程上车」入口在车长任务页，没有这个事实，
-    // field.js:85 就会拒 joined —— 所以先补事实（此步只证业务，UI 侧显式记未验证），再回工作台点真按钮。
+    // field.js 的 joined 门就会拒 —— 授权本体 + 上车事实都在这一段补齐：授权走业务命令
+    // （角色/日期是原生 picker 弹层，探针实测驱不动，如实记 unv），上车走车长页真实点击（Case D）。
     if (uiTarget) {
       const asgUi = assignsMid0.find(a => a.signupId === uiTarget.signupId)
       const drvUi = vehiclesMid0.some(v => v.drivers.some(d => d.kind === 'participant' && d.signupId === uiTarget.signupId))
       if (asgUi && !drvUi) {
-        const brd = await robustDispatch({ type: 'attendance.board', activityId: sandboxId, signupId: uiTarget.signupId, leg: 'outbound', boarded: true, note: '自动化清点上车' })
-        L.b('拼车乘客去程上车（经命令补齐，只证业务）', brd.ok === true, JSON.stringify(brd.error || brd.err || 'ok').slice(0, 160))
-        L.uiUnverified('「去程上车经车长任务页真实点击完成」', '本沙盒未授予车长协作身份，pages/vehicle 不可进；上车只在车长任务页有入口，此处用命令补齐事实，不充当 UI 证据')
-        // 命令不经过页面，面板不会自己知道；真实用户是「从车长页退回工作台」——这里重开页面等效
+        const profMe = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
+        const meId = profMe && profMe.ok && profMe.data.ok !== false ? profMe.data.view.profile.id : ''
+        const grant = await robustDispatch({ type: 'membership.save', activityId: sandboxId, membership: {
+          id: 'e2e-veh-contact-' + String(sandboxId).slice(-6), role: 'vehicle_contact', activityId: sandboxId, userId: meId,
+          vehicleId: (vehiclesMid0[0] || {}).id || '', expiresAt: '2027-03-15T23:59:59+08:00' } })
+        L.b('环境准备：membership.save 自授车辆联络（授权本体不充当 UI 证据）', grant.ok === true,
+          JSON.stringify(grant.error || grant.err || 'ok').slice(0, 160))
+        L.uiUnverified('「组织者在授权弹层经角色 picker 授予车辆联络」的 tap-through',
+          'role/scope/授权截止时间都是原生 <picker>：tap 后弹层不在可查询树（探针实测 .wx-picker/picker-view 全部 0 命中、截图无弹层）⇒ 无法自动化；'
+          + 'picker 数据源已修复在案（roleOptions=现场协作/车辆联络），保存链契约由 A 层 4b 钉住')
+        // Case D：车长任务页真实点击「确认上车」
+        page = await open('/pages/vehicle/vehicle?id=' + sandboxId)
+        await probeChannel(page)
+        const vd = await page.data()
+        L.u('车长任务页对本人可进（车辆联络授权生效）',
+          !!vd && vd.loading === false && !vd.denied, JSON.stringify({ loading: vd && vd.loading, denied: vd && vd.denied }))
+        let boardedUi = false
+        for (let round = 0; round < 6 && !boardedUi; round++) {
+          const btns = (await page.$$('.button.secondary')) || []
+          let hit = null
+          for (const el of btns) {
+            if (String((await el.text()) || '').trim() !== '确认上车') continue
+            const did = String((await el.attribute('data-id')) || '')
+            if (did === String(uiTarget.signupId)) { hit = el; break }
+          }
+          if (!hit) { await page.waitFor(1500); continue }
+          const okB = await tapEl(hit)
+          L.uiTap('车长页点「确认上车」（' + (uiTarget.name || '') + '）', okB,
+            'tap .button.secondary[data-id=' + uiTarget.signupId + ']@ pages/vehicle（第 ' + (round + 1) + ' 轮）')
+          await page.waitFor(2500)
+          const rowsB = ((await readOrg()).data.view.rows || [])
+          boardedUi = (rowsB.find(r => r.signupId === uiTarget.signupId) || {}).outboundBoarded === true
+        }
+        L.b('上车经车长任务页真实点击落库（outboundBoarded=true）', boardedUi,
+          JSON.stringify({ signupId: uiTarget.signupId, name: uiTarget.name }))
+        // 车长页不经过工作台，面板不知道世界变了；真实用户是「从车长页退回工作台」——重开页面等效
         page = await open('/pages/workspace/workspace?id=' + sandboxId)
         await probeChannel(page)
       }
