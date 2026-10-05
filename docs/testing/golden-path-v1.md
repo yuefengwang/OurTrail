@@ -88,10 +88,7 @@
 （`activity.wxml:48`）——组织者看不到「填写报名资料」是角色闸正常生效。单账号自动化因此无法以
 「第二身份」点进报名页，本轮改为 URL 直达该页后**页内控件全部真实点击**，并把「导航那一步」记为未验证。
 
-## 5. 本轮实测账本
-
-读数取自 §6 十连跑的**第 10 轮**（即最终构建；第 1~9 轮的节点表与计数与它逐行相同，唯一差异是
-GP-05 一条环境准备断言在跑中途改过名称与判据，见 §6.2）。
+## 5. 实测账本（Phase 3 修复后构建，取定版十连跑第 10 轮）
 
 ```
 节点                 BUSINESS     UI            断言(B/UI)
@@ -99,85 +96,101 @@ GP-00 环境             PASS         NONE          2/0
 GP-01 Create         PASS         INCONCLUSIVE  2/12
 GP-02 Edit           PASS         PASS          1/8
 GP-03 Publish        PASS         PASS          3/6
-GP-04 Discover       NONE         PASS          0/7
+GP-04 Discover       PASS         PASS          3/8
 GP-05 Signup         PASS         INCONCLUSIVE  4/16
 GP-06 Review         PASS         PASS          1/12
 GP-07 Vehicle        FAIL         FAIL          4/23
 GP-08 Seat           PASS         INCONCLUSIVE  4/7
-GP-09 Check-in       PASS         FAIL          3/21
-GP-10 Departure      PASS         PASS          5/19
+GP-09 Check-in       PASS         PASS          3/24
+GP-10 Departure      PASS         PASS          5/21
 GP-11 Arrival        PASS         INCONCLUSIVE  2/4
-GP-12 Home           PASS         FAIL          2/12
+GP-12 Home           PASS         PASS          2/21
 GP-13 Complete       PASS         PASS          3/10
 
-BUSINESS: FAIL（35 通过 / 1 失败 / 0 未验证）
-UI:       FAIL（142 通过 / 7 失败 / 8 未验证）
+BUSINESS: FAIL（38 通过 / 1 失败 / 0 未验证）
+UI:       FAIL（160 通过 / 4 失败 / 8 未验证）
 ENV:      4 项前置（0 项不成立）
-passed=177 failed=8 unverified=8 · OVERALL=FAIL · exit=1
+passed=198 failed=5 unverified=8 · OVERALL=FAIL · exit=1
 ```
 
-8 条失败**全部是产品缺陷或平台限制的直接后果**，没有一条是「点击没点着」：
+**剩下的 5 条红全部在 GP-07 Vehicle，且全部属于任务书 §五 划在本阶段范围外的三条产品缺陷**
+（`transport-panel.wxml:206` 的 `pickupIds.indexOf(...)` 恒真绑定、`transport-panel.wxml:212` 裸 checkbox、
+`roster-panel` 的 `roleOptions/scopeOptions` 未挂 data）。三条修完之后，主链 12 个节点的
+BUSINESS 与 UI 两维同时成立；只有车辆这一节点仍被它们挡住。
 
 | # | 维度 | 断言 | 实测读数 | 定性 |
 |---|---|---|---|---|
-| 1 | UI | 勾选落到 `vform.pickupIds` | `renderedChecked=true, beforeIds=[], afterIds=[]` | 产品缺陷（§3-1） |
-| 2 | UI | 「使用明确座号」勾选生效 | `seatLabelsOn=false, boxes=2` | 产品缺陷（§3-2 裸 checkbox） |
-| 3 | UI | 保存后面板未报错 | `请至少勾选一个集合上车点——车辆在此接人。` | 上一条的必然后果 |
+| 1 | UI | 勾选落到 `vform.pickupIds` | `renderedChecked=true, beforeIds=[], afterIds=[]` | 产品缺陷（§3-1，未修·范围外） |
+| 2 | UI | 「使用明确座号」勾选生效 | `seatLabelsOn=false, boxes=2` | 产品缺陷（§3-2 裸 checkbox，未修·范围外） |
+| 3 | UI | 保存后面板未报错 | `请至少勾选一个集合上车点——车辆在此接人。` | 1 的必然后果 |
 | 4 | BUSINESS | readTransport 回读到 1 号车 | `n=0`（UI 造不出车） | 产品缺陷（同 1–3） |
-| 5 | UI | 协作授权弹层的角色 picker 有数据 | `roleOptions=null, scopeOptions=null` | 产品缺陷（§3-3） |
-| 6 | UI | 阶段推进后挂载面板自行重读 | `panelPhase=published / cloudPhase=gathering` | 产品缺陷（§3-4） |
-| 7 | UI | 弹层动作表非空 | `sheetOpen=true, actions=[]` | 上一条的必然后果 |
-| 8 | UI | closing 段面板 phase 未重读 | `panelPhase=active / cloudPhase=closing` | 同一缺陷在 closing 复发 |
+| 5 | UI | 协作授权弹层的角色 picker 有数据 | `roleOptions=null, scopeOptions=null` | 产品缺陷（§3-3，未修·范围外） |
 
-8 条「UI 未验证」（不得当作通过，全部由平台限制或单账号通道造成）：
+8 条「UI 未验证」（不得当作通过，全部由平台限制或单账号通道造成）保持不变：
 `editor` 出发时间 picker（GP-01 两条）、报名页导航那一步（GP-05）、车辆弹层关闭把手在自动化通道里不可查
 （GP-07）、车辆经 UI 创建（GP-07）、协作授权经 UI 授予（GP-07）、`signup` 出行方式 picker（GP-08）、
 `field-panel` 路线节点 picker（GP-11）。
 
 **链路的真实可达性**：Create→Edit→Publish→Discover→Signup→Review→Seat→Check-in→Departure→Arrival→Home→Complete
-**十二个节点的业务状态全部按状态机推进到位**（`draft→published→gathering→active→closing→archived`，
+十二个节点的业务状态全部按状态机推进到位（`draft→published→gathering→active→closing→archived`，
 两位参与人 `checkedIn / outboundBoarded / departure=joined / home=true`，归档后 `detailState=finished`、
-敏感导出被拒）。唯一由 UI 断掉的是 **Vehicle 一个节点**：§3-1/2/3 三处缺陷使组织者在界面上
-既造不出车、也发不了车辆联络授权——本轮用 `vehicle.save` / `membership.save` 业务命令补出来让下游可测，
-并把这个替代明确记成 `unv`（UI 未验证），不洗成通过。
+敏感导出被拒）。唯一由 UI 断掉的仍是 Vehicle 一个节点（范围外三条缺陷）。
+
+### 5.1 Phase 3 三条修复在同轮里的判定行（真机读数）
+
+```
+✓ [UI] [GP-09] 已挂载的现场面板把 phase 重读到 gathering
+✓ [UI] [GP-09] 重读后的名单是新的（两位已确认参与者都在，且标着未签到）
+✓ [UI] [GP-12] 面板 phase 已随 syncKey 重读到 closing
+✓ [UI] [GP-10] 面板不再对「未上车的拼车乘客」提供「核实已随队出发」
+✓ [UI] [GP-10] 缺的事实被说清楚并把用户指向车长任务页
+✓ [UI] [GP-10] 车长任务页对本人可进 → 真实点击「确认上车」×2 → outboundBoarded=true
+✓ [UI] [GP-04] 命中的那张卡按 wx:for 下标回读页面数据，其 id 必须等于本轮 AID
+✓ [UI] [GP-04] 卡片文案自证 organizer 关系：服务端算出的 owner 标志渲染成「我组织的」
+✓ [BUSINESS] [GP-04] 后端权威态对齐：详情记录 id=AID，ownerId 等于本轮登录身份
+```
 
 ## 6. 稳定性
 
-### 6.1 十连跑（2026-10-05 01:00–02:11，每轮之前重启开发者工具）
+### 6.1 定版十连跑（2026-10-05 15:57–17:23；每轮之前 `cli quit`+`open`+`auto` 并过 `preflight.js` 体检）
 
 | run | exit | OVERALL | passed/failed/unverified | 失败断言签名 |
 |---|---|---|---|---|
-| 1 | 1 | FAIL | 177 / 8 / 8 | `73c94907` |
-| 2 | 1 | FAIL | 177 / 8 / 8 | `73c94907` |
-| 3 | 1 | FAIL | 177 / 8 / 8 | `73c94907` |
-| 4 | 1 | FAIL | 177 / 8 / 8 | `73c94907` |
-| 5 | 1 | FAIL | 177 / 8 / 8 | `73c94907` |
-| 6 | 1 | FAIL | 177 / 8 / 8 | `73c94907` |
-| 7 | 1 | FAIL | 177 / 8 / 8 | `73c94907` |
-| 8 | 1 | FAIL | 177 / 8 / 8 | `73c94907` |
-| 9 | 1 | FAIL | 177 / 8 / 8 | `73c94907` |
-| 10 | 1 | FAIL | 177 / 8 / 8 | `73c94907` |
+| 1 | 1 | FAIL | 191 / 5 / 8 | `c8b7a465` |
+| 2 | 1 | FAIL | 191 / 5 / 8 | `c8b7a465` |
+| 3 | 1 | FAIL | 191 / 5 / 8 | `c8b7a465` |
+| 4 | 1 | FAIL | 191 / 5 / 8 | `c8b7a465` |
+| 5 | 1 | FAIL | 191 / 5 / 8 | `c8b7a465` |
+| 6 | 1 | FAIL | 191 / 5 / 8 | `c8b7a465` |
+| 7 | 1 | FAIL | 191 / 5 / 8 | `c8b7a465` |
+| 8 | 1 | FAIL | 191 / 5 / 8 | `c8b7a465` |
+| 9 | 1 | FAIL | 119 / 50 / 10 | `0b2aae26`（见 §6.3） |
+| 10 | 1 | FAIL | 198 / 5 / 8 | `c8b7a465` |
 
-签名 = 该轮全部 `✗ [维] 断言名` 排序后的散列。**十轮完全一致**：同样的 8 条失败、同样的实测读数
-（`renderedChecked=true/beforeIds=[]/afterIds=[]`、`seatLabelsOn=false`、`panelPhase=published vs gathering`
-逐字节相同），逐节点账本的 B/UI 计数也一致。⇒ 这 8 条红是**确定性产品/平台事实**，不是抖动。
+**9/10 轮的失败集合逐条相同**——就是 §5 那 5 条范围外产品缺陷。run 之间的 `passed` 差异只来自
+条件记账（同一条断言是否走到第二跳、是否触发失败分支的额外读数）。
 
-### 6.2 失败定性（runs 10 / passed 0 是 OVERALL 意义上的，不是稳定性意义上的）
+### 6.2 定版之前的普查（同一套代码，修 flake 之前）
 
-| 类别 | 条数 | 明细 |
-|---|---|---|
-| PRODUCT BUG | 8 | §3-1（1 条 UI + 1 条 BUSINESS 后果）、§3-2（1 条）、§3-3（1 条）、§3-4（3 条：gathering 两条 + closing 一条）、以及 §3-1 导致保存被前端校验挡下（1 条）——合计 8 条，全部落在 GP-07/09/12 三个节点 |
-| TEST BUG（跑通过程中已修，不在最终读数里） | 5 | ①重渲染后旧句柄点错行（run 14，改按 `data-id` 点名）②阶段按钮只在 `tab===0`（run 16，加「点回总览」）③原因填进挂载面板的备注框（run 17，改为回读 `data.reason` 才算填对）④closing 段未先重进页面（run 18，补用户级「退出重进」）⑤CONFLICT 后立刻二次确认仍撞旧 revision（run 19，改为等页面读回最新 revision 再点） |
-| ENVIRONMENT FLAKE | 0（本轮） | 十轮重启 IDE 后连接全部一次成功。修 harness 之前的 run 15 曾出现过一次 `timeout waiting for automator response` 与一次 `page destroyed`（run 14/15 各一），后者根因是句柄失效（TEST BUG ⑤类），已在 run 17 用 `mp.currentPage()` 重绑句柄根治 |
-| REAL FLAKE | 0 | 十轮签名一致，无任何一次结果漂移 |
+先跑过两轮各 10 轮，暴露并修掉 §10-4/§10-5 列出的问题；其中一轮的 run 8 与下一轮的 run 10 出现
+`taps is not defined` 级联（32 条红）——那是**我在跑动中途改测试文件**造成的混合构建，
+不是产品也不是最终构建的读数，因此不计入 §6.1，但记录在此：换构建必须在一轮跑完之后。
 
-### 6.3 STABILITY 判定
+### 6.3 run 9 的定性与遗留
 
-**Stability = PASS（读数层面）**：连续 10 轮读数、失败集合、逐节点计数完全一致，0 flake。
-**Golden Path = FAIL**：10/10 轮都红，红在产品缺陷上——按任务书 §18，这是正确结果，不是需要消掉的噪声。
-每轮都会在真实云端留下一个 `[GP·黄金路径] …·<tag>` 沙盒活动（走到归档的那轮会自动退出发现列表；
-中途断掉的那些带报名、按域规则取消不掉，需在预演面板清理）。
+run 9 的 50 条红全部从一处起爆：GP-06 的 12 步名单勾选与确认按钮在 UI 维度全部记 PASS，
+但回读是 `confirmed=0 / pending=2`（审核没有落库），之后签到/上车/出发/到家/归档全部级联。
+**当时没有把面板的 `error / busy / selectedCount` 记进证据，所以无法定案**；已补上该读数
+（`§10-5` 同法），下一次真复现时可以一眼区分「按钮在 busy 期间是空点击」还是「CONFLICT 被面板吞掉」。
+定性：REAL FLAKE（1/10 次，机制未定案）——没有重试掩盖、没有降级成 skip、也没有改判据。
 
+### 6.4 STABILITY 判定
+
+- **失败集合稳定性：成立**。定版十连里 9 轮完全一致，且一致的那 5 条都在本阶段范围外。
+- **整体 GREEN：未达成，也不应达成**。OVERALL 恒为 FAIL（GP-07 三条产品缺陷）；即便修掉它们，
+  原生 `<picker>` 驱不动与单登录身份仍会让 4 个节点停在 INCONCLUSIVE（退出码 2）。
+  「10/10 PASS」在当前平台与既定范围下不可达，这是事实陈述，不是放宽判据能消除的东西。
+- 每轮都会在真实云端留下一场 `[GP·黄金路径] …·<tag>` 沙盒活动；走到归档的那轮会自动退出发现列表。
 ## 7. 复现
 
 ```bash

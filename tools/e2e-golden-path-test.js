@@ -737,8 +737,13 @@ async function main() {
     tap('点「确认仅处理这 N 人」下发 signup.review', okGo, '命中：' + !!go)
     const rvG = await settle(orgView, x => x.counters.confirmed === 2 && x.counters.pending === 0, 10)
     const v = rvG.v
+    // 十连跑里出现过一次「12 步 UI 全绿、审核却没落库」：当时面板上到底有没有红字没有被记下来，无法定案。
+    // 补上这一次读数——按钮点着了但服务端没动，必须能看到面板当时的状态。
+    const rpAfter = rvG.waited === -1 ? ((await dataOf(await page.$('roster-panel'))) || {}) : {}
     b('审核后 confirmed=2 且待审核归零', v.counters.confirmed === 2 && v.counters.pending === 0,
-      JSON.stringify({ counters: v.counters, 等待次数: rvG.waited }))
+      JSON.stringify({ counters: v.counters, 等待次数: rvG.waited,
+        面板当时: rvG.waited === -1 ? { error: rpAfter.error || '', busy: !!rpAfter.busy,
+          selectedCount: rpAfter.selectedCount, batch: rpAfter.batch, rows: (rpAfter.rows || []).length } : '（落库成功，未取）' }))
   }, uiGate('审核要经名单勾选与按钮'))
 
   // ============================================================
