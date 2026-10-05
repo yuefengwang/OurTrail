@@ -1,0 +1,124 @@
+/* Option B 原型（Meteoblue 模拟 + OurTrail 分析）视觉层。
+   OurTrail UI 部分色值 1:1 取自 app.wxss token（同 fallback/prototype.css）；
+   「模拟 meteoblue 图」内部使用 meteoblue 产品配色 —— 那是**被模拟对象的品牌色**，
+   不属于 OurTrail 设计系统，仅用于评估嵌入效果，勿反向移植。 */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: #E3E5E0; }
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  color: var(--ink); font-size: 14px; line-height: 22px; -webkit-font-smoothing: antialiased;
+}
+:root {
+  /* = OurTrail app.wxss tokens = */
+  --forest: #163E35; --leaf: #D6EA8A; --leaf-on-forest: #2D533F;
+  --paper: #F5F5F0; --surface: #FFFFFF; --ink: #202A26; --muted: #5F6E66;
+  --line: #DEE3DB; --control-line: #8C9791;
+  --danger: #B43D3B; --warning: #8C5A12; --info: #346583; --success: #276145;
+  --golden: #D6A33C; --blue-hour: #6C7C93;
+  --forest-soft: #ECF0EF; --success-soft: #EBF0EE; --warning-soft: #F4F0E9;
+  --danger-soft: #FAF1F1; --info-soft: #F0F3F6; --chart-night: #F0F1EC;
+  /* meteoblue 产品配色（模拟用，非 OurTrail token） */
+  --mb-blue: #01579B; --mb-red: #E53935; --mb-day: #FDF3C6;
+  --mb-precip: #2962FF; --mb-showers: #7EB2F5; --mb-frozen: #C8A882;
+  --mb-wind: #1B6B4B; --mb-gust: #64A8DC;
+}
+.phone { max-width: 375px; margin: 24px auto; background: var(--paper); min-height: 812px;
+  border-radius: 28px; overflow: hidden; box-shadow: 0 12px 48px rgba(32,42,38,.18); }
+@media (max-width: 420px) { .phone { margin: 0; border-radius: 0; min-height: 100vh; } }
+.page { padding: 20px 20px 48px; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.muted { color: var(--muted); } .small { font-size: 12px; line-height: 18px; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+.eyebrow { display:block; font-size:12px; line-height:18px; font-weight:600; letter-spacing:.72px; color:var(--muted); }
+.page-title { display:block; font-size:28px; line-height:1.3; font-weight:700; letter-spacing:-.6px; margin-top:4px; }
+.pt-meta { display:flex; justify-content:space-between; align-items:baseline; margin-top:2px; }
+.pt-place { font-size:15px; font-weight:600; } .pt-place .ele { color:var(--muted); font-weight:400; }
+.pt-src { font-size:11px; color:var(--muted); text-align:right; }
+
+.card { background: var(--surface); border-radius: 14px; padding: 14px; }
+.card-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.card-label { font-size: 13px; font-weight: 700; }
+.section-head { margin-top: 8px; }
+.section-title { display: block; font-size: 16px; line-height: 24px; font-weight: 700; }
+.section-sub { display: block; font-size: 12px; line-height: 18px; color: var(--muted); margin-top: 1px; }
+.level-tag { display:inline-block; font-size:10px; line-height:16px; font-weight:600; letter-spacing:.5px;
+  padding:0 7px; border-radius:5px; vertical-align:2px; margin-left:6px; }
+.level-fact { background: var(--forest-soft); color: var(--muted); }
+.level-analysis { background: var(--forest); color: var(--leaf); }
+
+/* 7 日条（降权重版：更矮、更安静） */
+.day-strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.day-strip::-webkit-scrollbar { display: none; }
+.day-card { flex: 0 0 52px; background: var(--surface); border-radius: 10px; padding: 6px 4px;
+  text-align: center; border: 1.5px solid transparent; cursor: pointer; }
+.day-card.on { border-color: var(--forest); background: var(--forest-soft); }
+.day-label { display: block; font-size: 10px; color: var(--muted); font-weight: 600; }
+.day-ico { display: block; font-size: 10px; line-height: 16px; height: 16px; }
+.day-temp { display: block; font-size: 11px; font-weight: 600; }
+.day-temp .lo { color: var(--muted); font-weight: 400; }
+
+/* Professional Weather 卡（Meteoblue 槽位） */
+.mb-card { padding: 10px 8px 8px; }
+.mb-note { font-size: 11px; line-height: 17px; color: var(--muted); margin: 0 6px 8px; }
+.mb-viewseg { display: flex; gap: 6px; margin: 0 4px 8px; }
+.seg-btn { flex: 1; text-align: center; font-size: 12px; line-height: 26px; height: 26px;
+  border-radius: 8px; background: var(--forest-soft); color: var(--muted); cursor: pointer; font-weight: 600; }
+.seg-btn.on { background: var(--forest); color: #fff; }
+.mb-scroll { overflow-x: auto; border-radius: 8px; }
+.mb-scroll.squeezed { overflow: hidden; }
+.mb-fig { display: block; }
+.mb-fig.squeezed { width: 100% !important; height: auto; }
+.mb-verdict { margin: 8px 4px 2px; font-size: 12px; line-height: 19px; border-radius: 10px; padding: 8px 12px; }
+.mb-verdict.bad { background: var(--danger-soft); }
+.mb-verdict.ok { background: var(--success-soft); }
+
+/* OurTrail 分析区（与 fallback 原型同构） */
+.pheno-featured { border-left: 3px solid var(--info); }
+.stars { color: var(--golden); font-size: 13px; letter-spacing: 1px; white-space: nowrap; }
+.stars .off { color: var(--line); }
+.grade-word { font-size: 12px; font-weight: 600; margin-left: 4px; }
+.g-success { color: var(--success); } .g-warning { color: var(--warning); } .g-neutral { color: var(--muted); }
+.pheno-window { font-size: 13px; font-weight: 600; margin-top: 2px; }
+.pheno-text { font-size: 12px; line-height: 19px; color: var(--muted); margin-top: 4px; }
+.pheno-advice { margin-top: 8px; font-size: 12px; background: var(--info-soft); border-radius: 8px; padding: 6px 10px; }
+.reason-panel { margin: 0 -14px; padding: 10px 14px 12px; background: var(--forest-soft);
+  border-radius: 0 0 14px 14px; font-size: 12px; line-height: 20px; }
+.reason-title { font-weight: 700; color: var(--muted); font-size: 11px; letter-spacing: .5px; margin-bottom: 4px; }
+.reason-item { display: flex; gap: 6px; align-items: baseline; }
+.reason-item .mark { font-weight: 700; flex: 0 0 auto; }
+.reason-item .mark.pos { color: var(--success); }
+.reason-item .fact { color: var(--ink); flex: 1 1 auto; min-width: 0; }
+.reason-item .link { color: var(--info); font-size: 11px; cursor: pointer; white-space: nowrap; flex: 0 0 auto; }
+.reason-note { margin-top: 6px; color: var(--muted); font-size: 11px; }
+
+/* 议程 */
+.agenda { padding: 14px; }
+.agenda-item { display: flex; gap: 10px; position: relative; padding-bottom: 14px; }
+.agenda-item:last-child { padding-bottom: 2px; }
+.ag-time { flex: 0 0 44px; font-size: 12px; color: var(--muted); padding-top: 1px; }
+.ag-line { flex: 0 0 14px; position: relative; }
+.ag-line::before { content: ""; position: absolute; left: 6px; top: 14px; bottom: -2px; width: 1.5px; background: var(--line); }
+.agenda-item:last-child .ag-line::before { display: none; }
+.ag-dot { position: absolute; left: 2px; top: 3px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--surface); }
+.ag-dot.l1 { background: var(--control-line); } .ag-dot.l2 { background: var(--forest); }
+.ag-body { flex: 1; min-width: 0; }
+.ag-title { font-size: 13px; font-weight: 600; line-height: 20px; }
+.ag-sub { font-size: 12px; color: var(--muted); line-height: 18px; }
+.ag-src { font-size: 10px; color: var(--muted); letter-spacing: .4px; }
+.ag-item-card { margin-top: 6px; border-radius: 10px; padding: 9px 11px; cursor: pointer; }
+.why-toggle { font-size: 11px; color: var(--forest); font-weight: 600; float: right; }
+
+.cond-card { border-left: 3px solid var(--forest); }
+.cond-main { display: flex; align-items: baseline; justify-content: space-between; }
+.cond-label { font-size: 15px; font-weight: 700; }
+.callout { border-radius: 0 10px 10px 0; padding: 9px 12px; font-size: 12px; line-height: 19px;
+  border-left: 3px solid var(--control-line); background: var(--surface); }
+.callout.warning { border-left-color: var(--warning); background: var(--warning-soft); }
+.callout.danger { border-left-color: var(--danger); background: var(--danger-soft); }
+.callout-title { font-weight: 700; display: block; }
+.num-toggle { text-align: center; font-size: 13px; color: var(--muted); padding: 10px;
+  background: var(--surface); border-radius: 14px; cursor: pointer; font-weight: 600; }
+.pt-footer { text-align: center; }
+.pt-footer .small { display: block; }

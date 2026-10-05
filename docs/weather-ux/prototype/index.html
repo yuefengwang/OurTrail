@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weather UX Prototypes · 目录</title>
+<style>
+  body { font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; background: #E3E5E0; margin: 0; padding: 40px 20px; color: #202A26; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 24px; letter-spacing: -0.4px; }
+  p { line-height: 1.7; color: #5F6E66; }
+  a.card { display: block; background: #fff; border-radius: 14px; padding: 18px 20px; margin: 14px 0; text-decoration: none; color: inherit; border-left: 4px solid #163E35; }
+  a.card:hover { box-shadow: 0 6px 24px rgba(32,42,38,.12); }
+  b { color: #163E35; }
+  .tag { display: inline-block; font-size: 11px; background: #ECF0EF; color: #5F6E66; border-radius: 5px; padding: 1px 8px; margin-left: 8px; vertical-align: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Weather UX Prototypes</h1>
+  <p>两份可交互原型共用同一份格聂 72h mock 数据与生产天相引擎（astro/sky/format）。建议用浏览器手机模拟 375×812 打开。</p>
+  <a class="card" href="meteoblue/index.html">
+    <b>原型 1 · meteoblue/</b><span class="tag">Option B</span><br>
+    Meteoblue「专业天气预览」槽位（模拟 Image API /meteogram 输出）+ OurTrail 户外分析。<br>
+    内含桌面图 375px 整图缩放 vs 原生宽横滚的<b>可读性实测</b>（§23）。
+  </a>
+  <a class="card" href="fallback/index.html">
+    <b>原型 2 · fallback/</b><span class="tag">Open-Meteo 自绘</span><br>
+    OurTrail 自绘 meteoblue-inspired 逐时时间轴（24h 一屏 / 48h 横滚 / 云层带剖面 / 风 / 议程 / 证据面板 / 数字明细）——
+    无 Meteoblue 时的完整形态，也是推荐的现行架构。
+  </a>
+  <p>引擎与 mock 由根目录 <code>build.js</code> 生成：<code>node build.js</code>。详见 <code>../README.md</code>。</p>
+</div>
+</body>
+</html>
