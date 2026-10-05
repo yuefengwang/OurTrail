@@ -239,6 +239,11 @@ Page({
   onAskDiscard() { this.setData({ discardAsk: true }) },
   onDiscardCancel() { this.setData({ discardAsk: false }) },
   onDiscardConfirm() {
+    // 放弃 = 终止一切未落库意图：必须先取消待触发的防抖自动保存——它不经过 persistPerson，
+    // 若不取消，会在最后一次输入的 800ms 后把刚被放弃的草稿原样写回甚至落库。
+    // （persistPerson 顶部的取消只保护显式保存路径；放弃是唯一的例外路径，审计期补修。）
+    clearTimeout(this._autoSave)
+    this._autoSave = null
     clearDrafts()
     this.setData({ discardAsk: false, draftPending: false, draftSavedAt: '', error: '', sheetError: '', sheetHint: '' })
     this.reload()

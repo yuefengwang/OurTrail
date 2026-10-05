@@ -645,7 +645,7 @@ async function scenario5() {
   }
   {
     // 放弃本机修改：dialog 确认 → 清草稿 + reload 显示服务端值
-    const { page, env } = bootMe({ profile: profileView() })
+    const { page, env, dispatches } = bootMe({ profile: profileView() })
     await settle(page)
     page.onField(fieldEv('medical', '本机未保存的备注', 'medical'))
     await sleep(20)
@@ -663,6 +663,12 @@ async function scenario5() {
     check('确认放弃：页面显示回服务端值',
       page.data.person.medical === '' && page.data.person.name === '张三',
       JSON.stringify(page.data.person))
+    // ★ 回归（审计期补修）：放弃发生在 800ms 防抖窗口内时，定时器不得把刚放弃的草稿
+    //   写回甚至落库——放弃 = 终止一切未落库意图
+    await sleep(1000)
+    check('★ 放弃后越过防抖窗口：草稿不被写回、不发任何命令',
+      !draftOf(env) && page.data.draftPending === false && dispatches.length === 0,
+      JSON.stringify({ d: draftOf(env), p: page.data.draftPending, n: dispatches.length }))
   }
 }
 
