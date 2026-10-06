@@ -299,3 +299,18 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
   **Out of scope / Follow-up（本轮记录不修）**：① `membership.save` 对 `vehicleId` 不做存在性校验（domain/profile.js 只查 profile 与过期时间）——域级校验缺口；② `pages/staff` 宿主的 field-panel 不传 sync-key 也无 written 监听，staff 视角的阶段新鲜度仍依赖进入时机；③ 车辆编辑弹层关闭把手在 `<overlay>` 组件内部，自动化通道不可查（已知通道限制）；④ 原生 picker 的 4 条 UI 真实路径需人工在真机走查兜底。
 
   **是否需要重新部署 trailApi：不需要**（本轮 `cloudfunctions/` 零改动）。**trailApiLab 需人工在控制台把超时调回 20 秒**（否则 B 层/预演沙盒的演员建档继续超时）。
+- 2026-10-07（**Phase 5：UI Interaction & State-Matrix Test Hardening——BUG-C 修复 + 三反例回归固化**）：接续 Phase 4 的中断任务（前一会话在套件调试中产出不可信内容后中止，套件文件删除重建）。独立 worktree `D:/OurTrail-ui-matrix`（分支 `win/ui-state-hardening`，基线 `8699c33`）。任务书钉死范围：只修 BUG-C + 三反例回归固化 + 文档，禁权限/安全/框架重构。
+
+  **BUG-C 实锤与修复（`roster-panel` 批量审核入口无状态门控）**：域规则要求 review 整批全部 pending（`signup.js:117-119`「只有待确认报名可以审核」，一行不符整批拒），但批量四按钮（确认/拒绝/递补/取消）仅受 `busy` 门控——confirmed 或混选在选时可点、弹层真实打开、后端整批拒。修复：`render()` 按「当前勾选的全部行」×阶段计算 `canReview`（全 pending 且 published）/`canPromote`（全 waitlisted 且 published）/`canCancel`（全 current 且未出行且 published|gathering；出行事实取行上字段，车辆腿状态留给后端），wxml 四按钮绑定 `{{canXxx && !busy ? 'onBatch' : ''}}` + disabled class + 无可操作时的解释文案。domain 零改动；后端仍是最终权威。
+
+  **回归固化（tools/e2e-ui-state-test.js，从零重建 651 行）**：UI Interaction / State-Matrix 层，RUN_TAG 运行唯一同伴名（跨轮无同名歧义）、submit 响应 targetIds 直发审核（绕开读滞后依赖）、面板行 statusLabel 回读（带存在性，杜绝虚绿）。TEST-UI-001（BUG-A 勾选全链）、TEST-UI-002（BUG-B 候选数据源 + range 绑定静态门 + 真实点选 INCONCLUSIVE）、TEST-UI-003a/a+/b-1/b-2/b-3（BUG-C 门控 + 状态矩阵腿）。
+
+  **PHASE B（修复前 3/3 稳定捕获）**：red-b1/b2/b3 连续三轮同签名 6 条门控红（confirmed/混选在选 ⇒ 按钮可点 + 弹层真实打开 batch:confirm；前提自证：赵辰 confirmed 来自 targetIds 审核）。**PHASE C（修复后 4/4 全绿）**：green-c1/c2/c3/c4 门控断言全部转绿。**PHASE D（变异验证 3/3）**：BUG-A 回植恒真绑定 → TEST-UI-001 三红（后端存 pk-2 证明恒真机制）；BUG-B 回植 confirmedOptions 误绑 → 静态门精确 1 红；BUG-C 回植仅 busy 门控 → 6 红。每次回植后均还原并经最终绿跑验证（74/0/2），无 mutation 残留。
+
+  **新发现（本套件产出，非本轮修复）**：① **阶段推进静默无效果 5+ 轮复现**——重开工作台后立即推进阶段，弹层/原因/确认全部正常但阶段不变、页面 error 为空（疑似页面持有旧 revision 命中 CAS 冲突，产品仅 toast+重读；toast 不落 error 字段）——套件以有界第 2 次尝试（重开=新读）恢复并经页面视图证实 gathering；与 read-lag 同根，归 NEEDS_PRODUCT_FOLLOWUP。② **read-after-write 20s+ 滞后**：submit 成功后组织者视图读不到新行（多轮复现）——同上归 NEEDS_PRODUCT_FOLLOWUP。
+
+  **文档**：`docs/testing/ui-state-matrix.md`（状态×门控矩阵 + 三反例 + NEEDS_PRODUCT_FOLLOWUP）、`docs/testing/ui-test-gap-audit.md`（Q1-Q5 + 分层覆盖 + 变异记录）。
+
+  **门禁**：check.js（含 Phase 4 硬门禁）/ check-handlers / smoke 160/0（Profile 补洞后口径）/ fault probes 34/0 / A 层 71/0 / 16 个 scenario 套件 0 失败 / **UI-State：green-c4b 74 过 0 败 2 INCONCLUSIVE（原生 picker 平台限制 + 阶段推进 30s 读窗口 skip）** / **GP 十连跑（Phase 5 树）10/10 轮 0 失败**（187/0/7 逐轮同读数，失败集合恒为空，7 条平台 INCONCLUSIVE 同签名；OVERALL=INCONCLUSIVE 如实保留）。B 层完整账本仍受 trailApiLab 3s 超时阻塞（见 Phase 4 条目）。
+
+  **是否需要重新部署 trailApi：不需要**（本轮 `cloudfunctions/` 零改动）。
