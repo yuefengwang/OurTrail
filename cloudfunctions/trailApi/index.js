@@ -4,7 +4,7 @@
 const cloud = require('wx-server-sdk')
 const crypto = require('crypto')
 const {
-  fetchForecast, gcjToWgs, isWeatherFreeAction, weatherCacheKey, resolvePointQuery, pointResponse,
+  fetchForecast, gcjToWgs, isWeatherFreeAction, weatherCacheKey, resolvePointQuery, pointResponse, PROVIDER,
 } = require('./lib/weather')
 const store = require('./store')
 const { canonicalPayload, deepClone, genId } = require('./domain/contracts')
@@ -183,6 +183,7 @@ async function actionGetWeather(payload) {
     return {
       status: 'ready',
       updatedAt: now,
+      provider: PROVIDER,
       hours,
       days: forecast.days || [],
       detail,
@@ -233,7 +234,7 @@ async function actionGetWeatherByPoint(payload) {
     const forecast = await getCachedForecast(q.wgs.lat, q.wgs.lng, q.date)
     const body = pointResponse(forecast)
     if (!body) return { status: 'out_of_range' }
-    return Object.assign({ status: 'ready', updatedAt: now }, body)
+    return Object.assign({ status: 'ready', updatedAt: now, provider: PROVIDER }, body)
   } catch (e) {
     return { status: 'unavailable', message: (e && e.message) || '天气服务暂时不可用。' }
   }

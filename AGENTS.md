@@ -31,10 +31,12 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 4. **`docs/e2e-mp/README.md`** — 改完 WXML/WXSS/组件结构后，**静态门禁通过不代表页面正常**。
    真机（微信开发者工具）驱动是本仓库唯一能看见像素的手段，见下方「直连微信开发者工具」一节。
    P4 的 5 个真机 bug 里只有 1 个是逻辑问题，其余 4 个逻辑测试全都测不到。
+   **动手跑 E2E 前先读 `docs/e2e-mp/automation-playbook.md`**：会话僵死的识别与恢复、`quit` vs `close`、
+   旧句柄"点击成功但没作用"、`busy` 期间的空按钮、一次性判读造成的假红、云函数部署与超时继承、退出码语义。
 5. **`docs/testing/e2e-result-semantics.md` + `tools/e2e-result.js`** — 动两套 E2E（`tools/e2e-test.js` /
    `tools/e2e-ui-test.js`）之前必读。要点：BUSINESS 与 UI 是两个独立维度；**UI 的一条 PASS 必须由
    「一次真实 tap/input + 它的后果观测」构成**；云侧 fallback 只能证 BUSINESS；门槛不过或通道退化
-   记 INCONCLUSIVE（退出码 2），**永远不是 PASS**。判别力由 `tools/e2e-fault-probe-test.js`（31 项变异）
+   记 INCONCLUSIVE（退出码 2），**永远不是 PASS**。判别力由 `tools/e2e-fault-probe-test.js`（34 项变异）
    自证；改测试语义之前先跑它，改完再跑一次。
 
 ---
@@ -135,16 +137,18 @@ node tools/astro-test.js                     # 天文（60）
 node tools/gpx-test.js                       # GPX + 坐标转换（47）
 node tools/sky-test.js                       # 天相结论（65）
 node tools/route-schedule-test.js            # 日程推算（41）
-node tools/weather-page-test.js              # 云函数→页面→组件契约（134）
+node tools/weather-page-test.js              # 云函数→页面→组件契约（136）
 node tools/watch-points-test.js              # 观察点/轨迹点组（37）
 node tools/weather-model-test.js             # P4 轨迹层编排（wx-free 纯函数）（82）
+node tools/weather-v2-test.js                # Weather V2：WMO 雪码/云海可见性/Evidence/optional 降级（45）
+node tools/meteogram-draw-test.js            # meteogram 真实 draw()：V2 云带剖面/风/日照轴（记录式 2D）（30）
 node tools/space-time-test.js                # P4 时空天相图几何 + 漫游读数（109）
 node tools/space-time-draw-test.js           # P4 真实 draw() 执行（记录式 2D 上下文）（55）
 node tools/roam-scrubber-test.js             # P4 漫游控件定时器与事件契约（33）
 
 # 端到端两层（A 层计入门禁；B 层需开发者工具，不计入门禁）
-node tools/e2e-test.js                         # A 层服务链路 E2E（62 项，真信封打 exports.main）
-node tools/e2e-fault-probe-test.js             # 结果模型变异自证（31 项）
+node tools/e2e-test.js                         # A 层服务链路 E2E（65 项，真信封打 exports.main）
+node tools/e2e-fault-probe-test.js             # 结果模型变异自证（34 项）
 node tools/e2e-ui-test.js                      # B 层真模拟器 UI E2E（两维账本，退出码 0/1/2）
 
 # Page-level scenarios
@@ -168,7 +172,8 @@ node tools/lab-dryrun-test.js                # 165
 node tools/check.js && node tools/check-handlers.js && \
 node cloudfunctions/trailApi/smoke-test.js && node tools/astro-test.js && \
 node tools/gpx-test.js && node tools/sky-test.js && node tools/route-schedule-test.js && \
-node tools/weather-page-test.js && node tools/watch-points-test.js && \
+node tools/weather-page-test.js && node tools/weather-v2-test.js && node tools/meteogram-draw-test.js && \
+node tools/watch-points-test.js && \
 node tools/weather-model-test.js && node tools/space-time-test.js && \
 node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
 node tools/scenario-editor-test.js

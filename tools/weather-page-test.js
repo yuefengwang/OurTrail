@@ -484,16 +484,24 @@ section('9. meteogram 布局不变量')
 const LAY = require('../miniprogram/components/meteogram/layout.js')
 
 {
-  const order = ['marks', 'temp', 'rain', 'cloud', 'code', 'axis']
+  const order = ['marks', 'temp', 'rain', 'cloud', 'bandProfile', 'wind', 'code', 'axis']
   let overlap = ''
   for (let i = 0; i < order.length - 1; i++) {
     const a = LAY.ROW[order[i]]
     const b = LAY.ROW[order[i + 1]]
     if (a.y + a.h > b.y) overlap = order[i] + '(' + a.y + '+' + a.h + ') > ' + order[i + 1] + '(' + b.y + ')'
   }
-  check('行与行不重叠', !overlap, overlap)
+  check('行与行不重叠（V2 新增云带剖面/风行后）', !overlap, overlap)
   check('画布高度覆盖最后一行', LAY.CHART_H >= LAY.ROW.axis.y + LAY.ROW.axis.h,
     LAY.CHART_H + ' < ' + (LAY.ROW.axis.y + LAY.ROW.axis.h))
+  // V2 云带剖面的海拔映射：0/6000m 映射到行内上下缘，中点居中
+  const bp = LAY.ROW.bandProfile
+  check('bandAltY 0m 落在行底、6000m 落在行顶',
+    Math.abs(LAY.bandAltY(0, bp) - (bp.y + bp.h - 2)) < 0.01
+    && Math.abs(LAY.bandAltY(6000, bp) - (bp.y + 2)) < 0.01,
+    LAY.bandAltY(0, bp) + '/' + LAY.bandAltY(6000, bp))
+  check('bandAltY 越界海拔被夹住（-500 → 0m 端，9000 → 6000m 端）',
+    LAY.bandAltY(-500, bp) === LAY.bandAltY(0, bp) && LAY.bandAltY(9000, bp) === LAY.bandAltY(6000, bp))
 
   // 左刻度栏必须装得下最长标签 `高/中/低`（原来是 34px，右对齐会左溢出到 x=-15 被裁）
   // 刻度栏画布字体是 9px，textWidth 必须按同一字号算

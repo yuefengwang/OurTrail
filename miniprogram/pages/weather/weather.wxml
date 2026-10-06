@@ -35,16 +35,16 @@
       <status-panel kind="loading" title="正在查询天气" detail="正在向气象服务查询该点的逐小时预报。" />
     </block>
     <block wx:elif="{{dayCards.length}}">
-      <!-- ============ 客观指标 ============ -->
+      <!-- ============ 事实层：逐时天气（V2 核心时间轴） ============ -->
       <view class="section-head">
         <view class="section-id">
-          <text class="section-title">客观指标</text>
-          <text class="section-sub">下面这 7 天的逐时预报</text>
+          <text class="section-title">逐时天气</text>
+          <text class="section-sub">温度 · 降水 · 云层带 · 风 — {{providerLabel}}</text>
         </view>
         <button class="button text" hover-class="button-hover" bindtap="onFullscreen">全图展示</button>
       </view>
 
-      <!-- 7 日概览条 -->
+      <!-- 7 日概览条（V2 降权：只负责选哪一天） -->
       <scroll-view class="day-strip" scroll-x enhanced show-scrollbar="{{false}}">
         <view
           wx:for="{{dayCards}}"
@@ -59,23 +59,61 @@
           <text class="day-phrase {{item.phrase.tone}}">{{item.phrase.label}}</text>
           <text class="day-temp tabular">{{item.tMax}}/{{item.tMin}}°</text>
           <text class="day-rain tabular">☂ {{item.precipProbMax}}%</text>
-          <text class="day-sun tabular">{{item.sunrise}}</text>
         </view>
       </scroll-view>
 
-      <!-- meteogram：时间坐标图（温度线 / 降水双柱 / 三层云量 / 天气简字 + 天相窗口标记） -->
-      <meteogram
-        series="{{chartSeries}}"
-        marks="{{chartMarks}}"
-        night="{{chartNight}}"
-        selected-dates="{{chartSelected}}"
-        bind:pickhour="onChartPickHour"
-      />
+      <!-- 24/48/72h 切窗（同一列宽同字号；24h 一屏，48/72h 横滚） -->
+      <view class="tl-viewseg">
+        <view class="seg-btn {{viewSpan === 24 ? 'on' : ''}}" hover-class="button-hover" bindtap="onSpanToggle" data-span="24">24 小时</view>
+        <view class="seg-btn {{viewSpan === 48 ? 'on' : ''}}" hover-class="button-hover" bindtap="onSpanToggle" data-span="48">48 小时</view>
+        <view class="seg-btn {{viewSpan === 72 ? 'on' : ''}}" hover-class="button-hover" bindtap="onSpanToggle" data-span="72">72 小时</view>
+      </view>
+
+      <!-- meteogram（V2 扩展）：天相窗口标记 / 温度线 / 降水+概率底带 / 三层云量 /
+           云层带剖面（虚线=此点海拔）/ 风 / 天气简字 + 日照轴（黄金/蓝调/暮光/夜） -->
+      <view class="timeline-card">
+        <meteogram
+          series="{{chartView}}"
+          marks="{{chartMarks}}"
+          night="{{chartNight}}"
+          selected-dates="{{chartSelected}}"
+          hour-width="{{viewHW}}"
+          elevation="{{chartElev}}"
+          sun-bands="{{chartSunBands}}"
+          sun-lines="{{chartSunLines}}"
+          now="{{chartNow}}"
+          pick="{{chartPick}}"
+          tip="「带」=≥80% 成层低云 · 虚线=此点海拔 · 点图看某小时"
+          bind:pickhour="onChartPickHour"
+        />
+        <!-- 小时浮条：L1 数字 + 该小时的 L2 窗口归属（与图上标记同源） -->
+        <view wx:if="{{hourChip}}" class="hour-chip" hover-class="button-hover" bindtap="onChipClose">
+          <view class="chip-row">
+            <text class="chip-time tabular">{{hourChip.t}}</text>
+            <text class="chip-main">{{hourChip.phrase.label}} {{hourChip.temp}}°C（体感 {{hourChip.feels}}°）</text>
+            <text class="chip-close">✕</text>
+          </view>
+          <view class="chip-row chip-sub tabular">
+            <text>降水 {{hourChip.pop}}%{{hourChip.precip > 0 ? ' ' + hourChip.precip + 'mm' : ''}}</text>
+            <text>风 {{hourChip.wind}} km/h{{hourChip.windDir ? ' ' + hourChip.windDir : ''}}</text>
+            <text>湿度 {{hourChip.rh}}%</text>
+            <text wx:if="{{hourChip.pressure !== '—'}}">气压 {{hourChip.pressure}} hPa</text>
+            <text wx:if="{{hourChip.band}}">云带 {{hourChip.band}}</text>
+          </view>
+          <view wx:if="{{hourChip.tags.length || hourChip.inCloud}}" class="chip-row chip-tags">
+            <text wx:for="{{hourChip.tags}}" wx:key="*this" class="chip-tag">{{item}}</text>
+            <text wx:if="{{hourChip.inCloud}}" class="chip-tag warn">处于云层带内</text>
+          </view>
+        </view>
+        <text class="chart-caption small muted">「带」= ≥80% 成层低云（模型垂直剖面）· 虚线 = 此点海拔 · 灰底 = 天文暗夜</text>
+      </view>
 
       <!-- P4 时空天相图：把 meteogram 的「时间×数值」补成「时间×海拔」，
            云层带 + 逐节点天相轨迹 + 主窗口括号 + 抵达净空，一眼看懂云在不在脚下。
-           没有可信抵达时刻的节点不画（宁可少几个点，不编造）。 -->
+           没有可信抵达时刻的节点不画（宁可少几个点，不编造）；
+           单点查询没有节点维度，整卡隐藏（QA 发现的空壳卡，2026-10-06）。 -->
       <space-time
+        wx:if="{{spaceNodes.length}}"
         series="{{spaceSeries}}"
         days="{{spaceDays}}"
         nodes="{{spaceNodes}}"
@@ -85,72 +123,118 @@
         arrive-t="{{spaceArriveT}}"
       />
 
-      <!-- 当日数字指标：日出日落 / 三层云量 / 云层带 / 月相 -->
-      <view wx:if="{{metrics}}" class="card stack-gap3">
-        <view class="card-header">
-          <text class="card-label">{{date}} 的数字</text>
-          <text wx:if="{{metrics.elev !== null}}" class="small muted tabular">此点约 {{metrics.elev}} m · {{elevSource}}</text>
+      <!-- V2 今日户外时间轴：天文/天气事实（灰）+ OurTrail 窗口（绿，与图上标记同源）。
+           回答「什么时候值得出去」；云海窗口已按民用晨昏裁剪（凌晨不可见段不展示） -->
+      <view class="section-head">
+        <text class="section-title">今日户外时间轴</text>
+        <text class="section-sub">天文与天气变化 + OurTrail 窗口，按时间排</text>
+      </view>
+      <view class="card agenda">
+        <view wx:for="{{agenda}}" wx:key="index" class="agenda-item">
+          <text class="ag-time tabular">{{item.t}}</text>
+          <view class="ag-line"><view class="ag-dot {{item.l2 ? 'l2' : 'l1'}}"></view></view>
+          <view class="ag-body">
+            <text class="ag-src">{{item.l2 ? 'OURTRAIL 分析' : '天文 / 天气'}}</text>
+            <view wx:if="{{item.l2}}" class="ag-item-card {{item.tone}}" hover-class="button-hover">
+              <view class="ag-title-row">
+                <text class="ag-title">{{item.title}}</text>
+                <text class="ag-stars">{{item.stars}}</text>
+              </view>
+              <view class="ag-meta tabular">
+                <text class="ag-window">{{item.window}}</text>
+                <text class="ag-grade {{item.tone}}">{{item.gradeLabel}}</text>
+              </view>
+            </view>
+            <block wx:else>
+              <view class="ag-title ag-title-l1">{{item.title}}</view>
+              <view wx:if="{{item.sub}}" class="ag-sub tabular">{{item.sub}}</view>
+            </block>
+          </view>
         </view>
-        <view class="list-row"><text>日出 / 日落</text><text class="tabular" style="font-weight:600;">{{metrics.sunrise}} / {{metrics.sunset}}</text></view>
-        <view class="list-row"><text>天文暗夜（银河窗口）</text><text class="tabular" style="font-weight:600;">{{metrics.nightWindow}}</text></view>
-        <view class="list-row"><text>云量 低 / 中 / 高</text><text class="tabular" style="font-weight:600;">{{metrics.low}}% / {{metrics.mid}}% / {{metrics.high}}%</text></view>
-        <view class="list-row"><text>云层带高度</text><text class="tabular" style="font-weight:600;">{{metrics.bandText}}</text></view>
-        <view class="list-row"><text>月相</text><text class="tabular" style="font-weight:600;">{{metrics.moon}}</text></view>
-        <text wx:if="{{metrics.inBand}}" class="small warn-text">此点海拔落在云层带内，大概率在雾中行进。</text>
+        <view wx:if="{{!agenda.length}}" class="ag-empty small muted">今天没有值得标注的窗口。</view>
       </view>
 
-      <!-- 当日徒步提示（安全类，优先级最高，独立于天相） -->
+      <!-- 当日徒步提示（安全类，优先级最高，独立于天相；数据与规则见 utils/conditions.js） -->
       <view wx:for="{{callouts}}" wx:key="title" class="callout {{item.tone}}">
         <text class="callout-title">{{item.title}}</text>
       </view>
 
-      <!-- ============ 结论：天相判断 ============ -->
+      <!-- ============ V2 户外条件（OurTrail 分析层，与事实层明确分界） ============ -->
       <view class="section-head">
-        <text class="section-title">结论 · 天相</text>
-        <text class="section-sub">按经验信号合成，附判断依据与该往哪看</text>
+        <text class="section-title">户外条件</text>
+        <text class="section-sub">由上方天气事实推算的条件判断，不是气象预报</text>
       </view>
 
-      <view wx:for="{{conclusions}}" wx:key="key" class="card sky-card">
-        <view class="card-header">
-          <text class="sky-title">{{item.title}}</text>
-          <text wx:if="{{item.label}}" class="badge {{item.tone}}">{{item.label}}{{item.score ? ' ' + item.score : ''}}</text>
+      <!-- 徒步条件总评（均分规则与 utils/weather-model.js judge 同源，不新增阈值） -->
+      <view wx:if="{{condOverall}}" class="card cond-card">
+        <view class="cond-main">
+          <text class="cond-label">徒步条件</text>
+          <text class="cond-grade"><text class="cond-stars">{{condOverall.stars}}</text><text class="ag-grade {{condOverall.tone}}">{{condOverall.label}}</text></text>
         </view>
-        <text class="sky-text">{{item.text}}</text>
+      </view>
+
+      <view wx:for="{{condCards}}" wx:key="key" class="card cond-pheno {{item.featured ? 'featured' : ''}}">
+        <view class="card-header" style="margin-bottom:2px;">
+          <text class="card-label">{{item.title}}{{item.featured ? ' · 值得关注' : ''}}</text>
+          <text class="cond-stars">{{item.stars}}</text>
+        </view>
+        <text wx:if="{{item.window}}" class="pheno-window tabular">{{item.window}}</text>
+        <text class="pheno-text">{{item.text}}</text>
         <view wx:if="{{item.look}}" class="sky-look">
           <text class="sky-look-label">往哪看</text>
           <text class="sky-look-text">{{item.look}}</text>
         </view>
-        <view wx:if="{{item.window}}" class="sky-look">
-          <text class="sky-look-label">时段</text>
-          <text class="sky-look-text tabular">{{item.window}}</text>
+        <!-- Evidence（V2 核心新增）：每个结论可展开为图上可核对的事实清单，可回跳图表 -->
+        <view wx:if="{{item.evidence.length}}" class="cond-why" hover-class="button-hover" bindtap="onToggleEvidence" data-key="{{item.key}}">
+          {{openEvidence[item.key] ? '收起依据 ▴' : '为什么？▾'}}
         </view>
-      </view>
-
-      <!-- 分时段摘要 -->
-      <view class="card" style="padding:0;">
-        <view wx:for="{{slots}}" wx:key="t" class="list-row">
-          <text class="tabular" style="font-weight:700;">{{item.t}}</text>
-          <view style="text-align:right;">
-            <text style="font-weight:700;">{{item.phrase.label}} {{item.temp}}°C</text>
-            <text class="list-sub">降水 {{item.pop}}% · 风 {{item.wind}} km/h</text>
+        <view wx:if="{{item.evidence.length && openEvidence[item.key]}}" class="reason-panel">
+          <text class="reason-title">OURTRAIL 判断依据 · 均为上方图表中的可见事实</text>
+          <view wx:for="{{item.evidence}}" wx:for-item="f" wx:key="fact" class="reason-item">
+            <text class="reason-mark">✓</text>
+            <text class="reason-fact">{{f.fact}}</text>
+            <text class="reason-link" hover-class="button-hover" catchtap="onEvidenceJump" data-at="{{f.at}}">看图 ↗</text>
           </view>
+          <text class="reason-note">评级来自 sky.js 同源判定；点「看图」定位到对应小时自行核对。</text>
         </view>
+        <view wx:if="{{item.featured}}" class="pheno-advice">建议：日出前抵达高处观景点。</view>
+        <text class="pheno-disclaimer small muted">基于天气数据估算，非气象预报。</text>
       </view>
 
-      <!-- 逐小时明细（折叠） -->
+      <!-- 逐小时明细（折叠，V2 Numbers：全字段横滚表，专业用户深度数据；默认收起） -->
       <view class="button text" hover-class="button-hover" bindtap="toggleDetail">{{showDetail ? '收起逐小时数据' : '展开逐小时数据'}}</view>
-      <view wx:if="{{showDetail}}" class="card" style="padding:0;">
-        <view wx:for="{{detailRows}}" wx:key="t" class="list-row">
-          <text class="tabular">{{item.t}}</text>
-          <view style="text-align:right;">
-            <text style="font-weight:700;">{{item.phrase.label}} {{item.temp}}°C</text>
-            <text class="list-sub">降水 {{item.pop}}% · 风 {{item.wind}} · 能见度 {{item.visibility}} km</text>
+      <view wx:if="{{showDetail}}" class="card num-sheet">
+        <scroll-view scroll-x enhanced show-scrollbar>
+          <view class="num-table">
+            <view class="num-row num-head">
+              <text class="nc nc-time">时间</text><text class="nc">天气</text><text class="nc">温度</text>
+              <text class="nc">体感</text><text class="nc">降水%</text><text class="nc">mm</text>
+              <text class="nc">风</text><text class="nc">风向</text><text class="nc">湿度</text>
+              <text class="nc">气压</text><text class="nc">能见度</text><text class="nc">UV</text>
+              <text class="nc">露点</text><text class="nc">云带 m</text>
+            </view>
+            <view wx:for="{{detailRows}}" wx:key="t" class="num-row">
+              <text class="nc nc-time tabular">{{item.t}}</text>
+              <text class="nc {{item.phrase.tone}}">{{item.phrase.label}}</text>
+              <text class="nc tabular">{{item.temp}}°</text>
+              <text class="nc tabular">{{item.feels}}°</text>
+              <text class="nc tabular">{{item.pop}}%</text>
+              <text class="nc tabular">{{item.precip}}</text>
+              <text class="nc tabular">{{item.wind}}</text>
+              <text class="nc">{{item.windDir}}</text>
+              <text class="nc tabular">{{item.rh}}%</text>
+              <text class="nc tabular">{{item.pressure}}</text>
+              <text class="nc tabular">{{item.visibility}}</text>
+              <text class="nc tabular">{{item.uv}}</text>
+              <text class="nc tabular">{{item.dewPoint}}°</text>
+              <text class="nc tabular">{{item.band}}</text>
+            </view>
           </view>
-        </view>
+        </scroll-view>
       </view>
 
       <text class="small muted">更新时间：{{updatedAt}}</text>
-      <text class="small muted">数据来源 Open-Meteo.com（CC BY 4.0）· 日出日落与天相判断为本机按坐标与海拔推算</text>
+      <text class="small muted">数据来源 {{providerLabel || 'Open-Meteo'}}（CC BY 4.0）· 日出日落与天相判断为本机按坐标与海拔推算</text>
     </block>
     <status-panel wx:else kind="empty" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" action-label="重新查询" bind:action="fetchWeather" />
 
