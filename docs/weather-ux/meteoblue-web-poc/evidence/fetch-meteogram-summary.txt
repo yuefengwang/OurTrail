@@ -1,0 +1,2 @@
+
+fetchMeteogram: 4/4 locations ok
