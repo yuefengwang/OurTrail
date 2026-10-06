@@ -134,7 +134,13 @@ function simplifyTrack(points, max) {
       lastIdx = cursor
     }
   }
-  if (lastIdx !== n - 1) out.push(points[n - 1])
+  if (lastIdx !== n - 1) {
+    // 浮点舍入可能让 k=max-1 的采样差一点没够到真实总里程（(total*(max-1))/(max-1) < total），
+    // 循环停在倒数第二点——尾点必须进结果，但总数不得超 max（schema 严检 track ≤ 200，
+    // 曾因 201 点被整单拒绝：2026-10-06 真机「操作字段不完整或格式不正确」）。
+    if (out.length >= max) out[out.length - 1] = points[n - 1]
+    else out.push(points[n - 1])
+  }
   return out
 }
 

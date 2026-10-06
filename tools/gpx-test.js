@@ -173,6 +173,21 @@ function run() {
   check('英尺制高程整体降级为无高程', rf.ok && rf.stats.hasElevation === false && rf.points.every(p => !('ele' in p)),
     rf.ok && JSON.stringify(rf.stats))
 
+  console.log('== 轨迹采样上限（浮点漏采 201 点回归：2026-10-06 真机发布失败真因）==')
+  // step 取一个 IEEE754 下 (total*199)/199 < total 的值：修前采样循环停在倒数第二点，
+  // 尾点分支再无条件追加 → 201 点，被 schema specArr(TrackPoint, 2, 200) 整单严拒。
+  const FP_STEP = 0.000048866838803323264
+  const floatTrack = Array.from({ length: 1000 }, (_, i) => ({ lat: 0, lng: i * FP_STEP }))
+  const sf = simplifyTrack(floatTrack, 200)
+  check('采样结果 ≤200 点', sf.length <= 200, sf.length)
+  check('首尾点保留', sf.length >= 2 && sf[0].lng === 0 && sf[sf.length - 1].lng === floatTrack[999].lng,
+    sf.length >= 2 && sf[sf.length - 1].lng)
+  const floatXml = '<?xml version="1.0"?><gpx><trk><trkseg>' +
+    floatTrack.map(p => '<trkpt lat="0" lon="' + p.lng + '"></trkpt>').join('') +
+    '</trkseg></trk></gpx>'
+  const rf2 = parseGpx(floatXml)
+  check('parseGpx 端到端 track ≤200 点', rf2.ok && rf2.track.length <= 200, rf2.ok && rf2.track.length)
+
   console.log('== 异常输入 ==')
   check('空文件', !parseGpx('').ok)
   check('非 GPX', !parseGpx('<html></html>').ok)
