@@ -5,6 +5,17 @@
 const MAX_FILE_BYTES = 8 * 1024 * 1024
 const MAX_POINTS = 12
 
+// ele 合法区间与 cloudfunctions/trailApi/domain/schema.js 的 RoutePoint.ele（specNum(-500, 9000)）同源，
+// tools/gpx-test.js 有跨检防止两处漂移。越界高程（-9999 哨兵、99999 脏值、英尺制）若透传，
+// 会被 schema 严格模式拒绝——整场活动报「操作字段不完整或格式不正确」，而非降级为无高程。
+const ELE_MIN = -500
+const ELE_MAX = 9000
+
+// 越界 ele 视为缺失（返回 null），而不是钳制到边界：哨兵值钳制后会污染云层带/云海判断。
+function saneEle(v) {
+  return Number.isFinite(v) && v >= ELE_MIN && v <= ELE_MAX ? Math.round(v) : null
+}
+
 function decodeEntities(s) {
   return String(s || '')
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
@@ -45,7 +56,7 @@ function extractPoints(xml, tags) {
     out.push({
       lat,
       lng,
-      ele: Number.isFinite(ele) && inner.indexOf('<ele') !== -1 ? ele : null,
+      ele: inner.indexOf('<ele') !== -1 ? saneEle(ele) : null,
       name: decodeEntities(child(inner, 'name')),
       time: Number.isFinite(time) ? time : null,
     })
@@ -218,9 +229,9 @@ function toRoutePoints(parsed) {
     // 轨迹附带的时刻与高程：用户不可编辑，供按节点推算抵达日与判断是否高过云层带
     const meta = nearest(p)
     const time = Number.isFinite(p.time) ? p.time : meta.time
-    const ele = Number.isFinite(p.ele) ? p.ele : meta.ele
+    const ele = saneEle(Number.isFinite(p.ele) ? p.ele : meta.ele)
     if (Number.isFinite(time)) out.time = new Date(time).toISOString()
-    if (Number.isFinite(ele)) out.ele = Math.round(ele)
+    if (ele !== null) out.ele = ele
     return out
   })
 }
@@ -315,4 +326,4 @@ function parseGpx(xml) {
   }
 }
 
-module.exports = { parseGpx, decodeEntities, extractPoints, measure, haversineKm, wgsToGcj, gcjToWgs, simplifyTrack, suggestTrailInfo, MAX_FILE_BYTES }
+module.exports = { parseGpx, decodeEntities, extractPoints, measure, haversineKm, wgsToGcj, gcjToWgs, simplifyTrack, suggestTrailInfo, saneEle, ELE_MIN, ELE_MAX, MAX_FILE_BYTES }
