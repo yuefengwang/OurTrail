@@ -10,6 +10,8 @@
 const EDITOR_PATH = require.resolve('../miniprogram/pages/editor/editor.js')
 const api = require('../miniprogram/utils/api')
 const draft = require('../miniprogram/utils/draft')
+// 云侧输入契约：GPX/编辑器产出的 payload 直接对真 schema 严检（同 weather-page-test 的跨检手法）
+const S = require('../cloudfunctions/trailApi/domain/schema.js')
 
 let passed = 0
 let failed = 0
@@ -368,6 +370,42 @@ async function scenario4() {
       input.routeSnapshot.points[0].time === '2020-05-01T01:00:00.000Z' && input.routeSnapshot.points[0].ele === 700
       && !('time' in input.routeSnapshot.points[1]) && !('ele' in input.routeSnapshot.points[1]),
       JSON.stringify(input.routeSnapshot.points))
+  }
+  {
+    // 坏高程防护：哨兵/越界 ele 若透传，服务端 schema 严格模式会整单拒绝（「操作字段不完整或格式不正确」，
+    // 2026-10-06 真机发布复现）。解析层剔除 + buildInput 复用同一判定，旧坏草稿下次保存自愈。
+    const SENTINEL_XML = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<gpx version="1.1" creator="test">',
+      '<trk><trkseg>',
+      '<trkpt lat="30.00" lon="103.00"><ele>-9999</ele></trkpt>',
+      '<trkpt lat="30.05" lon="103.02"></trkpt>',
+      '<trkpt lat="30.10" lon="103.05"><ele>900</ele></trkpt>',
+      '</trkseg></trk></gpx>',
+    ].join('')
+    const { page } = bootEditor({ wx: {
+      chooseMessageFile: o => o.success({ tempFiles: [{ path: 'wxfile://t.gpx', size: 120, name: '哨兵.gpx' }] }),
+      getFileSystemManager: () => ({ readFile: o => o.success({ data: SENTINEL_XML }) }),
+    } })
+    await settle(page)
+    page.onImportGpx()
+    page.onGpxApply()
+    const input = page.buildInput()
+    check('哨兵 ele 不污染爬升（孤立坏值前后无 ele 不参与高程差）', page.data.form.ascentM === '0', page.data.form.ascentM)
+    check('节点 ele 全部落在 schema 区间', input.routeSnapshot.points.every(p => !('ele' in p) || (p.ele >= -500 && p.ele <= 9000)),
+      JSON.stringify(input.routeSnapshot.points.map(p => p.ele)))
+    check('哨兵 GPX 的 buildInput 通过云端 ActivityInput 严检', S.validate(S.ActivityInput, input) === true,
+      JSON.stringify(input.routeSnapshot.points))
+    const { page: page2 } = bootEditor({})
+    await settle(page2)
+    page2.setData({ form: Object.assign({}, page2.data.form, {
+      points: [{ id: 'pt-old', name: '旧节点', kind: 'start', lat: '30.0', lng: '103.0', time: '', ele: -9999 }],
+    }) })
+    const healed = page2.buildInput()
+    check('旧草稿的越界 ele 在 buildInput 被剔除（草稿自愈）', healed.routeSnapshot.points[0] && !('ele' in healed.routeSnapshot.points[0]),
+      JSON.stringify(healed.routeSnapshot.points[0]))
+    check('自愈后的 payload 通过云端严检', S.validate(S.ActivityInput, healed) === true,
+      JSON.stringify(healed.routeSnapshot.points))
   }
 }
 

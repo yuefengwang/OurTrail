@@ -207,12 +207,17 @@ Page({
         title: f.routeTitle,
         distanceKm: Number(f.distanceKm) || 0,
         ascentM: Math.round(Number(f.ascentM)) || 0,
-        points: f.points.map(p => Object.assign(
-          { id: p.id, name: p.name, kind: p.kind, coordinates: coordsOrNull(p.lat, p.lng) },
-          // GPX 元数据原样透传（无值时不带键，schema 按 specOpt 兼容缺省）
-          p.time ? { time: p.time } : {},
-          Number.isFinite(p.ele) ? { ele: p.ele } : {}
-        )),
+        // GPX 元数据透传（无值时不带键，schema 按 specOpt 兼容缺省）。
+        // ele 走 gpx.saneEle：旧草稿可能在修复前存下越界高程（哨兵/英尺值），直接透传会被服务端 schema 严拒；
+        // 这里按同一规则剔除，草稿下次保存即自愈。
+        points: f.points.map(p => {
+          const ele = gpx.saneEle(p.ele)
+          return Object.assign(
+            { id: p.id, name: p.name, kind: p.kind, coordinates: coordsOrNull(p.lat, p.lng) },
+            p.time ? { time: p.time } : {},
+            ele !== null ? { ele } : {}
+          )
+        }),
         risks: f.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice })),
       },
       pickupPoints: f.pickups.map(p => ({

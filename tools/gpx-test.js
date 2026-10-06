@@ -1,6 +1,8 @@
 // GPX 解析的 node 冒烟测试。运行：node tools/gpx-test.js
 'use strict'
-const { parseGpx, wgsToGcj, gcjToWgs, simplifyTrack } = require('../miniprogram/utils/gpx')
+const { parseGpx, extractPoints, wgsToGcj, gcjToWgs, simplifyTrack, saneEle, ELE_MIN, ELE_MAX } = require('../miniprogram/utils/gpx')
+// 云端输入契约：ele 合法区间必须与 schema.js 的 RoutePoint.ele 同源，漂移在这里炸
+const S = require('../cloudfunctions/trailApi/domain/schema.js')
 
 let passed = 0
 let failed = 0
@@ -141,6 +143,35 @@ function run() {
   check('时间沿轨迹递增', rt.ok && rt.points.every((p, i) => i === 0 || Date.parse(p.time) > Date.parse(rt.points[i - 1].time)))
   check('无时间戳的轨迹不带 time 键', r4.ok && r4.points.every(p => !('time' in p)))
   check('无时间戳的轨迹仍带 ele', r4.ok && r4.points.every(p => Number.isFinite(p.ele)))
+
+  console.log('== 越界 ele 防护（哨兵/脏值/英尺制曾致发布被 schema 严拒）==')
+  check('saneEle 边界与云端 schema RoutePoint.ele 同源',
+    S.RoutePoint.keys.ele.t === 'opt' && S.RoutePoint.keys.ele.spec.t === 'num'
+    && S.RoutePoint.keys.ele.spec.min === ELE_MIN && S.RoutePoint.keys.ele.spec.max === ELE_MAX,
+    JSON.stringify(S.RoutePoint.keys.ele))
+  check('区间内保留并取整', saneEle(500) === 500 && saneEle(750.6) === 751 && saneEle(-500) === -500 && saneEle(9000) === 9000)
+  check('哨兵/脏值/英尺制/NaN 一律视为缺失', saneEle(-9999) === null && saneEle(99999) === null && saneEle(9843) === null
+    && saneEle(NaN) === null && saneEle(null) === null)
+  // 孤立哨兵：坏点前后都是无 <ele> 的点 → 爬升不受污染，但节点恰好采到坏值时曾整单被拒
+  const sentinelXml = '<gpx version="1.0"><trk><trkseg>'
+    + '<trkpt lat="30.0" lon="103.0"><ele>-9999</ele></trkpt>'
+    + '<trkpt lat="30.001" lon="103.001"></trkpt>'
+    + '<trkpt lat="30.002" lon="103.002"><ele>800</ele></trkpt>'
+    + '</trkseg></trk></gpx>'
+  const rs = parseGpx(sentinelXml)
+  // parseGpx 返回的 track 是纯折线（lat/lng）；元数据在 extractPoints 的原始输出上验证
+  const rawPts = extractPoints(sentinelXml, ['trkpt'])
+  check('哨兵点解析后 ele 视为缺失', rawPts[0].ele === null && rawPts[1].ele === null && rawPts[2].ele === 800,
+    JSON.stringify(rawPts))
+  check('哨兵不污染爬升', rs.ok && rs.ascentM === 0, rs.ok && rs.ascentM)
+  check('节点从最近有效轨迹点回填 ele', rs.ok && rs.points[0].ele === 800, rs.ok && JSON.stringify(rs.points[0]))
+  const feetXml = '<gpx version="1.0"><trk><trkseg>'
+    + '<trkpt lat="30.0" lon="103.0"><ele>9843</ele></trkpt>'
+    + '<trkpt lat="30.001" lon="103.001"><ele>9900</ele></trkpt>'
+    + '</trkseg></trk></gpx>'
+  const rf = parseGpx(feetXml)
+  check('英尺制高程整体降级为无高程', rf.ok && rf.stats.hasElevation === false && rf.points.every(p => !('ele' in p)),
+    rf.ok && JSON.stringify(rf.stats))
 
   console.log('== 异常输入 ==')
   check('空文件', !parseGpx('').ok)
