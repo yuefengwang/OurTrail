@@ -1,0 +1,292 @@
+{
+  "location": "daocheng",
+  "title": "Meteogram Dao Cheng Xian - meteoblue",
+  "tLoadMs": 2347,
+  "tIdleMs": 4858,
+  "totalRequests": 79,
+  "rasterImageRequests": [
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://www.meteoblue.com/assets/images/menu/menu-expand.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://www.meteoblue.com/assets/images/menu/menu-collapse.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/picto/24_day.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/bottomLinks/swiss_made.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/mobile_download_icons/app_store_light.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/mobile_download_icons/google_play_light.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/logo/meteoblue_logo_v2.0.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/community.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/searchbar/search.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/svg/fa/light/star-white.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/bottomLinks/icon_help.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/misc/crown.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/svg/fa/solid/cog-light.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/news_2.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/history_climate.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/logo/meteoblue_logo_v2.0_light.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/maps.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/7_day_weather.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/forecast.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/aviation.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/products.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/agriculture.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/bottomLinks/icon_download.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/svg/fa/light/angle-up.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/10_day_weather.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/widgets.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/webcam.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/svg/fa/light/angle-up-light.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/current.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/menu/outdoor_sports.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/svg/fa/solid/user-light.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/searchbar/map.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/svg/fa/regular/check.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/crosslinks/setupthree.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/crosslinks/weathermaps.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/crosslinks/airquality.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/crosslinks/multimodel.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/logo/socialmedia/follow/square-x-twitter.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/logo/socialmedia/follow/linkedin-color.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/logo/socialmedia/follow/facebook-color.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/svg/fa/light/print.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/logo/socialmedia/follow/youtube-color.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/svg+xml",
+      "url": "https://static.meteoblue.com/assets/images/logo/socialmedia/follow/instagram-color.svg"
+    },
+    {
+      "status": 200,
+      "ct": "image/png",
+      "url": "https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/03_iday_simple.png"
+    },
+    {
+      "status": 200,
+      "ct": "image/png",
+      "url": "https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/02_iday_simple.png"
+    },
+    {
+      "status": 200,
+      "ct": "image/png",
+      "url": "https://my.meteoblue.com/images/static/meteoblue_logo/meteoblue_logo-without-slogan_v1.0.png"
+    },
+    {
+      "status": 200,
+      "ct": "image/png",
+      "url": "https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/17_inight_simple.png"
+    },
+    {
+      "status": 200,
+      "ct": "image/png",
+      "url": "https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/13_iday_simple.png"
+    },
+    {
+      "status": 200,
+      "ct": "image/png",
+      "url": "https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/17_iday_simple.png"
+    },
+    {
+      "status": 200,
+      "ct": "image/png",
+      "url": "https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/01_inight_simple.png"
+    },
+    {
+      "status": 200,
+      "ct": "image/png",
+      "url": "https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/02_inight_simple.png"
+    },
+    {
+      "status": 200,
+      "ct": "image/png",
+      "url": "https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/03_inight_simple.png"
+    },
+    {
+      "status": 200,
+      "ct": "image/png",
+      "url": "https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/04_iday_simple.png"
+    }
+  ],
+  "meteogramEndpointRequests": [
+    {
+      "status": 200,
+      "ct": "application/json",
+      "size": 52317
+    }
+  ],
+  "dom": {
+    "title": "Meteogram Dao Cheng Xian - meteoblue",
+    "containerFound": true,
+    "containerChildren": [
+      "DIV.highcharts"
+    ],
+    "canvasCount": 0,
+    "svgCount": 1,
+    "chartSvgInContainer": true,
+    "highchartsGlobal": null
+  }
+}

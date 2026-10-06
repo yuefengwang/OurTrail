@@ -1,0 +1,258 @@
+{
+  "_note": "trimmed sample of my.meteoblue.com/images/meteogram?...format=highcharts response (full: 541KB)",
+  "isMeteogram": true,
+  "disableLegendToggle": true,
+  "title": {
+    "text": "Emeishan",
+    "useHTML": false,
+    "align": "left",
+    "style": {
+      "fontSize": "1.6em",
+      "color": "black"
+    }
+  },
+  "subtitle": {
+    "text": "29.53°N, 103.39°E (1099 m asl)",
+    "style": {
+      "fontSize": "1.2em",
+      "color": "black"
+    },
+    "useHTML": false,
+    "align": "left"
+  },
+  "credits": {
+    "text": "Last update: 2026-10-06 07:23",
+    "position": {
+      "align": "left",
+      "verticalAlign": "bottom",
+      "x": 20
+    },
+    "style": {
+      "fontSize": "1em"
+    }
+  },
+  "caption": {
+    "text": "<span><img src=https://my.meteoblue.com/images/static/meteoblue_logo/meteoblue_logo-without-slogan_v1.0.png height=20 width=120></span>",
+    "useHTML": true,
+    "align": "right",
+    "verticalAlign": "top",
+    "margin": 0,
+    "floating": true,
+    "y": 15
+  },
+  "xAxisKeys": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5"
+  ],
+  "yAxisCount": 5,
+  "series": [
+    {
+      "name": "Temperature colors",
+      "type": "areaspline",
+      "points": 121,
+      "firstPoint": {
+        "x": 1791244800000,
+        "y": 13.69,
+        "name": "2026-10-06 00:00"
+      },
+      "secondPoint": {
+        "x": 1791248400000,
+        "y": 13.67,
+        "name": "2026-10-06 01:00"
+      }
+    },
+    {
+      "name": "Temperature",
+      "type": "scatter",
+      "points": 121,
+      "firstPoint": {
+        "x": 1791244800000,
+        "y": 13.69,
+        "name": "2026-10-06 00:00"
+      },
+      "secondPoint": {
+        "x": 1791248400000,
+        "y": 13.67,
+        "name": "2026-10-06 01:00"
+      }
+    },
+    {
+      "name": "Temperature daily min",
+      "type": "scatter",
+      "points": 6,
+      "firstPoint": {
+        "x": 1791266400000,
+        "y": 13,
+        "name": "2026-10-06 06:00"
+      },
+      "secondPoint": {
+        "x": 1791352800000,
+        "y": 15,
+        "name": "2026-10-07 06:00"
+      }
+    },
+    {
+      "name": "Temperature daily max",
+      "type": "scatter",
+      "points": 5,
+      "firstPoint": {
+        "x": 1791298800000,
+        "y": 21,
+        "name": "2026-10-06 15:00"
+      },
+      "secondPoint": {
+        "x": 1791385200000,
+        "y": 18,
+        "name": "2026-10-07 15:00"
+      }
+    },
+    {
+      "name": "Pictograms",
+      "type": "scatter",
+      "points": 20,
+      "firstPoint": {
+        "x": 1791255600000,
+        "y": 16.130000000000003,
+        "marker": {
+          "symbol": "url(https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/03_inight_simple.png)",
+          "width": 32,
+          "height": 26.666666666666664
+        }
+      },
+      "secondPoint": {
+        "x": 1791277200000,
+        "y": 17.95,
+        "marker": {
+          "symbol": "url(https://my.meteoblue.com/images/static/meteoblue_weather_pictograms/png_6h_1d/03_iday_simple.png)",
+          "width": 32,
+          "height": 26.666666666666664
+        }
+      }
+    },
+    {
+      "name": "Cloud cover",
+      "type": "contour",
+      "points": 4477,
+      "firstPoint": {
+        "x": 1791244800000,
+        "y": 1065,
+        "value": 0,
+        "name": "2026-10-06 00:00",
+        "custom": {
+          "name": "Altitude: -0.5"
+        }
+      },
+      "secondPoint": {
+        "x": 1791248400000,
+        "y": 1065,
+        "value": 0,
+        "name": "2026-10-06 01:00",
+        "custom": {
+          "name": "Altitude: -0.5"
+        }
+      }
+    },
+    {
+      "name": "Ground",
+      "type": "area",
+      "points": 2,
+      "firstPoint": {
+        "x": 1791244800000,
+        "y": 1030
+      },
+      "secondPoint": {
+        "x": 1791676800000,
+        "y": 1030
+      }
+    },
+    {
+      "name": "Precipitation",
+      "type": "column",
+      "points": 121,
+      "firstPoint": {
+        "x": 1791244800000,
+        "y": 0,
+        "name": "2026-10-06 00:00"
+      },
+      "secondPoint": {
+        "x": 1791248400000,
+        "y": 0,
+        "name": "2026-10-06 01:00"
+      }
+    },
+    {
+      "name": "Showers",
+      "type": "column",
+      "points": 121,
+      "firstPoint": {
+        "x": 1791244800000,
+        "y": 0,
+        "name": "2026-10-06 00:00"
+      },
+      "secondPoint": {
+        "x": 1791248400000,
+        "y": 0,
+        "name": "2026-10-06 01:00"
+      }
+    },
+    {
+      "name": "Wind speed",
+      "type": "scatter",
+      "points": 121,
+      "firstPoint": {
+        "x": 1791244800000,
+        "y": 5.9,
+        "name": "2026-10-06 00:00"
+      },
+      "secondPoint": {
+        "x": 1791248400000,
+        "y": 6.7,
+        "name": "2026-10-06 01:00"
+      }
+    },
+    {
+      "name": "Wind gust",
+      "type": "scatter",
+      "points": 121,
+      "firstPoint": {
+        "x": 1791244800000,
+        "y": 10,
+        "name": "2026-10-06 00:00"
+      },
+      "secondPoint": {
+        "x": 1791248400000,
+        "y": 13.19,
+        "name": "2026-10-06 01:00"
+      }
+    },
+    {
+      "name": "Wind direction",
+      "type": "vector",
+      "points": 41,
+      "firstPoint": {
+        "x": 1791244800000,
+        "y": 20.1135,
+        "length": 100,
+        "direction": 244,
+        "name": "2026-10-06 00:00"
+      },
+      "secondPoint": {
+        "x": 1791255600000,
+        "y": 20.1135,
+        "length": 100,
+        "direction": 235,
+        "name": "2026-10-06 03:00"
+      }
+    }
+  ],
+  "colorAxis": {
+    "keys": [
+      "0",
+      "1"
+    ]
+  }
+}
