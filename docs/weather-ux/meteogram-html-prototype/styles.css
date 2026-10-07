@@ -1,0 +1,306 @@
+/* OurTrail Weather Meteogram Prototype · 页面样式
+ * 原则（来自任务书 §21）：专业 / 克制 / 信息密度 / Weather Facts First。
+ * 白底、细线、小字号、无大圆角卡片、无渐变、无阴影堆叠。
+ * 主色只允许森林绿 #163E35（OurTrail token）以极小面积出现：
+ * 品牌字、观景点海拔线、选中高亮、云在脚下底色。
+ */
+
+:root {
+  --ink: #1f2a26;          /* 主文字（近黑的森林调灰） */
+  --mut: #8a8f8a;          /* 次级文字 */
+  --faint: #b3b6b0;        /* 三级文字（工具条提示） */
+  --line: #e4e5df;         /* 分隔线 */
+  --paper: #f5f5f0;        /* OurTrail 纸面 token */
+  --forest: #163e35;       /* OurTrail 森林绿 token —— 唯一品牌色 */
+  --temp: #b5432e;
+  --rain: #4a78b8;
+  --shower: #8fb9df;
+  --wind: #3d8a7f;
+  --gust: #9fc4d8;
+}
+
+* { box-sizing: border-box; }
+
+/* ?debug=1：只看云场 renderer 本体（隐藏页头/读数/图例/页脚） */
+body.debug .hdr,
+body.debug .readout,
+body.debug .legend,
+body.debug .foot { display: none; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: #e9eae5;
+  color: var(--ink);
+  font-family: -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue",
+    "Segoe UI", "Microsoft YaHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum";
+}
+
+.stage {
+  max-width: 470px;
+  margin: 0 auto;
+  padding: 16px 12px 48px;
+}
+
+/* ---------- viewport 工具条（原型仪器，非设计） ---------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--mut);
+  padding: 2px 2px 10px;
+}
+
+.toolbar button {
+  font: inherit;
+  color: var(--mut);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 2px 9px;
+  cursor: pointer;
+}
+
+.toolbar button.active {
+  color: #fff;
+  background: var(--forest);
+  border-color: var(--forest);
+}
+
+.tb-label { letter-spacing: 0.08em; font-size: 10px; }
+
+.tb-hint { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--faint); }
+
+/* ---------- 手机画布 ---------- */
+
+.phone {
+  background: #fff;
+  border: 1px solid var(--line);
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  transition: width 0.25s ease;
+  overflow: hidden;
+}
+
+/* ---------- Header（克制，信息行而非 Hero） ---------- */
+
+.hdr { padding: 12px 12px 8px; }
+
+.hdr-brand {
+  font-size: 8px;
+  letter-spacing: 0.22em;
+  color: var(--forest);
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+
+.hdr-main { display: flex; align-items: flex-end; justify-content: space-between; }
+
+.hdr-place { display: flex; align-items: baseline; gap: 7px; }
+
+.hdr-place h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.elev { font-size: 11px; color: var(--mut); font-variant-numeric: tabular-nums; }
+
+.hdr-now { text-align: right; }
+
+.hdr-range {
+  font-size: 17px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.hdr-summary { font-size: 10px; color: var(--mut); margin-top: 1px; }
+
+.hdr-sub {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+  font-size: 9.5px;
+  color: var(--mut);
+  letter-spacing: 0.02em;
+}
+
+.hdr-sub .dim { color: var(--faint); }
+
+/* ---------- 交互读数条（V2：三级层级，默认提示态） ---------- */
+
+.readout {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #fbfbf8;
+  padding: 8px 12px 9px;
+  /* 提示态与选中态同为三级高度，点选时图表不跳 */
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+.readout .ro-hint { color: var(--faint); font-size: 10.5px; }
+
+/* 主行：时刻 + 温度 + 天相（+ 降水量）——一眼回答「这个时刻什么样」 */
+.ro-primary { display: flex; align-items: baseline; gap: 7px; }
+
+.ro-primary .ro-time {
+  font-weight: 600;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--forest);
+}
+
+.ro-primary .ro-temp {
+  font-weight: 600;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  color: var(--temp);
+}
+
+.ro-primary .ro-cond { font-size: 12px; font-weight: 500; }
+
+.ro-primary .ro-precip {
+  font-size: 11px;
+  color: var(--rain);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 数字突出（墨色），标签次级（灰）——云行与风行共用 */
+.readout .ro-num {
+  color: var(--ink);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.readout .ro-dim { color: var(--mut); }
+
+.ro-cloud { margin-top: 2px; font-size: 10.5px; }
+
+.ro-cloud .ro-arrow { color: var(--faint); margin: 0 6px; }
+
+.ro-cloud .ro-state { font-weight: 600; }
+
+.ro-state.ok { color: var(--forest); }
+.ro-state.in { color: #8a5a12; }
+.ro-state.mid { color: #5b6a75; }
+
+.ro-cloud .ro-dim { color: var(--mut); }
+
+/* 小行：风/湿/能见/体感 —— 辅助事实，最弱一级 */
+.ro-rest { margin-top: 2px; font-size: 9.5px; color: var(--mut); }
+
+/* ---------- 图表 ---------- */
+
+.chart-wrap { padding: 0; }
+
+#chart { display: block; width: 100%; }
+
+#chart text {
+  font-family: inherit;
+  font-feature-settings: "tnum";
+}
+
+#chart .hit { cursor: pointer; }
+
+/* ---------- 图例 ---------- */
+
+.legend {
+  border-top: 1px solid var(--line);
+  padding: 7px 12px 8px;
+  font-size: 8.5px;
+  color: var(--mut);
+  line-height: 1.9;
+}
+
+/* 两行有意排版：图形变量一行，约定解释一行 */
+.legend .lg-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0;
+}
+
+.legend .lg-title {
+  color: #6f746f;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin-right: 2px;
+}
+
+.legend .lg-item { margin-right: 9px; white-space: nowrap; }
+
+.legend .lg-item:last-child { margin-right: 0; }
+
+.legend .sw {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 1px;
+  vertical-align: -1px;
+  margin-right: 3px;
+}
+
+/* 云量「淡→浓」连续灰阶带（与图中五档同色系） */
+.legend .sw-ramp {
+  display: inline-block;
+  width: 34px;
+  height: 9px;
+  border-radius: 1px;
+  vertical-align: -1px;
+  margin-right: 4px;
+  background: linear-gradient(90deg, #eeeeea, #d4d6d0, #b0b2ab, #84867f, #5a5c56);
+  border: 1px solid #d8dad3;
+}
+
+.legend .lg-dim { color: var(--faint); margin-right: 4px; }
+
+.legend .sw-line {
+  display: inline-block;
+  width: 14px;
+  height: 0;
+  vertical-align: 2.5px;
+  margin-right: 3px;
+  border-top: 2px solid;
+}
+
+.legend .sw-dash {
+  display: inline-block;
+  width: 14px;
+  height: 0;
+  vertical-align: 2.5px;
+  margin-right: 3px;
+  border-top: 1.5px dashed var(--forest);
+}
+
+.legend .sw-arrow { color: #5a5f5a; margin-right: 2px; font-size: 9px; }
+
+/* ---------- 页脚 ---------- */
+
+.foot {
+  padding: 6px 12px 8px;
+  border-top: 1px solid var(--line);
+  font-size: 8px;
+  color: #c2c5be;
+  letter-spacing: 0.02em;
+}
+
+.stage-note {
+  max-width: 430px;
+  margin: 14px auto 0;
+  font-size: 10px;
+  color: var(--faint);
+  line-height: 1.7;
+  text-align: center;
+}

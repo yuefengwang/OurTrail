@@ -1,0 +1,46 @@
+<view class="page poc">
+  <view class="stack">
+
+    <view class="card">
+      <view class="poc-hdr">
+        <text class="poc-title">Cloud Field · 小程序 SVG POC</text>
+        <text class="poc-sub">{{name}} · {{metaLine}}</text>
+      </view>
+      <view class="stage">
+        <image class="field-img" src="{{fieldSrc}}" mode="widthFix"/>
+        <image class="sel-img" src="{{selSrc}}" mode="widthFix"/>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="row-label"><text class="lbl">选中时刻（仅 overlay 更新）</text></view>
+      <view class="chips">
+        <view
+          wx:for="{{hourChips}}"
+          wx:key="*this"
+          class="chip {{sel === item ? 'chip-on' : ''}}"
+          hover-class="chip-hover"
+          bindtap="onChip"
+          data-h="{{item}}"
+        >{{item}}时</view>
+      </view>
+
+      <view class="row-label"><text class="lbl">数据集</text></view>
+      <view class="chips">
+        <view class="chip {{ds === 'mock' ? 'chip-on' : ''}}" hover-class="chip-hover" bindtap="onDs" data-ds="mock">Mock</view>
+        <view class="chip {{ds === 'emeishan' ? 'chip-on' : ''}}" hover-class="chip-hover" bindtap="onDs" data-ds="emeishan">峨眉山·冻结</view>
+        <view class="chip {{ds === 'litang' ? 'chip-on' : ''}}" hover-class="chip-hover" bindtap="onDs" data-ds="litang">理塘·冻结</view>
+        <view class="chip {{ds === 'live-emeishan' ? 'chip-on' : ''}}" hover-class="chip-hover" bindtap="onDs" data-ds="live-emeishan">峨眉山·实时</view>
+        <view class="chip {{ds === 'live-litang' ? 'chip-on' : ''}}" hover-class="chip-hover" bindtap="onDs" data-ds="live-litang">理塘·实时</view>
+      </view>
+
+      <view class="readout"><text user-select>{{readout}}</text></view>
+      <view class="perf"><text user-select>{{perf}}</text></view>
+    </view>
+
+    <view class="poc-note">
+      <text>POC 仅验证 Cloud Field renderer 迁移与性能，非生产界面。\n基础场 = 静态 SVG data-URI（&lt;image&gt;）；选中层单独重生成。\n实时抓取需在开发者工具勾选「不校验合法域名」。</text>
+    </view>
+
+  </view>
+</view>

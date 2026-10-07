@@ -1,0 +1,44 @@
+/* Cloud Field SVG POC 页样式：页面骨架用全局 token/类，图表配色沿用已定稿云场色板。 */
+.poc { padding: 16px 12px 32px; }
+
+.poc-hdr { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+.poc-title { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: 0.02em; }
+.poc-sub { font-size: 11px; color: var(--muted); }
+
+.stage { position: relative; width: 100%; }
+.field-img { display: block; width: 100%; }
+.sel-img { position: absolute; left: 0; top: 0; width: 100%; }
+
+.row-label { margin: 12px 0 6px; }
+.lbl { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--surface);
+}
+.chip-on { color: #fff; background: var(--forest); border-color: var(--forest); }
+.chip-hover { opacity: 0.7; }
+
+.readout {
+  margin-top: 12px;
+  padding: 8px 10px;
+  background: var(--paper);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.perf {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.6;
+}
+
+.poc-note { margin-top: 4px; font-size: 10px; color: var(--muted); line-height: 1.7; }

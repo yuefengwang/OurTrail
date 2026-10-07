@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OurTrail Weather · Meteogram 高保真原型</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="stage">
+
+  <!-- viewport 模拟工具条（仅原型用，非设计的一部分） -->
+  <div class="toolbar" id="toolbar">
+    <span class="tb-label">Viewport</span>
+    <button type="button" data-w="375">375</button>
+    <button type="button" data-w="390">390</button>
+    <button type="button" data-w="414">414</button>
+    <button type="button" data-w="0" class="active">满宽</button>
+    <span class="tb-hint" id="tb-w">430 px</span>
+  </div>
+
+  <!-- 手机画布 -->
+  <div class="phone" id="phone">
+
+    <!-- §8 Header：克制，不做 Hero Card -->
+    <header class="hdr">
+      <div class="hdr-brand">OURTRAIL · WEATHER</div>
+      <div class="hdr-main">
+        <div class="hdr-place">
+          <h1 id="hdr-name">格聂</h1>
+          <span class="elev" id="hdr-elev">3,500 m</span>
+        </div>
+        <div class="hdr-now">
+          <div class="hdr-range" id="hdr-range"><!-- 3° / 14° --></div>
+          <div class="hdr-summary" id="hdr-summary"><!-- 多云 · 午后阵雨 --></div>
+        </div>
+      </div>
+      <div class="hdr-sub" id="hdr-sub"><!-- 周二 10-06 · 24 小时展望 · 数据源 · 更新时间 --></div>
+    </header>
+
+    <!-- §18 交互读数条：点按任意小时 → 此处显示该小时全部事实 -->
+    <div class="readout" id="readout"><!-- JS 渲染 --></div>
+
+    <!-- Meteogram：单一 SVG，所有面板共享同一条时间轴 -->
+    <div class="chart-wrap">
+      <svg id="chart" role="img" aria-label="格聂 24 小时天气 Meteogram"></svg>
+    </div>
+
+    <!-- §17 图例 -->
+    <div class="legend" id="legend"><!-- JS 渲染 --></div>
+
+    <footer class="foot">
+      数据 Open-Meteo（模拟）· 视觉验证原型，非生产界面
+    </footer>
+  </div>
+
+  <p class="stage-note">
+    OurTrail Weather Meteogram 高保真 HTML 原型 —— 验证「自绘 SVG meteogram」的视觉结构，
+    为微信小程序 SVG 迁移做设计定稿。参考 meteoblue 信息表达，OurTrail 自己的渲染与设计。
+  </p>
+</div>
+
+<script src="mock-data.js"></script>
+<script src="real-data.js"></script>
+<script src="meteogram.js"></script>
+</body>
+</html>
