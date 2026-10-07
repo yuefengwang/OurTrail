@@ -1,0 +1,297 @@
+// Phase 8 并发 / 一致性套件：node tools/e2e-concurrency-test.js
+//
+// 判定口径（先读这段再读代码）：
+//   · 本套件的一切结论都是 **STUB-BARRIER 层**，不是 REAL CLOUD。
+//     TEST-HARNESS DETERMINISTIC TRANSACTION BARRIER ≠ REAL CLOUD CONCURRENCY PROOF。
+//     真云端并发（REAL_CONCURRENCY）、云读滞后、UI 连点窗口一律记 INCONCLUSIVE 并写明原因（任务书 §17）。
+//   · barrier 默认 OFF；只有本套件显式打开。OFF 分支的作用是**复现桩基座本身的交叠窗口**
+//     （Phase 7 留下的「同 tick 两写均 OK」），好让 ON 分支的结论有对照，不是自证。
+//   · bugCheck 的红是**已定罪缺陷的常驻红测**，计入 bugs 不计入 failed；
+//     它自己变绿说明缺陷被修好了，届时以 DRIFT 报 exit 1，提醒把它转成正式断言——不许静默当通过。
+//   · 不用 sleep 造并发：Promise.all + await 交错本身就是并发窗口；顺序场景则显式标注 ordering。
+//   · 并发场景的两个 actor 必须是**同一个人**：桩把 openid 存在模块级全局（stub-wx-server-sdk.js:6
+//     `state.openid`，getWXContext 直接读它），两个并发请求会互相踩身份。跨身份并发要等真云端那一层，
+//     不在本套件里伪造。
+'use strict'
+const path = require('path')
+const Module = require('module')
+
+const STUB = path.join(__dirname, 'stub-wx-server-sdk.js')
+const origResolve = Module._resolveFilename
+Module._resolveFilename = function (request, ...rest) {
+  if (request === 'wx-server-sdk') return STUB
+  return origResolve.call(this, request, ...rest)
+}
+
+const stub = require('./stub-wx-server-sdk')
+stub.__state.db = stub.__fakeDb()
+const trailApi = require('../cloudfunctions/trailApi/index')
+
+let passed = 0
+let failed = 0
+let inconclusive = 0
+let bugs = 0
+let drift = 0
+const findings = []
+
+function check(name, cond, extra) {
+  if (cond) { passed++; console.log('  ✓ ' + name) }
+  else { failed++; console.error('  ✗ ' + name + (extra ? '（' + String(extra).slice(0, 200) + '）' : '')) }
+}
+/** 已定罪缺陷的常驻红测：stillBroken=true 时记 BUG（不算套件失败），转绿时记 DRIFT（算失败） */
+function bugCheck(id, title, stillBroken, evidence) {
+  if (stillBroken) {
+    bugs++
+    console.error('  ✗ [CONFIRMED BUG ' + id + '] ' + title)
+    findings.push([id, 'BUG（红测常驻）', title])
+  } else {
+    drift++
+    console.error('  ⚠ [DRIFT ' + id + '] 该缺陷探针已转绿——修复已落地，请把它转成正式断言，别让它悄悄消失')
+    findings.push([id, 'DRIFT（疑似已修，需转正）', title])
+  }
+  if (evidence) console.error('      证据：' + String(evidence).slice(0, 240))
+}
+function inc(name, why) {
+  inconclusive++
+  console.log('  ○ [INCONCLUSIVE] ' + name + ' —— ' + why)
+  findings.push(['INC', 'INCONCLUSIVE', name + '：' + why])
+}
+function section(t) { console.log('== ' + t + ' ==') }
+
+const LIN = 'o-lin-owner'
+function as(openid) {
+  const call = (action, extra) => {
+    stub.__state.openid = openid
+    return trailApi.main(Object.assign({ action }, extra))
+  }
+  return {
+    read: request => call('read', { request }),
+    dispatch: (payload, expectedRevision, requestId) => call('dispatch', { payload, expectedRevision, requestId }),
+  }
+}
+const OWNER = as(LIN)
+
+function input(title, description) {
+  return {
+    title, description, organizerIntro: '自动化',
+    startAt: '2027-03-06T08:00:00+08:00', endAt: '2027-03-06T18:00:00+08:00', deadlineAt: '2027-03-05T20:00:00+08:00',
+    acceptingSignups: true, capacity: 12, approvalMode: 'manual', routeId: null,
+    routeSnapshot: { title: '路线', distanceKm: 6, ascentM: 200, points: [{ id: 'pt-1', name: '山门', kind: 'start', coordinates: null }], risks: [] },
+    pickupPoints: [{ id: 'pk-1', name: '东门', meetingAt: '2027-03-06T07:00:00+08:00', address: 'x', coordinates: null }],
+    equipment: ['防滑鞋'], feeNote: 'AA', cancellationNote: '',
+  }
+}
+
+let activityId = ''
+const rev = async () => (await OWNER.read({ kind: 'activity', activityId, perspective: 'organizer' })).data.revision
+const act = async () => (await OWNER.read({ kind: 'activity', activityId, perspective: 'organizer' })).data.view.activity
+/** 一次场景的 14 列账本（任务书 §5）：不许只留 PASS 字样 */
+function ledger(o) {
+  console.log('  ┌ ' + o.id + '  actorA=' + o.actorA + ' actorB=' + o.actorB + '（同一 owner 身份，排除权限层干扰）')
+  console.log('  │ 初始 revision=' + o.initialRevision + '  基座=' + o.barrier + '  ordering=' + o.ordering)
+  console.log('  │ A=' + o.opA + '  B=' + o.opB)
+  console.log('  │ 期望：winner=' + o.expectedWinner + ' loser=' + o.expectedLoser + ' error=' + o.expectedError)
+  console.log('  └ 实测：finalRevision=' + o.finalRevision + '  finalState=' + o.finalState + '  readBack=' + o.readBack + '  loserSideEffects=' + o.loserSideEffects + '  判定=' + o.verdict)
+}
+
+async function setup() {
+  await OWNER.dispatch({ type: 'profile.save', person: { name: '林溪', phone: '00000000001', emergency: { name: '林母', phone: '00000000051' }, medical: '' } })
+  const r = await OWNER.dispatch({ type: 'activity.create', input: input('基线标题', '基线说明') })
+  activityId = r.data.targetIds[0]
+  check('S-00 夹具：draft 活动建档（真实信封）', r.ok === true && !!activityId, r.error)
+}
+
+async function main() {
+  await setup()
+
+  // ============================================================
+  section('S0 基座对照：barrier OFF（复现桩的事务交叠窗口，不是产品结论）')
+  // ============================================================
+  {
+    stub.__setTxnBarrier(false)
+    const R = await rev()
+    const [a, b] = await Promise.all([
+      OWNER.dispatch({ type: 'activity.edit', activityId, input: input('A 的标题', '基线说明') }, R),
+      OWNER.dispatch({ type: 'activity.edit', activityId, input: input('基线标题', 'B 的说明') }, R),
+    ])
+    const finalRev = await rev()
+    const f = await act()
+    const bothOk = a.ok === true && b.ok === true
+    const lostUpdate = (f.title === 'A 的标题' && f.description !== 'B 的说明') || (f.description === 'B 的说明' && f.title !== 'A 的标题')
+    check('S0 两写均返回成功（同 revision、无 CONFLICT）', bothOk, JSON.stringify({ a: a.error, b: b.error }))
+    check('S0 finalRevision 只 +1（两事务都把 meta 写成同一个 R+1，不是 R+2）', finalRev === R + 1, R + '→' + finalRev)
+    check('S0 存在被吞掉的写入（lost update）——这正是必须开 barrier 的理由', lostUpdate, JSON.stringify(f.title) + JSON.stringify(f.description))
+    ledger({ id: 'S0', actorA: 'Owner', actorB: 'Owner', initialRevision: R, barrier: 'OFF', ordering: 'Promise.all（交错）',
+      opA: 'edit title=A', opB: 'edit description=B', expectedWinner: '（基座无隔离，无胜者语义）', expectedLoser: '（同上）',
+      expectedError: 'none', finalRevision: finalRev, finalState: 'title=' + f.title + ' / description=' + f.description,
+      readBack: '权威读 activity/organizer', loserSideEffects: '两写都落了文档，但后者覆盖前者', verdict: 'TEST HARNESS ARTIFACT' })
+  }
+
+  // ============================================================
+  section('S1 同 revision 并发双写：barrier ON（任务书 §6/§8）')
+  // ============================================================
+  {
+    stub.__setTxnBarrier(true)
+    const R = await rev()
+    const [a, b] = await Promise.all([
+      OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S1-A 标题', 'S1 说明') }, R),
+      OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S1-B 标题', 'S1 说明') }, R),
+    ])
+    const oks = [a, b].filter(x => x.ok === true).length
+    const conflicts = [a, b].filter(x => x.ok === false && x.error.code === 'CONFLICT').length
+    const finalRev = await rev()
+    const f = await act()
+    const winnerTitle = a.ok === true ? 'S1-A 标题' : 'S1-B 标题'
+    const loserTitle = a.ok === true ? 'S1-B 标题' : 'S1-A 标题'
+    check('S1 恰好一个成功', oks === 1, 'ok 数=' + oks)
+    check('S1 恰好一个 CONFLICT', conflicts === 1, JSON.stringify({ a: a.error && a.error.code, b: b.error && b.error.code }))
+    check('S1 finalRevision = R+1（无跳跃、无双推进）', finalRev === R + 1, R + '→' + finalRev)
+    check('S1 胜者写入完整存活', f.title === winnerTitle, f.title)
+    // 败者零副作用的可观测面限定在活动对象本身：组织者视图不暴露事件账/收据（selectors.js:426-438），
+    // 所以这里证的是「败者的任何字段值都没留下」，不是「审计账里少一条」。
+    check('S1 败者零副作用：其唯一标记在落库活动对象中完全不存在',
+      JSON.stringify(f).indexOf(loserTitle) === -1, loserTitle)
+    ledger({ id: 'S1', actorA: 'Owner', actorB: 'Owner', initialRevision: R, barrier: 'ON', ordering: 'Promise.all（交错）',
+      opA: 'edit title=S1-A', opB: 'edit title=S1-B', expectedWinner: 'A 或 B（基座不规定谁赢，只规定只有一个赢）',
+      expectedLoser: '另一个', expectedError: 'CONFLICT', finalRevision: finalRev, finalState: 'title=' + f.title,
+      readBack: '权威读两次一致', loserSideEffects: '零（事务整体未提交）', verdict: oks === 1 && conflicts === 1 && finalRev === R + 1 ? 'PASS（STUB-BARRIER）' : 'FAIL' })
+    check('S1 barrier 判据：两写均成功＝CAS/domain BUG（任务书 D1 第 8 条）', !(a.ok && b.ok), 'barrier ON 下仍双胜')
+  }
+
+  // ============================================================
+  section('S2 stale write：串行先后 + 显式旧 revision（任务书 §10）')
+  // ============================================================
+  {
+    const R = await rev()
+    const first = await OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S2 第一次', 'S2 说明') }, R)
+    const stale = await OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S2 用旧 R', 'S2 说明') }, R)
+    const finalRev = await rev()
+    const f = await act()
+    check('S2 新 revision 的写成功', first.ok === true, first.error)
+    check('S2 旧 revision 的写被 CONFLICT 精确拒绝', stale.ok === false && stale.error.code === 'CONFLICT', JSON.stringify(stale.error))
+    check('S2 胜者内容完全保留（旧写没有覆盖新写）', f.title === 'S2 第一次', f.title)
+    check('S2 revision 只推进一次', finalRev === R + 1, R + '→' + finalRev)
+    inc('S2 CONFLICT 的来源层（内存层① vs 事务层②）', '两处文案逐字相同（commands.js:122 与 store.js:115），信封层无法区分；要区分需在测试里注入层标记，属改基座，本轮不做')
+    ledger({ id: 'S2', actorA: 'Owner', actorB: 'Owner', initialRevision: R, barrier: 'ON', ordering: 'sequential（A 提交后 B 才发）',
+      opA: 'edit title=S2 第一次 @R', opB: 'edit title=S2 用旧 R @R（已过期）', expectedWinner: 'A', expectedLoser: 'B',
+      expectedError: 'CONFLICT', finalRevision: finalRev, finalState: 'title=' + f.title, readBack: '权威读一致',
+      loserSideEffects: '零', verdict: 'PASS（STUB-BARRIER）' })
+  }
+
+  // ============================================================
+  section('S3 lost update 定向：两个不同字段的先后写（任务书 §9）')
+  // ============================================================
+  {
+    const R = await rev()
+    const a = await OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S3-A 标题', 'S3-A 说明') }, R)
+    const b = await OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S3-B 标题', 'S3-B 说明') }, R)
+    check('S3 A 成功', a.ok === true, a.error)
+    check('S3 B 因未重读而 CONFLICT（domain 契约里没有 merge 语义，禁止默认 last-write-wins）',
+      b.ok === false && b.error.code === 'CONFLICT', JSON.stringify(b.error))
+    const f = await act()
+    check('S3 A 的两个字段都存活', f.title === 'S3-A 标题' && f.description === 'S3-A 说明', JSON.stringify({ t: f.title, d: f.description }))
+    ledger({ id: 'S3', actorA: 'Owner', actorB: 'Owner', initialRevision: R, barrier: 'ON', ordering: 'sequential（B 沿用同一个 R）',
+      opA: 'edit {title,description} @R', opB: 'edit {title,description} @R（陈旧）', expectedWinner: 'A', expectedLoser: 'B',
+      expectedError: 'CONFLICT', finalRevision: await rev(), finalState: 'title=' + f.title + ' / description=' + f.description,
+      readBack: '权威读一致', loserSideEffects: '零', verdict: 'PASS（STUB-BARRIER）' })
+  }
+
+  // ============================================================
+  section('S4 BUG-C1：编辑器首条命令 expectedRevision=undefined ⇒ CAS 绕过（任务书 R1）')
+  // ============================================================
+  for (const barrier of ['ON', 'OFF']) {
+    stub.__setTxnBarrier(barrier === 'ON')
+    const R = await rev()
+    const tag = '（barrier ' + barrier + '）'
+    // A 的表单是「开页时」装配的：取当前权威态的字段值，此后不再刷新（复刻 editor.js:134-172 不回填 revision）
+    const staleForm = input('S4 标题', (await act()).description)
+    // B 是守规矩的客户端：带自己读到的 R，只改 description
+    const b = await OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S4 标题', 'B 的写入存活' + barrier) }, R)
+    // A 是编辑器的首条命令：expectedRevision 传 undefined（editor.js:580 的真实出线形态）
+    const a = await OWNER.dispatch({ type: 'activity.edit', activityId, input: Object.assign(staleForm, { title: 'A 的标题' + barrier }) }, undefined)
+    const finalRev = await rev()
+    const f = await act()
+    const bothOk = a.ok === true && b.ok === true
+    const bSwallowed = bothOk && f.description !== 'B 的写入存活' + barrier
+    bugCheck('BUG-C1/' + barrier,
+      '编辑器首条命令（不传 expectedRevision）吞掉他人刚落的写入，双方都收到成功 ' + tag,
+      bothOk && bSwallowed,
+      'R=' + R + ' finalRev=' + finalRev + ' A.ok=' + a.ok + ' B.ok=' + b.ok +
+        ' → title=' + JSON.stringify(f.title) + ' description=' + JSON.stringify(f.description))
+    ledger({ id: 'S4/' + barrier, actorA: 'Owner(复刻 editor 首存：revision 缺省)', actorB: 'Owner(正确客户端 @R)', initialRevision: R,
+      barrier: barrier, ordering: 'sequential（B 先提交，A 后发；A 的表单来自 B 提交之前）',
+      opA: 'edit {title:"A 的标题", description:<开页时的旧值>} @undefined', opB: 'edit description="B 的写入存活" @R',
+      expectedWinner: 'B（A 至少必须 CONFLICT，或不得吞掉 B）', expectedLoser: 'A → CONFLICT',
+      expectedError: 'CONFLICT', finalRevision: finalRev, finalState: 'title=' + f.title + ' / description=' + f.description,
+      readBack: '权威读 activity/organizer', loserSideEffects: 'A 未收到任何错误，却把 B 的写入抹了',
+      verdict: bothOk && bSwallowed ? 'BUG（CLIENT CAS BYPASS / lost update）' : '未复现（需复查）' })
+  }
+
+  // ============================================================
+  section('S4c 对照组：同场景但 A 显式带 R（证明病因只有 undefined）')
+  // ============================================================
+  {
+    stub.__setTxnBarrier(true)
+    const R = await rev()
+    const b = await OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S4c 标题', 'B 的说明存活') }, R)
+    const a = await OWNER.dispatch({ type: 'activity.edit', activityId, input: input('A 的标题', '基线说明') }, R)
+    const f = await act()
+    check('S4c B 成功', b.ok === true, b.error)
+    check('S4c A 必须 CONFLICT（显式 R 时同一场景完全成立，说明 BUG-C1 的唯一变量是不传 revision）',
+      a.ok === false && a.error.code === 'CONFLICT', JSON.stringify(a.error))
+    check('S4c B 的写入未被吞（description 仍是 B 的）', f.description === 'B 的说明存活', f.description)
+    check('S4c revision 只 +1（A 未落库）', await rev() === R + 1, R + '→' + await rev())
+    ledger({ id: 'S4c', actorA: 'Owner(显式 R)', actorB: 'Owner(显式 R)', initialRevision: R, barrier: 'ON',
+      ordering: 'sequential（B 先提交）', opA: 'edit @R（已过期）', opB: 'edit @R', expectedWinner: 'B', expectedLoser: 'A',
+      expectedError: 'CONFLICT', finalRevision: await rev(), finalState: 'description=' + f.description,
+      readBack: '权威读', loserSideEffects: '零', verdict: 'PASS（STUB-BARRIER，S4 的对照）' })
+  }
+
+  // ============================================================
+  section('S5 并发重复提交：同 requestId 同内容（任务书 §11/§12）')
+  // ============================================================
+  {
+    stub.__setTxnBarrier(true)
+    const R = await rev()
+    const rid = 'req-concurrent-dup-1'
+    const payload = { type: 'activity.edit', activityId, input: input('S5 同请求号', 'S5 说明') }
+    const [a, b] = await Promise.all([
+      OWNER.dispatch(payload, R, rid),
+      OWNER.dispatch(payload, R, rid),
+    ])
+    const oks = [a, b].filter(x => x.ok === true).length
+    const finalRev = await rev()
+    const replayed = [a, b].filter(x => x.ok === true && x.data && x.data.replayed === true).length
+    check('S5 恰好一次成功、一次 CONFLICT', oks === 1 && [a, b].filter(x => x.ok === false && x.error.code === 'CONFLICT').length === 1,
+      JSON.stringify({ a: a.error && a.error.code, b: b.error && b.error.code }))
+    check('S5 只产生一次 mutation（revision 只 +1）', finalRev === R + 1, R + '→' + finalRev)
+    check('S5 并发重复的失败者拿到的是 CONFLICT，不是顺序路径的 replayed:true（语义差异如实登记）',
+      replayed === 0, 'replayed 数=' + replayed)
+    ledger({ id: 'S5', actorA: 'Owner', actorB: 'Owner（同 requestId、同指纹）', initialRevision: R, barrier: 'ON',
+      ordering: 'Promise.all（同 requestId）', opA: 'edit @R rid=X', opB: 'edit @R rid=X',
+      expectedWinner: 'A 或 B', expectedLoser: '另一个', expectedError: 'CONFLICT（并发）/ replayed:true（顺序）',
+      finalRevision: finalRev, finalState: 'title=' + (await act()).title, readBack: '权威读',
+      loserSideEffects: '零（收据查重读自各自快照，兜底靠事务层②）', verdict: 'PASS（STUB-BARRIER）' })
+    const r3 = await OWNER.dispatch(payload, await rev(), rid)
+    const revAfterReplay = await rev()
+    check('S5 顺序路径对照：同一 requestId 重发 → replayed:true 且 revision 不推进',
+      r3.ok === true && !!(r3.data && r3.data.replayed) && revAfterReplay === finalRev,
+      JSON.stringify({ ok: r3.ok, replayed: r3.data && r3.data.replayed, rev: finalRev + '→' + revAfterReplay, error: r3.error }))
+  }
+
+  // ============================================================
+  section('S6 本套件测不到的（一律 INCONCLUSIVE，不许转 PASS）')
+  // ============================================================
+  inc('REAL_CONCURRENCY（真云端并发 CAS）', '本套件全在桩基座上；真云端的写锁粒度、超时与 MVCC 可见性未建模。要出真结论必须部署后由真实小程序并发打 trailApi（§17）')
+  inc('read-after-write 滞后量级', '桩是同一张内存 Map，写入即刻可见，天然复现不了 20s+ 云读滞后；且 store.js:43 分页查询 vs :62 主键读的两种可见性等级只能在真云端测（§15/§16）')
+  inc('UI 连点窗口：只剩「第二次点击在渲染窗口内是否真发生」一问', 'busy 门是 WXML 绑定态、依赖 setData 重渲染，桩里没有渲染时序。但一致性后果不依赖这一问：同面板两条命令必带同一个 expectedRevision，先后到达走层①、真同时走层②（S1/M2 已实测），所以本问只决定「会不会弹出那句把用户说成他人的误导文案」')
+
+  console.log('')
+  console.log('判定汇总（STUB-BARRIER 层）：')
+  findings.forEach(x => console.log('  [' + x[1] + '] ' + x[0] + ' — ' + x[2]))
+  console.log('')
+  console.log('passed=' + passed + ' failed=' + failed + ' bugs=' + bugs + ' inconclusive=' + inconclusive + ' drift=' + drift)
+  process.exit(failed + drift ? 1 : 0)
+}
+
+main().catch(e => { console.error('套件自身异常：' + (e && e.stack || e)); process.exit(1) })
