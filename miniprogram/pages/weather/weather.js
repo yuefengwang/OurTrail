@@ -605,7 +605,7 @@ Page({
       /* Phase 3 §十二：OI 卡可见时，Agenda 里的 L2「OurTrail 分析」窗口与 OI 重复
          —— 页面级过滤（agenda.js 不动），Agenda 保留天气节奏与天文时刻（L1） */
       agenda: (unified && oiCard) ? agendaView.filter(e => !e.l2) : agendaView,
-    }))
+    }), () => this.probeStageWidth())
   },
 
   /* ---------- Weather V2 Phase 2：统一 Meteogram ---------- */
@@ -638,7 +638,7 @@ Page({
         sunTimes: this.cfSunTimes(result, this.data.date, effHorizon, elevation),
         dateLabel: this.cfDateLabel(this.data.date),
       })
-      this._unified = { key: key, geo: geo, surface: detail, horizon: effHorizon, baseUri: cfToDataUri(base.svg) }
+      this._unified = { key: key, geo: geo, surface: detail, horizon: effHorizon, baseUri: this.cfUri(base.svg) }
     }
     const card = {
       hours: field.times,
@@ -667,7 +667,7 @@ Page({
     const row = u.surface[hour] || {}
     const ov = UMG.renderUnifiedSelection(u.geo, { selectedAbs: hour })
     const st = CFF.inferState(u.geo.sample, hour, u.geo.userAlt, u.geo.covered)
-    card.selSrc = cfToDataUri(ov.svg)
+    card.selSrc = this.cfUri(ov.svg)
     card.hour = hour % 24
     card.absHour = hour
     card.stKey = st.key || ''
@@ -702,11 +702,30 @@ Page({
     this.selectHour(this.data.date, cfPad(h) + ':00')
   },
 
+  /* Visual Fidelity Audit：SVG 构建宽度必须 = 卡片实际内宽（实测 stage = windowWidth − 72：
+     页面水平边距 40 + .card 内边距 32，均为固定 px 随窗口线性）。否则 widthFix 缩放
+     （实测 390→318 = 0.815×）会把 7.5px 轴标签压到 6.1px、云场重采样发糊。 */
   cfWidth() {
     if (!this._cfWidth) {
-      try { this._cfWidth = Math.round(wx.getSystemInfoSync().windowWidth) || 375 } catch (e) { this._cfWidth = 375 }
+      try { this._cfWidth = Math.round(wx.getSystemInfoSync().windowWidth) - 72 } catch (e) { this._cfWidth = 303 }
+      if (this._cfWidth < 240) this._cfWidth = 240
     }
     return this._cfWidth
+  },
+
+  /* supersample 实验（Test C）结论：root 2× 包络（viewBox 1× + scale(g) + width/height 2×）
+     在微信 <image> 上无效——运行时对 SVG 不执行 widthFix 降采样，内容以内在尺寸原样显示
+     （实测 2× 放大裁切）。已回退为 1:1；保留函数体供未来 DPR 策略参考。因子恒为 1。 */
+  cfSS() { return 1 },
+
+  cfUri(svg) {
+    const f = this.cfSS()
+    const m = /^<svg([^>]*)>([\s\S]*)<\/svg>$/.exec(svg)
+    if (!m) return cfToDataUri(svg)
+    const w = +(/width="([\d.]+)"/.exec(m[1]) || [])[1]
+    const h = +(/height="([\d.]+)"/.exec(m[1]) || [])[1]
+    if (!w || !h) return cfToDataUri(svg)
+    return cfToDataUri('<svg xmlns="http://www.w3.org/2000/svg" width="' + (w * f) + '" height="' + (h * f) + '" viewBox="0 0 ' + w + ' ' + h + '"><g transform="scale(' + f + ')">' + m[2] + '</g></svg>')
   },
 
   cfDateLabel(date) {
@@ -782,7 +801,7 @@ Page({
       ? (+nowIso.slice(11, 13)) * 60 + (+nowIso.slice(14, 16))
       : null
     const card = OIP.buildOiCard(this._oiCache.oi, { width: this.cfWidth(), nowMin: nowMin })
-    card.timelineSrc = cfToDataUri(card.timelineSvg)
+    card.timelineSrc = this.cfUri(card.timelineSvg)
     const pick = this.data.chartPick
     if (pick && pick.date === this.data.date) {
       OIP.applySelection(card, parseInt(pick.t, 10))
@@ -831,7 +850,7 @@ Page({
     const card = OIP.buildHorizonOiCard(days.map(function (d) {
       return { dayLabel: d.dayLabel, date: d.date, oi: d.oi }
     }), { width: this.cfWidth(), horizon: horizon })
-    card.timelineSrc = cfToDataUri(card.timelineSvg)
+    card.timelineSrc = this.cfUri(card.timelineSvg)
     const pick = this.data.chartPick
     if (pick) {
       const abs = cfAbsHour(pick.date, pick.t, this.data.date)
@@ -899,6 +918,21 @@ Page({
       this.selectHour(this.data.date, cfPad(hour) + ':00')
     }
     this.ensureMeteogramVisible()
+  },
+
+  /* Visual Fidelity：首次渲染后实测 stage 宽，校准 cfWidth 常数（防 CSS 漂移）；偏差 >1px 重建 */
+  probeStageWidth() {
+    if (typeof wx === 'undefined' || !wx.createSelectorQuery || !this.data.unified) return
+    try {
+      const self = this
+      wx.createSelectorQuery().in(this).select('.cf-stage').boundingClientRect(function (rect) {
+        if (!rect || !rect.width) return
+        const measured = Math.round(rect.width)
+        if (Math.abs(measured - self.cfWidth()) <= 1) return
+        self._cfWidth = measured
+        self.refreshViewCards()
+      }).exec()
+    } catch (e) { /* 静默：校准是增强 */ }
   },
 
   /* 滚动是增强不是功能依赖：任何失败静默 */
