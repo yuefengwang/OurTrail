@@ -1,0 +1,51 @@
+== C0 夹具：真信封建档案 + 建活动 ==
+  ✓ C0 夹具：活动建档、读回 revision 为整数
+  ✓ C0 夹具：权威读 title=基线标题
+== C1 BUG-C1：A=陈旧编辑器实例（真 editor.js），B=守规矩客户端 ==
+  ✓ C1 前置：A 开页无 denied、表单装出的是开页那一刻的服务端值
+  ✓ C1 B 的合法保存成功：R0 → R0+1
+  ✓ C1 B 落库后权威读为 B 的标题与说明
+  ✓ C1 前置：A 的保存真的发出一条命令（不是本地校验提前拦下）
+  ✗ C1-① A 发出的 expectedRevision 是整数（病灶：undefined ⇒ 两层 CAS 同时放弃）（expectedRevision=undefined）
+  ✗ C1-② A 发出的 expectedRevision === 开页读到的 R0（表单与 revision 必须成对；写前现读等于自证通过）（expected=undefined R0=2）
+  ✗ C1-③ A 的陈旧保存被拒绝（ok=false）（{"ok":true,"data":{"targetIds":["activity-muy6o0unrq8n4p"],"replayed":false,"revision":4}}）
+  ✗ C1-④ 拒绝码是 CONFLICT（而非 INVALID_INPUT/WRONG_PHASE 一类夹具错）
+  ✗ C1-⑤ revision 未因 A 的尝试推进（停在 R0+1）（3→4）
+  ✗ C1-⑥ B 的修改仍然存活（title 与 description 都没被陈旧表单覆盖）（"基线标题"）
+  ✗ C1-⑦ 全量文档逐字节零副作用（14 集合 + ot_meta/main 全未变：rows/receipts/events 无一被写）（变化集合=ot_activities,ot_events,ot_notices,ot_receipts）
+  ✗ C1-⑧ 败者内容零残留：A 写的那句话在整库里不存在（快照中出现了 A 的陈旧内容）
+  ✗ C1-⑨ 用户可见反馈：A 收到冲突提示（toast 或页面 failure），不是静默成功（{"toasts":[],"failure":""}）
+  ✓ C1-⑩ A 的 busy 态被释放（拒绝路径不能把按钮永久锁死）
+== C2 正控制：重开编辑器（读到最新 R）后保存必须成功——排除"夹具坏造成 C1 假红" ==
+  ✗ C2 前置：重开后表单跟到 B 的值（基线标题）
+  ✓ C2 新鲜实例保存成功（C1 的红来自陈旧 revision，不来自 schema/权限/夹具）
+  ✗ C2 新鲜实例带整数 expectedRevision
+  ✗ C2 revision 因这次合法写入推进 +1（反空断言：链路真能写）（3→5）
+== C3 同一 revision 生命周期覆盖到的其它命令（delete / copy / publish） ==
+  ✗ C3-delete 破坏性命令 activity.delete 的第一条出口也必须带整数 expectedRevision（{"type":"activity.delete"}）
+  ✓ C3-delete 命令本身被服务端接受（否则下面的"消失"断言是自证）
+  ✓ C3-delete 反空断言：这条命令确实被执行了（活动已从组织者视图消失），不是没发出去
+  ✗ C3-copy 新建态编辑器的 activity.copy 也必须带整数 expectedRevision（{"type":"activity.copy"}）
+  ✗ C3-publish 不报名那条支路（用 this.revision）也必须带整数 expectedRevision（{"type":"activity.publish"}）
+  ✓ C3-publish 反空断言：发布真的把 phase 推到 published
+== C4 客户端漏斗：任何页面缺 revision 都不得触网（把这一类钉死，不止 editor） ==
+  ✗ C4-① api.dispatch 缺 expectedRevision 时本地拒绝（fail closed），而不是发出去让云端猜（没有抛错——缺 revision 仍会被发出）
+  ✗ C4-② 该拒绝零网络调用（一次 callFunction 都没发）（新增调用数=1）
+  ✗ C4-③ dispatchAndSync 同样不得把缺 revision 的命令发出去（{"threw":false,"callsAdded":1}）
+  ✗ C4-④ 拒绝错误带专用 code 与可行动文案（页面要能区分「客户端漏传」与「云端冲突」）（null）
+  ✓ C4-⑤ 反空断言：漏斗门不误伤合法写（带 revision 时恰好一次调用、revision +1）
+== 证据通道与遗留（一律不转 PASS） ==
+  ▶ [P1 · BUG-C1] 客户端 CAS 绕过。本套件＝STUB / CLIENT-LIFECYCLE PROOF：真 editor.js + 真 api.js + 真 index.js/domain/store，仅 DB 为内存桩。REAL CLOUD PROOF 见 Phase 9 报告 §B（真机双编辑器实例）。
+  ▶ [STUB LIMITATION · C1-LOAD] 内存 Map 写入即刻可见 ⇒ 本套件复现不了真云端「ot_meta 主键读新 / 业务集合分页读旧」的可见性差与事务锁粒度。C1 证「客户端没送 revision」这一因，不证云端读滞后这一果。
+  ▶ [P2 · INDEX-122] index.js:122「非整数 expectedRevision ⇒ 缺省成 before.revision」这条支路仍在。C4 漏斗门使任何已发布页面都走不到它，但支路本身没拆：拆它要同步给 A 层 4 套 + B 层 3 套里所有"不传 revision"的调用点补 revision（B 层只能在开发者工具里验）。按任务书 §3「最小范围修复、禁止借机大 refactor」本轮未动，作为待批决策项上报。
+  ▶ [P2 · S4/S4b] e2e-concurrency 的 S4 常驻红测（服务端层缺 revision ⇒ lost update）在客户端修复后依旧成立——它测的就是那条未拆的支路，故保持 bugs 计数、不转绿、不删。
+  ▶ [P2 · RETRY-COVER] CONFLICT 后 dispatchAndSync 会 reload()；editor reload 在存在本机草稿时用草稿覆盖表单，而修复后 reload 会把 revision 回填成最新值 ⇒ 用户按提示「重试」即以最新 R 提交陈旧草稿。本轮未改（改它属冲突合并产品决策），已如实登记。
+
+判定汇总：
+  [P1 · BUG-C1] 客户端 CAS 绕过。本套件＝STUB / CLIENT-LIFECYCLE PROOF：真 editor.js + 真 api.js + 真 index.js/domain/store，仅 DB 为内存桩。REAL CLOUD PROOF 见 Phase 9 报告 §B（真机双编辑器实例）。
+  [STUB LIMITATION · C1-LOAD] 内存 Map 写入即刻可见 ⇒ 本套件复现不了真云端「ot_meta 主键读新 / 业务集合分页读旧」的可见性差与事务锁粒度。C1 证「客户端没送 revision」这一因，不证云端读滞后这一果。
+  [P2 · INDEX-122] index.js:122「非整数 expectedRevision ⇒ 缺省成 before.revision」这条支路仍在。C4 漏斗门使任何已发布页面都走不到它，但支路本身没拆：拆它要同步给 A 层 4 套 + B 层 3 套里所有"不传 revision"的调用点补 revision（B 层只能在开发者工具里验）。按任务书 §3「最小范围修复、禁止借机大 refactor」本轮未动，作为待批决策项上报。
+  [P2 · S4/S4b] e2e-concurrency 的 S4 常驻红测（服务端层缺 revision ⇒ lost update）在客户端修复后依旧成立——它测的就是那条未拆的支路，故保持 bugs 计数、不转绿、不删。
+  [P2 · RETRY-COVER] CONFLICT 后 dispatchAndSync 会 reload()；editor reload 在存在本机草稿时用草稿覆盖表单，而修复后 reload 会把 revision 回填成最新值 ⇒ 用户按提示「重试」即以最新 R 提交陈旧草稿。本轮未改（改它属冲突合并产品决策），已如实登记。
+
+passed=12 failed=19

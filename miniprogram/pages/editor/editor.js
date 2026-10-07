@@ -155,6 +155,10 @@ Page({
             initial = a
             phase = res.view.activity.phase
             this.routeId = res.view.activity.routeId || null
+            // BUG-C1：表单与 revision 必须成对抓取——这条读就是表单的来源。
+            // 只靠写成功后回填会让每个会话的第一条命令 expectedRevision=undefined，
+            // 被 index.js 缺省成服务端当前值 ⇒ 两层 CAS 同时放弃 ⇒ 陈旧表单静默覆盖他人写入。
+            this.revision = res.revision
           }
         }
       }
@@ -174,6 +178,8 @@ Page({
   loadMyActivities() {
     api.read({ kind: 'home', perspective: 'organizer', openedActivityIds: [] }).then(res => {
       if (res.view.kind !== 'home') return
+      // 新建态没有"表单来自哪次读"，这条 home 读就是它的 CAS 基线；已有成对抓取（reload 编辑态）时不覆盖。
+      if (this.revision === undefined && Number.isInteger(res.revision)) this.revision = res.revision
       const mine = res.view.activities.filter(a => a.meta.owner)
       this.setData({
         myActivities: mine.map(a => ({ id: a.id, title: a.title || '未命名草稿' })),
@@ -577,7 +583,11 @@ Page({
       const payload = this.savedId
         ? { type: 'activity.edit', activityId: this.savedId, input }
         : { type: 'activity.create', input }
-      return api.dispatchAndSync(payload, this.revision, this).then(res2 => {
+      // 编辑态用"装配这张表单的那次读"的 revision（成对，才能查出别人在中间写过）；
+      // 新建态的表单来自本机草稿、不来自任何服务端读，用紧挨着这次写的 profile 读即可。
+      // 绝不能用 profile 读的返回值给编辑态现补一个 revision——那等于写前自证通过，CAS 失效。
+      const expectedRevision = this.savedId ? this.revision : res.revision
+      return api.dispatchAndSync(payload, expectedRevision, this).then(res2 => {
         const id = this.savedId || res2.targetIds[0]
         this.savedId = id
         this.revision = res2.revision

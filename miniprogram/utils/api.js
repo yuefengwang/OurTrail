@@ -93,6 +93,14 @@ function getWeatherByPoint(lat, lng, date) {
 
 /** 提交命令；CONFLICT 时自动标记 needRefresh（页面应重读后重试） */
 function dispatch(payload, expectedRevision, requestId) {
+  // BUG-C1 的漏斗门：缺 revision 的命令一旦发出，index.js 会把它缺省成服务端当前值
+  // ⇒ 内存层①与事务层②同时放弃 ⇒ 陈旧表单静默覆盖他人写入。客户端一律 fail closed：
+  // 没读到状态就别写。不置 needRefresh——那不是"别人改了"，是本页没读到。
+  if (!Number.isInteger(expectedRevision)) {
+    const err = new Error('页面数据尚未读取完成，本次修改没有保存。请重新打开该页面后再试。')
+    err.code = 'NO_REVISION'
+    return Promise.reject(err)
+  }
   return call('dispatch', {
     payload,
     expectedRevision,
