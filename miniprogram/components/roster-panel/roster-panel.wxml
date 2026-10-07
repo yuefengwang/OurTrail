@@ -53,16 +53,19 @@
     </view>
     <status-panel wx:else kind="empty" title="没有匹配的参与人" detail="尝试其他姓名或报名状态。" />
 
-    <!-- 批量动作只在有勾选时出现：空选态不留一排死按钮 -->
+    <!-- 批量动作只在有勾选时出现：空选态不留一排死按钮。
+         可用性按所选行的状态×阶段门控（canReview/canPromote/canCancel，render() 计算，与 domain 整批规则同向）：
+         confirmed/混选在选时不给可点的「确认报名」——后端会整批拒的操作 UI 不提供入口（Phase 5 BUG-C）。 -->
     <view wx:if="{{selectedCount}}" class="stack" style="gap:12px;">
       <view class="form-actions">
-        <view class="button secondary {{!busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="confirm" bindtap="{{!busy ? 'onBatch' : ''}}">确认报名</view>
-        <view class="button secondary {{!busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="reject" bindtap="{{!busy ? 'onBatch' : ''}}">拒绝报名</view>
+        <view class="button secondary {{canReview && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="confirm" bindtap="{{canReview && !busy ? 'onBatch' : ''}}">确认报名</view>
+        <view class="button secondary {{canReview && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="reject" bindtap="{{canReview && !busy ? 'onBatch' : ''}}">拒绝报名</view>
       </view>
       <view class="form-actions">
-        <view class="button secondary {{!busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="promote" bindtap="{{!busy ? 'onBatch' : ''}}">递补候补</view>
-        <view class="button secondary {{!busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="cancel" bindtap="{{!busy ? 'onBatch' : ''}}">取消报名</view>
+        <view class="button secondary {{canPromote && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="promote" bindtap="{{canPromote && !busy ? 'onBatch' : ''}}">递补候补</view>
+        <view class="button secondary {{canCancel && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="cancel" bindtap="{{canCancel && !busy ? 'onBatch' : ''}}">取消报名</view>
       </view>
+      <text wx:if="{{!canReview && !canPromote && !canCancel}}" class="small muted">所选人员的当前状态没有可执行的批量操作：审核仅对待确认、递补仅对候补、取消仅对未出行的有效报名。</text>
       <view class="button text {{!busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{!busy ? 'onExportOpen' : ''}}">
         <icon name="download" size="18" color="#163E35" />
         <text>导出选中的 {{selectedCount}} 人</text>

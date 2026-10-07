@@ -117,11 +117,27 @@ Component({
       const selected = {}
       for (const r of rows) if (this.data.selected[r.signupId]) selected[r.signupId] = true
       const selectedCount = Object.keys(selected).length
+      // 批量动作的可用性按「当前勾选的全部行」的状态×阶段计算，与 domain 的整批规则同向
+      // （signup.js：review 仅限全部 pending 且 published；promote 仅限全部 waitlisted 且 published；
+      //  cancel 允许 published|gathering 且全部为 current 未出行——出行事实取行上字段，车辆已发车的
+      //  剩余判定留给后端）。后端仍是最终权威；这里挡住的是「点下去必被整批拒」的入口（Phase 5 BUG-C）。
+      const selRows = Object.keys(this.data.selected)
+        .map(id => this.view.rows.find(r => r.signupId === id))
+        .filter(Boolean)
+      const phase = this.view.activity.phase
+      const allPending = selRows.length > 0 && selRows.every(r => r.status === 'pending')
+      const allWaitlisted = selRows.length > 0 && selRows.every(r => r.status === 'waitlisted')
+      const allCurrentUntravelled = selRows.length > 0 && selRows.every(r =>
+        (r.status === 'pending' || r.status === 'confirmed' || r.status === 'waitlisted')
+        && !r.home && r.departure !== 'joined' && !r.outboundBoarded && !r.returnBoarded)
       this.setData({
         rows,
         selected,
         selectedCount,
         allChecked: rows.length > 0 && rows.every(r => selected[r.signupId]),
+        canReview: allPending && phase === 'published',
+        canPromote: allWaitlisted && phase === 'published',
+        canCancel: allCurrentUntravelled && ['published', 'gathering'].indexOf(phase) !== -1,
         countersLine: '已确认 ' + v.counters.confirmed + ' · 待审核 ' + v.counters.pending + ' · 候补 ' + v.counters.waitlisted + '。仅显示你有权查看的人员。',
       })
     },
