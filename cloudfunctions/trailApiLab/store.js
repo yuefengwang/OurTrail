@@ -107,12 +107,19 @@ function diffCollections(before, after) {
  */
 async function persistState(db, before, after, expectedRevision, nowIso) {
   const { writes, removes } = diffCollections(before, after)
+  // BUG-C3：CAS 冲突的判定不能依赖异常对象穿过 runTransaction 边界。真云端会用 SDK 自己的错误对象
+  // 重新抛出回调里抛出的异常，届时 catch 里的 `e instanceof ConflictError` 判 false，
+  // 冲突被误分类成 STORAGE_UNAVAILABLE ⇒ 客户端不置 needRefresh、不重读，
+  // 而文案还让用户"保留输入后重试"，重试必然再撞同一个陈旧 revision（数据无损，恢复链路坏了）。
+  // 所以冲突记成边界内侧的哨兵，出了边界再由我们自己抛；早退 = 本事务不做任何写入 = 败者零副作用。
+  let conflicted = false
   try {
     await db.runTransaction(async transaction => {
       const metaRes = await transaction.collection('ot_meta').doc('main').get()
       const meta = metaRes && metaRes.data
       if (!meta || meta.revision !== expectedRevision) {
-        throw new ConflictError('安排已更新，本次修改没有保存。请核对最新状态后重新提交。')
+        conflicted = true
+        return
       }
       for (const w of writes) {
         await transaction.collection(w.coll).doc(w._id).set({ data: w.data })
@@ -126,8 +133,11 @@ async function persistState(db, before, after, expectedRevision, nowIso) {
     })
   } catch (e) {
     if (e instanceof ConflictError) throw e
+    // 这条分支现在只兜真正的存储侧故障（SDK 自己的错误、超时、连接问题）——
+    // CAS 冲突已经由 conflicted 哨兵接管，不再依赖类型跨边界存活。
     throw Object.assign(new Error('这次修改没有保存，原安排未改变。请保留输入后重试。'), { code: 'STORAGE_UNAVAILABLE' })
   }
+  if (conflicted) throw new ConflictError('安排已更新，本次修改没有保存。请核对最新状态后重新提交。')
   return { revision: expectedRevision + 1 }
 }
 

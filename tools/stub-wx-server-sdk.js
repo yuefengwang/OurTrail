@@ -3,7 +3,7 @@
 // / orderBy.limit.skip.get / runTransaction。
 'use strict'
 
-const state = { openid: '', db: null }
+const state = { openid: '', db: null, txnBarrier: false, txnErrorWrapping: false }
 
 function fakeDb() {
   const colls = new Map()
@@ -73,7 +73,19 @@ function fakeDb() {
       // MVCC 快照都没有建模，任何结论都必须标 STUB-BARRIER，不得写成 REAL_CONCURRENCY PASS。
       // 默认 OFF：既有 39 个套件的时序行为与改造前逐字节一致。
       // barrier 模拟的是 read → CAS → write → commit 整体落在事务锁内（store.js:111-125）。
-      return state.txnBarrier ? serialize(() => fn(transaction)) : fn(transaction)
+      const run = () => fn(transaction)
+      if (!state.txnErrorWrapping) return state.txnBarrier ? serialize(run) : run()
+      // ── TEST-HARNESS SDK ERROR-TYPE ERASURE（Phase 10A，BUG-C3）────────────────
+      // 建模的是真云端的一个可观测性质：回调里抛出的自定义 Error 穿过 runTransaction 边界后
+      // **不再是同一个异常对象**（`store.js:128` 的 `e instanceof ConflictError` 因此判 false）。
+      // 这是 STUB MODEL，不是 REAL CLOUD 证明——真 SDK 到底是"重新包装我们的错误"还是"抛它自己的
+      // 事务冲突错误"，需要云函数日志才能区分（见 docs/testing/phase10a-c3-trace.md §2）。
+      // 本开关只保证一件事：**冲突语义不得依赖异常类型跨边界存活**。
+      // 默认 OFF：既有 43 个套件的时序与错误类型逐字节不变。
+      const erased = state.txnBarrier ? serialize(run) : run()
+      return erased.catch(err => {
+        throw Object.assign(new Error('transaction failed: ' + (err && err.message || String(err))), { errCode: -500100 })
+      })
     },
     __count: name => coll(name).size,
   }
@@ -89,4 +101,6 @@ module.exports = {
   __fakeDb: fakeDb,
   /** 开关 TEST-HARNESS 事务串行化 barrier；返回切换前的值。默认 OFF，仅 Phase 8 并发套件显式 ON。 */
   __setTxnBarrier: on => { const prev = !!state.txnBarrier; state.txnBarrier = !!on; return prev },
+  /** 开关 TEST-HARNESS SDK 异常类型擦除（Phase 10A / BUG-C3）；默认 OFF。 */
+  __setTxnErrorWrapping: on => { const prev = !!state.txnErrorWrapping; state.txnErrorWrapping = !!on; return prev },
 }

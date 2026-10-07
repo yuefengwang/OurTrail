@@ -25,7 +25,20 @@ Module._resolveFilename = function (request, ...rest) {
 
 const stub = require('./stub-wx-server-sdk')
 stub.__state.db = stub.__fakeDb()
+const store = require('../cloudfunctions/trailApi/store')
 const trailApi = require('../cloudfunctions/trailApi/index')
+
+/** 全量文档快照（S8 的败者零副作用判据用；14 集合 + ot_meta/main） */
+async function snapshot() {
+  const out = {}
+  for (const key of store.ALL_COLLECTIONS) {
+    const name = store.COLLECTIONS[key]
+    out[name] = (await stub.__state.db.collection(name).orderBy('_id', 'asc').limit(1000).skip(0).get()).data
+  }
+  out.ot_meta = { main: (await stub.__state.db.collection('ot_meta').doc('main').get()).data }
+  return JSON.stringify(out
+  )
+}
 
 let passed = 0
 let failed = 0
@@ -277,6 +290,66 @@ async function main() {
     check('S5 顺序路径对照：同一 requestId 重发 → replayed:true 且 revision 不推进',
       r3.ok === true && !!(r3.data && r3.data.replayed) && revAfterReplay === finalRev,
       JSON.stringify({ ok: r3.ok, replayed: r3.data && r3.data.replayed, rev: finalRev + '→' + revAfterReplay, error: r3.error }))
+  }
+
+  // ============================================================
+  section('S8 BUG-C3 回归：SDK 边界丢失异常类型时，事务层②的冲突必须仍是 CONFLICT（Phase 10A）')
+  // ============================================================
+  {
+    // 复现并钉住 Phase 9 的真云端实测（docs/testing/phase9-evidence/real-concurrency-and-read-after-write.md）：
+    // 同一 tick 双发、同一个 revision，胜者 ok，但败者拿到的是 STORAGE_UNAVAILABLE 而不是 CONFLICT。
+    // 根因在 store.js:128 用 `e instanceof ConflictError` 作为"这是我方 CAS 冲突"的唯一判据——
+    // 类型一跨边界丢失就掉进 :129 的基础设施故障分支 ⇒ 客户端不置 needRefresh、不重读，
+    // 而服务端文案还让用户"保留输入后重试"（重试必然再撞同一个陈旧 revision）。数据无损，语义坏了。
+    // 基座维度 = STUB MODEL（stub 的 __setTxnErrorWrapping 建模类型擦除），不是 REAL CLOUD 证明。
+    stub.__setTxnBarrier(true)
+    stub.__setTxnErrorWrapping(true)
+    const R = await rev()
+    const before = await snapshot()
+    const receiptsBefore = JSON.parse(before).ot_receipts.length
+    const [a, b] = await Promise.all([
+      OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S8 类型擦除-A', 'S8 说明') }, R),
+      OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S8 类型擦除-B', 'S8 说明') }, R),
+    ])
+    const codes = [a, b].map(x => x.ok ? 'OK' : (x.error && x.error.code))
+    const loserIdx = codes.indexOf('OK') === 0 ? 1 : 0
+    const winnerIdx = 1 - loserIdx
+    const loser = [a, b][loserIdx], winner = [a, b][winnerIdx]
+    const loserTag = loserIdx === 1 ? 'S8 类型擦除-B' : 'S8 类型擦除-A'
+    const winnerTag = loserIdx === 1 ? 'S8 类型擦除-A' : 'S8 类型擦除-B'
+    check('S8 恰好一个成功', codes.filter(c => c === 'OK').length === 1, JSON.stringify(codes))
+    check('S8 败者必须是 CONFLICT（真云端实测给的是 STORAGE_UNAVAILABLE ⇒ 客户端恢复链路失效）',
+      loser.ok === false && loser.error.code === 'CONFLICT', JSON.stringify(loser.error))
+    const finalRev = await rev()
+    check('S8 revision 只 +1', finalRev === R + 1, R + '→' + finalRev)
+    const f = await act()
+    check('S8 胜者写入存活、败者内容未落库',
+      f.title === winnerTag, JSON.stringify({ got: f.title, want: winnerTag }))
+    const after = await snapshot()
+    check('S8 败者零副作用：其标记在整库快照里不存在', after.indexOf(loserTag) === -1, loserTag)
+    check('S8 receipts 只 +1（败者不留收据）',
+      JSON.parse(after).ot_receipts.length === receiptsBefore + 1,
+      receiptsBefore + '→' + JSON.parse(after).ot_receipts.length)
+    ledger({ id: 'S8', actorA: 'Owner', actorB: 'Owner（同一 owner、同一个 R）', initialRevision: R, barrier: 'ON',
+      ordering: 'Promise.all + SDK 异常类型擦除（STUB MODEL）',
+      opA: 'edit title=S8 类型擦除-A @R', opB: 'edit title=S8 类型擦除-B @R',
+      expectedWinner: 'A 或 B（基座不规定谁赢）', expectedLoser: '另一个 → CONFLICT（不是 STORAGE_UNAVAILABLE）',
+      expectedError: 'CONFLICT', finalRevision: finalRev, finalState: 'title=' + f.title,
+      readBack: '权威读 activity/organizer + 14 集合全量快照', loserSideEffects: '零（内容/收据/逐字节）',
+      verdict: loser.ok === false && loser.error.code === 'CONFLICT' ? 'PASS（STUB-MODEL）' : 'BUG（冲突被分类成基础设施故障）' })
+
+    // 对照：把类型擦除关掉，同一形状必须还是 CONFLICT ⇒ 唯一变量就是那道边界上的类型丢失
+    stub.__setTxnErrorWrapping(false)
+    const R2 = await rev()
+    const [c, d] = await Promise.all([
+      OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S8 对照-C', 'S8 说明') }, R2),
+      OWNER.dispatch({ type: 'activity.edit', activityId, input: input('S8 对照-D', 'S8 说明') }, R2),
+    ])
+    const cCodes = [c, d].map(x => x.ok ? 'OK' : (x.error && x.error.code))
+    check('S8 对照（wrapping OFF）：同样恰好一胜、败者 CONFLICT ⇒ 证明上面那条红的唯一变量是类型擦除',
+      cCodes.filter(x => x === 'OK').length === 1 && cCodes.includes('CONFLICT'), JSON.stringify(cCodes))
+    // 复位：S7/S6 及后续场景都必须在默认（OFF）基座上跑，擦除开关只属于 S8 这一段
+    stub.__setTxnErrorWrapping(false)
   }
 
   // ============================================================

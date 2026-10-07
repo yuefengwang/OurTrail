@@ -73,20 +73,12 @@ async function quiesce() {
 /* ---------- 客户端 wx.cloud → 真云函数 exports.main ---------- */
 const OWNER = 'o-lin-owner'
 const net = { calls: [], dispatches: [] }
-let injectFail = null   // C7 用：注入一封信封，形状取自真云端实测（docs/testing/phase9-evidence/real-concurrency-and-read-after-write.md）
 function bridge() {
   return ({ name, data }) => {
     const rec = { name, data, action: data && data.action }
     net.calls.push(rec)
     if (rec.action === 'dispatch') net.dispatches.push(rec)
     stub.__state.openid = OWNER
-    if (rec.action === 'dispatch' && injectFail) {
-      const injected = injectFail
-      injectFail = null
-      const r = { ok: false, error: injected }
-      rec.result = r
-      return Promise.resolve({ result: r })
-    }
     return trailApi.main(Object.assign({}, data)).then(r => { rec.result = r; return { result: r } })
   }
 }
@@ -372,23 +364,61 @@ async function main() {
       JSON.stringify({ rev: res && res.revision, goodRev, callsAdded: net.calls.length - c2 }))
   }
 
-  /* ================= C7 常驻红测 BUG-C3 ================= */
-  section('C7 常驻红测 BUG-C3：真云端并发败者拿到的是 STORAGE_UNAVAILABLE ⇒ 客户端不自愈（本轮只归档不修）')
+  /* ================= C7 BUG-C3 正式回归（Phase 10A） ================= */
+  section('C7 BUG-C3：真并发（两请求同时基于同一个 R）在 SDK 类型擦除下仍须是 CONFLICT，且客户端必须进入恢复路径')
   {
     await quiesce()
-    // 信封形状来自真云端实测（同一 tick 双写，败者 code=STORAGE_UNAVAILABLE，见 Phase 9 证据文件）。
+    // 必须"同时"才行：顺序的陈旧写在层①（commands.js:122）就被拦成 CONFLICT，压根进不了事务，
+    // 也就碰不到 store.js:128 那道 instanceof——真云端出问题的正是两笔事务重叠的情形
+    //（Phase 9 实测：同一 tick 双发、同一个 revision ⇒ 败者 STORAGE_UNAVAILABLE）。
+    // barrier ON 保证"恰好一胜"，类型擦除 ON 复现 SDK 边界丢类型，整条链从【客户端】观察。
+    stub.__setTxnBarrier(true)
+    stub.__setTxnErrorWrapping(true)
     const R = await rev()
-    const page = { reloadCalls: 0, reload() { page.reloadCalls++; return Promise.resolve() }, triggerEvent: () => {} }
-    injectFail = { code: 'STORAGE_UNAVAILABLE', message: '这次修改没有保存，原安排未改变。请保留输入后重试。' }
-    let err = null
-    await api.dispatchAndSync({ type: 'activity.edit', activityId: ACT, input: input('C7 并发败者', 'C7 并发败者') }, R, page).catch(e => { err = e })
-    check('C7 前置：这封信封确实按失败透给页面（errorText 可见、code 原样）',
-      !!err && err.code === 'STORAGE_UNAVAILABLE' && /没有保存/.test(err.message || ''), JSON.stringify(err && { code: err.code, message: err.message }))
-    bugCheck('BUG-C3',
-      '并发冲突在真云端表现为 STORAGE_UNAVAILABLE，而 api.js 只对 code===CONFLICT 置 needRefresh ⇒ 不重读、不刷新，' +
-      '用户按文案"保留输入后重试"再点仍是同一个陈旧 revision，冲突自恢复链路失效',
-      page.reloadCalls === 0,
-      'reloadCalls=' + page.reloadCalls + '（期望：任何"本次修改未落库"的失败都应驱动一次重读）')
+    const pageA = { reloadCalls: 0, reload() { pageA.reloadCalls++; return Promise.resolve() }, triggerEvent: () => {} }
+    const pageB = { reloadCalls: 0, reload() { pageB.reloadCalls++; return Promise.resolve() }, triggerEvent: () => {} }
+    const uiBefore = ui.toasts.length
+    const pair = await Promise.all([
+      api.dispatchAndSync({ type: 'activity.edit', activityId: ACT, input: input('C7 标题', 'C7-A 的说明') }, R, pageA)
+        .then(r => ({ ok: true, r })).catch(e => ({ ok: false, e })),
+      api.dispatchAndSync({ type: 'activity.edit', activityId: ACT, input: input('C7 标题', 'C7-B 的说明') }, R, pageB)
+        .then(r => ({ ok: true, r })).catch(e => ({ ok: false, e })),
+    ])
+    const losers = pair.filter(x => !x.ok)
+    const winners = pair.filter(x => x.ok)
+    check('C7-① 恰好一个成功（串行化基座下既不许双胜、也不许两个都失败）',
+      winners.length === 1 && losers.length === 1, JSON.stringify(pair.map(x => x.ok ? 'OK' : x.e && x.e.code)))
+    const loserErr = losers[0] && losers[0].e
+    check('C7-② 败者的错误码是 CONFLICT（真云端实测给的是 STORAGE_UNAVAILABLE ⇒ 这一条就是病灶）',
+      !!loserErr && loserErr.code === 'CONFLICT', JSON.stringify(loserErr && { code: loserErr.code, message: loserErr.message }))
+    const loserPage = pair[0] === losers[0] ? pageA : pageB
+    const winnerPage = pair[0] === losers[0] ? pageB : pageA
+    check('C7-③ 败者页面进入恢复路径：needRefresh ⇒ page.reload() 恰好一次',
+      loserPage.reloadCalls === 1, 'reloadCalls=' + loserPage.reloadCalls)
+    check('C7-④ 胜者页面不被误触发重读（恢复路径只属于冲突那一方）',
+      winnerPage.reloadCalls === 0, 'reloadCalls=' + winnerPage.reloadCalls)
+    check('C7-⑤ 用户看到的是"已被他人更新、请重试"，不是"云存储不可用/服务异常"',
+      ui.toasts.slice(uiBefore).some(t => /他人更新|已刷新|重试/.test(t))
+        && !ui.toasts.slice(uiBefore).some(t => /存储|服务异常/.test(t)),
+      JSON.stringify(ui.toasts.slice(uiBefore)))
+    check('C7-⑥ 数据完好：revision 只因胜者推进一次', (await rev()) === R + 1, JSON.stringify({ R, after: await rev() }))
+    const snapC7 = await snapshot()
+    const landedCount = ['C7-A 的说明', 'C7-B 的说明'].filter(t => snapC7.indexOf(t) !== -1).length
+    check('C7-⑦ 败者内容零残留：整库快照里只出现一笔写入的标记',
+      landedCount === 1, '命中标记数=' + landedCount)
+    // 选择性对照：真正的存储故障不能被擦成 CONFLICT。让 runTransaction 自己失败（不是回调里抛的），
+    // 这才是 store.js:129 那条分支应当保留的唯一场景。
+    const db = stub.__state.db
+    const realTxn = db.runTransaction
+    db.runTransaction = () => Promise.reject(Object.assign(new Error('internal error'), { errCode: -500100 }))
+    let infra = null
+    await api.dispatch({ type: 'activity.edit', activityId: ACT, input: input('C7 标题', '存储故障对照') }, await rev())
+      .then(() => {}).catch(e => { infra = e })
+    db.runTransaction = realTxn
+    check('C7-⑧ 选择性：SDK 自身的存储异常仍然报 STORAGE_UNAVAILABLE（修复不得把一切判成冲突）',
+      !!infra && infra.code === 'STORAGE_UNAVAILABLE', JSON.stringify(infra && infra.code))
+    stub.__setTxnErrorWrapping(false)
+    stub.__setTxnBarrier(false)
   }
 
   /* ================= 结论分栏 ================= */
