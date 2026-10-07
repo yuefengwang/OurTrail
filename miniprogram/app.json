@@ -15,7 +15,8 @@
     "pages/weather-hub/weather-hub",
     "pages/anotices/anotices",
     "pages/lab/lab",
-    "pages/privacy/privacy"
+    "pages/privacy/privacy",
+    "pages/cloud-field-poc/cloud-field-poc"
   ],
   "window": {
     "navigationBarBackgroundColor": "#163E35",
@@ -30,10 +31,22 @@
     "selectedColor": "#163E35",
     "backgroundColor": "#FFFFFF",
     "list": [
-      { "pagePath": "pages/home/home", "text": "活动" },
-      { "pagePath": "pages/weather-hub/weather-hub", "text": "天气" },
-      { "pagePath": "pages/notices/notices", "text": "通知" },
-      { "pagePath": "pages/me/me", "text": "我的" }
+      {
+        "pagePath": "pages/home/home",
+        "text": "活动"
+      },
+      {
+        "pagePath": "pages/weather-hub/weather-hub",
+        "text": "天气"
+      },
+      {
+        "pagePath": "pages/notices/notices",
+        "text": "通知"
+      },
+      {
+        "pagePath": "pages/me/me",
+        "text": "我的"
+      }
     ]
   },
   "permission": {
@@ -41,7 +54,10 @@
       "desc": "用于签到时校验是否到达集合点、以及主动上报一次位置"
     }
   },
-  "requiredPrivateInfos": ["getLocation", "chooseLocation"],
+  "requiredPrivateInfos": [
+    "getLocation",
+    "chooseLocation"
+  ],
   "lazyCodeLoading": "requiredComponents",
   "style": "v2",
   "sitemapLocation": "sitemap.json",

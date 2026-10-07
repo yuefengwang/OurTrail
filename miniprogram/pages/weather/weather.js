@@ -21,8 +21,32 @@ const agenda = require('../../utils/agenda')
 const cond = require('../../utils/conditions')
 const RS = require('../../utils/route-schedule')
 const WP = require('../../utils/watch-points')
+// Weather V2：Cloud Field（多高度云量剖面）——适配器 + 冻结 renderer（POC 已验证）
+const CFF = require('../../utils/cloud-field-svg.js')
+const WCFF = require('../../utils/weather-cloud-field.js')
+const UMG = require('../../utils/meteogram-svg.js')
+const OI = require('../../utils/outdoor-intelligence.js')
+const OIP = require('../../utils/oi-presentation.js')
 
 const wpStore = WP.createWatchPoints(draft.wxStorage)
+
+// Cloud Field 卡的纯函数工具（页面局部）
+function cfPad(n) { return (n < 10 ? '0' : '') + n }
+function cfFmtM(v) { return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',') }
+function cfToDataUri(svg) { return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) }
+function cfParseHM(s, fallback) {
+  const m = /^(\d{1,2}):(\d{2})/.exec(s || '')
+  return m ? (+m[1] + +m[2] / 60) : fallback
+}
+
+/* Phase 4：date+time → 相对所选日的绝对小时（窗口外 = -1） */
+function cfAbsHour(date, t, baseDate) {
+  if (!ISO_DATE.test(date) || !ISO_DATE.test(baseDate)) return -1
+  const off = Math.round((Date.parse(date + 'T12:00:00') - Date.parse(baseDate + 'T12:00:00')) / 86400000)
+  const hour = parseInt(t, 10)
+  if (!Number.isFinite(off) || off < 0 || off > 6 || !Number.isFinite(hour)) return -1
+  return off * 24 + hour
+}
 
 // V2 视图：页面主图默认 24h 一屏（11.5px/列 × 24 + 左刻度 52 + 右留白 8 = 336 ≤ 343 内容宽），
 // 48/72h 同列宽横向滚动——同一字号，不为塞下更多小时缩字（实现方案 §关键决定 1）。
@@ -130,6 +154,11 @@ Page({
     agenda: [],
     // 时空天相图（P4）。spaceNodes 只含可信抵达时刻的节点，见 setData 处的注释。
     spaceSeries: [],
+    // Weather V2：统一 Meteogram 卡（additive）。null = 数据缺失/渲染失败 → 回退经典 canvas。
+    unified: null,
+    // Weather V2 OI Phase 2：Outdoor Intelligence 卡（additive，全防御降级）。
+    oiCard: null,
+    oiHorizon: null,
     // sky.js 的「前日有降水」依据。dayCards 是转换后的展示形状，不能直接喂给 sky.js
     spaceDays: [],
     spaceNodes: [],
@@ -410,6 +439,7 @@ Page({
       detailRows: [], chartSeries: [], chartMarks: {}, chartNight: {},
       chartView: [], chartSunBands: {}, chartSunLines: {}, chartNow: null, chartElev: null,
       chartPick: null, hourChip: null, agenda: [],
+      unified: null, oiCard: null, oiHorizon: null,
       condOverall: null, condCards: [], openEvidence: {},
     }
     // 兜底：日期尚未落定时不外呼（云函数会回"日期无效"，那句话对用户没意义）。
@@ -502,6 +532,36 @@ Page({
     // 这里多传一份完整序列是有意的取舍；若日后性能吃紧，可裁到
     // 「spaceNodes 涉及的日期 ±1 天」而不是整条 168 小时。
     const spaceSeries = series
+    /* Weather V2：统一 Meteogram 卡（additive）。内部全防御——数据缺失/渲染异常
+       只降级本卡（unified = null → 回退经典 canvas meteogram），其余不受影响。 */
+    let unified = null
+    try {
+      unified = this.buildUnifiedCard(result, elevation)
+    } catch (e) {
+      console.warn('[weather] unified meteogram 渲染降级：', e)
+      unified = null
+    }
+    /* Weather V2 OI Phase 2：Outdoor Intelligence 卡（additive，独立 try/catch——
+       OI 异常只隐藏本卡，Meteogram 与其余天气功能不受影响）。 */
+    let oiCard = null
+    if (this.data.viewSpan === 24) {
+      try {
+        oiCard = this.buildOiCard(result, point, elevation)
+      } catch (e) {
+        console.warn('[weather] OI 渲染降级：', e)
+        oiCard = null
+      }
+    }
+    /* Phase 4 §17：多日机会卡（48/72h 视图；异常只隐藏本卡） */
+    let oiHorizon = null
+    if (this.data.viewSpan !== 24) {
+      try {
+        oiHorizon = this.buildOiHorizonCard(result, point, elevation)
+      } catch (e) {
+        console.warn('[weather] OI 多日卡降级：', e)
+        oiHorizon = null
+      }
+    }
     // 交给「全图展示」横屏页：那一页在页面栈上方，直接读内存即可，不必把 168 小时序列塞 URL
     // （7 天语义是缓存契约与全屏页依赖，页面主图的 24/48/72h 切窗走 buildViewSeries，不在这里）
     chartStore.set({
@@ -535,10 +595,317 @@ Page({
       chartNow,
       chartElev: Number.isFinite(elevation) ? elevation : null,
       chartView: this.buildViewSeries(chartSeries, this.data.viewSpan),
-      agenda: agendaView,
       spaceSeries,
       spaceDays: result.days || [],
+      unified: unified,
+      oiCard: oiCard,
+      oiHorizon: oiHorizon,
+      /* Phase 3 §十二：OI 卡可见时，Agenda 里的 L2「OurTrail 分析」窗口与 OI 重复
+         —— 页面级过滤（agenda.js 不动），Agenda 保留天气节奏与天文时刻（L1） */
+      agenda: (unified && oiCard) ? agendaView.filter(e => !e.l2) : agendaView,
     }))
+  },
+
+  /* ---------- Weather V2 Phase 2：统一 Meteogram ---------- */
+
+  /* 温度/降水/Cloud Field/风 共用一个 timeScale 与一根 crosshair。
+     数据（cloudLevels）→ 适配器 → 冻结云场数学（复用导出）+ surface 行 → 统一 SVG。
+     几何按 (updatedAt|date|elevation|width) 缓存：切选中时刻只重生成 crosshair
+     overlay（<1ms），绝不重算场与等值带。数据缺失/异常 → null（回退经典 canvas
+     meteogram；48/72h 切窗与全屏继续走经典视图）。 */
+  buildUnifiedCard(result, elevation) {
+    const field = WCFF.buildCloudField(result, { date: this.data.date, userAltitude: elevation })
+    if (!field) return null
+    const detail = (result.series || []).filter(h => h.d === this.data.date)
+    if (detail.length < 24) return null
+    const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' + this.cfWidth()
+    if (!this._unified || this._unified.key !== key) {
+      const geo = UMG.buildUnified({
+        surface: detail, cloudField: field,
+        userAltitude: elevation, width: this.cfWidth(),
+      })
+      const day = (result.days || []).find(x => x.date === this.data.date) || {}
+      const base = UMG.renderUnifiedBase(geo, {
+        sunrise: cfParseHM(day.sunrise, 7.0),
+        sunset: cfParseHM(day.sunset, 19.0),
+        dateLabel: this.cfDateLabel(this.data.date),
+      })
+      this._unified = { key: key, geo: geo, surface: detail, baseUri: cfToDataUri(base.svg) }
+    }
+    const card = {
+      hours: field.times,
+      src: this._unified.baseUri,
+      selSrc: '',
+      hour: null,
+      stKey: '',
+      r1: '', r2: '', r3: '', r4: '',
+      readout: '点下方时刻（或图上任意小时）查看读数。',
+    }
+    const pick = this.data.chartPick
+    if (pick && this.cfDateOffset(pick.date) >= 0) {
+      this.applyUnifiedSelection(cfAbsHour(pick.date, pick.t, this.data.date), card)
+    }
+    return card
+  },
+
+  /* 选中某小时：一根贯穿四变量的 crosshair（overlay）+ 三级读数。
+     Level 1 天气事实（时间/温度/现象/降水）→ Level 2 云场事实（云量/云区）
+     → Level 2.5 OurTrail 解读（你在云中等，色区分）→ Level 1b 风事实。 */
+  /* Phase 4：abs = 绝对小时（0..horizon-1）；未传 abs 时按 24h 语义解析 t */
+  applyUnifiedSelection(t, card, abs) {
+    const hour = Number.isFinite(abs) ? abs : parseInt(t, 10)
+    if (!Number.isFinite(hour) || hour < 0 || hour >= (this._unified ? this._unified.horizon : 24)) return null
+    const u = this._unified
+    const row = u.surface[hour] || {}
+    const ov = UMG.renderUnifiedSelection(u.geo, { selectedAbs: hour })
+    const st = CFF.inferState(u.geo.sample, hour, u.geo.userAlt, u.geo.covered)
+    card.selSrc = cfToDataUri(ov.svg)
+    card.hour = hour % 24
+    card.absHour = hour
+    card.stKey = st.key || ''
+    const dayLabel = (u.geo.days && u.geo.days[Math.floor(hour / 24)]) ? u.geo.days[Math.floor(hour / 24)].label : ''
+    const timePrefix = hour >= 24 ? dayLabel + ' ' : ''
+    const precip = (row.precip || 0) + (row.showers || 0)
+    card.r1 = timePrefix + cfPad(hour % 24) + ':00 · ' + (row.temp == null ? '—' : Math.round(row.temp)) + '° ' + F.weatherPhrase(row.code).label +
+      (precip >= 0.05 ? ' · 降水 ' + (Math.round(precip * 10) / 10) + ' mm' : '')
+    if (st.span) card.r2 = '云量 ' + st.span.peak + '% · 云区 ' + cfFmtM(st.span.lo) + '–' + cfFmtM(st.span.hi) + ' m'
+    else card.r2 = '海拔 ' + cfFmtM(u.geo.userAlt) + ' m 云量 ' + st.cUser + '%'
+    card.r3 = st.key ? st.word : ''
+    card.r4 = '风 ' + (row.wind == null ? '—' : Math.round(row.wind)) + ' km/h · 阵 ' + (row.gust == null ? '—' : Math.round(row.gust)) + (row.windDir != null ? ' · ' + F.windDirText(row.windDir) : '')
+    return card.r1
+  },
+
+  /* 图上选中（selectHour）→ 统一 crosshair 同步（只更 overlay，不重算等值带） */
+  updateUnifiedSel(date, t) {
+    if (!this.data.unified || !this._unified) return
+    const off = this.cfDateOffset(date)
+    if (off < 0) return
+    const abs = off * 24 + parseInt(t, 10)
+    if (!Number.isFinite(abs) || abs >= this._unified.horizon) return
+    const card = Object.assign({}, this.data.unified)
+    if (this.applyUnifiedSelection(t, card, abs) == null) return
+    this.setData({ unified: card })
+  },
+
+  /* 统一卡时刻条 → 与图共用同一选中链路（selectHour 同步两处 UI） */
+  onCloudHour(e) {
+    const h = Number(e.currentTarget.dataset.h)
+    if (!Number.isFinite(h) || h < 0 || h > 23) return
+    this.selectHour(this.data.date, cfPad(h) + ':00')
+  },
+
+  cfWidth() {
+    if (!this._cfWidth) {
+      try { this._cfWidth = Math.round(wx.getSystemInfoSync().windowWidth) || 375 } catch (e) { this._cfWidth = 375 }
+    }
+    return this._cfWidth
+  },
+
+  cfDateLabel(date) {
+    const wd = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][new Date(date + 'T12:00:00').getDay()]
+    return wd + ' · ' + date.replace(/-0?/, '.').replace('-', '.')
+  },
+
+  /* Phase 4：date 相对所选日起的天数偏移（不在窗口内 = -1） */
+  cfDateOffset(date) {
+    if (!ISO_DATE.test(date) || !ISO_DATE.test(this.data.date)) return -1
+    const off = Math.round((Date.parse(date + 'T12:00:00') - Date.parse(this.data.date + 'T12:00:00')) / 86400000)
+    return off >= 0 && off <= 6 ? off : -1
+  },
+
+  /* Phase 4：horizon 卡的日标签（今天/明天/后天 或 周X） */
+  cfDayLabels(startDate, horizon) {
+    const todayIso = new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10)
+    const WD = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+    const out = []
+    const n = Math.ceil(horizon / 24)
+    for (let off = 0; off < n; off++) {
+      const d = new Date(Date.parse(startDate + 'T12:00:00') + off * 86400000).toISOString().slice(0, 10)
+      if (startDate === todayIso) out.push(off === 0 ? '今天' : off === 1 ? '明天' : off === 2 ? '后天' : WD[new Date(d + 'T12:00:00').getDay()])
+      else out.push(WD[new Date(d + 'T12:00:00').getDay()] + (off === 0 ? '（所选日）' : ''))
+    }
+    return out
+  },
+
+  /* Phase 4：逐日日出日落（小时），昼夜分段渐变用 */
+  cfSunTimes(result, startDate, horizon, point) {
+    const coords = (point && point.coordinates) || {}
+    if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) return null
+    const elev = Number.isFinite(this.data.chartElev) ? this.data.chartElev : (result.pointElevation || 0)
+    const out = []
+    const n = Math.ceil(horizon / 24)
+    for (let off = 0; off < n; off++) {
+      try {
+        const d = new Date(Date.parse(startDate + 'T12:00:00') + off * 86400000).toISOString().slice(0, 10)
+        const sun = A.sunTimes(d, coords.lat, coords.lng, elev)
+        out.push({ rise: cfParseHM(sun.sunrise, 7), set: cfParseHM(sun.sunset, 19) })
+      } catch (e) { out.push(null) }
+    }
+    return out
+  },
+
+  /* ---------- Weather V2 OI Phase 2：Opportunity 卡 ---------- */
+
+  /* OI 模型（outdoor-intelligence.js）→ 呈现适配（oi-presentation.js）→ 卡数据。
+     几何/窗口按 (updatedAt|date|elev|coords|width) 缓存；选中只改 selIndex。 */
+  buildOiCard(result, point, elevation) {
+    const field = WCFF.buildCloudField(result, { date: this.data.date, userAltitude: elevation })
+    const coords = point.coordinates || {}
+    const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' +
+      (coords.lat == null ? '' : coords.lat.toFixed(2)) + '|' + this.cfWidth()
+    if (!this._oiCache || this._oiCache.key !== key) {
+      const detail = (result.series || []).filter(h => h.d === this.data.date)
+      if (detail.length < 24) return null
+      const oi = OI.buildOutdoorIntelligence({
+        date: this.data.date,
+        detail: detail,
+        userAltitude: elevation,
+        elevOK: Number.isFinite(elevation),
+        lat: Number.isFinite(coords.lat) ? coords.lat : null,
+        lng: Number.isFinite(coords.lng) ? coords.lng : null,
+        cloudField: field,
+        days: result.days || [],
+      })
+      this._oiCache = { key: key, oi: oi }
+    }
+    /* Phase 3：当天「现在」分钟（跨零点窗口与「进行中」标记用；非当天 = null） */
+    const nowIso = new Date(Date.now() + 8 * 3600000).toISOString()
+    const nowMin = nowIso.slice(0, 10) === this.data.date
+      ? (+nowIso.slice(11, 13)) * 60 + (+nowIso.slice(14, 16))
+      : null
+    const card = OIP.buildOiCard(this._oiCache.oi, { width: this.cfWidth(), nowMin: nowMin })
+    const pick = this.data.chartPick
+    if (pick && pick.date === this.data.date) {
+      OIP.applySelection(card, parseInt(pick.t, 10))
+    }
+    return card
+  },
+
+  /* Phase 4：逐日 OI（horizon 卡的共享缓存） */
+  buildOiDays(result, point, elevation, horizon) {
+    const coords = point.coordinates || {}
+    const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' +
+      (coords.lat == null ? '' : coords.lat.toFixed(2)) + '|h' + horizon
+    if (!this._oiDays || this._oiDays.key !== key) {
+      const labels = this.cfDayLabels(this.data.date, horizon)
+      const days = []
+      const n = Math.ceil(horizon / 24)
+      for (let off = 0; off < n; off++) {
+        const d = new Date(Date.parse(this.data.date + 'T12:00:00') + off * 86400000).toISOString().slice(0, 10)
+        const dayDetail = (result.series || []).filter(h => h.d === d)
+        if (dayDetail.length < 12) continue // 不足半天不构成可解读的一天
+        days.push({
+          date: d,
+          dayLabel: labels[off],
+          oi: OI.buildOutdoorIntelligence({
+            date: d,
+            detail: dayDetail,
+            userAltitude: elevation,
+            elevOK: Number.isFinite(elevation),
+            lat: Number.isFinite(coords.lat) ? coords.lat : null,
+            lng: Number.isFinite(coords.lng) ? coords.lng : null,
+            cloudField: WCFF.buildCloudFieldRange(result, { startDate: d, hours: 24, userAltitude: elevation }),
+            days: result.days || [],
+          }),
+        })
+      }
+      this._oiDays = { key: key, days: days }
+    }
+    return this._oiDays.days
+  },
+
+  /* Phase 4 §17：48/72h OI 卡 —— 按日分组 + absHour 锚点（与多日 Meteogram 同一时间轴） */
+  buildOiHorizonCard(result, point, elevation) {
+    const horizon = this.data.viewSpan === 72 ? 72 : 48
+    const days = this.buildOiDays(result, point, elevation, horizon)
+    if (!days.length) return null
+    const card = OIP.buildHorizonOiCard(days.map(function (d) {
+      return { dayLabel: d.dayLabel, date: d.date, oi: d.oi }
+    }), { width: this.cfWidth(), horizon: horizon })
+    card.timelineSrc = cfToDataUri(card.timelineSvg)
+    const pick = this.data.chartPick
+    if (pick) {
+      const abs = cfAbsHour(pick.date, pick.t, this.data.date)
+      if (abs >= 0) OIP.applyHorizonSelection(card, abs)
+    }
+    return card
+  },
+
+  /* Phase 3 §四：展开折叠的次要时段 */
+  onOiMore() {
+    if (!this.data.oiCard) return
+    this.setData({ 'oiCard.expanded': !this.data.oiCard.expanded })
+  },
+
+  /* Phase 3 §八：多日摘要点某天 → 切日（复用 onDayTap 既有链路） */
+  onOiDay(e) {
+    const date = e.currentTarget.dataset.date
+    if (!date) return
+    this.onDayTap({ currentTarget: { dataset: { date: date } } })
+  },
+
+  /* 图上选中 → OI 卡窗口高亮 + 证据展开（纯 presentation，不进 OI 模型） */
+  updateOiSel(date, t) {
+    if (this.data.viewSpan !== 24) {
+      /* Phase 4：horizon 卡按 absHour 高亮 */
+      if (!this.data.oiHorizon) return
+      const abs = cfAbsHour(date, t, this.data.date)
+      if (abs < 0) return
+      const hcard = Object.assign({}, this.data.oiHorizon)
+      OIP.applyHorizonSelection(hcard, abs)
+      this.setData({ oiHorizon: hcard })
+      return
+    }
+    if (!this.data.oiCard || date !== this.data.date) return
+    const card = Object.assign({}, this.data.oiCard)
+    OIP.applySelection(card, parseInt(t, 10))
+    this.setData({ oiCard: card })
+  },
+
+  /* OI 时间轴/列表点击 → selectHour（Meteogram crosshair + 读数联动闭环） */
+  onOiTap(e) {
+    const h = Number(e.currentTarget.dataset.h)
+    if (!Number.isFinite(h) || h < 0) return
+    if (h >= 24 && this.data.viewSpan !== 24) {
+      /* Phase 4：horizon 卡传绝对小时 → 对应日期 */
+      const d = new Date(Date.parse(this.data.date + 'T12:00:00') + Math.floor(h / 24) * 86400000).toISOString().slice(0, 10)
+      this.selectHour(d, cfPad(h % 24) + ':00')
+      return
+    }
+    if (h > 23) return
+    this.selectHour(this.data.date, cfPad(h) + ':00')
+  },
+
+  /* Evidence「看图 ↗」：focusHour → 统一 selectHour → crosshair（复用全局唯一选中链路，
+     不建第二套 selection state）；统一 Meteogram 不在视口时轻滚动（不跳页顶/不开弹层）。 */
+  onOiEvidence(e) {
+    const hour = Number(e.currentTarget.dataset.hour)
+    if (!Number.isFinite(hour) || hour < 0) return
+    if (hour >= 24 && this.data.viewSpan !== 24) {
+      /* Phase 4：horizon 卡传绝对小时 → 对应日期 */
+      const d = new Date(Date.parse(this.data.date + 'T12:00:00') + Math.floor(hour / 24) * 86400000).toISOString().slice(0, 10)
+      this.selectHour(d, cfPad(hour % 24) + ':00')
+    } else {
+      if (hour > 23) return
+      this.selectHour(this.data.date, cfPad(hour) + ':00')
+    }
+    this.ensureMeteogramVisible()
+  },
+
+  /* 滚动是增强不是功能依赖：任何失败静默 */
+  ensureMeteogramVisible() {
+    if (!this.data.unified) return
+    if (typeof wx === 'undefined' || !wx.createSelectorQuery) return
+    try {
+      wx.createSelectorQuery().in(this).select('.cloud-field-card').boundingClientRect(function (rect) {
+        if (!rect) return
+        let winH = 667
+        try { winH = wx.getSystemInfoSync().windowHeight } catch (e2) {}
+        if (rect.top < 0 || rect.top > winH - 80) {
+          wx.pageScrollTo({ selector: '.cloud-field-card', duration: 300, fail: function () {} })
+        }
+      }).exec()
+    } catch (e) { /* 静默 */ }
   },
 
   // 「现在」标记：仅当日所选日期 = 北京时间今天时给（查看未来日期没有"现在"可言）
@@ -698,6 +1065,27 @@ Page({
       chartPick: null,
       hourChip: null,
     })
+    /* Phase 4：horizon 变化 → 统一 Meteogram / OI 卡按新窗口重建（缓存 key 含 horizon，
+       命中时零成本；数据缺失时各自降级回退，不影响主流程） */
+    this.refreshViewCards()
+  },
+
+  /* Phase 4：按当前 viewSpan 重建统一 Meteogram 与 OI 卡（span 切换专用） */
+  refreshViewCards() {
+    const result = this._lastResult
+    const point = this.getPoints()[this.data.pointIndex]
+    if (!result || !point) return
+    const elevation = Number.isFinite(point.ele) ? point.ele : result.pointElevation
+    let unified = null
+    try { unified = this.buildUnifiedCard(result, point, elevation) } catch (e) { unified = null }
+    let oiCard = null
+    let oiHorizon = null
+    if (this.data.viewSpan === 24) {
+      try { oiCard = this.buildOiCard(result, point, elevation) } catch (e) { oiCard = null }
+    } else {
+      try { oiHorizon = this.buildOiHorizonCard(result, point, elevation) } catch (e) { oiHorizon = null }
+    }
+    this.setData({ unified: unified, oiCard: oiCard, oiHorizon: oiHorizon })
   },
 
   // 关闭小时浮条
@@ -787,6 +1175,10 @@ Page({
         inCloud: list.indexOf('inCloud') !== -1,
       },
     })
+    // Weather V2：统一 Meteogram 与图共享选中时刻（只更 crosshair overlay，不重算等值带）
+    this.updateUnifiedSel(date, t)
+    // Weather V2 OI：机会窗口高亮/证据展开同步（纯 presentation）
+    this.updateOiSel(date, t)
   },
 
   toggleDetail() {

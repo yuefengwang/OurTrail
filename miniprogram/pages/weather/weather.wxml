@@ -70,8 +70,11 @@
       </view>
 
       <!-- meteogram（V2 扩展）：天相窗口标记 / 温度线 / 降水+概率底带 / 三层云量 /
-           云层带剖面（虚线=此点海拔）/ 风 / 天气简字 + 日照轴（黄金/蓝调/暮光/夜） -->
-      <view class="timeline-card">
+           云层带剖面（虚线=此点海拔）/ 风 / 天气简字 + 日照轴（黄金/蓝调/暮光/夜）。
+           Weather V2 Phase 2：cloudLevels 可用且 24h 视图时改用统一 Meteogram
+           （温度/降水/Cloud Field/风 共用一条时间轴与一根 crosshair）；
+           数据缺失或 48/72h 视图回退本经典 canvas 视图。 -->
+      <view wx:if="{{!unified}}" class="timeline-card">
         <meteogram
           series="{{chartView}}"
           marks="{{chartMarks}}"
@@ -106,6 +109,188 @@
           </view>
         </view>
         <text class="chart-caption small muted">「带」= ≥80% 成层低云（模型垂直剖面）· 虚线 = 此点海拔 · 灰底 = 天文暗夜</text>
+      </view>
+
+      <!-- Weather V2 Phase 2：统一 Meteogram（additive）。
+           温度/降水/Cloud Field/风 共用一条时间轴与一根 crosshair；
+           灰阶等值带 = 云量（10–100%），虚线 = 此点海拔，琥珀段 = 此刻处于云中。
+           cloudLevels 缺失或 48/72h 视图时回退经典 canvas meteogram（上方 wx:else）。 -->
+      <view wx:if="{{unified}}" class="card cloud-field-card">
+        <view class="cf-stage">
+          <image class="cf-img" src="{{unified.src}}" mode="widthFix"/>
+          <image wx:if="{{unified.selSrc}}" class="cf-sel" src="{{unified.selSrc}}" mode="widthFix"/>
+        </view>
+        <view class="cf-hours">
+          <view
+            wx:for="{{unified.hours}}"
+            wx:key="*this"
+            class="cf-hour tabular {{unified.hour === item ? 'on' : ''}}"
+            hover-class="button-hover"
+            bindtap="onCloudHour"
+            data-h="{{item}}"
+          >{{item}}</view>
+        </view>
+        <view class="cf-readout">
+          <view class="ro-l1 tabular">{{unified.r1}}</view>
+          <view class="ro-l2 tabular">{{unified.r2}}</view>
+          <view wx:if="{{unified.r3}}" class="ro-l3 {{unified.stKey}}">→ {{unified.r3}}</view>
+          <view class="ro-l4 tabular">{{unified.r4}}</view>
+        </view>
+        <text class="chart-caption small muted">灰阶 = 云量等值带（浅→深 = 10→100%）· 虚线 = 此点海拔 · 琥珀段 = 你在云中 · 箭头 = 风向（吹向）</text>
+      </view>
+
+      <!-- Weather V2 OI Phase 2：今天值得关注（additive）。
+           三级分层：Meteogram = 天气事实；本卡 = OurTrail 解读 + 机会窗口。
+           时间轴与 Meteogram 共用同一 timeScale；点窗口/条目 → selectHour 联动。
+           OI 数据缺失/异常时整卡隐藏（不影响天气主功能）。 -->
+      <view wx:if="{{oiCard}}" class="card oi-card">
+        <view class="oi-hdr">
+          <text class="oi-title">今天值得关注</text>
+          <text class="oi-sub small muted">{{oiCard.astroNote}}</text>
+        </view>
+        <view class="oi-timeline">
+          <image class="oi-tl-img" src="{{oiCard.timelineSrc}}" mode="widthFix"/>
+          <view
+            wx:for="{{oiCard.tapZones}}"
+            wx:key="hour"
+            class="oi-tap"
+            style="left:{{item.left}}%;width:{{item.width}}%"
+            hover-class="button-hover"
+            bindtap="onOiTap"
+            data-hour="{{item.hour}}"
+          />
+        </view>
+        <!-- Phase 4 §17：48/72h 视图 = 按日分组的机会列表（与多日 Meteogram 同一时间轴） -->
+        <block wx:if="{{viewSpan !== 24 && oiHorizon}}">
+          <view class="oi-timeline">
+            <image class="oi-tl-img" src="{{oiHorizon.timelineSrc}}" mode="widthFix"/>
+            <view
+              wx:for="{{oiHorizon.tapZones}}"
+              wx:key="hour"
+              class="oi-tap"
+              style="left:{{item.left}}%;width:{{item.width}}%;top:{{item.track * 36}}%;height:34%"
+              hover-class="button-hover"
+              bindtap="onOiTap"
+              data-h="{{item.hour}}"
+            />
+          </view>
+          <view
+            wx:for="{{oiHorizon.groups}}"
+            wx:for-item="group"
+            wx:for-index="gi"
+            wx:key="label"
+            class="oi-daygroup"
+          >
+            <view class="oi-dayhdr"><text class="oi-dayhdr-text">{{group.label}}</text></view>
+            <view
+              wx:for="{{group.items}}"
+              wx:for-item="item"
+              wx:key="index"
+              class="oi-item {{oiHorizon.selGroup === gi && oiHorizon.selIndex === index ? 'on' : ''}}"
+              hover-class="button-hover"
+              bindtap="onOiTap"
+              data-h="{{item.absHour}}"
+            >
+              <view class="oi-row">
+                <text class="oi-time tabular">{{item.timeText}}</text>
+                <text class="oi-name">{{item.title}}{{item.live ? ' · 进行中' : ''}}</text>
+                <text class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
+              </view>
+              <view class="oi-ev">
+                <text class="small muted">{{item.summaryText}}</text>
+                <text
+                  wx:if="{{item.anchor}}"
+                  class="oi-link"
+                  hover-class="button-hover"
+                  catchtap="onOiEvidence"
+                  data-hour="{{item.anchor.focusAbs}}"
+                >{{oiHorizon.selGroup === gi && oiHorizon.selIndex === index ? '看图 · ' + item.anchor.focusLabel : '看图 ↗'}}</text>
+              </view>
+            </view>
+          </view>
+          <view wx:if="{{oiHorizon.silenceNote}}" class="oi-silence">
+            <text class="small muted">{{oiHorizon.silenceNote}}</text>
+          </view>
+        </block>
+        <!-- 24h 视图：单日机会列表 -->
+        <view class="oi-list" wx:if="{{viewSpan === 24}}">
+          <view
+            wx:for="{{oiCard.items}}"
+            wx:key="index"
+            class="oi-item {{oiCard.selIndex === index ? 'on' : ''}}"
+            hover-class="button-hover"
+            bindtap="onOiTap"
+            data-hour="{{item.hour}}"
+          >
+            <view class="oi-row">
+              <text class="oi-time tabular">{{item.timeText}}</text>
+              <text class="oi-name">{{item.title}}{{item.live ? ' · 进行中' : ''}}</text>
+              <text class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
+            </view>
+            <view class="oi-ev">
+              <text class="small muted">{{item.summaryText}}</text>
+              <text
+                wx:if="{{item.anchor}}"
+                class="oi-link"
+                hover-class="button-hover"
+                catchtap="onOiEvidence"
+                data-hour="{{item.anchor.focusHour}}"
+              >{{oiCard.selIndex === index ? '看图 · ' + item.anchor.focusLabel : '看图 ↗'}}</text>
+            </view>
+          </view>
+          <block wx:if="{{oiCard.expanded}}">
+            <view
+              wx:for="{{oiCard.moreItems}}"
+              wx:key="index"
+              class="oi-item oi-minor {{oiCard.selIndex === oiCard.items.length + index ? 'on' : ''}}"
+              hover-class="button-hover"
+              bindtap="onOiTap"
+              data-hour="{{item.hour}}"
+            >
+              <view class="oi-row">
+                <text class="oi-time tabular">{{item.timeText}}</text>
+                <text class="oi-name">{{item.title}}</text>
+                <text class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
+              </view>
+              <view class="oi-ev">
+                <text class="small muted">{{item.summaryText}}</text>
+                <text
+                  wx:if="{{item.anchor}}"
+                  class="oi-link"
+                  hover-class="button-hover"
+                  catchtap="onOiEvidence"
+                  data-hour="{{item.anchor.focusHour}}"
+                >{{oiCard.selIndex === oiCard.items.length + index ? '看图 · ' + item.anchor.focusLabel : '看图 ↗'}}</text>
+              </view>
+            </view>
+          </block>
+          <view wx:if="{{oiCard.moreCount > 0}}" class="oi-more" hover-class="button-hover" bindtap="onOiMore">
+            <text class="small muted">{{oiCard.expanded ? '收起' : '还有 ' + oiCard.moreCount + ' 个时段'}}</text>
+          </view>
+        </view>
+        <view wx:if="{{viewSpan !== 24 && oiMultiDay}}" class="oi-multi">
+          <view
+            wx:for="{{oiMultiDay}}"
+            wx:key="date"
+            class="oi-day"
+            hover-class="button-hover"
+            bindtap="onOiDay"
+            data-date="{{item.date}}"
+          >
+            <text class="oi-day-label">{{item.label}}</text>
+            <text class="oi-day-main" wx:if="{{item.silence}}">暂无明显天气类机会</text>
+            <view wx:else class="oi-day-main">
+              <text class="oi-day-top">{{item.topTitle}}</text>
+              <text class="oi-day-sub tabular">{{item.topTime}} · 另有 {{item.count - 1}} 个时段</text>
+            </view>
+            <text class="oi-day-count tabular">{{item.silence ? '—' : item.count + ' 项'}}</text>
+          </view>
+          <text class="small muted oi-day-hint">点某天查看当日 24 小时机会详情</text>
+        </view>
+        <view wx:if="{{oiCard.silenceNote}}" class="oi-silence">
+          <text class="small muted">{{oiCard.silenceNote}}</text>
+        </view>
+        <text class="chart-caption small muted">OurTrail 户外解读由当日天气数据推导 · 天文时刻为确定性事件 · 天气窗口标注置信</text>
       </view>
 
       <!-- P4 时空天相图：把 meteogram 的「时间×数值」补成「时间×海拔」，
