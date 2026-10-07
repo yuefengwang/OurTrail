@@ -312,6 +312,19 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
   **门禁**：check.js / check-handlers / smoke 160/0 / fault probes 34/0 / A 层 71/0 / 16 个 scenario 套件 0 失败 / **Permission 矩阵 96/0** / Phase 5 UI-State 回归 74/0/2（无回归）/ GP sanity 187/0/7（INCONCLUSIVE 平台项如实保留）。
 
   **是否需要重新部署 trailApi：不需要**（生产代码零改动——变异已全部还原，git diff 零残留）。
+- 2026-10-07（**Phase 7：Domain Boundary / Negative Matrix——非法输入/非法转换/重复操作/冲突的确定性拒绝矩阵**）：接续 Phase 6（基线 `a98fedb`）。独立 worktree `D:/OurTrail-domain-neg`（分支 `win/domain-negative-matrix`）。生产代码零改动。
+
+  **只读审计**：域错误码全集 17 种（频次实测：INVALID_INPUT×50 / WRONG_PHASE×37 / NOT_FOUND×20 / DRIVER_CONFLICT×9 / UNRESOLVED_DEPARTURE×7 / FORBIDDEN×5 / CONFLICT×4 / CAPACITY×4 / VEHICLE_FULL×3 / UNRESOLVED_SAFETY×3 / GROUP_SCOPE×3 / CONSENT_REQUIRED×3 / DUPLICATE_PERSON×2 / AUTH_REQUIRED×2 / SEAT_TAKEN×1 / REQUEST_REUSED×1 / PICKUP_MISMATCH×1）。拒绝路径六层：入口→schema→权限→幂等/CAS→handler 业务→不变量（invariants 落库前全量复检，失败整体不落 ⇒ 天然零副作用）。既有覆盖缺口实测：PICKUP_MISMATCH / VEHICLE_FULL / GROUP_SCOPE / REQUEST_REUSED / DUPLICATE_PERSON / CAPACITY 边界——六类码全仓测试零覆盖。
+
+  **新套件（tools/e2e-domain-negative-test.js，83 断言 0 失败）**：NOT_FOUND/跨活动归属（三资源 404 + 跨活动 FORBIDDEN，快照对比零副作用）；INVALID_INPUT（空 pickupPoints 的 draft 允许/发布拒、类型错、空数组/重复 id、阶段门优先于字段校验、profile 字段语义）；WRONG_PHASE 阶段×命令（draft submit、published 现场、跳段、active 非迟到 checkin、archived 写入×3）；Capacity 边界（N-1/N/N+1：apply 满员 CAPACITY、waitlist 显式候补 ALLOW、满员 promote CAPACITY、取消释放后 promote→pending→confirm 闭环）；**PICKUP_MISMATCH**（强排不经上车点 + ghost pickupPointId 的 INVALID_INPUT 对照 + 不变量先查 PICKUP 后查 SEAT 的顺序证据）；Cancel 边界（重复取消已 cancelled 行 WRONG_PHASE、合法取消释放名额回环）；幂等（同 requestId 同内容 replayed:true 零变化、异内容 REQUEST_REUSED、DUPLICATE_PERSON 重复报名、重复 confirm WRONG_PHASE）；Seat/Driver（SEAT_TAKEN 原状不变、非法座号 INVALID_INPUT、自身换座合法、VEHICLE_FULL 负容量）；确定性 CAS（过期 revision → CONFLICT、败者零副作用、revision 无跳跃）。
+
+  **变异验证 4/4**（回植→红→还原→绿，git diff 零残留）：M1 移除签到阶段门 → 2 红（active 签到真执行+状态变化）；M2/M2b 容量门**双层串联**实测——移除 promote 层另一层仍拦（纵深防御生效），两层同移 → 满员 promote 成功+后续错乱（2 红）；M3 移除 PICKUP_MISMATCH 不变量 → 3 红（强排成功+对照格错误码变为座号门——顺带钉住判定顺序）；M4 移除请求号复用保护 → 1 红。
+
+  **关键发现**：① **未发现 DATA INTEGRITY / SECURITY BUG**——17 种错误码语义精确，每个拒绝零副作用（快照含 revision 对比）。② draft 阶段 create 允许空 pickupPoints（完整性门在发布时）——契约自洽。③ 拒绝检查顺序：阶段门先于字段校验；不变量先查 PICKUP 后查 SEAT（M3 顺带钉住）。④ 容量门双层串联（promote 层+不变量层）——纵深防御实证。⑤ 重复取消已 cancelled 行命中 travelLocked 文案分支（码对文案不精确——低危 UX 观察，不修）。⑥ **同 tick 双写在桩内两写均 ok**（桩事务交叠窗口）——concurrency 归 Phase 8，本套件改用确定性过期 revision 语义（与 Phase 4 A 层 6 处 CONFLICT 断言互补）。
+
+  **门禁**：check.js / check-handlers / smoke 160/0 / fault probes 34/0 / A 层 71/0 / **Permission 矩阵 96/0（无回归）** / 16 个 scenario 套件 0 失败 / **Domain Negative 83/0** / Phase 5 UI-State 74/0/2（无回归）/ GP sanity 187/0/7（同签名零回归，INCONCLUSIVE 平台项如实保留）。
+
+  **是否需要重新部署 trailApi：不需要**（生产代码零改动——变异已全部还原）。
 - 2026-10-07（**Phase 5：UI Interaction & State-Matrix Test Hardening——BUG-C 修复 + 三反例回归固化**）：接续 Phase 4 的中断任务（前一会话在套件调试中产出不可信内容后中止，套件文件删除重建）。独立 worktree `D:/OurTrail-ui-matrix`（分支 `win/ui-state-hardening`，基线 `8699c33`）。任务书钉死范围：只修 BUG-C + 三反例回归固化 + 文档，禁权限/安全/框架重构。
 
   **BUG-C 实锤与修复（`roster-panel` 批量审核入口无状态门控）**：域规则要求 review 整批全部 pending（`signup.js:117-119`「只有待确认报名可以审核」，一行不符整批拒），但批量四按钮（确认/拒绝/递补/取消）仅受 `busy` 门控——confirmed 或混选在选时可点、弹层真实打开、后端整批拒。修复：`render()` 按「当前勾选的全部行」×阶段计算 `canReview`（全 pending 且 published）/`canPromote`（全 waitlisted 且 published）/`canCancel`（全 current 且未出行且 published|gathering；出行事实取行上字段，车辆腿状态留给后端），wxml 四按钮绑定 `{{canXxx && !busy ? 'onBatch' : ''}}` + disabled class + 无可操作时的解释文案。domain 零改动；后端仍是最终权威。
