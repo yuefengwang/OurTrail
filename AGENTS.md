@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — OurTrail
 
-**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：16 页 / 13 组件目录 / 13 actions / 39 commands / smoke 106）· **Gate recount:** 2026-10-07（38 门禁套件 / 2488 断言 / smoke 167）· **Base commit:** `1acd55e`
+**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-07 Phase 9（**43 门禁套件 / 2724 断言 / smoke 173 / 17 页**）· **Base commit:** `1acd55e`
 
 ---
 
@@ -12,7 +12,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 
 | Layer | Reality |
 |---|---|
-| Client | WeChat mini program, **native WXML/WXSS/CommonJS JS**. **16 pages**, **13 个组件目录**（12 在用 + `privacy-popup` 死代码）+ 位于 `miniprogram/custom-tab-bar/`（不在 components/ 下）, **zero npm dependencies** (no `miniprogram/package.json`, no `miniprogram_npm/`). `libVersion 3.8.12`, appid `wx1227a277a3f2f7ea` |
+| Client | WeChat mini program, **native WXML/WXSS/CommonJS JS**. **17 pages**（`app.json` 实测，2026-10-07 复点：新增 `pages/weather-hub`、`pages/cloud-field-poc`）, **13 个组件目录**（12 在用 + `privacy-popup` 死代码）+ 位于 `miniprogram/custom-tab-bar/`（不在 components/ 下）, **zero npm dependencies** (no `miniprogram/package.json`, no `miniprogram_npm/`). `libVersion 3.8.12`, appid `wx1227a277a3f2f7ea` |
 | Backend | **ONE production** cloud function `trailApi` — 13 `action` values multiplexed through one `ROUTES` map (`index.js:244`), fanning out to **39 command types**. Sole dependency `wx-server-sdk ~3.0.1`. 另有 **`trailApiLab`**：私有预演工具云函数（只给 `pages/lab` 造 `[预演]` 沙盒），与生产**共用同一套 `ot_*` 集合**，不是第二条服务链路 |
 | Store | Document-per-record across **16** `ot_*` collections (14 in the `COLLECTIONS` map, plus `ot_meta` and `weather_cache`). `ot_meta/main` = `{revision, savedAt}`. Writes diff records inside one transaction with a **revision CAS** |
 | Domain | 13 pure JS modules in `cloudfunctions/trailApi/domain/` — all authorization, business rules, and response shapes live here and **the client cannot bypass any of it** |
@@ -38,6 +38,11 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
    「一次真实 tap/input + 它的后果观测」构成**；云侧 fallback 只能证 BUSINESS；门槛不过或通道退化
    记 INCONCLUSIVE（退出码 2），**永远不是 PASS**。判别力由 `tools/e2e-fault-probe-test.js`（34 项变异）
    自证；改测试语义之前先跑它，改完再跑一次。
+6. **`docs/testing/release-coverage-matrix.md`** — 想知道"这条命令/这个错误码到底有没有人测"就先查它，别靠记忆。
+   它是脚本算出来的（39 命令 × 20 错误码 × 21 模块 × 17 页），并写明三条界线：
+   **A 层 PASS ≠ UI PASS ≠ REAL CLOUD PASS；桩 barrier ≠ 真云端并发；门槛不过一律 INCONCLUSIVE。**
+   并发/一致性侧的结论正文在 `docs/testing/concurrency-consistency-model.md`（层①/层② 分工）与
+   `docs/testing/phase9-report-2026-10-07.md`（BUG-C1 收口 + 真云端并发与读滞后实测）。
 
 ---
 
@@ -60,11 +65,14 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── domain/         # 13 pure modules — see .../domain/AGENTS.md
 │   ├── lib/weather.js  # Open-Meteo proxy (duplicates gcjToWgs — keep in sync)
 │   └── smoke-test.js   # 167 cases, needs no wx-server-sdk
-├── tools/             # 46 个零依赖 node 脚本（实测 2026-10-07）：40 个 `*-test.js`
-│                      #   （37 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
+├── tools/             # 51 个零依赖 node 脚本（实测 2026-10-07 Phase 9）：45 个 `*-test.js`
+│                      #   （42 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
 │                      #   `e2e-ui-state-test` / `e2e-golden-path-test`）+ 2 个静态检查 +
 │                      #   `e2e-result.js`（结果账本，被上述 3 套真机层与变异自证 require）+
 │                      #   桩/生成器（gen-map-markers / sync-lab / stub-wx-server-sdk）
+│                      #   ⚠ 改过 cloudfunctions/trailApi/domain/* 或 store.js 后必须跑
+│                      #   `node tools/sync-lab.js`，否则 trailApiLab 副本与生产不一致，
+│                      #   `lab-dryrun` 会红（Phase 8 就留过这条残留，Phase 9 才补跑）。
 ├── docs/product/      # 9 tracked product specs + 3 ADRs — the "why"
 │                      # (天气线三份：P1 徒步天气概览 / P2 天相与meteogram / P3 独立天气模块)
 ├── docs/testing/      # 审计与测试基线：cross-agent-audit.md（裁决记录）/
@@ -130,7 +138,7 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Gated suites — 38, all currently passing（2026-10-07 全量复跑，共 2488 断言）.
+# Gated suites — 43（42 个 tools/*-test.js + smoke-test.js）, all currently passing（2026-10-07 Phase 9 全量复跑，共 2724 断言）.
 # ⚠ 断言总数是**快照**，不是恒定值：
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
 #   那些改动会增删用例（例：smoke 104→106→167、workspace 104→111 均非本轮 P4 改动）。
@@ -162,6 +170,11 @@ node tools/e2e-test.js                         # A 层服务链路 E2E（71 项�
 node tools/e2e-fault-probe-test.js             # 结果模型变异自证（34 项）
 node tools/e2e-permission-test.js              # A 层权限矩阵：角色×命令×阶段×归属（96 断言，8 actor 全走真实信封）
 node tools/e2e-domain-negative-test.js         # A 层 Domain 负矩阵：17 种错误码的确定性拒绝 + 败者零副作用快照对比（83 断言）
+node tools/e2e-concurrency-test.js             # A 层并发基座（Phase 8）：barrier 对照/同 R 双写/陈旧写/幂等（37 断言，bugs=2 常驻红测、4 INCONCLUSIVE，exit 0 可进门禁）
+node tools/e2e-client-cas-test.js              # BUG-C1 回归（Phase 9）：真 editor.js + 真 api.js → 真 trailApi（35 断言，bugs=2：BUG-C2 草稿优先覆盖 / BUG-C3 真云端冲突分类）
+node tools/e2e-interleave-test.js              # §13 多步骤并发交错 C1~C6（67 断言，3 INCONCLUSIVE；两层 CAS + baseRevision 内层 + 阶段门次序）
+node tools/e2e-panel-sync-test.js              # §14 工作台/面板 revision 同步 P1~P6（40 断言；含 api.js 吞掉 reload 的后果判定）
+node tools/e2e-release-gap-test.js             # Release Gate 缺口 G1~G6（51 断言；CONSENT_REQUIRED / GROUP_SCOPE / incident / swap / vehicle.remove / companion.remove）
 node tools/e2e-ui-test.js                      # B 层真模拟器 UI E2E（两维账本，退出码 0/1/2）
 node tools/e2e-ui-state-test.js                # B 层 Phase 5 UI 状态矩阵（需开发者工具 9420，不计入门禁）
 
@@ -196,6 +209,9 @@ node tools/weather-model-test.js && node tools/space-time-test.js && \
 node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
 node tools/e2e-test.js && node tools/e2e-fault-probe-test.js && \
 node tools/e2e-permission-test.js && node tools/e2e-domain-negative-test.js && \
+node tools/e2e-concurrency-test.js && node tools/e2e-client-cas-test.js && \
+node tools/e2e-interleave-test.js && node tools/e2e-panel-sync-test.js && \
+node tools/e2e-release-gap-test.js && \
 node tools/scenario-editor-test.js
 ```
 
