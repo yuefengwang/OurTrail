@@ -14,7 +14,7 @@ const HOURLY = [
   // 三者均为 optional：旧客户端忽略，新客户端对缺失降级（'—'/不画箭头），不得因单字段缺失失败。
   'wind_direction_10m', 'surface_pressure', 'dew_point_2m',
 ]
-const CLOUD_LEVELS = [1000, 975, 950, 925, 900, 850, 800, 700, 600]
+const CLOUD_LEVELS = [1000, 975, 950, 925, 900, 850, 825, 800, 775, 750, 725, 700, 675, 650, 625, 600, 575, 550, 525, 500, 475, 450]
 // 气压层剖面：云量（相对湿度近似）+ 位势高度（换算层海拔 m ASL）
 for (const lv of CLOUD_LEVELS) {
   HOURLY.push('cloud_cover_' + lv + 'hPa', 'geopotential_height_' + lv + 'hPa')
@@ -122,7 +122,7 @@ function cloudBandAt(h, i) {
   }
 }
 
-// 返回 { elevation, days, detail }；detail 为所选日 24h 全量（含 band）。
+// 返回 { elevation, days, detail, series, cloudLevels }；detail 为所选日 24h 全量（含 band）。
 async function fetchForecast(lat, lng, date) {
   const diff = Math.round((Date.parse(date) - Date.parse(cnToday())) / 86400000)
   if (diff > 15) return { tooEarly: true, days: [], detail: [] } // 超出预报范围，临近出发再查
@@ -187,7 +187,51 @@ async function fetchForecast(lat, lng, date) {
   // 完全无关的旧窗口，客户端兜底逻辑又会照单全收，导致上半屏与下半屏讲的不是同一天。
   const start = Math.max(0, times.findIndex(t => t.slice(0, 10) === date))
   const series = times.slice(start, start + 168).map((_, i) => hourView(times, h, start + i))
-  return { elevation: Math.round(j.elevation), days: daysOut, detail, series }
+  // Weather V2 additive：多高度云量剖面（与 series 同窗）。buildCloudLevels 内部
+  // 全防御，任何异常返回 null —— 旧客户端不读它，新客户端按缺失降级。
+  const cloudLevels = buildCloudLevels(times, h, start, series.length)
+  return { elevation: Math.round(j.elevation), days: daysOut, detail, series, cloudLevels }
+}
+
+/* ---------- Cloud Levels：多高度云量剖面（Weather V2 additive，2026-10） ---------- */
+
+// 把气压层云量/位势高度整理成稳定的透出结构。设计约束：
+//   ▸ ADD-ONLY：缺失/异常一律返回 null，绝不影响天气响应主体；
+//   ▸ altitude = geopotential_height（模型真实层高 m ASL，逐时变化，故为数组而非标量）；
+//   ▸ 缺失值以 null 保留在数组内（可识别），整层全空的气压层（山区地下层）整层省略；
+//   ▸ 数值全部整型化（cover 0-100 clamp、海拔取整），NaN 不允许离开本函数。
+function buildCloudLevels(times, h, start, count) {
+  try {
+    if (!times || !times.length || count <= 0) return null
+    const slice = times.slice(start, start + count)
+    if (slice.length < count) return null
+    const levels = []
+    for (const lv of CLOUD_LEVELS) {
+      const ccArr = h['cloud_cover_' + lv + 'hPa'] || []
+      const gtArr = h['geopotential_height_' + lv + 'hPa'] || []
+      const altitudes = []
+      const cloudCover = []
+      let any = false
+      for (let i = 0; i < slice.length; i++) {
+        const gi = start + i
+        const cc = ccArr[gi]
+        const gt = gtArr[gi]
+        if (Number.isFinite(cc) && Number.isFinite(gt)) {
+          altitudes.push(Math.round(gt))
+          cloudCover.push(Math.round(Math.max(0, Math.min(100, cc))))
+          any = true
+        } else {
+          altitudes.push(null)
+          cloudCover.push(null)
+        }
+      }
+      if (any) levels.push({ pressure: lv, altitudes, cloudCover })
+    }
+    if (!levels.length) return null
+    return { times: slice, levels, unit: { altitude: 'm ASL', cloudCover: '%' } }
+  } catch (e) {
+    return null
+  }
 }
 
 // 单小时投影（detail/series 共用）：t 保持 'HH:mm'（既有消费者依赖），d 为所属日期。
@@ -281,6 +325,7 @@ function pointResponse(forecast) {
     days: forecast.days || [],
     detail,
     series: forecast.series || [],
+    cloudLevels: forecast.cloudLevels || null,
     pointElevation: forecast.elevation,
   }
 }
@@ -288,4 +333,5 @@ function pointResponse(forecast) {
 module.exports = {
   fetchForecast, cnToday, gcjToWgs, cloudBandAt, hourView, PROVIDER,
   isWeatherFreeAction, weatherCacheKey, resolvePointQuery, pointResponse,
+  buildCloudLevels,
 }

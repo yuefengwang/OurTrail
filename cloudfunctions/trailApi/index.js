@@ -188,6 +188,8 @@ async function actionGetWeather(payload) {
       days: forecast.days || [],
       detail,
       series: forecast.series || [],
+      // Weather V2 additive：多高度云量剖面（缺失 = null，旧客户端不读，新客户端降级）
+      cloudLevels: forecast.cloudLevels || null,
       pointElevation: forecast.elevation,
     }
   } catch (e) {

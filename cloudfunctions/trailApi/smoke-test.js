@@ -280,6 +280,34 @@ function run() {
   const hClear = { cloud_cover_925hPa: [10], geopotential_height_925hPa: [1000] }
   check('晴空无带', cloudBandAt(hClear, 0) === null)
 
+  console.log('== 12b. 天气：cloudLevels 多高度云量剖面（Weather V2 additive） ==')
+  const { buildCloudLevels } = require('./lib/weather')
+  const times3 = ['2026-10-06T00:00', '2026-10-06T01:00', '2026-10-06T02:00']
+  const hLv = {
+    cloud_cover_950hPa: [10, 20, null], geopotential_height_950hPa: [500, 505, 510],
+    cloud_cover_800hPa: [80, 130, 55], geopotential_height_800hPa: [1900, 1910, 1920],
+    cloud_cover_600hPa: [40, 50, 60], geopotential_height_600hPa: [4300, 4310, 4320],
+  }
+  const cl = buildCloudLevels(times3, hLv, 0, 3)
+  check('正常数据：结构齐全', cl && cl.times.length === 3 && cl.levels.length === 3 && cl.unit.altitude === 'm ASL', cl)
+  check('数值整型化 + 0-100 clamp（130% → 100）',
+    cl.levels[1].cloudCover[1] === 100 && Number.isInteger(cl.levels[1].cloudCover[1]), cl.levels[1])
+  check('缺失小时保留 null（可识别，不污染 0）',
+    cl.levels[0].cloudCover[2] === null && cl.levels[0].altitudes[2] === null, cl.levels[0])
+  const clPartial = buildCloudLevels(times3, {
+    cloud_cover_950hPa: [10, null, null], geopotential_height_950hPa: [500, null, null],
+  }, 0, 3)
+  check('单层部分有效仍保留（any 规则）', clPartial && clPartial.levels.length === 1 && clPartial.levels[0].cloudCover[0] === 10, clPartial)
+  const clEmpty = buildCloudLevels(times3, {}, 0, 3)
+  check('全空 → null（降级信号）', clEmpty === null, clEmpty)
+  const clShort = buildCloudLevels(times3, hLv, 0, 5)
+  check('窗口超出 times → null', clShort === null, clShort)
+  const clNaN = buildCloudLevels(times3, {
+    cloud_cover_800hPa: [NaN, 30, 40], geopotential_height_800hPa: [1900, NaN, 1920],
+  }, 0, 3)
+  check('NaN/Infinity 不离开数据层（转 null）',
+    clNaN.levels[0].cloudCover[0] === null && clNaN.levels[0].altitudes[1] === null, clNaN)
+
   console.log('== 13. 删除草稿 ==')
   r = dispatch(sTrack, LIN, { type: 'activity.create', input: fullActivityInput() })
   check('再建一份草稿用于删除', r.ok, r.error)
