@@ -73,12 +73,20 @@ async function quiesce() {
 /* ---------- 客户端 wx.cloud → 真云函数 exports.main ---------- */
 const OWNER = 'o-lin-owner'
 const net = { calls: [], dispatches: [] }
+let injectFail = null   // C7 用：注入一封信封，形状取自真云端实测（docs/testing/phase9-evidence/real-concurrency-and-read-after-write.md）
 function bridge() {
   return ({ name, data }) => {
     const rec = { name, data, action: data && data.action }
     net.calls.push(rec)
     if (rec.action === 'dispatch') net.dispatches.push(rec)
     stub.__state.openid = OWNER
+    if (rec.action === 'dispatch' && injectFail) {
+      const injected = injectFail
+      injectFail = null
+      const r = { ok: false, error: injected }
+      rec.result = r
+      return Promise.resolve({ result: r })
+    }
     return trailApi.main(Object.assign({}, data)).then(r => { rec.result = r; return { result: r } })
   }
 }
@@ -362,6 +370,25 @@ async function main() {
     check('C4-⑤ 反空断言：漏斗门不误伤合法写（带 revision 时恰好一次调用、revision +1）',
       res && res.revision === goodRev + 1 && net.calls.length === c2 + 1,
       JSON.stringify({ rev: res && res.revision, goodRev, callsAdded: net.calls.length - c2 }))
+  }
+
+  /* ================= C7 常驻红测 BUG-C3 ================= */
+  section('C7 常驻红测 BUG-C3：真云端并发败者拿到的是 STORAGE_UNAVAILABLE ⇒ 客户端不自愈（本轮只归档不修）')
+  {
+    await quiesce()
+    // 信封形状来自真云端实测（同一 tick 双写，败者 code=STORAGE_UNAVAILABLE，见 Phase 9 证据文件）。
+    const R = await rev()
+    const page = { reloadCalls: 0, reload() { page.reloadCalls++; return Promise.resolve() }, triggerEvent: () => {} }
+    injectFail = { code: 'STORAGE_UNAVAILABLE', message: '这次修改没有保存，原安排未改变。请保留输入后重试。' }
+    let err = null
+    await api.dispatchAndSync({ type: 'activity.edit', activityId: ACT, input: input('C7 并发败者', 'C7 并发败者') }, R, page).catch(e => { err = e })
+    check('C7 前置：这封信封确实按失败透给页面（errorText 可见、code 原样）',
+      !!err && err.code === 'STORAGE_UNAVAILABLE' && /没有保存/.test(err.message || ''), JSON.stringify(err && { code: err.code, message: err.message }))
+    bugCheck('BUG-C3',
+      '并发冲突在真云端表现为 STORAGE_UNAVAILABLE，而 api.js 只对 code===CONFLICT 置 needRefresh ⇒ 不重读、不刷新，' +
+      '用户按文案"保留输入后重试"再点仍是同一个陈旧 revision，冲突自恢复链路失效',
+      page.reloadCalls === 0,
+      'reloadCalls=' + page.reloadCalls + '（期望：任何"本次修改未落库"的失败都应驱动一次重读）')
   }
 
   /* ================= 结论分栏 ================= */
