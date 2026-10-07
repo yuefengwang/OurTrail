@@ -473,6 +473,8 @@ Page({
         return
       }
       this._lastResult = Object.assign({ pointId: point.id }, result)
+      const _co = point.coordinates || {}
+      this._oiCoords = { lat: Number.isFinite(_co.lat) ? _co.lat : null, lng: Number.isFinite(_co.lng) ? _co.lng : null }
       this.applyWeather(result, point, reset)
     }).catch(e => this.setData(Object.assign({}, reset, {
       loadingWeather: false, emptyTitle: '天气暂不可用', emptyDetail: api.errorText(e),
@@ -614,23 +616,29 @@ Page({
      overlay（<1ms），绝不重算场与等值带。数据缺失/异常 → null（回退经典 canvas
      meteogram；48/72h 切窗与全屏继续走经典视图）。 */
   buildUnifiedCard(result, elevation) {
-    const field = WCFF.buildCloudField(result, { date: this.data.date, userAltitude: elevation })
+    /* Phase 4：horizon = viewSpan（24 默认；48/72 多日）。detail 为所选日起 horizon 小时切片，
+       cloudField 同窗（buildCloudFieldRange），day header/昼夜分段用逐日 label 与日出日落。 */
+    const horizon = this.data.viewSpan === 48 || this.data.viewSpan === 72 ? this.data.viewSpan : 24
+    const field = WCFF.buildCloudFieldRange(result, { startDate: this.data.date, hours: horizon, userAltitude: elevation })
     if (!field) return null
-    const detail = (result.series || []).filter(h => h.d === this.data.date)
+    const startIdx = (result.series || []).findIndex(h => h.d === this.data.date)
+    if (startIdx < 0) return null
+    const detail = (result.series || []).slice(startIdx, startIdx + horizon)
     if (detail.length < 24) return null
-    const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' + this.cfWidth()
+    const effHorizon = Math.min(horizon, detail.length)
+    const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' + this.cfWidth() + '|h' + effHorizon
     if (!this._unified || this._unified.key !== key) {
       const geo = UMG.buildUnified({
         surface: detail, cloudField: field,
         userAltitude: elevation, width: this.cfWidth(),
+        horizon: effHorizon,
+        dayLabels: this.cfDayLabels(this.data.date, effHorizon),
       })
-      const day = (result.days || []).find(x => x.date === this.data.date) || {}
       const base = UMG.renderUnifiedBase(geo, {
-        sunrise: cfParseHM(day.sunrise, 7.0),
-        sunset: cfParseHM(day.sunset, 19.0),
+        sunTimes: this.cfSunTimes(result, this.data.date, effHorizon, elevation),
         dateLabel: this.cfDateLabel(this.data.date),
       })
-      this._unified = { key: key, geo: geo, surface: detail, baseUri: cfToDataUri(base.svg) }
+      this._unified = { key: key, geo: geo, surface: detail, horizon: effHorizon, baseUri: cfToDataUri(base.svg) }
     }
     const card = {
       hours: field.times,
@@ -728,10 +736,10 @@ Page({
   },
 
   /* Phase 4：逐日日出日落（小时），昼夜分段渐变用 */
-  cfSunTimes(result, startDate, horizon, point) {
-    const coords = (point && point.coordinates) || {}
+  cfSunTimes(result, startDate, horizon, elevation) {
+    const coords = this._oiCoords || {}
     if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) return null
-    const elev = Number.isFinite(this.data.chartElev) ? this.data.chartElev : (result.pointElevation || 0)
+    const elev = Number.isFinite(elevation) ? elevation : (result.pointElevation || 0)
     const out = []
     const n = Math.ceil(horizon / 24)
     for (let off = 0; off < n; off++) {
@@ -774,6 +782,7 @@ Page({
       ? (+nowIso.slice(11, 13)) * 60 + (+nowIso.slice(14, 16))
       : null
     const card = OIP.buildOiCard(this._oiCache.oi, { width: this.cfWidth(), nowMin: nowMin })
+    card.timelineSrc = cfToDataUri(card.timelineSvg)
     const pick = this.data.chartPick
     if (pick && pick.date === this.data.date) {
       OIP.applySelection(card, parseInt(pick.t, 10))
@@ -1075,9 +1084,11 @@ Page({
     const result = this._lastResult
     const point = this.getPoints()[this.data.pointIndex]
     if (!result || !point) return
+    const _co = point.coordinates || {}
+    this._oiCoords = { lat: Number.isFinite(_co.lat) ? _co.lat : null, lng: Number.isFinite(_co.lng) ? _co.lng : null }
     const elevation = Number.isFinite(point.ele) ? point.ele : result.pointElevation
     let unified = null
-    try { unified = this.buildUnifiedCard(result, point, elevation) } catch (e) { unified = null }
+    try { unified = this.buildUnifiedCard(result, elevation) } catch (e) { unified = null }
     let oiCard = null
     let oiHorizon = null
     if (this.data.viewSpan === 24) {
