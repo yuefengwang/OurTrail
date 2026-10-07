@@ -74,3 +74,18 @@ Before: baseline/chengdu-24h-375px.png、baseline/litang-48h-375px.png（深青�
 After: iter-1-chengdu-24h-375px.png、iter-1-litang-48h-375px.png（柱明显减重变窄，「何时下雨」仍一眼可读，POP 带未被误伤）
 Decision: KEEP / Reason: 达到变体 A 预期——降水回到功能指示位不抢主角；无新问题；check.js + check-handlers + meteogram-svg-test 25/0 全绿。
 备注: 按 plan §4.1 A/B 各做一轮再比选——本条是候选 A，Iteration 2 做候选 B 后一并比选定稿。
+
+## Iteration 2 — P0-1 降水柱 · 变体 B
+
+Problem: 变体 A 已减重但仍是静态权重——需要验证「常态退为底纹、选中才高亮」是否比恒定中等权重更符合层级目标。
+Hypothesis: 按 plan §4.1 变体 B —— 柱宽再窄（0.2635 → 0.20 列宽）+ 基础层所有柱退为底纹（fill-opacity 0.3），选中小时的柱在 crosshair 选中层以全不透明重绘高亮；「何时下雨」由底纹给出，「此刻多大」由选中高亮给出。
+范围: 仅 `meteogram-svg.js` 基础层柱 opacity/宽度 + 选中层新增选中柱重绘；数据/色相/POP 带/测试不动。
+对照: 同机位 chengdu-24h + litang-48h，与 Iteration 1（候选 A）+ 原型三方比选。
+
+### Iteration 2 — Change / Before / After / Decision
+
+Change: 基础层柱 fill-opacity 0.55 → 0.30、柱宽 0.2635 → 0.20；选中层新增选中小时柱全不透明重绘。
+Before: iter-1-*.png（变体 A）
+After: iter-2-chengdu-24h-375px.png、iter-2-litang-48h-375px.png（柱成苍白底纹）
+Decision: REJECT / Reason: 默认态（未选中）下柱太弱——成都空图日「何时下雨」不再一眼可辨；理塘 48h 里 POP 底带反而比柱更抢眼，层级倒挂。spec §4.1 目标「一眼看出何时下雨、多大」变体 B 不达标。**变体 A 胜出，P0-1 定稿为 Iteration 1 状态。**
+回滚: `git checkout -- miniprogram/utils/meteogram-svg.js`（本轮未提交改动，回到 70a8258 = 变体 A）
