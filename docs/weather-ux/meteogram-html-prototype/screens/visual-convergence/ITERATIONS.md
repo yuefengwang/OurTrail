@@ -59,3 +59,18 @@ Problem: 基线留档
 Before: baseline/（13 张：litang-{24,48,72} + litang-24-sel16 + litang-72-414 + emeishan-{24,48,72} + emeishan-24-sel6 + chengdu-{24,48,72} + chengdu-24-390）
 Decision: KEEP（存档）
 Reason: 后续每轮的对照物
+
+## Iteration 1 — P0-1 降水柱 · 变体 A
+
+Problem: 深青双柱是全图唯一高饱和元素（成都 24h 空图最抢眼）、柱体偏宽，视觉权重压过温度曲线。
+Hypothesis: 按 plan §4.1 变体 A —— 柱体加 fill-opacity 0.55（#346583/#2E8B8B 保底色相不动，白底上视觉读作低饱和冷色）+ 柱宽收窄 15%（0.31→0.2635 列宽系数），降水回到「何时下雨」的功能指示位，不再抢主角。
+范围: 仅 `meteogram-svg.js` 降水双柱 rect；POP≥50 底带、色相、数据、测试契约不动。
+对照: chengdu-24h（空图日柱最抢眼）+ litang-48h（柱簇+POP 块）同机位重拍 vs baseline vs 原型 horizon-chengdu-72-375。
+
+### Iteration 1 — Change / Before / After / Decision
+
+Change: `meteogram-svg.js` 降水双柱 `fill-opacity="0.55"` + 柱宽系数 0.31 → 0.2635（min 1.5px 保护保留）；色相/POP 底带/数据不动。
+Before: baseline/chengdu-24h-375px.png、baseline/litang-48h-375px.png（深青柱为全图唯一高饱和元素）
+After: iter-1-chengdu-24h-375px.png、iter-1-litang-48h-375px.png（柱明显减重变窄，「何时下雨」仍一眼可读，POP 带未被误伤）
+Decision: KEEP / Reason: 达到变体 A 预期——降水回到功能指示位不抢主角；无新问题；check.js + check-handlers + meteogram-svg-test 25/0 全绿。
+备注: 按 plan §4.1 A/B 各做一轮再比选——本条是候选 A，Iteration 2 做候选 B 后一并比选定稿。

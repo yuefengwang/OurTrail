@@ -355,13 +355,13 @@ function renderUnifiedBase(geo, opts) {
   rows.forEach(function (r, h) {
     const p = r.precip || 0, sh = r.showers || 0
     if (p + sh < 0.05) return
-    const bw = Math.max(1.5, geo.plotW / 24 * 0.31)
+    const bw = Math.max(1.5, geo.plotW / 24 * 0.2635)
     const cx = geo.X(h)
     const base = ROWS.precip.y + ROWS.precip.h
     const hP = (p / geo.precip.max) * (ROWS.precip.h - 6)
     const hS = (sh / geo.precip.max) * (ROWS.precip.h - 6)
-    if (p >= 0.05) pw += '<rect x="' + fmt(cx - bw - 0.5) + '" y="' + fmt(base - hP) + '" width="' + fmt(bw) + '" height="' + fmt(hP) + '" fill="' + C.rain + '"/>'
-    if (sh >= 0.05) pw += '<rect x="' + fmt(cx + 0.5) + '" y="' + fmt(base - hS) + '" width="' + fmt(bw) + '" height="' + fmt(hS) + '" fill="' + C.showers + '"/>'
+    if (p >= 0.05) pw += '<rect x="' + fmt(cx - bw - 0.5) + '" y="' + fmt(base - hP) + '" width="' + fmt(bw) + '" height="' + fmt(hP) + '" fill="' + C.rain + '" fill-opacity="0.55"/>'
+    if (sh >= 0.05) pw += '<rect x="' + fmt(cx + 0.5) + '" y="' + fmt(base - hS) + '" width="' + fmt(bw) + '" height="' + fmt(hS) + '" fill="' + C.showers + '" fill-opacity="0.55"/>'
   })
   s += '<g>' + pw + '</g>'
   s += '<text x="' + (geo.L - 5) + '" y="' + (ROWS.precip.y + ROWS.precip.h + 2.5) + '" text-anchor="end" font-size="7.5" fill="' + C.muted + '">0</text>'
