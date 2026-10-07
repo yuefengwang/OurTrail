@@ -168,16 +168,45 @@ function isoLoops(F, T, xOf, yOf) {
     }
     if (loop.length >= 4) loops.push(loop)
   }
-  /* 几何清理：微环过滤（<12px² 数值碎片；有意义的孤立小云区远大于此） */
-  function areaOf(lp) {
-    var s = 0
+  /* 几何清理（P1 修复续）：碎片过滤用「路径长度」≥24px——触及时间窗边界的开链
+     （平坦成层云的顶/底边界，隐式弦与边界重合）鞋履面积恒≈0，面积过滤会整层删除；
+     长度过滤下噪声碎片（1–2 cell，周长 <10px）被滤、真实云边界（数百 px）保留。 */
+  var pathLen = function (lp) {
+    var s2 = 0
     for (var i2 = 0; i2 < lp.length; i2++) {
-      var p = lp[i2], q = lp[(i2 + 1) % lp.length]
-      s += p.x * q.y - q.x * p.y
+      var p2 = lp[i2], q2 = lp[(i2 + 1) % lp.length]
+      s2 += Math.sqrt((p2.x - q2.x) * (p2.x - q2.x) + (p2.y - q2.y) * (p2.y - q2.y))
     }
-    return Math.abs(s / 2)
+    return s2
   }
-  loops = loops.filter(function (lp) { return areaOf(lp) >= 12 })
+  /* P1 修复（Cloud Field 消失）：触及时间窗边界的带状云场，其等值线是「顶边链 +
+     底边链」两条开链——隐式弦与近水平边界重合 → 弦面积≈0 → 曾被微环过滤整幅删除。
+     修复：开链沿网格边界按 mean-y 配对闭合（band 多边形 = 顶链 + 底链逆序），
+     面积过滤恢复正确。场数学（CR/marching/阈值）未动。 */
+  var openChains = [], closedChains = []
+  var edgeX0 = xOf(1), edgeX1 = xOf(F.nx - 2)
+  /* 边界容差必须随 cellW 缩放：开链端点落在最外 padding 列 xOf(0)/xOf(nx-1)，
+     距 edgeX0/edgeX1 恰为一个 cellW。固定 2px 只在 cellW<2（窄窗/72h 细网格）下成立，
+     cellW≥2（24h 全部生产宽度、414 设备 72h）时配对静默失败 → 顶/底链各留一条
+     贴弦窄条，带内部空心。实测阈值恰在 cellW=2 处翻转（W=318 72h 成功 / W=336 失败）。 */
+  var edgeTol = Math.max(2, (xOf(1) - xOf(0)) * 1.05)
+  loops.forEach(function (lp) {
+    var onEdge = function (p) { return Math.abs(p.x - edgeX0) < edgeTol || Math.abs(p.x - edgeX1) < edgeTol }
+    if (onEdge(lp[0]) && onEdge(lp[lp.length - 1])) openChains.push(lp)
+    else closedChains.push(lp)
+  })
+  if (openChains.length >= 2) {
+    var meanY = function (lp) { var s2 = 0; lp.forEach(function (pt) { s2 += pt.y }); return s2 / lp.length }
+    openChains.sort(function (p, q) { return meanY(q) - meanY(p) })
+    for (var oi = 0; oi + 1 < openChains.length; oi += 2) {
+      closedChains.push(openChains[oi].concat(openChains[oi + 1].slice().reverse()))
+    }
+    if (openChains.length % 2 === 1) closedChains.push(openChains[openChains.length - 1])
+  } else {
+    closedChains = closedChains.concat(openChains)
+  }
+  loops = closedChains
+  loops = loops.filter(function (lp) { return pathLen(lp) >= 24 })
   /* Chaikin 圆化一轮 */
   return loops.map(function (loop) {
     if (loop.length < 3) return loop
