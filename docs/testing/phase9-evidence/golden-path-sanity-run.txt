@@ -1,0 +1,286 @@
+
+──── [GP-00 环境] ────
+  ✓ [BUSINESS] [GP-00] 本脚本源码完整性自检（0 违规）
+  ✓ [ENV] 找到开发者工具 cli.bat
+  ✓ [ENV] automator 连接（自动化端口 9420）
+  ✓ [ENV] 模拟器运行中
+  · UI 元素通道：healthy（$$ view → 558 个元素）
+  ✓ [ENV] 元素查询通道可用（控制组 $$ view 非空）
+  ✓ [BUSINESS] [GP-00] 本轮标题唯一（不与历史轮撞名，起点不依赖「碰巧存在」的数据）
+
+──── [GP-01 Create 创建活动] ────
+  · UI 元素通道：healthy（$$ view → 558 个元素）
+  ✓ [UI] [GP-01] 点首页「发起活动」进入编辑器
+  ✓ [UI] [GP-01] 真实导航落到编辑器页
+  · UI 元素通道：healthy（$$ view → 33 个元素）
+  ✓ [UI] [GP-01] 编辑器装配（isNew=true、三步标签）
+  ✓ [UI] [GP-01] 在标题栏输入活动名
+  ✓ [UI] [GP-01] 标题落到表单状态（form.title 等于所填）
+  ✓ [UI] [GP-01] 点第 02 步「路线与集合」
+  ✓ [UI] [GP-01] 步骤切换生效（data.step=1）
+  ✓ [UI] [GP-01] 回到第 01 步准备填时间
+  ✓ [UI] [GP-01] 点开「出发时间」行
+  ✓ [UI] [GP-01] 时间行展开（expandedTimes.dt_start=true）
+  · [UI INCONCLUSIVE] [GP-01] 原生 <picker mode=date/time> 驱动出发时间：实测 picker 3 个，tap 后 dt_start={"date":"","time":""}（与改前 {"date":"","time":""} 相同）：DevTools 原生层不可查询、不可驱动
+  · [UI INCONCLUSIVE] [GP-01] 「出发时间由用户亲手选定」这条真实路径：原生 <picker mode=date/time> 驱不动（实测无面板、值不变）；出发时间只能由业务命令补齐 ⇒ 草稿落库只有 BUSINESS 证据
+  ✓ [BUSINESS] [GP-01] activity.create → 草稿落库 ok
+  ✓ [BUSINESS] [GP-01] 回读：phase=draft 且标题/名额等于 fixture 输入
+
+──── [GP-02 Edit 编辑活动] ────
+  · UI 元素通道：healthy（$$ view → 36 个元素）
+  ✓ [UI] [GP-02] 从草稿详情点「返回编辑与发布」
+  ✓ [UI] [GP-02] 真实导航落到编辑器
+  · UI 元素通道：healthy（$$ view → 29 个元素）
+  ✓ [UI] [GP-02] 编辑器按已存草稿装配（isNew=false、标题回填）
+  ✓ [UI] [GP-02] 展开「详细介绍（可选）」折叠
+  ✓ [UI] [GP-02] 折叠展开生效（expandedIntro=true，介绍输入位出现）
+  ✓ [UI] [GP-02] 在活动介绍里填写新内容
+  ✓ [UI] [GP-02] 新介绍落到表单状态（form.description 等于所填）
+  ✓ [UI] [GP-02] 点「保存草稿」提交修改
+  ✓ [BUSINESS] [GP-02] activity.edit 回读：说明已改变，其它字段没被覆盖，revision 恰好 +1
+
+──── [GP-03 Publish 发布] ────
+  ✓ [UI] [GP-03] 切到第 03 步「招募与风险」（发布按钮只在这一步渲染）
+  ✓ [UI] [GP-03] 步骤切换生效（data.step=2）
+  ✓ [UI] [GP-03] 点「发布活动」打开发布弹层
+  ✓ [UI] [GP-03] 发布弹层已打开（弹层内的「确认发布」按钮可被查到）
+  ✓ [UI] [GP-03] 点弹层内「确认发布」
+  ✓ [BUSINESS] [GP-03] 发布后 phase=published
+  ✓ [BUSINESS] [GP-03] 发布未勾选「我本人也参加」⇒ 名单为空（发布与报名是两件事）
+  ✓ [UI] [GP-03] 已发布活动不再提供「发布活动」入口（重复发布先被 UI 挡住）
+  ✓ [BUSINESS] [GP-03] 服务端拒绝重复发布且这场活动逐字段零变化
+
+──── [GP-04 Discover 发现活动] ────
+  · UI 元素通道：healthy（$$ view → 562 个元素）
+  ✓ [UI] [GP-04] 点首页「发现活动」
+  ✓ [UI] [GP-04] 真实导航落到发现页
+  ✓ [BUSINESS] [GP-04] 发现流里 id=AID 的活动恰好一条，且 phase=published、标题与 organizerIntro 等于 fixture 输入
+  ✓ [UI] [GP-04] 列表页确实渲染出这一张卡（不是靠 id 直达详情）
+  ✓ [UI] [GP-04] 命中的那张卡按 wx:for 下标回读页面数据，其 id 必须等于本轮 AID
+  ✓ [UI] [GP-04] 卡片文案自证 organizer 关系：服务端算出的 owner 标志渲染成「我组织的」
+  ✓ [UI] [GP-04] 点该活动卡片
+  ✓ [UI] [GP-04] 点卡片后落到活动详情
+  ✓ [UI] [GP-04] 详情内容正确（标题一致、非 denied、带队介绍就是我填的那句）
+  ✓ [BUSINESS] [GP-04] 后端权威态对齐：详情记录 id=AID，ownerId 等于本轮登录身份（= activity.create 的下发者）
+  ✓ [BUSINESS] [GP-04] 发现流那一条与详情是同一条记录（不是同名活动）
+
+──── [GP-05 Signup 真实报名] ────
+  ✓ [BUSINESS] [GP-05] 环境准备：所需同行人已在档案里且恰有一名同名候选（无需新建）
+  ✓ [BUSINESS] [GP-05] 回读并锁定同行人 id（候选勾选按 id 精确命中，不按顺序）
+  ✓ [UI] [GP-05] 组织者详情页给出的是「进入工作台」
+  ✓ [UI] [GP-05] 组织者视角的详情页不提供报名 CTA（角色闸按设计生效）
+  · [UI INCONCLUSIVE] [GP-05] 「参与者从他人活动点进报名页」这一段：本自动化通道只有一个登录身份：他人活动的报名 CTA 归他人，第二身份点不进来。因此报名页改由 URL 直达，页内每一个控件（勾选框/授权/提交）仍全部走真实 tap——被跳过的那一步是导航，不是被测控件
+  · UI 元素通道：healthy（$$ view → 11 个元素）
+  ✓ [UI] [GP-05] 报名页服务端准入闸放行（permittedActions 含 signup.submit 才会装配成功）
+  ✓ [UI] [GP-05] 报名页装配（mode=new、只有本人）
+  ✓ [UI] [GP-05] 本轮那位同行人候选行渲染，且 data-key 挂在 checkbox-group 上（上一轮修的那处）
+  ✓ [UI] [GP-05] 点同行人候选的勾选框
+  ✓ [UI] [GP-05] 勾选后同行人进入参与人列表（两位参与人）
+  ✓ [UI] [GP-05] 授权勾选位齐全（dataUse×2 + proxyAuthority×1）
+  ✓ [UI] [GP-05] 勾选第 1 位的「dataUse」
+  ✓ [UI] [GP-05] 「dataUse」落到第 1 位参与人状态
+  ✓ [UI] [GP-05] 勾选第 2 位的「dataUse」
+  ✓ [UI] [GP-05] 「dataUse」落到第 2 位参与人状态
+  ✓ [UI] [GP-05] 勾选第 2 位的「proxyAuthority」
+  ✓ [UI] [GP-05] 「proxyAuthority」落到第 2 位参与人状态
+  ✓ [UI] [GP-05] 点「提交报名」
+  ✓ [BUSINESS] [GP-05] 报名落库：两条 pending（本人 + GP同行甲）
+  ✓ [BUSINESS] [GP-05] 整组语义：两条报名挂在同一个报名组
+
+──── [GP-06 Review 报名审核] ────
+  · UI 元素通道：healthy（$$ view → 52 个元素）
+  ✓ [UI] [GP-06] 从详情点「进入工作台」
+  ✓ [UI] [GP-06] 真实导航落到工作台
+  ✓ [UI] [GP-06] 工作台四个分区渲染
+  ✓ [UI] [GP-06] 点「名单」分区
+  ✓ [UI] [GP-06] 名单面板渲染两条待审核
+  ✓ [UI] [GP-06] 每行选择框是带 data-id 的 checkbox-group
+  ✓ [UI] [GP-06] 勾选待审核行 1（按 signupId 命中）
+  ✓ [UI] [GP-06] 勾选待审核行 2（按 signupId 命中）
+  ✓ [UI] [GP-06] 勾选状态进入面板数据（selectedCount=2）
+  ✓ [UI] [GP-06] 点「确认报名」打开确认弹层
+  ✓ [UI] [GP-06] 确认弹层打开（batch=confirm，标题带人数）
+  ✓ [UI] [GP-06] 点「确认仅处理这 N 人」下发 signup.review
+  ✓ [BUSINESS] [GP-06] 审核后 confirmed=2 且待审核归零
+
+──── [GP-07 Vehicle 车辆组织] ────
+  ✓ [UI] [GP-07] 点「分车」分区
+  ✓ [UI] [GP-07] 点「添加车辆」
+  ✓ [UI] [GP-07] 车辆编辑弹层打开（editorOpen=true）
+  ✓ [UI] [GP-07] 点「添加司机」加一名服务司机
+  ✓ [UI] [GP-07] 表单渲染出名称/车牌/核载/司机姓名/电话等输入位
+  ✓ [UI] [GP-07] 填写车辆名称
+  ✓ [UI] [GP-07] 填写车牌
+  ✓ [UI] [GP-07] 填写核载人数
+  ✓ [UI] [GP-07] 填写预留/禁用座位
+  ✓ [UI] [GP-07] 填写服务司机姓名
+  ✓ [UI] [GP-07] 填写司机联系电话
+  ✓ [UI] [GP-07] 各字段落到 vform 状态
+  ✓ [UI] [GP-07] 点「覆盖的上车点」第 1 项（真实勾选）
+  ✓ [UI] [GP-07] 勾选落到 vform.pickupIds（含 pk-1）
+  ✓ [UI] [GP-07] 勾选「使用明确座号」
+  ✓ [UI] [GP-07] 「使用明确座号」勾选生效（checkbox-group 载体的 change 可达）
+  ✓ [UI] [GP-07] 填写乘客座号 01,02
+  ✓ [UI] [GP-07] 点「保存车辆安排」
+  ✓ [UI] [GP-07] 保存后面板未报错（有错说明被前端校验挡下，而不是没点着）
+  · [UI INCONCLUSIVE] [GP-07] 点把手关闭车辆编辑弹层：遮罩与右上角 X 都在 <overlay> 组件内部模板：tp.$$(".overlay-mask")/tp.$$(".icon-button")/ov.$() 三种查法实测全部落空（元素通道本身健康，同页 .button 查得到）⇒ 通道看不见组件内部，不能据此说产品坏
+  ✓ [BUSINESS] [GP-07] readTransport 回读到 1 号车：1 名服务司机、乘客位 2、座号等于 fixture
+  ✓ [UI] [GP-07] 在名单面板点「协作授权」
+  ✓ [UI] [GP-07] 协作授权弹层的角色 picker 有数据（车辆联络能否经 UI 授予）
+  ✓ [BUSINESS] [GP-07] 环境准备：membership.save 自授车辆联络（只为让车长页可进，不充当 UI 证据）
+  · [UI INCONCLUSIVE] [GP-07] 「组织者在名单面板经授权弹层授予车辆联络」的 tap-through：角色/范围/授权截止时间是原生 <picker>：tap 后弹层不在可查询树（探针实测 .wx-picker/picker-view 全 0 命中、截图无弹层）⇒ 选角色这步无法自动化；picker 数据源已修复（上一条 UI 断言），保存链契约由 A 层 4b 钉住，上车走车长页真实点击（GP-10）
+
+──── [GP-08 Seat 座位分配] ────
+  ✓ [BUSINESS] [GP-08] 环境准备：2 位乘客全部改为 shared/pk-1（业务入口，不充当 UI 证据）
+  ✓ [BUSINESS] [GP-08] 回读：两位乘客都挂在集合上车点（keepTogether 组不会因混合出行方式被整体拒分）
+  · [UI INCONCLUSIVE] [GP-08] 「乘客在报名页选『按上车点集合』」这条真实路径：报名页出行方式是原生 <picker>（signup 的 onPartTrip），自动化通道驱不动 ⇒ UI 提交的报名只能落在「自行前往」；本节点用业务命令改出行方式，只记 BUSINESS
+  · UI 元素通道：healthy（$$ view → 89 个元素）
+  ✓ [UI] [GP-08] 重进工作台后点「分车」分区（离开再回来也是真实用户清掉弹层的做法）
+  ✓ [UI] [GP-08] 分车面板无残留弹层（三个弹层位都是关的）
+  ✓ [UI] [GP-08] 点「预览自动分车方案」
+  ✓ [UI] [GP-08] 预览产出的方案含 2 条新增（面板 planChanged 读数）
+  ✓ [UI] [GP-08] 点「明确确认并提交此方案」
+  ✓ [BUSINESS] [GP-08] 两位乘客都被分到 1号车，座号集合恰好等于 fixture 的 01/02
+  ✓ [BUSINESS] [GP-08] 整组同车：两条安排挂同一辆车（keepTogether 语义）
+  ✓ [UI] [GP-08] 座位示意把两个座位都显示为已占
+
+──── [GP-09 Check-in 集合与签到] ────
+  · UI 元素通道：healthy（$$ view → 89 个元素）
+  ✓ [UI] [GP-09] 点回「总览」分区（阶段按钮只在这里渲染）
+  ✓ [UI] [GP-09] 分区切换生效（data.tab=0）
+  ✓ [UI] [GP-09] 点「进入正在集合」
+  ✓ [UI] [GP-09] 阶段确认弹层打开（transitionOpen=true）
+  ✓ [UI] [GP-09] 填写阶段变更原因（落到 data.reason）
+  ✓ [UI] [GP-09] 点「确认变更，不跳过检查」（第 1 次）
+  ✓ [BUSINESS] [GP-09] phase=gathering（回读阶段）
+  ✓ [UI] [GP-09] 阶段推进后直接点「现场」分区（不退出重进）
+  ✓ [UI] [GP-09] 已挂载的现场面板把 phase 重读到 gathering
+  ✓ [UI] [GP-09] 重读后的名单是新的（两位已确认参与者都在，且标着未签到）
+  ✓ [UI] [GP-09] 点开第一行的「现场记录」
+  ✓ [UI] [GP-09] 弹层动作表按新阶段装配（不再全空）
+  · UI 元素通道：healthy（$$ view → 74 个元素）
+  ✓ [UI] [GP-09] 重进后点「现场」分区
+  ✓ [UI] [GP-09] 现场区渲染两位已确认参与者
+  ✓ [UI] [GP-09] 面板行序里能定位到「需要上车的那位乘客」
+  ✓ [UI] [GP-09] 点开「GP同行甲」的现场记录
+  ✓ [UI] [GP-09] 弹层动作表含「确认现场签到」（GP同行甲）
+  ✓ [UI] [GP-09] 为「GP同行甲」填写核实依据
+  ✓ [UI] [GP-09] 核实依据落到组件状态（data.note 等于所填）
+  ✓ [UI] [GP-09] 点「确认现场签到」（GP同行甲）
+  ✓ [UI] [GP-09] 点开「Loose Caged」的现场记录
+  ✓ [UI] [GP-09] 弹层动作表含「确认现场签到」（Loose Caged）
+  ✓ [UI] [GP-09] 为「Loose Caged」填写核实依据
+  ✓ [UI] [GP-09] 核实依据落到组件状态（data.note 等于所填）
+  ✓ [UI] [GP-09] 点「确认现场签到」（Loose Caged）
+  ✓ [BUSINESS] [GP-09] 两位乘客都 checkedIn=true（签到是上车与出发的前置，全部经真实弹层点击）
+  ✓ [BUSINESS] [GP-09] 签到对象包含那位同行人（后续上车与出发取证的主体一致）
+
+──── [GP-10 Departure 出发] ────
+  · UI 元素通道：healthy（$$ view → 89 个元素）
+  ✓ [UI] [GP-10] 点「现场」分区
+  ✓ [UI] [GP-10] 点开该乘客（需上车者）的「现场记录」
+  ✓ [UI] [GP-10] 面板不再对「未上车的拼车乘客」提供「核实已随队出发」
+  ✓ [UI] [GP-10] 缺的事实被说清楚并把用户指向车长任务页
+  ✓ [BUSINESS] [GP-10] 没有可点的死按钮 ⇒ 也没有误下发的出发记录（departure 仍 unknown，零副作用）
+  · UI 元素通道：healthy（$$ view → 24 个元素）
+  ✓ [UI] [GP-10] 车长任务页对本人可进（车辆联络授权生效）
+  ✓ [UI] [GP-10] 点「确认上车」（GP同行甲）
+  ✓ [UI] [GP-10] 点「确认上车」（Loose Caged）
+  ✓ [BUSINESS] [GP-10] 两位乘客去程上车落库（outboundBoarded=true，经车长页真实点击「确认上车」）
+  ✓ [BUSINESS] [GP-10] 上车对象包含那位同行人（后续出发核实的主体一致）
+  · UI 元素通道：healthy（$$ view → 89 个元素）
+  ✓ [UI] [GP-10] 点开「GP同行甲」的现场记录（待核实出发）
+  ✓ [UI] [GP-10] 点「核实已随队出发」（GP同行甲）
+  ✓ [UI] [GP-10] 点开「Loose Caged」的现场记录（待核实出发）
+  ✓ [UI] [GP-10] 点「核实已随队出发」（Loose Caged）
+  ✓ [BUSINESS] [GP-10] 两人 departure=joined（签到 + 去程上车齐备后服务端才放行）
+  ✓ [UI] [GP-10] 点回「总览」分区（阶段按钮只在这里渲染）
+  ✓ [UI] [GP-10] 分区切换生效（data.tab=0）
+  ✓ [UI] [GP-10] 点「进入正在同行」
+  ✓ [UI] [GP-10] 阶段确认弹层打开（transitionOpen=true）
+  ✓ [UI] [GP-10] 填写阶段变更原因（落到 data.reason）
+  ✓ [UI] [GP-10] 点「确认变更，不跳过检查」（第 1 次）
+  ✓ [BUSINESS] [GP-10] gathering→active 成功（出发核实硬门通过）
+
+──── [GP-11 Arrival 到达] ────
+  · UI 元素通道：healthy（$$ view → 22 个元素）
+  ✓ [UI] [GP-11] 点「确认本程发车」
+  ✓ [BUSINESS] [GP-11] 去程已发车（vehicle.depart 落库，发车证据由服务端覆写）
+  ✓ [UI] [GP-11] 点「完成本程行驶」
+  ✓ [BUSINESS] [GP-11] 去程行驶完成（到达的运力事实）
+  · UI 元素通道：healthy（$$ view → 89 个元素）
+  ✓ [UI] [GP-11] 现场弹层提供「确认到达此节点」按钮
+  · [UI INCONCLUSIVE] [GP-11] 「参与者抵达某条路线节点」经 UI 确认：选点是原生 <picker range=pointLabels>，自动化通道驱不动（同 GP-01 结论）；attendance.node 只有域层与 A 层证据，本轮不代发冒充 UI
+
+──── [GP-12 Home 安全到家] ────
+  · UI 元素通道：healthy（$$ view → 89 个元素）
+  ✓ [UI] [GP-12] 点回「总览」分区（阶段按钮只在这里渲染）
+  ✓ [UI] [GP-12] 分区切换生效（data.tab=0）
+  ✓ [UI] [GP-12] 点「进入返程报平安」
+  ✓ [UI] [GP-12] 阶段确认弹层打开（transitionOpen=true）
+  ✓ [UI] [GP-12] 填写阶段变更原因（落到 data.reason）
+  ✓ [UI] [GP-12] 点「确认变更，不跳过检查」（第 1 次）
+  ✓ [BUSINESS] [GP-12] phase=closing
+  ✓ [UI] [GP-12] 推进 closing 后直接点「现场」分区（不退出重进）
+  ✓ [UI] [GP-12] 面板 phase 已随 syncKey 重读到 closing
+  ✓ [UI] [GP-12] 点开「GP同行甲」的现场记录（待到家）
+  ✓ [UI] [GP-12] 为「GP同行甲」填写到家依据
+  ✓ [UI] [GP-12] 点「核实安全到家」（GP同行甲）
+  ✓ [UI] [GP-12] 点开「Loose Caged」的现场记录（待到家）
+  ✓ [UI] [GP-12] 为「Loose Caged」填写到家依据
+  ✓ [UI] [GP-12] 点「核实安全到家」（Loose Caged）
+  ✓ [BUSINESS] [GP-12] 两人 home=true（安全闭环完成）
+
+──── [GP-13 Complete 归档收尾] ────
+  ✓ [UI] [GP-13] 点回「总览」分区（阶段按钮只在这里渲染）
+  ✓ [UI] [GP-13] 分区切换生效（data.tab=0）
+  ✓ [UI] [GP-13] 点「进入已归档」
+  ✓ [UI] [GP-13] 阶段确认弹层打开（transitionOpen=true）
+  ✓ [UI] [GP-13] 填写阶段变更原因（落到 data.reason）
+  ✓ [UI] [GP-13] 点「确认变更，不跳过检查」（第 1 次）
+  ✓ [BUSINESS] [GP-13] phase=archived（人人安全闭环后归档成功）
+  ✓ [BUSINESS] [GP-13] 归档后参与者视角 detailState=finished
+  ✓ [BUSINESS] [GP-13] 归档即关闭工作数据能力：敏感导出被拒
+
+==== VERDICT ====
+BUSINESS: PASS         （37 通过 / 0 失败 / 0 未验证）
+UI:       INCONCLUSIVE （150 通过 / 0 失败 / 7 未验证）
+ENV:      4 项前置（0 项不成立）
+OVERALL:  INCONCLUSIVE
+reason:
+  - UI 未验证：[GP-01] 原生 <picker mode=date/time> 驱动出发时间——实测 picker 3 个，tap 后 dt_start={"date":"","time":""}（与改前 {"date":"","time":""} 相同）：DevTools 原生层不可查询、不可驱动
+  - UI 未验证：[GP-01] 「出发时间由用户亲手选定」这条真实路径——原生 <picker mode=date/time> 驱不动（实测无面板、值不变）；出发时间只能由业务命令补齐 ⇒ 草稿落库只有 BUSINESS 证据
+  - UI 未验证：[GP-05] 「参与者从他人活动点进报名页」这一段——本自动化通道只有一个登录身份：他人活动的报名 CTA 归他人，第二身份点不进来。因此报名页改由 URL 直达，页内每一个控件（勾选框/授权/提交）仍全部走真实 tap——被跳过的那一步是导航，不是被测控件
+  - UI 未验证：[GP-07] 点把手关闭车辆编辑弹层——遮罩与右上角 X 都在 <overlay> 组件内部模板：tp.$$(".overlay-mask")/tp.$$(".icon-button")/ov.$() 三种查法实测全部落空（元素通道本身健康，同页 .button 查得到）⇒ 通道看不见组件内部，不能据此说产品坏
+  - UI 未验证：[GP-07] 「组织者在名单面板经授权弹层授予车辆联络」的 tap-through——角色/范围/授权截止时间是原生 <picker>：tap 后弹层不在可查询树（探针实测 .wx-picker/picker-view 全 0 命中、截图无弹层）⇒ 选角色这步无法自动化；picker 数据源已修复（上一条 UI 断言），保存链契约由 A 层 4b 钉住，上车走车长页真实点击（GP-10）
+  - UI 未验证：[GP-08] 「乘客在报名页选『按上车点集合』」这条真实路径——报名页出行方式是原生 <picker>（signup 的 onPartTrip），自动化通道驱不动 ⇒ UI 提交的报名只能落在「自行前往」；本节点用业务命令改出行方式，只记 BUSINESS
+  - UI 未验证：[GP-11] 「参与者抵达某条路线节点」经 UI 确认——选点是原生 <picker range=pointLabels>，自动化通道驱不动（同 GP-01 结论）；attendance.node 只有域层与 A 层证据，本轮不代发冒充 UI
+passed=187 failed=0 unverified=7
+
+==== GOLDEN PATH 逐节点账本 ====
+节点                 BUSINESS     UI            断言(B/UI)
+GP-00 环境             PASS         NONE          2/0
+GP-01 Create         PASS         INCONCLUSIVE  2/12
+GP-02 Edit           PASS         PASS          1/8
+GP-03 Publish        PASS         PASS          3/6
+GP-04 Discover       PASS         PASS          3/8
+GP-05 Signup         PASS         INCONCLUSIVE  4/16
+GP-06 Review         PASS         PASS          1/12
+GP-07 Vehicle        PASS         INCONCLUSIVE  2/23
+GP-08 Seat           PASS         INCONCLUSIVE  4/7
+GP-09 Check-in       PASS         PASS          3/24
+GP-10 Departure      PASS         PASS          5/17
+GP-11 Arrival        PASS         INCONCLUSIVE  2/4
+GP-12 Home           PASS         PASS          2/14
+GP-13 Complete       PASS         PASS          3/6
+
+未验证清单（7 条，一律不得当作通过）：
+  · [UI] [GP-01] 原生 <picker mode=date/time> 驱动出发时间 —— 实测 picker 3 个，tap 后 dt_start={"date":"","time":""}（与改前 {"date":"","time":""} 相同）：DevTools 原生层不可查询、不可驱动
+  · [UI] [GP-01] 「出发时间由用户亲手选定」这条真实路径 —— 原生 <picker mode=date/time> 驱不动（实测无面板、值不变）；出发时间只能由业务命令补齐 ⇒ 草稿落库只有 BUSINESS 证据
+  · [UI] [GP-05] 「参与者从他人活动点进报名页」这一段 —— 本自动化通道只有一个登录身份：他人活动的报名 CTA 归他人，第二身份点不进来。因此报名页改由 URL 直达，页内每一个控件（勾选框/授权/提交）仍全部走真实 tap——被跳过的那一步是导航，不是被测控件
+  · [UI] [GP-07] 点把手关闭车辆编辑弹层 —— 遮罩与右上角 X 都在 <overlay> 组件内部模板：tp.$$(".overlay-mask")/tp.$$(".icon-button")/ov.$() 三种查法实测全部落空（元素通道本身健康，同页 .button 查得到）⇒ 通道看不见组件内部，不能据此说产品坏
+  · [UI] [GP-07] 「组织者在名单面板经授权弹层授予车辆联络」的 tap-through —— 角色/范围/授权截止时间是原生 <picker>：tap 后弹层不在可查询树（探针实测 .wx-picker/picker-view 全 0 命中、截图无弹层）⇒ 选角色这步无法自动化；picker 数据源已修复（上一条 UI 断言），保存链契约由 A 层 4b 钉住，上车走车长页真实点击（GP-10）
+  · [UI] [GP-08] 「乘客在报名页选『按上车点集合』」这条真实路径 —— 报名页出行方式是原生 <picker>（signup 的 onPartTrip），自动化通道驱不动 ⇒ UI 提交的报名只能落在「自行前往」；本节点用业务命令改出行方式，只记 BUSINESS
+  · [UI] [GP-11] 「参与者抵达某条路线节点」经 UI 确认 —— 选点是原生 <picker range=pointLabels>，自动化通道驱不动（同 GP-01 结论）；attendance.node 只有域层与 A 层证据，本轮不代发冒充 UI
+
+OVERALL=INCONCLUSIVE  BUSINESS=PASS  UI=INCONCLUSIVE  exit=2
