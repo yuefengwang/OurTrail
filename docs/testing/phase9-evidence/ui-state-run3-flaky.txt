@@ -1,0 +1,97 @@
+  ✓ [BUSINESS] 本脚本源码完整性自检（0 违规）
+  ✓ [ENV] 找到开发者工具 cli.bat
+  ✓ [ENV] automator 连接开发者工具（自动化端口 9420）
+  ✓ [ENV] 模拟器运行中
+
+== 沙盒建档（trailApi 命令直建；不依赖 trailApiLab——其超时配置是既知环境问题） ==
+  ✓ [BUSINESS] 建 [预演] 活动草稿
+  ✓ [BUSINESS] 发布（发布即报名本人，自动确认）
+  ✓ [BUSINESS] companion.save（赵辰-nirg）
+  ✓ [BUSINESS] companion.save（李晃-nirg）
+  ✓ [BUSINESS] companion.save（王闰-nirg）
+  ✓ [BUSINESS] 赵辰-nirg 报名落库（pending）
+  ✓ [BUSINESS] 李晃-nirg 报名落库（pending）
+  ✓ [BUSINESS] 王闰-nirg 报名落库（pending）
+  ✓ [BUSINESS] 审核确认赵辰-nirg（李晃、王闰保持 pending）
+  · UI 元素通道：healthy（$$ view → 88 个元素）
+  ✓ [UI] 点「名单」分区
+  ✓ [UI] 勾选已确认的「赵辰-nirg」
+  ✓ [UI] 勾选落到 selected（selectedCount=1）
+  ✓ [UI] confirmed 在选时「确认报名」呈 disabled（class 含 disabled）
+  ✓ [UI] 真实点击「确认报名」（confirmed 在选，应当是空点击）
+  ✓ [UI] 点击后未进入确认流程（batch 仍为空、选择保持）——后端会拒的操作 UI 不提供入口
+  ✓ [UI] 追加勾选 pending 的「李晃-nirg」（混选）
+  ✓ [UI] 混选落到 selected（selectedCount=2）
+  ✓ [UI] 混选（confirmed+pending）时「确认报名」仍 disabled（域规则整批拒绝 ⇒ UI 同向）
+  ✓ [UI] 真实点击「确认报名」（混选，应当是空点击）
+  ✓ [UI] 混选点击后仍未进入确认流程（batch 仍为空）
+  · UI 元素通道：healthy（$$ view → 88 个元素）
+  ✓ [UI] 勾选 pending 的「李晃-nirg」（只勾这一行）
+  ✓ [UI] 选择恰为 1 且是 pending 行
+  ✓ [UI] 纯 pending 在选时「确认报名」可用（class 不含 disabled）
+  ✓ [UI] 点「确认报名」打开确认弹层
+  ✓ [UI] 确认流程打开（batch=confirm，弹层在等确认）
+  ✓ [UI] 点「确认仅处理这 1 人」
+  ✓ [BUSINESS] 审核落库：李晃-nirg confirmed（真实 UI 全链）
+  · UI 元素通道：healthy（$$ view → 93 个元素）
+  ✓ [UI] 点「分车」分区
+  ✓ [UI] 点「添加车辆」
+  ✓ [UI] 车辆编辑弹层打开且 vform 就绪
+  ✓ [UI] 点「添加司机」（默认服务司机）
+  ✓ [UI] 表单渲染出 6 个输入位
+  ✓ [UI] 表单字段落到 vform
+  ✓ [UI] 点「覆盖的上车点」第 1 项（真实勾选）
+  ✓ [UI] 点击后渲染态 checked=true 且 vform.pickupIds 恰含 target（渲染态与数据一致，BUG-A 回归核心）
+  ✓ [UI] 点「保存车辆安排」
+  ✓ [UI] 保存成功且无前端校验拦截（「请至少勾选一个集合上车点」不得出现）
+  ✓ [BUSINESS] readTransport 回读：pickupPointIds 含所勾集合点（UI → 后端全链）
+  ✓ [BUSINESS] readTransport 回读：1 名服务司机（与 UI 输入一致）
+  ✓ [UI] 重开车辆编辑（回显验证）
+  ✗ [UI FAIL] 重开弹层：pickupIds 回显含 target 且渲染态 checked=true（UI reload 一致性）：{"pickupIds":null,"renderedChecked":null}
+  ✓ [UI] 司机候选数据源非空（picker range=driverCandidates 的来源）
+  ✓ [UI] 候选包含已确认未分车的「赵辰-nirg」（options 来自正确业务数据）
+  ✓ [UI] 候选不含 pending 的「王闰-nirg」（options 与业务状态同步）
+  ✓ [UI] 司机 picker 的 range 绑定为 driverCandidates（绑定完整性静态门）
+  ✓ [UI] 打开车辆编辑（司机 picker 的宿主弹层）
+  ✓ [UI] 编辑弹层重新打开且 vform 就绪
+  ✓ [UI] 点「添加司机」（新增第 2 位司机位）
+  ✓ [UI] 司机类型 picker 在场（切换参与者司机必经的原生 picker）
+  · [UI INCONCLUSIVE] 真实把司机类型切到「已确认参与者兼司机」并选中候选：切换类型与选候选都是原生 <picker> 弹层：tap 后弹层不在可查询树（.wx-picker/picker-view 全 0 命中，探针证据见 golden-path-v1.md §11）⇒ 自动化通道无法点选；候选数据源已在本块断言非空且正确，参与者司机命令契约由 A 层 vehicle.save（参与者司机）覆盖
+  ✓ [UI] 点「名单」分区（回到 published 名单区）
+  ✓ [UI] 勾选 pending 的「王闰-nirg」
+  ✓ [UI] pending 在选（published）时「取消报名」可用（cancel 允许 published|gathering）
+  ✓ [UI] 点「取消报名」打开取消弹层
+  ✓ [UI] 取消流程打开（batch=cancel）
+  ✓ [UI] 填写取消原因（必填项）
+  ✓ [UI] 点「确认仅处理这 1 人」下发 signup.cancel
+  ✓ [BUSINESS] 取消落库：王闰-nirg cancelled（真实 UI 全链）
+  · UI 元素通道：healthy（$$ view → 99 个元素）
+  ✓ [UI] 点「进入正在集合」（阶段推进入口，第 1 次）
+  ✓ [UI] 阶段确认弹层打开
+  ✓ [UI] 填写阶段变更原因（落到 data.reason）
+  ✓ [UI] 点「确认变更，不跳过检查」
+  · [BUSINESS INCONCLUSIVE] 阶段推进落库：gathering（第 1 次尝试，30s 读窗口内未见）：未执行——页面error=""，页面busy=false——读滞后 NEEDS_PRODUCT_FOLLOWUP，转页面视图判定
+  · UI 元素通道：healthy（$$ view → 99 个元素）
+  ✓ [BUSINESS] 阶段推进落库：gathering（第 2 次尝试的写入延迟可见，经页面视图证实）
+  · UI 元素通道：healthy（$$ view → 99 个元素）
+  ✓ [UI] 点「名单」分区
+  ✓ [UI] 勾选已确认的「李晃-nirg」（gathering 阶段）
+  ✓ [UI] confirmed 在选（gathering）时「确认报名」disabled（状态维：review 仅限 pending）
+  ✓ [UI] 真实点击「确认报名」（confirmed 在选，应当是空点击）
+  ✓ [UI] 点击后未进入确认流程（batch 仍为空）
+  ✓ [UI] gathering 阶段 confirmed 未出行在选时「取消报名」可用（cancel 允许 published|gathering × current × 未出行）
+  ✓ [UI] 点「取消报名」打开取消弹层
+  ✓ [UI] 取消流程打开（batch=cancel）
+  ✓ [UI] 填写取消原因（必填项）
+  ✓ [UI] 点「确认仅处理这 1 人」下发 signup.cancel
+  ✓ [BUSINESS] 取消落库：李晃-nirg cancelled（真实 UI 全链，gathering 阶段）
+
+==== VERDICT ====
+BUSINESS: INCONCLUSIVE （16 通过 / 0 失败 / 1 未验证）
+UI:       FAIL         （57 通过 / 1 失败 / 1 未验证）
+ENV:      3 项前置（0 项不成立）
+OVERALL:  FAIL
+reason:
+  - UI 未验证：真实把司机类型切到「已确认参与者兼司机」并选中候选——切换类型与选候选都是原生 <picker> 弹层：tap 后弹层不在可查询树（.wx-picker/picker-view 全 0 命中，探针证据见 golden-path-v1.md §11）⇒ 自动化通道无法点选；候选数据源已在本块断言非空且正确，参与者司机命令契约由 A 层 vehicle.save（参与者司机）覆盖
+  - BUSINESS 未验证：阶段推进落库：gathering（第 1 次尝试，30s 读窗口内未见）——未执行——页面error=""，页面busy=false——读滞后 NEEDS_PRODUCT_FOLLOWUP，转页面视图判定
+passed=73 failed=1 unverified=2
