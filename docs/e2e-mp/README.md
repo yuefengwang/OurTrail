@@ -2,6 +2,10 @@
 
 配合 `AGENTS.md` 的「直连微信开发者工具：agent 端到端实现/测试闭环」一节使用。
 
+> **要动手跑真机 E2E 之前先读 [`automation-playbook.md`](./automation-playbook.md)** ——
+> 会话僵死怎么认、`quit` 与 `close` 的差别、旧句柄"点击成功但没作用"、`busy` 期间的空按钮、
+> 一次性判读造成的假红、云函数部署与超时、退出码 0/1/2 的含义。全部是本机实测，不是通用文档转述。
+
 ## 为什么需要它
 
 `tools/check.js`、`check-handlers.js` 与全部 `tools/*-test.js` 都**看不见像素**。
