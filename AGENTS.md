@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — OurTrail
 
-**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：16 页 / 13 组件目录 / 13 actions / 39 commands / smoke 106）· **Base commit:** `1acd55e`
+**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：16 页 / 13 组件目录 / 13 actions / 39 commands / smoke 106）· **Gate recount:** 2026-10-07（38 门禁套件 / 2488 断言 / smoke 167）· **Base commit:** `1acd55e`
 
 ---
 
@@ -59,9 +59,9 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── store.js        # 16 ot_* collections, loadState, persistState CAS
 │   ├── domain/         # 13 pure modules — see .../domain/AGENTS.md
 │   ├── lib/weather.js  # Open-Meteo proxy (duplicates gcjToWgs — keep in sync)
-│   └── smoke-test.js   # 106 cases, needs no wx-server-sdk
-├── tools/             # 45 个零依赖 node 脚本（实测 2026-10-07）：39 个 `*-test.js`
-│                      #   （36 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
+│   └── smoke-test.js   # 167 cases, needs no wx-server-sdk
+├── tools/             # 46 个零依赖 node 脚本（实测 2026-10-07）：40 个 `*-test.js`
+│                      #   （37 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
 │                      #   `e2e-ui-state-test` / `e2e-golden-path-test`）+ 2 个静态检查 +
 │                      #   `e2e-result.js`（结果账本，被上述 3 套真机层与变异自证 require）+
 │                      #   桩/生成器（gen-map-markers / sync-lab / stub-wx-server-sdk）
@@ -130,14 +130,14 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Logic regression — 26 gated suites, all currently passing（2026-10-04 复跑）.
+# Gated suites — 38, all currently passing（2026-10-07 全量复跑，共 2488 断言）.
 # ⚠ 断言总数是**快照**，不是恒定值：
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
-#   那些改动会增删用例（例：smoke 104→106、workspace 104→107 均非本轮 P4 改动）。
+#   那些改动会增删用例（例：smoke 104→106→167、workspace 104→111 均非本轮 P4 改动）。
 #   **以每个脚本自己打印的 passed=N 为准**，不要信任何写死的总数。
-node cloudfunctions/trailApi/smoke-test.js   # 领域层（106）
+node cloudfunctions/trailApi/smoke-test.js   # 领域层（167）
 node tools/astro-test.js                     # 天文（60）
-node tools/gpx-test.js                       # GPX + 坐标转换（47）
+node tools/gpx-test.js                       # GPX + 坐标转换（57）
 node tools/sky-test.js                       # 天相结论（65）
 node tools/route-schedule-test.js            # 日程推算（41）
 node tools/weather-page-test.js              # 云函数→页面→组件契约（136）
@@ -148,9 +148,17 @@ node tools/meteogram-draw-test.js            # meteogram 真实 draw()：V2 云�
 node tools/space-time-test.js                # P4 时空天相图几何 + 漫游读数（109）
 node tools/space-time-draw-test.js           # P4 真实 draw() 执行（记录式 2D 上下文）（55）
 node tools/roam-scrubber-test.js             # P4 漫游控件定时器与事件契约（33）
+node tools/cloud-field-svg-test.js           # Cloud Field 等值带 SVG 渲染器：网格/开链配对/碎片过滤（27）
+node tools/weather-cloud-field-test.js       # 生产返回体 → cloudField 适配器 + inferState（29）
+node tools/meteogram-svg-test.js             # Unified Meteogram SVG 构建（25）
+node tools/meteogram-multiday-test.js        # Multi-Day Horizon 48/72h（44）
+node tools/outdoor-cloud-sea-test.js         # 云海机会窗口判定（20）
+node tools/outdoor-intelligence-test.js      # Outdoor Intelligence 条件态/机会判定（24）
+node tools/outdoor-intelligence-ui-test.js   # OI 呈现层 + 天气页集成（46）
+node tools/weather-v2-visual-audit-test.js   # Weather V2 视觉保真审计：跨宽度几何归一化/YOU 锚点/covered 透传/OI 卡契约（38）
 
 # 端到端两层（A 层计入门禁；B 层需开发者工具，不计入门禁）
-node tools/e2e-test.js                         # A 层服务链路 E2E（65 项，真信封打 exports.main）
+node tools/e2e-test.js                         # A 层服务链路 E2E（71 项，真信封打 exports.main）
 node tools/e2e-fault-probe-test.js             # 结果模型变异自证（34 项）
 node tools/e2e-permission-test.js              # A 层权限矩阵：角色×命令×阶段×归属（96 断言，8 actor 全走真实信封）
 node tools/e2e-domain-negative-test.js         # A 层 Domain 负矩阵：17 种错误码的确定性拒绝 + 败者零副作用快照对比（83 断言）
@@ -158,13 +166,13 @@ node tools/e2e-ui-test.js                      # B 层真模拟器 UI E2E（两�
 node tools/e2e-ui-state-test.js                # B 层 Phase 5 UI 状态矩阵（需开发者工具 9420，不计入门禁）
 
 # Page-level scenarios
-node tools/scenario-editor-test.js           # 137
+node tools/scenario-editor-test.js           # 142
 node tools/scenario-activity-test.js         # 136
-node tools/scenario-workspace-test.js        # 107
-node tools/scenario-signup-test.js           # 100
-node tools/scenario-me-test.js               # 81
-node tools/scenario-notices-test.js          # 64
-node tools/scenario-vehicle-test.js          # 55
+node tools/scenario-workspace-test.js        # 111
+node tools/scenario-signup-test.js           # 103
+node tools/scenario-me-test.js               # 143
+node tools/scenario-notices-test.js          # 67
+node tools/scenario-vehicle-test.js          # 56
 node tools/scenario-api-test.js              # 27
 node tools/scenario-discover-test.js         # 21
 node tools/scenario-lab-test.js              # 20
@@ -179,9 +187,14 @@ node tools/check.js && node tools/check-handlers.js && \
 node cloudfunctions/trailApi/smoke-test.js && node tools/astro-test.js && \
 node tools/gpx-test.js && node tools/sky-test.js && node tools/route-schedule-test.js && \
 node tools/weather-page-test.js && node tools/weather-v2-test.js && node tools/meteogram-draw-test.js && \
+node tools/cloud-field-svg-test.js && node tools/weather-cloud-field-test.js && \
+node tools/meteogram-svg-test.js && node tools/meteogram-multiday-test.js && \
+node tools/outdoor-cloud-sea-test.js && node tools/outdoor-intelligence-test.js && \
+node tools/outdoor-intelligence-ui-test.js && node tools/weather-v2-visual-audit-test.js && \
 node tools/watch-points-test.js && \
 node tools/weather-model-test.js && node tools/space-time-test.js && \
 node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
+node tools/e2e-test.js && node tools/e2e-fault-probe-test.js && \
 node tools/e2e-permission-test.js && node tools/e2e-domain-negative-test.js && \
 node tools/scenario-editor-test.js
 ```

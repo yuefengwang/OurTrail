@@ -232,6 +232,7 @@ function buildUnified(opts) {
     surface: surface, nT: nT, cf: cf,
     width: width, plotW: plotW, L: L, R: R,
     horizon: horizon, dayBounds: dayBounds, days: days,
+    covered: cf.covered || null,
     X: X, x0: x0,
     sample: cloudSample,
     cloud: cloud, bands: bands, inRuns: inRuns,
