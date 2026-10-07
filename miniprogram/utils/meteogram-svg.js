@@ -412,11 +412,14 @@ function renderUnifiedBase(geo, opts) {
   ;[ROWS.precip.y - 6, ROWS.cloud.y - 6, ROWS.wind.y - 6].forEach(function (y) {
     s += '<line x1="' + geo.L + '" y1="' + y + '" x2="' + (geo.L + geo.plotW) + '" y2="' + y + '" stroke="' + C.grid + '" stroke-width="0.6"/>'
   })
-  /* 行标题（左上角小字，弱化） */
-  s += '<text x="0" y="' + (ROWS.iconTemp.y - 2) + '" font-size="7.5" fill="#a9aca6">温度 °C</text>'
-  s += '<text x="0" y="' + (ROWS.precip.y - 2) + '" font-size="7.5" fill="#a9aca6">降水 mm/h</text>'
-  s += '<text x="0" y="' + (ROWS.cloud.y - 2) + '" font-size="7.5" fill="#a9aca6">云量 · 高度 m</text>'
-  s += '<text x="0" y="' + (ROWS.wind.y - 2) + '" font-size="7.5" fill="#a9aca6">风 km/h</text>'
+  /* 行标题（左侧 gutter 空档内小字，弱化）
+     不用行顶 y-2：gutter 同列叠着各轴刻度，行顶恰好压最近一档
+     （降水 max/云量 0/风 2000 与标题字形重叠 1~5px）。四条统一落在
+     行内刻度带之间的净空（各行 y+12~+16），与刻度字形净距 ≥4px。 */
+  s += '<text x="0" y="' + (ROWS.iconTemp.y + 16) + '" font-size="7.5" fill="#a9aca6">温度 °C</text>'
+  s += '<text x="0" y="' + (ROWS.precip.y + 16) + '" font-size="7.5" fill="#a9aca6">降水 mm/h</text>'
+  s += '<text x="0" y="' + (ROWS.cloud.y + 16) + '" font-size="7.5" fill="#a9aca6">云量 · 高度 m</text>'
+  s += '<text x="0" y="' + (ROWS.wind.y + 12) + '" font-size="7.5" fill="#a9aca6">风 km/h</text>'
   if (HZ > 24) {
     /* day header：今天 | 明天 | 后天（含每日最高/最低，§11） */
     geo.days.forEach(function (d, di) {
