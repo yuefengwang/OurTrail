@@ -194,7 +194,7 @@
               <view class="oi-row">
                 <text class="oi-time tabular">{{item.timeText}}</text>
                 <text class="oi-name">{{item.title}}{{item.live ? ' · 进行中' : ''}}</text>
-                <text class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
+                <text wx:if="{{item.tierClass !== 'good'}}" class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
               </view>
               <view class="oi-ev">
                 <text class="small muted">{{item.summaryText}}</text>
@@ -225,7 +225,7 @@
             <view class="oi-row">
               <text class="oi-time tabular">{{item.timeText}}</text>
               <text class="oi-name">{{item.title}}{{item.live ? ' · 进行中' : ''}}</text>
-              <text class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
+              <text wx:if="{{item.tierClass !== 'good'}}" class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
             </view>
             <view class="oi-ev">
               <text class="small muted">{{item.summaryText}}</text>
@@ -250,7 +250,7 @@
               <view class="oi-row">
                 <text class="oi-time tabular">{{item.timeText}}</text>
                 <text class="oi-name">{{item.title}}</text>
-                <text class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
+                <text wx:if="{{item.tierClass !== 'good'}}" class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
               </view>
               <view class="oi-ev">
                 <text class="small muted">{{item.summaryText}}</text>
