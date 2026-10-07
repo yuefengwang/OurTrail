@@ -168,9 +168,19 @@ function isoLoops(F, T, xOf, yOf) {
     }
     if (loop.length >= 4) loops.push(loop)
   }
-  /* 几何清理（P1 修复续）：碎片过滤用「路径长度」≥24px——触及时间窗边界的开链
-     （平坦成层云的顶/底边界，隐式弦与边界重合）鞋履面积恒≈0，面积过滤会整层删除；
-     长度过滤下噪声碎片（1–2 cell，周长 <10px）被滤、真实云边界（数百 px）保留。 */
+  /* 几何清理（P1 修复续）：碎片过滤 = 面积≥12px² 或 路径长度≥24px（满足其一即保留）。
+     单用长度会误杀小而实的闭合核（90% 档 mock 核 area 13.2 / len 17.4——云顶最深色块，
+     单长度阈值下整档消失）；单用面积会整层删除开链（平坦成层云的顶/底边界隐式弦与
+     边界重合，鞋履面积恒≈0）。OR 规则：噪声碎片（1–2 cell，area<12 且 len<24）被滤，
+     真实小核与真实云边界（数百 px）都保留。 */
+  var areaOf = function (lp) {
+    var s = 0
+    for (var i2 = 0; i2 < lp.length; i2++) {
+      var p2 = lp[i2], q2 = lp[(i2 + 1) % lp.length]
+      s += p2.x * q2.y - q2.x * p2.y
+    }
+    return Math.abs(s / 2)
+  }
   var pathLen = function (lp) {
     var s2 = 0
     for (var i2 = 0; i2 < lp.length; i2++) {
@@ -206,7 +216,7 @@ function isoLoops(F, T, xOf, yOf) {
     closedChains = closedChains.concat(openChains)
   }
   loops = closedChains
-  loops = loops.filter(function (lp) { return pathLen(lp) >= 24 })
+  loops = loops.filter(function (lp) { return areaOf(lp) >= 12 || pathLen(lp) >= 24 })
   /* Chaikin 圆化一轮 */
   return loops.map(function (loop) {
     if (loop.length < 3) return loop
