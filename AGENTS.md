@@ -60,8 +60,11 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── domain/         # 13 pure modules — see .../domain/AGENTS.md
 │   ├── lib/weather.js  # Open-Meteo proxy (duplicates gcjToWgs — keep in sync)
 │   └── smoke-test.js   # 106 cases, needs no wx-server-sdk
-├── tools/             # 32 个零依赖 node 脚本：26 个门禁套件 + 2 个静态检查 +
-│                      #   e2e-result.js（结果账本，被两套 E2E require）+ 桩/生成器
+├── tools/             # 45 个零依赖 node 脚本（实测 2026-10-07）：39 个 `*-test.js`
+│                      #   （36 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
+│                      #   `e2e-ui-state-test` / `e2e-golden-path-test`）+ 2 个静态检查 +
+│                      #   `e2e-result.js`（结果账本，被上述 3 套真机层与变异自证 require）+
+│                      #   桩/生成器（gen-map-markers / sync-lab / stub-wx-server-sdk）
 ├── docs/product/      # 9 tracked product specs + 3 ADRs — the "why"
 │                      # (天气线三份：P1 徒步天气概览 / P2 天相与meteogram / P3 独立天气模块)
 ├── docs/testing/      # 审计与测试基线：cross-agent-audit.md（裁决记录）/
@@ -149,7 +152,10 @@ node tools/roam-scrubber-test.js             # P4 漫游控件定时器与事件
 # 端到端两层（A 层计入门禁；B 层需开发者工具，不计入门禁）
 node tools/e2e-test.js                         # A 层服务链路 E2E（65 项，真信封打 exports.main）
 node tools/e2e-fault-probe-test.js             # 结果模型变异自证（34 项）
+node tools/e2e-permission-test.js              # A 层权限矩阵：角色×命令×阶段×归属（96 断言，8 actor 全走真实信封）
+node tools/e2e-domain-negative-test.js         # A 层 Domain 负矩阵：17 种错误码的确定性拒绝 + 败者零副作用快照对比（83 断言）
 node tools/e2e-ui-test.js                      # B 层真模拟器 UI E2E（两维账本，退出码 0/1/2）
+node tools/e2e-ui-state-test.js                # B 层 Phase 5 UI 状态矩阵（需开发者工具 9420，不计入门禁）
 
 # Page-level scenarios
 node tools/scenario-editor-test.js           # 137
@@ -176,6 +182,7 @@ node tools/weather-page-test.js && node tools/weather-v2-test.js && node tools/m
 node tools/watch-points-test.js && \
 node tools/weather-model-test.js && node tools/space-time-test.js && \
 node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
+node tools/e2e-permission-test.js && node tools/e2e-domain-negative-test.js && \
 node tools/scenario-editor-test.js
 ```
 
