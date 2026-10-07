@@ -299,6 +299,19 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
   **Out of scope / Follow-up（本轮记录不修）**：① `membership.save` 对 `vehicleId` 不做存在性校验（domain/profile.js 只查 profile 与过期时间）——域级校验缺口；② `pages/staff` 宿主的 field-panel 不传 sync-key 也无 written 监听，staff 视角的阶段新鲜度仍依赖进入时机；③ 车辆编辑弹层关闭把手在 `<overlay>` 组件内部，自动化通道不可查（已知通道限制）；④ 原生 picker 的 4 条 UI 真实路径需人工在真机走查兜底。
 
   **是否需要重新部署 trailApi：不需要**（本轮 `cloudfunctions/` 零改动）。**trailApiLab 需人工在控制台把超时调回 20 秒**（否则 B 层/预演沙盒的演员建档继续超时）。
+- 2026-10-07（**Phase 6：Permission / Security Matrix——角色×命令×阶段×归属 的授权边界矩阵化**）：接续 Phase 5（基线 `dd13aa3`，含 BUG-C 修复）。独立 worktree `D:/OurTrail-perm`（分支 `win/permission-matrix`）。本阶段只增测试与文档，生产代码零改动。
+
+  **架构审计（只读）**：权限权威 = `domain/permissions.js` 的 `canExecute/staffCan/vehicleCan/canReadSensitive/canReadNotice`；身份关系四类（isOwner / isOwnSignup=own-or-proxy / staff=能力+scope+未过期 / vehicle_contact=绑定车辆+未过期）；跨活动防线 requireSignups/requireVehicles（目标必须属于本活动）。矩阵与实测：`docs/testing/permission-security-matrix.md`。
+
+  **新套件（tools/e2e-permission-test.js，96 断言 0 失败）**：8 actor（owner/staff×2/vcoord×2/member/第二 member/nonmember/another-owner/ANON）全走真实信封（profile→create→publish→submit→review→membership.save 授权）。覆盖：activity ownership（edit/transition/delete 越权 ×3 actor + 跨 owner）、membership（自提权拒/撤销拒/readAccess owner-only）、vehicle（save owner-only ×3、assignment 后 VCOORD 边界、跨车拒绝、board 非 self-service）、attendance（own/他人/capability 不匹配/过期授权写入即拒/departure 非 self-service/board 非 self-service/home 阶段门/未出行者拒）、读面（readTransport/readAccess owner-only；readSensitive self/他人/staff 能力匹配/roster-only 拒/archived workDataAvailable；readContact 车辆绑定；readForm own/owner；export owner-only+purpose 门+回读）、ANON AUTH_REQUIRED、跨活动 vehicleId 归属拒。
+
+  **关键更正与发现**：① Phase 4 记录「membership.save 不校验 vehicleId 存在性」**不成立**——canExecute 的 requireVehicles 覆盖（不存在 → NOT_FOUND 实测 ✓）；profile.js 层缺校验为纵深冗余，非可达缺口。② 过期授权在写入时即被拒（INVALID_INPUT「授权结束时间必须晚于当前时间」）——staffCan 过期分支不可经真实路径触达（纵深防御）。③ **读面拒绝的信封与 dispatch 不同**：读选择器返回（不 throw）⇒ main 包裹为 {ok:true, data:{ok:false, error}}——客户端必须检查 data.ok（测试断言按此写）。④ **activity.edit 两层门不一致**：canExecute 说 owner-only，handler 说 owner||own（M1 变异 12 红中发现：participant 可编辑活动级字段）——**NEEDS_PRODUCT_DECISION**。⑤ 阶段推进静默无效果（Phase 5 发现）在本套件上下文未复现（命令直发路径无 UI 重开读滞后）。
+
+  **变异验证 3/3**（domain/permissions.js 临时回植→套件红→还原→绿+git diff 零残留）：M1 activity.edit 移除 owner 门控 → 6 红（member/nonmember/跨 owner edit 放行+状态真实变化——handler 的 own 路径随之暴露）；M3 membership.save 移除 owner 门控 → 自提权成功并级联（MEM 获得 checkin 能力后「他人签到/departure」由拒转行——提权升级的活证明）；M2 vehicleCan 移除 vehicleId 绑定 → 跨车发车精确 1 红。
+
+  **门禁**：check.js / check-handlers / smoke 160/0 / fault probes 34/0 / A 层 71/0 / 16 个 scenario 套件 0 失败 / **Permission 矩阵 96/0** / Phase 5 UI-State 回归 74/0/2（无回归）/ GP sanity 187/0/7（INCONCLUSIVE 平台项如实保留）。
+
+  **是否需要重新部署 trailApi：不需要**（生产代码零改动——变异已全部还原，git diff 零残留）。
 - 2026-10-07（**Phase 5：UI Interaction & State-Matrix Test Hardening——BUG-C 修复 + 三反例回归固化**）：接续 Phase 4 的中断任务（前一会话在套件调试中产出不可信内容后中止，套件文件删除重建）。独立 worktree `D:/OurTrail-ui-matrix`（分支 `win/ui-state-hardening`，基线 `8699c33`）。任务书钉死范围：只修 BUG-C + 三反例回归固化 + 文档，禁权限/安全/框架重构。
 
   **BUG-C 实锤与修复（`roster-panel` 批量审核入口无状态门控）**：域规则要求 review 整批全部 pending（`signup.js:117-119`「只有待确认报名可以审核」，一行不符整批拒），但批量四按钮（确认/拒绝/递补/取消）仅受 `busy` 门控——confirmed 或混选在选时可点、弹层真实打开、后端整批拒。修复：`render()` 按「当前勾选的全部行」×阶段计算 `canReview`（全 pending 且 published）/`canPromote`（全 waitlisted 且 published）/`canCancel`（全 current 且未出行且 published|gathering；出行事实取行上字段，车辆腿状态留给后端），wxml 四按钮绑定 `{{canXxx && !busy ? 'onBatch' : ''}}` + disabled class + 无可操作时的解释文案。domain 零改动；后端仍是最终权威。
