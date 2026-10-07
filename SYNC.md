@@ -117,6 +117,16 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
 
 ## 六、变更日志
 
+- 2026-10-07（**Phase 8 M3/M4：幂等收据与状态链 boundary 的行为变异，4/4 齐**）：接 `1f278f6` checkpoint，只做 M3/M4，production 零永久改动。
+
+  **M3（拆 `commands.js:116-121` 幂等收据）**：RED＝并发套件 24/1（S5「同 requestId 重发 → replayed:true 且零推进」）、domain-negative 81/2、A 层 70/1、smoke 172/1。**RED 的真实成因不是二次执行**：重放撞上 `domain/invariants.js` 的收据唯一性检查，报 `INVALID_INPUT「请求记录重复。」` ⇒ 幂等其实有两层（收据查表管 replay 语义、落库前全量不变量复检管重复），拆前者把语义降级成报错，不会静默双写。RESTORE 后 25/0·83/0·71/0·173/0。
+
+  **M4（先建 S7 状态链，再变异）**：boundary 位置**更正为 `domain/activity.js:160-169`**（不在 invariants）——`gathering→active` 逐人要求 `record.departure`，`kind==='joined'` 加 `checkIn`，拼车再加 `boardingByLeg.outbound`；取集处 `:140 const confirmed`。S7 全走真实信封 `create→publish(self 报名)→profile.save→signup.submit→signup.review→transition(gathering)`，核实次序复用 A 层 `e2e-test.js:272-274`（不重造夹具；两人都 `trip.mode='self'`，故 `board` 腿按 `permissions.js:52-53` 天然不适用，带座位的 board 腿仍由 A 层守）。baseline：越级 ⇒ `UNRESOLVED_DEPARTURE` 且 phase/revision/rows 三态全无变化；完成 `checkin+departure` ⇒ ok、`phase=active`、**revision 恰好 +5**。
+  两条自己抓出的假绿写进注释防回归：① `revision` 在信封 `data` 上不在 `view` 上，`v.revision` 恒 `undefined` ⇒「不推进」曾是自证；② 补「合法链 +5」反空断言后当场暴露。
+  变异第一次打偏也记进文档：把分支条件改成 `false &&` 撤的是**这条边本身**，于是撞 `WRONG_PHASE`，phase 从未进 active，测到的是阶段机不是 boundary（该轮作废）。第二次改打 `:140 const confirmed = []`（保留边合法、只让核实失去对象；副作用是 `:171-181` 的 coordinating→late 转化同被跳过，已如实标注）⇒ **RED 为真行为变化**：未核实越级成功落库、`phase gathering→active`、`revision 18→19`、两名 confirmed 参与者仍 `checkedIn=false` 且无出发核实，套件 31/6。
+
+  **RESTORE 与回归**：`git checkout -- domain/activity.js` 后 concurrency **37/0**（bugs=2 常驻红测、4 INCONCLUSIVE）、smoke **173/0**、fault-probe **34/0**、A 层 **71/0**、permission **96/0**、domain-negative **83/0**、check.js ALL PASSED、check-handlers exit 0；`git status` 仅剩 `tools/e2e-concurrency-test.js` 与本文档/日志 ⇒ **M1/M2/M3/M4 变异 4/4 有效，RESIDUE=0**。**BUG-C1 保持 P1 CONCURRENCY / DATA CONSISTENCY BUG（Client CAS bypass）真云端结论不变**，`editor.js`、`index.js:122` 与 production CAS 语义一律未动，修复留 Phase 9。**是否需要重新部署 trailApi：不需要**（本轮 production 未改；`activity.js` 的改动仅存在于已还原的变异窗口内）。
+
 - 2026-10-07（**Phase 8 第一轮：并发/一致性只读审计 + 桩事务 barrier + BUG-C1 定罪**）：接续一个中断的 agent 现场（`win/concurrency-consistency` 停在 Phase 7 栈顶 `cc44504`，工作树遗留 `domain/activity.js` handler owner 门 +3 行、`tools/e2e-permission-test.js` 一条 `fs.readFileSync` 字符串静态门）。先把分支 `--ff-only` 到 master `65b66cb`（改动文件在新基线上逐字节未变，安全带过），再按任务书做第一阶段（只允许 audit + `activity.edit` 最小修复 + 只读一致性审计）。
 
   **只读审计（`docs/testing/concurrency-consistency-model.md`）核心结论**：① **两层 CAS 语义不等价**——层①`commands.js:122` 比的是「本请求 loadState 时刻」的 revision，只防得住**客户端显式带陈旧值**；层②`store.js:114` 在事务内重读 `ot_meta/main`，是**真并发下唯一防线**（两个并发请求都读到 R、都过层①）。② `index.js:122` 把非整数的 `expectedRevision` 缺省成 `before.revision`，等于两层同时放弃 ⇒ 该次写退化为 last-write-wins。③ handler 只改 `deepClone` 候选且 `!ok` 整体丢弃（`commands.js:123-125`），事务内任何失败整体不提交 ⇒ **domain 与 store 都是全有或全无，未发现部分副作用路径**。④ 桩的 `runTransaction` 原本只是 `return fn(transaction)`（无锁无串行），故 Phase 7 记的「同 tick 两写均 OK」定性为 **TEST HARNESS ARTIFACT**，不是生产 CAS bug——但代价是既有基座无法证伪双写。⑤ 读路径有两种一致性等级：meta 走主键读（`store.js:62`）、15 个业务集合走分页查询（`store.js:43`），这是「20s+ 云读滞后」与「workspace 重开后推进阶段静默无效果」的最简机制假设（revision 新、业务行旧，再叠加 `api.js:121` 把 reload 的失败 `.catch(()=>{})` 吞掉），**HYPOTHESIS 状态，桩里天然复现不了**。

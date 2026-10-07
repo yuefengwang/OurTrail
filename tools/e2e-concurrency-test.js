@@ -76,7 +76,7 @@ function input(title, description) {
     title, description, organizerIntro: '自动化',
     startAt: '2027-03-06T08:00:00+08:00', endAt: '2027-03-06T18:00:00+08:00', deadlineAt: '2027-03-05T20:00:00+08:00',
     acceptingSignups: true, capacity: 12, approvalMode: 'manual', routeId: null,
-    routeSnapshot: { title: '路线', distanceKm: 6, ascentM: 200, points: [{ id: 'pt-1', name: '山门', kind: 'start', coordinates: null }], risks: [] },
+    routeSnapshot: { title: '路线', distanceKm: 6, ascentM: 200, points: [{ id: 'pt-1', name: '山门', kind: 'start', coordinates: null }], risks: [{ id: 'risk-1', title: '湿滑', advice: '防滑鞋' }] },
     pickupPoints: [{ id: 'pk-1', name: '东门', meetingAt: '2027-03-06T07:00:00+08:00', address: 'x', coordinates: null }],
     equipment: ['防滑鞋'], feeNote: 'AA', cancellationNote: '',
   }
@@ -277,6 +277,88 @@ async function main() {
     check('S5 顺序路径对照：同一 requestId 重发 → replayed:true 且 revision 不推进',
       r3.ok === true && !!(r3.data && r3.data.replayed) && revAfterReplay === finalRev,
       JSON.stringify({ ok: r3.ok, replayed: r3.data && r3.data.replayed, rev: finalRev + '→' + revAfterReplay, error: r3.error }))
+  }
+
+  // ============================================================
+  section('S7 状态链 boundary：gathering→active 的出发核实（任务书 §13）')
+  // ============================================================
+  {
+    const CHEN = 'o-chen-member'
+    const chen = as(CHEN)
+    const person = (name, phone, en, ep) => ({ name, phone, emergency: { name: en, phone: ep }, medical: '', avatar: '' })
+    const view7 = async id => (await OWNER.read({ kind: 'activity', activityId: id, perspective: 'organizer' })).data.view
+    const rev7 = async id => (await OWNER.read({ kind: 'activity', activityId: id, perspective: 'organizer' })).data.revision
+    // 次序严格照抄 A 层 tools/e2e-test.js:272-274（checkin → board → depart）。
+    // 本场两位参与者都走 trip.mode='self'，所以 board 腿按 permissions.js:53 天然不适用
+    // （needsOutboundBoarding 只对 shared 生效）；带座位安排的 board 腿仍由 A 层 :277-282 守，不在此重造。
+    const checkin = async (id, sid) => OWNER.dispatch({ type: 'attendance.checkin', activityId: id, signupId: sid,
+      checkIn: { method: 'manual', evidence: { at: '', by: '', note: '集合点人工核实' } } }, await rev7(id))
+    const depart = async (id, sid) => OWNER.dispatch({ type: 'attendance.departure', activityId: id, signupId: sid,
+      outcome: { kind: 'joined', evidence: { at: '', by: '', note: '随队出发' } } }, await rev7(id))
+
+    /** 真实信封建到 gathering：create→publish→submit→review→transition。不碰 DB、不伪造 phase、不 mock handler */
+    async function buildGathering(tag) {
+      let r = await OWNER.dispatch({ type: 'activity.create', input: input(tag + ' 状态链', 'S7 夹具') })
+      const id = r.data.targetIds[0]
+      const linProfile = (await OWNER.read({ kind: 'profile' })).data.view.profile
+      r = await OWNER.dispatch({ type: 'activity.publish', activityId: id, participation: {
+        personRef: { kind: 'user', userId: LIN }, participant: linProfile.person,
+        trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } }, await rev7(id))
+      check(tag + ' publish（组织者本人报名）ok', r.ok === true, JSON.stringify(r.error || ''))
+      await chen.dispatch({ type: 'profile.save', person: person('陈屿S7', '00000000092', '陈父S7', '00000000052') })
+      const chenProfile = (await chen.read({ kind: 'profile' })).data.view.profile
+      r = await chen.dispatch({ type: 'signup.submit', activityId: id, keepTogether: false, mode: 'apply', participants: [{
+        personRef: { kind: 'user', userId: CHEN }, participant: chenProfile.person,
+        trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } }] }, await rev7(id))
+      check(tag + ' signup.submit（第二人报名）ok', r.ok === true, JSON.stringify(r.error || ''))
+      const pending = (await view7(id)).rows.filter(x => x.status === 'pending').map(x => x.signupId)
+      r = await OWNER.dispatch({ type: 'signup.review', activityId: id, signupIds: pending, decision: 'confirm' }, await rev7(id))
+      check(tag + ' signup.review 批量确认 ok', r.ok === true, JSON.stringify(r.error || ''))
+      r = await OWNER.dispatch({ type: 'activity.transition', activityId: id, next: 'gathering', reason: '按期集合' }, await rev7(id))
+      check(tag + ' transition gathering ok', r.ok === true, JSON.stringify(r.error || ''))
+      return id
+    }
+
+    const id7 = await buildGathering('S7')
+    let v = await view7(id7)
+    const revBefore = await rev7(id7)   // revision 在 data 上、不在 view 上；写 v.revision 会拿到 undefined 造成空断言
+    const rowFacts = x => JSON.stringify(v.rows.map(y => [y.name, y.status, y.checkedIn, y.departure, y.needsOutboundBoarding]))
+    const rowsBefore = rowFacts(v)
+    check('S7 夹具成立：phase=gathering、confirmed=2、pending=0',
+      v.activity.phase === 'gathering' && v.counters.confirmed === 2 && v.counters.pending === 0,
+      JSON.stringify({ phase: v.activity.phase, counters: v.counters }))
+
+    const bad = await OWNER.dispatch({ type: 'activity.transition', activityId: id7, next: 'active', reason: '未核实就发车' }, revBefore)
+    v = await view7(id7)
+    check('S7 baseline：未完成出发核实 → UNRESOLVED_DEPARTURE（不是 WRONG_PHASE/INVALID_INPUT）',
+      bad.ok === false && bad.error.code === 'UNRESOLVED_DEPARTURE', JSON.stringify(bad.error))
+    check('S7 baseline 拒绝零副作用：phase 仍 gathering', v.activity.phase === 'gathering', v.activity.phase)
+    const revAfterBad = await rev7(id7)
+    check('S7 baseline 拒绝不推进 revision', revAfterBad === revBefore, revBefore + '→' + revAfterBad)
+    check('S7 baseline 拒绝不动名单（status/checkedIn/departure/needsOutboundBoarding 全不变）',
+      rowFacts(v) === rowsBefore, '')
+
+    for (const sid of v.rows.map(x => x.signupId)) { await checkin(id7, sid); await depart(id7, sid) }
+    v = await view7(id7)
+    check('S7 前置真的建成了：两行都 checkedIn=true 且 needsOutboundBoarding=false（不是靠错误文案反推）',
+      v.rows.length === 2 && v.rows.every(x => x.checkedIn === true && x.needsOutboundBoarding === false),
+      JSON.stringify(v.rows.map(x => ({ n: x.name, ci: x.checkedIn, nob: x.needsOutboundBoarding }))))
+    const legal = await OWNER.dispatch({ type: 'activity.transition', activityId: id7, next: 'active', reason: '全员核实发车' }, await rev7(id7))
+    v = await view7(id7)
+    check('S7 正常链完成核实后 gathering→active 合法成功（phase=active）',
+      legal.ok === true && v.activity.phase === 'active', JSON.stringify({ ok: legal.ok, err: legal.error, phase: v.activity.phase }))
+    const revFinal = await rev7(id7)
+    // 反空断言：合法链确实推进了 5 次（2×checkin + 2×departure + 1×transition），
+    // 所以上面「拒绝那次不推进」不是「revision 本来就取不到」造成的假绿。
+    check('S7 合法链推进 revision = +5（2 签到 + 2 出发核实 + 1 推进），证明「不推进」那条不是空断言',
+      revFinal === revBefore + 5, revBefore + '→' + revFinal)
+    ledger({ id: 'S7', actorA: 'Owner(组织者)', actorB: 'Member(已报名未核实)', initialRevision: revBefore, barrier: 'ON',
+      ordering: 'sequential（真实链 create→publish→submit→review→gathering）',
+      opA: 'activity.transition next=active（未完成出发核实）', opB: 'attendance.checkin + attendance.departure(joined) 逐人',
+      expectedWinner: '核实链', expectedLoser: '越级 transition', expectedError: 'UNRESOLVED_DEPARTURE',
+      finalRevision: revFinal, finalState: 'phase=' + v.activity.phase + ' confirmed=' + v.counters.confirmed,
+      readBack: 'organizer 视图逐步回读', loserSideEffects: '零（phase/revision/rows 全未变）',
+      verdict: (bad.ok === false && bad.error.code === 'UNRESOLVED_DEPARTURE' && legal.ok === true) ? 'PASS（STUB，boundary 基线）' : 'FAIL' })
   }
 
   // ============================================================

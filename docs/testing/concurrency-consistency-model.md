@@ -161,3 +161,18 @@ M3（拆幂等收据）与 M4（放宽 phase 边界，需先建 §13 的状态�
 **结论**：BUG-C1 不只是 stub 推演——真云端现版同样让「不传 `expectedRevision` 的首条命令」绕过 CAS，产生 last-write-wins，且双方都收到成功。§5 的云读滞后假设这两轮**既未证实也未否证**（n=2，写读间隔被 9s 页面装配与 2.9s RTT 支配，分辨率不足；模拟器链路 ≠ 线上小程序链路），继续记 INCONCLUSIVE。
 
 **方法论教训**：v1 曾误报「已复现」——B 在 `gathering` 阶段改 title 被 `WRONG_PHASE` 拒（lockedKeys），根本没有可被吞的前序写入，而我拿「终态 title == A 的陈旧值」当判据，把「B 从未成功」读成了「B 被吞」。v2 起判据加前置门：**B 必须 landed 且 revision +1、终态必须 +2**，否则整轮记 INVALID。
+
+## 12. M4：状态链 boundary 的行为变异（2026-10-07）
+
+**boundary 位置修正**：`gathering→active` 的出发核实**不在 `invariants.js`**，在 `domain/activity.js:160-169`：逐人要求 `record.departure`（:165），`kind==='joined'` 还要求 `record.checkIn`，拼车（`trip.mode==='shared'` 且非参与者司机）还要 `boardingByLeg.outbound`（:168）。取集处是 `:140 const confirmed`。第二趟循环（:171-181）把仍在 `coordinating` 的人转成未解决的 `late` 异常。
+
+**S7（`tools/e2e-concurrency-test.js`，11 条断言，全套 37/0）**：真实信封 `create → publish(本人 self 报名) → profile.save(第二人) → signup.submit → signup.review(confirm) → transition(gathering)`，payload 与次序严格复用 A 层 `tools/e2e-test.js:272-274`（`checkin → board → departure`）。本场两人都取 `trip.mode='self'`，因此 `board` 腿按 `permissions.js:52-53`（`needsOutboundBoarding` 只对 shared 生效）天然不适用；带座位安排的 `board` 腿仍由 A 层 `:277-282` 守，不在此重造夹具。
+- baseline：未核实越级 ⇒ `UNRESOLVED_DEPARTURE`（不是 WRONG_PHASE/INVALID_INPUT），phase 仍 gathering、revision 不推进、rows 的 `status/checkedIn/departure/needsOutboundBoarding` 逐字节不变。
+- 完成 `checkin+departure` 后 ⇒ `transition` ok、`phase=active`、**revision 恰好 +5**（2 签到 + 2 出发核实 + 1 推进）。
+
+**两条自己抓出来的假绿**（都写进代码注释，防止回归成空断言）：① `revision` 挂在信封 `data` 上、不在 `view` 上，`v.revision` / 由 `view7` 派生的 `rev7` 全是 `undefined`，于是「拒绝不推进 revision」变成 `undefined===undefined` 自证；② 补上「合法链必须 +5」的反空断言后，这个缺陷当场暴露（第一次跑出 `undefined→undefined`）。
+
+**变异第一次打偏（记录，别重犯）**：把 `} else if (activity.phase==='gathering' && p.next==='active') {` 改成 `false &&` ——撤掉的不是边上的核实，而是**这条边本身**，于是撞上下面的 `else return WRONG_PHASE('不允许跳过或回退活动阶段')`，phase 从未进入 active，测到的是阶段机而不是 boundary。该轮已作废并 `git checkout` 还原。
+**第二次单点变异**（正确）：`:140 const confirmed = []`——保留边合法，只让逐人核实失去对象（副作用：`:171-181` 的 coordinating→late 转化同时被跳过，如实标注）。
+**RED 实测（行为变化，不是字符串匹配）**：未核实的越级 transition **成功落库**，`phase: gathering → active`、`revision 18 → 19`，而两名 confirmed 参与者仍 `checkedIn=false` 且无任何出发核实记录 ⇒ 活动进入「已出发」而全员去向未核实，正是该 boundary 存在的目的；套件 `31/6`。
+**RESTORE**：`git checkout -- domain/activity.js` 后 `37/0`，全套回归 smoke 173/0、fault 34/0、A 层 71/0、permission 96/0、domain-negative 83/0、check ALL PASSED、check-handlers exit 0；residue 仅 `tools/e2e-concurrency-test.js`。⇒ **M1/M2/M3/M4 = 4/4 有效，RESIDUE=0。**
