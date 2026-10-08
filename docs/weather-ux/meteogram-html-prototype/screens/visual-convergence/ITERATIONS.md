@@ -232,3 +232,21 @@ Change: 无代码改动；仅本文档（Ranking P2-3 关闭注 + 本条目）+ 
 Before: 无（非改码轮；基线同机位对照见 baseline/chengdu-48h-375px.png、baseline/chengdu-72h-375px.png）
 After: iter-8-chengdu-48h-375px.png、iter-8-chengdu-72h-375px.png、iter-8-litang-72h-375px.png（对照物 horizon-chengdu-72-375.png）
 Decision: CLOSE（证据关闭，无回滚对象）/ Reason: 48/72h 网格/箭头/日分隔与原型同构无可见劣化；P2-2 图例跨 viewSpan 保持 2 行；P2-3 关闭，Ranking 已同步。
+
+## Iteration 9 — 真机读数 bug 修复 ·「海拔 undefined m 云量 null%」+ 解读行缺失
+
+Problem: 统一卡选中小时后第二行读数打出 `海拔 undefined m 云量 null%`，第三行 OurTrail 解读（你在云中/头顶有云层）整行不渲染（375px 真机截图实证，见 before 图）。Iter6 已记录该隐患、Task 4 收尾留置「另开一轮」，本轮兑现。
+根因（代码取证，非猜测）: `weather.js` `applyUnifiedSelection` 读 `u.geo.userAlt`，但 `meteogram-svg.js` `buildUnified` 返回体把海拔嵌在 `cloud.userAlt` 下、**顶层没有 userAlt** → 两处读到 `undefined`：① `inferState(sample, hour, undefined, covered)` 三路比较（inCovered/belowHi/aboveLo）全为 false → `key`/`cUser` 恒 null → r3 恒空、r2 走 else 分支；② `cfFmtM(undefined)` 与 `null + '%'` 裸拼串把 `undefined`/`null` 打到屏上。null 与 undefined 在 `inferState` 内语义不同（`undefined-200=NaN` → key 恒 null；`null-200=-200` 可跑出 mid），故 elevation 缺失时须传 `undefined` 保持「无解读」语义，不能传 null。
+范围: 仅 `weather.js` 两处（L670 inferState 取值源 + L681 r2 拼串 null 守卫，附中文 bug 现场回归注释——规则 18）+ `tools/weather-page-test.js` 新增 §11b。**不改** meteogram-svg 返回形状、inferState/denseSpanAt 阈值、sky/OI/CF 任何数学。
+
+### Iteration 9 — Change / Before / After / Decision
+
+Change: ① `weather.js` `applyUnifiedSelection` 内取 `const userAlt = u.geo.cloud && Number.isFinite(u.geo.cloud.userAlt) ? u.geo.cloud.userAlt : undefined`，`inferState` 改传 `userAlt`；② r2 else 分支两处 null 守卫 → `'海拔 ' + (userAlt != null ? cfFmtM(userAlt) : '—') + ' m 云量 ' + (st.cUser != null ? st.cUser + '%' : '—')`；③ `weather-page-test.js` §11b 三形态 13 断言——A（3500m 在覆盖区内 → `海拔 3,500 m 云量 65%` + 你在云中）、B（云量 80% 厚层 → span 云区行 `3,150–3,750 m`——span 不依赖 userAlt，**改前即绿 = 回归护栏**）、C（500m 在覆盖区下 → `海拔 500 m 云量 —` + 头顶有云层），三形态各带 r1-r4 无 undefined/null 泄漏断言。
+测试: §11b 改前红 7 / 绿 6（A r2/r3/泄漏、B r3、C r2/r3/泄漏红；B r2 护栏绿），全文件 142 passed/7 failed；修复后 **149 passed/0 failed**。门禁 38 套全量实跑：37 绿 + `outdoor-intelligence-ui` 46 过 1 败（`applySelection 命中 IN_CLOUD 窗口` L118，Task 4 已 stash 隔离归因的既有数据依赖败例，非本轮引入）；`check.js` ALL CHECKS PASSED、`check-handlers.js weather` 19 handlers ✓。`cloud-field-svg` 链跑单次 26/1（未捕获 ✗ 行）后独立复跑 27/0——判为性能断言偶发 flake（同 Iteration 7 记录），本轮 diff 未触其字节。
+证据（2026-10-08，375 机位、真实数据、改码后 cli close→open→auto 重开）:
+- 理塘（elevation 3500）: r2 `海拔 undefined m 云量 null%` → **`海拔 3,500 m 云量 0%`**（数字干净）；r3 为空是正确语义——13:00 用户海拔处云量 0%、无 in/sea/mid 信号，不编解读（r2 的 0% 证明 userAlt 已正确进入 inferState）。
+- 成都（elevation 500，C 形态）: r2 **`海拔 500 m 云量 —`**（em-dash 而非 null%）+ r3 **`→ 头顶有云层` 解读行渲染出现**（改前整行缺失）——r3 恢复的直接实证。
+- 375px 无回归: 分段控件/坐标轴/图例/读数四行全部完整无溢出（两张 after 图）。
+Before: iter-9-litang-24h-sel13-before.png（`海拔 undefined m 云量 null%`、r3 缺失）
+After: iter-9-litang-24h-sel13-after.png、iter-9-chengdu-24h-sel13-after.png
+Decision: KEEP / Reason: bug 根因取证确凿（字段路径错误 + 裸拼串），修复最小（2 处取值/守卫，渲染数学零改动）；测试先红后绿（7 红 → 0 红，B 形态护栏改前即绿防误伤）；38 套门禁除既有归因败例全绿；真机双地点前后对照实证 r2/r3 均恢复。

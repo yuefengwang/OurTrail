@@ -667,7 +667,13 @@ Page({
     const u = this._unified
     const row = u.surface[hour] || {}
     const ov = UMG.renderUnifiedSelection(u.geo, { selectedAbs: hour })
-    const st = CFF.inferState(u.geo.sample, hour, u.geo.userAlt, u.geo.covered)
+    /* 海拔必须取 cloud.userAlt：buildUnified 把它嵌在 cloud 下，顶层没有 userAlt。
+       真机 bug（375px 截图实证）：读 u.geo.userAlt 恒为 undefined → inferState 三路比较
+       全收到 undefined → cUser/key 恒 null → r2 拼出「海拔 undefined m 云量 null%」、
+       r3 解读行整行缺失。elevation 缺失时传 undefined（而非 null）保持「无解读」语义，
+       回归钉子：tools/weather-page-test.js §11b（in / span / mid 三形态）。 */
+    const userAlt = u.geo.cloud && Number.isFinite(u.geo.cloud.userAlt) ? u.geo.cloud.userAlt : undefined
+    const st = CFF.inferState(u.geo.sample, hour, userAlt, u.geo.covered)
     card.selSrc = this.cfUri(ov.svg)
     card.hour = hour % 24
     card.absHour = hour
@@ -678,7 +684,9 @@ Page({
     card.r1 = timePrefix + cfPad(hour % 24) + ':00 · ' + (row.temp == null ? '—' : Math.round(row.temp)) + '° ' + F.weatherPhrase(row.code).label +
       (precip >= 0.05 ? ' · 降水 ' + (Math.round(precip * 10) / 10) + ' mm' : '')
     if (st.span) card.r2 = '云量 ' + st.span.peak + '% · 云区 ' + cfFmtM(st.span.lo) + '–' + cfFmtM(st.span.hi) + ' m'
-    else card.r2 = '海拔 ' + cfFmtM(u.geo.userAlt) + ' m 云量 ' + st.cUser + '%'
+    /* null 守卫：cUser 在用户海拔不可采样时为 null、userAlt 在 elevation 缺失时为 undefined，
+       裸拼串会把 null/undefined 打到屏上（真机 bug 现场见上）。 */
+    else card.r2 = '海拔 ' + (userAlt != null ? cfFmtM(userAlt) : '—') + ' m 云量 ' + (st.cUser != null ? st.cUser + '%' : '—')
     card.r3 = st.key ? st.word : ''
     card.r4 = '风 ' + (row.wind == null ? '—' : Math.round(row.wind)) + ' km/h · 阵 ' + (row.gust == null ? '—' : Math.round(row.gust)) + (row.windDir != null ? ' · ' + F.windDirText(row.windDir) : '')
     return card.r1

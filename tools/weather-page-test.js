@@ -767,6 +767,72 @@ function oldServerResult(today, selectedDate) {
   }
 }
 
+// ============ 11b. 统一卡读数 r2/r3：海拔与云态解读（真机 bug 回归）============
+// 真机 375px 截图实证的 bug 现场：r2 = 「海拔 undefined m 云量 null%」、r3 解读行整行缺失。
+// 根因：applyUnifiedSelection 读 u.geo.userAlt，但 buildUnified 返回体把海拔嵌在
+// cloud.userAlt 下、顶层根本没有 userAlt → inferState 三路比较全收到 undefined →
+// cUser/key 恒 null。B 形态的 span 云区行不依赖 userAlt（改前即绿）= 回归护栏。
+{
+  section('11b. 统一卡读数 r2/r3：海拔与云态解读（真机 undefined/null 回归）')
+
+  const mkCloudLevels = covers => {
+    const times = []
+    for (let i = 0; i < 48; i++) times.push(addDays(DATE, Math.floor(i / 24)) + 'T' + String(i % 24).padStart(2, '0') + ':00')
+    return {
+      times,
+      levels: covers.map(c => ({ altitudes: times.map(() => c.alt), cloudCover: times.map(() => c.cov) })),
+    }
+  }
+  const mkResult = (covers, updatedAt) => ({
+    pointId: 'p1',
+    series: fakeSeries(DATE, 2),
+    days: fakeDays(DATE, 3),
+    detail: [],
+    updatedAt,
+    cloudLevels: mkCloudLevels(covers),
+  })
+  const runPick = (covers, elevation, updatedAt) => {
+    const page = makePage(pageConfig())
+    page.data.date = DATE
+    page.data.viewSpan = 24
+    page.data.chartPick = { date: DATE, t: '13:00' }
+    return page.buildUnifiedCard(mkResult(covers, updatedAt), elevation)
+  }
+  const noLeak = card => !!card && !/undefined|null/.test([card.r1, card.r2, card.r3, card.r4].join(' '))
+  const dump = card => card ? [card.r1, card.r2, card.r3, card.r4].join(' | ') : 'card=null'
+
+  // A：用户 3500m 在覆盖区 [1000,5000] 内，该海拔云量 65% ≥ IN_C(60) → 你在云中
+  {
+    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 65 }, { alt: 5000, cov: 20 }], 3500, DATE + 'T10:00:00+08:00')
+    check('11b-A 卡构建成功（src/selSrc 非空）', !!card && !!card.src && !!card.selSrc, dump(card))
+    check('11b-A r1 = 13:00 · 12° …', !!card && /^13:00 · 12° /.test(card.r1), card && card.r1)
+    check('11b-A r2 = 海拔 3,500 m 云量 65%', !!card && card.r2 === '海拔 3,500 m 云量 65%', card && card.r2)
+    check('11b-A r3 = 你在云中（stKey=in）', !!card && card.r3 === '你在云中' && card.stKey === 'in',
+      card && (card.r3 + '/' + card.stKey))
+    check('11b-A r1-r4 无 undefined/null 泄漏', noLeak(card), dump(card))
+  }
+
+  // B：云量 80% 厚层 → span 云区行（span 不读 userAlt，改前即绿 = 回归护栏）
+  {
+    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 80 }, { alt: 5000, cov: 20 }], 3500, DATE + 'T10:01:00+08:00')
+    check('11b-B 卡构建成功（src/selSrc 非空）', !!card && !!card.src && !!card.selSrc, dump(card))
+    check('11b-B r2 = 云量 80% · 云区 3,150–3,750 m', !!card && card.r2 === '云量 80% · 云区 3,150–3,750 m', card && card.r2)
+    check('11b-B r3 = 你在云中（stKey=in）', !!card && card.r3 === '你在云中' && card.stKey === 'in',
+      card && (card.r3 + '/' + card.stKey))
+    check('11b-B r1-r4 无 undefined/null 泄漏', noLeak(card), dump(card))
+  }
+
+  // C：用户 500m 低于覆盖区（lo=max(ALT0,1000)=2000）→ 头顶有云层；cUser 不可采样 → 云量 —
+  {
+    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 65 }, { alt: 5000, cov: 20 }], 500, DATE + 'T10:02:00+08:00')
+    check('11b-C 卡构建成功（src/selSrc 非空）', !!card && !!card.src && !!card.selSrc, dump(card))
+    check('11b-C r2 = 海拔 500 m 云量 —', !!card && card.r2 === '海拔 500 m 云量 —', card && card.r2)
+    check('11b-C r3 = 头顶有云层（stKey=mid）', !!card && card.r3 === '头顶有云层' && card.stKey === 'mid',
+      card && (card.r3 + '/' + card.stKey))
+    check('11b-C r1-r4 无 undefined/null 泄漏', noLeak(card), dump(card))
+  }
+}
+
 // ============ 12. local 模式（P3 独立天气模块 §5）============
 // 单点与轨迹组共用同一查询视图：不 read 活动、日期第一轮落定、分享降精度（决策 b）、
 // 轨迹组按 §5.4 展开抵达日程且基准日不随切日前漂。加载真页面配置（同第 7 节手法）。
