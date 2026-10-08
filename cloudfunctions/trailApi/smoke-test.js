@@ -3,10 +3,11 @@
 'use strict'
 
 const { reduceCommand, genId } = require('./domain/commands')
+const { handleActivity } = require('./domain/activity')
 const { assertInvariants } = require('./domain/invariants')
 const { selectView, selectTransport, getDetailState, selectSensitive, selectContact } = require('./domain/selectors')
 const { planAssignments } = require('./domain/allocation')
-const { canonicalPayload } = require('./domain/contracts')
+const { canonicalPayload, deepClone } = require('./domain/contracts')
 const W = require('./lib/weather')
 const crypto = require('crypto')
 
@@ -707,6 +708,44 @@ function run() {
     check('敏感导出带用途 → ok 且事件账记录用途',
       r.ok && r.value.state.events.some(e => e.summary.indexOf('敏感名单导出：紧急联络卡打印') !== -1), r.error)
     st = r.value.state
+  }
+
+  console.log('== 17. activity.edit handler 层 owner 门（Phase 8.0 纵深防御第二层）==')
+  {
+    // 直调 handleActivity 是刻意的：第二层只有绕过 canExecute 才观测得到。
+    // 走完整 dispatch 时两层都回 FORBIDDEN，行为上不可区分——Phase 8 变异实测：
+    // 只拆 handler 门 ⇒ permission 96/1（仅静态门红）、A 层 71/0 全盲；
+    // 只拆 canExecute 门 ⇒ 拒绝改由 handler 发出，文案不同但信封形状一样。
+    let st = emptyState()
+    let r = dispatch(st, LIN, { type: 'profile.save', person: { name: '林溪', phone: '00000000001', emergency: { name: '林母', phone: '00000000051' }, medical: '' } })
+    st = r.value.state
+    r = dispatch(st, LIN, { type: 'activity.create', input: fullActivityInput() })
+    st = r.value.state
+    const actId = r.value.targetIds[0]
+    const title0 = st.activities[0].title
+    const rev0 = st.revision
+    const pristine = JSON.stringify(st)
+    const edit = (actor, title) => ({
+      actor: { userId: actor }, requestId: genId('req'), expectedRevision: st.revision, fingerprint: '0'.repeat(64),
+      payload: { type: 'activity.edit', activityId: actId, input: Object.assign(fullActivityInput(), { title }) },
+    })
+
+    const victim = deepClone(st)
+    const denied = handleActivity(victim, edit(OWNER, '越权改标题'), ctx())
+    check('非 owner 直调 handler activity.edit → FORBIDDEN（第二层独立成立）',
+      denied.ok === false && denied.error.code === 'FORBIDDEN', denied.error)
+    check('拒绝文案出自 handler（不是 canExecute 的通用权限文案）',
+      denied.ok === false && String(denied.error.message).indexOf('只有活动发起者') === 0, denied.error)
+    check('败者零副作用：传入的 state 深比较与调用前逐字节一致（title/revision/receipts/events 全未动）',
+      JSON.stringify(victim) === pristine, '')
+
+    const mine = deepClone(st)
+    const allowedRes = handleActivity(mine, edit(LIN, '青城后山·本人改'), ctx())
+    check('owner 直调 handler activity.edit → ok（第二层不误伤正当写入）', allowedRes.ok === true, allowedRes.error)
+    check('正当写入改到 title，且 handler 层不推进 revision（推进属 commands 层职责）',
+      allowedRes.ok === true && mine.activities[0].title === '青城后山·本人改' && mine.revision === rev0, '')
+    check('第二层在字段校验之前生效：非 owner 带非法输入仍是 FORBIDDEN 而非 INVALID_INPUT',
+      handleActivity(deepClone(st), { actor: { userId: OWNER }, requestId: genId('req'), expectedRevision: st.revision, fingerprint: '0'.repeat(64), payload: { type: 'activity.edit', activityId: actId, input: null } }, ctx()).error.code === 'FORBIDDEN', '')
   }
 
   console.log('')

@@ -92,6 +92,9 @@ function handleActivity(state, command, context) {
       return success([copy.id])
     }
     case 'activity.edit': {
+      // handler 层的 owner 门（Phase 8.0）：canExecute 已 owner-only，这里显式复核——
+      // 授权不依赖单点；activity.ownerId 与 actor 的关系是本命令唯一的授权依据。
+      if (activity.ownerId !== command.actor.userId) return failure('FORBIDDEN', '只有活动发起者可以修改活动内容。')
       if (['closing', 'archived', 'cancelled'].indexOf(activity.phase) !== -1) return failure('WRONG_PHASE', '结束核验、归档或取消后，活动内容为只读。')
       if (!S.validate(S.ActivityInput, p.input)) return failure('INVALID_INPUT', '活动字段不完整或格式不正确。')
       const input = p.input

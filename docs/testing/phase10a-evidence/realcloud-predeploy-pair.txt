@@ -1,0 +1,8 @@
+00:27:17.876 SESSION ALIVE SDK=3.8.12  判据=storage
+00:27:33.520   第 0 次：R=4699 结果=["OK","CONFLICT"] ok数=1 Δrevision=1 title="P10A0-A 并发标题"
+00:27:41.991   第 1 次：R=4700 结果=["OK","CONFLICT"] ok数=1 Δrevision=1 title="P10A1-A 并发标题"
+00:27:49.429   第 2 次：R=4701 结果=["OK","CONFLICT"] ok数=1 Δrevision=1 title="P10A2-A 并发标题"
+00:27:49.429   汇总：尝试=3 恰好一胜=3 双胜=0 Δ=1 的次数=3 败者码=["CONFLICT","CONFLICT","CONFLICT"]
+00:27:49.429 VERDICT ⇒ 注意：败者一律 CONFLICT，恢复链路可用（客户端会重读） | 真云端无 lost update 的前置条件：恰好一胜=3/3、Δ=1=3/3
+00:28:21.951   收尾：恢复 title="[预演] 工作台E2E" 已恢复=true revision=4703
+00:28:21.951 DISCONNECTED（未 quit / 未 close）

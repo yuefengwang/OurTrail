@@ -1,0 +1,33 @@
+02:20:32.777 SESSION ALIVE SDK=3.8.12
+02:20:47.697   第 0 轮：OK=1 Δ=1 码=["OK","CONFLICT","CONFLICT","CONFLICT","CONFLICT","CONFLICT"]
+02:20:58.086   第 1 轮：OK=1 Δ=1 码=["CONFLICT","CONFLICT","STORAGE_UNAVAILABLE","STORAGE_UNAVAILABLE","CONFLICT","OK"]
+02:21:07.992   第 2 轮：OK=1 Δ=1 码=["OK","CONFLICT","CONFLICT","CONFLICT","CONFLICT","STORAGE_UNAVAILABLE"]
+02:21:16.408   第 3 轮：OK=1 Δ=1 码=["CONFLICT","STORAGE_UNAVAILABLE","CONFLICT","OK","STORAGE_UNAVAILABLE","STORAGE_UNAVAILABLE"]
+02:21:24.113   第 4 轮：OK=1 Δ=1 码=["CONFLICT","CONFLICT","STORAGE_UNAVAILABLE","CONFLICT","OK","STORAGE_UNAVAILABLE"]
+02:21:33.518   第 5 轮：OK=1 Δ=1 码=["STORAGE_UNAVAILABLE","STORAGE_UNAVAILABLE","CONFLICT","OK","CONFLICT","CONFLICT"]
+02:21:42.386   第 6 轮：OK=1 Δ=1 码=["STORAGE_UNAVAILABLE","CONFLICT","OK","STORAGE_UNAVAILABLE","CONFLICT","CONFLICT"]
+02:21:51.101   第 7 轮：OK=1 Δ=1 码=["OK","CONFLICT","CONFLICT","CONFLICT","CONFLICT","STORAGE_UNAVAILABLE"]
+02:22:00.767   第 8 轮：OK=1 Δ=1 码=["OK","CONFLICT","STORAGE_UNAVAILABLE","CONFLICT","CONFLICT","CONFLICT"]
+02:22:09.783   第 9 轮：OK=1 Δ=1 码=["STORAGE_UNAVAILABLE","CONFLICT","CONFLICT","STORAGE_UNAVAILABLE","CONFLICT","OK"]
+02:22:17.790   第 10 轮：OK=1 Δ=1 码=["CONFLICT","CONFLICT","OK","STORAGE_UNAVAILABLE","CONFLICT","CONFLICT"]
+02:22:25.277   第 11 轮：OK=1 Δ=1 码=["STORAGE_UNAVAILABLE","CONFLICT","OK","STORAGE_UNAVAILABLE","CONFLICT","CONFLICT"]
+02:22:33.261   第 12 轮：OK=1 Δ=1 码=["CONFLICT","CONFLICT","OK","STORAGE_UNAVAILABLE","CONFLICT","STORAGE_UNAVAILABLE"]
+02:22:40.967   第 13 轮：OK=1 Δ=1 码=["STORAGE_UNAVAILABLE","CONFLICT","CONFLICT","CONFLICT","OK","STORAGE_UNAVAILABLE"]
+02:22:40.967 
+02:22:40.967 == 判据 ==
+02:22:40.967   轮数=14 / 14 恰好一胜的违例=0 Δ≠1 的违例=0
+02:22:40.967   总码分布={"OK":14,"CONFLICT":47,"STORAGE_UNAVAILABLE":23,"OTHER":0}
+02:22:40.967 == STORAGE_UNAVAILABLE 签名分布（归一化后）==
+02:22:40.968   ×23  {"name":"Error","code":"-501001","keys":"errCode,errMsg","errMsg":"document.set:fail -# resource system error. [R","msg":"document.set:fail -# resource system error. [R"}
+02:22:40.968 == 原始样本（前 6 条，未归一化）==
+02:22:40.968   name=Error|code=-501001|errMsg=document.set:fail -501001 resource system error. [ResourceUnavailable.Transactio|msg=document.set:fail -501001 resource system error. [ResourceUnavailable.TransactionConflict] Transaction is conflict, mayb|keys=errCode,errMsg
+02:22:40.968   name=Error|code=-501001|errMsg=document.set:fail -501001 resource system error. [ResourceUnavailable.Transactio|msg=document.set:fail -501001 resource system error. [ResourceUnavailable.TransactionConflict] Transaction is conflict, mayb|keys=errCode,errMsg
+02:22:40.968   name=Error|code=-501001|errMsg=document.set:fail -501001 resource system error. [ResourceUnavailable.Transactio|msg=document.set:fail -501001 resource system error. [ResourceUnavailable.TransactionConflict] Transaction is conflict, mayb|keys=errCode,errMsg
+02:22:40.968   name=Error|code=-501001|errMsg=document.set:fail -501001 resource system error. [ResourceUnavailable.Transactio|msg=document.set:fail -501001 resource system error. [ResourceUnavailable.TransactionConflict] Transaction is conflict, mayb|keys=errCode,errMsg
+02:22:40.968   name=Error|code=-501001|errMsg=document.set:fail -501001 resource system error. [ResourceUnavailable.Transactio|msg=document.set:fail -501001 resource system error. [ResourceUnavailable.TransactionConflict] Transaction is conflict, mayb|keys=errCode,errMsg
+02:22:40.968   name=Error|code=-501001|errMsg=document.set:fail -501001 resource system error. [ResourceUnavailable.Transactio|msg=document.set:fail -501001 resource system error. [ResourceUnavailable.TransactionConflict] Transaction is conflict, mayb|keys=errCode,errMsg
+02:22:40.968   样本数=23
+02:22:40.968 == 结论口径（不下映射结论，只报事实）==
+02:22:40.968   签名种类=1 ⇒ 单一稳定形状
+02:22:47.587   收尾恢复="OK" 终态 title="[预演] 工作台E2E" 已恢复=true
+02:22:47.588 DISCONNECTED（未 quit/close）

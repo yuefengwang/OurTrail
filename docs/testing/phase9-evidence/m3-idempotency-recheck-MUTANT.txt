@@ -1,0 +1,16 @@
+FAIL e2e-concurrency               passed=36 failed=1
+        ✗ [CONFIRMED BUG BUG-C1/ON] 编辑器首条命令（不传 expectedRevision）吞掉他人刚落的写入，双方都收到成功 （barrier ON）
+        ✗ [CONFIRMED BUG BUG-C1/OFF] 编辑器首条命令（不传 expectedRevision）吞掉他人刚落的写入，双方都收到成功 （barrier OFF）
+        ✗ S5 顺序路径对照：同一 requestId 重发 → replayed:true 且 revision 不推进（{"ok":false,"rev":"12→12","error":{"code":"INVALID_INPUT","message":"请求记录重复。"}}）
+FAIL e2e-domain-negative           passed=81 failed=2
+        ✗ 同 requestId 同内容重放 → replayed:true（{"ok":false,"err":{"code":"INVALID_INPUT","message":"请求记录重复。"}}）
+        ✗ 同 requestId 异内容 → REQUEST_REUSED「此请求号已用于另一份内容」（{"code":"INVALID_INPUT","message":"请求记录重复。"}）
+FAIL e2e                           passed=70 failed=1
+        ✗ 同 requestId 重放 → replayed=true 且零副作用
+FAIL smoke                         passed=172 failed=1
+        ✗ replayed true
+ok   e2e-interleave                passed=67 failed=0
+ok   e2e-client-cas                passed=35 failed=0
+ok   e2e-release-gap               passed=51 failed=0
+
+== TOTAL passed=512 failed=5 suites=7 nonzero_exit=4 → e2e-concurrency,e2e-domain-negative,e2e,smoke

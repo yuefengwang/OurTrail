@@ -1,0 +1,20 @@
+02:58:31.253 SESSION ALIVE SDK=3.8.12
+02:58:51.002   第 0 轮：OK=1 Δ=1 码=["OK","CONFLICT","CONFLICT","CONFLICT","CONFLICT","CONFLICT"]
+02:59:02.227   第 1 轮：OK=1 Δ=1 码=["OK","CONFLICT","CONFLICT","CONFLICT","CONFLICT","CONFLICT"]
+02:59:13.373   第 2 轮：OK=1 Δ=1 码=["CONFLICT","CONFLICT","OK","CONFLICT","CONFLICT","CONFLICT"]
+02:59:21.664   第 3 轮：OK=1 Δ=1 码=["CONFLICT","CONFLICT","CONFLICT","CONFLICT","OK","CONFLICT"]
+02:59:31.044   第 4 轮：OK=1 Δ=1 码=["CONFLICT","CONFLICT","OK","CONFLICT","STORAGE_UNAVAILABLE","CONFLICT"]
+02:59:39.275   第 5 轮：OK=1 Δ=1 码=["CONFLICT","CONFLICT","CONFLICT","CONFLICT","OK","CONFLICT"]
+02:59:48.111   第 6 轮：OK=1 Δ=1 码=["CONFLICT","CONFLICT","CONFLICT","OK","CONFLICT","CONFLICT"]
+02:59:56.229   第 7 轮：OK=1 Δ=1 码=["CONFLICT","CONFLICT","CONFLICT","OK","CONFLICT","CONFLICT"]
+FAIL: Error: timeout waiting for automator response
+    at Connection.onMessage (C:\Users\thinkbook\AppData\Local\Temp\opencode\mp-auto\node_modules\miniprogram-automator\out\Connection.js:1:985)
+    at Transport.emit (node:events:509:28)
+    at WebSocket.<anonymous> (C:\Users\thinkbook\AppData\Local\Temp\opencode\mp-auto\node_modules\miniprogram-automator\out\Transport.js:1:220)
+    at WebSocket.onMessage (C:\Users\thinkbook\AppData\Local\Temp\opencode\mp-auto\node_modules\ws\lib\event-target.js:120:16)
+    at WebSocket.emit (node:events:509:28)
+    at Receiver.receiverOnMessage (C:\Users\thinkbook\AppData\Local\Temp\opencode\mp-auto\node_modules\ws\lib\websocket.js:807:20)
+    at Receiver.emit (node:events:509:28)
+    at Receiver.dataMessage (C:\Users\thinkbook\AppData\Local\Temp\opencode\mp-auto\node_modules\ws\lib\receiver.js:448:14)
+    at Receiver.getData (C:\Users\thinkbook\AppData\Local\Temp\opencode\mp-auto\node_modules\ws\lib\receiver.js:377:17)
+    at Receiver.startLoop (C:\Users\thinkbook\AppData\Local\Temp\opencode\mp-auto\node_modules\ws\lib\receiver.js:158:22)
