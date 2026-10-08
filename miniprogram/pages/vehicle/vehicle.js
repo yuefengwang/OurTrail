@@ -69,15 +69,21 @@ Page({
     const passengers = vt.passengers.map(p => {
       const isExpected = expected.some(x => x.signupId === p.signupId)
       const hasBoarded = leg === 'outbound' ? p.outboundBoarded : p.returnBoarded
+      // 徽标文案与配色都由结构化事实决定，WXML 不再拿中文文案反推状态（AGENTS.md 铁律 19）。
+      // 「本程不载他」不是一个未完成项：返程另有安排、去程已核实未出发或仍在协调，
+      // 就陈述他的去向，而不是点名「未上车」，让清点看起来欠了他一笔。
+      const notCarried = !isExpected
+      const status = notCarried
+        ? (leg === 'return' ? (F.RETURN_PLAN_LABELS[p.returnPlan] || '不占本车返程') : (F.DEPARTURE_LABELS[p.departure] || '不在本程'))
+        : (hasBoarded ? '已上车' : '未上车')
+      const tone = notCarried ? (leg === 'return' ? 'success' : 'neutral') : (hasBoarded ? 'success' : 'warning')
       return {
         signupId: p.signupId,
         name: p.name,
         avatar: p.avatar || '',
         subtitle: p.pickup + ' · ' + (p.seat ? p.seat + '号座' : '未编号'),
-        // 不点名「未上车」：本车不载他返程时，那不是一个未完成项，而是根本没有这项。
-        status: leg === 'return' && !p.returnBoardingApplies
-          ? (F.RETURN_PLAN_LABELS[p.returnPlan] || '不占本车返程')
-          : (hasBoarded ? '已上车' : '未上车'),
+        status,
+        tone,
         showBoard: canOperate && !legInfo.departed && isExpected && !hasBoarded,
       }
     })

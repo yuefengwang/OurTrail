@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — OurTrail
 
-**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Base commit:** `72e4520`
+**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Gate recount 3:** 2026-10-08 全生命周期审计（**50 门禁套件 / 3546 断言**，新增 6 套 `tools/lifecycle-*-test.js` 共 699，`e2e-domain-negative` 83→86；常驻红仍是天气线那 1 条。报告 `docs/superpowers/specs/2026-10-08-full-domain-lifecycle-audit.md`）· **Base commit:** `2e504f2`
 
 ---
 
@@ -65,10 +65,11 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── domain/         # 13 pure modules — see .../domain/AGENTS.md
 │   ├── lib/weather.js  # Open-Meteo proxy (duplicates gcjToWgs — keep in sync)
 │   └── smoke-test.js   # 167 cases, needs no wx-server-sdk
-├── tools/             # 51 个零依赖 node 脚本（实测 2026-10-07 Phase 9）：45 个 `*-test.js`
-│                      #   （42 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
+├── tools/             # 59 个零依赖 node 脚本（实测 2026-10-08 全生命周期审计后）：52 个 `*-test.js`
+│                      #   （49 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
 │                      #   `e2e-ui-state-test` / `e2e-golden-path-test`）+ 2 个静态检查 +
 │                      #   `e2e-result.js`（结果账本，被上述 3 套真机层与变异自证 require）+
+│                      #   `lifecycle-harness.js`（6 套 lifecycle-* 套件共用的世界驱动器，本身不是套件）+
 │                      #   桩/生成器（gen-map-markers / sync-lab / stub-wx-server-sdk）
 │                      #   ⚠ 改过 cloudfunctions/trailApi/domain/* 或 store.js 后必须跑
 │                      #   `node tools/sync-lab.js`，否则 trailApiLab 副本与生产不一致，
@@ -138,8 +139,8 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Gated suites — 43（42 个 tools/*-test.js + smoke-test.js）, all currently passing（2026-10-08 Phase 10A 全量复跑，共 2750 断言；
-# 唯一 1 红 = tools/outdoor-intelligence-ui-test.js 的常驻非确定性用例，打线上 Open-Meteo + 真实时钟，已归档归因、非本轮改动引入）.
+# Gated suites — 50（49 个 tools/*-test.js + smoke-test.js）. 2026-10-08 全生命周期审计后共 3546 断言；
+# 全量复跑唯一红 = tools/outdoor-intelligence-ui-test.js 的常驻非确定性用例，打线上 Open-Meteo + 真实时钟，已归档归因、非本轮改动引入.
 # ⚠ 断言总数是**快照**，不是恒定值：
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
 #   那些改动会增删用例（例：smoke 104→106→167、workspace 104→111 均非本轮 P4 改动）。
@@ -167,11 +168,18 @@ node tools/outdoor-intelligence-ui-test.js   # OI 呈现层 + 天气页集成（
 node tools/trip-mode-test.js                  # 出行方式 self/shared：Case 1-10 业务态 + 投影/动作/导出/detailState（78）
 node tools/weather-v2-visual-audit-test.js   # Weather V2 视觉保真审计：跨宽度几何归一化/YOU 锚点/covered 透传/OI 卡契约（38）
 
+# 全生命周期审计六套（2026-10-08 新增；共用 tools/lifecycle-harness.js，该文件本身不是套件）
+node tools/lifecycle-transitions-test.js     # 7×7 阶段穷举/终态封口/级联键/两条死路探测（214）
+node tools/lifecycle-cancellation-test.js    # 八个取消时点 + 名额候补联动 + 取消∥分车交错 + 集合点收敛（71）
+node tools/lifecycle-allocation-test.js      # 容量/占座/司机/上车点/删车换司机 + 预览不可重排不可覆盖（109）
+node tools/lifecycle-projection-test.js      # 逐行标志↔域内结论差分、permittedActions 可用性穷举、视角最小暴露、客户端文案判状态静态门（132）
+node tools/lifecycle-concurrency-test.js     # 8 类命令同 requestId 重放、同版本并发败者零副作用、归档后迟到操作、递补整批原子（126）
+node tools/lifecycle-fuzz-test.js            # 60×45 随机场景零违背 + 13 条终态性质 + 20 类变异自证 + 固化种子（47）
 # 端到端两层（A 层计入门禁；B 层需开发者工具，不计入门禁）
 node tools/e2e-test.js                         # A 层服务链路 E2E（71 项，真信封打 exports.main）
 node tools/e2e-fault-probe-test.js             # 结果模型变异自证（34 项）
 node tools/e2e-permission-test.js              # A 层权限矩阵：角色×命令×阶段×归属（96 断言，8 actor 全走真实信封）
-node tools/e2e-domain-negative-test.js         # A 层 Domain 负矩阵：17 种错误码的确定性拒绝 + 败者零副作用快照对比（83 断言）
+node tools/e2e-domain-negative-test.js         # A 层 Domain 负矩阵：17 种错误码的确定性拒绝 + 败者零副作用快照对比（86 断言）
 node tools/e2e-concurrency-test.js             # A 层并发基座（Phase 8）：barrier 对照/同 R 双写/陈旧写/幂等（37 断言，bugs=2 常驻红测、4 INCONCLUSIVE，exit 0 可进门禁）
 node tools/e2e-client-cas-test.js              # BUG-C1/C3 回归（Phase 9/10A）：真 editor.js + 真 api.js → 真 trailApi（54 断言，bugs=1：BUG-C2 草稿优先覆盖；C7=层①冲突不得依赖异常类型跨边界，C8=平台事务中止的窄映射，含 C8-⓪ 有效性门与 C8-⑨⑩⑪ 选择性三对照）
 node tools/e2e-interleave-test.js              # §13 多步骤并发交错 C1~C6（67 断言，3 INCONCLUSIVE；两层 CAS + baseRevision 内层 + 阶段门次序）
@@ -215,10 +223,23 @@ node tools/e2e-permission-test.js && node tools/e2e-domain-negative-test.js && \
 node tools/e2e-concurrency-test.js && node tools/e2e-client-cas-test.js && \
 node tools/e2e-interleave-test.js && node tools/e2e-panel-sync-test.js && \
 node tools/e2e-release-gap-test.js && \
+node tools/lifecycle-transitions-test.js && node tools/lifecycle-cancellation-test.js && \
+node tools/lifecycle-allocation-test.js && node tools/lifecycle-projection-test.js && \
+node tools/lifecycle-concurrency-test.js && node tools/lifecycle-fuzz-test.js && \
 node tools/scenario-editor-test.js
 ```
 
 **Test style is hand-rolled** — no jest/vitest/miniprogram-simulate. Each `tools/*-test.js` redefines `check(name, cond, extra)` + `section(title)` and calls `process.exit(failed ? 1 : 0)`. `scenario-editor-test.js` contains the reusable harness: it stubs `global.wx`, captures the real `Page()` config, `delete require.cache` to force a fresh source read, and monkey-patches `utils/api` to assert emitted commands.
+
+**`tools/lifecycle-harness.js` 的三条硬约定**（改 domain 之前先读它，否则等于把审计白做）：
+
+1. fixture **只能通过真实命令**建立——手拼 State 测的是「我造出来的状态」，不是「系统能到达的状态」。
+2. `checkOracles` 是按业务规格**独立重写**的第二套不变量，不复用 `invariants.js` 的实现；
+   两边必须对同一批变异同时报红（`lifecycle-fuzz-test.js` §4 就是这条的自证）。把 invariant 改松，oracle 会红。
+3. 每步强制检查「被拒命令逐字节零副作用」与「接受则 revision +1」——这是抓「半成功」的机器判据，不是抽查。
+
+另：`w.dispatch` 默认把 `expectedRevision` 取当前值，测并发必须显式传 `{expectedRevision: base}`，
+否则「并发」跑成了合法的顺序两次写，全绿而无意义（本轮自己就先错过一次，靠新增的失败读数抓到）。
 
 **Run/preview is WeChat DevTools only.** Deploy: right-click `cloudfunctions/trailApi` → 上传并部署：云端安装依赖；或用 `cli cloud functions deploy --e <env> --n <fn> --r`（CLI 部署不继承控制台超时配置，部署后要把超时改回 20 秒）.
 **只有装了开发者工具的那台机器能跑 UI/E2E**：当前 Windows 机可以（`C:\Program Files (x86)\Tencent\微信web开发者工具\cli.bat`，服务端口 33278，自动化端口 9420）；Mac 那台没有装，静态门禁是那里唯一的自动闸门。
@@ -358,6 +379,8 @@ await mp.disconnect()
 17. **Never put `WXSS` literals in a component** — use `app.wxss` tokens via `var()`. `app.wxss` is the only place a new semantic color may be introduced, and it must be registered in `design-system.md` too. **「禁止发明新色值」**
 18. **Do not trust English marker comments.** This repo writes its rules in Chinese. Grep `禁止|不要|务必|坑|注意|严禁` — `DO NOT`/`NEVER`/`DEPRECATED` return almost nothing. The highest-signal rules are inline comments at the top of the file that owns the bug.
 19. **Never infer a domain state from a display label.** 出行方式只有一个来源：`Signup.trip.mode` → `permissions.js` 的义务谓词（`isVehicleTraveller` / `needsVehicleService` / `needsSeatAssignment` / `needsOutboundBoarding` / `needsReturnBoarding`）→ `selectors.rowView` 的 `tripMode` + 派生布尔 → UI 读这些布尔。UI/WXML 里出现 `pickup === '自行前往'`、或域内再写一遍 `trip.mode === 'shared' && !driver`，就是复发点（`SYNC.md` 2026-10-08 记的 D2/D3/D4）。文案在 `utils/format.js` 定义一次（`TRIP_MODE_LABELS` / `TRIP_MODE_OPTIONS` / `RETURN_PLAN_LABELS`），并且**只允许向下**：domain → projection → label，反向一律禁止。`self` 永远不需要车辆/座位/上车点/boarding；`shared` 的全部既有约束一个都不许放松（不要为了 self 去放宽 invariant，也不要加 `noVehicle`/`skipVehicle`/`skipDriver` 这类 Activity 级开关）。
+20. **整库 invariant 有一条锁库风险**：`assertInvariants` 校验的是整个 State，任何「线上历史数据可能已经长成那样」的规则写进这里，都会让**此后全库每一次写入**一起被拒（本项目无迁移/回填脚本，`ensureCollections` 也不是迁移）。判据：只有「任何历史数据都不可能违反」的约束才放进 `invariants.js`；可能已有脏形态的，改在**写入端各拦一次** + 放进 `tools/lifecycle-harness.js` 的 `checkOracles` 看守新数据。`activity.delete` 的 positions 级联（F3）就是这个形态的活教材。另：`vehicle.depart` 与「本车参与者司机记为未出发」这类矛盾属 F1，本轮按此原则处理，没有写进 invariants。
+21. **元素数量不是 UI 证据。** `tools/e2e-ui-test.js` 曾拿「面板里有没有 `.list-row`」证明「分车弹层渲染出来了」，而 `.list-row` 同时存在于面板正文的车辆卡与同行组列表——弹层根本没开时也记 PASS（2026-10-08 实测 `planOpen=false` 仍 ✓）。UI 判据必须来自**那个对象的那个状态读数**（`planOpen` / `planChanged.length` / 点击前的 `busy`），不是同名的泛指元素。同理：`bindtap="{{cond ? '' : 'onX'}}"` 的按钮在 `cond` 为真时是「样式正常、文案正确、点了没反应」，tap 返回成功也不代表任何事情。
 
 ---
 

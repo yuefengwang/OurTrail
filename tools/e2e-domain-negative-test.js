@@ -449,12 +449,25 @@ async function main() {
       outcome: { kind: 'not_departed', evidence: { at: '', by: '', note: 'I 段准备：发起者未随车' } } }, await rev())
     const r1 = await OWNER.dispatch({ type: 'activity.transition', activityId, next: 'active', reason: 'J：全员核实完成' }, await rev())
     check('Owner gathering→active（出发核实完成后）→ ALLOW', r1.ok === true, JSON.stringify(r1.error || ''))
-    // active 阶段迟到补到：李四未签到 → checkin 在 active 应拒（非迟到协调）
+    // active 阶段不是随便补签到的地方：**出发情况已定论**的人（王五已核实随队）不能再签到，
+    // 那会把一条已闭环的安全事实改时间戳。未定论的人（协调中/未出发）另见下一组——那是迟到补录的正路。
     const before = await snap()
-    const r2 = await OWNER.dispatch({ type: 'attendance.checkin', activityId, signupId: li,
+    const r2 = await OWNER.dispatch({ type: 'attendance.checkin', activityId, signupId: wang,
       checkIn: { method: 'manual', evidence: { at: '', by: '', note: 'active 迟到' } } }, await rev())
-    check('active 阶段 checkin（非迟到协调）→ WRONG_PHASE', r2.ok === false && r2.error.code === 'WRONG_PHASE', JSON.stringify(r2.error || ''))
+    check('active 阶段对「已定论（joined）」的人补签到 → WRONG_PHASE', r2.ok === false && r2.error.code === 'WRONG_PHASE', JSON.stringify(r2.error || ''))
     check('active 拒后状态不变', (await snap()) === before, '')
+    // 反面对照（2026-10-08 生命周期审计 F6）：被核实「未出发」的人后来到场，active 阶段必须能补签到，
+    // 否则他在整段行程里再也没有合法路径被记为随队出行，安全档案里也就永远没有他。
+    const r2b = await OWNER.dispatch({ type: 'attendance.checkin', activityId, signupId: li,
+      checkIn: { method: 'manual', evidence: { at: '', by: '', note: 'active 迟到补到' } } }, await rev())
+    check('active 阶段对「未定论（not_departed）」的人补签到 → ALLOW', r2b.ok === true, JSON.stringify(r2b.error || ''))
+    const r2c = await OWNER.dispatch({ type: 'attendance.departure', activityId, signupId: li,
+      outcome: { kind: 'coordinating', evidence: { at: '', by: '', note: '人到场，重新协调' } } }, await rev())
+    check('未出发可改回协调中（定论前都可纠正）', r2c.ok === true, JSON.stringify(r2c.error || ''))
+    // 把夹具放回后续断言所依赖的形态：李四再次定为未出发（协调中是「未定论」，会挡住归档）。
+    const r2d = await OWNER.dispatch({ type: 'attendance.departure', activityId, signupId: li,
+      outcome: { kind: 'not_departed', evidence: { at: '', by: '', note: '核实确未随行' } } }, await rev())
+    check('协调中可再定为未出发（收尾闭环的另一条出口）', r2d.ok === true, JSON.stringify(r2d.error || ''))
     // closing → archived：写命令 WRONG_PHASE 抽样（vehicle.save + signup.review）。
     // 归档前须 UNRESOLVED_SAFETY 清零（域要求全员到家/核实）：王五 closing home（已出行），李四/林溪未出行
     // ——「未出行者的收尾」按实际域语义（home 限已出行者）⇒ 归档前用 owner 对未出行者记 departure？不行：

@@ -31,9 +31,11 @@ function validateInput(state, ownerId, input, full, activityId) {
     const roster = state.signups.filter(s => s.activityId === activityId)
     if (roster.filter(s => s.status === 'pending' || s.status === 'confirmed').length > input.capacity) return failure('CAPACITY', '活动名额不能低于待确认和已确认总人数。')
     const pickups = new Set(input.pickupPoints.map(p => p.id))
-    if (roster.some(s => isVehicleTraveller(s) && !pickups.has(s.trip.pickupPointId))
+    // 只有「还在流程里」的报名才钉住集合点：已取消/已移除/未通过的人是历史行，
+    // 让他们钉住一个没人用的集合点，领队就永远收不干净集合信息（审计 F2，与 invariants.js 同源）。
+    if (roster.some(s => isCurrentSignup(s) && isVehicleTraveller(s) && !pickups.has(s.trip.pickupPointId))
       || state.vehicles.some(v => v.activityId === activityId && v.pickupPointIds.some(id => !pickups.has(id)))) {
-      return failure('INVALID_INPUT', '已有报名或车辆引用的上车点不能删除。')
+      return failure('INVALID_INPUT', '仍有报名或车辆引用的上车点不能删除。')
     }
     const signupIds = new Set(roster.map(s => s.id))
     const points = new Set(input.routeSnapshot.points.map(p => p.id))
@@ -209,7 +211,10 @@ function handleActivity(state, command, context) {
       state.vehicles = state.vehicles.filter(v => v.activityId !== activityId)
       state.assignments = state.assignments.filter(a => a.activityId !== activityId)
       state.incidents = state.incidents.filter(i => i.activityId !== activityId)
-      state.positions = state.positions.filter(p => p.activityId !== activityId)
+      // positions/attendance/assignments 这些以 signupId 为主键的记录里没有 activityId 字段，
+      // 只能按被删报名的 id 清（审计 F5：原来按 p.activityId 筛等于一条都没删，
+      // 一旦触发就会让「位置记录的参与者不存在」把此后全库每一次写入一起拖红）。
+      state.positions = state.positions.filter(p => !removedSignups.has(p.signupId))
       // 历史变更事件挂在活动上，活动没了事件也一并清理（事件是活动作用域的日志，非安全档案）
       state.events = state.events.filter(e => e.activityId !== activityId)
       // 私有路线保留：它是所有者可复用的路线资产（V2 路线库的种子）

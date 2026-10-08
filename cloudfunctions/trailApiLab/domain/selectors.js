@@ -7,6 +7,8 @@ const {
   needsVehicleService, passengerAssignment, permissionDenied, requireActivity, requireSignups,
   returnBoardingApplies, staffCan, vehicleCan, workDataAvailable, isVehicleTraveller,
 } = require('./permissions')
+// 「现场补录的门」由写侧自己给出（field.js），投影只消费：两处各写一遍必然漂移（审计 F4/F7）。
+const { lateArrivalDoor, departureDoor } = require('./field')
 
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key)
 
@@ -503,7 +505,13 @@ function permittedActions(state, actor, view, visible, now) {
       actions.add('notice.delivery')
       if (phase === 'draft') { actions.add('activity.publish'); actions.add('activity.delete') }
       if (phase === 'published' || phase === 'gathering') {
-        for (const type of ['signup.review', 'signup.promote', 'vehicle.save', 'vehicle.remove', 'assignment.commit', 'assignment.set', 'assignment.remove', 'assignment.swap']) actions.add(type)
+        for (const type of ['vehicle.save', 'vehicle.remove', 'assignment.commit', 'assignment.set', 'assignment.remove', 'assignment.swap']) actions.add(type)
+      }
+      // 审核与递补只成立在 published（signup.js:125 的阶段门），且只在这两类人真的存在时广播：
+      // 候补队列可以带进集合阶段，而域内那时已经拒绝递补——照旧广播就是给界面一个必红字按钮（审计 F4b）。
+      if (phase === 'published') {
+        if (view.counters.pending > 0) actions.add('signup.review')
+        if (view.counters.waitlisted > 0) actions.add('signup.promote')
       }
     }
   }
@@ -519,10 +527,16 @@ function permittedActions(state, actor, view, visible, now) {
     if (!work || signup.status !== 'confirmed') continue
     const attendance = state.attendance.find(a => a.signupId === signup.id)
     if (!attendance) continue
-    const lateArrival = phase === 'active' && attendance.departure && attendance.departure.kind === 'coordinating'
-    if (phase === 'gathering' || lateArrival) {
+    // 门与写侧共用同一份定义（field.js）：投影不得自己再判一次「什么时候还能补录」，
+    // 否则 domain 放开了、UI 还藏着按钮，或反过来 UI 给了按钮而 domain 必拒。
+    const late = lateArrivalDoor(phase, attendance)
+    if (phase === 'gathering' || late) {
       add({ type: 'attendance.checkin', activityId, signupId: signup.id, checkIn: { method: 'manual', evidence: { at: now, by: actor.userId, note: '' } } })
+    }
+    if (departureDoor(phase, attendance)) {
       add({ type: 'attendance.departure', activityId, signupId: signup.id, outcome: { kind: 'joined', evidence: { at: now, by: actor.userId, note: '' } } })
+    }
+    if (phase === 'gathering' || late) {
       // 去程上车只对「已排到车的拼车乘客」成立：自行前往的人与兼任参与者的司机没有任何上车事实可记，
       // field.js 必拒 —— 不广播，UI 就不会有一个点下去只换来红字的按钮。
       if (needsVehicleService(state, signup) && assignmentFor(state, signup)) {
@@ -544,9 +558,15 @@ function permittedActions(state, actor, view, visible, now) {
   if (work && ['gathering', 'active', 'closing'].indexOf(phase) !== -1) {
     for (const incident of view.incidents.filter(i => !i.resolved)) add({ type: 'incident.resolve', activityId, incidentId: incident.id, note: '' })
     const vehicles = organizer ? state.vehicles.filter(v => v.activityId === activityId) : (view.vehicleTask ? [view.vehicleTask.vehicle] : [])
+    // 每一程的合法阶段与 field.js 同表；按钮只在该程「还没发车」或「已发车未完成的」时出现。
+    // 「完成本程」在发车之前是永远不可能成立的（field.js:40 必拒），不能挂在界面上等用户去撞红字。
+    const legs = phase === 'gathering' ? ['outbound'] : phase === 'active' ? ['outbound', 'return'] : ['return']
     for (const vehicle of vehicles) {
-      add({ type: 'vehicle.depart', activityId, vehicleId: vehicle.id, leg: phase === 'closing' ? 'return' : 'outbound', note: '' })
-      add({ type: 'vehicle.complete', activityId, vehicleId: vehicle.id, leg: phase === 'closing' ? 'return' : 'outbound', note: '' })
+      for (const leg of legs) {
+        const legInfo = vehicle.legs[leg]
+        if (!legInfo.departed) add({ type: 'vehicle.depart', activityId, vehicleId: vehicle.id, leg, note: '' })
+        else if (!legInfo.completed) add({ type: 'vehicle.complete', activityId, vehicleId: vehicle.id, leg, note: '' })
+      }
     }
   }
   if (state.notices.some(n => n.activityId === activityId && canReadNotice(state, actor, n, now))) actions.add('notice.read')

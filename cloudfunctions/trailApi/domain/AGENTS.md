@@ -83,6 +83,21 @@ Enforced here, not in the client. All of these have a test or a pin behind them:
 
 - A `SignupGroup` occupies capacity as a **unit**. `manual` approvalMode ⇒ pending, `automatic` ⇒ confirmed. When full, the **whole group** must explicitly waitlist.
 - Phase gates: `published→gathering` requires no pending; `gathering→active` requires every actual traveller verified departed (check-in + outbound boarding); `closing→archived` requires all home with no open incidents; cancellation is only possible before departure.
+- **出发定论的两道门只有一个出处**（2026-10-08 生命周期审计，`field.js` 顶部具名导出，`selectors.permittedActions` 直接消费同一对函数，不得自行重述）：
+  `lateArrivalDoor = active ∧ departure ∈ {coordinating, not_departed}`（签到与去程上车的补录门）、
+  `departureDoor = gathering ∨ ((active ∨ closing) ∧ 未定论)`（出发情况的可改门）。
+  两条都是**为了消灭死路**而放宽的，不是放松终态：archived 仍禁止 coordinating，joined 仍要求签到 + 必要上车，
+  「已随队出发」依旧不可回退。放宽前存在两条不可完成形态（not_departed 者在 active 无法补录；
+  coordinating 者随活动进 closing 后全库再无任何命令能给它定论 ⇒ 永久无法归档）。
+- `vehicle.depart` / `vehicle.complete` 会检查本车参与者司机的出发定论：车要动，司机就不能记为「未出发」（F1）。
+  `vehicle.remove` / `vehicle.save` 换司机则用 `travelLocked` 拦住「已有履约事实的司机」——删车会连带抹掉他这条事实
+  并把他变成在 active 阶段无法再补齐乘车义务的待分车者（F7）。
+- **整库 invariant 有锁库风险**：`assertInvariants` 校验整个 State，任何「线上历史数据可能已长成那样」的规则写进这里，
+  会让此后每一次写入一起被拒（本项目无迁移脚本）。这类规则改在写入端各拦一次 + 放进 `tools/lifecycle-harness.js`
+  的 `checkOracles` 看守新数据。F1 的司机/发车矛盾就是这样处理的，没有进 invariants.js。
+- 上车点引用只约束 **live 报名**（`isCurrentSignup`）：`cancelled/removed/rejected` 是历史行，
+  不钉住集合点（F2）。注意 `activity.pickupPoints` 的**语义**未变——它是全场集合点，
+  published 活动仍必须 ≥1 个（self 也拿它当出发点），2026-10-08 上一轮 §18 的决策仍然成立。
 - `PositionReport`: one latest per person, `consentExpiresAt` = the activity's `endAt`, non-revisable after revocation, **stale after strictly 30 minutes**.
 - Reading sensitive data requires a declared `purpose`（**门槛在读取侧，但服务端不落任何审计记录**）；`export.record` 是**客户端主动发的命令**，服务端不强制——「先写审计」是自律而非机制，2026-10-04 回代码确认.
 - `notice.read` produces **no** event. `recordChange` fans out to everyone for publish/edit/transition, and to affected people for `signup.*` / `assignment.*`.

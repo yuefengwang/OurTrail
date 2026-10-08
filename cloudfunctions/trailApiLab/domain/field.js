@@ -3,6 +3,34 @@
 
 const { failure } = require('./contracts')
 const { isSelfSignup, isVehicleTraveller, needsVehicleService, needsOutboundBoarding, needsReturnBoarding, returnBoardingApplies, passengerAssignment } = require('./permissions')
+const { hasLegHistory } = require('./transport')
+
+/** 出发情况尚未定局的两种取值：还能补录、还能纠正，也还不能归档。 */
+const UNRESOLVED_DEPARTURE_KINDS = ['coordinating', 'not_departed']
+function departureUnresolved(record) {
+  return !!record && !!record.departure && UNRESOLVED_DEPARTURE_KINDS.indexOf(record.departure.kind) !== -1
+}
+/** 迟到补录门（签到与去程上车）：只在行程阶段，且此人出发情况仍未定局。
+ *  「未出发」也算未定局——此前它被排除在外，于是被误判或临时改变主意的在场者
+ *  在 active 阶段既补不了签到也改不了核实结论，安全档案里就永远没有他的位置（审计 F6）。 */
+function lateArrivalDoor(phase, record) {
+  return phase === 'active' && departureUnresolved(record)
+}
+/** 出发情况核实门：集合阶段对全员开放；行程与返程阶段只对仍未定局的人开放。
+ *  返程必须一起放行：带着「协调中」的人进入 closing 是合法的（阶段门只看 reason），
+ *  若此处不放开，此人再无任何合法路径给出定论，而归档条件恰恰要求定论 ⇒ 活动永久无法归档（审计 F7）。
+ *  放开后也只能落到「未出发」或继续「协调中」——要变成「已随队出发」仍需签到与去程上车，
+ *  那两道的门仍在 active 关闭，所以这条不会让任何人绕过安全核实。 */
+function departureDoor(phase, record) {
+  return phase === 'gathering' || (['active', 'closing'].indexOf(phase) !== -1 && departureUnresolved(record))
+}
+/** 本车的参与者司机里，谁被核实为「未出发」。 */
+function undepartedDrivers(state, vehicle) {
+  return vehicle.drivers.filter(d => d.kind === 'participant').map(d => {
+    const record = state.attendance.find(a => a.signupId === d.signupId)
+    return record && record.departure && record.departure.kind === 'not_departed' ? record.signupId : null
+  }).filter(id => id !== null)
+}
 
 function handleField(state, command, context) {
   const p = command.payload
@@ -36,6 +64,10 @@ function handleField(state, command, context) {
     if (!vehicle) return failure('NOT_FOUND', '找不到车辆。')
     const leg = vehicle.legs[p.leg]
     if ((p.leg === 'outbound' && ['gathering', 'active'].indexOf(phase) === -1) || (p.leg === 'return' && ['active', 'closing'].indexOf(phase) === -1)) return failure('WRONG_PHASE', '当前阶段不能操作这一程车辆。')
+    // 车要动，司机就得在场：本车的参与者司机若已被核实为「未出发」，发车/完成本程就会和这条事实打对台。
+    // 乘客侧的「未出发」是合理的（他确实没来），司机侧不是——车没有司机就不成立（审计 F1）。
+    const undeparted = undepartedDrivers(state, vehicle)
+    if (undeparted.length) return failure('UNRESOLVED_DEPARTURE', '本车的参与者司机已被核实为未出发，请先更正他的出发情况或更换司机。')
     if (p.type === 'vehicle.complete') {
       if (!leg.departed) return failure('WRONG_PHASE', '车辆尚未发车，不能完成本程。')
       if (!leg.completed) leg.completed = evidence(p.note)
@@ -65,7 +97,7 @@ function handleField(state, command, context) {
   if (signup.status !== 'confirmed') return failure('WRONG_PHASE', '只有已确认的参与者可以记录履约。')
   const assignment = passengerAssignment(state, signup)
   const vehicle = assignment ? state.vehicles.find(v => v.id === assignment.vehicleId) : undefined
-  const lateArrival = phase === 'active' && record.departure && record.departure.kind === 'coordinating'
+  const lateArrival = lateArrivalDoor(phase, record)
   switch (p.type) {
     case 'attendance.checkin':
       if (phase !== 'gathering' && !lateArrival) return failure('WRONG_PHASE', '签到仅用于集合或已记录的迟到补到。')
@@ -87,10 +119,15 @@ function handleField(state, command, context) {
       return done([signup.id])
     }
     case 'attendance.departure': {
-      if (phase !== 'gathering' && !lateArrival) return failure('WRONG_PHASE', '只能在集合或迟到协调时核实出发结果。')
+      if (!departureDoor(phase, record)) return failure('WRONG_PHASE', '只能在集合阶段核实出发情况；行程或返程中可为尚未定论（协调中／未出发）的人补录或纠正。')
       const kind = p.outcome.kind
       if (record.departure && record.departure.kind === 'joined' && kind !== 'joined') return failure('WRONG_PHASE', '已出行者须继续安全收尾，不能改成未出发。')
       if (kind !== 'joined' && (!p.outcome.evidence.note.trim() || record.boardingByLeg.outbound)) return failure('UNRESOLVED_DEPARTURE', '未出发或协调状态需要依据，且不能与已上车事实矛盾。')
+      // 「未出发」的人不能同时是把车开走的那个司机——发车事实与这条相互打脸（审计 F1 的另一端）。
+      if (kind === 'not_departed' && state.vehicles.some(v => v.activityId === p.activityId
+        && v.drivers.some(d => d.kind === 'participant' && d.signupId === signup.id) && hasLegHistory(v))) {
+        return failure('DRIVER_CONFLICT', '此人兼任的车辆已有行车事实，不能把他核实为未出发；请先更换司机。')
+      }
       if (kind === 'joined' && (!record.checkIn || needsOutboundBoarding(state, signup))) return failure('UNRESOLVED_DEPARTURE', '请先核实签到及必要的去程上车。')
       record.departure = { kind, evidence: evidence(p.outcome.evidence.note) }
       return done([signup.id])
@@ -125,4 +162,4 @@ function handleField(state, command, context) {
   }
 }
 
-module.exports = { handleField }
+module.exports = { handleField, lateArrivalDoor, departureDoor, departureUnresolved }

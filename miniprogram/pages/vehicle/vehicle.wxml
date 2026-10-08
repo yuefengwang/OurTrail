@@ -31,7 +31,7 @@
         avatar="{{item.avatar}}"
         subtitle="{{item.subtitle}}"
         status="{{item.status}}"
-        tone="{{item.status === '已上车' || item.status === '另行返程' ? 'success' : 'warning'}}"
+        tone="{{item.tone}}"
       >
         <view class="button text" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="onCopyContact">复制联系</view>
         <view wx:if="{{item.showBoard}}" class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="{{busy ? '' : 'onBoard'}}">确认上车</view>

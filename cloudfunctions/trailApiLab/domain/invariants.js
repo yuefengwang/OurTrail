@@ -3,7 +3,7 @@
 
 const S = require('./schema')
 const { failure } = require('./contracts')
-const { isVehicleTraveller } = require('./permissions')
+const { isCurrentSignup, isVehicleTraveller } = require('./permissions')
 
 const invalid = message => failure('INVALID_INPUT', message)
 const unique = values => new Set(values).size === values.length
@@ -38,7 +38,10 @@ function assertInvariants(state) {
     if (signup.personRef.kind === 'user' && !profiles.has(signup.personRef.userId)) return invalid('报名所引用的账号不存在。')
     if (signup.personRef.kind === 'companion' && signup.personRef.ownerId !== signup.submittedByUserId) return invalid('同行人与提交者的关系不一致。')
     const trip = signup.trip
-    if (isVehicleTraveller(signup) && !activity.pickupPoints.some(p => p.id === trip.pickupPointId)) return invalid('报名上车点不属于本场活动。')
+    // 上车点只对「还在流程里的人」构成引用约束：已取消/已移除/未通过的人是历史行，
+    // 把他们钉在集合点上会让领队永远删不掉一个没人用的集合点（审计 F2）。
+    if (isVehicleTraveller(signup) && isCurrentSignup(signup)
+      && !activity.pickupPoints.some(p => p.id === trip.pickupPointId)) return invalid('报名上车点不属于本场活动。')
   }
   for (const activity of state.activities) {
     if (!profiles.has(activity.ownerId)) return invalid('活动发起账号不存在。')

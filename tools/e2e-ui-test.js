@@ -536,23 +536,39 @@ async function main() {
       const tp = await page.$('transport-panel')
       const planOv = tp ? (await tp.$$('overlay'))[0] : null
       const previewBtns = tp ? await queryAll(tp, '.button.primary.block') : []
+      // 点之前先把面板状态取出来：bindtap 是动态表达式，busy 或没有车辆时它会变成空串，
+      // 于是「tap 成功但什么都没发生」——不读数就只能把它误判成弹层问题（本轮实测）。
+      const pre = tp ? await tp.data() : null
+      console.log('      · [诊断] 预览点击前：buttons=' + previewBtns.length + ' busy=' + (pre && pre.busy) + ' vehicles=' + (pre && pre.vehicles ? pre.vehicles.length : null) + ' planOpen=' + (pre && pre.planOpen) + ' error=' + JSON.stringify(pre && pre.error))
       const okPrev = await tapEl(previewBtns[0])
-      L.uiTap('点「预览自动分车」按钮', okPrev && !!planOv, 'tap .button.primary.block @ transport-panel；overlay ' + (planOv ? '存在' : '缺失'))
-      // overlay 的具名 slot 内容在本基础库查不到，从面板作用域查渲染结果
-      let planRows = 0
+      L.uiTap('点「预览自动分车」按钮', okPrev && !!planOv,
+        'tap .button.primary.block @ transport-panel；overlay ' + (planOv ? '存在' : '缺失')
+          + '；点击前面板读数=' + JSON.stringify({ buttons: previewBtns.length, busy: pre && pre.busy, vehicles: pre && pre.vehicles ? pre.vehicles.length : null, planOpen: pre && pre.planOpen }))
+      // overlay 的具名 slot 内容在本基础库查不到，从面板作用域查渲染结果。
+      // ⚠ 证据强度（本轮实测修正）：`.list-row` 在面板正文里也存在（车辆卡、同行组），
+      // 只数 `.list-row` 会把「弹层根本没开」读成「方案渲染出来了」——那是假 PASS。
+      // 所以主判据改为组件自己的状态读数：planOpen 必须为真，且差异行数来自 planChanged。
+      let planData = null
       let danger = null
-      for (let t = 0; t < 6; t++) {
-        await page.waitFor(2000)
-        planRows = tp ? (await tp.$$('.list-row')).length : 0
+      for (let t = 0; t < 8; t++) {
+        await page.waitFor(1500)
+        planData = tp ? await tp.data() : null
         danger = tp ? (await tp.$$('.callout.danger'))[0] : null
-        if (planRows > 0 || danger) break
+        if ((planData && planData.planOpen === true) || danger) break
       }
-      L.uEffect('预览自动分车 → 面板渲染出差异行（allocation 惰性 require 的真机回归点）', planRows > 0,
-        '.list-row 命中 ' + planRows + ' 行' + (danger ? '；同屏错误文案：' + String((await danger.text()) || '').slice(0, 120) : ''))
+      const planRows = planData && planData.planChanged ? planData.planChanged.length : 0
+      const renderedRows = tp ? (await tp.$$('.list-row')).length : 0
+      L.uEffect('预览自动分车 → 弹层真的打开（planOpen=true）', !!(planData && planData.planOpen === true),
+        'planOpen=' + (planData && planData.planOpen) + '；planCounts=' + JSON.stringify(planData && planData.planCounts))
+      L.uEffect('预览产出差异行（allocation 惰性 require 的真机回归点）', planRows > 0,
+        'planChanged ' + planRows + ' 行；屏上 .list-row 共 ' + renderedRows + ' 个（含正文车辆卡，不能单独作判据）'
+          + (danger ? '；同屏错误文案：' + String((await danger.text()) || '').slice(0, 120) : ''))
       await shot('04-workspace-plan')
       const commitBtn = tp ? await findButtonByText(tp, '明确确认并提交此方案') : null
       const okCommit = await tapEl(commitBtn)
-      L.uiTap('点「明确确认并提交此方案」按钮', okCommit, 'findButtonByText 命中：' + (commitBtn ? '是' : '否') + '；面板可见 ' + JSON.stringify(await buttonLabels(tp)).slice(0, 200))
+      L.uiTap('点「明确确认并提交此方案」按钮', okCommit, 'findButtonByText 命中：' + (commitBtn ? '是' : '否')
+        + '；弹层状态=' + JSON.stringify({ planOpen: planData && planData.planOpen, rows: planRows })
+        + '；面板可见 ' + JSON.stringify(await buttonLabels(tp)).slice(0, 200))
       await page.waitFor(2500)
       const tr = await cloudCall('trailApi', 'readTransport', { activityId: sandboxId })
       const assigns = (tr && tr.ok && tr.data.ok !== false && tr.data.value.assignments) || []

@@ -4,10 +4,18 @@
 const { failure, deepClone } = require('./contracts')
 const { passengerCapacity } = require('./allocation')
 const { requireSignups } = require('./permissions')
+const { travelLocked } = require('./signup')
 
 const done = ids => ({ ok: true, value: ids })
 const hasLegHistory = vehicle => !!(vehicle.legs.outbound.departed || vehicle.legs.outbound.completed
   || vehicle.legs.return.departed || vehicle.legs.return.completed)
+
+/** 指定名单里，仍是本车参与者司机且已留下履约事实的人：动这辆车会连带抹掉那条事实。 */
+function travelLockedDrivers(vehicle, state, signupIds) {
+  return vehicle.drivers
+    .filter(d => d.kind === 'participant' && signupIds.indexOf(d.signupId) !== -1 && travelLocked(state, d.signupId))
+    .map(d => d.signupId)
+}
 
 function vehicleInActivity(state, activityId, vehicleId) {
   const vehicle = state.vehicles.find(v => v.id === vehicleId)
@@ -95,6 +103,13 @@ function handleTransport(candidate, command, context) {
         if (!found.ok) return found
         old = found.value
         if (hasLegHistory(old)) return failure('WRONG_PHASE', '已发车或完成行程的车辆不能修改配置。')
+        // 从司机名单里去掉一个「已经以司机身份上车/出发」的人，等于替他抹掉那条事实——
+        // 与 vehicle.remove 的乘客规则同源：先明确解除义务，再动承载它的记录（审计 F11）。
+        const keptIds = payload.input.drivers.filter(d => d.kind === 'participant').map(d => d.signupId)
+        const dropped = old.drivers.filter(d => d.kind === 'participant' && keptIds.indexOf(d.signupId) === -1).map(d => d.signupId)
+        if (travelLockedDrivers(old, candidate, dropped).length) {
+          return failure('DRIVER_CONFLICT', '本车的参与者司机已有上车或出发事实，请先在名单里更正他的出发情况，再更换司机。')
+        }
       }
       const drivers = validateDrivers(candidate, payload.activityId, payload.vehicleId, payload.input)
       if (!drivers.ok) return drivers
@@ -117,6 +132,13 @@ function handleTransport(candidate, command, context) {
       if (hasLegHistory(found.value)) return failure('WRONG_PHASE', '不能删除已有行程事实的车辆。')
       if (candidate.assignments.some(a => a.vehicleId === payload.vehicleId)) {
         return failure('CONFLICT', '车辆仍有乘客安排，请先明确调整或解除安排。')
+      }
+      // 车上的参与者司机也是这辆车的承载义务：删车会连「他答应开车」这条一起消失，
+      // 且他会立刻变成需要别人捎带的人——若此时他已被核实随队出发，就再没有合法路径补齐乘车事实。
+      const held = travelLockedDrivers(found.value, candidate,
+        found.value.drivers.filter(d => d.kind === 'participant').map(d => d.signupId))
+      if (held.length) {
+        return failure('DRIVER_CONFLICT', '本车的参与者司机已有上车或出发事实，请先更换司机，再删除这辆车。')
       }
       candidate.vehicles = candidate.vehicles.filter(v => v.id !== payload.vehicleId)
       candidate.memberships = candidate.memberships.filter(m => m.role !== 'vehicle_contact' || m.vehicleId !== payload.vehicleId)
