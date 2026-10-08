@@ -130,3 +130,22 @@ Change: 无代码改动；仅本文档（Iteration 4 条目 + 对照物身份四
 Before: baseline/chengdu-72h-375px.png、baseline/emeishan-72h-375px.png
 After: iter-4-chengdu-72.png、iter-4-emeishan-72.png（09:34 重拍归档：标签可读、左轴净空、斜带/斜纹与 horizon 同款、无新问题）
 Decision: CLOSE（证据关闭，无改码故无回滚对象）/ Reason: ①③非缺陷（白描边按设计工作、拓扑同款）；②对照物身份与窗口差异解释全部形状差，渲染器自基线零漂移；KEEP 方向不变，P1-2 关闭。
+
+## Iteration 5 — P1-3 小时 chip 网格挤占首屏 + 读数条空态
+
+Problem: `cf-hours` 方形 chip 阵列插在图表与读数条之间——24h 占 3 行、48h ≥4 行、72h 达 7 行（baseline/litang-72h-375px 见 0–56+），读数条与图例被推到折叠线以下；且未选中时读数条是四行全空的灰条（baseline/chengdu-24h-375px，`unified.readout` 文案写在 JS 里但 WXML 从未渲染）。HTML 原型无 chip 网格：点图即读，图下直接是读数条。
+Hypothesis: 删网格 + `.cf-stage` 整条 bindtap（`onCfTap` 坐标反解列 → 与 OI/看图共用 `selectHour` 链路）+ 读数条空态渲染 `unified.readout` 提示，三件事一次收敛；选时能力不丢（OI tap 区仍走 selectHour）。
+范围: `weather.wxml`（删 cf-hours 块、cf-stage 加 bindtap、读数条 wx:if/wx:else）/ `weather.wxss`（删 .cf-hours/.cf-hour、加 .ro-hint）/ `weather.js`（`onCloudHour` → `onCfTap`、`hours: field.times` 删除、readout 文案改「点图上任意小时查看读数。」）；测试零依赖（grep tools/ 无 unified/cf-hour/onCloudHour 引用）。
+坐标手法（同 `meteogram.js onTap`）: `e.detail.x` 页面坐标 − `.cf-stage` `boundingClientRect().left` → ×`geo.width/rect.width` 归一 → `h = floor((x − L) / (plotW/horizon))` 钳位 `[0, horizon−1]` → `selectHour(addDays(date, ⌊h/24⌋), cfPad(h%24)+':00')`。
+
+### Iteration 5 — Change / Before / After / Decision
+
+Change: `weather.wxml` L119-135（cf-stage `bindtap="onCfTap" hover-class="button-hover"`；删 10 行 cf-hours 网格；读数条 `<block wx:if="{{unified.r1}}">` 四行 + `wx:else` 提示）；`weather.wxss` 删 `.cf-hours`/`.cf-hour`/`.cf-hour.on`（11 行）、加 `.ro-hint`（11px var(--muted)）；`weather.js` `onCloudHour` → `onCfTap`（坐标反解 + 静默降级）、card 删 `hours: field.times`、readout 文案改「点图上任意小时查看读数。」。
+测试: 四套门禁实跑 check ✓ / check-handlers weather ✓（19 handlers，onCfTap 解析到）/ meteogram-svg 25/0 / visual-audit 38/0；e2e-ui/e2e-ui-state/golden-path grep 无 cf-hour 引用。
+证据（2026-10-08，375 机位、真实数据、改码后 cli close→open→auto 重开重拍）:
+- 默认态: iter-5-chengdu-24h（3 行 chip → 0，读数条显示提示不再空灰）、iter-5-litang-72h（7 行 chip → 0，读数条+图例直接跟图）。
+- 点图链路硬校验: `drive-shots --stage-tap` tap `.cf-stage` 后轮询 `unified.r1 && selSrc` 双落地才截图，否则退出码 3 —— 实跑 exit 0，日志 `stage-tap absHour=10 r1=10:00 · 21° 阴`；iter-5-chengdu-24h-375px-tap 裁图见 crosshair 10:00 绿时刻度 + 读数三级全填（10:00 · 21° 阴 / 云量 87% · 云区 2,150–2,325 m / 风 5 km/h · 阵 15 · 北风）。
+- 48/72h 选时: OI tap 区（data-hour）仍走 selectHour，drive-shots selHour 改走该路径，未命中如实记 `sel-miss` 不冒充。
+Before: baseline/chengdu-24h-375px.png、baseline/litang-72h-375px.png
+After: iter-5-chengdu-24h-375px.png、iter-5-litang-72h-375px.png、iter-5-chengdu-24h-375px-tap.png
+Decision: KEEP / Reason: P1-3 两个复现点全消（chip 网格 0 行、读数条空态有提示文案）；点图即读对齐原型且有硬校验证据；选时能力未丢（OI 区 + 点图两路共用 selectHour）；四套门禁全绿；无新问题（hover-class 用全局 button-hover，无新色值）。

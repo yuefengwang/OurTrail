@@ -116,25 +116,20 @@
            灰阶等值带 = 云量（10–100%），虚线 = 此点海拔，琥珀段 = 此刻处于云中。
            cloudLevels 缺失或 48/72h 视图时回退经典 canvas meteogram（上方 wx:else）。 -->
       <view wx:if="{{unified}}" class="card cloud-field-card">
-        <view class="cf-stage">
+        <!-- 点图即读（对齐 HTML 原型）：不再有小时 chip 网格，横条点击反解列 → selectHour。
+             tap 坐标是页面坐标，需减 boundingClientRect().left（同 meteogram.js onTap）。 -->
+        <view class="cf-stage" bindtap="onCfTap" hover-class="button-hover">
           <image class="cf-img" src="{{unified.src}}" mode="widthFix"/>
           <image wx:if="{{unified.selSrc}}" class="cf-sel" src="{{unified.selSrc}}" mode="widthFix"/>
         </view>
-        <view class="cf-hours">
-          <view
-            wx:for="{{unified.hours}}"
-            wx:key="*this"
-            class="cf-hour tabular {{unified.hour === item ? 'on' : ''}}"
-            hover-class="button-hover"
-            bindtap="onCloudHour"
-            data-h="{{item}}"
-          >{{item}}</view>
-        </view>
         <view class="cf-readout">
-          <view class="ro-l1 tabular">{{unified.r1}}</view>
-          <view class="ro-l2 tabular">{{unified.r2}}</view>
-          <view wx:if="{{unified.r3}}" class="ro-l3 {{unified.stKey}}">→ {{unified.r3}}</view>
-          <view class="ro-l4 tabular">{{unified.r4}}</view>
+          <block wx:if="{{unified.r1}}">
+            <view class="ro-l1 tabular">{{unified.r1}}</view>
+            <view class="ro-l2 tabular">{{unified.r2}}</view>
+            <view wx:if="{{unified.r3}}" class="ro-l3 {{unified.stKey}}">→ {{unified.r3}}</view>
+            <view class="ro-l4 tabular">{{unified.r4}}</view>
+          </block>
+          <view wx:else class="ro-hint">{{unified.readout}}</view>
         </view>
         <text class="chart-caption small muted">灰阶 = 云量等值带（浅→深 = 10→100%）· 虚线 = 此点海拔 · 琥珀段 = 你在云中 · 箭头 = 风向（吹向）</text>
       </view>

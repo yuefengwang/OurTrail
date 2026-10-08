@@ -641,13 +641,12 @@ Page({
       this._unified = { key: key, geo: geo, surface: detail, horizon: effHorizon, baseUri: this.cfUri(base.svg) }
     }
     const card = {
-      hours: field.times,
       src: this._unified.baseUri,
       selSrc: '',
       hour: null,
       stKey: '',
       r1: '', r2: '', r3: '', r4: '',
-      readout: '点下方时刻（或图上任意小时）查看读数。',
+      readout: '点图上任意小时查看读数。',
     }
     const pick = this.data.chartPick
     if (pick && this.cfDateOffset(pick.date) >= 0) {
@@ -695,11 +694,29 @@ Page({
     this.setData({ unified: card })
   },
 
-  /* 统一卡时刻条 → 与图共用同一选中链路（selectHour 同步两处 UI） */
-  onCloudHour(e) {
-    const h = Number(e.currentTarget.dataset.h)
-    if (!Number.isFinite(h) || h < 0 || h > 23) return
-    this.selectHour(this.data.date, cfPad(h) + ':00')
+  /* P1-3 点图即读：小时 chip 网格已移除，直接点图反解列 → selectHour（与 OI 看图同链路）。
+     e.detail.x 是页面坐标；.cf-stage 无横滚，页面 x ≡ 视口 x，减 boundingClientRect().left
+     得卡内坐标（同 components/meteogram onTap 手法）。SVG 逻辑宽 = stage 实测宽
+     （probeStageWidth 校准后恒等），1:1；列宽 = plotW / horizon，列中心 = L + (h+0.5)*列宽。 */
+  onCfTap(e) {
+    if (!this.data.unified || !this._unified) return
+    const px = (e && e.detail && Number.isFinite(e.detail.x)) ? e.detail.x
+      : (e && e.changedTouches && e.changedTouches[0] && Number.isFinite(e.changedTouches[0].x) ? e.changedTouches[0].x : NaN)
+    if (!Number.isFinite(px)) return
+    const geo = this._unified.geo
+    const self = this
+    try {
+      wx.createSelectorQuery().in(this).select('.cf-stage').boundingClientRect(function (rect) {
+        if (!rect || !rect.width || !Number.isFinite(rect.left)) return
+        const xSvg = (px - rect.left) * (geo.width / rect.width) // 校准偏差时归一，恒等时 ×1
+        const colW = geo.plotW / geo.horizon
+        let h = Math.floor((xSvg - geo.L) / colW)
+        if (!Number.isFinite(h)) return
+        if (h < 0) h = 0
+        if (h > geo.horizon - 1) h = geo.horizon - 1
+        self.selectHour(self.addDays(self.data.date, Math.floor(h / 24)), cfPad(h % 24) + ':00')
+      }).exec()
+    } catch (err) { /* 点图是增强：查询失败静默，读数保持现值 */ }
   },
 
   /* Visual Fidelity Audit：SVG 构建宽度必须 = 卡片实际内宽（实测 stage = windowWidth − 72：

@@ -179,16 +179,6 @@
 .cf-stage { position: relative; width: 100%; }
 .cf-img { display: block; width: 100%; }
 .cf-sel { position: absolute; left: 0; top: 0; width: 100%; }
-.cf-hours { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-.cf-hour {
-  font-size: 10px;
-  padding: 3px 6px;
-  border-radius: 4px;
-  border: 1px solid var(--line);
-  color: var(--muted);
-  background: var(--surface);
-}
-.cf-hour.on { color: #fff; background: var(--forest); border-color: var(--forest); }
 /* 读数三级：L1 天气事实（大）→ L2 云场事实 → L2.5 OurTrail 解读（彩色）→ L1b 风 */
 .cf-readout {
   margin-top: 8px;
@@ -197,6 +187,8 @@
   border-radius: 8px;
   line-height: 1.55;
 }
+/* 未选中态：提示文案代替空灰条（原型同位为纯事实提示） */
+.cf-readout .ro-hint { font-size: 11px; color: var(--muted); }
 .cf-readout .ro-l1 { font-size: 14px; font-weight: 600; color: var(--ink); }
 .cf-readout .ro-l2 { margin-top: 2px; font-size: 11px; color: var(--muted); }
 .cf-readout .ro-l3 { margin-top: 2px; font-size: 11px; font-weight: 600; }
