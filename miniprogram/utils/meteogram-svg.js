@@ -458,6 +458,21 @@ function renderUnifiedSelection(geo, opts) {
   s += '<rect x="' + fmt(geo.x0(selAbs)) + '" y="' + ROWS.iconTemp.y + '" width="' + fmt(geo.plotW / HZ) + '" height="' + (ROWS.axis.y - ROWS.iconTemp.y) + '" fill="rgba(22,62,53,0.035)"/>'
   s += '<line x1="' + fmt(sx) + '" y1="' + (ROWS.iconTemp.y - 2) + '" x2="' + fmt(sx) + '" y2="' + (ROWS.axis.y + 2) + '" stroke="#163e35" stroke-width="0.5" opacity="0.4"/>'
   s += '<circle cx="' + fmt(sx) + '" cy="' + fmt(geo.temp.y(row.temp == null ? (geo.temp.lo + geo.temp.hi) / 2 : row.temp)) + '" r="2.3" fill="#fff" stroke="#163e35" stroke-width="0.9"/>'
+  /* ⑨ 选中时刻克制小高亮：降水柱描边 + 风/阵风交点圆（原型 meteogram.js ⑨ 段 L707-716 逐参对齐；
+     描边框住基础层实际画出的双柱并四周留 1px，不复用 yPrec——它的 h-4 刻度与柱高 h-6 不同源） */
+  const p = row.precip || 0, sh = row.showers || 0
+  if (p + sh >= 0.05 && (p >= 0.05 || sh >= 0.05)) {
+    const bw = Math.max(1.5, geo.plotW / 24 * 0.2635)
+    const precBase = ROWS.precip.y + ROWS.precip.h
+    const hP = (p / geo.precip.max) * (ROWS.precip.h - 6)
+    const hS = (sh / geo.precip.max) * (ROWS.precip.h - 6)
+    const maxH = Math.max(p >= 0.05 ? hP : 0, sh >= 0.05 ? hS : 0)
+    s += '<rect x="' + fmt(sx - bw - 1.5) + '" y="' + fmt(precBase - maxH - 1) + '" width="' + fmt(2 * bw + 3) + '" height="' + fmt(maxH + 1) + '" fill="none" stroke="#163e35" stroke-width="0.7"/>'
+  }
+  if (geo.wind) {
+    s += '<circle cx="' + fmt(sx) + '" cy="' + fmt(geo.wind.y(row.wind == null ? 0 : row.wind)) + '" r="2" fill="#fff" stroke="#163e35" stroke-width="0.8"/>'
+    s += '<circle cx="' + fmt(sx) + '" cy="' + fmt(geo.wind.y(row.gust == null ? 0 : row.gust)) + '" r="1.7" fill="#fff" stroke="#163e35" stroke-width="0.7"/>'
+  }
   s += '<rect x="' + fmt(Math.max(geo.L, Math.min(geo.L + geo.plotW - chipW, sx - chipW / 2))) + '" y="' + (ROWS.axis.y + 4) + '" width="' + chipW + '" height="11" rx="2" fill="#163e35"/>'
   s += '<text x="' + fmt(Math.max(geo.L + chipW / 2, Math.min(geo.L + geo.plotW - chipW / 2, sx))) + '" y="' + (ROWS.axis.y + 11.5) + '" text-anchor="middle" font-size="7" font-weight="600" fill="#fff">' + chipText + '</text>'
   const svg = s + '</svg>'

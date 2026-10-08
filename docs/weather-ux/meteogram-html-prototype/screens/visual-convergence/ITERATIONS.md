@@ -38,9 +38,9 @@ Baseline: cf89b94 · 2026-10-07 · 基线套件读数 38 套件 / 2488 断言（
 - 原型**没有这个网格**：点图即读，图下直接是读数条/图例（horizon-*-375）。chip 方块（白底描边圆角）也是全页最「组件库」的元素，与工程图气质冲突。
 - 附带疑点：未选中时读数条疑似空灰条（chengdu-24h 图下圆条无文字）——待核验是否 ro-l1 空态。
 
-### P1-4 Crosshair 视觉重量
+### P1-4 Crosshair 选中层与原型对齐
 
-- 选时实况（sel16/sel6）四件套：竖线 + 温度曲线交点**白圆** + 绿色时间牌 + 下方 chip 高亮；原型只有「细线 + 绿时间牌 + 轻列洗」。白圆与 chip 高亮是额外中等强度元素，列洗在截图里几乎不可见。A/B 时降重。
+- **（Iteration 6 更正）** 原条目前提被证伪：白圆原型同参存在（`meteogram.js` L705，r=2.3）；chip 高亮随 Iter5 删 cf-hours 网格已消失；列洗 0.035、竖线 0.5/0.4、时间牌 22×11 双侧同参。真实缺口是**反向的**——运行时缺原型三件克制小高亮（降水柱 outline 0.7 / 风圆 r=2·0.8 / 阵风圆 r=1.7·0.7），Iteration 6 补齐。
 
 ### P2-1 OI presentation 去重（Task 4 专章）
 
@@ -149,3 +149,22 @@ Change: `weather.wxml` L119-135（cf-stage `bindtap="onCfTap" hover-class="butto
 Before: baseline/chengdu-24h-375px.png、baseline/litang-72h-375px.png
 After: iter-5-chengdu-24h-375px.png、iter-5-litang-72h-375px.png、iter-5-chengdu-24h-375px-tap.png
 Decision: KEEP / Reason: P1-3 两个复现点全消（chip 网格 0 行、读数条空态有提示文案）；点图即读对齐原型且有硬校验证据；选时能力未丢（OI 区 + 点图两路共用 selectHour）；四套门禁全绿；无新问题（hover-class 用全局 button-hover，无新色值）。
+
+## Iteration 6 — P1-4 Crosshair 选中层与原型对齐
+
+Problem: P1-4 排名前提是「白圆/chip 高亮是运行时额外元素、原型只有细线+时间牌+轻列洗」。逐参核对冻结原型 `meteogram.js` ⑨ 段后前提**证伪**：白圆 r=2.3、列洗 0.035、竖线 0.5/0.4、时间牌 22×11 全部双侧同参；chip 高亮随 Iter5 删 cf-hours 网格已消失。真实缺口反向——运行时选中层缺原型的三件克制小高亮：降水柱 outline（0.7 描边）、风速交点圆（r=2/0.8）、阵风交点圆（r=1.7/0.7），选中时读不出「此刻降水多大、风/阵风在曲线哪个位置」。
+Hypothesis: 按原型 ⑨ 段逐参补齐三件高亮，选中层即与原型同构；不降重（原降重前提已失效），不发明新样式。
+范围: 仅 `meteogram-svg.js` `renderUnifiedSelection` 选中层新增三段图元；基础层/数据/sky/OI/几何与测试契约不动。
+
+### Iteration 6 — Change / Before / After / Decision
+
+Change: `meteogram-svg.js` +15 行（temp 白圆后、时间牌前）——① 降水 outline：`p+sh≥0.05` 时描边框住基础层实际双柱并四周留 1px（`bw` 柱宽系数 0.2635 与基础层同源；**不复用 yPrec**——其 h-4 刻度与柱高 h-6 不同源，注释已记录）；② 风圆 r=2 sw=0.8、③ 阵风圆 r=1.7 sw=0.7（`geo.wind.y(row.wind||gust)`，null→0 与基础层曲线同源）；④ `geo.wind` 缺失整体跳过（48/72h 回退画布不受影响）。
+测试: 新增 stroke-width 0.7/0.8/0.7 与断言的 `stroke-width="0.5"` 计数不冲突（meteogram-svg-test L45 split===2、multiday L123 count===1 各自仍过）。四套门禁实跑：check ✓ / check-handlers weather ✓ / meteogram-svg 25/0 / visual-audit 38/0。
+证据（2026-10-08，375 机位、真实数据、改码后 cli close→open→auto 重开重拍；`drive-shots` 已升级 waitSel 硬校验——轮询 `unified.r1 && selSrc` 双落地否则退出码 3，OI tap 未命中如实记 `tap-miss→api` 不冒充）:
+- 降水正例: 峨眉山 sel12（r1=12:00 · 17° 毛毛雨 · 降水 1.7 mm，探针 `probe-precip.js` 选定小时）——iter-6-emeishan-24h-sel12-{before,after} 全图 + 裁图 iter-6-crop-em12-precip-{before,after}：Before 裸双柱，After 墨绿 1px 描边框住选中小时双柱。
+- 风/阵风圆四对: litang13（iter-6-crop-wind13-{before,after}：Before 裸曲线，After 双白圆骑在风/阵风曲线上）+ litang16 / emeishan6 / emeishan12 同判（crops 留 `~/.ourtrail-mp-auto/shots/iter6-crops/`）。
+- 条件渲染: 理塘 sel13 无降水（探针 litang NONE）→ 无 outline，正确；`litang13-wind-*` 裁图对 md5 相同系裁剪脚本误用同源，未入库，以 `wind13-*` 与全图为准。
+- 附带观察（非本轮引入，Before/After 同现，留作后续）: 理塘读数 r2 出现「海拔 undefined m 云量 null%」——`weather.js` 读 `u.geo.userAlt` 与 `inferState` cUser 在该数据形状下未取到值，既有隐患，另开一轮处理。
+Before: iter-6-emeishan-24h-sel12-before.png、iter-6-litang-24h-sel13-before.png（选中层仅竖线+temp 白圆+时间牌+列洗）
+After: iter-6-emeishan-24h-sel12-after.png、iter-6-litang-24h-sel13-after.png + 4 张裁图（三件高亮全部落地，参数与原型 ⑨ 段一致）
+Decision: KEEP / Reason: P1-4 排名前提证伪并更正（见 Ranking）；反向缺口补齐后选中层与原型同构；四套门禁全绿；无新问题（无新色值，全部 #163e35/token 白）。
