@@ -55,7 +55,7 @@
       <text wx:if="{{!incidents.length}}" class="muted">当前范围没有异常记录。</text>
     </view>
 
-    <view wx:if="{{phase === 'active'}}" class="stack" style="gap:12px;">
+    <view wx:if="{{showPositions}}" class="stack" style="gap:12px;">
       <text class="section-title">最后一次主动上报</text>
       <text class="small muted">本人主动上报 · 非实时追踪 · 不用于导航。超过30分钟的点位不代表当前所在。</text>
       <view wx:for="{{positions}}" wx:key="signupId" class="list-row">
@@ -89,7 +89,7 @@
     <view
       wx:for="{{actions}}"
       wx:key="label"
-      class="button secondary block {{busy ? 'disabled' : ''}}"
+      class="button {{item.primary ? 'primary' : 'secondary'}} block {{busy ? 'disabled' : ''}}"
       hover-class="button-hover"
       data-index="{{index}}"
       bindtap="{{busy ? '' : 'onAction'}}"

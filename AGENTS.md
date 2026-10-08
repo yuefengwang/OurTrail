@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — OurTrail
 
-**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Gate recount 3:** 2026-10-08 全生命周期审计（**50 门禁套件 / 3546 断言**，新增 6 套 `tools/lifecycle-*-test.js` 共 699，`e2e-domain-negative` 83→86；常驻红仍是天气线那 1 条。报告 `docs/superpowers/specs/2026-10-08-full-domain-lifecycle-audit.md`）· **Base commit:** `2e504f2`
+**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Gate recount 3:** 2026-10-08 全生命周期审计（**50 门禁套件 / 3546 断言**，新增 6 套 `tools/lifecycle-*-test.js` 共 699，`e2e-domain-negative` 83→86；常驻红仍是天气线那 1 条。报告 `docs/superpowers/specs/2026-10-08-full-domain-lifecycle-audit.md`）· **Gate recount 4:** 2026-10-08 旅程可解释性重构（**52 门禁套件 / 3698 断言**，新增 `tools/journey-test.js` 138 与 `tools/journey-graph-test.js` 12；客户端多出 `utils/journey.js` 322 行＝状态与下一步的唯一翻译层。报告 `docs/superpowers/specs/2026-10-08-user-journey-ux-audit.md`；常驻红仍是天气线那 1 条）· **Base commit:** `2e504f2`
 
 ---
 
@@ -56,7 +56,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── pages/         # 16 dirs, 1:1 with app.json `pages`
 │   ├── components/    # 13 dirs（12 在用 + privacy-popup 死代码）
 │   ├── custom-tab-bar/  # 与 components/ 同级，样式必须自包含
-│   ├── utils/         # 10 files — see miniprogram/utils/AGENTS.md
+│   ├── utils/         # 20 files — see miniprogram/utils/AGENTS.md
 │   ├── wxs/           # text.wxs
 │   └── assets/markers/  # generated PNGs (map markers reject base64)
 ├── cloudfunctions/trailApi/   # BACKEND — see cloudfunctions/trailApi/AGENTS.md
@@ -65,8 +65,8 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── domain/         # 13 pure modules — see .../domain/AGENTS.md
 │   ├── lib/weather.js  # Open-Meteo proxy (duplicates gcjToWgs — keep in sync)
 │   └── smoke-test.js   # 167 cases, needs no wx-server-sdk
-├── tools/             # 59 个零依赖 node 脚本（实测 2026-10-08 全生命周期审计后）：52 个 `*-test.js`
-│                      #   （49 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
+├── tools/             # 61 个零依赖 node 脚本（实测 2026-10-08 旅程可解释性重构后）：54 个 `*-test.js`
+│                      #   （51 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
 │                      #   `e2e-ui-state-test` / `e2e-golden-path-test`）+ 2 个静态检查 +
 │                      #   `e2e-result.js`（结果账本，被上述 3 套真机层与变异自证 require）+
 │                      #   `lifecycle-harness.js`（6 套 lifecycle-* 套件共用的世界驱动器，本身不是套件）+
@@ -97,6 +97,8 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 | How does the page talk to the cloud? | `miniprogram/utils/api.js` — the **only** `wx.cloud` caller |
 | What are the design tokens? | `miniprogram/app.wxss` lines 5–40 (33 CSS custom properties on `page`) |
 | Beijing-time formatting + label maps | `miniprogram/utils/format.js` |
+| 这一页该说什么状态 / 下一步是什么 | `miniprogram/utils/journey.js`（唯一出口；页面只插值，不再自造状态词） |
+| 页面图与死页面归谁管 | `tools/journey-graph-test.js`（可达性、返回路径、denied 出口、模板比枚举、词汇漂移） |
 | GPX → route nodes | `miniprogram/utils/gpx.js` → `parseGpx` |
 | 天相 / 概率判断 | `miniprogram/utils/sky.js` → `summarize`; astronomy in `utils/astro.js` |
 | Why does rule X exist? | `docs/product/` + `docs/prototypes/ourtrail-app/src/domain/` (read-only) |
@@ -112,7 +114,8 @@ Reference centrality measured by **grep require-count** (no TS/JS LSP and no ast
 | Module | Refs | Role |
 |---|---|---|
 | `miniprogram/utils/api.js` | 15 | Sole `wx.cloud.callFunction` site; 14 exports |
-| `miniprogram/utils/format.js` | 12 | UTC+8 formatting + all label maps |
+| `miniprogram/utils/format.js` | 15 | UTC+8 formatting + all label maps |
+| `miniprogram/utils/journey.js` | 7 | **状态与下一步的唯一翻译层**：阶段/报名/出行/指标/构成/门槛/错误码→人话；wx-free，`tools/journey-test.js` 直接打它 |
 | `domain/contracts.js` | 12 | ERROR_CODES, `canonicalPayload` (sha256 fingerprint), `genId`, `deepClone` |
 | `miniprogram/utils/draft.js` | 7 | wx-storage drafts + opened-activity LRU |
 | `domain/permissions.js` | 7 | All authorization |
@@ -139,7 +142,7 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Gated suites — 50（49 个 tools/*-test.js + smoke-test.js）. 2026-10-08 全生命周期审计后共 3546 断言；
+# Gated suites — 52（51 个 tools/*-test.js + smoke-test.js）. 2026-10-08 旅程可解释性重构后共 3698 断言；
 # 全量复跑唯一红 = tools/outdoor-intelligence-ui-test.js 的常驻非确定性用例，打线上 Open-Meteo + 真实时钟，已归档归因、非本轮改动引入.
 # ⚠ 断言总数是**快照**，不是恒定值：
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
@@ -167,6 +170,10 @@ node tools/outdoor-intelligence-test.js      # Outdoor Intelligence 条件态/�
 node tools/outdoor-intelligence-ui-test.js   # OI 呈现层 + 天气页集成（46）
 node tools/trip-mode-test.js                  # 出行方式 self/shared：Case 1-10 业务态 + 投影/动作/导出/detailState（78）
 node tools/weather-v2-visual-audit-test.js   # Weather V2 视觉保真审计：跨宽度几何归一化/YOU 锚点/covered 透传/OI 卡契约（38）
+
+# 旅程可解释性两套（2026-10-08 新增；被测层是 miniprogram/utils/journey.js——状态与下一步的唯一翻译层）
+node tools/journey-test.js                   # 阶段/报名/出行/指标/构成/门槛/错误码/时间线/只读锁：四问是否齐备（138）
+node tools/journey-graph-test.js             # 页面图静态门：死页面、无返回路径、denied 无出口、WXML 比枚举、状态词漂移、死模块登记（12）
 
 # 全生命周期审计六套（2026-10-08 新增；共用 tools/lifecycle-harness.js，该文件本身不是套件）
 node tools/lifecycle-transitions-test.js     # 7×7 阶段穷举/终态封口/级联键/两条死路探测（214）
@@ -226,6 +233,7 @@ node tools/e2e-release-gap-test.js && \
 node tools/lifecycle-transitions-test.js && node tools/lifecycle-cancellation-test.js && \
 node tools/lifecycle-allocation-test.js && node tools/lifecycle-projection-test.js && \
 node tools/lifecycle-concurrency-test.js && node tools/lifecycle-fuzz-test.js && \
+node tools/journey-test.js && node tools/journey-graph-test.js && \
 node tools/scenario-editor-test.js
 ```
 
@@ -381,6 +389,7 @@ await mp.disconnect()
 19. **Never infer a domain state from a display label.** 出行方式只有一个来源：`Signup.trip.mode` → `permissions.js` 的义务谓词（`isVehicleTraveller` / `needsVehicleService` / `needsSeatAssignment` / `needsOutboundBoarding` / `needsReturnBoarding`）→ `selectors.rowView` 的 `tripMode` + 派生布尔 → UI 读这些布尔。UI/WXML 里出现 `pickup === '自行前往'`、或域内再写一遍 `trip.mode === 'shared' && !driver`，就是复发点（`SYNC.md` 2026-10-08 记的 D2/D3/D4）。文案在 `utils/format.js` 定义一次（`TRIP_MODE_LABELS` / `TRIP_MODE_OPTIONS` / `RETURN_PLAN_LABELS`），并且**只允许向下**：domain → projection → label，反向一律禁止。`self` 永远不需要车辆/座位/上车点/boarding；`shared` 的全部既有约束一个都不许放松（不要为了 self 去放宽 invariant，也不要加 `noVehicle`/`skipVehicle`/`skipDriver` 这类 Activity 级开关）。
 20. **整库 invariant 有一条锁库风险**：`assertInvariants` 校验的是整个 State，任何「线上历史数据可能已经长成那样」的规则写进这里，都会让**此后全库每一次写入**一起被拒（本项目无迁移/回填脚本，`ensureCollections` 也不是迁移）。判据：只有「任何历史数据都不可能违反」的约束才放进 `invariants.js`；可能已有脏形态的，改在**写入端各拦一次** + 放进 `tools/lifecycle-harness.js` 的 `checkOracles` 看守新数据。`activity.delete` 的 positions 级联（F3）就是这个形态的活教材。另：`vehicle.depart` 与「本车参与者司机记为未出发」这类矛盾属 F1，本轮按此原则处理，没有写进 invariants。
 21. **元素数量不是 UI 证据。** `tools/e2e-ui-test.js` 曾拿「面板里有没有 `.list-row`」证明「分车弹层渲染出来了」，而 `.list-row` 同时存在于面板正文的车辆卡与同行组列表——弹层根本没开时也记 PASS（2026-10-08 实测 `planOpen=false` 仍 ✓）。UI 判据必须来自**那个对象的那个状态读数**（`planOpen` / `planChanged.length` / 点击前的 `busy`），不是同名的泛指元素。同理：`bindtap="{{cond ? '' : 'onX'}}"` 的按钮在 `cond` 为真时是「样式正常、文案正确、点了没反应」，tap 返回成功也不代表任何事情。
+22. **状态与「下一步」只有一个翻译层：`miniprogram/utils/journey.js`。** 三条可机器校验的界线，由 `tools/journey-graph-test.js` 常驻守着（不是靠自觉）：① **WXML 不比较服务端枚举原文**——`wx:if="{{phase === 'draft'}}"` / `{{transitionNext === 'cancelled' ? 'danger' : …}}` 一律改成 JS 或投影算好的布尔（`isDraft` / `transitionDanger` / `showPositions`），模板只认布尔与插值；② **受管中文状态词只出现在 `format.js` 与 `journey.js`**——页面 JS 里再打一份 `'待签到'` / `'草稿'` / `'自行前往'` 就是第二次定义，`roster-panel` 的旧 `STATUS_OPTIONS`（「候补」vs 标签表「候补中」）与 workspace 的 `SUBTITLES` 都是这么烂掉的；③ **页面图必须闭合**——每一页要么 tabBar/有跳进来的路由，要么登记进 `DEV_ONLY` 并写明为什么（`lab` / `cloud-field-poc`），登记页还得自声明内部身份、且不许出现在用户页里。同一门还查「有入口没返回路径」与「denied 态一屏红字没有出路」（`vehicle` / `signup` / `workspace` / `lab` / `privacy` 本轮各中一次）。方向仍然只允许 domain → projection → label（见铁律 19）。
 
 ---
 

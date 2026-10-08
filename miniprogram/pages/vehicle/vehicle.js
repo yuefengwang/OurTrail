@@ -2,6 +2,7 @@
 'use strict'
 const api = require('../../utils/api')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 
 Page({
   data: {
@@ -22,6 +23,7 @@ Page({
     message: '',
     error: '',
     busy: false,
+    busyAt: 0,
   },
 
   onLoad(options) {
@@ -34,6 +36,13 @@ Page({
   },
 
   reload() {
+    // busy 只是「这次写还没落地」的界面姿态，不是业务状态。某条命令的 promise 没能回来时，
+    // 它绝不能把整块面板永久锁成「看着能点、点了没反应」——真机实测过一个残留 busy
+    // 锁死组织者工作台整条分车链，而屏幕上没有任何一处说明为什么。
+    if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+      this.setData({ busy: false, busyAt: 0 })
+      console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+    }
     // vehicleId 缺省时服务端会自动挑选本人可联络的车辆（selectors activityView 的
     // vehicle 视角：无 vehicleId 即 vehicleCan 命中的第一辆）。home 的协作任务卡
     // 只带 activityId，此前客户端把"缺参"当死路，车辆联络人从唯一入口进来就是 denied（P0-2）。
@@ -105,6 +114,8 @@ Page({
     })
   },
 
+  goHome() { wx.switchTab({ url: '/pages/home/home' }) },
+
   onLeg(e) {
     const leg = e.currentTarget.dataset.leg
     if (leg === this.data.leg) return
@@ -114,7 +125,7 @@ Page({
   onBoard(e) {
     if (this.data.busy) return
     const signupId = e.currentTarget.dataset.id
-    this.setData({ busy: true, error: '' })
+    this.setData({ busy: true, busyAt: Date.now(), error: '' })
     api.dispatchAndSync({
       type: 'attendance.board',
       activityId: this.activityId,
@@ -143,7 +154,7 @@ Page({
 
   onDepart() {
     if (this.data.busy || this.data.departed) return
-    this.setData({ busy: true, error: '' })
+    this.setData({ busy: true, busyAt: Date.now(), error: '' })
     api.dispatchAndSync({ type: 'vehicle.depart', activityId: this.activityId, vehicleId: this.vehicleId, leg: this.data.leg, note: '本车清点后发车' }, this.revision, this)
       .then(res => {
         this.revision = res.revision
@@ -156,7 +167,7 @@ Page({
 
   onComplete() {
     if (this.data.busy || this.data.completed) return
-    this.setData({ busy: true, error: '' })
+    this.setData({ busy: true, busyAt: Date.now(), error: '' })
     api.dispatchAndSync({ type: 'vehicle.complete', activityId: this.activityId, vehicleId: this.vehicleId, leg: this.data.leg, note: '本程行驶已完成' }, this.revision, this)
       .then(res => {
         this.revision = res.revision

@@ -12,7 +12,7 @@
         <text class="page-title" style="display:block;margin-top:4px;">把出发，安排妥当。</text>
         <text class="muted" style="display:block;margin-top:4px;">先保存想法，准备好后再发布。保存草稿不会自动报名。</text>
       </view>
-      <view wx:if="{{phase === 'draft'}}" class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onDeleteDraftOpen'}}" style="flex:0 0 auto;">删除草稿</view>
+      <view wx:if="{{isDraft}}" class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onDeleteDraftOpen'}}" style="flex:0 0 auto;">删除草稿</view>
     </view>
 
     <!-- 复制模板（仅新建且有过往活动时） -->
@@ -448,9 +448,9 @@
         <icon name="arrow" size="18" color="#FFFFFF" />
       </view>
     </view>
-    <view wx:if="{{step === 2 && phase === 'draft'}}" class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPublishIntent'}}">发布活动</view>
+    <view wx:if="{{step === 2 && isDraft}}" class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPublishIntent'}}">发布活动</view>
     <view class="form-actions">
-      <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSave'}}">{{phase === 'draft' ? '保存草稿' : '保存修改'}}</view>
+      <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSave'}}">{{saveLabel}}</view>
       <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSavePreview'}}">保存并预览</view>
     </view>
     <text wx:if="{{draftSavedAt}}" class="small muted" style="text-align:center;">草稿已自动保存 · {{draftSavedAt}}</text>

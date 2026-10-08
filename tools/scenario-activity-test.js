@@ -275,8 +275,9 @@ async function scenario1() {
     // primary 雷的回归：renderView 内任何未定义标识符都会把 ReferenceError 吃成 denied，这里必须为空
     check('装配完成不进 denied（primary 雷回归）', env.page.data.denied === '' && env.page.data.loading === false,
       env.page.data.denied)
-    check('hero：标题/徽标「一起同行」/出发时间/路线名/里程爬升人数',
-      env.page.data.title === '青城后山 · 周末轻徒步' && env.page.data.badgeText === '一起同行'
+    // 徽标位曾经是常量「一起同行」——最贵的一格没有回答「我现在是什么状态」。现在它承载真实状态。
+    check('hero：标题/徽标=真实状态（不再是常量口号）/出发时间/路线名/里程爬升人数',
+      env.page.data.title === '青城后山 · 周末轻徒步' && env.page.data.badgeText === '行前安排就绪'
       && env.page.data.startAtLabel === '10/3 08:00' && env.page.data.routeTitle === '青城后山穿越'
       && env.page.data.distance === 12.5 && env.page.data.ascent === 860
       && env.page.data.confirmed === 2 && env.page.data.capacity === 20,
@@ -285,7 +286,9 @@ async function scenario1() {
       env.page.data.stateKey === 'ready' && env.page.data.stateTitle === '行前安排已就绪'
       && env.page.data.stateDetail === '检查集合时间、出行方式与装备，出发当天见。'
       && env.page.data.stateTone === 'success'
-      && env.page.data.countersLine === '待审核 0 人 · 候补 0 人 · 剩余 18 个名额',
+      // 参与者视角的这一格给他自己的时间锚点；组织者的工作队列（待审核/候补/剩余）不再摆到参与者面前
+      && /^集合 /.test(env.page.data.countersLine) && /剩/.test(env.page.data.countersLine)
+      && env.page.data.countersLine.indexOf('待审核') === -1,
       JSON.stringify({ k: env.page.data.stateKey, c: env.page.data.countersLine }))
     check('我与同行人：两行装配（主报名 isPrimary、副标题以出行方式打头；无车行标「车辆待安排」）',
       env.page.data.rows.length === 2 && env.page.data.rows[0].isPrimary === true
@@ -490,16 +493,17 @@ async function scenario3() {
   {
     const env = bootActivity({ view: viewFixture(v => { v.detailState = 'cancelled'; v.badgeOverride = null }) })
     await settle(env.page)
-    check('已取消：徽标「已取消」+ 警示语气 + 状态文案',
-      env.page.data.badgeText === '已取消' && env.page.data.stateKey === 'cancelled'
+    check('已取消：徽标说实话「活动已取消」+ 警示语气 + 状态文案',
+      env.page.data.badgeText === '活动已取消' && env.page.data.stateKey === 'cancelled'
       && env.page.data.stateTitle === '活动已取消' && env.page.data.stateTone === 'warning',
       JSON.stringify({ b: env.page.data.badgeText, t: env.page.data.stateTone }))
   }
   {
     const env = bootActivity({ view: viewFixture(v => { v.detailState = 'finished' }) })
     await settle(env.page)
-    check('已归档：徽标「已归档」+ 正常语气',
-      env.page.data.badgeText === '已归档' && env.page.data.stateKey === 'finished'
+    // 参与者看到的是人话：这场已经结束了。「已归档」是系统词。
+    check('已归档：徽标「已结束」+ 正常语气',
+      env.page.data.badgeText === '已结束' && env.page.data.stateKey === 'finished'
       && env.page.data.stateTitle === '一起走过，平安收尾' && env.page.data.stateTone === 'success',
       JSON.stringify({ b: env.page.data.badgeText, t: env.page.data.stateTone }))
   }

@@ -17,10 +17,15 @@ const os = require('os')
 const net = require('net')
 const { execFileSync } = require('child_process')
 const { createLedger, auditSource, BUSINESS, UI } = require('./e2e-result')
+// 按钮文案从 journey 层取，不在测试里再抄一份：改了文案应当由这层带着测试一起走，
+// 而不是让真机套件因为一句「进入正在集合」找不到按钮而整链假红。
+const J = require('../miniprogram/utils/journey.js')
 
 const DEPS = path.join(os.homedir(), '.ourtrail-e2e')
 const SHOTS = path.join(DEPS, 'shots')
-const AUTOMATOR_PORT = 9420
+// 9420 是本套件的约定端口；但自动化端口偶发留下「仍在 LISTEN、automator 连不上」的旧句柄，
+// 唯一救法是重绑一个新 --auto-port。留一个环境变量口子，换端口不必改代码。
+const AUTOMATOR_PORT = Number(process.env.OURTRAIL_AUTO_PORT || 9420)
 const PROJECT = 'D:\\OurTrail'
 const CLI_CANDIDATES = [
   'C:\\Program Files (x86)\\Tencent\\微信web开发者工具\\cli.bat',
@@ -472,6 +477,25 @@ async function main() {
       L.uEffect('勾选落到 vform.pickupIds（UI 操作 → 组件状态，BUG-1 修复验证）',
         idsNow.indexOf(pkValue) !== -1 && idsNow.length === 1,
         JSON.stringify({ pkValue, beforeIds: (opened && opened.vform && opened.vform.pickupIds) || [], afterIds: idsNow }))
+      // 单车只覆盖一个上车点时，其他上车点需要乘车的人会被 preview 判 PICKUP_MISMATCH 而排不进车，
+      // 于是「随队出发」在域里永远不成立——真机整链就卡在那儿。所以这里把余下的上车点也真实勾上：
+      // 既验证多选可以累加（单项勾选证不了这件事），也让后面那辆车真的能装下所有 shared 的人。
+      const pkTotal = pkGroup ? (await pkGroup.$$('checkbox')).length : 0
+      const picked = [pkValue]
+      for (let i = 1; i < pkTotal; i++) {
+        const g2 = tp ? (await tp.$$('checkbox-group'))[0] : null
+        const b2 = g2 ? (await g2.$$('checkbox'))[i] : null
+        const v2 = b2 ? String((await b2.attribute('value')) || '') : ''
+        if (!b2 || !v2 || picked.indexOf(v2) !== -1) continue
+        if (!await tapEl(b2)) continue
+        await page.waitFor(1200)
+        const st2 = tp ? await tp.data() : null
+        const ids2 = ((st2 && st2.vform) || {}).pickupIds || []
+        if (ids2.indexOf(v2) !== -1) picked.push(v2)
+      }
+      L.uEffect('逐个勾选其余上车点均累加进 vform.pickupIds（多选真实可用）',
+        picked.length === pkTotal && pkTotal > 1,
+        JSON.stringify({ picked: picked.length, total: pkTotal }))
       // —— Case B：明确座号。change 载体已改为 checkbox-group（裸 <checkbox bindchange> 真机永不触发）。 ——
       const seatGroup = groups[1] || null
       const seatBox = seatGroup ? (await seatGroup.$$('checkbox'))[0] : null
@@ -508,8 +532,15 @@ async function main() {
       const editBtn = tp ? await findButtonByText(tp, '编辑车辆与司机') : null
       const okEdit = await tapEl(editBtn)
       L.uiTap('重开车辆编辑（回显验证入口）', okEdit, 'tap 车辆卡上的「编辑车辆与司机」')
-      await page.waitFor(2000)
-      const stRe = tp ? await tp.data() : null
+      // onEditorOpen 走的是 api.readTransport（异步），一次固定 2s 等待会在慢链路上读到
+      // 还没有 vform 的面板，于是 checkbox 尚未回显就判读 ⇒ 假红。改为轮询到 vform 落地，
+      // 再重新查一次渲染态。
+      let stRe = null
+      for (let t = 0; t < 8; t++) {
+        await page.waitFor(1500)
+        stRe = tp ? await tp.data() : null
+        if (stRe && stRe.vform) break
+      }
       const groupsRe = tp ? await tp.$$('checkbox-group') : []
       const pkBoxRe = groupsRe[0] ? (await groupsRe[0].$$('checkbox'))[0] : null
       const checkedRe = pkBoxRe ? await pkBoxRe.property('checked') : null
@@ -520,7 +551,17 @@ async function main() {
       // 关弹层不依赖查不到的 overlay 把手：再点一次保存（幂等）
       const save2 = tp ? await findButtonByText(tp, '保存车辆安排') : null
       await tapEl(save2)
-      await page.waitFor(2000)
+      // 必须等这次写真正落地再往下点：busy=true 时「预览自动分车」的 bindtap 会被模板
+      // 收成空串（按钮同时在说「正在按最新名单计算…」），这时候的 tap 必然什么都没发生。
+      let settled = null
+      for (let t = 0; t < 10; t++) {
+        await page.waitFor(1500)
+        settled = tp ? await tp.data() : null
+        if (settled && settled.busy === false && settled.editorOpen === false) break
+      }
+      L.uEffect('第二次保存落地：弹层关闭且 busy 复位（下一步 tap 的前提）',
+        !!settled && settled.busy === false && settled.editorOpen === false,
+        JSON.stringify(settled && { busy: settled.busy, editorOpen: settled.editorOpen, error: settled.error }))
       let cardSeen = false
       for (let t = 0; t < 6 && !cardSeen; t++) {
         const cards2 = tp ? await tp.$$('.card') : []
@@ -606,7 +647,7 @@ async function main() {
 
     let gath
     await L.block('推进 gathering', 2, async () => {
-      gath = await advanceViaUI('进入正在集合', '按期集合')
+      gath = await advanceViaUI(J.TRANSITION_LABEL.gathering, '按期集合')
       L.b('推进 gathering 并回读到阶段值（经真实工作台按钮）', gath.phase === 'gathering', JSON.stringify(gath).slice(0, 160))
       // BUG-1 的验证点：工作台切区只 setData，面板靠页面下发的 syncKey（phase@revision）自失效重读。
       // 阶段推到集合后，仍挂着的现场面板必须已经是新 phase，弹层动作表才不会是空的。

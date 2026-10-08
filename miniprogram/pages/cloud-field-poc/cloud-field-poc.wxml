@@ -40,6 +40,8 @@
 
     <view class="poc-note">
       <text>POC 仅验证 Cloud Field renderer 迁移与性能，非生产界面。\n基础场 = 静态 SVG data-URI（&lt;image&gt;）；选中层单独重生成。\n实时抓取需在开发者工具勾选「不校验合法域名」。</text>
+      <!-- 编译模式直达，没有返回栈：给一条明确出路，别把人关在这一页 -->
+      <view class="button text" hover-class="button-hover" bindtap="goHome">回到活动页</view>
     </view>
 
   </view>

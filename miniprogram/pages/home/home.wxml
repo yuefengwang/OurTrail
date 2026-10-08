@@ -70,6 +70,7 @@
           date="{{item.date}}"
           meta="{{item.meta}}"
           status="{{item.status}}"
+          when="{{item.when}}"
           featured="{{item.featured}}"
           info="{{item.info}}"
           data-id="{{item.id}}"

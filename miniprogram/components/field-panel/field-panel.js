@@ -3,6 +3,7 @@
 'use strict'
 const api = require('../../utils/api')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 
 const DEP_TONES = { unknown: 'warning', joined: 'success', not_departed: 'success', coordinating: 'warning' }
 
@@ -39,6 +40,7 @@ Component({
     message: '',
     sheetHint: '',
     busy: false,
+    busyAt: 0,
   },
 
   observers: {
@@ -56,8 +58,17 @@ Component({
 
   methods: {
     reload() {
+      // busy 只是「这次写还没落地」的界面姿态，不是业务状态。某条命令的 promise 没能回来时，
+      // 它绝不能把整块面板永久锁成「看着能点、点了没反应」——真机实测过一个残留 busy
+      // 锁死组织者工作台整条分车链，而屏幕上没有任何一处说明为什么。
+      if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+        this.setData({ busy: false, busyAt: 0 })
+        console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+      }
       const activityId = this.data.activityId
-      if (!activityId || this._loading) return
+      // 没有活动编号时以前直接 return：面板停在 loading 骨架上，永远转圈也不说为什么。
+      if (!activityId) { this.setData({ loading: false, denied: '这条协作入口没有带上活动，请向领队重新要一次链接。' }); return }
+      if (this._loading) return
       this._loading = true
       return api.read({ kind: 'activity', activityId, perspective: this.data.perspective }).then(res => {
         if (res.view.kind !== 'activity') {
@@ -86,7 +97,7 @@ Component({
               r.tripMode === 'shared' ? (r.vehicle || '待安排车辆') : '',
               r.tripMode === 'shared' && r.outboundBoarded ? '已上车' : '',
             ].filter(Boolean).join(' · '),
-            status: r.home ? '已到家' : F.DEPARTURE_LABELS[r.departure] || '出发待核实',
+            status: r.home ? '已到家' : (F.DEPARTURE_LABELS[r.departure] || F.DEPARTURE_LABELS.unknown),
             tone: r.home || r.departure === 'not_departed' ? 'success' : 'warning',
           }))
         const positions = (v.positions || []).map(p => ({
@@ -102,6 +113,8 @@ Component({
           loading: false,
           denied: '',
           phase,
+          // 上报点只在行程进行中才有意义；「进行中」这个判断留在 JS，模板不认服务端枚举原文。
+          showPositions: phase === 'active',
           headline: phase === 'closing' ? '逐人核实，安心收尾' : '现场事实，逐项确认',
           pendingHome: v.counters.pendingHome,
           openIncidents: v.counters.openIncidents,
@@ -129,32 +142,28 @@ Component({
       const id = e.currentTarget.dataset.id
       const row = this.view.rows.find(r => r.signupId === id)
       if (!row) return
-      const phase = this.data.phase
       const permitted = this.view.permittedActions
       const acts = []
-      const lateArrival = phase === 'active' && row.departure === 'coordinating'
-      if (phase === 'gathering' || lateArrival) {
-        if (!row.checkedIn && permitted.indexOf('attendance.checkin') !== -1) {
-          acts.push({ label: '确认现场签到', type: 'attendance.checkin', needNote: true })
-        }
-        if (permitted.indexOf('attendance.departure') !== -1) {
-          // 按钮只在该行真的能成立时才给：服务端 joined 门（field.js）要「已签到 +（拼车乘客）去程已上车」，
-          // 缺事实时点下去只会换来一句红字，而正确入口在车长任务页（attendance.board）。
-          const joinedReady = row.checkedIn && !row.needsOutboundBoarding
-          if (joinedReady) acts.push({ label: '核实已随队出发', type: 'attendance.departure', outcome: 'joined' })
-          if (!row.outboundBoarded) {
-            acts.push({ label: '核实未出发', type: 'attendance.departure', outcome: 'not_departed', needNote: true })
-            acts.push({ label: '标记迟到协调', type: 'attendance.departure', outcome: 'coordinating', needNote: true })
-          }
+      // 「这一刻这道命令存不存在」只由服务端投影回答（permittedActions 用了 field.js 的具名门），
+      // 客户端不再自带一份 phase/lateArrival 判断——那份重复规则每改一次域内就会漂一次。
+      if (permitted.indexOf('attendance.checkin') !== -1 && !row.checkedIn) {
+        acts.push({ label: '确认现场签到', type: 'attendance.checkin', needNote: true })
+      }
+      if (permitted.indexOf('attendance.departure') !== -1) {
+        // 按钮只在该行真的能成立时才给：服务端 joined 门（field.js）要「已签到 +（拼车乘客）去程已上车」，
+        // 缺事实时点下去只会换来一句红字，而正确入口在车长任务页（attendance.board）。
+        if (row.checkedIn && !row.needsOutboundBoarding) acts.push({ label: '核实已随队出发', type: 'attendance.departure', outcome: 'joined' })
+        if (!row.outboundBoarded) {
+          acts.push({ label: '核实未出发', type: 'attendance.departure', outcome: 'not_departed', needNote: true })
+          acts.push({ label: '标记迟到协调', type: 'attendance.departure', outcome: 'coordinating', needNote: true })
         }
       }
-      if (phase === 'closing' && row.departure === 'joined' && !row.home && permitted.indexOf('attendance.home') !== -1) {
+      if (row.departure === 'joined' && !row.home && permitted.indexOf('attendance.home') !== -1) {
         acts.push({ label: '核实安全到家', type: 'attendance.home', needNote: true })
       }
       // permittedActions 是活动级的能力集合，「这行能不能做这件事」还要看该行的出行方式：
       // 返程安排只对需要乘车的人成立（服务端 field.js 同样按 trip.mode 拒 self）。
-      if (['active', 'closing'].indexOf(phase) !== -1 && row.departure === 'joined' && row.tripMode === 'shared'
-        && permitted.indexOf('attendance.returnPlan') !== -1) {
+      if (row.departure === 'joined' && row.tripMode === 'shared' && permitted.indexOf('attendance.returnPlan') !== -1) {
         acts.push({
           label: row.returnPlan === 'independent' ? '改回原车返程' : '记录另行返程',
           type: 'attendance.returnPlan',
@@ -162,19 +171,22 @@ Component({
           needNote: true,
         })
       }
-      if (['gathering', 'active', 'closing'].indexOf(phase) !== -1 && permitted.indexOf('incident.report') !== -1) {
+      if (permitted.indexOf('incident.report') !== -1) {
         acts.push({ label: '记录下撤报备', type: 'incident.report', kind: 'withdrawal', needNote: true })
         acts.push({ label: '记录其他异常', type: 'incident.report', kind: 'other', needNote: true })
       }
-      const nodeEnabled = phase === 'active' && row.departure === 'joined' && permitted.indexOf('attendance.node') !== -1
+      const nodeEnabled = row.departure === 'joined' && permitted.indexOf('attendance.node') !== -1
       if (nodeEnabled) acts.push({ label: '确认到达此节点', type: 'attendance.node', needNote: true, needPoint: true })
+      // 一屏一个主动作：第一条就是「此刻最该做的那一步」，其余降为次要，避免六个同权重按钮排成一列。
+      acts.forEach((a, i) => { a.primary = i === 0 })
       // 少了「核实已随队出发」时必须说清缺哪一步、去哪儿补，否则组织者只会对着空动作表猜。
+      const canVerifyDeparture = permitted.indexOf('attendance.departure') !== -1
       let sheetHint = ''
-      if ((phase === 'gathering' || lateArrival) && permitted.indexOf('attendance.departure') !== -1
-        && acts.every(a => a.type !== 'attendance.departure' || a.outcome === 'not_departed' || a.outcome === 'coordinating')) {
+      if (canVerifyDeparture && acts.every(a => a.type !== 'attendance.departure' || a.outcome === 'not_departed' || a.outcome === 'coordinating')) {
         sheetHint = !row.checkedIn ? '请先完成现场签到，再核实是否随队出发。'
           : (row.needsOutboundBoarding ? '此人需要乘车随队：请先在车长任务页点「确认上车」，回来才能核实已随队出发。' : '')
       }
+      if (!acts.length) sheetHint = sheetHint || '这位参与人当前没有需要补的现场事实；如果情况有变，请报备异常。'
       this.setData({
         sheetHint,
         sheetOpen: true,
@@ -220,7 +232,7 @@ Component({
         payload = { type: act.type, activityId: this.data.activityId, signupIds: [this.data.sel.signupId], kind: act.kind, description: this.data.note }
       }
       if (!payload) return
-      this.setData({ busy: true, error: '', message: '' })
+      this.setData({ busy: true, busyAt: Date.now(), error: '', message: '' })
       api.dispatchAndSync(payload, this.revision, this)
         .then(res => {
           this.revision = res.revision

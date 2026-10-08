@@ -28,6 +28,9 @@ Page({
     this.reload()
   },
 
+  // 这一页由编译模式直达，没有返回栈可用；不给出口就等于把人关在预演面板里。
+  goHome() { wx.switchTab({ url: '/pages/home/home' }) },
+
   onPullDownRefresh() {
     this.reload().then(() => wx.stopPullDownRefresh()).catch(() => wx.stopPullDownRefresh())
   },

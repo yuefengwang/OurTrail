@@ -431,6 +431,15 @@ Page({
   // 档案未激活时的直达出口：去「我的」补全（编辑器 profileGate 同型；报名草稿在本机，回来接着填）
   onGoProfile() { wx.switchTab({ url: '/pages/me/me' }) },
 
+  // denied 页必须给出路：有活动编号就回那场活动，没有就回首页，
+  // 不能把人关在一屏红字里只能靠导航条返回（分享链接冷启动时没有上一页可回）。
+  goBackToActivity() {
+    if (!this.activityId) return wx.switchTab({ url: '/pages/home/home' })
+    const pages = getCurrentPages()
+    if (pages.length > 1) return wx.navigateBack()
+    wx.redirectTo({ url: '/pages/activity/activity?id=' + this.activityId })
+  },
+
   // ---- 编辑模式 ----
   onPurpose(e) { this.setData({ purpose: e.detail.value }) },
 

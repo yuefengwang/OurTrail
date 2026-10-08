@@ -1,7 +1,7 @@
 <article class="card activity-card {{featured ? 'hero activity-card--featured' : ''}}" bindtap="onTap" hover-class="card-hover">
   <image wx:if="{{featured}}" class="trail-art" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNENkVBOEEiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTEzNS0yMEM0MCAzMSAyMjAgNTEgMTI2IDEwN1MzNSAxNzkgMTMyIDI2MCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE4My0yMEM4OCAzMSAxNjQgNzggODQgMTIzUzkyIDIwMSAxNzkgMjYwIiBzdHJva2Utd2lkdGg9IjEuMjUiLz48L3N2Zz4=" mode="aspectFit" />
   <view class="card-header activity-card__header hero-body">
-    <text class="activity-card__date small tabular" id="date">{{date}}</text>
+    <text class="activity-card__date small tabular" id="date">{{date}}{{when ? ' · 出发 ' + when : ''}}</text>
     <text class="badge {{featured ? 'on-forest' : 'neutral'}}" id="status">{{status}}</text>
   </view>
   <view class="activity-card__title hero-body">{{title}}</view>

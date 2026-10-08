@@ -4,6 +4,7 @@
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 
 Page({
   data: {
@@ -56,6 +57,8 @@ Page({
         }
       }
       this.cache = byId
+      // 倒计时要有可信的「现在」——用服务端时钟，避免手机时间不准把「剩 3 天」算错
+      this.now = home.now
       const profileName = profile.view.kind === 'profile' ? profile.view.profile.person.name : ''
       this.setData({ loading: false, denied: '', profileName })
       this.render()
@@ -96,8 +99,10 @@ Page({
       title: a.title || '未命名草稿',
       date: F.dateLabel(a.startAt),
       meta: (a.routeSnapshot.title || '路线待完善') + ' · ' + a.routeSnapshot.distanceKm + ' km',
-      status: a.meta.owner ? '我组织的 · ' + (F.PHASE_LABELS[a.phase] || a.phase)
-        : (a.meta.joined ? (F.PHASE_LABELS[a.phase] || a.phase) : '最近查看'),
+      // 状态词只在 journey 一处定义；卡片再补一句「还有多久」，
+      // 因为首页真正要回答的是「哪一场快到时间了」，不是「它在哪个 phase」。
+      status: (a.meta.owner ? '我组织的 · ' : (a.meta.joined ? '' : '最近查看 · ')) + J.phaseLabel(a.phase),
+      when: a.startAt && ['archived', 'cancelled'].indexOf(a.phase) === -1 ? J.remaining(this.now, a.startAt).text : '',
       featured: a.id === featuredId && a.phase !== 'draft',
       info: '已确认 ' + a.meta.confirmed + ' 人 · 待审核 ' + a.meta.pending + ' 人 · 名额 ' + a.meta.capacity + ' 人',
     }))
@@ -110,6 +115,7 @@ Page({
       emptyAction = '清除搜索'
     } else if (filter === 'recent') {
       emptyTitle = '还没有最近查看的活动'
+      emptyDetail = '打开过一场活动之后，它会回到这里；也可以从「发现活动」开始。'
       emptyAction = ''
     }
     this.setData({ tasks, cards, emptyTitle, emptyDetail, emptyAction, hasAny: all.length > 0 })

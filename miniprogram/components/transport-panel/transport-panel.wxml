@@ -6,7 +6,7 @@
   <view wx:else class="stack">
     <view class="card-header">
       <text class="section-title">先看容量，再安排同行</text>
-      <view class="button text" hover-class="button-hover" data-id="" bindtap="onEditorOpen">
+      <view wx:if="{{!lockHint}}" class="button text" hover-class="button-hover" data-id="" bindtap="onEditorOpen">
         <icon name="plus" size="18" color="#163E35" />
         <text>添加车辆</text>
       </view>
@@ -23,8 +23,11 @@
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
 
-    <view class="button primary block {{busy || !vehicles.length ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !vehicles.length ? '' : 'onPreview'}}">
-      <text>预览自动分车方案</text>
+    <!-- 出发之后服务端就拒绝排车写操作。与其留一堆点了才撞红字的按钮，不如说明现在只能看、该去哪处理。 -->
+    <view wx:if="{{lockHint}}" class="callout warning">{{lockHint}}</view>
+
+    <view wx:if="{{!lockHint}}" class="button primary block {{busy || !vehicles.length ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !vehicles.length ? '' : 'onPreview'}}">
+      <text>{{busy ? '正在按最新名单计算…' : '预览自动分车方案'}}</text>
       <icon name="arrow" size="18" color="#FFFFFF" />
     </view>
 
@@ -41,7 +44,7 @@
       <text class="small muted">上车点：{{vh.pickupList}}</text>
 
       <view wx:if="{{vh.seatLabels}}" class="stack-gap3">
-        <text class="eyebrow">座位示意 · 点选座位安排人员</text>
+        <text class="eyebrow">{{lockHint ? '座位示意 · 只读回看' : '座位示意 · 点选座位安排人员'}}</text>
         <view class="seat-grid">
           <block wx:for="{{vh.seatCells}}" wx:for-item="cell" wx:for-index="ci" wx:key="seat">
             <view wx:if="{{cell.aisle}}" class="seat aisle" aria-hidden="true"></view>
@@ -50,7 +53,7 @@
               data-vehicle="{{vh.id}}"
               data-seat="{{cell.seat}}"
               data-occupant="{{cell.signupId}}"
-              bindtap="openAssign"
+              bindtap="{{lockHint ? '' : 'openAssign'}}"
             >
               <text style="font-weight:700;">{{cell.seat}}</text>
               <text>{{cell.occupant || '空位'}}</text>
@@ -65,7 +68,7 @@
           class="list-row"
           data-vehicle="{{vh.id}}"
           data-occupant="{{item.signupId}}"
-          bindtap="openAssign"
+          bindtap="{{lockHint ? '' : 'openAssign'}}"
         >
           <view class="list-main">
             <text>{{item.name}}</text>
@@ -73,10 +76,10 @@
           </view>
           <icon name="arrow" size="16" color="#163E35" />
         </view>
-        <view class="button secondary block" hover-class="button-hover" data-vehicle="{{vh.id}}" bindtap="openAssign">安排乘客至此车</view>
+        <view wx:if="{{!lockHint}}" class="button secondary block" hover-class="button-hover" data-vehicle="{{vh.id}}" bindtap="openAssign">安排乘客至此车</view>
       </view>
 
-      <view class="form-actions">
+      <view wx:if="{{!lockHint}}" class="form-actions">
         <view class="button text" hover-class="button-hover" data-id="{{vh.id}}" bindtap="onEditorOpen">编辑车辆与司机</view>
         <view class="button text" hover-class="button-hover" data-id="{{vh.id}}" bindtap="onRemoveAsk">删除车辆</view>
       </view>
@@ -106,7 +109,7 @@
     <view wx:for="{{planRemoved}}" wx:key="signupId" class="callout warning">移除：{{item.name}} · {{item.line}}</view>
     <view wx:for="{{planUnassigned}}" wx:key="signupId" class="callout warning">{{item.name}}：{{item.reason}}</view>
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
-    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPlanCommit'}}">明确确认并提交此方案</view>
+    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPlanCommit'}}">{{busy ? '正在提交…' : '明确确认并提交此方案'}}</view>
     <view class="button secondary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPlanRecompute'}}">按最新状态重新计算</view>
   </view>
 </overlay>

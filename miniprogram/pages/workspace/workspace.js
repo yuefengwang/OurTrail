@@ -2,19 +2,11 @@
 'use strict'
 const api = require('../../utils/api')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 
 const NEXT_PHASE = { published: 'gathering', gathering: 'active', active: 'closing', closing: 'archived' }
 const TABS = ['总览', '名单', '分车', '现场']
-// 副标题随阶段换焦点：工作台只讲「现在最该做什么」
-const SUBTITLES = {
-  draft: '发布前把信息补齐，再开放报名。',
-  published: '先处理需要你确认的事，再安心出发。',
-  gathering: '人在集合点，以现场清点与出发核实为准。',
-  active: '行程进行中，逐项记录节点与异常。',
-  closing: '返程收尾，逐人确认安全到家。',
-  archived: '活动已归档，可回看名单与现场记录。',
-  cancelled: '活动已取消，仅保留记录供回看。',
-}
+const TAB_BY_TARGET = { roster: 1, transport: 2, field: 3, edit: 0 }
 
 Page({
   data: {
@@ -39,6 +31,10 @@ Page({
     unchecked: 0,
     openIncidents: 0,
     pendingHome: 0,
+    queue: [],
+    milestone: '',
+    notVerified: 0,
+    transitionHint: '',
     phaseTimeline: [],
     canTransition: false,
     nextPhaseLabel: '',
@@ -50,11 +46,13 @@ Page({
     // 弹层
     transitionOpen: false,
     transitionNext: '',
+    transitionDanger: false,
     transitionTitle: '',
     reason: '',
     error: '',
     message: '',
     busy: false,
+    busyAt: 0,
   },
 
   onLoad(options) {
@@ -67,6 +65,13 @@ Page({
   },
 
   reload() {
+    // busy 只是「这次写还没落地」的界面姿态，不是业务状态。某条命令的 promise 没能回来时，
+    // 它绝不能把整块面板永久锁成「看着能点、点了没反应」——真机实测过一个残留 busy
+    // 锁死组织者工作台整条分车链，而屏幕上没有任何一处说明为什么。
+    if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+      this.setData({ busy: false, busyAt: 0 })
+      console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+    }
     if (!this.activityId) {
       this.setData({ loading: false, denied: '缺少活动编号。' })
       return
@@ -83,18 +88,29 @@ Page({
       const a = v.activity
       const phase = a.phase
       const next = NEXT_PHASE[phase]
-      const inField = phase === 'published' || phase === 'gathering'
-      const timeline = ['published', 'gathering', 'active', 'closing', 'archived'].map(p => ({
-        phase: p,
-        label: F.PHASE_LABELS[p] + (p === phase ? ' · 当前' : ''),
-        current: p === phase,
-      }))
+      // 指标位与阶段成对：在场上看「待签到」，收尾看「待到家」。措辞与切换规则只在 journey 里有一份。
+      const metric = J.fieldMetric(phase)
+      const rows = v.rows || []
+      const confirmed = rows.filter(r => r.status === 'confirmed')
+      // 推进门槛的「谁挡着」全部来自投影好的行标志，页面不重述域内规则（AGENTS.md 铁律 19）。
+      const notVerified = confirmed.filter(r => r.departure === 'unknown').length
+      const coordinating = confirmed.filter(r => r.departure === 'coordinating').length
+      const missingBoarding = confirmed.filter(r => r.departure === 'joined' && r.needsOutboundBoarding).length
+      const hasTravelFact = confirmed.some(r => r.departure === 'joined' || r.outboundBoarded || r.returnBoarded || r.home)
+      const queue = J.leaderQueue({
+        phase, now: res.now, startAt: a.startAt, deadlineAt: a.deadlineAt,
+        meetingAt: (a.pickupPoints[0] || {}).meetingAt || null,
+        vehicleTravel: v.counters.vehicleTravel, counters: v.counters,
+      })
+      const blocker = J.transitionBlocker({
+        next, counters: v.counters, unassignedBoarding: missingBoarding, coordinating, hasTravelFact,
+      })
       this.setData({
         loading: false,
         denied: '',
         eyebrow: '组织者工作台',
-        phaseLabel: F.PHASE_LABELS[phase] || phase,
-        subtitle: SUBTITLES[phase] || SUBTITLES.published,
+        phaseLabel: J.phaseLabel(phase),
+        subtitle: J.phaseScene(phase),
         title: a.title || '未命名活动',
         pending: v.counters.pending,
         unassigned: v.counters.unassigned,
@@ -103,20 +119,21 @@ Page({
         selfTravel: v.counters.selfTravel,
         vehicleTravel: v.counters.vehicleTravel,
         assigned: v.counters.assigned,
-        tripSummaryLine: '全部已确认 ' + v.counters.confirmed
-          + ' · 自行前往 ' + v.counters.selfTravel
-          + ' · 需要乘车 ' + v.counters.vehicleTravel
-          + '（已安排 ' + v.counters.assigned + '）',
+        tripSummaryLine: J.tripMixLine(v.counters),
         waitlisted: v.counters.waitlisted,
         unchecked: v.counters.unchecked,
         openIncidents: v.counters.openIncidents,
         pendingHome: v.counters.pendingHome,
-        thirdValue: inField ? v.counters.unchecked : v.counters.pendingHome,
-        thirdLabel: inField ? '待签到' : '待到家',
-        phaseTimeline: timeline,
+        thirdValue: v.counters[metric.key],
+        thirdLabel: metric.label,
+        queue: queue.items,
+        milestone: queue.milestone,
+        notVerified,
+        phaseTimeline: J.timeline(res.now, phase),
         syncKey: phase + '@' + res.revision,
         canTransition: !!next && v.permittedActions.indexOf('activity.transition') !== -1,
-        nextPhaseLabel: next ? F.PHASE_LABELS[next] : '',
+        nextPhaseLabel: next ? J.TRANSITION_LABEL[next] || J.phaseLabel(next) : '',
+        transitionHint: blocker,
         canCancel: v.permittedActions.indexOf('activity.transition') !== -1
           && ['draft', 'published', 'gathering'].indexOf(phase) !== -1,
         canEdit: v.permittedActions.indexOf('activity.edit') !== -1,
@@ -138,9 +155,20 @@ Page({
   goRoster() { this.setData({ tab: 1 }) },
   goTransport() { this.setData({ tab: 2 }) },
   goField() { this.setData({ tab: 3 }) },
+
+  // 待办行由 leaderQueue 生成，每条自带「去哪个分区解决」——页面上不再各写一份跳转。
+  goQueueItem(e) {
+    const target = e.currentTarget.dataset.target
+    if (target === 'edit') return wx.navigateTo({ url: '/pages/editor/editor?id=' + this.activityId })
+    const tab = TAB_BY_TARGET[target]
+    if (tab === undefined) return
+    this.onTab({ currentTarget: { dataset: { tab } } })
+  },
   goNotices() { wx.navigateTo({ url: '/pages/anotices/anotices?id=' + this.activityId }) },
   goEdit() { wx.navigateTo({ url: '/pages/editor/editor?id=' + this.activityId }) },
   goDetail() { wx.navigateTo({ url: '/pages/activity/activity?id=' + this.activityId }) },
+  // denied 时不能再把人导去另一个 denied 页：没有活动编号就回首页。
+  onDeniedAction() { if (this.activityId) this.goDetail(); else wx.switchTab({ url: '/pages/home/home' }) },
 
   // ---- 阶段推进 ----
   onTransition(e) {
@@ -150,6 +178,8 @@ Page({
       transitionOpen: true,
       transitionNext: next,
       transitionTitle: next === 'cancelled' ? '确认取消活动' : '确认进入' + (F.PHASE_LABELS[next] || next),
+      // 按钮的危险配色由 JS 决定：模板不比较服务端枚举原文（模板只认布尔）。
+      transitionDanger: next === 'cancelled',
       reason: '',
       error: '',
     })
@@ -158,7 +188,7 @@ Page({
   onReason(e) { this.setData({ reason: e.detail.value }) },
   onTransitionConfirm() {
     if (!this.data.reason.trim() || this.data.busy) return
-    this.setData({ busy: true, error: '' })
+    this.setData({ busy: true, busyAt: Date.now(), error: '' })
     api.dispatchAndSync({
       type: 'activity.transition',
       activityId: this.activityId,

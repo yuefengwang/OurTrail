@@ -245,9 +245,13 @@ async function scenario1() {
     && VEHICLE_JSON.usingComponents['status-panel'] === '/components/status-panel/status-panel'
     && VEHICLE_JSON.usingComponents['icon'] === '/components/icon/icon',
     JSON.stringify(VEHICLE_JSON.usingComponents || {}))
-  check('denied/loading 两态各占一个 status-panel，正文只在 else 分支（只读时无操作按钮可点）',
-    VEHICLE_WXML.indexOf('<status-panel wx:if="{{denied}}" kind="denied" title="本车任务不可用" detail="{{denied}}" />') !== -1
+  // 拒绝态不能只留一句话：这一页没有别的入口，不给「回到首页」就是死页（§25）。
+  // 注意这里仍要求正文只在 else 分支——只读时不该有可点的操作按钮。
+  check('denied/loading 两态各占一个 status-panel，denied 带退出入口，正文只在 else 分支',
+    VEHICLE_WXML.indexOf('<status-panel wx:if="{{denied}}" kind="denied" title="本车任务不可用" detail="{{denied}}" actionLabel="回到首页" bind:action="goHome" />') !== -1
     && VEHICLE_WXML.indexOf('<status-panel kind="loading" title="正在载入" detail="正在读取本车名单。" />') !== -1)
+  check('denied 的退出入口在页面配置上真的有 goHome（不是绑了个不存在的方法）',
+    VEHICLE_WXML.indexOf('bind:action="goHome"') !== -1 && typeof pageConfig().goHome === 'function')
   check('清点行文案与 person-row 属性接线（name/avatar/subtitle/status/tone）',
     VEHICLE_WXML.indexOf('应到 {{expectedCount}} 人 · 已上车 {{boardedCount}} 人') !== -1
     && /<person-row[\s\S]*?name="\{\{item.name\}\}"[\s\S]*?avatar="\{\{item.avatar\}\}"[\s\S]*?subtitle="\{\{item.subtitle\}\}"[\s\S]*?status="\{\{item.status\}\}"[\s\S]*?tone=/.test(VEHICLE_WXML))

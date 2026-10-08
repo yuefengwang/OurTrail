@@ -1,5 +1,5 @@
 <view class="page">
-  <status-panel wx:if="{{denied}}" kind="denied" title="{{mode === 'edit' ? '无法读取报名资料' : '当前无法报名'}}" detail="{{denied}}" />
+  <status-panel wx:if="{{denied && !profileGate}}" kind="denied" title="{{mode === 'edit' ? '无法读取报名资料' : '当前无法报名'}}" detail="{{denied}}" actionLabel="回到活动详情" bind:action="goBackToActivity" />
   <view wx:if="{{denied && profileGate}}" class="stack" style="margin-top:16px;">
     <view class="button primary block" hover-class="button-hover" bindtap="onGoProfile">去「我的」补全资料（草稿已在本机，回来接着填）</view>
   </view>

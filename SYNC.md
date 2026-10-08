@@ -117,6 +117,18 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
 
 ## 六、变更日志
 
+- 2026-10-08（**全链路用户旅程与状态可解释性重构：新增 `utils/journey.js` 单一翻译层 + 两套常驻门 + 真机整链走通**，基线 `2e504f2`，分支 `win/trip-mode-decoupling`）：**不需要重新部署 trailApi**（本轮只动客户端与测试；服务端零改动，`git status` 里 `cloudfunctions/` 只有 `sync-lab` 重跑后的副本一致性检查）。完整报告：`docs/superpowers/specs/2026-10-08-user-journey-ux-audit.md`。
+
+  **做了什么**：把「现在是什么状态 / 我现在能做什么 / 下一步是什么」从 17 个页面各自的散文与三元式里抽出来，收敛成 `miniprogram/utils/journey.js`（322 行，wx-free）：`phaseLabel/phaseScene/phaseTone`、`signupLabel`、`statusFilterOptions`、`incidentOptions`、`remaining/dayPrefix`、`participantNext`、`leaderQueue`、`tripMixLine/fieldMetric/transportLock`、`TRANSITION_LABEL`、`transitionBlocker`、`timeline`（✓/●/○，强光下不靠色相）、`explain`（每个 `ERROR_CODES` 都有中文标题+原因+出路）、`busyStale`。方向仍然只允许 domain → projection → label（铁律 19 的延续，新增铁律 22）。改动覆盖 `activity`/`workspace`/`home`/`editor`/`signup`/`vehicle`/`me`/`lab`/`cloud-field-poc` 与三个工作台面板，另删掉 `utils/util.js` 里与 `format.js` 逐字节重复的第二份 `relativeDeadline`。
+
+  **门禁从 50 套涨到 52 套 / 3698 断言**：新增 `tools/journey-test.js`（138：四问是否齐备、状态词是否单源、每个错误码是否说得出原因、指标位是否会随阶段变——带反对照，防止判据恒真）与 `tools/journey-graph-test.js`（12：**页面图静态门**——死页面、有入口没返回路径、denied 无出路、WXML 比较服务端枚举原文、页面自造受管状态词、内部页登记与自声明）。两条门都是可机器校验的界线，不再靠自觉。
+
+  **本轮自己制造并当场收回的两条假红**（如实记录，避免下次当成产品 bug 排查）：① `tools/e2e-ui-test.js` 写死「进入正在集合」，而新词表把按钮改成动词优先的「开始集合」→ 找不到按钮，阶段不推进，**12 条 BUSINESS + 11 条 UI 级联红**，其中一路 `WRONG_PHASE` 红字看起来像域内门槛坏了。改成读 `J.TRANSITION_LABEL`，文案与测试同源。② 第二次保存的 `busy` 还没落地就去点「预览自动分车」，而模板此时把 `bindtap` 收成空串——「点了没反应」被读成弹层问题。改成先轮询 `busy===false && editorOpen===false` 再往下；「重开车辆编辑」也改成轮询 `vform` 落地后才判读渲染态。另修正一处 fixture 语义：车辆原先只勾第 1 个上车点，导致其他上车点需要乘车的人被 `previewAssignments` 判 `PICKUP_MISMATCH` 而永远排不进车，`joined` 出发核实因此在域内不成立——改为逐个真实勾选其余上车点（顺带把「多选可累加」变成一条真判据）。
+
+  **真机 UI E2E（开发者工具 + automator，自动化端口经 `OURTRAIL_AUTO_PORT` 指定）**：三跑收敛 23✗ → 9✗ → **BUSINESS PASS 26/0、UI 64✓/0✗/1 未验证**（退出码 2 = INCONCLUSIVE，不是 PASS）。整条链经真实点击走通：添加车辆→勾选上车点→明确座号→保存→重开回显→预览分车→确认提交→座位示意出现已占座→点「开始集合」→填原因→确认变更→现场签到→车长页确认上车→核实随队出发→批量核实→推进 active→路线节点→closing→核实安全到家→全员到家→归档→工作台「待到家」归零。唯一未验证项是原生 `<picker>` 弹层不可被 automator 查询（授权角色授予），按语义记 BUSINESS 证据、**不冒充 UI 证据**。
+
+  **剩余风险**（详见报告 §10）：`picker` 类操作永远只能靠人；「一眼看懂」没有做过真人可用性测试；词汇单源门只覆盖 JS 字面量，WXML 散文文案未管；`utils/util.js` 是零引用死模块且仍按已不存在的 `status === 'active'` 说话（登记进门里的 `DEAD_MODULES`，一旦被 require 先红）；工作台四面板常驻挂载换来切区不丢状态，代价是最多 4 次全量读，尚未实测。
+
 - 2026-10-08（**全业务生命周期深度审计：9 条缺陷修复 + 6 套 lifecycle 门禁 + 一条假绿被消除**，基线 `2e504f2`，分支 `win/trip-mode-decoupling`）：**需重新部署 trailApi —— 未部署**（CLI deploy 不继承控制台 20 秒超时，会把天气链打断；已用 `cli cloud functions download` 逐文件确认线上包 == HEAD，故本轮云端行为与修复前一致）。完整报告：`docs/superpowers/specs/2026-10-08-full-domain-lifecycle-audit.md`。
 
   **做法**：新增 `tools/lifecycle-harness.js`——确定性时钟+确定性 id 的世界驱动器，fixture 全部**通过真实命令**建立（不手拼 State），每步之后自动跑 `assertInvariants`、跑一份按业务规格**独立重写**的 `checkOracles`（不复用 invariants.js 的实现，所以「把不变量改松」本身会被测红），并强制「被拒命令必须逐字节零副作用」。在其上写 6 套套件：transitions 214 / cancellation 71 / allocation 109 / projection 132 / concurrency 126 / fuzz 47，共 **699 条新断言**。随机套件为 60 场景×45 步（1745 条被接受 / 1500+ 条被拒命令，场景先真实推进到 gathering/active/closing/archived 再随机，并带阶段覆盖守卫）零违背，另有 13 条终态性质、13 类非法 ID 攻击、8 个固化种子与 400 步长程，以及 **20 类人为违规的变异自证**（oracle 与 invariants.js 两边必须同时报红）。

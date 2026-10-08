@@ -178,6 +178,18 @@
       </view>
       <text class="small muted">只在活动中主动上报一次位置，不会后台追踪。</text>
     </view>
+
+    <!-- H 隐私指引：此前只有已停用的 privacy-popup 能跳到它，这份文件对用户等于不存在 -->
+    <view class="card stack-gap3">
+      <text class="card-label">隐私与资料</text>
+      <view class="list-row" hover-class="button-hover" bindtap="onOpenPrivacy">
+        <view class="list-main">
+          <text>隐私保护指引</text>
+          <text class="list-sub">收集哪些资料、只用于哪件事、你能怎么撤回</text>
+        </view>
+        <text class="muted">›</text>
+      </view>
+    </view>
   </view>
 
   <!-- 激活 sheet（04 §4）：头像 + 昵称 + 手机号，完成 = 首次 profile.save -->

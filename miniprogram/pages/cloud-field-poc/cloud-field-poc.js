@@ -63,6 +63,8 @@ Page({
     this.applyDataset('mock', DATASETS.mock)
   },
 
+  goHome() { wx.switchTab({ url: '/pages/home/home' }) },
+
   onDs(e) {
     const key = e.currentTarget.dataset.ds
     if (key === 'live-emeishan') return this.fetchLive('emeishan')

@@ -3,9 +3,12 @@
 'use strict'
 const api = require('../../utils/api')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 
-const STATUS_OPTIONS = ['全部状态', '待审核', '已确认', '候补', '已拒绝', '已取消', '已移除']
-const STATUS_VALUES = ['all', 'pending', 'confirmed', 'waitlisted', 'rejected', 'cancelled', 'removed']
+// 筛选器选项与状态标签只有 journey.statusFilterOptions() 一份出处。
+// 这里曾自带一份 ['全部状态','待审核','候补','已拒绝'...]，与 format.STATUS_LABELS（'候补中'/'未通过'）
+// 在同屏并排出现——同一行数据在两处叫不同名字。
+const STATUS_FILTERS = J.statusFilterOptions()
 const CAPABILITIES = [
   { value: 'roster', label: '查看名单' },
   { value: 'checkin', label: '签到确认' },
@@ -30,7 +33,7 @@ Component({
     denied: '',
     countersLine: '',
     search: '',
-    statusOptions: STATUS_OPTIONS,
+    statusOptions: STATUS_FILTERS,
     // 协作授权弹层的两个 picker 数据源：常量此前只存在模块作用域、从未挂进 data，
     // picker 的 range 取到 undefined（弹层能开、下拉恒为空，车辆联络授不出去）。
     roleOptions: ROLE_OPTIONS,
@@ -66,6 +69,7 @@ Component({
     error: '',
     message: '',
     busy: false,
+    busyAt: 0,
   },
 
   observers: {
@@ -78,6 +82,13 @@ Component({
 
   methods: {
     reload() {
+      // busy 只是「这次写还没落地」的界面姿态，不是业务状态。某条命令的 promise 没能回来时，
+      // 它绝不能把整块面板永久锁成「看着能点、点了没反应」——真机实测过一个残留 busy
+      // 锁死组织者工作台整条分车链，而屏幕上没有任何一处说明为什么。
+      if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+        this.setData({ busy: false, busyAt: 0 })
+        console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+      }
       const activityId = this.data.activityId
       if (!activityId || this._loading) return
       this._loading = true
@@ -100,7 +111,7 @@ Component({
 
     render() {
       const v = this.view
-      const statusValue = STATUS_VALUES[this.data.statusIndex]
+      const statusValue = (STATUS_FILTERS[this.data.statusIndex] || STATUS_FILTERS[0]).value
       const search = this.data.search
       const rows = v.rows
         .filter(r => statusValue === 'all' || r.status === statusValue)
@@ -215,7 +226,7 @@ Component({
         }
         payload = { type: 'signup.cancel', activityId: this.data.activityId, signupIds: ids, reason: this.data.batchReason }
       } else payload = { type: 'signup.review', activityId: this.data.activityId, signupIds: ids, decision: this.data.batch }
-      this.setData({ busy: true, error: '' })
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync(payload, this.revision, this)
         .then(res => {
           this.revision = res.revision
@@ -242,7 +253,7 @@ Component({
         this.setData({ error: '导出用途必填，请写明本次导出的工作用途。' })
         return
       }
-      this.setData({ busy: true, error: '' })
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({ type: 'export.record', activityId: this.data.activityId, signupIds: ids, mode, purpose }, this.revision, this)
         .then(res => {
           this.revision = res.revision

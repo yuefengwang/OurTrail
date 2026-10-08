@@ -1,12 +1,13 @@
 # utils/ — 纯逻辑层
 
-11 files. **9 of the 11 are deliberately free of any `wx.*` API** so `tools/*-test.js` can `require()` them directly under plain Node. That property is the reason this directory is testable at all — do not break it.
+20 files (2026-10-08 复点 `ls miniprogram/utils/*.js`). **All but `api.js` / `draft.js` are deliberately free of any `wx.*` API** so `tools/*-test.js` can `require()` them directly under plain Node. That property is the reason this directory is testable at all — do not break it.
 
 | File | LOC | wx-free | Role |
 |---|---|---|---|
 | `api.js` | ~128 | **NO** | The only `wx.cloud.callFunction` site in the entire mini program. 15 exports（含 `getWeatherByPoint`）. |
 | `draft.js` | ~92 | **NO** | wx storage 的两个落点之一：本地草稿 + 最近查看 + `wxStorage` 通用适配器（供注入式纯 util 用，见 `watch-points.js`）。 |
 | `format.js` | 128 | yes | UTC+8 formatting + every label-copy map + WMO `weatherPhrase` |
+| `journey.js` | 322 | yes | **状态与「下一步」的唯一翻译层**（2026-10-08 旅程重构新增）：`phaseLabel/phaseScene/phaseTone`、`signupLabel`、`statusFilterOptions`、`incidentOptions`、`remaining/dayPrefix`、`participantNext`、`leaderQueue`、`tripMixLine/fieldMetric/transportLock`、`TRANSITION_LABEL`、`transitionBlocker`、`timeline`（✓/●/○）、`explain`（每个 `ERROR_CODES` 都有中文标题+原因+出路）、`busyStale`。**页面只插值，不再自造状态词，也不在 WXML 里比较服务端枚举。** 测试：`tools/journey-test.js`（138）；结构门：`tools/journey-graph-test.js`（12）。方向仍是 domain → projection → label（根 AGENTS.md 铁律 19/22）。 |
 | `util.js` | 111 | yes | `distanceKm` (haversine), `maskPhone`/`maskId`, `relativeDeadline`, `buildRosterTsv` (clipboard), `buildRosterCsv` (BOM + full PII, for insurance), `wmoText`, `reportText` |
 | `astro.js` | 283 | yes | NOAA solar/lunar math, twilights, 银心 season + azimuth |
 | `sky.js` | 433 | yes | 天相 probability engine, 6 phenomena |
@@ -17,7 +18,9 @@
 | `weather-model.js` | ~330 | yes | P4 轨迹层编排：`snap`/`nodeFacts`/`runsOf`/`annotateRuns`/`trackPoints`/`posAt`/`judge`。**不含任何天相阈值**——一律委托 `sky.js`；天相 key→颜色也在**不在**这里（`utils/` 不得反向依赖 `components/`，映射在 `components/space-time/layout.js`） |
 | `notices-page.js` | ~172 | yes | `makeNoticesPage(getActivityId, opts)` page factory（`opts.tabBarIndex` 供 Tab 页自报选中态） |
 
-Measured reference centrality (files requiring each): `api.js` 15 · `format.js` 12 · `draft.js` 7 · `astro.js` 5 · `sky.js` 4 · `route-schedule.js` 3 · `gpx.js` 3 · `chart-store.js` 3 · `weather-model.js` 1 · `notices-page.js` 2 · `util.js` 0.
+Measured reference centrality (files requiring each, 2026-10-08 复点): `format.js` 15 · `api.js` 13 · `journey.js` 7 · `draft.js` 7 · `astro.js` 5 · `sky.js` 4 · `route-schedule.js` 3 · `gpx.js` 3 · `chart-store.js` 3 · `weather-model.js` 1 · `notices-page.js` 2 · **`util.js` 0（死模块，见下）**.
+
+**`util.js` 是零引用死模块，且这句话现在被门钉住了。** `tools/journey-graph-test.js` 把它登记进 `DEAD_MODULES`：名单导出早已走服务端 `readExport`，而它内部的 `buildRosterTsv/buildRosterCsv` 仍按 `status === 'active'` 说话——那个取值在域里已经不存在（`LIVE_SIGNUP = pending/confirmed/waitlisted`）。仓库的先例是「停用但保留文件」（`components/privacy-popup` 同例），所以没有删；**一旦被 require，词汇单源那条门会先红**，届时必须先改它的旧文案。它的 `relativeDeadline`（与 `format.js` 逐字节相同、与 `journey.remaining` 同语义）已于本轮删除——倒计时只有 `journey.js` 一个出处。
 
 ## THE PURITY RULE
 

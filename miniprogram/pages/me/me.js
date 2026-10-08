@@ -487,6 +487,11 @@ Page({
     wx.navigateTo({ url: '/pages/activity/activity?id=' + id })
   },
 
+  // 隐私指引此前只有 privacy-popup（已停用的死组件）能跳到，等于对用户不存在。
+  onOpenPrivacy() {
+    wx.navigateTo({ url: '/pages/privacy/privacy' })
+  },
+
   // ---- 位置授权撤回 ----
   onRevoke(e) {
     const { activityId, signupId } = e.currentTarget.dataset

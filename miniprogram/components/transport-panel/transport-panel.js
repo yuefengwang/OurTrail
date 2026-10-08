@@ -3,6 +3,7 @@
 'use strict'
 const api = require('../../utils/api')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 
 Component({
   options: { styleIsolation: 'apply-shared' },
@@ -44,6 +45,7 @@ Component({
     error: '',
     message: '',
     busy: false,
+    busyAt: 0,
   },
 
   observers: {
@@ -56,6 +58,13 @@ Component({
 
   methods: {
     reload() {
+      // busy 只是「这次写还没落地」的界面姿态，不是业务状态。某条命令的 promise 没能回来时，
+      // 它绝不能把整块面板永久锁成「看着能点、点了没反应」——真机实测过一个残留 busy
+      // 锁死组织者工作台整条分车链，而屏幕上没有任何一处说明为什么。
+      if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+        this.setData({ busy: false, busyAt: 0 })
+        console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+      }
       const activityId = this.data.activityId
       if (!activityId || this._loading) return
       this._loading = true
@@ -133,6 +142,9 @@ Component({
         this.setData({
           loading: false,
           denied: '',
+          // 出发之后服务端就拒绝一切排车写操作；与其让按钮留着等人撞红字，
+          // 现在就收成只读并说明去哪儿处理（现场区）。
+          lockHint: J.transportLock(v.activity.phase),
           metrics: {
             vehicles: transport.vehicles.length,
             seats: transport.vehicles.reduce((sum, x) => sum + F.usable(x), 0),
@@ -208,7 +220,7 @@ Component({
     onPlanRecompute() { this.onPreview() },
     onPlanCommit() {
       if (!this.data.plan || this.data.busy) return
-      this.setData({ busy: true, error: '' })
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({ type: 'assignment.commit', activityId: this.data.activityId, preview: this.data.plan }, this.revision, this)
         .then(res => {
           this.revision = res.revision
@@ -251,7 +263,7 @@ Component({
     onAssignSet() {
       const pick = this.data.confirmedOptions[this.data.assignIndex]
       if (!pick || this.data.busy) return
-      this.setData({ busy: true, error: '' })
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({
         type: 'assignment.set',
         activityId: this.data.activityId,
@@ -266,12 +278,12 @@ Component({
     onAssignRemove() {
       const pick = this.data.confirmedOptions[this.data.assignIndex]
       if (!pick || this.data.busy) return
-      this.setData({ busy: true, error: '' })
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({ type: 'assignment.remove', activityId: this.data.activityId, signupId: pick.signupId }, this.revision, this)
         .then(res => {
           this.revision = res.revision
           this.setData({ busy: false, assignOpen: false, message: '已移除此人的车辆安排。' })
-          api.toast('已移除')
+          api.toast('车辆安排已移除')
           this.reload()
         }).catch(err => this.setData({ busy: false, error: api.errorText(err) }))
     },
@@ -279,7 +291,7 @@ Component({
       const pick = this.data.confirmedOptions[this.data.assignIndex]
       const swap = this.data.swapOptions[this.data.swapIndex]
       if (!pick || !swap || this.data.busy) return
-      this.setData({ busy: true, error: '' })
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({
         type: 'assignment.swap',
         activityId: this.data.activityId,
@@ -302,7 +314,7 @@ Component({
     onRemoveClose() { this.setData({ removeOpen: false }) },
     onRemoveConfirm() {
       if (!this.data.removeVehicleId || this.data.busy) return
-      this.setData({ busy: true, error: '' })
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({ type: 'vehicle.remove', activityId: this.data.activityId, vehicleId: this.data.removeVehicleId }, this.revision, this)
         .then(res => {
           this.revision = res.revision
@@ -461,7 +473,7 @@ Component({
           return
         }
       }
-      this.setData({ busy: true, error: '' })
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({
         type: 'vehicle.save',
         activityId: this.data.activityId,

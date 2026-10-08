@@ -4,13 +4,10 @@
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 
-const KIND_OPTIONS = [
-  { value: 'other', label: '其他需要协助' },
-  { value: 'late', label: '迟到' },
-  { value: 'withdrawal', label: '提前退出同行' },
-  { value: 'injury', label: '伤病' },
-]
+// 报备类型文案只在 format.INCIDENT_LABELS 定义一次，这里只规定出现顺序（默认落在最稳的一项）。
+const KIND_OPTIONS = J.incidentOptions()
 
 // ---- 路线地图（设计文档 docs/product/路线地图可视化-活动详情页设计.md）----
 // 坐标全站 GCJ-02，map/openLocation 直接消费。marker 图标由 tools/gen-map-markers.js 生成。
@@ -117,6 +114,10 @@ Page({
     isDraft: false,
     draftNotice: false,
     badgeText: '',
+    milestone: '',
+    howLine: '',
+    nextActionLabel: '',
+    nextActionTarget: '',
     startAtLabel: '',
     title: '',
     routeTitle: '',
@@ -170,6 +171,7 @@ Page({
     canPosReport: false,
     canPosRevoke: false,
     busy: false,
+    busyAt: 0,
   },
 
   onLoad(options) {
@@ -191,6 +193,13 @@ Page({
   },
 
   reload() {
+    // busy 只是「这次写还没落地」的界面姿态，不是业务状态。某条命令的 promise 没能回来时，
+    // 它绝不能把整块面板永久锁成「看着能点、点了没反应」——真机实测过一个残留 busy
+    // 锁死组织者工作台整条分车链，而屏幕上没有任何一处说明为什么。
+    if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+      this.setData({ busy: false, busyAt: 0 })
+      console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+    }
     if (!this.activityId) {
       this.setData({ loading: false, denied: '缺少活动编号。' })
       return
@@ -214,8 +223,6 @@ Page({
     const v = this.view
     const a = v.activity
     const stateKey = v.detailState
-    const stateCopy = F.DETAIL_STATE_TITLES[stateKey] || ['', '']
-    const warnStates = ['cancelled', 'closed', 'waitlist']
     const isOwnerReal = v.permittedActions.indexOf('activity.edit') !== -1
     const selfButton = stateKey === 'gathering' ? '我已到达 · 去签到'
       : stateKey === 'closing' ? '确认返程与到家'
@@ -252,6 +259,17 @@ Page({
     }))
     const pickups = a.pickupPoints.map(p => ({ id: p.id, name: p.name, address: p.address, time: F.dtLabel(p.meetingAt), coordinates: p.coordinates || null }))
     const risks = a.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice }))
+    // 状态可解释性层：把投影翻译成「我在哪 / 什么状态 / 我能做什么 / 下一步」。
+    // 集合时刻要取这个人自己那个上车点的集合时间——共享活动里不同人可能在不同点集合。
+    const myPickup = primary && primary.pickupPointId
+      ? a.pickupPoints.find(p => p.id === primary.pickupPointId) : null
+    const journey = J.participantNext({
+      phase: a.phase, detailState: stateKey, now: this.now,
+      startAt: a.startAt, deadlineAt: a.deadlineAt, meetingAt: myPickup ? myPickup.meetingAt : a.startAt,
+      tripMode: primary ? primary.tripMode : null,
+      pickupName: primary && primary.tripMode === 'shared' ? primary.pickup : '',
+      vehicleLabel: primary ? primary.vehicle : '', seatLabel: primary ? primary.seat : '',
+    })
     this._routePoints = a.routeSnapshot.points
     this._routePickups = a.pickupPoints
     this.setData({
@@ -259,7 +277,12 @@ Page({
       denied: '',
       isDraft: a.phase === 'draft',
       draftNotice: a.phase === 'draft',
-      badgeText: a.phase === 'draft' ? '草稿' : stateKey === 'cancelled' ? '已取消' : stateKey === 'finished' ? '已归档' : '一起同行',
+      // 草稿没有 detailState 可依据（它落在 closed 上），徽标必须说实话：还没发布。
+      badgeText: a.phase === 'draft' ? F.PHASE_LABELS.draft : journey.status,
+      milestone: journey.milestone,
+      howLine: journey.how,
+      nextActionLabel: journey.cta ? journey.cta.label : '',
+      nextActionTarget: journey.cta ? journey.cta.target : '',
       startAtLabel: F.dtLabel(a.startAt),
       title: a.title || '未命名活动',
       routeTitle: a.routeSnapshot.title || '路线待完善',
@@ -268,14 +291,18 @@ Page({
       confirmed: v.counters.confirmed,
       capacity: a.capacity,
       stateKey,
-      stateTitle: stateCopy[0],
-      stateDetail: stateCopy[1],
-      stateTone: warnStates.indexOf(stateKey) !== -1 ? 'warning' : 'success',
-      countersLine: '待审核 ' + v.counters.pending + ' 人 · 候补 ' + v.counters.waitlisted + ' 人 · 剩余 ' + v.counters.remaining + ' 个名额',
+      stateTitle: journey.nextTitle,
+      stateDetail: journey.nextDetail,
+      stateTone: journey.statusTone === 'info' ? 'success' : (journey.statusTone === 'neutral' ? 'success' : journey.statusTone),
+      // 「待审核 N · 候补 N · 剩余 N」是组织者的工作队列，不是参与者此刻该关心的事；
+      // 参与者这一格给他自己的下一步（集合倒计时 / 怎么去）。
+      countersLine: isOwnerReal
+        ? '待审核 ' + v.counters.pending + ' 人 · 候补 ' + v.counters.waitlisted + ' 人 · 剩余 ' + v.counters.remaining + ' 个名额'
+        : (journey.milestone || journey.how || ''),
       isOwner: isOwnerReal,
       canSubmit: !a.phase || (v.permittedActions.indexOf('signup.submit') !== -1 && stateKey === 'new'),
       canSelfSheet: !!(primary && primary.status === 'confirmed' && ['gathering', 'checked', 'active', 'closing'].indexOf(stateKey) !== -1),
-      selfButton,
+      selfButton: journey.cta && journey.cta.target === 'sheet' ? journey.cta.label : selfButton,
       rows,
       primaryId: v.primarySignupId || '',
       description: a.description || '活动说明待补充。',
@@ -353,6 +380,18 @@ Page({
       address: ds.address || '',
       scale: 16,
     })
+  },
+
+  // 「下一步」按钮按投影给的目标分流：报名 / 打开我的状态弹层 / 滚到集合信息。
+  onNextAction() {
+    const target = this.data.nextActionTarget
+    if (target === 'signup') return this.onSignup()
+    if (target === 'sheet') return this.onSelfSheet()
+    if (target === 'discover') return wx.navigateTo({ url: '/pages/discover/discover' })
+    wx.createSelectorQuery().in(this).select('#meeting-block').boundingClientRect(rect => {
+      if (!rect) return
+      wx.pageScrollTo({ scrollTop: rect.top + (this._scrolled || 0) - 90, duration: 240 })
+    }).exec()
   },
 
   onWorkspace() {
@@ -445,7 +484,7 @@ Page({
 
   run(payload, successMsg) {
     if (this.data.busy) return
-    this.setData({ busy: true, selError: '', selMessage: '' })
+    this.setData({ busy: true, busyAt: Date.now(), selError: '', selMessage: '' })
     api.dispatchAndSync(payload, this.revision, this)
       .then(() => {
         this.setData({ busy: false, selMessage: successMsg })

@@ -37,7 +37,10 @@
     <view wx:if="{{!isDraft}}" class="callout {{stateTone}}">
       <text class="callout-title">{{stateTitle}}</text>
       <text style="display:block;margin-top:4px;">{{stateDetail}}</text>
-      <text class="small" style="display:block;margin-top:4px;">{{countersLine}}</text>
+      <!-- 时间锚点单独一行、前面带形状标记：户外强光下不能只靠颜色区分「现在该做的那件事」 -->
+      <text wx:if="{{milestone}}" class="small tabular" style="display:block;margin-top:6px;">● {{milestone}}</text>
+      <text wx:if="{{countersLine}}" class="small" style="display:block;margin-top:4px;">{{countersLine}}</text>
+      <text wx:if="{{howLine}}" class="small" style="display:block;margin-top:4px;">{{howLine}}</text>
     </view>
 
     <view class="form-actions">
@@ -53,7 +56,9 @@
         bindtap="onSignup"
       >填写报名资料</button>
       <view wx:elif="{{canSelfSheet}}" class="button primary" hover-class="button-hover" bindtap="onSelfSheet" style="flex:1;">{{selfButton}}</view>
-      <button class="button secondary" hover-class="button-hover" open-type="share" style="flex:1;">
+      <view wx:elif="{{nextActionTarget === 'meeting'}}" class="button primary" hover-class="button-hover" bindtap="onNextAction" style="flex:1;">{{nextActionLabel}}</view>
+      <!-- 分享是次要动作，给它 text 权重：一屏只留一个 primary，拇指落在哪个上一目了然 -->
+      <button class="button text" hover-class="button-hover" open-type="share">
         <icon name="copy" size="18" color="#163E35" />
         <text>分享</text>
       </button>
@@ -92,7 +97,7 @@
       <text wx:if="{{organizerIntro}}" class="small muted">{{organizerIntro}}</text>
     </view>
 
-    <view class="stack" style="gap:0;">
+    <view id="meeting-block" class="stack" style="gap:0;">
       <view class="card-header">
         <text class="section-title">路线与集合</text>
         <view class="button text" hover-class="button-hover" bindtap="onWeather">

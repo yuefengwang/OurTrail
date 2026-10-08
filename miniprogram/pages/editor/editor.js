@@ -87,6 +87,9 @@ Page({
     isNew: true,
     savedId: '',
     phase: 'draft',
+    // 模板只做「这个按钮在不在」的判断，不认服务端枚举原文（阶段枚举只在 JS 里出现一次）。
+    isDraft: true,
+    saveLabel: '保存草稿',
     step: 0,
     stepLabels: ['01 内容与时间', '02 路线与集合', '03 招募与风险'],
     form: toForm(emptyInput()),
@@ -170,6 +173,8 @@ Page({
         isNew: !this.activityId,
         savedId: denied ? '' : this.savedId,
         phase,
+        isDraft: phase === 'draft',
+        saveLabel: phase === 'draft' ? '保存草稿' : '保存修改',
         form: toForm(initial || emptyInput()),
       })
       this.loadMyActivities()

@@ -7,6 +7,7 @@ Component({
     date: { type: String, value: '' },
     meta: { type: String, value: '' },
     status: { type: String, value: '' },
+    when: { type: String, value: '' },
     info: { type: String, value: '' },
     featured: { type: Boolean, value: false },
   },

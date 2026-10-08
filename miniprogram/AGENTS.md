@@ -15,7 +15,7 @@ config.js    16 lines. CLOUD_ENV='cloud1-d9ghcm034574b9d55', FUNC_NAME='trailApi
              NOTICE_TMPL_IDS={activity:''} (empty ⇒ clipboard fallback). Only env file.
 pages/       16 dirs, 1:1 with app.json.
 components/  13 dirs（12 在用 + privacy-popup 死代码）. custom-tab-bar/ sits outside components/（在 miniprogram/ 根下）.
-utils/       10 files → see utils/AGENTS.md
+utils/       20 files → see utils/AGENTS.md（`journey.js` 是状态与下一步的唯一翻译层）
 wxs/text.wxs 16 lines. WXS regex must use getRegExp().
 assets/markers/  generated PNGs — map marker.iconPath rejects base64
 ```
@@ -57,6 +57,7 @@ The auto-assign algorithm is **server-side** (`domain/allocation.js`). `transpor
 'use strict'
 const api = require('../../utils/api')
 const F = require('../../utils/format')          // optional
+const J = require('../../utils/journey')        // 任何要印「状态 / 下一步」的页面都该要（根 AGENTS.md 铁律 22）
 const draft = require('../../utils/draft')      // optional
 
 Page({

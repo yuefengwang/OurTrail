@@ -15,14 +15,8 @@ const fmtTime = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`
 const fmtDT = d => `${fmtDate(d)} ${fmtTime(d)}`
 const WEEK = ['日', '一', '二', '三', '四', '五', '六']
 
-function relativeDeadline(ts) {
-  const diff = ts - Date.now()
-  if (diff <= 0) return '已截止'
-  const h = Math.floor(diff / 3600000)
-  if (h >= 48) return `剩 ${Math.floor(h / 24)} 天截止`
-  if (h >= 1) return `剩 ${h} 小时截止`
-  return `剩 ${Math.max(1, Math.floor(diff / 60000))} 分钟截止`
-}
+// 这里曾有第二份 relativeDeadline（与 format.js 逐字节相同、与 journey.remaining 同语义）。
+// 倒计时只有 utils/journey.js 一个出处：两处实现迟早给出一句不同的话术。
 
 function maskPhone(p) {
   return p && p.length === 11 ? `${p.slice(0, 3)}****${p.slice(7)}` : (p || '')
@@ -105,7 +99,7 @@ const reportText = type => REPORT_TYPE[type] || type
 
 module.exports = {
   pad, fmtDate, fmtTime, fmtDT, WEEK, cnParts, cnTodayStr,
-  relativeDeadline, maskPhone, maskId, distanceKm,
+  maskPhone, maskId, distanceKm,
   pickupName, carName, buildRosterTsv, buildRosterCsv,
   wmoText, reportText
 }

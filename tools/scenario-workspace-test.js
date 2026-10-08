@@ -291,19 +291,24 @@ async function scenario1() {
       && WORKSPACE_WXML.indexOf('hidden="{{tab') === -1)
     check('wxml：三个指标可点，分别跳名单/分车/现场（指标即入口）',
       (WORKSPACE_WXML.match(/class="metric" hover-class="button-hover" bindtap="go(Roster|Transport|Field)"/g) || []).length === 3)
-    check('副标题随阶段装配（published → 行前准备话术）',
-      page.data.subtitle === '先处理需要你确认的事，再安心出发。', page.data.subtitle)
+    // 阶段话术只在 journey.phaseScene 一处定义（原来 workspace 自带一份 SUBTITLES，是第二套词汇）
+    check('副标题随阶段装配（published → 该阶段在发生什么）',
+      page.data.subtitle === '正在等大家报名与确认。', page.data.subtitle)
     check('标题与阶段徽标（published → 行前准备）',
       page.data.title === '青城后山 · 周末轻徒步' && page.data.phaseLabel === '行前准备')
     check('三项指标：待审核 1 / 待分车 2 / 第三格=待签到 3',
       page.data.pending === 1 && page.data.unassigned === 2 && page.data.thirdValue === 3 && page.data.thirdLabel === '待签到',
       JSON.stringify({ p: page.data.pending, u: page.data.unassigned, t: page.data.thirdValue }))
-    check('进程时间线 5 段且当前段带「· 当前」标记',
-      page.data.phaseTimeline.length === 5 && page.data.phaseTimeline[0].label === '行前准备 · 当前'
-      && page.data.phaseTimeline[0].current === true && page.data.phaseTimeline[1].current === false,
-      JSON.stringify(page.data.phaseTimeline.map(x => x.label)))
-    check('下一阶段按钮可用且指向「正在集合」，编辑入口打开',
-      page.data.canTransition === true && page.data.nextPhaseLabel === '正在集合' && page.data.canEdit === true)
+    // 时间线是现有 phase 的投影，且当前/已过/未到靠形状标记（✓ ● ○），不只靠颜色
+    check('进程时间线 5 段：当前标 ●、未到标 ○、label 不带装饰',
+      page.data.phaseTimeline.length === 5 && page.data.phaseTimeline[0].label === '行前准备'
+      && page.data.phaseTimeline[0].current === true && page.data.phaseTimeline[0].mark === '●'
+      && page.data.phaseTimeline[1].mark === '○' && page.data.phaseTimeline[1].current === false,
+      JSON.stringify(page.data.phaseTimeline.map(x => x.mark + x.label)))
+    // 主动作文案是动词短语（按钮说「做什么」，不是「进入某个名词阶段」）
+    check('下一阶段按钮可用且指向「开始集合」，编辑入口打开',
+      page.data.canTransition === true && page.data.nextPhaseLabel === '开始集合' && page.data.canEdit === true,
+      JSON.stringify({ c: page.data.canTransition, n: page.data.nextPhaseLabel }))
     check('published（出发前）可取消', page.data.canCancel === true)
     check('导航栏标题设置为「活动工作台」', rec.titles.indexOf('活动工作台') !== -1, JSON.stringify(rec.titles))
     check('revision 取自读取（后续阶段推进做 CAS）', page.revision === 1, String(page.revision))
@@ -320,8 +325,10 @@ async function scenario1() {
     check('closing 阶段第三格切到「待到家」（pendingHome）',
       page.data.thirdLabel === '待到家' && page.data.thirdValue === 1,
       JSON.stringify({ l: page.data.thirdLabel, v: page.data.thirdValue }))
-    check('closing 下一阶段 = 已归档，且已出发后不可再取消',
-      page.data.nextPhaseLabel === '已归档' && page.data.canCancel === false)
+    // 主动作文案是动词短语：按钮要回答「按下去会发生什么」，不是「进入某个名词阶段」
+    check('closing 下一阶段 = 安全收尾并归档，且已出发后不可再取消',
+      page.data.nextPhaseLabel === '安全收尾并归档' && page.data.canCancel === false,
+      page.data.nextPhaseLabel)
   }
   {
     makeWx()
@@ -385,17 +392,24 @@ async function scenario3() {
   const page = makePage(pageConfig())
   page.onLoad({ id: 'a1' }); page.onShow()
   await settlePage(page)
-  check('gathering 阶段展示取消入口（进程区独立 danger 块，data-next=cancelled）',
+  // 取消是破坏性动作：从与主动作同权重的大块 danger 降级为文字入口，危险确认留在弹层里
+  check('gathering 阶段展示取消入口（文字权重 + data-next=cancelled，不再与主动作同块同色）',
     page.data.canCancel === true
-    && /wx:if="\{\{canCancel\}\}" class="button danger block/.test(WORKSPACE_WXML)
+    && /wx:if="\{\{canCancel\}\}" class="button text"/.test(WORKSPACE_WXML)
     && WORKSPACE_WXML.indexOf('data-next="cancelled"') !== -1
-    && WORKSPACE_WXML.indexOf('>取消活动</view>') !== -1)
+    && !/class="button danger block[^"]*"[^>]*data-next="cancelled"/.test(WORKSPACE_WXML)
+    && /取消这场活动/.test(WORKSPACE_WXML),
+    WORKSPACE_WXML.split('\n').filter(l => l.indexOf('data-next=') !== -1).join(' | ').slice(0, 200))
   page.onTransition({ currentTarget: { dataset: { next: 'cancelled' } } })
   check('danger 块带 data-next=cancelled → 弹层标题「确认取消活动」',
     page.data.transitionOpen === true && page.data.transitionNext === 'cancelled'
     && page.data.transitionTitle === '确认取消活动')
-  check('取消路径的确认按钮用 danger 样式（wxml 契约）',
-    WORKSPACE_WXML.indexOf("transitionNext === 'cancelled' ? 'danger' : 'primary'") !== -1)
+  // 危险样式仍由「这一次要取消」决定，但枚举比较挪到了 JS：模板只读 transitionDanger（§10）。
+  check('取消路径的确认按钮用 danger 样式（wxml 只读布尔，不认枚举原文）',
+    WORKSPACE_WXML.indexOf("transitionDanger ? 'danger' : 'primary'") !== -1
+    && page.data.transitionDanger === true
+    && WORKSPACE_WXML.indexOf("transitionNext === 'cancelled'") === -1,
+    WORKSPACE_WXML.split('\n').filter(l => l.indexOf('transition') !== -1).join(' | ').slice(0, 240))
   page.onReason({ detail: { value: '暴雨预警，出于安全取消' } })
   page.onTransitionConfirm()
   await waitFor(() => env.cmds.length === 1 && !page.data.busy)
@@ -625,7 +639,7 @@ async function scenario5() {
     env.cmds[4].payload.type === 'assignment.remove' && env.cmds[4].payload.signupId === 's2'
     && keysOf(env.cmds[4].payload) === 'activityId,signupId,type' && schemaOk(env.cmds[4].payload),
     JSON.stringify(env.cmds[4].payload))
-  check('移除反馈 toast「已移除」+ 弹层关闭', rec.toasts.indexOf('已移除') !== -1 && comp.data.assignOpen === false)
+  check('移除反馈 toast 说清了移除的是什么 + 弹层关闭', rec.toasts.indexOf('车辆安排已移除') !== -1 && comp.data.assignOpen === false)
 
   comp.onRemoveAsk({ currentTarget: { dataset: { id: 'v1' } } })
   check('删除车辆先弹确认层并带车辆名（不发命令）',

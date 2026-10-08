@@ -1,5 +1,5 @@
 <view class="page">
-  <status-panel wx:if="{{denied}}" kind="denied" title="没有此工作台的访问权限" detail="{{denied}}" actionLabel="查看活动" bind:action="goDetail" />
+  <status-panel wx:if="{{denied}}" kind="denied" title="没有此工作台的访问权限" detail="{{denied}}" actionLabel="{{activityId ? '查看活动' : '回到我的活动'}}" bind:action="onDeniedAction" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在核对当前需要关注的事。" />
   </block>
@@ -34,28 +34,19 @@
     <field-panel class="{{tab === 3 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" perspective="organizer" sync-key="{{syncKey}}" bind:written="onPanelSync" />
 
     <block wx:if="{{tab === 0}}">
+      <!-- 时间锚点：领队最该先看到的不是字段，是「还剩多久到我必须做的那一步」 -->
+      <view wx:if="{{milestone}}" class="callout">
+        <text class="callout-title">● {{milestone}}</text>
+      </view>
+
       <view class="stack" style="gap:0;">
         <text class="section-title">当前待办</text>
-        <view class="list-row" hover-class="button-hover" bindtap="goRoster">
+        <!-- 待办由 journey.leaderQueue 生成：只列真的拦路的事，每条带人数与去处；
+             没有拦路事时给一句话，而不是摆四个 0 让人以为都欠着 -->
+        <view wx:for="{{queue}}" wx:key="id" class="list-row" hover-class="button-hover" bindtap="goQueueItem" data-target="{{item.target}}">
           <view class="list-main">
-            <text>确认报名与候补</text>
-            <text class="list-sub">{{pending}} 人待审核 · {{waitlisted}} 人候补</text>
-          </view>
-          <icon name="arrow" size="18" color="#163E35" />
-        </view>
-        <!-- 排车是「需要乘车的人」的子流程：全场没人需要乘车时，这条待办根本不存在，
-             而不是摆一个 0 让人以为还欠着一步 -->
-        <view wx:if="{{vehicleTravel > 0}}" class="list-row" hover-class="button-hover" bindtap="goTransport">
-          <view class="list-main">
-            <text>检查车辆与人员安排</text>
-            <text class="list-sub">{{unassigned}} 人需要乘车待安排 · 不自动拆分同车组（{{selfTravel}} 人自行前往，无需排车）</text>
-          </view>
-          <icon name="arrow" size="18" color="#163E35" />
-        </view>
-        <view class="list-row" hover-class="button-hover" bindtap="goField">
-          <view class="list-main">
-            <text>现场清点与安全收尾</text>
-            <text class="list-sub">{{unchecked}} 人待签到 · {{openIncidents}} 项异常待处理 · {{pendingHome}} 人待到家</text>
+            <text>{{item.label}}{{item.blocking ? '（拦路）' : ''}}</text>
+            <text class="list-sub">{{item.detail}}</text>
           </view>
           <icon name="arrow" size="18" color="#163E35" />
         </view>
@@ -70,15 +61,20 @@
 
       <view class="stack" style="gap:12px;">
         <text class="section-title">活动进程</text>
+        <!-- ✓ 已完成 · ● 当前 · ○ 还没到：户外强光下不能只靠颜色承载状态（AGENTS 铁律 / 设计走查） -->
         <view class="timeline">
           <view wx:for="{{phaseTimeline}}" wx:key="phase" class="timeline-item">
-            <text class="badge {{item.current ? 'success' : 'neutral'}}">{{item.label}}</text>
+            <text class="badge {{item.current ? 'on-forest' : (item.done ? 'success' : 'neutral')}}">{{item.mark}} {{item.label}}{{item.current ? ' · 当前' : ''}}</text>
           </view>
         </view>
-        <view class="button primary block {{canTransition && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canTransition && !busy ? 'onTransition' : ''}}">进入{{nextPhaseLabel}}</view>
+        <view class="button primary block {{canTransition && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canTransition && !busy ? 'onTransition' : ''}}">{{nextPhaseLabel || '这一步现在还不能做'}}</view>
+        <!-- 门槛不满足时先说清缺什么、去哪儿补，而不是给一个点不动的灰按钮 -->
+        <text wx:if="{{!canTransition && transitionHint}}" class="small muted" style="display:block;">为什么现在不能推进：{{transitionHint}}</text>
+        <text wx:elif="{{!canTransition}}" class="small muted" style="display:block;">这一阶段没有可推进的下一步；已归档或已取消的活动只读。</text>
         <view wx:if="{{canEdit}}" class="button text" hover-class="button-hover" bindtap="goEdit">编辑活动</view>
       </view>
-      <view wx:if="{{canCancel}}" class="button danger block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onTransition'}}" data-next="cancelled">取消活动</view>
+      <!-- 取消是破坏性动作，降级为文字入口；真正的危险确认留在弹层里 -->
+      <view wx:if="{{canCancel}}" class="button text" hover-class="button-hover" bindtap="{{busy ? '' : 'onTransition'}}" data-next="cancelled">取消这场活动（仅出发前可作废）</view>
 
       <view class="button secondary block" hover-class="button-hover" bindtap="goDetail">以参与者视角查看活动</view>
       <view wx:if="{{message}}" class="callout success">{{message}}</view>
@@ -92,7 +88,7 @@
         <textarea class="textarea" value="{{reason}}" maxlength="2000" bindinput="onReason" />
       </form-field>
       <view wx:if="{{error}}" class="callout danger">{{error}}</view>
-      <view class="button {{transitionNext === 'cancelled' ? 'danger' : 'primary'}} block {{!reason || busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{!reason || busy ? '' : 'onTransitionConfirm'}}">确认变更，不跳过检查</view>
+      <view class="button {{transitionDanger ? 'danger' : 'primary'}} block {{!reason || busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{!reason || busy ? '' : 'onTransitionConfirm'}}">确认变更，不跳过检查</view>
     </view>
   </overlay>
 </view>

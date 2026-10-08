@@ -16,9 +16,9 @@
     <!-- 搜索 + 状态筛选一行放下，少占两行标签 -->
     <view class="roster-filter">
       <input class="input" placeholder="搜索姓名、上车点或车辆" value="{{search}}" bindinput="onSearch" />
-      <picker range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatus">
+      <picker range="{{statusOptions}}" range-key="label" value="{{statusIndex}}" bindchange="onStatus">
         <view class="picker">
-          <text class="picker-value">{{statusOptions[statusIndex]}}</text>
+          <text class="picker-value">{{statusOptions[statusIndex].label}}</text>
           <text class="picker-arrow">▾</text>
         </view>
       </picker>
@@ -58,11 +58,11 @@
          confirmed/混选在选时不给可点的「确认报名」——后端会整批拒的操作 UI 不提供入口（Phase 5 BUG-C）。 -->
     <view wx:if="{{selectedCount}}" class="stack" style="gap:12px;">
       <view class="form-actions">
-        <view class="button secondary {{canReview && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="confirm" bindtap="{{canReview && !busy ? 'onBatch' : ''}}">确认报名</view>
+        <view class="button primary {{canReview && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="confirm" bindtap="{{canReview && !busy ? 'onBatch' : ''}}">确认报名</view>
         <view class="button secondary {{canReview && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="reject" bindtap="{{canReview && !busy ? 'onBatch' : ''}}">拒绝报名</view>
       </view>
       <view class="form-actions">
-        <view class="button secondary {{canPromote && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="promote" bindtap="{{canPromote && !busy ? 'onBatch' : ''}}">递补候补</view>
+        <view class="button {{canPromote && !busy ? 'primary' : 'disabled'}}" hover-class="button-hover" data-action="promote" bindtap="{{canPromote && !busy ? 'onBatch' : ''}}">递补候补</view>
         <view class="button secondary {{canCancel && !busy ? '' : 'disabled'}}" hover-class="button-hover" data-action="cancel" bindtap="{{canCancel && !busy ? 'onBatch' : ''}}">取消报名</view>
       </view>
       <text wx:if="{{!canReview && !canPromote && !canCancel}}" class="small muted">所选人员的当前状态没有可执行的批量操作：审核仅对待确认、递补仅对候补、取消仅对未出行的有效报名。</text>
