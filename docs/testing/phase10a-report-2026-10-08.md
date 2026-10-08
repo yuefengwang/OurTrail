@@ -63,16 +63,31 @@ K=6 × 6 轮 = 36 个请求同时基于同一个 R：`TALLY = {OK:6, CONFLICT:17
 C7 八条全绿，其中 **C7-⑧ 选择性**：让 `runTransaction` 自身失败（不是回调里抛的）仍必须报
 `STORAGE_UNAVAILABLE` ⇒ 证明修复没有把一切擦成冲突。
 
-## 5. real cloud GREEN —— **PENDING-DEPLOY（不由我代跑，也不猜）**
+## 5. real cloud GREEN —— **未取得：第一次部署来源不对（已用代码级取证证明，不是猜）**
 
-修复在云函数持久层，必须部署到线上 `trailApi` 后才能取真读数。业主选择"B：你在 IDE 部署，我只验证"，
-故当前状态是**等部署**。部署后我将用同一支探针（K=6×6）复跑，判据预先写死：
+修复在云函数持久层，必须部署到线上 `trailApi` 后才能取真读数。业主选"B：你在 IDE 部署，我只验证"。
+第一次部署后 K=6×6 复跑仍见 `STORAGE_UNAVAILABLE`（5/30）。预写判据只能让我"不写 GREEN"，
+但两种解释（新代码没上线 / 修复不够）**在读数上不可区分** ⇒ 先做来源取证：
+`cli cloud functions download` 把线上包拉回仓库外临时目录做 diff（`phase10a-evidence/deploy-provenance-check.md`）：
 
-- `STORAGE_UNAVAILABLE` 计数必须 **0**；`CONFLICT` 承接那批败者；
-- 每轮仍恰好一个 `OK`、Δrevision 仍 = 1（否则不是分类问题而是并发正确性问题，立即升级为独立缺陷上报）；
-- 沙盒 title 收尾恢复原值；不 `quit`/`close`。
-- 若部署后仍见 `STORAGE_UNAVAILABLE` ⇒ 判"新代码未上线"（AGENTS.md 记过 CLI 部署不继承控制台超时的同类坑），
-  不写成 GREEN。
+| 检查 | 线上实际 |
+|---|---|
+| `store.js` 里 `conflicted` 哨兵 | **不存在（0 次）** |
+| `store.js` vs 未修版 `D:/OurTrail-p9` | 逐字节一致 |
+| `domain/activity.js` 里 Phase 8 的 handler owner 门 | **不存在**；整文件与 `D:/OurTrail`(master) 逐字节一致 |
+| `timeout` / status | 20 / Active（IDE 部署保留了控制台超时，这条是好消息） |
+
+⇒ **部署来源是主 worktree `D:\OurTrail`（master），修复从未上线。** 因此今天的 GREEN 判据没有被触发，
+也**不能**把这条读数读成"修复无效"。两次 K=6（13/30 与 5/30）都是同一份未修代码、只差并发时序
+⇒ 再次证明 STORAGE 比率不可跨轮对比，可依据的只有"过了层①又掉进 `store.js:129`"这一代码级事实。
+
+重新从 `D:\OurTrail-p10a` 部署后的复跑判据（顺序固定为**先取证、再跑探针**）：
+1. `download` + diff 必须看到 `conflicted` 哨兵在线上包里；
+2. K=6×6：`STORAGE_UNAVAILABLE` 计数必须 **0**，`CONFLICT` 承接那批败者；
+3. 每轮仍恰好一个 `OK`、Δrevision 仍 = 1（否则不是分类问题而是并发正确性问题，立即升级为独立缺陷上报）；
+4. 若取证已证明哨兵在线而探针仍见 `STORAGE_UNAVAILABLE` ⇒ 属机制②（SDK 自身事务中止也落进 `:129`）：
+   **不擅自扩生产改动范围**，停下上报并附该证据；
+5. 沙盒 title 收尾恢复原值；不 `quit`/`close`。
 
 ## 6. client recovery GREEN
 
@@ -149,7 +164,7 @@ IDE 只 `disconnect`，未 `quit`/`close`。
 | §2 根因 | 已定性到判据本身，机制二义性如实保留 |
 | §3 最小修复 | 达成，未越界 |
 | §4 stub GREEN | 达成（含选择性反证 C7-⑧） |
-| §5 real cloud GREEN | **待部署** |
+| §5 real cloud GREEN | **未取得**：第一次部署来源是 master（取证已证明），修复未上线 |
 | §6 client recovery GREEN | 达成（客户端未改，走原生 CONFLICT 分支） |
 | §7 变异 | M6 有效、还原逐字节一致 |
 | §8 C1 / §9 C2 | C1 仍 GREEN；C2 未修、行为未变（但触发概率上升，已登记） |
