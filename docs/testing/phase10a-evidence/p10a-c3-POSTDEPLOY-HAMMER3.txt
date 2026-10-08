@@ -1,0 +1,22 @@
+01:41:12.698   第 0 次：R=4726 K=6 码=["STORAGE_UNAVAILABLE","CONFLICT","CONFLICT","CONFLICT","OK","STORAGE_UNAVAILABLE"]
+01:41:12.698            败者文案样本=["这次修改没有保存，原安排未改变。请保留输入后重试。","安排已更新，本次修改没有保存。请核对最新状态后重新提交。"]
+01:41:14.742            revision 4726→4727（Δ=1，成功写入数=1）
+01:41:21.748   第 1 次：R=4727 K=6 码=["STORAGE_UNAVAILABLE","CONFLICT","STORAGE_UNAVAILABLE","OK","CONFLICT","CONFLICT"]
+01:41:21.748            败者文案样本=["这次修改没有保存，原安排未改变。请保留输入后重试。","安排已更新，本次修改没有保存。请核对最新状态后重新提交。"]
+01:41:23.636            revision 4727→4728（Δ=1，成功写入数=1）
+01:41:29.727   第 2 次：R=4728 K=6 码=["STORAGE_UNAVAILABLE","OK","CONFLICT","CONFLICT","CONFLICT","STORAGE_UNAVAILABLE"]
+01:41:29.728            败者文案样本=["这次修改没有保存，原安排未改变。请保留输入后重试。","安排已更新，本次修改没有保存。请核对最新状态后重新提交。"]
+01:41:32.037            revision 4728→4729（Δ=1，成功写入数=1）
+01:41:37.646   第 3 次：R=4729 K=6 码=["STORAGE_UNAVAILABLE","CONFLICT","CONFLICT","STORAGE_UNAVAILABLE","OK","CONFLICT"]
+01:41:37.646            败者文案样本=["这次修改没有保存，原安排未改变。请保留输入后重试。","安排已更新，本次修改没有保存。请核对最新状态后重新提交。"]
+01:41:40.066            revision 4729→4730（Δ=1，成功写入数=1）
+01:41:45.512   第 4 次：R=4730 K=6 码=["STORAGE_UNAVAILABLE","CONFLICT","OK","CONFLICT","STORAGE_UNAVAILABLE","CONFLICT"]
+01:41:45.512            败者文案样本=["这次修改没有保存，原安排未改变。请保留输入后重试。","安排已更新，本次修改没有保存。请核对最新状态后重新提交。"]
+01:41:47.858            revision 4730→4731（Δ=1，成功写入数=1）
+01:41:53.901   第 5 次：R=4731 K=6 码=["STORAGE_UNAVAILABLE","CONFLICT","CONFLICT","STORAGE_UNAVAILABLE","OK","CONFLICT"]
+01:41:53.901            败者文案样本=["这次修改没有保存，原安排未改变。请保留输入后重试。","安排已更新，本次修改没有保存。请核对最新状态后重新提交。"]
+01:41:55.787            revision 4731→4732（Δ=1，成功写入数=1）
+01:41:55.787 TALLY={"CONFLICT":18,"STORAGE_UNAVAILABLE":12,"OK":6,"OTHER":0}
+01:41:58.013   收尾前 title="HAMMER5-4"
+01:42:06.813   恢复写入="OK" 终态 title="[预演] 工作台E2E" 已恢复=true
+01:42:06.814 DISCONNECTED（未 quit/close）

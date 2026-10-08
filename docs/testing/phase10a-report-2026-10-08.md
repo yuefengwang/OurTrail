@@ -63,31 +63,35 @@ K=6 × 6 轮 = 36 个请求同时基于同一个 R：`TALLY = {OK:6, CONFLICT:17
 C7 八条全绿，其中 **C7-⑧ 选择性**：让 `runTransaction` 自身失败（不是回调里抛的）仍必须报
 `STORAGE_UNAVAILABLE` ⇒ 证明修复没有把一切擦成冲突。
 
-## 5. real cloud GREEN —— **未取得：第一次部署来源不对（已用代码级取证证明，不是猜）**
+## 5. real cloud GREEN —— **未取得：修复必要但不充分（机制②已证实）**
 
-修复在云函数持久层，必须部署到线上 `trailApi` 后才能取真读数。业主选"B：你在 IDE 部署，我只验证"。
-第一次部署后 K=6×6 复跑仍见 `STORAGE_UNAVAILABLE`（5/30）。预写判据只能让我"不写 GREEN"，
-但两种解释（新代码没上线 / 修复不够）**在读数上不可区分** ⇒ 先做来源取证：
-`cli cloud functions download` 把线上包拉回仓库外临时目录做 diff（`phase10a-evidence/deploy-provenance-check.md`）：
+两次部署、两次读数，顺序都是**先取证线上包、再跑行为探针**（细节见
+`phase10a-evidence/deploy-provenance-check.md` 与 `phase10a-evidence/realcloud-post-deploy-NES.md`）：
 
-| 检查 | 线上实际 |
-|---|---|
-| `store.js` 里 `conflicted` 哨兵 | **不存在（0 次）** |
-| `store.js` vs 未修版 `D:/OurTrail-p9` | 逐字节一致 |
-| `domain/activity.js` 里 Phase 8 的 handler owner 门 | **不存在**；整文件与 `D:/OurTrail`(master) 逐字节一致 |
-| `timeout` / status | 20 / Active（IDE 部署保留了控制台超时，这条是好消息） |
+**第一次部署**：线上 `store.js` 无哨兵、`domain/activity.js` 连 Phase 8 的 owner 门都没有，与 `D:/OurTrail`(master)
+逐字节一致 ⇒ 部署来源是主 worktree，**修复从未上线**。所以那一轮 `STORAGE_UNAVAILABLE` 5/30 不算判据失败。
 
-⇒ **部署来源是主 worktree `D:\OurTrail`（master），修复从未上线。** 因此今天的 GREEN 判据没有被触发，
-也**不能**把这条读数读成"修复无效"。两次 K=6（13/30 与 5/30）都是同一份未修代码、只差并发时序
-⇒ 再次证明 STORAGE 比率不可跨轮对比，可依据的只有"过了层①又掉进 `store.js:129`"这一代码级事实。
+**第二次部署（正确来源）**：取证确认线上 `store.js` 与修复版逐字节一致（`conflicted` 4 次、owner 门已在、`timeout=20`）。
+随后 K=6 × 4 批 = 24 轮、144 个请求：
 
-重新从 `D:\OurTrail-p10a` 部署后的复跑判据（顺序固定为**先取证、再跑探针**）：
-1. `download` + diff 必须看到 `conflicted` 哨兵在线上包里；
-2. K=6×6：`STORAGE_UNAVAILABLE` 计数必须 **0**，`CONFLICT` 承接那批败者；
-3. 每轮仍恰好一个 `OK`、Δrevision 仍 = 1（否则不是分类问题而是并发正确性问题，立即升级为独立缺陷上报）；
-4. 若取证已证明哨兵在线而探针仍见 `STORAGE_UNAVAILABLE` ⇒ 属机制②（SDK 自身事务中止也落进 `:129`）：
-   **不擅自扩生产改动范围**，停下上报并附该证据；
-5. 沙盒 title 收尾恢复原值；不 `quit`/`close`。
+| | CONFLICT | STORAGE_UNAVAILABLE | OK | 恰好一胜 | Δrevision |
+|---|---|---|---|---|---|
+| 合计 | 79 | **31** | 22 | 22/22 | 22/22 全部 =1 |
+
+⇒ **败者仍有 28% 拿到 `STORAGE_UNAVAILABLE`，没有归零。** 时延数据否证了"哨兵早退导致 commit 卡住"这一替代解释
+（STORAGE 败者 2.41–2.53 s，比 OK 的 2.45–2.65 s 还快一点，没有数秒长尾）：
+这些不是我们从 `meta.revision` 判出的那次冲突（那条走哨兵，已与异常类型无关），
+而是 **SDK 自己在 `runTransaction` 内中止/拒绝**，落进 `store.js` 的 `catch` 被兜底成 `STORAGE_UNAVAILABLE`。
+
+**定性**：
+- 并发正确性仍然完好（22/22 轮恰好一胜、Δ=1，无 lost update、无双写）；
+- BUG-C3 的语义缺陷**只被部分修复**——哨兵让"我方 CAS 判定"这一类正确映射（stub 侧 C7-②③⑤ 全绿），
+  但真云端还有第二类冲突来源没被映射 ⇒ **不能判 FIXED**；
+- 再往下修就需要原始错误身份，而当前 `catch` 把它丢掉了。凭猜匹配错误码会把真存储故障也判成冲突，
+  比现状更糟（C7-⑧ 正是为守住这条而写）。
+⇒ 按任务书 §9「如果 production fix 影响范围超出 store/error mapping：立即停止并报告」——**本轮停手**：
+不改 `catch` 的兜底逻辑、不加 retry、不动客户端。下一步方案（一次性诊断部署，只给 message 加 `errCode/name`
+再跑同一支探针取签名）已写进 `realcloud-post-deploy-NES.md` 末节，等授权。
 
 ## 6. client recovery GREEN
 
@@ -156,7 +160,7 @@ IDE 只 `disconnect`，未 `quit`/`close`。
 
 ## 14. Phase 10A 是否可以 ACCEPT
 
-**CONDITIONAL ACCEPT**，缺的只有第 5 项：
+**NOT ACCEPT（收在有价值的中间态）**——第 5 项已跑完，结果不是 GREEN 而是"部分修复"：
 
 | 项 | 状态 |
 |---|---|
@@ -164,12 +168,17 @@ IDE 只 `disconnect`，未 `quit`/`close`。
 | §2 根因 | 已定性到判据本身，机制二义性如实保留 |
 | §3 最小修复 | 达成，未越界 |
 | §4 stub GREEN | 达成（含选择性反证 C7-⑧） |
-| §5 real cloud GREEN | **未取得**：第一次部署来源是 master（取证已证明），修复未上线 |
+| §5 real cloud GREEN | **未取得**：修复已确认在线，但败者仍 28% 是 `STORAGE_UNAVAILABLE` ⇒ 必要但不充分（机制②已证实），按停止条件收手 |
 | §6 client recovery GREEN | 达成（客户端未改，走原生 CONFLICT 分支） |
 | §7 变异 | M6 有效、还原逐字节一致 |
 | §8 C1 / §9 C2 | C1 仍 GREEN；C2 未修、行为未变（但触发概率上升，已登记） |
-| §10 全量 | 无头全绿；真机两套 SKIPPED 待部署后复跑 |
+| §10 全量 | 无头全绿。真机两套本轮**主动推迟**（结论已定为"停手上报"，跑它们不改变判定，且要占共享 DevTools）⇒ 记 DEFERRED，不写 PASS |
 
-⇒ **他部署 `trailApi` 之后**，我复跑 K=6 探针 + UI-State + Golden Path；三项都到位才把
-`CONDITIONAL ACCEPT` 改写成 `ACCEPT`。若他不部署而直接进 Phase 10B，则线上仍是"C3 未修 + 修复已在仓库未生效"
-的不一致状态——这一点必须显式避免。
+⇒ **不能 ACCEPT，也不能判"修好了"。** 线上当前是**改善但未收口**：我方 CAS 判定这一类已正确映射成 CONFLICT，
+真云端还剩一类（SDK 主动中止事务）没映射；22/22 轮并发正确性完好 ⇒ **这是一个可以安全停住的 checkpoint**
+（无数据风险，只是恢复路径仍会偶发失效）。
+
+下一步只有一件事：**批准一次性诊断部署**——只给 `store.js` 兜底分支的 message 加上原始错误的 `errCode/name`，
+不改任何控制流；部署后用同一支 K=6 探针取回真实签名，再决定正式怎么映射；诊断跑完必须还原并复跑门禁。
+（凭猜匹配错误码不可取：会把真存储故障也判成冲突，比现状更糟——`C7-⑧` 就是为守住这条写的。）
+即使不继续，也请明确 **BUG-C3 仍是 OPEN 状态，不是 FIXED**。
