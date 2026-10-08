@@ -131,6 +131,7 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
 
   **未动的东西**：`index.js:122`（D1 → Phase 10B）、BUG-C2（P2 / Product Decision Required）、天气线 1 条常驻非确定性红（本轮复现同一句 `✗ applySelection 命中 IN_CLOUD 窗口`，打线上 Open-Meteo + 真实时钟，与 store 无关）。B 层两套真机套件仍 DEFERRED（跑它们不改变本判据且要占共享 IDE）；客户端恢复路径是 STUB PROOF，页面级真并发本轮没做 ⇒ 不写 UI PASS。
   全量无头门禁：43 套 / **2750 断言**（`e2e-client-cas` 42→54），唯一 1 红即上述天气套件。取证与日志：`docs/testing/phase10a-evidence/`、报告 `docs/testing/phase10a-report-2026-10-08.md`、只读定位 `docs/testing/phase10a-c3-trace.md`。
+  **合并窗口**：中继本次不可达 ⇒ 未 push。待并的形状与命令、并完必做的复跑、以及 Phase 10B 候选（D1 / 残余 1 条未归类 / 页面级真并发 / C2 / 23 条命令零真云端）都写在 `docs/testing/phase10a-merge-window-handoff.md`：`master` 当前 `686fa7c` 正是本分支的 merge-base（0 behind / 21 ahead / 54 files），**预期是纯 fast-forward**。
 
 - 2026-10-07（**Phase 9：并发/一致性收口 + Release Gate 覆盖面扩张**，基线 `win/concurrency-consistency` @ `2058e41`，专用 worktree `D:/OurTrail-p9`，分支 `win/phase9-concurrency-closure`）：
 
