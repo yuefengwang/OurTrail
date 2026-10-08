@@ -93,6 +93,29 @@ C7 八条全绿，其中 **C7-⑧ 选择性**：让 `runTransaction` 自身失�
 不改 `catch` 的兜底逻辑、不加 retry、不动客户端。下一步方案（一次性诊断部署，只给 message 加 `errCode/name`
 再跑同一支探针取签名）已写进 `realcloud-post-deploy-NES.md` 末节，等授权。
 
+## 5b. 诊断部署已完成 —— 签名是**单一稳定**的一类（`c3-error-signature-result.md`）
+
+线上包先经 diff 证明是诊断版，再跑 K=6×14 轮（84 请求）：
+
+```
+判据：14/14 轮恰好一胜、Δrevision 全 =1、无 lost update          → 全部成立
+分布：OK 14 / CONFLICT 47 / STORAGE_UNAVAILABLE 23 / OTHER 0
+签名：23 个样本归一化后只有 1 类（23/23）
+      name=Error  errCode=-501001  keys=errCode,errMsg
+      document.set:fail -501001 resource system error.
+      [ResourceUnavailable.TransactionConflict] Transaction is conflict…
+```
+两条直接推论（只报事实）：
+1. **不是机制①**：签名里没有 `code=CONFLICT`、没有我方文案 ⇒ 不是我们的 `ConflictError` 被 SDK 重抛时丢类型；
+   哨兵那条路会早退、不做任何 `set`，而失败点正是事务内的 `document.set` ⇒ 我方 CAS 当时是通过的，
+   随后**平台按自己的读写冲突规则原子中止**（Δ=1 与败者零副作用佐证"原子"）。
+2. 平台把"事务冲突"作为 `-501001` 下的**具名子类** `ResourceUnavailable.TransactionConflict` 报出来
+   ⇒ 存在可窄化匹配的特征；但本次样本里只见这一个子类，任何映射都必须绑子类型标记，不能拿裸码赌。
+
+已按约定**立即还原**：`git revert 18ddb16` → `6f7086a`；两份 `store.js` 与基线 `f5b3a8a` 逐字节一致；
+全仓 `DIAG-P10A` 0 命中；线上已重新部署非诊断版（`DIAG=0`、`conflicted=4`、`timeout=20`）；沙盒 title 已恢复。
+正式映射（约 3 行窄分支 + 桩侧开关 + C7-⑧ 加严 + 部署后复跑 + 变异复核）**只写成方案，未实现**，等批准。
+
 ## 6. client recovery GREEN
 
 `api.js` **未改**，其 CONFLICT 分支本来就是对的；修复后真并发败者走的就是它：
@@ -174,11 +197,16 @@ IDE 只 `disconnect`，未 `quit`/`close`。
 | §8 C1 / §9 C2 | C1 仍 GREEN；C2 未修、行为未变（但触发概率上升，已登记） |
 | §10 全量 | 无头全绿。真机两套本轮**主动推迟**（结论已定为"停手上报"，跑它们不改变判定，且要占共享 DevTools）⇒ 记 DEFERRED，不写 PASS |
 
-⇒ **不能 ACCEPT，也不能判"修好了"。** 线上当前是**改善但未收口**：我方 CAS 判定这一类已正确映射成 CONFLICT，
-真云端还剩一类（SDK 主动中止事务）没映射；22/22 轮并发正确性完好 ⇒ **这是一个可以安全停住的 checkpoint**
-（无数据风险，只是恢复路径仍会偶发失效）。
+⇒ **仍不能 ACCEPT——但诊断已把剩下那一步变成"只需你批准映射"。** 线上当前是**改善但未收口**：我方 CAS 判定这一类已正确映射成 CONFLICT，
+真云端还剩一类（平台主动中止事务）**已定位到单一稳定签名、映射方案待批**；所有读数的并发正确性完好
+（无双胜、无 lost update、Δ=1）⇒ 这是一个可以安全停住的 checkpoint（无数据风险，只是恢复路径仍会偶发失效）。
 
-下一步只有一件事：**批准一次性诊断部署**——只给 `store.js` 兜底分支的 message 加上原始错误的 `errCode/name`，
-不改任何控制流；部署后用同一支 K=6 探针取回真实签名，再决定正式怎么映射；诊断跑完必须还原并复跑门禁。
-（凭猜匹配错误码不可取：会把真存储故障也判成冲突，比现状更糟——`C7-⑧` 就是为守住这条写的。）
-即使不继续，也请明确 **BUG-C3 仍是 OPEN 状态，不是 FIXED**。
+**诊断已完成并已还原**（见 §5b）：签名 `errCode=-501001` + 子类型 `ResourceUnavailable.TransactionConflict`，
+失败点在事务内 `document.set`，23/23 样本同一类。下一步只有一件事：**批准正式映射**——`store.js` 的 catch 里、
+`STORAGE_UNAVAILABLE` 兜底之前加一条窄分支（`errCode === -501001` **且**命中该子类型才抛 `ConflictError`，
+与层①同文案，约 3 行）。配套四件：① 桩侧新增可选"平台事务冲突中止"开关做 RED/GREEN 断言；
+② `C7-⑧` 加严——其它 SDK 错误必须仍是 `STORAGE_UNAVAILABLE`，证明映射窄而非宽；
+③ 部署后复跑同一支 K=6×14，期望 `STORAGE_UNAVAILABLE` 归 0、`OK` 仍 14/14、Δ 仍全 =1；④ 变异复核。
+知情要点：真机文案归平台所有；若平台改名，窄匹配会**停止命中并退回今天的行为**（不会误判成冲突，方向是安全的），
+但这一漂移**测试抓不到**（桩里那条字符串是我自己写的），只能靠再诊断或云函数日志发现。
+无论批不批，**BUG-C3 仍是 OPEN 状态，不是 FIXED**。
