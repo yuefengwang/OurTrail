@@ -421,6 +421,86 @@ async function main() {
     stub.__setTxnBarrier(false)
   }
 
+  /* ================= C8 BUG-C3 机制② 正式回归（Phase 10A 映射，先于改动写） ================= */
+  section('C8 BUG-C3 机制②：败者已通过我方 CAS、被平台在事务内 document.set 上原子中止时，分类仍须是 CONFLICT 且客户端须进入恢复路径')
+  {
+    await quiesce()
+    // C7 覆盖的是"冲突判定不得依赖异常类型跨边界存活"（barrier + 类型擦除 ⇒ 败者走 conflicted 哨兵）。
+    // 真云端诊断取回的第二类**不是**那条路：两笔并发事务都读到同一个 R、都通过 store.js:120 的 CAS，
+    // 随后平台按自己的读写冲突规则在事务内 document.set 上中止败者；错误对象是平台自有的
+    // errCode=-501001 + 子类型 ResourceUnavailable.TransactionConflict，键集只有 errCode,errMsg（没有 code、
+    // 没有我方文案）⇒ store.js:135 的 instanceof 判 false ⇒ 落进 STORAGE_UNAVAILABLE 兜底。
+    // 签名取证：docs/testing/phase10a-evidence/c3-error-signature-result.md（23/23 样本同一类）。
+    stub.__setTxnBarrier(false)
+    stub.__setTxnConflictAbort(true)
+    const abortsBefore = stub.__state.aborts
+    const R = await rev()
+    const pageA = { reloadCalls: 0, reload() { pageA.reloadCalls++; return Promise.resolve() }, triggerEvent: () => {} }
+    const pageB = { reloadCalls: 0, reload() { pageB.reloadCalls++; return Promise.resolve() }, triggerEvent: () => {} }
+    const uiBefore = ui.toasts.length
+    const pair = await Promise.all([
+      api.dispatchAndSync({ type: 'activity.edit', activityId: ACT, input: input('C8 标题', 'C8-A 的说明') }, R, pageA)
+        .then(r => ({ ok: true, r })).catch(e => ({ ok: false, e })),
+      api.dispatchAndSync({ type: 'activity.edit', activityId: ACT, input: input('C8 标题', 'C8-B 的说明') }, R, pageB)
+        .then(r => ({ ok: true, r })).catch(e => ({ ok: false, e })),
+    ])
+    const aborted = stub.__state.aborts - abortsBefore
+    // 有效性门：没有它，C8 可能只是 C7 换了个名字（走哨兵早退）甚至是空断言。
+    check('C8-⓪ 前序生效：恰好 1 笔事务在【写入点】被平台中止（⇒ 两笔都通过了我方 CAS，测的确实是机制②）',
+      aborted === 1, JSON.stringify({ abortsDelta: aborted, codes: pair.map(x => x.ok ? 'OK' : x.e && x.e.code) }))
+    const losers = pair.filter(x => !x.ok)
+    const winners = pair.filter(x => x.ok)
+    check('C8-① 恰好一个成功（平台中止是原子的：既不许双胜、也不许两个都失败）',
+      winners.length === 1 && losers.length === 1, JSON.stringify(pair.map(x => x.ok ? 'OK' : x.e && x.e.code)))
+    const loserErr = losers[0] && losers[0].e
+    check('C8-② 败者的错误码是 CONFLICT（真云端这一类现在给的是 STORAGE_UNAVAILABLE ⇒ 待映射的病灶）',
+      !!loserErr && loserErr.code === 'CONFLICT', JSON.stringify(loserErr && { code: loserErr.code, message: loserErr.message }))
+    const loserPage = pair[0] === losers[0] ? pageA : pageB
+    const winnerPage = pair[0] === losers[0] ? pageB : pageA
+    check('C8-③ 败者页面进入恢复路径：needRefresh ⇒ page.reload() 恰好一次',
+      loserPage.reloadCalls === 1, 'reloadCalls=' + loserPage.reloadCalls)
+    check('C8-④ 胜者页面不被误触发重读',
+      winnerPage.reloadCalls === 0, 'reloadCalls=' + winnerPage.reloadCalls)
+    check('C8-⑤ 用户看到的是"已被他人更新、请重试"，不是"云存储不可用"',
+      ui.toasts.slice(uiBefore).some(t => /他人更新|已刷新|重试/.test(t))
+        && !ui.toasts.slice(uiBefore).some(t => /存储|服务异常/.test(t)),
+      JSON.stringify(ui.toasts.slice(uiBefore)))
+    check('C8-⑥ 数据完好：revision 只因胜者推进一次', (await rev()) === R + 1, JSON.stringify({ R, after: await rev() }))
+    const snapC8 = await snapshot()
+    const landed8 = ['C8-A 的说明', 'C8-B 的说明'].filter(t => snapC8.indexOf(t) !== -1).length
+    check('C8-⑦ 败者内容零残留：中止发生前没落下任何一笔写（整库快照只有一笔标记）',
+      landed8 === 1, '命中标记数=' + landed8)
+    // 闭环对照：败者按提示重读后拿新 revision 再写一次必须成功——这句才是"恢复链路坏了"的实际代价。
+    const afterRetry = await api.dispatch({ type: 'activity.edit', activityId: ACT, input: input('C8 标题', 'C8 重试后落库') }, await rev())
+      .then(r => r && r.revision).catch(() => 'REJECTED')
+    check('C8-⑧ 恢复闭环：败者重读后的重试以合法 revision 成功（不再是"照提示做必然再撞"）',
+      afterRetry === R + 2, JSON.stringify({ afterRetry, want: R + 2 }))
+
+    // 选择性（窄匹配的红线）：同样带 errCode=-501001 但**不是**那个子类型的 SDK 错误，
+    // 必须仍然走 STORAGE_UNAVAILABLE。真故障样本本轮云端一个都没出现，所以"窄"只能在这里自证。
+    const db = stub.__state.db
+    const realTxn = db.runTransaction
+    const inject = async () => {
+      const cur = await rev()
+      db.runTransaction = () => Promise.reject(inject._err)
+      return api.dispatch({ type: 'activity.edit', activityId: ACT, input: input('C8 标题', '选择性对照') }, cur)
+        .then(() => 'OK').catch(e => (e && e.code) || 'NO_CODE')
+        .finally(() => { db.runTransaction = realTxn })
+    }
+    const mkErr = msg => { const e = new Error(msg); e.errCode = -501001; e.errMsg = msg; return e }
+    inject._err = mkErr('document.set:fail -501001 resource system error. [InternalError.DbNotReady] resource not ready.')
+    check('C8-⑨ 选择性①：-501001 的其它子类型（本轮未见过的真故障形状）不得被映射成冲突',
+      await inject() === 'STORAGE_UNAVAILABLE')
+    inject._err = Object.assign(new Error('internal error'), { errCode: -501001 })
+    check('C8-⑩ 选择性②：只有裸码 -501001、没有子类型标记时不得被映射成冲突',
+      await inject() === 'STORAGE_UNAVAILABLE')
+    inject._err = Object.assign(new Error('[ResourceUnavailable.TransactionConflict] fake'), { errCode: -502000 })
+    check('C8-⑪ 选择性③：只有子类型文案、错误码不是 -501001 时同样不得映射（两个条件是 AND）',
+      await inject() === 'STORAGE_UNAVAILABLE')
+    db.runTransaction = realTxn
+    stub.__setTxnConflictAbort(false)
+  }
+
   /* ================= 结论分栏 ================= */
   section('证据通道与遗留（一律不转 PASS）')
   finding('BUG-C1', 'P1', '客户端 CAS 绕过。本套件＝STUB / CLIENT-LIFECYCLE PROOF：真 editor.js + 真 api.js + 真 index.js/domain/store，仅 DB 为内存桩。REAL CLOUD PROOF 见 Phase 9 报告 §B（真机双编辑器实例）。')

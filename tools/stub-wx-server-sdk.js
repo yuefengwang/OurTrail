@@ -3,7 +3,26 @@
 // / orderBy.limit.skip.get / runTransaction。
 'use strict'
 
-const state = { openid: '', db: null, txnBarrier: false, txnErrorWrapping: false }
+const state = {
+  openid: '', db: null, txnBarrier: false, txnErrorWrapping: false,
+  // 平台级事务冲突中止（Phase 10A / BUG-C3 机制②）：开关 + 已应用写计数 + 中止计数
+  txnConflictAbort: false, writeSeq: 0, aborts: 0,
+}
+
+// 真云端实测到的错误形状（2026-10-08 诊断部署取证，23/23 样本同一类）：
+//   name=Error  errCode=-501001  自身可枚举键只有 errCode,errMsg（**没有 code**）
+//   errMsg='document.set:fail -501001 resource system error. [ResourceUnavailable.TransactionConflict] …'
+// `__platformAbort` 用 defineProperty 挂成不可枚举标记：既能让"类型擦除"开关认出
+// 这是平台自有的错误（不是我们回调里抛出去又被重抛的那个），又不污染 Object.keys 的签名形状。
+function platformAbortError(method) {
+  const msg = 'document.' + method + ':fail -501001 resource system error. ' +
+    '[ResourceUnavailable.TransactionConflict] Transaction is conflict, maybe conflicts with other transactions.'
+  const err = new Error(msg)
+  err.errCode = -501001
+  err.errMsg = msg
+  Object.defineProperty(err, '__platformAbort', { value: true, enumerable: false })
+  return err
+}
 
 function fakeDb() {
   const colls = new Map()
@@ -54,6 +73,21 @@ function fakeDb() {
     collection,
     createCollection: async () => {},
     runTransaction: fn => {
+      // 事务开局即记录"全局已应用写"的水位；写入点上只要水位被**别人**推进过就判冲突中止，
+      // own 把自己这一笔笔写排除掉（同事务内多次 set 不是冲突）。
+      const tx = { startSeq: state.writeSeq, own: 0 }
+      const applyWrite = (method, body) => {
+        if (state.txnConflictAbort && state.writeSeq - tx.own !== tx.startSeq) {
+          state.aborts++
+          throw platformAbortError(method)
+        }
+        body()
+        state.writeSeq++
+        tx.own++
+      }
+      // 写排队 = 先发起者先落库；读**不**排队 = 两笔并发事务都会先通过 store.js:120 的我方 CAS。
+      // 这正是机制②的发生顺序：CAS 通过 → 平台在写入点原子中止（败者零写入，见 e2e-client-cas C8）。
+      const write = task => state.txnConflictAbort ? serialize(task) : task()
       const transaction = {
         collection: name => ({
           doc: id => ({
@@ -62,8 +96,12 @@ function fakeDb() {
               if (!d) throw new Error('document not exists')
               return { data: clone(d) }
             },
-            set: async ({ data }) => { coll(name).set(id, clone(data)) },
-            remove: async () => { coll(name).delete(id) },
+            set: ({ data }) => write(() => {
+              applyWrite('set', () => { coll(name).set(id, clone(data)) })
+            }),
+            remove: () => write(() => {
+              applyWrite('remove', () => { coll(name).delete(id) })
+            }),
           }),
         }),
       }
@@ -84,6 +122,9 @@ function fakeDb() {
       // 默认 OFF：既有 43 个套件的时序与错误类型逐字节不变。
       const erased = state.txnBarrier ? serialize(run) : run()
       return erased.catch(err => {
+        // 平台自有的错误（含 conflictAbort 造的那枚 -501001）**不是**"我们回调里抛出去又被重抛"的那个，
+        // 所以不参与类型擦除；否则两个开关同开时 errCode 会被改写成 -500100，建模就失真了。
+        if (err && err.__platformAbort) throw err
         throw Object.assign(new Error('transaction failed: ' + (err && err.message || String(err))), { errCode: -500100 })
       })
     },
@@ -103,4 +144,12 @@ module.exports = {
   __setTxnBarrier: on => { const prev = !!state.txnBarrier; state.txnBarrier = !!on; return prev },
   /** 开关 TEST-HARNESS SDK 异常类型擦除（Phase 10A / BUG-C3）；默认 OFF。 */
   __setTxnErrorWrapping: on => { const prev = !!state.txnErrorWrapping; state.txnErrorWrapping = !!on; return prev },
+  /**
+   * 开关 TEST-HARNESS 平台级事务冲突中止（Phase 10A / BUG-C3 机制②）；默认 OFF。
+   * ON：读不排队、写排队 ⇒ 并发两笔都先通过我方 CAS，后落者在事务内 `document.set` 处收到
+   * 平台自己的 -501001 / ResourceUnavailable.TransactionConflict，且**一笔都没写**。
+   * 与 barrier 互斥：barrier 把整个事务体串起来，败者会先撞我方 CAS 哨兵、根本走不到 set，
+   * 所以同开时中止计数恒 0（C8 的有效性门会把这种"没生效"判成 INVALID，不放行空断言）。
+   */
+  __setTxnConflictAbort: on => { const prev = !!state.txnConflictAbort; state.txnConflictAbort = !!on; return prev },
 }
