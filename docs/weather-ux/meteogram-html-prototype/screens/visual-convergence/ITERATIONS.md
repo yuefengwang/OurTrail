@@ -57,9 +57,10 @@ Baseline: cf89b94 · 2026-10-07 · 基线套件读数 38 套件 / 2488 断言（
 - **已实现**：`weather.wxml` caption → 两行 `.chart-legend`（行1 图形变量 swatch / 行2 约定解释），色值全部走 token（3 个复用 + 5 个 `--chart-*` 新增 = SVG 运行时字面量双写，已登记 design-system.md）。首轮 4 行溢出、收间距后 375px 恰 2 行（见 Iteration 7 专章）。
 - 偏差记录：行2 保留「琥珀段 = 你在云中」（原型 README 边界为「不进图例」；基线 caption 原有此句，属保留非新增）；「10→100%」按原型 V4 图例压缩决策降级为「淡→浓」。
 
-### P2-3 48/72h 压缩噪声
+### P2-3 48/72h 压缩噪声 —— **证据关闭（2026-10-08，Iteration 8 CLOSE）**
 
-- 网格线与风箭头密度较 24h 高，但与原型同构，暂未见明显劣化；迭代中复核，不预设问题。
+- ~~网格线与风箭头密度较 24h 高，但与原型同构，暂未见明显劣化；迭代中复核，不预设问题。~~
+- **复核结论**：48/72h 真机三张（chengdu-48/72 + litang-72）与冻结原型 `horizon-chengdu-72-375.png` 同窗对照——网格 6h 一标签、风箭头 2-3h 一支、日分隔线、day header hi/lo 彩标全同构，无叠字/截断/糊化，无劣化，无改码关闭（见 Iteration 8）。附带核验：P2-2 两行图例在 48/72h 同样恰好 2 行。
 
 ## Iteration 0（基线，非迭代）
 
@@ -213,3 +214,21 @@ Change: ① `weather.wxml` 单行 caption → `<view class="chart-legend">` 两�
 Before: baseline/chengdu-24h-375px.png、baseline/litang-24h-375px.png（单行纯文字 caption）
 After: iter-7-chengdu-24h-375px.png、iter-7-litang-24h-375px.png（两行 swatch 图例，375px 恰 2 行）
 Decision: KEEP / Reason: 原型两行结构落地且 375px 恰 2 行收口；色值零发明（3 个既有 token 复用 + 5 个新 token 全部 = SVG 运行时字面量双写并登记 design-system.md）；7/8 门禁全绿 + 1 既有败例归因不重复；无新问题（L111 经典 caption 与其 `.chart-caption` 类未触）。
+
+## Iteration 8 — P2-3 48/72h 压缩噪声（证据关闭，无改码）
+
+Problem: P2-3 排名前提「网格线与风箭头密度较 24h 高，但与原型同构，暂未见明显劣化；迭代中复核，不预设问题」——48/72h 下时间轴标签 00/06/12/18 每日重复、风箭头行跨 48/72h 排布，需核验是否比 24h/原型有可见劣化（标签叠字、箭头糊成一片、行挤压）。
+证据（2026-10-08，375 机位、真实数据、无改码复拍）:
+- runtime 三张: iter-8-chengdu-48h-375px.png（两日头）、iter-8-chengdu-72h-375px.png、iter-8-litang-72h-375px.png（三日头）——时间轴 00/06/12/18×日 无叠字无截断；风箭头约 2-3h 一支、方向可辨未糊化；日分隔强线与 day header（今天/明天/后天 + hi/lo 彩标）齐全。
+- 对照冻结原型: `screens/horizon-chengdu-72-375.png` 同窗逐项对照——网格 6h 一标签、箭头密度、日分隔、day header 全部同构；原型图上多出的选中态 crosshair 时间牌（明天 14:00）系其截图带选中，非密度差异。
+- 附带核验: P2-2 两行图例在 48/72h 同样恰好 2 行（iter-8 三张全现），跨 viewSpan 保持。
+- 已知出范围项（复现但不动）: temp 轴 23°/19° 两档互叠为 Iteration 3 记录在案的原型同款恒等。
+- 门禁（无改码）: 沿用 P2-2 轮全套 8 项结果——本轮 diff 仅 ITERATIONS.md + 3 张截图；提交前 check.js 复跑。
+范围: 无 Change——排名前提即「不预设问题」，复核后无劣化，不改码（先例同 Iteration 4）。
+
+### Iteration 8 — Change / Before / After / Decision
+
+Change: 无代码改动；仅本文档（Ranking P2-3 关闭注 + 本条目）+ 3 张证据截图入库。
+Before: 无（非改码轮；基线同机位对照见 baseline/chengdu-48h-375px.png、baseline/chengdu-72h-375px.png）
+After: iter-8-chengdu-48h-375px.png、iter-8-chengdu-72h-375px.png、iter-8-litang-72h-375px.png（对照物 horizon-chengdu-72-375.png）
+Decision: CLOSE（证据关闭，无回滚对象）/ Reason: 48/72h 网格/箭头/日分隔与原型同构无可见劣化；P2-2 图例跨 viewSpan 保持 2 行；P2-3 关闭，Ranking 已同步。
