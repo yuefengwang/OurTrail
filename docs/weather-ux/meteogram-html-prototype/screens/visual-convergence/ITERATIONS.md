@@ -51,9 +51,11 @@ Baseline: cf89b94 · 2026-10-07 · 基线套件读数 38 套件 / 2488 断言（
 - **范围调整（先例同 P1-4）**：改码落在页面表现层 `weather.wxml` / `weather.js`（外层 gate、agenda 过滤、`onOiTap` 双键兜底），非排名预设的 `oi-presentation.js`——后者零改动，model/sky 红线未触。
 - 留置不处理：`weather.wxml` L266 `oiMultiDay` 分支从未赋值（死分支，删之超范围）。
 
-### P2-2 图例形态
+### P2-2 图例形态 —— **已收敛（2026-10-08，Iteration 7 KEEP）**
 
-- 基线 = 单行纯文字 caption（「灰阶 = 云量等值带…」）；原型 = 两行带色块/图标图例（horizon-litang-24 底部）。收敛候选，低优先。
+- ~~基线 = 单行纯文字 caption（「灰阶 = 云量等值带…」）；原型 = 两行带色块/图标图例（horizon-litang-24 底部）。收敛候选，低优先。~~
+- **已实现**：`weather.wxml` caption → 两行 `.chart-legend`（行1 图形变量 swatch / 行2 约定解释），色值全部走 token（3 个复用 + 5 个 `--chart-*` 新增 = SVG 运行时字面量双写，已登记 design-system.md）。首轮 4 行溢出、收间距后 375px 恰 2 行（见 Iteration 7 专章）。
+- 偏差记录：行2 保留「琥珀段 = 你在云中」（原型 README 边界为「不进图例」；基线 caption 原有此句，属保留非新增）；「10→100%」按原型 V4 图例压缩决策降级为「淡→浓」。
 
 ### P2-3 48/72h 压缩噪声
 
@@ -192,3 +194,22 @@ Change: ① `weather.wxml` L141 外层 `wx:if` → `{{oiCard || oiHorizon}}`，a
 Before: ~/.ourtrail-mp-auto/shots/task4-before/chengdu-48h-375px.png、~/.ourtrail-mp-auto/shots/task4-24h/chengdu-24h-375px.png
 After: ~/.ourtrail-mp-auto/shots/task4-after/chengdu-{48h,24h}-375px.png
 Decision: KEEP / Reason: P2-1 前提证伪（去重→整卡缺失）并按设计文档修复渲染；反向缺陷 24h 死 tap 同轮修复且真机三信号全通；24h 像素级无回归；6/7 门禁全绿，唯一败例 stash 隔离 + probe 归因为既有数据依赖，非本轮引入。
+
+## Iteration 7 — P2-2 图例形态 · 两行 swatch 图例
+
+Problem: 统一 Meteogram 卡图注是单行纯文字 caption（`weather.wxml` L134「灰阶 = 云量等值带（浅→深 = 10→100%）· 虚线 = 此点海拔 · 琥珀段 = 你在云中 · 箭头 = 风向（吹向）」），与原型两行带色块图例不同构：文字说「灰阶」读者看不见色阶、说「琥珀段」看不见琥珀色，图上五种曲线/柱色（温度/降水/阵雨/风速/阵风）零图例。
+Hypothesis: 按原型 `renderLegend()` 两行结构重写——行1 图形变量（swatch + 标签）、行2 约定解释（虚线/琥珀/箭头）；swatch 色值全走 token：`--ink`(#202A26=C.temp)、`--info`(#346583=C.rain)、`--forest`(#163E35=C.you) 三个既有复用，showers/wind/gust/inCloud/ramp 新增 `--chart-*`（值 = `meteogram-svg.js` `C` 色板与 `cloud-field-svg.js` `BANDS` 字面量双写，同步契约先例同 `--golden`）；字号 10px（本页 `.chip-tag`/`.day-*` 已有先例，原型 8.5px 等比）。375px 卡内宽 303px（page 20×2 + card 16×2）下首轮宽度估算临界，预留 flex-wrap 兜底。
+范围: `weather.wxml` L134 一处（L111 经典 canvas caption 不动，`.chart-caption` 类保留供其使用）；`weather.wxss` 新增 `.chart-legend` 段；`app.wxss` `--blue-hour` 后 +5 token；`design-system.md` token 表 +3 行。数据/sky/OI/SVG 几何/测试零改动。
+
+### Iteration 7 — Change / Before / After / Decision
+
+Change: ① `weather.wxml` 单行 caption → `<view class="chart-legend">` 两行 `.lg-row`——行1：`[ramp] 云量 淡→浓 · [ink]温度 · [info]降水 · [showers]阵雨 · [wind]风速 · [gust]阵风`，行2：`[dashed] 虚线 = 此点海拔 · [amber] 琥珀段 = 你在云中 · ↗ 箭头 = 风向（吹向）`；② `weather.wxss` +22 行（`.chart-legend` 10px/16 var(--muted)、`.lg-row` flex-wrap、`.lg-item`、`.sw-ramp` 34×9 渐变带、`.sw-line` + 修饰类、`.sw-dash`/`.sw-amber`/`.sw-arrow`），附同步契约中文注释（改色三处同步，同 --golden 先例）；③ `app.wxss` +9 行 5 token（`--chart-showers #2E8B8B` / `--chart-wind #3D8A7F` / `--chart-gust #9FC4D8` / `--chart-in-cloud rgba(180,118,26,0.65)` / `--chart-ramp` 五档灰阶 linear-gradient）附「SVG 拿不到 var() 只能双写」同步注释；④ `design-system.md` +3 行登记。
+首轮溢出与修正: 首轮渲染 4 行（行1 尾「阵风」折行、行2 尾「箭头」折行——两行均超 303px；该轮截图未留档，/tmp 被终版覆盖，如实记录）。收间距复拍：`.lg-item` margin 6→4、`.sw-line` 14→12 且 margin 3→2、`.sw-ramp` margin 3→2、`.lg-dim` 3→2 → 第二轮两地点均恰好 2 行。
+测试: 门禁 8 项实跑——check ✓ / check-handlers weather ✓（19 handlers）/ meteogram-svg 25/0 / cloud-field-svg 27/0 / visual-audit 38/0 / weather-page 136/0 / weather-v2 45/0 / outdoor-intelligence-ui 46 过 1 败（`applySelection 命中 IN_CLOUD 窗口` 既有数据依赖败例，Task 4 已 stash 隔离归因，不重复）。cloud-field-svg 链跑中曾单次 26/1（未捕获 ✗ 行），其后独立复跑 5 次全 27/0 → 判为性能断言类偶发 flake；本轮 diff 仅 4 文件（wxml/wxss/app.wxss/design-system.md），未触 `cloud-field-svg.js` 任何字节。grep 复核：tools/ 无断言钉本图例文案/类名/`--chart-*` token。
+证据（2026-10-08，375 机位、真实数据、改码后 cli close→open→auto 重开两轮重拍）:
+- 行数: iter-7-chengdu-24h-375px.png、iter-7-litang-24h-375px.png —— 行1「▬ 云量 淡→浓 ─温度 ─降水 ─阵雨 ─风速 ─阵风」、行2「┈ 虚线 = 此点海拔 ─ 琥珀段 = 你在云中 ↗ 箭头 = 风向（吹向）」，各恰 2 行，无第三行、无截断、无横向溢出。
+- 色对齐: 温度墨黑(--ink=C.temp)、降水蓝(--info=C.rain)、阵雨青(--chart-showers=C.showers)、风速深青(--chart-wind=C.wind)、阵风浅蓝(--chart-gust=C.gust)、ramp 五档灰阶与云场面板同带(=BANDS)、虚线森林绿(--forest)、琥珀橙(--chart-in-cloud=C.inCloud)——截图逐一目视与 SVG 字面量同值。
+- 已知偏差（记录）: 行2 含「琥珀段 = 你在云中」与原型 README「你不进图例」边界不一致——基线 caption 原有该句，属保留非新增；「10→100%」按原型 V4「图例压缩」决策降级为「淡→浓」。
+Before: baseline/chengdu-24h-375px.png、baseline/litang-24h-375px.png（单行纯文字 caption）
+After: iter-7-chengdu-24h-375px.png、iter-7-litang-24h-375px.png（两行 swatch 图例，375px 恰 2 行）
+Decision: KEEP / Reason: 原型两行结构落地且 375px 恰 2 行收口；色值零发明（3 个既有 token 复用 + 5 个新 token 全部 = SVG 运行时字面量双写并登记 design-system.md）；7/8 门禁全绿 + 1 既有败例归因不重复；无新问题（L111 经典 caption 与其 `.chart-caption` 类未触）。

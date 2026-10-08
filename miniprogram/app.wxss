@@ -21,6 +21,15 @@ page {
   --golden: #D6A33C;      /* 黄金 / 晚霞窗口 */
   --blue-hour: #6C7C93;    /* 蓝调时刻 */
 
+  /* Weather V2 图例 swatch 色 —— 从 utils/meteogram-svg.js 的 C 色板与
+     utils/cloud-field-svg.js 的 BANDS 提升而来：SVG 拿不到 var() 只能双写。
+     改色必须同步两处字面量，否则图例色块与图上标记分叉（同 --golden 先例）。 */
+  --chart-showers: #2E8B8B;                     /* 阵雨柱（C.showers） */
+  --chart-wind: #3D8A7F;                        /* 风速曲线（C.wind） */
+  --chart-gust: #9FC4D8;                        /* 阵风曲线（C.gust） */
+  --chart-in-cloud: rgba(180, 118, 26, 0.65);   /* 琥珀段：此刻处于云中（C.inCloud） */
+  --chart-ramp: linear-gradient(90deg, #eeeeea, #d4d6d0, #b0b2ab, #84867f, #5a5c56); /* 云量五档灰阶（= BANDS，3 测试 pin） */
+
   --surface: #FFFFFF;
   --forest-soft: #ECF0EF;      /* forest 8% + white */
   --success-soft: #EBF0EE;     /* success 9% + white */

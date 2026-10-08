@@ -35,6 +35,28 @@
 .timeline-card { display: block; }
 .chart-caption { display: block; margin-top: 6px; }
 
+/* 统一 Meteogram 图例（对齐 HTML 原型 renderLegend 两行：行1 图形变量 / 行2 约定解释）。
+   swatch 颜色全部走 app.wxss 的 --chart-* token；token 值 = utils/meteogram-svg.js C 色板
+   与 utils/cloud-field-svg.js BANDS 的运行时字面量，改色必须三处同步（同 --golden 先例）。 */
+.chart-legend { display: block; margin-top: 6px; font-size: 10px; line-height: 16px; color: var(--muted); }
+.lg-row { display: flex; flex-wrap: wrap; align-items: center; }
+.lg-item { display: inline-flex; align-items: center; margin-right: 4px; white-space: nowrap; }
+.lg-title { font-weight: 600; letter-spacing: 0.5px; }
+.lg-dim { margin-left: 2px; opacity: 0.75; }
+.sw-ramp {
+  width: 34px; height: 9px; box-sizing: border-box; border: 1px solid var(--line);
+  background: var(--chart-ramp); margin-right: 2px;
+}
+.sw-line { width: 12px; height: 0; margin-right: 2px; border-top: 2px solid var(--line); }
+.sw-temp { border-top-color: var(--ink); }
+.sw-rain { border-top-color: var(--info); }
+.sw-showers { border-top-color: var(--chart-showers); }
+.sw-wind { border-top-color: var(--chart-wind); }
+.sw-gust { border-top-color: var(--chart-gust); }
+.sw-dash { border-top: 1.5px dashed var(--forest); }
+.sw-amber { border-top-color: var(--chart-in-cloud); }
+.sw-arrow { margin-right: 2px; font-weight: 600; }
+
 /* 小时浮条：点图上某小时后的数字与窗口归属（L1 事实 + L2 归属同条） */
 .hour-chip {
   margin-top: 8px; border-radius: 10px; background: var(--forest-soft); padding: 8px 12px;

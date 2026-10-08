@@ -131,7 +131,21 @@
           </block>
           <view wx:else class="ro-hint">{{unified.readout}}</view>
         </view>
-        <text class="chart-caption small muted">灰阶 = 云量等值带（浅→深 = 10→100%）· 虚线 = 此点海拔 · 琥珀段 = 你在云中 · 箭头 = 风向（吹向）</text>
+        <view class="chart-legend">
+          <view class="lg-row">
+            <view class="lg-item"><view class="sw-ramp"></view><text class="lg-title">云量</text><text class="lg-dim">淡→浓</text></view>
+            <view class="lg-item"><view class="sw-line sw-temp"></view><text>温度</text></view>
+            <view class="lg-item"><view class="sw-line sw-rain"></view><text>降水</text></view>
+            <view class="lg-item"><view class="sw-line sw-showers"></view><text>阵雨</text></view>
+            <view class="lg-item"><view class="sw-line sw-wind"></view><text>风速</text></view>
+            <view class="lg-item"><view class="sw-line sw-gust"></view><text>阵风</text></view>
+          </view>
+          <view class="lg-row">
+            <view class="lg-item"><view class="sw-line sw-dash"></view><text>虚线 = 此点海拔</text></view>
+            <view class="lg-item"><view class="sw-line sw-amber"></view><text>琥珀段 = 你在云中</text></view>
+            <view class="lg-item"><text class="sw-arrow">↗</text><text>箭头 = 风向（吹向）</text></view>
+          </view>
+        </view>
       </view>
 
       <!-- Weather V2 OI Phase 2：今天值得关注（additive）。

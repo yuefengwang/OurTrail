@@ -19,6 +19,9 @@
 | `--success-soft` / `--warning-soft` / `--danger-soft` / `--info-soft` | #EBF0EE / #F4F0E9 / #FAF1F1 / #F0F3F6 | 语义色浅底 |
 | `--golden` | #D6A33C | **天相**：黄金/晚霞窗口。由 `MARK_STYLE.golden` 提升而来，改色须同步 |
 | `--blue-hour` | #6C7C93 | **天相**：蓝调时刻。同上，须同步 `MARK_STYLE.blueHour` |
+| `--chart-showers` / `--chart-wind` / `--chart-gust` | #2E8B8B / #3D8A7F / #9FC4D8 | **Weather V2 图例**：阵雨柱/风速线/阵风线。由 `meteogram-svg.js` `C` 色板提升，改色须同步 |
+| `--chart-in-cloud` | rgba(180,118,26,0.65) | **Weather V2 图例**：琥珀段「你在云中」。同上（`C.inCloud`） |
+| `--chart-ramp` | linear-gradient(#eeeeea→#d4d6d0→#b0b2ab→#84867f→#5a5c56) | **Weather V2 图例**：云量五档灰阶带。= `cloud-field-svg.js` `BANDS`（3 测试 pin），改色须同步 |
 | `--on-forest-muted` / `--on-forest-line` | #D0D8D7 / #4E6C65 | 森林底上的次要文字/线 |
 | `--leaf-on-forest` | #2D533F | 森林底上的嫩叶底；亦为「星空」天相色 |
 | `--focus` | #346583 | 聚焦态描边（= `--info`） |
