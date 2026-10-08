@@ -117,6 +117,21 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
 
 ## 六、变更日志
 
+- 2026-10-08（**Phase 10A：BUG-C3 收口（服务端冲突分类）**，基线 `711b3c1`（Phase 9 收口点），专用 worktree `D:/OurTrail-p10a`，分支 `win/phase10a-c3`）：**需重新部署 trailApi —— 已部署**（CLI 从 p10a 树，21 files / 83.7 KB，`download`+递归 diff 证线上=本地、`timeout=20`、Active）。
+
+  **病灶**：`store.js:135` 的 `e instanceof ConflictError` 判定穿过云 SDK 边界后判 false ⇒ 冲突被误分类成 `STORAGE_UNAVAILABLE`；`api.js` 只对 `CONFLICT` 置 `needRefresh` ⇒ 败者不重读不刷新，而文案写"请保留输入后重试"，照做必再撞同一个陈旧 revision（数据无损，**自愈链路坏**）。Phase 9 定罪为 D2 待批，本 Phase 只做这一件。
+
+  **两类真云端成因（诊断部署取证，逐条分开修）**：
+  ① 我方 CAS 冲突（事务内 `meta.revision !== expectedRevision`）被 SDK 重抛时丢类型 ⇒ 改成**边界内侧哨兵** `let conflicted`，出边界后由我们自己抛 `ConflictError`（早退=零写入）。回归 C7：真并发两笔同 R 同时发（barrier + 类型擦除两个 TEST-HARNESS 开关），修复前 RED、修复后 CONFLICT + reload 恰好一次。
+  ② **平台自己中止事务**：一次性诊断部署（只给兜底分支的 message 附带 `name/errCode/errMsg/message/键名`，控制流与返回值零改动，取完签名立即 `git revert`）取回 **23/23 样本单一签名** `errCode=-501001` + `ResourceUnavailable.TransactionConflict`、键集只有 `errCode,errMsg`、失败点在事务内 `document.set` ⇒ 我方 CAS 当时是通过的，随后平台按自己的读写冲突规则**原子中止**（Δ=1 与败者零副作用佐证）。据此落地**窄映射**：`errCode === -501001` **且**命中该子类型才抛 `ConflictError`（3 行，文案同层①）；裸码单独作判据被明确禁止——会把未见过的真存储故障伪装成冲突。
+
+  **新增测试资产**：桩基座第三个 TEST-HARNESS 开关 `__setTxnConflictAbort()`（默认 OFF；读不排队、写排队 ⇒ 两笔并发都先过我方 CAS、后落者在 `set` 处被中止；错误对象按取证形状造，`__platformAbort` 用不可枚举属性以免被类型擦除改写；与 barrier 互斥）+ `e2e-client-cas-test.js` 的 **C8（12 条）**：C8-⓪ 有效性门（`aborts` 增量恰=1，证明确实走机制②、不是 C7 换名，也不许空断言）、①⑥⑦ 并发正确性与零残留、②③④⑤ 分类/reload/文案、⑧ 重试闭环、⑨⑩⑪ 选择性三对照（别的 `-501001` 子类型 / 只有裸码 / 只有文案没有码 都必须是 `STORAGE_UNAVAILABLE`）。映射落地前 **RED：3 红恰为 C8-②③⑤**，落地后 **54/0**。变异双向复核：删窄分支 ⇒ 恰 `②③⑤` 红且红因是 `STORAGE_UNAVAILABLE`；放宽成只看裸码 ⇒ 恰 `⑨⑩` 红而 `⑪` 仍绿（两个条件都受约束，断言不是摆设），两轮变异均逐字节还原。
+
+  **真云端复验**（同一支 K=6×14 探针）：完整一跑 `{OK:14, CONFLICT:70, STORAGE_UNAVAILABLE:0, OTHER:0}`、恰好一胜违例 0、Δ≠1 违例 0、沙盒 title 收尾恢复；另一跑 8 轮后 automator 响应超时（重绑自动化端口后跑完整），**跨跑合计 132 个败者请求里剩 1 条 `STORAGE_UNAVAILABLE`（0.8%，映射前 33%）且未归类**——诊断版已还原，普通版取不到原始对象 ⇒ 要么是真存储故障（分类本对），要么是 `-501001` 的另一个未观测子类型 ⇒ 定性需再一次诊断部署，另批。**因此 C3 判「已修，附条件」，不写 FIXED。** 知情风险：窄匹配绑平台字符串，平台改名则停止命中并退回今天的行为（方向安全、桩测不到）。
+
+  **未动的东西**：`index.js:122`（D1 → Phase 10B）、BUG-C2（P2 / Product Decision Required）、天气线 1 条常驻非确定性红（本轮复现同一句 `✗ applySelection 命中 IN_CLOUD 窗口`，打线上 Open-Meteo + 真实时钟，与 store 无关）。B 层两套真机套件仍 DEFERRED（跑它们不改变本判据且要占共享 IDE）；客户端恢复路径是 STUB PROOF，页面级真并发本轮没做 ⇒ 不写 UI PASS。
+  全量无头门禁：43 套 / **2750 断言**（`e2e-client-cas` 42→54），唯一 1 红即上述天气套件。取证与日志：`docs/testing/phase10a-evidence/`、报告 `docs/testing/phase10a-report-2026-10-08.md`、只读定位 `docs/testing/phase10a-c3-trace.md`。
+
 - 2026-10-07（**Phase 9：并发/一致性收口 + Release Gate 覆盖面扩张**，基线 `win/concurrency-consistency` @ `2058e41`，专用 worktree `D:/OurTrail-p9`，分支 `win/phase9-concurrency-closure`）：
 
   **BUG-C1（P1 Client CAS bypass）先建回归再修**：新 `tools/e2e-client-cas-test.js`（真 `pages/editor/editor.js` + 真 `utils/api.js`（不 monkey-patch）+ 真 `index.js/domain/store`，仅 DB 为内存桩）。修复前 **RED：passed=12 failed=19 exit=1** —— A 的陈旧保存 `ok:true`、revision 3→4、B 的 title 被覆盖回旧值、`ot_activities/ot_events/ot_notices/ot_receipts` 全被写、用户零提示。修复 **passed=35 failed=0 bugs=2 drift=0**，C2 正控制（无草稿重开必成功且 +1）排除"夹具坏造成假红"，C1-⑦ 用 14 集合 + ot_meta 全量逐字节证败者零副作用。原始日志两份留档 `docs/testing/phase9-evidence/`。

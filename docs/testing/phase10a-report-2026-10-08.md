@@ -116,6 +116,34 @@ C7 八条全绿，其中 **C7-⑧ 选择性**：让 `runTransaction` 自身失�
 全仓 `DIAG-P10A` 0 命中；线上已重新部署非诊断版（`DIAG=0`、`conflicted=4`、`timeout=20`）；沙盒 title 已恢复。
 正式映射（约 3 行窄分支 + 桩侧开关 + C7-⑧ 加严 + 部署后复跑 + 变异复核）**只写成方案，未实现**，等批准。
 
+## 5c. 映射已批准并落地 —— 真云端复跑：完整 14 轮 `STORAGE_UNAVAILABLE` = 0
+
+业主批准（选项 A：做完→我自己 CLI 部署→复跑→变异复核→交报告）。落地内容与诊断报告 §6 的方案**逐字一致**，未扩面：
+
+- `store.js` catch 里加 3 行窄分支（`errCode === -501001` **且** 命中 `ResourceUnavailable.TransactionConflict` 才抛 `ConflictError`，文案与层①同）；
+  `instanceof` 分支、`conflicted` 哨兵、CAS 算法、事务体、返回值、重试策略、客户端、`index.js:122` 全未动。
+- 桩基座新增 `__setTxnConflictAbort()`（默认 OFF）：读不排队、写排队 ⇒ 两笔并发都先过我方 CAS，
+  后落者在事务内 `document.set` 被平台原子中止（错误对象按取证形状造，`__platformAbort` 用不可枚举属性以免被类型擦除改写）。
+- 新回归 **C8（12 条）**，先 RED 后 GREEN：改动前 `3 红 = C8-②③⑤`（`c8-mechanism2-RED.txt`），改动后 `54/0`（`c8-mechanism2-GREEN.txt`）。
+  **C8-⓪ 是有效性门**：断言 `aborts` 增量恰=1，证明测的确实是机制②（不是 C7 换了个名字走哨兵，也不是空断言）。
+- **C8-⑨⑩⑪ 选择性三对照**（别的 `-501001` 子类型 / 只有裸码 / 只有文案没有码）都必须仍是 `STORAGE_UNAVAILABLE`。
+- 变异双向复核（`m7-*.txt`）：删掉窄分支 ⇒ 恰 `C8-②③⑤` 红、红因是 `STORAGE_UNAVAILABLE`；
+  把判据放宽成只看裸码 ⇒ 恰 `C8-⑨⑩` 红而 `⑪` 仍绿 ⇒ 证明"码 AND 子类型"两个条件都受断言约束，断言不是摆设。
+
+真云端复验（同一支 K=6×14 探针；来源先经 download+diff 证明线上就是 p10a 树、`timeout=20`、无 DIAG 残留）：
+
+```
+run3（完整 14 轮 / 84 请求）  {OK:14, CONFLICT:70, STORAGE_UNAVAILABLE:0, OTHER:0}
+                              恰好一胜违例=0   Δ≠1 违例=0   收尾恢复 OK
+跨跑合计（run1 完成的 8 轮 + run3 的 14 轮 = 22 轮 / 132 败者请求）
+                              STORAGE_UNAVAILABLE = 1（0.8%）   ← 映射前同类为 23/70（33%）
+```
+
+run1 在 8 轮后撞 automator 响应超时（run2 开局即超时、0 请求，作废）；重绑自动化端口 9427 后 run3 跑完整。
+**那 1 条残余没有归类**：诊断版已还原，普通版取不到原始错误对象 ⇒ 要么是一次真存储故障（分类本就对），
+要么是 `-501001` 的另一个子类型（诊断样本里从未出现过）⇒ 窄映射未覆盖。定性要再来一次诊断部署，需单独批准。
+详见 `phase10a-evidence/realcloud-post-mapping-K6.md`。
+
 ## 6. client recovery GREEN
 
 `api.js` **未改**，其 CONFLICT 分支本来就是对的；修复后真并发败者走的就是它：
@@ -183,30 +211,31 @@ IDE 只 `disconnect`，未 `quit`/`close`。
 
 ## 14. Phase 10A 是否可以 ACCEPT
 
-**NOT ACCEPT（收在有价值的中间态）**——第 5 项已跑完，结果不是 GREEN 而是"部分修复"：
+**CONDITIONAL ACCEPT。** 诊断→批准→落地→复验这条链已闭合（§5c），服务端分类这一类真云端实测归 0；
+"CONDITIONAL" 只挂三条如实登记的尾巴，没有一条是数据风险：
 
 | 项 | 状态 |
 |---|---|
 | §1 RED | STUB 与 REAL CLOUD 两栏都成立（真云端 K=6 命中 13/30） |
-| §2 根因 | 已定性到判据本身，机制二义性如实保留 |
-| §3 最小修复 | 达成，未越界 |
-| §4 stub GREEN | 达成（含选择性反证 C7-⑧） |
-| §5 real cloud GREEN | **未取得**：修复已确认在线，但败者仍 28% 是 `STORAGE_UNAVAILABLE` ⇒ 必要但不充分（机制②已证实），按停止条件收手 |
-| §6 client recovery GREEN | 达成（客户端未改，走原生 CONFLICT 分支） |
-| §7 变异 | M6 有效、还原逐字节一致 |
-| §8 C1 / §9 C2 | C1 仍 GREEN；C2 未修、行为未变（但触发概率上升，已登记） |
-| §10 全量 | 无头全绿。真机两套本轮**主动推迟**（结论已定为"停手上报"，跑它们不改变判定，且要占共享 DevTools）⇒ 记 DEFERRED，不写 PASS |
+| §2 根因 | 两类都定到一个**唯一且可测**的原因：① 哨兵已修（C7）② 平台事务中止已映射（C8） |
+| §3 最小修复 | 达成，两次都未越界（哨兵 3 行 / 映射 3 行） |
+| §4 stub GREEN | 达成（C7 + C8 + 选择性反证 C7-⑧、C8-⑨⑩⑪） |
+| §5 real cloud GREEN | **达成（完整 14 轮 STORAGE=0）**；跨跑合计仍有 1/132 未归类（§5c），不写"归零" |
+| §6 client recovery GREEN | 达成（客户端未改，走原生 CONFLICT 分支）——但页面级真并发未做，见下"通道边界" |
+| §7 变异 | M6/M7 双向有效、还原逐字节一致 |
+| §8 C1 / §9 C2 | C1 仍 GREEN；C2 未修（P2 / Product Decision Required，按指示） |
+| §10 全量 | 无头 43 套：`gate-full-post-mapping.txt` → 2750 断言，唯一 1 红是已登记的天气线非确定性（`outdoor-intelligence-ui`，本轮复现同一句 `✗ applySelection 命中 IN_CLOUD 窗口`，与 store 改动无关）。真机两套仍记 DEFERRED |
 
-⇒ **仍不能 ACCEPT——但诊断已把剩下那一步变成"只需你批准映射"。** 线上当前是**改善但未收口**：我方 CAS 判定这一类已正确映射成 CONFLICT，
-真云端还剩一类（平台主动中止事务）**已定位到单一稳定签名、映射方案待批**；所有读数的并发正确性完好
-（无双胜、无 lost update、Δ=1）⇒ 这是一个可以安全停住的 checkpoint（无数据风险，只是恢复路径仍会偶发失效）。
+**未收口的三条（不许读成 FIXED 的一部分）：**
 
-**诊断已完成并已还原**（见 §5b）：签名 `errCode=-501001` + 子类型 `ResourceUnavailable.TransactionConflict`，
-失败点在事务内 `document.set`，23/23 样本同一类。下一步只有一件事：**批准正式映射**——`store.js` 的 catch 里、
-`STORAGE_UNAVAILABLE` 兜底之前加一条窄分支（`errCode === -501001` **且**命中该子类型才抛 `ConflictError`，
-与层①同文案，约 3 行）。配套四件：① 桩侧新增可选"平台事务冲突中止"开关做 RED/GREEN 断言；
-② `C7-⑧` 加严——其它 SDK 错误必须仍是 `STORAGE_UNAVAILABLE`，证明映射窄而非宽；
-③ 部署后复跑同一支 K=6×14，期望 `STORAGE_UNAVAILABLE` 归 0、`OK` 仍 14/14、Δ 仍全 =1；④ 变异复核。
-知情要点：真机文案归平台所有；若平台改名，窄匹配会**停止命中并退回今天的行为**（不会误判成冲突，方向是安全的），
-但这一漂移**测试抓不到**（桩里那条字符串是我自己写的），只能靠再诊断或云函数日志发现。
-无论批不批，**BUG-C3 仍是 OPEN 状态，不是 FIXED**。
+1. **残余 1/132 未归类** ⇒ 要定性必须再做一次诊断部署（待批）。
+2. **平台文案漂移**：窄匹配绑在 `ResourceUnavailable.TransactionConflict` 这个平台字符串上；
+   若平台改名，映射**停止命中并退回今天的行为**（不会误判成冲突，失效方向安全），
+   而这一漂移**桩测不到**（桩里那条字符串是我写的），只能靠再诊断或云函数日志发现 ⇒ 属知情风险。
+3. **通道边界**：客户端恢复路径（reload 恰好一次 / 文案）是 STUB PROOF；页面级真并发（两个真 editor 实例同时点保存）
+   本轮没做 ⇒ **不写 UI PASS**。
+
+**仍在本 Phase 之外的既有登记**：D1（`index.js:122` 缺省成 `before.revision` 的支路）留 10B；
+BUG-C2 产品决策；天气线 1 条常驻红；23 个命令零真云端覆盖。
+⇒ **BUG-C3 建议从 OPEN 改判为「已修，附条件」**：两类冲突的服务端分类都有真云端读数支撑，
+判 FIXED 的最后一格留给"那 1/132 的定性"或"页面级真并发"，二者都要另批资源。

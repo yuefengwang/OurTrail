@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — OurTrail
 
-**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-07 Phase 9（**43 门禁套件 / 2724 断言 / smoke 173 / 17 页**）· **Base commit:** `1acd55e`
+**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Base commit:** `1acd55e`
 
 ---
 
@@ -138,7 +138,8 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Gated suites — 43（42 个 tools/*-test.js + smoke-test.js）, all currently passing（2026-10-07 Phase 9 全量复跑，共 2724 断言）.
+# Gated suites — 43（42 个 tools/*-test.js + smoke-test.js）, all currently passing（2026-10-08 Phase 10A 全量复跑，共 2750 断言；
+# 唯一 1 红 = tools/outdoor-intelligence-ui-test.js 的常驻非确定性用例，打线上 Open-Meteo + 真实时钟，已归档归因、非本轮改动引入）.
 # ⚠ 断言总数是**快照**，不是恒定值：
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
 #   那些改动会增删用例（例：smoke 104→106→167、workspace 104→111 均非本轮 P4 改动）。
@@ -171,7 +172,7 @@ node tools/e2e-fault-probe-test.js             # 结果模型变异自证（34 �
 node tools/e2e-permission-test.js              # A 层权限矩阵：角色×命令×阶段×归属（96 断言，8 actor 全走真实信封）
 node tools/e2e-domain-negative-test.js         # A 层 Domain 负矩阵：17 种错误码的确定性拒绝 + 败者零副作用快照对比（83 断言）
 node tools/e2e-concurrency-test.js             # A 层并发基座（Phase 8）：barrier 对照/同 R 双写/陈旧写/幂等（37 断言，bugs=2 常驻红测、4 INCONCLUSIVE，exit 0 可进门禁）
-node tools/e2e-client-cas-test.js              # BUG-C1 回归（Phase 9）：真 editor.js + 真 api.js → 真 trailApi（35 断言，bugs=2：BUG-C2 草稿优先覆盖 / BUG-C3 真云端冲突分类）
+node tools/e2e-client-cas-test.js              # BUG-C1/C3 回归（Phase 9/10A）：真 editor.js + 真 api.js → 真 trailApi（54 断言，bugs=1：BUG-C2 草稿优先覆盖；C7=层①冲突不得依赖异常类型跨边界，C8=平台事务中止的窄映射，含 C8-⓪ 有效性门与 C8-⑨⑩⑪ 选择性三对照）
 node tools/e2e-interleave-test.js              # §13 多步骤并发交错 C1~C6（67 断言，3 INCONCLUSIVE；两层 CAS + baseRevision 内层 + 阶段门次序）
 node tools/e2e-panel-sync-test.js              # §14 工作台/面板 revision 同步 P1~P6（40 断言；含 api.js 吞掉 reload 的后果判定）
 node tools/e2e-release-gap-test.js             # Release Gate 缺口 G1~G6（51 断言；CONSENT_REQUIRED / GROUP_SCOPE / incident / swap / vehicle.remove / companion.remove）
