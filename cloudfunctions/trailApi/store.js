@@ -135,7 +135,18 @@ async function persistState(db, before, after, expectedRevision, nowIso) {
     if (e instanceof ConflictError) throw e
     // 这条分支现在只兜真正的存储侧故障（SDK 自己的错误、超时、连接问题）——
     // CAS 冲突已经由 conflicted 哨兵接管，不再依赖类型跨边界存活。
-    throw Object.assign(new Error('这次修改没有保存，原安排未改变。请保留输入后重试。'), { code: 'STORAGE_UNAVAILABLE' })
+    // ── [DIAG-P10A 一次性诊断，取到签名后立即 git revert 还原] ──────────────────
+    // 只做一件事：把原始错误的身份字段拼进 message 带回来。
+    // 控制流 / code / 异常类型 / 事务与 CAS 逻辑 / 返回值 全部不变；不新增任何映射。
+    // 只取白名单字段与长度上限，不 dump 对象值（避免把文档内容带进文案）。
+    const sig = 'name=' + ((e && e.name) || '?') +
+      '|code=' + (e && typeof e === 'object' && e.code !== undefined ? String(e.code)
+        : e && typeof e === 'object' && e.errCode !== undefined ? String(e.errCode)
+          : e && typeof e === 'object' && e.errorCode !== undefined ? String(e.errorCode) : '?') +
+      '|errMsg=' + (e && typeof e.errMsg === 'string' ? e.errMsg.replace(/\s+/g, ' ').slice(0, 80) : '?') +
+      '|msg=' + String((e && e.message) || e).replace(/\s+/g, ' ').slice(0, 120) +
+      '|keys=' + (e && typeof e === 'object' ? Object.keys(e).slice(0, 8).join(',') : typeof e)
+    throw Object.assign(new Error('这次修改没有保存，原安排未改变。请保留输入后重试。 [DIAG ' + sig + ']'), { code: 'STORAGE_UNAVAILABLE' })
   }
   if (conflicted) throw new ConflictError('安排已更新，本次修改没有保存。请核对最新状态后重新提交。')
   return { revision: expectedRevision + 1 }
