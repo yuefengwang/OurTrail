@@ -3,8 +3,9 @@
 
 const {
   authRequired, canExecute, canReadNotice, canReadSensitive, hasProxyConsent, isCurrentSignup,
-  isOwnSignup, isOwner, isSelfSignup, needsOutboundBoarding, permissionDenied, requireActivity, requireSignups,
-  staffCan, vehicleCan, workDataAvailable,
+  isOwnSignup, isOwner, isSelfSignup, needsOutboundBoarding, needsReturnBoarding, needsSeatAssignment,
+  needsVehicleService, passengerAssignment, permissionDenied, requireActivity, requireSignups,
+  returnBoardingApplies, staffCan, vehicleCan, workDataAvailable, isVehicleTraveller,
 } = require('./permissions')
 
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key)
@@ -100,10 +101,9 @@ function noticeView(notice) {
     deliveries: notice.deliveries.map(d => ({ id: d.id, channel: d.channel, status: d.status, at: d.at, by: d.by, detail: d.detail })),
   }
 }
-function assignmentFor(state, signup) {
-  return state.assignments.find(a => a.activityId === signup.activityId && a.signupId === signup.id
-    && state.vehicles.some(v => v.activityId === signup.activityId && v.id === a.vehicleId))
-}
+// 座位安排由域内唯一出处给出（permissions.passengerAssignment），不再在本文件另写一遍查找；
+// participantDriverVehicle 只是取出司机所驾驶的那辆车供显示用。
+const assignmentFor = passengerAssignment
 function participantDriverVehicle(state, signup) {
   return state.vehicles.find(v => v.activityId === signup.activityId && v.drivers.some(d => d.kind === 'participant' && d.signupId === signup.id))
 }
@@ -112,19 +112,31 @@ function rowView(state, signup) {
   const assignment = assignmentFor(state, signup)
   const vehicle = (assignment && state.vehicles.find(v => v.id === assignment.vehicleId && v.activityId === signup.activityId)) || participantDriverVehicle(state, signup)
   const activity = state.activities.find(a => a.id === signup.activityId)
+  const byVehicle = isVehicleTraveller(signup)
+  const pickupPoint = byVehicle && activity
+    ? activity.pickupPoints.find(p => p.id === signup.trip.pickupPointId) : null
   return {
     signupId: signup.id, groupId: signup.groupId, name: signup.participant.name, status: signup.status,
     avatar: signup.participant.avatar || '',
-    pickup: signup.trip.mode === 'self' ? '自行前往'
-      : (activity ? (activity.pickupPoints.find(p => signup.trip.mode === 'shared' && p.id === signup.trip.pickupPointId) || {}).name || '' : ''),
+    // 出行方式是结构化语义字段：detailState 与所有下游面板只读它，不再从 pickup 文案反推。
+    tripMode: signup.trip.mode,
+    pickupPointId: byVehicle ? signup.trip.pickupPointId : null,
+    // 需要乘车的人即便上车点已失效也仍然是「需要乘车」——绝不能再显示成自行前往。
+    pickup: !byVehicle ? '自行前往' : (pickupPoint ? pickupPoint.name : '上车点信息缺失'),
     vehicle: vehicle ? vehicle.label : '', seat: assignment ? assignment.seatLabel : null,
+    // 「他此刻占着某个乘客座位吗」是域内查出来的事实，不是靠 vehicle/seat 是否非空推断的：
+    // 分车面板用它筛掉不能当司机候选的人，UI 不再拿显示字段猜业务状态。
+    hasPassengerAssignment: !!assignment,
     checkedIn: !!(attendance && attendance.checkIn),
     outboundBoarded: !!(attendance && attendance.boardingByLeg.outbound),
     returnBoarded: !!(attendance && attendance.boardingByLeg.return),
-    // 「核实已随队出发」按 field.js 的同一条规则给出可用性：拼车乘客没有去程上车事实时，
-    // 服务端必拒 —— 与其给一个点下去只换来红字的按钮，不如在投影里说清楚缺哪一步。
+    // 三个「乘车义务」标志全部来自 permissions 的唯一出处；UI 据此决定要不要出现分车/上车入口。
+    needsSeatAssignment: needsSeatAssignment(state, signup),
     needsOutboundBoarding: needsOutboundBoarding(state, signup),
-    returnPlan: attendance ? attendance.returnPlan.kind : 'assigned',
+    needsReturnBoarding: needsReturnBoarding(state, signup),
+    // self 的返程不占用活动车辆：老数据里他们仍带着改造前写入的 'assigned'，按出行方式归一，
+    // 免得界面宣称「自行前往的人原车返程」。新写入由 signup.js 直接落 'own'。
+    returnPlan: !byVehicle ? 'own' : (attendance ? attendance.returnPlan.kind : 'assigned'),
     departure: attendance && attendance.departure ? attendance.departure.kind : 'unknown',
     home: !!(attendance && attendance.home),
   }
@@ -173,7 +185,7 @@ function selectSignupForm(state, actor, activityId, signupId, purpose, now) {
         personRef: signup.personRef.kind === 'user' ? { kind: 'user', userId: signup.personRef.userId }
           : { kind: 'companion', ownerId: signup.personRef.ownerId, companionId: signup.personRef.companionId },
         participant: personView(signup.participant),
-        trip: signup.trip.mode === 'self' ? { mode: 'self' } : { mode: 'shared', pickupPointId: signup.trip.pickupPointId },
+        trip: isVehicleTraveller(signup) ? { mode: 'shared', pickupPointId: signup.trip.pickupPointId } : { mode: 'self' },
         consent: { dataUse: signup.consent.dataUse, proxyAuthority: signup.consent.proxyAuthority, proxyHome: signup.consent.proxyHome },
       },
     },
@@ -213,16 +225,22 @@ function csvCell(value) {
 function selectExport(state, actor, activityId, signupIds, mode, purpose, now) {
   const permission = canExecute(state, actor, { type: 'export.record', activityId, signupIds, mode, purpose }, now)
   if (!permission.ok) return permission
-  const headers = ['姓名', '报名状态', '上车点', '车辆', '座位', '签到', '去程上车', '返程上车', '到家']
+  const tripLabels = { self: '自行前往', shared: '搭乘车辆' }
+  const headers = ['姓名', '报名状态', '出行方式', '上车点', '车辆', '座位', '签到', '去程上车', '返程上车', '到家']
   if (mode === 'sensitive') headers.push('紧急联系人', '紧急联系电话', '健康备注')
   const statusLabels = { pending: '待审核', confirmed: '已确认', waitlisted: '候补', rejected: '已拒绝', cancelled: '已取消', removed: '已移除' }
   const cells = [headers]
   for (const id of signupIds) {
     const signup = state.signups.find(s => s.id === id)
     const row = rowView(state, signup)
-    const values = [row.name, statusLabels[row.status], row.pickup, row.vehicle, row.seat || '',
-      row.checkedIn ? '已签到' : '未签到', row.outboundBoarded ? '已上车' : '未上车',
-      row.returnBoarded ? '已上车' : '未上车', row.home ? '已到家' : '未到家']
+    // 自行前往的人没有车辆/座位/上车这些事实，导出里写「未上车」等于凭空造出一个未完成项。
+    const byVehicle = row.tripMode === 'shared'
+    const values = [row.name, statusLabels[row.status], tripLabels[row.tripMode] || row.tripMode, row.pickup,
+      byVehicle ? row.vehicle : '不适用', byVehicle ? (row.seat || '') : '不适用',
+      row.checkedIn ? '已签到' : '未签到',
+      byVehicle ? (row.outboundBoarded ? '已上车' : '未上车') : '不适用',
+      byVehicle ? (row.returnBoarded ? '已上车' : '未上车') : '不适用',
+      row.home ? '已到家' : '未到家']
     if (mode === 'sensitive') {
       const sensitive = selectSensitive(state, actor, activityId, id, purpose, now)
       if (!sensitive.ok) return sensitive
@@ -429,8 +447,12 @@ function selectView(state, actor, request, now) {
       confirmed, pending, occupied: confirmed + pending,
       waitlisted: all.filter(s => s.status === 'waitlisted').length,
       remaining: activity.capacity - confirmed - pending,
-      unassigned: visible.filter(s => s.status === 'confirmed' && s.trip.mode === 'shared'
-        && !assignmentFor(state, s) && !participantDriverVehicle(state, s)).length,
+      // 出行方式分桶：Leader 只需要处理「需要乘车且尚未安排」这一格。
+      // self 参与者不进 unassigned（不是缺事项），也不需要一个都没有的「未分车」计数。
+      selfTravel: visible.filter(s => s.status === 'confirmed' && !isVehicleTraveller(s)).length,
+      vehicleTravel: visible.filter(s => s.status === 'confirmed' && isVehicleTraveller(s)).length,
+      assigned: visible.filter(s => s.status === 'confirmed' && isVehicleTraveller(s) && !needsSeatAssignment(state, s)).length,
+      unassigned: visible.filter(s => s.status === 'confirmed' && needsSeatAssignment(state, s)).length,
       unchecked: rows.filter(r => r.status === 'confirmed' && !r.checkedIn).length,
       pendingHome: rows.filter(r => r.status === 'confirmed' && r.departure === 'joined' && !r.home).length,
       openIncidents: incidents.filter(i => !i.resolved && i.subjectIds.some(id => visible.some(s => s.id === id))).length,
@@ -444,6 +466,10 @@ function selectView(state, actor, request, now) {
           signupId: r.signupId, groupId: r.groupId, name: r.name, status: r.status, pickup: r.pickup,
           vehicle: r.vehicle, seat: r.seat, checkedIn: r.checkedIn, outboundBoarded: r.outboundBoarded,
           returnBoarded: r.returnBoarded, returnPlan: r.returnPlan, departure: r.departure, home: r.home,
+          // 车长页此前自己用 returnPlan/seat 推导「谁还需要清点」；改为直接消费域内标志。
+          // returnBoardingApplies = 返程清点是否存在（含已上车的人）；needsReturnBoarding = 还欠着没清点。
+          needsOutboundBoarding: r.needsOutboundBoarding, needsReturnBoarding: r.needsReturnBoarding,
+          returnBoardingApplies: returnBoardingApplies(state, s),
           avatar: r.avatar, phone: s.participant.phone,
         }
       }),
@@ -497,7 +523,11 @@ function permittedActions(state, actor, view, visible, now) {
     if (phase === 'gathering' || lateArrival) {
       add({ type: 'attendance.checkin', activityId, signupId: signup.id, checkIn: { method: 'manual', evidence: { at: now, by: actor.userId, note: '' } } })
       add({ type: 'attendance.departure', activityId, signupId: signup.id, outcome: { kind: 'joined', evidence: { at: now, by: actor.userId, note: '' } } })
-      add({ type: 'attendance.board', activityId, signupId: signup.id, leg: 'outbound', boarded: true, note: '' })
+      // 去程上车只对「已排到车的拼车乘客」成立：自行前往的人与兼任参与者的司机没有任何上车事实可记，
+      // field.js 必拒 —— 不广播，UI 就不会有一个点下去只换来红字的按钮。
+      if (needsVehicleService(state, signup) && assignmentFor(state, signup)) {
+        add({ type: 'attendance.board', activityId, signupId: signup.id, leg: 'outbound', boarded: true, note: '' })
+      }
     }
     if (phase === 'active' && attendance.departure && attendance.departure.kind === 'joined') {
       add({ type: 'attendance.node', activityId, signupId: signup.id, pointId: view.activity.routeSnapshot.points.length ? view.activity.routeSnapshot.points[0].id : '', note: '' })
@@ -505,8 +535,9 @@ function permittedActions(state, actor, view, visible, now) {
     }
     if (phase === 'gathering' || phase === 'active' || phase === 'closing') add({ type: 'incident.report', activityId, signupIds: [signup.id], kind: 'other', description: '' })
     if (phase === 'active' || phase === 'closing') {
-      add({ type: 'attendance.returnPlan', activityId, signupId: signup.id, plan: 'assigned', note: '' })
-      if (attendance.departure && attendance.departure.kind === 'joined' && attendance.returnPlan.kind === 'assigned') add({ type: 'attendance.board', activityId, signupId: signup.id, leg: 'return', boarded: true, note: '' })
+      // 返程安排是乘车的子事实：自行前往的人返程不占用活动车辆。
+      if (isVehicleTraveller(signup)) add({ type: 'attendance.returnPlan', activityId, signupId: signup.id, plan: 'assigned', note: '' })
+      if (attendance.departure && attendance.departure.kind === 'joined' && returnBoardingApplies(state, signup)) add({ type: 'attendance.board', activityId, signupId: signup.id, leg: 'return', boarded: true, note: '' })
       if (phase === 'closing' && attendance.departure && attendance.departure.kind === 'joined' && !attendance.home) add({ type: 'attendance.home', activityId, signupId: signup.id, note: '' })
     }
   }
@@ -534,7 +565,9 @@ function getDetailState(view, now) {
     if (activity.phase === 'closing') return 'closing'
     if (activity.phase === 'active') return 'active'
     if (activity.phase === 'gathering') return signup.checkedIn ? 'checked' : 'gathering'
-    return signup.pickup === '自行前往' || !!signup.vehicle ? 'ready' : 'confirmed'
+    // 「就绪」= 没有待办的乘车安排。此前这一行拿 pickup === '自行前往' 判断，
+    // 等于让中文文案给状态机投票；现在读域内算好的义务标志。
+    return signup.needsSeatAssignment ? 'confirmed' : 'ready'
   }
   return activity.phase === 'published' && activity.acceptingSignups
     && (!activity.deadlineAt || Date.parse(now) < Date.parse(activity.deadlineAt)) ? 'new' : 'closed'

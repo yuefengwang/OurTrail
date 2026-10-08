@@ -25,6 +25,10 @@ Page({
     candidates: [],
     participants: [],
     keepTogether: true,
+    // 出行方式选项文案只在 utils/format.js 定义一次，这里原样搬进 data 供 WXML 渲染
+    tripModes: [],
+    pickupOptions: [],
+    needsVehicle: false,
     errors: {},
     failure: '',
     capacityAsk: false,
@@ -32,6 +36,7 @@ Page({
     expandedParts: {},
     // 编辑模式
     editForm: null,
+    editPickupIndex: -1,
     editConsentLocked: false,
   },
 
@@ -99,8 +104,11 @@ Page({
         personRef: { kind: 'companion', ownerId: profile.id, companionId: c.id },
         checked: false,
       }))
-      this.tripValues = ['self'].concat(v.activity.pickupPoints.map(p => p.id))
-      const tripOptions = ['自行前往'].concat(v.activity.pickupPoints.map(p => p.name))
+      // 出行方式与上车点是两个独立维度：mode 决定「要不要乘车」，上车点只在 shared 时才有意义。
+      // 此前两者被压成同一个 picker 下标（index 0 = 自行前往），任何非 shared 都会被渲染成
+      // 「自行前往」，把需要乘车的人显示成不需要车的人。
+      this.pickupValues = v.activity.pickupPoints.map(p => p.id)
+      const pickupOptions = v.activity.pickupPoints.map(p => p.name)
       const saved = draft.getDraft(this.activityId, 'signup')
       let participants = [this.makeParticipant(own)]
       let keepTogether = true
@@ -125,7 +133,9 @@ Page({
         participants: withTrip,
         expandedParts,
         keepTogether,
-        tripOptions,
+        pickupOptions,
+        tripModes: F.TRIP_MODE_OPTIONS,
+        needsVehicle: withTrip.some(p => p.trip && p.trip.mode === 'shared'),
       })
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
   },
@@ -148,8 +158,14 @@ Page({
     const emergency = person.emergency || {}
     return Object.assign({}, p, {
       complete: !!(person.name && person.phone && emergency.name && emergency.phone),
-      tripIndex: this.tripIndexOf(p),
+      pickupIndex: this.pickupIndexOf(p),
+      tripSummary: this.tripLabel(p),
     })
+  },
+
+  /** 出行方式变化后要重算的派生显示键：同车约束只对「需要乘车」的人生成意义。 */
+  syncTripScope(participants) {
+    this.setData({ needsVehicle: participants.some(p => p.trip && p.trip.mode === 'shared') })
   },
 
   // 已在「我的」登记过的资料直接展示：草稿参与人只补空字段（姓名/电话/紧急联系/备注），
@@ -246,21 +262,39 @@ Page({
     this.clearResolvedErrors()
   },
 
-  onPartTrip(e) {
-    const index = e.currentTarget.dataset.index
-    const value = this.tripValues[Number(e.detail.value)] || 'self'
+  onPartMode(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    const mode = e.detail.value === 'shared' ? 'shared' : 'self'
     const participants = this.data.participants.slice()
-    participants[index] = Object.assign({}, participants[index], {
-      trip: value === 'self' ? { mode: 'self' } : { mode: 'shared', pickupPointId: value },
-    })
+    const p = participants[index]
+    let trip
+    if (mode === 'self') {
+      trip = { mode: 'self' }
+    } else {
+      const keep = p.trip && p.trip.mode === 'shared' ? p.trip.pickupPointId : null
+      trip = { mode: 'shared', pickupPointId: keep || (this.pickupValues || [])[0] || '' }
+    }
+    participants[index] = this.decorateParticipant(Object.assign({}, p, { trip }))
+    this.updateDraft({ participants })
+    this.syncTripScope(participants)
+    this.clearResolvedErrors()
+  },
+
+  onPartPickup(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    const p = this.data.participants[index]
+    if (!p || !p.trip || p.trip.mode !== 'shared') return
+    const pickupPointId = (this.pickupValues || [])[Number(e.detail.value)] || ''
+    const participants = this.data.participants.slice()
+    participants[index] = this.decorateParticipant(Object.assign({}, p, { trip: { mode: 'shared', pickupPointId } }))
     this.updateDraft({ participants })
     this.clearResolvedErrors()
   },
 
-  tripIndexOf(p) {
-    if (p.trip.mode !== 'shared') return 0
-    const idx = (this.tripValues || []).indexOf(p.trip.pickupPointId)
-    return idx > 0 ? idx : 0
+  /** shared 就是 shared：上车点被改名/删除时返回 -1（picker 显示未选），绝不返回 0 冒充「自行前往」。 */
+  pickupIndexOf(p) {
+    if (!p.trip || p.trip.mode !== 'shared') return -1
+    return (this.pickupValues || []).indexOf(p.trip.pickupPointId)
   },
 
   onPartConsent(e) {
@@ -275,12 +309,17 @@ Page({
 
   onKeepTogether(e) { this.updateDraft({ keepTogether: toggleOn(e.detail.value) }) },
 
+  /**
+   * 参与者一行的出行摘要：先给出行方式，再给上车点。
+   * shared 的人即使上车点被改名/删除也仍然是「搭乘车辆」，只是信息缺失——
+   * 绝不允许把需要乘车的人显示成自行前往（那会让人以为领队还要给他留车是多余的）。
+   */
   tripLabel(p) {
-    if (!this.view) return ''
-    const a = this.view.activity
-    if (p.trip.mode === 'self') return '自行前往'
-    const point = a.pickupPoints.find(x => x.id === p.trip.pickupPointId)
-    return point ? point.name : '请选择上车点'
+    const trip = (p && p.trip) || {}
+    if (trip.mode !== 'shared') return F.TRIP_MODE_LABELS.self
+    const point = this.view && this.view.activity
+      ? this.view.activity.pickupPoints.find(x => x.id === trip.pickupPointId) : null
+    return F.TRIP_MODE_LABELS.shared + ' · ' + (point ? point.name : F.PICKUP_MISSING)
   },
 
   validate() {
@@ -402,8 +441,12 @@ Page({
   },
 
   loadForm(purpose) {
-    // 先刷新 revision（编辑模式可能没有读过活动视图）；顺手存档案快照供提交后回写
-    api.read({ kind: 'profile' }).then(res => {
+    // 先刷新 revision（编辑模式不走 reload()）；顺手存档案快照供提交后回写。
+    // 出行方式控件需要本场的上车点清单，所以这里把活动视图一并读出来——与档案读并发，不多一次往返。
+    Promise.all([
+      api.read({ kind: 'profile' }),
+      api.read({ kind: 'activity', activityId: this.activityId, perspective: 'participant' }),
+    ]).then(([res, actRes]) => {
       this.revision = res.revision
       this.now = res.now
       if (res.view.kind === 'profile') {
@@ -412,6 +455,7 @@ Page({
         this.profilePerson = JSON.parse(JSON.stringify(res.view.profile.person))
         this.profileCompanions = JSON.parse(JSON.stringify(res.view.profile.companions))
       }
+      if (actRes.view.kind === 'activity') this.view = actRes.view
       return api.readForm(this.activityId, this.signupId, purpose)
     }).then(result => {
       if (!result.ok) {
@@ -420,6 +464,8 @@ Page({
       }
       this.approvedPurpose = purpose
       const input = result.value.input
+      const points = this.view ? this.view.activity.pickupPoints : []
+      this.pickupValues = points.map(p => p.id)
       this.setData({
         loading: false,
         purposeGate: false,
@@ -432,6 +478,9 @@ Page({
           trip: input.trip,
           consent: input.consent,
         },
+        pickupOptions: points.map(p => p.name),
+        tripModes: F.TRIP_MODE_OPTIONS,
+        editPickupIndex: this.pickupIndexOf({ trip: input.trip }),
         editConsentLocked: true,
         errors: {},
         failure: '',
@@ -452,11 +501,24 @@ Page({
     this.setData({ editForm: form })
   },
 
-  onEditTrip(e) {
-    const value = e.detail.value
+  onEditMode(e) {
+    const mode = e.detail.value === 'shared' ? 'shared' : 'self'
     const form = JSON.parse(JSON.stringify(this.data.editForm))
-    form.trip = value === 'self' ? { mode: 'self' } : { mode: 'shared', pickupPointId: value }
-    this.setData({ editForm: form })
+    if (mode === 'self') {
+      form.trip = { mode: 'self' }
+    } else {
+      const keep = form.trip && form.trip.mode === 'shared'
+        ? form.trip.pickupPointId : (this.pickupValues || [])[0] || ''
+      form.trip = { mode: 'shared', pickupPointId: keep }
+    }
+    this.setData({ editForm: form, editPickupIndex: this.pickupIndexOf(form) })
+  },
+
+  onEditPickup(e) {
+    const form = JSON.parse(JSON.stringify(this.data.editForm))
+    if (!form.trip || form.trip.mode !== 'shared') return
+    form.trip = { mode: 'shared', pickupPointId: (this.pickupValues || [])[Number(e.detail.value)] || '' }
+    this.setData({ editForm: form, editPickupIndex: this.pickupIndexOf(form) })
   },
 
   onEditSubmit() {

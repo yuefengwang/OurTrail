@@ -76,11 +76,25 @@ const STATUS_LABELS = { pending: '待审核', confirmed: '已确认', waitlisted
 const DEPARTURE_LABELS = { unknown: '出发待核实', joined: '已随队', not_departed: '未出发', coordinating: '协调中' }
 const INCIDENT_LABELS = { late: '迟到', withdrawal: '提前退出同行', injury: '伤病', other: '其他需要协助' }
 const UNASSIGNED_LABELS = { no_vehicle: '尚无可用车辆', pickup_mismatch: '上车点不匹配', group_too_large: '整组人数超过可用容量', no_seat: '可用座位不足' }
+/* ---------- 出行方式（参与者级语义） ----------
+ * 键是域内的 Signup.trip.mode，不是活动级开关：同一场活动可以同时有 self 与 shared 的参与者。
+ * 文案只在这里定义一次；页面/组件一律取这里的标签，既不再各写一份，
+ * 也严禁反过来用文案判断业务状态（判断请读服务端投影的 tripMode / needsSeatAssignment）。 */
+const TRIP_MODE_LABELS = { self: '自行前往', shared: '搭乘车辆' }
+const TRIP_MODE_HINTS = { self: '我会自己到集合点', shared: '需要活动安排车辆' }
+const TRIP_MODE_OPTIONS = [
+  { value: 'self', label: TRIP_MODE_LABELS.self, hint: TRIP_MODE_HINTS.self },
+  { value: 'shared', label: TRIP_MODE_LABELS.shared, hint: TRIP_MODE_HINTS.shared },
+]
+// 返程安排（Attendance.returnPlan.kind）。own 由出行方式派生，领队不能代为填写。
+const RETURN_PLAN_LABELS = { assigned: '原车返程', independent: '另行返程', own: '自行往返' }
+// shared 参与者的上车点被改名/删除时给的话，不是「自行前往」——出行方式没有变。
+const PICKUP_MISSING = '上车点信息缺失'
 const DETAIL_STATE_TITLES = {
   new: ['让我们，一起出发', '阅读路线与风险提示，准备好后提交报名。'],
   pending: ['报名已收到', '组织者正在确认安排，审核结果会更新在这里。'],
-  confirmed: ['已确认，等待分车', '你的名额已确认，车辆与座位安排随后更新。'],
-  ready: ['行前安排已就绪', '检查集合时间、上车点与装备，出发当天见。'],
+  confirmed: ['已确认，等待车辆安排', '你的名额已确认；需要乘车的人会随名单一起排定车辆与座位。'],
+  ready: ['行前安排已就绪', '检查集合时间、出行方式与装备，出发当天见。'],
   gathering: ['到集合点了吗？', '到达后主动签到，让领队知道你已到场。'],
   checked: ['签到完成，等你同行', '签到不等于已上车，请留意现场清点与出发安排。'],
   active: ['山野之间，彼此照应', '按节点确认进度；需要帮助或提前退出，请主动报备。'],
@@ -149,5 +163,6 @@ function minutesLabel(mins) {
 module.exports = {
   pad, WEEK, cnParts, dateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
   minutesLabel, relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
-  UNASSIGNED_LABELS, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase, windDirText,
+  UNASSIGNED_LABELS, TRIP_MODE_LABELS, TRIP_MODE_HINTS, TRIP_MODE_OPTIONS, RETURN_PLAN_LABELS,
+  PICKUP_MISSING, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase, windDirText,
 }

@@ -220,12 +220,18 @@ function activityFixture() {
   }
 }
 function rowFixture(id, name, over) {
-  return Object.assign({
+  const r = Object.assign({
     signupId: id, groupId: 'g1', name, status: 'confirmed', avatar: '',
+    tripMode: 'shared',
     pickup: '东门集合点', vehicle: '1号车', seat: '01',
     checkedIn: false, outboundBoarded: false, returnBoarded: false,
     returnPlan: 'assigned', departure: 'unknown', home: false,
   }, over || {})
+  // 按服务端 rowView 的口径把派生标志补齐，避免 fixture 与投影两套说法各写各的
+  r.hasPassengerAssignment = r.tripMode === 'shared' && !!r.vehicle
+  r.needsSeatAssignment = r.tripMode === 'shared' && !r.hasPassengerAssignment
+  r.returnBoardingApplies = r.tripMode === 'shared' && r.returnPlan === 'assigned'
+  return r
 }
 // mutate(v) 直接改视图；未指定时默认「已确认参与者的 published 活动详情」
 function viewFixture(mutate) {
@@ -277,14 +283,14 @@ async function scenario1() {
       JSON.stringify({ t: env.page.data.title, b: env.page.data.badgeText, s: env.page.data.startAtLabel }))
     check('状态区块：ready → 「行前安排已就绪」+ 计数行',
       env.page.data.stateKey === 'ready' && env.page.data.stateTitle === '行前安排已就绪'
-      && env.page.data.stateDetail === '检查集合时间、上车点与装备，出发当天见。'
+      && env.page.data.stateDetail === '检查集合时间、出行方式与装备，出发当天见。'
       && env.page.data.stateTone === 'success'
       && env.page.data.countersLine === '待审核 0 人 · 候补 0 人 · 剩余 18 个名额',
       JSON.stringify({ k: env.page.data.stateKey, c: env.page.data.countersLine }))
-    check('我与同行人：两行装配（主报名 isPrimary、副标题含车辆座号；无车行标「车辆待安排」）',
+    check('我与同行人：两行装配（主报名 isPrimary、副标题以出行方式打头；无车行标「车辆待安排」）',
       env.page.data.rows.length === 2 && env.page.data.rows[0].isPrimary === true
-      && env.page.data.rows[0].statusLabel === '已确认' && env.page.data.rows[0].subtitle === '东门集合点 · 1号车 · 01 座'
-      && env.page.data.rows[1].isPrimary === false && env.page.data.rows[1].subtitle === '东门集合点 · 车辆待安排'
+      && env.page.data.rows[0].statusLabel === '已确认' && env.page.data.rows[0].subtitle === '搭乘车辆 · 东门集合点 · 1号车 · 01 座'
+      && env.page.data.rows[1].isPrimary === false && env.page.data.rows[1].subtitle === '搭乘车辆 · 东门集合点 · 车辆待安排'
       && env.page.data.primaryId === 's1',
       JSON.stringify(env.page.data.rows))
     check('安排区块：介绍/组织者说明/三个时间行',
@@ -329,8 +335,9 @@ async function scenario1() {
     check('行切换后仍不进 denied', env.page.data.denied === '')
   }
   {
-    // 上车点无坐标的同行人（pickup 自行前往）副标题不掺「车辆待安排」
-    const env = bootActivity({ view: viewFixture(v => { v.rows = [rowFixture('s1', '张三', { pickup: '自行前往', vehicle: '', seat: null })] }) })
+    // 自行前往（trip.mode=self）的同行者：副标题不该掺任何车辆/上车点字样。
+    // 注意这里必须显式给 tripMode——旧写法只改 pickup 文案，正是「用文案当业务状态」的那类 bug。
+    const env = bootActivity({ view: viewFixture(v => { v.rows = [rowFixture('s1', '张三', { tripMode: 'self', pickup: '自行前往', vehicle: '', seat: null, returnPlan: 'own' })] }) })
     await settle(env.page)
     check('自行前往的行不标「车辆待安排」', env.page.data.rows[0].subtitle === '自行前往',
       env.page.data.rows[0].subtitle)

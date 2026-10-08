@@ -66,7 +66,7 @@ cloudfunctions/trailApi/
                        activity/signup/transport/field/profile/notices/
                        allocation/selectors/contracts
   lib/weather.js       Open-Meteo 代理（沿用）
-  smoke-test.js        领域层冒烟测试（node smoke-test.js，167 项）
+  smoke-test.js        领域层冒烟测试（node smoke-test.js，173 项）
 tools/                 零依赖 node 脚本，无 root package.json、无 npm test：
   check.js             静态门禁：JS 语法/WXML 配平/WXSS 花括号/app.json 页面齐全/
                        组件引用（正向 + 反向注册）
@@ -75,11 +75,12 @@ tools/                 零依赖 node 脚本，无 root package.json、无 npm t
                        （真机勾选同行人失效那次的回归闸）
   e2e-result.js          E2E 结果账本：BUSINESS/UI 两维 × PASS/FAIL/INCONCLUSIVE，退出码
                        0/1/2；含源码完整性自检 auditSource（被三套 E2E 脚本复用）
-  *-test.js            40 个套件 = 20 个纯逻辑回归（天文/GPX/天相/日程/天气契约/Weather V2
-                       云场全链与真实 draw() 执行/视觉保真审计）+ 11 个页面级场景 + 2 个
-                       trailApiLab 集成（stub wx-server-sdk，含剧本离线干跑）+ 4 个 A 层
-                       端到端（服务链路/结果模型变异自证/权限矩阵/Domain 负矩阵）+
-                       3 个需开发者工具；37 个可无头进门禁 + smoke = 38 门禁套件（见下「测试」）
+  *-test.js            46 个套件文件 = 21 个纯逻辑回归（天文/GPX/天相/日程/天气契约/Weather V2
+                       云场全链与真实 draw() 执行/视觉保真审计/出行方式 self-shared 矩阵）+ 11 个页面级场景 + 2 个
+                       trailApiLab 集成（stub wx-server-sdk，含剧本离线干跑）+ 10 个 A 层
+                       端到端（服务链路/结果模型变异自证/权限矩阵/Domain 负矩阵/并发/交错/面板同步/
+                       Release Gate 缺口/客户端 CAS）+
+                       3 个需开发者工具；43 个可无头进门禁 + smoke = 44 门禁套件（见下「测试」）
   sync-lab.js          把 trailApi 的 domain/store 同步进 trailApiLab（部署 lab 前跑）
   gen-map-markers.js   地图 marker PNG 生成器（写文件，非常驻脚本）
 cloudfunctions/trailApiLab/   预演工具（私有测试用）：以合成演员身份执行预演剧本，
@@ -130,7 +131,7 @@ node tools/weather-v2-test.js && node tools/meteogram-draw-test.js && \
 node tools/cloud-field-svg-test.js && node tools/weather-cloud-field-test.js && \
 node tools/meteogram-svg-test.js && node tools/meteogram-multiday-test.js && \
 node tools/outdoor-cloud-sea-test.js && node tools/outdoor-intelligence-test.js && \
-node tools/outdoor-intelligence-ui-test.js && node tools/weather-v2-visual-audit-test.js && \
+node tools/outdoor-intelligence-ui-test.js && node tools/trip-mode-test.js && node tools/weather-v2-visual-audit-test.js && \
 node tools/e2e-test.js && node tools/e2e-fault-probe-test.js && \
 node tools/e2e-permission-test.js && node tools/e2e-domain-negative-test.js && \
 node tools/scenario-api-test.js && node tools/scenario-editor-test.js && \
@@ -142,16 +143,18 @@ node tools/scenario-lab-test.js && node tools/trailapilab-test.js && \
 node tools/lab-dryrun-test.js
 ```
 
-共 **38 个套件**（断言总数是快照，2026-10-07 全量复跑测得 2488 —— 本仓库常有并行工作增删用例，**以各脚本自己打印的 `passed=N` 为准**）：
+共 **44 个套件**（断言总数是快照，2026-10-08 出行方式解耦后全量复跑测得 2845 —— 本仓库常有并行工作增删用例，**以各脚本自己打印的 `passed=N` 为准**）：
 `smoke` 167（领域层，不需 wx-server-sdk）· `astro` 60 · `gpx` 57 · `sky` 65 · `route-schedule` 41 ·
 `weather-page` 136（云函数→页面→组件契约）· `watch-points` 37 ·
 `weather-model` 82（P4 轨迹层编排）· `space-time` 109（P4 几何 + 漫游读数）·
 `space-time-draw` 55（执行真实 `draw()`，记录式 2D 上下文）· `roam-scrubber` 33（漫游控件定时器与事件）·
 Weather V2 渲染链（`weather-v2` 45 / `meteogram-draw` 30 / `cloud-field-svg` 27 /
 `weather-cloud-field` 29 / `meteogram-svg` 25 / `meteogram-multiday` 44 / `outdoor-cloud-sea` 20 /
-`outdoor-intelligence` 24 / `outdoor-intelligence-ui` 46 / `weather-v2-visual-audit` 38——
+`outdoor-intelligence` 24 / `outdoor-intelligence-ui` 46 / `trip-mode` 78（出行方式 self/shared：
+Case 1-10 业务态 + rowView 投影 / permittedActions 广播 / counters 分桶 / 导出列 / detailState）、
+`weather-v2-visual-audit` 38——
 跨宽度几何归一化 / YOU 锚点 / covered 透传 / OI 卡契约）·
-页面级场景（editor 142 / activity 136 / workspace 111 / signup 103 / me 143 / notices 67 /
+页面级场景（editor 142 / activity 136 / workspace 114 / signup 104 / me 143 / notices 67 /
 vehicle 56 / api 27 / discover 21 / lab 20 / staff 18）· lab 集成（lab-dryrun 165 / trailapilab 25）·
 **`e2e` 71（A 层服务链路端到端：页面真实信封 → trailApi `exports.main` 真实路由/CAS/幂等/overrideEvidence →
 内存库落库 → 读动作回读验证；全业务链建档→发布→报名→审核→分车预览提交→改派（含 SEAT_TAKEN 负向）→

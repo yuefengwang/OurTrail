@@ -2,7 +2,7 @@
 'use strict'
 
 const { failure } = require('./contracts')
-const { isSelfSignup, needsOutboundBoarding } = require('./permissions')
+const { isSelfSignup, isVehicleTraveller, needsVehicleService, needsOutboundBoarding, needsReturnBoarding, returnBoardingApplies, passengerAssignment } = require('./permissions')
 
 function handleField(state, command, context) {
   const p = command.payload
@@ -40,10 +40,18 @@ function handleField(state, command, context) {
       if (!leg.departed) return failure('WRONG_PHASE', '车辆尚未发车，不能完成本程。')
       if (!leg.completed) leg.completed = evidence(p.note)
     } else {
-      const passengers = state.assignments.filter(a => a.vehicleId === vehicle.id).map(a => state.attendance.find(r => r.signupId === a.signupId)).filter(Boolean)
-      const unresolved = passengers.some(r => p.leg === 'outbound'
-        ? !r.boardingByLeg.outbound && ['not_departed', 'coordinating'].indexOf(r.departure ? r.departure.kind : '') === -1
-        : r.departure && r.departure.kind === 'joined' && r.returnPlan.kind === 'assigned' && !r.boardingByLeg.return)
+      // 乘客按报名取（不是按履约记录），返程清点资格必须由唯一出处判定，不能在这里重述一遍规则。
+      const passengers = state.assignments.filter(a => a.vehicleId === vehicle.id)
+        .map(a => state.signups.find(s => s.id === a.signupId)).filter(Boolean)
+      const unresolved = passengers.some(s => {
+        const r = state.attendance.find(rec => rec.signupId === s.id)
+        if (!r) return false
+        // 去程：本车任何人都必须已上车，除非已核实为未出发或仍在协调；
+        // 返程：只有「随队且按原车返程」的拼车乘客才需要清点（自行返程/另行返程不占座位）。
+        return p.leg === 'outbound'
+          ? !r.boardingByLeg.outbound && ['not_departed', 'coordinating'].indexOf(r.departure ? r.departure.kind : '') === -1
+          : needsReturnBoarding(state, s)
+      })
       if (unresolved) return failure('UNRESOLVED_DEPARTURE', '仍有本车人员未上车或未核实去向，请逐人清点。')
       if (!leg.departed) leg.departed = evidence(p.note)
     }
@@ -55,9 +63,8 @@ function handleField(state, command, context) {
   const record = state.attendance.find(a => a.signupId === signup.id)
   if (!record) return failure('NOT_FOUND', '找不到此报名的履约记录。')
   if (signup.status !== 'confirmed') return failure('WRONG_PHASE', '只有已确认的参与者可以记录履约。')
-  const assignment = state.assignments.find(a => a.signupId === signup.id)
+  const assignment = passengerAssignment(state, signup)
   const vehicle = assignment ? state.vehicles.find(v => v.id === assignment.vehicleId) : undefined
-  const participantDriver = state.vehicles.some(v => v.activityId === activity.id && v.drivers.some(d => d.kind === 'participant' && d.signupId === signup.id))
   const lateArrival = phase === 'active' && record.departure && record.departure.kind === 'coordinating'
   switch (p.type) {
     case 'attendance.checkin':
@@ -70,9 +77,11 @@ function handleField(state, command, context) {
       return done([signup.id])
     case 'attendance.board': {
       if (p.leg === 'outbound' ? phase !== 'gathering' && !lateArrival : ['active', 'closing'].indexOf(phase) === -1) return failure('WRONG_PHASE', '当前阶段不能修改这一程上车记录。')
+      if (!isVehicleTraveller(signup)) return failure('WRONG_PHASE', '自行前往的参与者没有上车事实需要记录。')
+      if (!needsVehicleService(state, signup)) return failure('WRONG_PHASE', '参与者司机随队驾驶自己的车辆，不需要乘客上车记录。')
       if (!vehicle) return failure('INVALID_INPUT', '请先安排本人的乘坐车辆。')
       if (p.leg === 'outbound' && (!record.checkIn || (record.departure && record.departure.kind === 'not_departed'))) return failure('UNRESOLVED_DEPARTURE', '请先签到并核实是否随队出发。')
-      if (p.leg === 'return' && (!record.departure || record.departure.kind !== 'joined' || record.returnPlan.kind === 'independent')) return failure('WRONG_PHASE', '仅随队且按原车返程的参与者需要返程清点。')
+      if (p.leg === 'return' && (!record.departure || record.departure.kind !== 'joined' || !returnBoardingApplies(state, signup))) return failure('WRONG_PHASE', '仅随队且按原车返程的参与者需要返程清点。')
       if (vehicle.legs[p.leg].departed && !(lateArrival && p.leg === 'outbound' && p.boarded && !record.boardingByLeg.outbound)) return failure('WRONG_PHASE', '车辆已发车，不能抹去或改写已有上车事实。')
       record.boardingByLeg[p.leg] = p.boarded ? (record.boardingByLeg[p.leg] || evidence(p.note)) : null
       return done([signup.id])
@@ -87,6 +96,8 @@ function handleField(state, command, context) {
       return done([signup.id])
     }
     case 'attendance.returnPlan':
+      // 返程安排是「乘车履约」的子事实：自行前往的人返程不占用活动车辆，这条核实对他们不适用。
+      if (!isVehicleTraveller(signup)) return failure('WRONG_PHASE', '自行前往的参与者返程不占用活动车辆，无需核实返程安排。')
       if (['active', 'closing'].indexOf(phase) === -1 || !record.departure || record.departure.kind !== 'joined') return failure('WRONG_PHASE', '出行后才能核实返程安排。')
       if (!p.note.trim()) return failure('INVALID_INPUT', '请填写返程安排的核实依据。')
       if (record.boardingByLeg.return || (vehicle && vehicle.legs.return.departed)) return failure('WRONG_PHASE', '已有返程上车或发车事实，不能直接改为另一安排。')

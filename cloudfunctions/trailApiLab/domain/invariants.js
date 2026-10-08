@@ -3,6 +3,7 @@
 
 const S = require('./schema')
 const { failure } = require('./contracts')
+const { isVehicleTraveller } = require('./permissions')
 
 const invalid = message => failure('INVALID_INPUT', message)
 const unique = values => new Set(values).size === values.length
@@ -37,7 +38,7 @@ function assertInvariants(state) {
     if (signup.personRef.kind === 'user' && !profiles.has(signup.personRef.userId)) return invalid('报名所引用的账号不存在。')
     if (signup.personRef.kind === 'companion' && signup.personRef.ownerId !== signup.submittedByUserId) return invalid('同行人与提交者的关系不一致。')
     const trip = signup.trip
-    if (trip.mode === 'shared' && !activity.pickupPoints.some(p => p.id === trip.pickupPointId)) return invalid('报名上车点不属于本场活动。')
+    if (isVehicleTraveller(signup) && !activity.pickupPoints.some(p => p.id === trip.pickupPointId)) return invalid('报名上车点不属于本场活动。')
   }
   for (const activity of state.activities) {
     if (!profiles.has(activity.ownerId)) return invalid('活动发起账号不存在。')
@@ -95,7 +96,7 @@ function assertInvariants(state) {
     if (!signup || !vehicle || signup.activityId !== assignment.activityId || vehicle.activityId !== assignment.activityId) return invalid('人员与车辆分配引用了不存在或其他活动的记录。')
     if (signup.status !== 'confirmed') return failure('WRONG_PHASE', '只有已确认参与者才能分车。')
     if (participantDrivers.has(signup.id)) return failure('DRIVER_CONFLICT', '参与者司机不能重复分配乘客座位。')
-    if (signup.trip.mode !== 'shared') return invalid('自行到达者不能分配乘客座位。')
+    if (!isVehicleTraveller(signup)) return invalid('自行到达者不能分配乘客座位。')
     if (!vehicle.pickupPointIds.includes(signup.trip.pickupPointId)) return failure('PICKUP_MISMATCH', '车辆不经过这位参与者的上车点。')
     if (assignment.seatLabel !== null) {
       if (!vehicle.seatLabels || vehicle.seatLabels.indexOf(assignment.seatLabel) === -1) return invalid('所选座号不属于这辆车。')
@@ -129,6 +130,15 @@ function assertInvariants(state) {
     if (record.departure && record.departure.kind === 'joined' && (signup.status !== 'confirmed' || !record.checkIn)) return invalid('实际出行者必须保持有效报名及签到事实。')
     if (record.home && (!record.departure || record.departure.kind !== 'joined')) return invalid('未核实实际出行者不能被标记为安全到家。')
     if (record.returnPlan.kind === 'independent' && !record.returnPlan.evidence.note.trim()) return invalid('另行返程必须有核实依据。')
+    // self 的「零乘车事实」兜底：解除动作由 signup.js 完成，这里保证脏数据进不了库。
+    // 可达性：上车要求 needsVehicleService（shared 且非司机）+ 有效 assignment；而 travelLocked
+    // 在任何已存在上车事实时锁死 signup.edit，所以既有数据必然满足这条，无需回填。
+    if (!isVehicleTraveller(signup) && (record.boardingByLeg.outbound || record.boardingByLeg.return)) {
+      return invalid('自行到达者不能留下上车事实。')
+    }
+    // 'own'（自行返程）是 trip.mode 的派生值，只能出现在自行前往的人身上；
+    // 领队侧的 attendance.returnPlan 命令不接受它，所以这条不可能被命令绕过。
+    if (record.returnPlan.kind === 'own' && isVehicleTraveller(signup)) return invalid('自行返程只适用于自行前往的参与者。')
   }
   if (!unique(state.positions.map(p => p.signupId))) return invalid('每位参与者只保留一条最新上报位置。')
   for (const position of state.positions) {

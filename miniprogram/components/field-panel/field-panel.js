@@ -77,7 +77,15 @@ Component({
             signupId: r.signupId,
             name: r.name,
             avatar: r.avatar || '',
-            subtitle: r.pickup + ' · ' + (r.checkedIn ? '已签到' : '未签到') + ' · ' + (r.vehicle || '无乘车安排'),
+            // 现场清点看的是「人到位了没」，不是「排到车了没」：自行前往的人没有乘车安排
+            // 也不是异常，所以车辆/上车点信息只在需要乘车时才出现在副标题里。
+            subtitle: [
+              F.TRIP_MODE_LABELS[r.tripMode] || r.tripMode,
+              r.tripMode === 'shared' ? (r.pickup || F.PICKUP_MISSING) : '',
+              r.checkedIn ? '已签到' : '未签到',
+              r.tripMode === 'shared' ? (r.vehicle || '待安排车辆') : '',
+              r.tripMode === 'shared' && r.outboundBoarded ? '已上车' : '',
+            ].filter(Boolean).join(' · '),
             status: r.home ? '已到家' : F.DEPARTURE_LABELS[r.departure] || '出发待核实',
             tone: r.home || r.departure === 'not_departed' ? 'success' : 'warning',
           }))
@@ -143,7 +151,10 @@ Component({
       if (phase === 'closing' && row.departure === 'joined' && !row.home && permitted.indexOf('attendance.home') !== -1) {
         acts.push({ label: '核实安全到家', type: 'attendance.home', needNote: true })
       }
-      if (['active', 'closing'].indexOf(phase) !== -1 && row.departure === 'joined' && permitted.indexOf('attendance.returnPlan') !== -1) {
+      // permittedActions 是活动级的能力集合，「这行能不能做这件事」还要看该行的出行方式：
+      // 返程安排只对需要乘车的人成立（服务端 field.js 同样按 trip.mode 拒 self）。
+      if (['active', 'closing'].indexOf(phase) !== -1 && row.departure === 'joined' && row.tripMode === 'shared'
+        && permitted.indexOf('attendance.returnPlan') !== -1) {
         acts.push({
           label: row.returnPlan === 'independent' ? '改回原车返程' : '记录另行返程',
           type: 'attendance.returnPlan',
@@ -162,7 +173,7 @@ Component({
       if ((phase === 'gathering' || lateArrival) && permitted.indexOf('attendance.departure') !== -1
         && acts.every(a => a.type !== 'attendance.departure' || a.outcome === 'not_departed' || a.outcome === 'coordinating')) {
         sheetHint = !row.checkedIn ? '请先完成现场签到，再核实是否随队出发。'
-          : '此人拼车随队：请先在车长任务页点「确认上车」，回来才能核实已随队出发。'
+          : (row.needsOutboundBoarding ? '此人需要乘车随队：请先在车长任务页点「确认上车」，回来才能核实已随队出发。' : '')
       }
       this.setData({
         sheetHint,

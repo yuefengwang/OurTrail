@@ -477,8 +477,13 @@
         <text class="small muted">发布后以你的常用资料报名。请先在「我的」检查本人及紧急联络信息。</text>
         <form-field label="本人出行方式">
           <radio-group bindchange="onTripChange">
-            <label class="radio-label"><radio color="#163E35" value="self" checked="{{tripSelf}}" /><text>自行前往</text></label>
-            <label class="radio-label"><radio color="#163E35" value="pickup" checked="{{!tripSelf}}" /><text>按上车点集合</text></label>
+            <label class="radio-label" wx:for="{{tripModes}}" wx:for-item="opt" wx:key="value">
+              <radio color="#163E35" value="{{opt.value}}" checked="{{(tripSelf ? 'self' : 'shared') === opt.value}}" />
+              <view class="check-text">
+                <text>{{opt.label}}</text>
+                <text class="small muted" style="display:block;">{{opt.hint}}</text>
+              </view>
+            </label>
           </radio-group>
         </form-field>
         <form-field wx:if="{{!tripSelf}}" label="选择上车点">

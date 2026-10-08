@@ -14,9 +14,11 @@
     <view class="metrics">
       <view class="metric"><text class="metric-value">{{metrics.vehicles}}</text><text class="metric-label">辆车</text></view>
       <view class="metric"><text class="metric-value">{{metrics.seats}}</text><text class="metric-label">可分配乘客位</text></view>
-      <view class="metric"><text class="metric-value">{{metrics.unassigned}}</text><text class="metric-label">待安排乘客</text></view>
+      <view class="metric"><text class="metric-value">{{metrics.unassigned}}</text><text class="metric-label">需乘车待安排</text></view>
     </view>
     <text class="small muted">可用乘客位 = 核载人数 − 司机人数 − 预留 / 禁用座位。参与者司机已计入司机，不再重复占乘客位。</text>
+    <!-- 这一区间只服务「需要乘车」的人：自行前往的人不欠任何安排，也不该在这里被列成待办 -->
+    <text class="small muted" style="display:block;margin-top:4px;">需乘车 {{metrics.vehicleTravel}} 人 · 自行前往 {{metrics.selfTravel}} 人（不在排车范围，可自行到集合点签到）。</text>
 
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
@@ -26,7 +28,8 @@
       <icon name="arrow" size="18" color="#FFFFFF" />
     </view>
 
-    <status-panel wx:if="{{!vehicles.length}}" kind="empty" title="还没有车辆安排" detail="先添加车辆、司机和覆盖的上车点，再预览分车。" />
+    <status-panel wx:if="{{!vehicles.length && metrics.vehicleTravel}}" kind="empty" title="还没有车辆安排" detail="先添加车辆、司机和覆盖的上车点，再预览分车。仍有 {{metrics.vehicleTravel}} 人需要乘车。" />
+    <status-panel wx:elif="{{!vehicles.length}}" kind="empty" title="这一场不需要排车" detail="全部 {{metrics.selfTravel}} 位已确认参与者都选择自行前往集合点，没有人需要车辆。这里不需要任何操作，活动可以直接进入集合与签到。" />
 
     <view wx:for="{{vehicles}}" wx:for-item="vh" wx:key="id" class="card stack-gap3">
       <view class="card-header">
@@ -186,8 +189,10 @@
           <input class="input" type="number" maxlength="11" value="{{item.phone}}" data-index="{{index}}" data-key="phone" bindinput="onDriverField" />
         </form-field>
       </block>
-      <!-- 候选=已确认且未分车（域规则会拒绝其余人），此前误绑了只在座位指派流程赋值的 confirmedOptions，下拉恒为空 -->
-      <form-field wx:else label="选择参与者司机" hint="需已确认报名，且尚未安排车辆。">
+      <!-- 候选=已确认且没有占用乘客座位（域规则 transport.js validateDrivers 会拒绝其余人）。
+           自行前往的人正是司机的主要来源：他们自己开车到场。此前误绑了只在座位指派流程赋值的
+           confirmedOptions，下拉恒为空。 -->
+      <form-field wx:else label="选择参与者司机" hint="需已确认报名，且没有占用乘客座位（自行前来的参与者也可以）。">
         <picker range="{{driverCandidates}}" range-key="label" value="{{item.signupIndex}}" data-index="{{index}}" bindchange="onDriverPick">
           <view class="picker {{item.signupIndex < 0 ? 'placeholder' : ''}}">
             <text class="picker-value">{{item.signupIndex < 0 ? '请选择' : driverCandidates[item.signupIndex].label}}</text>
@@ -195,7 +200,7 @@
           </view>
         </picker>
       </form-field>
-      <text wx:if="{{item.kind === 'participant' && !driverCandidates.length}}" class="small muted">还没有可兼任司机的参与者：先在名单区确认报名，且此人尚未分车。</text>
+      <text wx:if="{{item.kind === 'participant' && !driverCandidates.length}}" class="small muted">还没有可兼任司机的参与者：先在名单区确认报名，且此人没有占用乘客座位。</text>
       <view class="button text" hover-class="button-hover" data-index="{{index}}" bindtap="removeDriver">移除此司机</view>
     </view>
     <view class="button secondary block" hover-class="button-hover" bindtap="addDriver">添加司机</view>

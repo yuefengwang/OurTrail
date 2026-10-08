@@ -111,8 +111,16 @@ Component({
           avatar: r.avatar || '',
           statusLabel: F.STATUS_LABELS[r.status] || r.status,
           tone: r.status === 'confirmed' ? 'success' : (r.status === 'pending' ? 'warning' : 'neutral'),
-          subtitle: [r.pickup, r.vehicle || '未分车', r.seat ? r.seat + '座' : '', r.checkedIn ? '已签到' : '', r.home ? '已到家' : '']
-            .filter(Boolean).join(' · '),
+          // 副标题按出行方式分层：自行前往的人不该看到「未分车」这种欠事字样，
+          // 车辆/座位/上车点只在「需要乘车」时才是一项信息。判断读 tripMode，不读文案。
+          subtitle: [
+            F.TRIP_MODE_LABELS[r.tripMode] || r.tripMode,
+            r.tripMode === 'shared' ? (r.pickup || F.PICKUP_MISSING) : '',
+            r.tripMode === 'shared' ? (r.vehicle || '待安排车辆') : '',
+            r.tripMode === 'shared' && r.seat ? r.seat + '座' : '',
+            r.checkedIn ? '已签到' : '',
+            r.home ? '已到家' : '',
+          ].filter(Boolean).join(' · '),
         }))
       const selected = {}
       for (const r of rows) if (this.data.selected[r.signupId]) selected[r.signupId] = true

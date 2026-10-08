@@ -228,7 +228,7 @@ function ownPart(over) {
     person: person('张三', '13800000000', '王五', '13700000000', '无'),
     trip: { mode: 'self' },
     consent: { dataUse: true, proxyAuthority: false, proxyHome: false },
-    complete: true, tripIndex: 0, checked: true, // UI 附加状态字段（修复后由 decorateParticipant 产出）
+    complete: true, pickupIndex: -1, tripSummary: '自行前往', checked: true, // UI 附加状态字段（修复后由 decorateParticipant 产出）
   }, over || {})
 }
 function compPart(over) {
@@ -237,7 +237,7 @@ function compPart(over) {
     person: person('李四', '13900000000', '王五', '13700000000', ''),
     trip: { mode: 'self' },
     consent: { dataUse: true, proxyAuthority: true, proxyHome: false },
-    complete: true, tripIndex: 0,
+    complete: true, pickupIndex: -1, tripSummary: '自行前往',
   }, over || {})
 }
 function seedParts(page, parts, extra) {
@@ -296,9 +296,11 @@ async function scenario1() {
       page.data.participants.length === 1 && page.data.participants[0].key === 'u:p1'
       && page.data.participants[0].person.name === '张三',
       JSON.stringify(page.data.participants))
-    checkGate(broken, ISSUE_RELOAD, '上车点选项 = 自行前往 + 活动集合点',
-      JSON.stringify(page.data.tripOptions) === JSON.stringify(['自行前往', '东门集合点', '西门停车区']),
-      JSON.stringify(page.data.tripOptions))
+    checkGate(broken, ISSUE_RELOAD, '上车点选项 = 活动集合点（出行方式已独立成单选，不再混进同一个 picker）',
+      JSON.stringify(page.data.pickupOptions) === JSON.stringify(['东门集合点', '西门停车区'])
+      && JSON.stringify(page.data.tripModes.map(m => m.label)) === JSON.stringify(['自行前往', '搭乘车辆'])
+      && page.data.needsVehicle === false,
+      JSON.stringify({ pickupOptions: page.data.pickupOptions, tripModes: page.data.tripModes, needsVehicle: page.data.needsVehicle }))
   }
   {
     // 本地草稿恢复（报名页的断点续填）
@@ -430,9 +432,9 @@ async function scenario2() {
   {
     const { page } = bootSignup({ options: { id: 'a1' } })
     await settle(page)
-    // tripValues 在装配抛错点之前已就绪，真实可达
-    check('tripValues = self + 集合点 id（picker 序号映射基准）',
-      JSON.stringify(page.tripValues) === JSON.stringify(['self', 'pk-1', 'pk-2']), JSON.stringify(page.tripValues))
+    // pickupValues 在装配抛错点之前已就绪，真实可达
+    check('pickupValues = 集合点 id（picker 序号映射基准，不再混入 self 这一档）',
+      JSON.stringify(page.pickupValues) === JSON.stringify(['pk-1', 'pk-2']), JSON.stringify(page.pickupValues))
     const broken = hitReloadBug(page)
     // 档案里本人紧急联系为空 → 不齐
     checkGate(broken, ISSUE_RELOAD, '本人资料不齐 → complete=false（折叠行显示「待补全」徽标）',
@@ -469,7 +471,7 @@ async function scenario2() {
       !page.data.expandedParts['u:p1'], JSON.stringify(page.data.expandedParts))
   }
   {
-    // 手动展开/收起与 picker 序号映射（togglePart/tripIndexOf 不经过已知问题链路，真实可达）
+    // 手动展开/收起与 picker 序号映射（togglePart/pickupIndexOf 不经过已知问题链路，真实可达）
     const { page } = bootSignup({ options: { id: 'a1' } })
     await settle(page)
     seedParts(page, [ownPart(), compPart()])
@@ -477,9 +479,12 @@ async function scenario2() {
     check('收合态点击展开', page.data.expandedParts['c:c1'] === true)
     page.togglePart(tap('c:c1'))
     check('再点收起', !page.data.expandedParts['c:c1'], JSON.stringify(page.data.expandedParts))
-    check('tripIndexOf：shared 映射回集合点序号', page.tripIndexOf({ trip: { mode: 'shared', pickupPointId: 'pk-2' } }) === 2)
-    check('tripIndexOf：未知集合点兜底 0（自行前往）', page.tripIndexOf({ trip: { mode: 'shared', pickupPointId: 'pk-x' } }) === 0)
-    check('tripIndexOf：self → 0', page.tripIndexOf({ trip: { mode: 'self' } }) === 0)
+    check('pickupIndexOf：shared 映射回集合点序号', page.pickupIndexOf({ trip: { mode: 'shared', pickupPointId: 'pk-2' } }) === 1)
+    // D7：旧实现返回 0，而 0 在旧 picker 里就是「自行前往」——需要乘车的人被显示成不需要车。
+    // 现在出行方式与上车点解耦，找不到点只能是 -1（未选），绝不改写 mode。
+    check('pickupIndexOf：未知集合点 → -1（显示未选，不再冒充自行前往）',
+      page.pickupIndexOf({ trip: { mode: 'shared', pickupPointId: 'pk-x' } }) === -1)
+    check('pickupIndexOf：self → -1（本来就不需要上车点）', page.pickupIndexOf({ trip: { mode: 'self' } }) === -1)
   }
 }
 
@@ -560,7 +565,7 @@ async function scenario4() {
     })
     await settle(page)
     seedParts(page, [
-      ownPart({ trip: { mode: 'shared', pickupPointId: 'pk-2' }, tripIndex: 2 }),
+      ownPart({ trip: { mode: 'shared', pickupPointId: 'pk-2' }, pickupIndex: 1, tripSummary: '搭乘车辆 · 西门停车区' }),
       compPart(),
     ], { keepTogether: true })
     page.revision = 5
@@ -575,7 +580,7 @@ async function scenario4() {
       JSON.stringify(Object.keys(p)))
     check('expectedRevision = 页面 revision（CAS 基准）', cmds[0].expectedRevision === 5, String(cmds[0].expectedRevision))
     check('participants 两位', p.participants.length === 2, String(p.participants.length))
-    check('每位 = personRef/participant/trip/consent 四键（UI 附加 complete/tripIndex/key/kindLabel 不泄漏）',
+    check('每位 = personRef/participant/trip/consent 四键（UI 附加 complete/pickupIndex/tripSummary/key/kindLabel 不泄漏）',
       p.participants.every(x => JSON.stringify(Object.keys(x).sort()) === JSON.stringify(['consent', 'participant', 'personRef', 'trip'])),
       JSON.stringify(p.participants.map(x => Object.keys(x))))
     const a = p.participants[0]
@@ -593,7 +598,7 @@ async function scenario4() {
       JSON.stringify(b.personRef) === JSON.stringify({ kind: 'companion', ownerId: 'p1', companionId: 'c1' })
       && b.consent.proxyAuthority === true,
       JSON.stringify(b.personRef))
-    check('UI 附加字段痕迹不进 payload', !/"(complete|tripIndex|kindLabel|checked|key)"/.test(JSON.stringify(p.participants)),
+    check('UI 附加字段痕迹不进 payload', !/"(complete|pickupIndex|tripSummary|kindLabel|checked|key)"/.test(JSON.stringify(p.participants)),
       JSON.stringify(p.participants).slice(0, 200))
     check('提交成功反馈：toast + redirect 回活动页 + busy 复位',
       env.rec.toasts.indexOf('报名已提交') !== -1 && env.rec.nav.indexOf('/pages/activity/activity?id=a1') !== -1
@@ -640,7 +645,8 @@ async function scenario4() {
     await waitFor(() => !!page.data.editForm)
     page.onEditField(editField('name', '张三丰'))
     page.onEditField(editField('medical', '哮喘史'))
-    page.onEditTrip({ detail: { value: 'pk-2' } })
+    page.onEditMode({ detail: { value: 'shared' } })
+    page.onEditPickup({ detail: { value: '1' } })
     if (mappingOk) { // 紧急联系字段依赖已知问题②的映射；映射坏了就不驱动（独立断言见下）
       page.onEditField(editField('ename', '赵六'))
       page.onEditField(editField('ephone', '13611111111'))
@@ -779,20 +785,26 @@ async function scenario6() {
       JSON.stringify(page.data.participants[0] && page.data.participants[0].person.emergency))
     const ranConsent = runHandler(() => page.onPartConsent(field(0, 'dataUse', true)))
     checkGate(!ranConsent, ISSUE_UPDATE, '勾选资料使用授权', ranConsent && page.data.participants[0].consent.dataUse === true)
-    const ranTrip = runHandler(() => page.onPartTrip({ currentTarget: { dataset: { index: 0 } }, detail: { value: '2' } }))
-    checkGate(!ranTrip, ISSUE_UPDATE, '选择集合点 → trip 变 shared+pickupPointId',
+    const ranTrip = runHandler(() => {
+      page.onPartMode({ currentTarget: { dataset: { index: 0 } }, detail: { value: 'shared' } })
+      page.onPartPickup({ currentTarget: { dataset: { index: 0 } }, detail: { value: '1' } })
+    })
+    checkGate(!ranTrip, ISSUE_UPDATE, '选「搭乘车辆」+ 集合点 → trip 变 shared+pickupPointId',
       ranTrip && JSON.stringify(page.data.participants[0].trip) === JSON.stringify({ mode: 'shared', pickupPointId: 'pk-2' }),
       JSON.stringify(page.data.participants[0] && page.data.participants[0].trip))
+    check('选了搭乘车辆 ⇒ needsVehicle 打开（同车约束问题这时才有意义）',
+      page.data.needsVehicle === true && page.data.participants[0].pickupIndex === 1,
+      JSON.stringify({ needsVehicle: page.data.needsVehicle, pickupIndex: page.data.participants[0].pickupIndex }))
     // keepTogether 不经过 decorateParticipant，真实可用
     page.onKeepTogether({ detail: { value: false } })
     const saved = draft.getDraft('a1', 'signup')
     check('取消「整组同车」生效并写入本地草稿',
       page.data.keepTogether === false && !!saved && saved.keepTogether === false,
       JSON.stringify(saved))
-    check('tripLabel：self → 自行前往；shared → 集合点名；未知集合点 → 请选择上车点',
+    check('tripLabel：self → 自行前往；shared → 搭乘车辆 · 集合点名；未知集合点 → 搭乘车辆 · 上车点信息缺失',
       page.tripLabel({ trip: { mode: 'self' } }) === '自行前往'
-      && page.tripLabel({ trip: { mode: 'shared', pickupPointId: 'pk-2' } }) === '西门停车区'
-      && page.tripLabel({ trip: { mode: 'shared', pickupPointId: 'pk-x' } }) === '请选择上车点',
+      && page.tripLabel({ trip: { mode: 'shared', pickupPointId: 'pk-2' } }) === '搭乘车辆 · 西门停车区'
+      && page.tripLabel({ trip: { mode: 'shared', pickupPointId: 'pk-x' } }) === '搭乘车辆 · 上车点信息缺失',
       JSON.stringify([page.tripLabel({ trip: { mode: 'self' } }), page.tripLabel({ trip: { mode: 'shared', pickupPointId: 'pk-2' } })]))
   }
 }

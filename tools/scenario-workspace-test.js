@@ -178,14 +178,21 @@ function schemaOk(payload) {
 // ---- 样例视图（形状对齐 selectors 的 activityView/rowView）----
 const NOW = '2026-09-29T09:00:00+08:00'
 function row(id, name, status, over) {
-  return Object.assign({
+  const r = Object.assign({
     signupId: id, groupId: 'g1', name, status, avatar: '',
+    tripMode: 'shared',
     pickup: '东门集合点', vehicle: '', seat: null,
     checkedIn: false, outboundBoarded: false, returnBoarded: false,
     // 服务端 rowView 的字段：拼车乘客没有去程上车事实时为 true（field.js 的 joined 门同一出处）
     needsOutboundBoarding: false,
     returnPlan: 'assigned', departure: 'unknown', home: false,
   }, over || {})
+  // 三个派生标志按服务端 rowView 的口径在这里算出来（fixture 只声明输入事实，
+  // 避免手工维护一份与服务端漂移的副本）：占用乘客位 ⇔ 有该活动的车辆安排。
+  r.hasPassengerAssignment = r.tripMode === 'shared' && !!r.vehicle
+  r.needsSeatAssignment = r.tripMode === 'shared' && !r.hasPassengerAssignment
+  r.returnBoardingApplies = r.tripMode === 'shared' && r.returnPlan === 'assigned'
+  return r
 }
 const ROWS = [
   row('s1', '张三', 'pending'),
@@ -429,10 +436,10 @@ async function scenario4() {
     ROSTER_WXML.indexOf('class="roster-filter"') !== -1
     && ROSTER_WXML.indexOf('<text class="field-label">搜索名单</text>') === -1
     && ROSTER_WXML.indexOf('<form-field label="报名状态">') === -1)
-  check('行装配：状态文案/语气/副标题（未分车、座号）',
+  check('行装配：状态文案/语气/副标题（出行方式打头，未排车说「待安排车辆」）',
     comp.data.rows.length === 6 && comp.data.rows[0].statusLabel === '待审核' && comp.data.rows[0].tone === 'warning'
-    && comp.data.rows[0].subtitle === '东门集合点 · 未分车'
-    && comp.data.rows[1].subtitle === '东门集合点 · 1号车 · 01座',
+    && comp.data.rows[0].subtitle === '搭乘车辆 · 东门集合点 · 待安排车辆'
+    && comp.data.rows[1].subtitle === '搭乘车辆 · 东门集合点 · 1号车 · 01座',
     JSON.stringify(comp.data.rows[0]))
   check('同行组约束行（整组同车标注）',
     comp.data.groups.length === 2 && comp.data.groups[0].names === '李四、王五',
@@ -530,11 +537,11 @@ async function scenario5() {
     && vh.seatCells.length === 5 && vh.seatCells[0].occupied === true && vh.seatCells[0].occupant === '李四'
     && vh.seatCells[1].occupant === '王五' && vh.seatCells[2].aisle === true && vh.seatCells[4].occupied === false,
     JSON.stringify(vh.seatCells))
-  check('已确认人员选项 = 4 人（无安排者标「未分车」）',
-    comp.data.confirmed.length === 4 && comp.data.confirmed[2].label === '孙七 · 西门停车区 · 未分车',
+  check('已确认人员选项 = 4 人（都需乘车；未排车者标「待安排车辆」并带座位号）',
+    comp.data.confirmed.length === 4 && comp.data.confirmed[2].label === '孙七 · 西门停车区 · 待安排车辆',
     JSON.stringify(comp.data.confirmed.map(c => c.label)))
   check('同车约束行（整组同车）', comp.data.groups.length === 1 && comp.data.groups[0].names === '李四、王五')
-  check('参与者司机候选=已确认且未分车（孙七/周八；有车的李四王五与未确认者不入列）',
+  check('参与者司机候选=已确认且没占用乘客座位（孙七/周八；有车的李四王五与未确认者不入列）',
     comp.data.driverCandidates.length === 2 && comp.data.driverCandidates[0].signupId === 's5'
     && comp.data.driverCandidates[1].signupId === 's6',
     JSON.stringify(comp.data.driverCandidates))
@@ -641,12 +648,13 @@ async function scenario6() {
     await settleComp(comp)
     check('现场读取带 perspective 属性（workspace 传 organizer）',
       env.reads.length === 1 && env.reads[0].perspective === 'organizer', JSON.stringify(env.reads))
-    check('只列已确认人员并带签到/乘车副标题',
+    check('只列已确认人员并带出行方式/上车点/签到/车辆副标题',
       comp.data.rows.length === 4
-      && comp.data.rows[0].subtitle === '东门集合点 · 未签到 · 1号车'
-      && comp.data.rows[1].subtitle === '西门停车区 · 已签到 · 1号车'
-      && comp.data.rows[2].subtitle === '西门停车区 · 未签到 · 无乘车安排',
-      JSON.stringify(comp.data.rows[0]))
+      && comp.data.rows[0].subtitle === '搭乘车辆 · 东门集合点 · 未签到 · 1号车'
+      && comp.data.rows[1].subtitle === '搭乘车辆 · 西门停车区 · 已签到 · 1号车'
+      && comp.data.rows[2].subtitle === '搭乘车辆 · 西门停车区 · 未签到 · 待安排车辆'
+      && comp.data.rows[3].subtitle === '搭乘车辆 · 西门停车区 · 已签到 · 待安排车辆',
+      JSON.stringify(comp.data.rows.map(r => r.subtitle)))
     check('gathering 收尾标语为现场事实', comp.data.headline === '现场事实，逐项确认')
 
     comp.openSheet({ currentTarget: { dataset: { id: 's2' } } })
@@ -665,7 +673,7 @@ async function scenario6() {
     comp.openSheet({ currentTarget: { dataset: { id: 's6' } } })
     check('已签到但缺去程上车的行（s6）不给 joined，并把用户指向车长任务页',
       !comp.data.actions.some(a => a.outcome === 'joined')
-      && comp.data.sheetHint === '此人拼车随队：请先在车长任务页点「确认上车」，回来才能核实已随队出发。',
+      && comp.data.sheetHint === '此人需要乘车随队：请先在车长任务页点「确认上车」，回来才能核实已随队出发。',
       JSON.stringify({ actions: comp.data.actions.map(a => a.label), hint: comp.data.sheetHint }))
     check('动作不含上车与位置上报（上车在车长任务页、位置上报是参与者本人自助）',
       comp.data.actions.every(a => a.type !== 'attendance.board' && a.type !== 'position.report'))
@@ -786,6 +794,32 @@ async function scenario6() {
       && env.cmds[0].payload.note === '全队抵达营地，清点无误'
       && keysOf(env.cmds[0].payload) === 'activityId,note,pointId,signupId,type'
       && schemaOk(env.cmds[0].payload), JSON.stringify(env.cmds[0].payload))
+  }
+  {
+    // 混合出行：同一个现场面板里，self 行不该出现任何车辆字样，也不该拿到返程安排动作
+    // （服务端 field.js 对 self 的 board/returnPlan 都是拒绝，这里验 UI 不再给出必红的入口）。
+    makeWx()
+    const view = withPhase('closing', CLOSING_ACTIONS)
+    view.rows[1] = Object.assign({}, view.rows[1], {
+      tripMode: 'self', pickup: '自行前往', vehicle: '', seat: null,
+      hasPassengerAssignment: false, needsSeatAssignment: false, needsOutboundBoarding: false,
+      returnBoardingApplies: false, needsReturnBoarding: false, returnPlan: 'own',
+      checkedIn: true, departure: 'joined',
+    })
+    const env = installApi({ view })
+    const comp = makeComponent(compConfig(FIELD_PATH), { activityId: 'a1', perspective: 'organizer' })
+    attach(comp)
+    await settleComp(comp)
+    const selfRow = comp.data.rows.find(r => r.signupId === 's2')
+    check('现场面板：self 行副标题只有出行方式与签到事实，不含车辆/座位/上车',
+      selfRow.subtitle === '自行前往 · 已签到', selfRow.subtitle)
+    comp.openSheet({ currentTarget: { dataset: { id: 's2' } } })
+    check('现场面板：self 行不给返程安排动作（与 field.js 的 trip.mode 门同向）',
+      comp.data.actions.every(a => a.type !== 'attendance.returnPlan'),
+      JSON.stringify(comp.data.actions.map(a => a.label)))
+    check('现场面板：self 行仍能正常核实到家（收尾义务与出行方式无关）',
+      comp.data.actions.some(a => a.type === 'attendance.home'),
+      JSON.stringify(comp.data.actions.map(a => a.label)))
   }
 }
 

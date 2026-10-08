@@ -117,8 +117,10 @@ function staffView(over) {
     },
     rows: [{
       signupId: 's2', groupId: 'g1', name: '李四', status: 'confirmed', avatar: '',
+      tripMode: 'shared',
       pickup: '东门集合点', vehicle: '1号车', seat: '01',
       checkedIn: false, outboundBoarded: false, returnBoarded: false,
+      needsOutboundBoarding: true, needsSeatAssignment: false, returnBoardingApplies: true,
       returnPlan: 'assigned', departure: 'unknown', home: false,
     }],
     counters: { confirmed: 1, pending: 0, occupied: 1, waitlisted: 0, remaining: 5, unassigned: 0, unchecked: 1, pendingHome: 0, openIncidents: 0 },
@@ -214,7 +216,7 @@ async function scenario4() {
     await waitFor(() => comp.data.loading === false && comp.data.rows.length > 0)
     check('授权有效：staff 视角名单出画面（已确认者带签到/乘车副标题）',
       comp.data.denied === '' && comp.data.rows.length === 1
-      && comp.data.rows[0].name === '李四' && comp.data.rows[0].subtitle === '东门集合点 · 未签到 · 1号车',
+      && comp.data.rows[0].name === '李四' && comp.data.rows[0].subtitle === '搭乘车辆 · 东门集合点 · 未签到 · 1号车',
       JSON.stringify(comp.data.rows))
     check('读取 revision 交给面板做后续命令的 CAS 基准', comp.revision === 7, String(comp.revision))
   }

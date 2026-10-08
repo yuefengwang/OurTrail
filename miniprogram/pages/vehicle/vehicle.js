@@ -1,6 +1,7 @@
 // 本车任务（原型 screens/VehicleTask.tsx）：去程/返程逐人清点、发车与完成。
 'use strict'
 const api = require('../../utils/api')
+const F = require('../../utils/format')
 
 Page({
   data: {
@@ -55,9 +56,11 @@ Page({
     const vehicle = vt.vehicle
     const leg = this.data.leg
     const phase = v.activity.phase
+    // 「本车返程要清点谁」由域内算好（returnBoardingApplies）：按原车返程的拼车乘客才算，
+    // 另行返程与自行往返都不占这辆车的返程座位。此前这里用 returnPlan 自己重述了一遍规则。
     const expected = vt.passengers.filter(p => leg === 'outbound'
       ? ['not_departed', 'coordinating'].indexOf(p.departure) === -1
-      : p.departure === 'joined' && p.returnPlan === 'assigned')
+      : p.departure === 'joined' && p.returnBoardingApplies)
     const boarded = expected.filter(p => leg === 'outbound' ? p.outboundBoarded : p.returnBoarded)
     const legInfo = vehicle.legs[leg]
     const canOperate = leg === 'outbound'
@@ -71,7 +74,10 @@ Page({
         name: p.name,
         avatar: p.avatar || '',
         subtitle: p.pickup + ' · ' + (p.seat ? p.seat + '号座' : '未编号'),
-        status: leg === 'return' && p.returnPlan === 'independent' ? '另行返程' : (hasBoarded ? '已上车' : '未上车'),
+        // 不点名「未上车」：本车不载他返程时，那不是一个未完成项，而是根本没有这项。
+        status: leg === 'return' && !p.returnBoardingApplies
+          ? (F.RETURN_PLAN_LABELS[p.returnPlan] || '不占本车返程')
+          : (hasBoarded ? '已上车' : '未上车'),
         showBoard: canOperate && !legInfo.departed && isExpected && !hasBoarded,
       }
     })

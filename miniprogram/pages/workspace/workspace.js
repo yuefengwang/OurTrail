@@ -28,6 +28,10 @@ Page({
     subtitle: '先处理需要你确认的事，再安心出发。',
     pending: 0,
     unassigned: 0,
+    selfTravel: 0,
+    vehicleTravel: 0,
+    assigned: 0,
+    tripSummaryLine: '',
     thirdValue: 0,
     thirdLabel: '待签到',
     // 总览
@@ -94,6 +98,15 @@ Page({
         title: a.title || '未命名活动',
         pending: v.counters.pending,
         unassigned: v.counters.unassigned,
+        // 出行方式构成：领队要处理的只有「需要乘车且还没排到车」的那一格，
+        // 自行前往的人不是缺事项，不能和他们混在同一个计数里。
+        selfTravel: v.counters.selfTravel,
+        vehicleTravel: v.counters.vehicleTravel,
+        assigned: v.counters.assigned,
+        tripSummaryLine: '全部已确认 ' + v.counters.confirmed
+          + ' · 自行前往 ' + v.counters.selfTravel
+          + ' · 需要乘车 ' + v.counters.vehicleTravel
+          + '（已安排 ' + v.counters.assigned + '）',
         waitlisted: v.counters.waitlisted,
         unchecked: v.counters.unchecked,
         openIncidents: v.counters.openIncidents,

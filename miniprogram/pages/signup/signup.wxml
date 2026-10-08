@@ -42,6 +42,25 @@
       <form-field label="健康与用药备注" hint="可选，仅用于本次活动的必要安全协作。">
         <textarea class="textarea" value="{{editForm.person.medical}}" maxlength="2000" data-key="medical" bindinput="onEditField" />
       </form-field>
+      <form-field label="出行方式" error="{{errors.trip}}" hint="已上车或已核实随队出发后，出行方式不能再改——乘车事实已经发生。">
+        <radio-group bindchange="onEditMode">
+          <label class="radio-label" wx:for="{{tripModes}}" wx:for-item="opt" wx:key="value">
+            <radio color="#163E35" value="{{opt.value}}" checked="{{editForm.trip.mode === opt.value}}" />
+            <view class="check-text">
+              <text>{{opt.label}}</text>
+              <text class="small muted" style="display:block;">{{opt.hint}}</text>
+            </view>
+          </label>
+        </radio-group>
+      </form-field>
+      <form-field wx:if="{{editForm.trip.mode === 'shared'}}" label="上车点" error="{{errors.trip}}">
+        <picker range="{{pickupOptions}}" value="{{editPickupIndex < 0 ? 0 : editPickupIndex}}" bindchange="onEditPickup">
+          <view class="picker {{editPickupIndex < 0 ? 'placeholder' : ''}}">
+            <text class="picker-value">{{editPickupIndex < 0 ? '请选择上车点' : pickupOptions[editPickupIndex]}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
     </view>
     <view class="callout">
       <text class="small">原授权只读。修改资料不会追加或扩大同行人的授权。</text>
@@ -78,7 +97,7 @@
           <view class="cluster" style="gap:8px;min-width:0;">
             <text class="badge neutral tabular">{{pi + 1}}</text>
             <text style="font-weight:600;">{{p.person.name || '未命名参与人'}}</text>
-            <text class="small muted">{{p.kindLabel}}</text>
+            <text class="small muted">{{p.kindLabel}} · {{p.tripSummary}}</text>
           </view>
           <view class="cluster" style="gap:8px;flex:0 0 auto;">
             <text class="badge {{p.complete ? 'success' : 'warning'}}">{{p.complete ? '资料齐' : '待补全'}}</text>
@@ -124,10 +143,21 @@
         <form-field label="健康与用药备注" hint="可选，仅用于本次活动的必要安全协作。">
           <textarea class="textarea slim" value="{{p.person.medical}}" maxlength="2000" data-index="{{pi}}" data-key="medical" bindinput="onPartField" />
         </form-field>
-        <form-field label="出行方式 / 上车点" error="{{errors['p' + pi + '-trip']}}">
-          <picker range="{{tripOptions}}" value="{{p.tripIndex || 0}}" data-index="{{pi}}" bindchange="onPartTrip">
-            <view class="picker {{!p.tripIndex ? 'placeholder' : ''}}">
-              <text class="picker-value">{{tripOptions[p.tripIndex || 0] || '请选择'}}</text>
+        <form-field label="这次怎么去？" error="{{errors['p' + pi + '-trip']}}">
+          <radio-group data-index="{{pi}}" bindchange="onPartMode">
+            <label class="radio-label" wx:for="{{tripModes}}" wx:for-item="opt" wx:key="value">
+              <radio color="#163E35" value="{{opt.value}}" checked="{{p.trip.mode === opt.value}}" />
+              <view class="check-text">
+                <text>{{opt.label}}</text>
+                <text class="small muted" style="display:block;">{{opt.hint}}</text>
+              </view>
+            </label>
+          </radio-group>
+        </form-field>
+        <form-field wx:if="{{p.trip.mode === 'shared'}}" label="上车点" error="{{errors['p' + pi + '-trip']}}">
+          <picker range="{{pickupOptions}}" value="{{p.pickupIndex < 0 ? 0 : p.pickupIndex}}" data-index="{{pi}}" bindchange="onPartPickup">
+            <view class="picker {{p.pickupIndex < 0 ? 'placeholder' : ''}}">
+              <text class="picker-value">{{p.pickupIndex < 0 ? '请选择上车点' : pickupOptions[p.pickupIndex]}}</text>
               <text class="picker-arrow">▾</text>
             </view>
           </picker>
@@ -157,12 +187,13 @@
       </view>
     </block>
 
-    <checkbox-group bindchange="onKeepTogether">
+    <!-- 同车约束只在「有人需要乘车」时才有意义：全员自行前往时不问这个问题 -->
+    <checkbox-group wx:if="{{needsVehicle}}" bindchange="onKeepTogether">
       <label class="check-label">
         <checkbox color="#163E35" value="1" checked="{{keepTogether}}" />
         <view class="check-text">
           <text>尽量安排同行人同车</text>
-          <text class="small muted" style="display:block;">整组安排；容量不足时不会静默拆组。</text>
+          <text class="small muted" style="display:block;">整组安排；容量不足时不会静默拆组。自行前往的人不受此约束影响。</text>
         </view>
       </label>
     </checkbox-group>

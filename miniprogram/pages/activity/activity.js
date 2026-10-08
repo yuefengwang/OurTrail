@@ -226,10 +226,13 @@ Page({
       avatar: r.avatar || '',
       statusLabel: F.STATUS_LABELS[r.status] || r.status,
       tone: r.status === 'confirmed' ? 'success' : 'neutral',
+      // 出行方式一律读服务端投影的 tripMode；此前这里拿 r.pickup !== '自行前往' 反推「这人还需要车吗」，
+      // 等于让中文文案给业务状态投票（上车点若被命名成「自行前往」就会判错）。
       subtitle: [
-        r.pickup,
-        r.vehicle || (r.pickup !== '自行前往' ? '车辆待安排' : ''),
-        r.seat ? r.seat + ' 座' : '',
+        F.TRIP_MODE_LABELS[r.tripMode] || r.tripMode,
+        r.tripMode === 'shared' ? (r.pickup || F.PICKUP_MISSING) : '',
+        r.tripMode === 'shared' ? (r.vehicle || '车辆待安排') : '',
+        r.tripMode === 'shared' && r.seat ? r.seat + ' 座' : '',
         r.home ? '已安全到家' : (r.checkedIn ? '已签到' : ''),
       ].filter(Boolean).join(' · '),
       isPrimary: r.signupId === v.primarySignupId,

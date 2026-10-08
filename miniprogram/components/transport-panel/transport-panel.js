@@ -116,13 +116,19 @@ Component({
             passengers,
           }
         })
-        const confirmed = v.rows.filter(r => r.status === 'confirmed').map(r => ({
-          signupId: r.signupId, label: r.name + ' · ' + r.pickup + ' · ' + (r.vehicle || '未分车'),
+        // 乘车安排的候选人只包括「需要乘车」的已确认者：自行前往的人在域里就不能分座
+        // （invariants「自行到达者不能分配乘客座位」），列进来只会让领队点出一个必被拒的操作。
+        // 仍需保留已排到车的人，否则「换人/移除当前座位」的入口会找不到对象。
+        const confirmed = v.rows.filter(r => r.status === 'confirmed' && r.tripMode === 'shared').map(r => ({
+          signupId: r.signupId,
+          label: r.name + ' · ' + (r.pickup || F.PICKUP_MISSING) + ' · '
+            + (r.vehicle ? r.vehicle + (r.seat ? ' ' + r.seat : '') : '待安排车辆'),
         }))
-        // 参与者司机候选：域规则要求「已确认且尚无车辆安排」（transport.js 校验，先在这里过滤掉必被拒的人）
+        // 参与者司机候选：域规则是「已确认且没有占用乘客座位」（transport.js validateDrivers）。
+        // 自行前往的人正是司机的主要来源——他们自己开车到场，不是「未分车」的缺事项。
         const driverCandidates = v.rows
-          .filter(r => r.status === 'confirmed' && !r.vehicle)
-          .map(r => ({ signupId: r.signupId, label: r.name + ' · ' + r.pickup }))
+          .filter(r => r.status === 'confirmed' && !r.hasPassengerAssignment && !r.vehicle)
+          .map(r => ({ signupId: r.signupId, label: r.name + ' · ' + (F.TRIP_MODE_LABELS[r.tripMode] || r.tripMode) }))
         this._loading = false
         this.setData({
           loading: false,
@@ -131,6 +137,9 @@ Component({
             vehicles: transport.vehicles.length,
             seats: transport.vehicles.reduce((sum, x) => sum + F.usable(x), 0),
             unassigned: v.counters.unassigned,
+            // 需乘车人数：为 0 时这一区间的存在本身就没有待办，面板要说明这点而不是显示空座位表
+            vehicleTravel: v.counters.vehicleTravel,
+            selfTravel: v.counters.selfTravel,
           },
           vehicles,
           groups: transport.groups.filter(g => g.keepTogether && g.signupIds.length > 1).map(g => ({
@@ -417,7 +426,7 @@ Component({
         if (d.kind === 'participant') {
           const c = this.data.driverCandidates[d.signupIndex]
           if (!c) {
-            this.setData({ error: '请为参与者司机选择人选（需已确认报名且尚未分车）。' })
+            this.setData({ error: '请为参与者司机选择人选（需已确认报名，且没有占用乘客座位）。' })
             return
           }
           drivers.push({ kind: 'participant', signupId: c.signupId })

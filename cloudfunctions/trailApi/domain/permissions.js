@@ -47,17 +47,71 @@ function vehicleCan(state, actor, activityId, vehicleId, now) {
       && m.activityId === activityId && m.vehicleId === vehicleId && Date.parse(now) < Date.parse(m.expiresAt))
 }
 
-/** 「已随队出发」这类核实对拼车乘客有额外前置：必须先有去程上车事实（司机本人随队开车，不需要上车记录）。
- *  field.js 的 joined 门与工作台的按钮可用性都读这里，避免同一条规则在两处各写一遍而漂移。 */
-function needsOutboundBoarding(state, signup) {
-  if (signup.trip.mode !== 'shared') return false
-  const isParticipantDriver = state.vehicles.some(v => v.activityId === signup.activityId
+/* ---------- 出行方式与乘车义务（全系统唯一出处） ----------
+ * 这一组判断是 self/shared 解耦的承重结构：域内曾经有 4 处各写一遍
+ * （permissions/activity/selectors/allocation），其中 selectors.js 的 detailState 还在拿
+ * 中文显示文案「自行前往」反推出行方式。现在所有「这个人要不要乘车」的判断都从这里出，
+ * UI 只消费 selectors 投影好的布尔标志，不允许再自行推断。 */
+
+/** 出行方式是否需要上车点等乘车前提。self（自行前往）恒 false。 */
+function isVehicleTraveller(signup) {
+  return signup.trip.mode === 'shared'
+}
+
+/** 以报名者身份兼任本场某辆车司机的报名 id 集合。 */
+function participantDriverSignupIds(state, activityId) {
+  const ids = new Set()
+  for (const vehicle of state.vehicles) {
+    if (vehicle.activityId !== activityId) continue
+    for (const driver of vehicle.drivers) if (driver.kind === 'participant') ids.add(driver.signupId)
+  }
+  return ids
+}
+
+/** 该报名是否兼任本场某辆车的司机（自己开车的人不占乘客位）。 */
+function isParticipantDriver(state, signup) {
+  return state.vehicles.some(v => v.activityId === signup.activityId
     && v.drivers.some(d => d.kind === 'participant' && d.signupId === signup.id))
-  if (isParticipantDriver) return false
-  const assignment = state.assignments.find(a => a.signupId === signup.id)
-  if (!assignment) return true
+}
+
+/** 该报名当前的乘客座位安排；引用的车辆必须属于同一场活动，否则视为未安排。 */
+function passengerAssignment(state, signup) {
+  return state.assignments.find(a => a.activityId === signup.activityId && a.signupId === signup.id
+    && state.vehicles.some(v => v.activityId === signup.activityId && v.id === a.vehicleId)) || null
+}
+
+/** 是否需要「搭乘活动车辆」履约：self 一律 false；兼任司机的 shared 参与者自己开车，也不需要乘客位。 */
+function needsVehicleService(state, signup) {
+  return isVehicleTraveller(signup) && !isParticipantDriver(state, signup)
+}
+
+/** 是否属于「待安排车辆」——self 永不进入该集合（活动主流程与 Leader 视图都靠它）。 */
+function needsSeatAssignment(state, signup) {
+  return needsVehicleService(state, signup) && !passengerAssignment(state, signup)
+}
+
+/** 「已随队出发」这类核实对拼车乘客有额外前置：必须先有去程上车事实（司机本人随队开车，不需要上车记录）。
+ *  field.js 的 joined 门、活动推进门与工作台/车长页的按钮可用性都读这里，避免同一条规则在两处各写一遍而漂移。 */
+function needsOutboundBoarding(state, signup) {
+  if (!needsVehicleService(state, signup)) return false
+  if (!passengerAssignment(state, signup)) return true
   const record = state.attendance.find(a => a.signupId === signup.id)
   return !(record && record.boardingByLeg && record.boardingByLeg.outbound)
+}
+
+/** 返程清点这件事对该参与者是否「存在」：只有随队的拼车乘客（非司机、按原车返程）才有返程上车事实。
+ *  self 与兼任司机的人恒 false——他们是「不适用」，不是「未完成」。 */
+function returnBoardingApplies(state, signup) {
+  if (!needsVehicleService(state, signup)) return false
+  const record = state.attendance.find(a => a.signupId === signup.id)
+  return !!record && record.returnPlan.kind === 'assigned'
+}
+
+/** 返程清点的未完成状态（工作台上「待返程上车」的人数与车长页按钮可用性都读这里）。 */
+function needsReturnBoarding(state, signup) {
+  if (!returnBoardingApplies(state, signup)) return false
+  const record = state.attendance.find(a => a.signupId === signup.id)
+  return !!record.departure && record.departure.kind === 'joined' && !record.boardingByLeg.return
 }
 
 function requireActivity(state, activityId) {
@@ -278,6 +332,9 @@ function canExecute(state, actor, payload, now) {
 module.exports = {
   permissionDenied, missing, consentRequired, allowed, authRequired,
   isOwnSignup, isSelfSignup, isOwner, hasProxyConsent, isCurrentSignup, workDataAvailable,
-  staffCan, vehicleCan, needsOutboundBoarding, requireActivity, requireSignups, requireVehicles,
+  staffCan, vehicleCan, requireActivity, requireSignups, requireVehicles,
+  isVehicleTraveller, participantDriverSignupIds, isParticipantDriver, passengerAssignment,
+  needsVehicleService, needsSeatAssignment, needsOutboundBoarding,
+  returnBoardingApplies, needsReturnBoarding,
   canReadSensitive, canReadNotice, canExecute,
 }

@@ -100,6 +100,7 @@ Page({
     participate: false,
     dataUse: false,
     tripSelf: true,
+    tripModes: F.TRIP_MODE_OPTIONS,
     tripPickupIndex: -1,
     // 反馈
     failure: '',
@@ -816,11 +817,17 @@ Page({
         }
         const profile = res.view.profile
         const pickups = this.data.form.pickups
-        const usePickup = !this.data.tripSelf && this.data.tripPickupIndex >= 0 && pickups[this.data.tripPickupIndex]
+        const picked = this.data.tripPickupIndex >= 0 ? pickups[this.data.tripPickupIndex] : null
+        // 选了「搭乘车辆」却没选上车点时不能悄悄降级成 self：
+        // 那会让领队本人的报名变成「不需要车」，而 publish 之后改出行方式就要走集合期协调。
+        if (!this.data.tripSelf && !picked) {
+          this.setData({ failure: '选择搭乘车辆时，请先指定你的上车点。' })
+          return
+        }
         participation = {
           personRef: { kind: 'user', userId: profile.id },
           participant: profile.person,
-          trip: usePickup ? { mode: 'shared', pickupPointId: pickups[this.data.tripPickupIndex].id } : { mode: 'self' },
+          trip: picked && !this.data.tripSelf ? { mode: 'shared', pickupPointId: picked.id } : { mode: 'self' },
           consent: { dataUse: true, proxyAuthority: false, proxyHome: false },
         }
         this.doPublish(participation, res.revision)

@@ -16,9 +16,11 @@
     <!-- 指标即入口：点数字直接跳到对应工作区 -->
     <view class="metrics">
       <view class="metric" hover-class="button-hover" bindtap="goRoster"><text class="metric-value">{{pending}}</text><text class="metric-label">待审核 ›</text></view>
-      <view class="metric" hover-class="button-hover" bindtap="goTransport"><text class="metric-value">{{unassigned}}</text><text class="metric-label">待分车 ›</text></view>
+      <view class="metric" hover-class="button-hover" bindtap="goTransport"><text class="metric-value">{{unassigned}}</text><text class="metric-label">待安排车辆 ›</text></view>
       <view class="metric" hover-class="button-hover" bindtap="goField"><text class="metric-value">{{thirdValue}}</text><text class="metric-label">{{thirdLabel}} ›</text></view>
     </view>
+    <!-- 出行方式构成写在指标下面：待安排车辆只统计「需要乘车」的人，自行到达的人不是缺事项 -->
+    <text class="small muted" style="display:block;margin-top:-4px;">{{tripSummaryLine}}</text>
 
     <view class="segmented" aria-label="工作台分区">
       <view wx:for="{{tabLabels}}" wx:key="index" class="seg {{tab === index ? 'on' : ''}}" data-tab="{{index}}" bindtap="onTab">{{item}}</view>
@@ -41,10 +43,12 @@
           </view>
           <icon name="arrow" size="18" color="#163E35" />
         </view>
-        <view class="list-row" hover-class="button-hover" bindtap="goTransport">
+        <!-- 排车是「需要乘车的人」的子流程：全场没人需要乘车时，这条待办根本不存在，
+             而不是摆一个 0 让人以为还欠着一步 -->
+        <view wx:if="{{vehicleTravel > 0}}" class="list-row" hover-class="button-hover" bindtap="goTransport">
           <view class="list-main">
             <text>检查车辆与人员安排</text>
-            <text class="list-sub">{{unassigned}} 人尚未分车 · 不自动拆分同车组</text>
+            <text class="list-sub">{{unassigned}} 人需要乘车待安排 · 不自动拆分同车组（{{selfTravel}} 人自行前往，无需排车）</text>
           </view>
           <icon name="arrow" size="18" color="#163E35" />
         </view>

@@ -2,7 +2,7 @@
 'use strict'
 
 const { failure, deepClone } = require('./contracts')
-const { authRequired, isOwner, permissionDenied, requireActivity } = require('./permissions')
+const { authRequired, isOwner, isVehicleTraveller, needsVehicleService, permissionDenied, requireActivity } = require('./permissions')
 
 /** 乘客位 = 核载 − 司机（含服务司机）− 预留/禁用。 */
 function passengerCapacity(vehicle) {
@@ -48,12 +48,13 @@ function planAssignments(state, actor, activityId, now) {
   if (!valid.ok) return valid
 
   const allVehicles = state.vehicles.filter(v => v.activityId === activityId)
-  const drivers = new Set(allVehicles.flatMap(v => v.drivers.flatMap(d => d.kind === 'participant' ? [d.signupId] : [])))
   const vehicles = allVehicles
     .filter(v => !(v.legs.outbound.departed || v.legs.outbound.completed || v.legs.return.departed || v.legs.return.completed))
     .sort((a, b) => compare(a.id, b.id))
+  // 「谁需要乘车」只有一处定义：needsVehicleService 天然排除 self 与兼任参与者的司机，
+  // 所以自动分车永远不会把自行前往的人排进车里。
   const eligible = state.signups
-    .filter(s => s.activityId === activityId && s.status === 'confirmed' && s.trip.mode === 'shared' && !drivers.has(s.id))
+    .filter(s => s.activityId === activityId && s.status === 'confirmed' && needsVehicleService(state, s))
     .sort((a, b) => compare(a.id, b.id))
   const together = new Set(state.groups.filter(g => g.activityId === activityId && g.keepTogether).map(g => g.id))
   const units = new Map()
@@ -72,7 +73,7 @@ function planAssignments(state, actor, activityId, now) {
     if (!remaining.length) continue
     const oldVehicleId = members.map(s => (assigned.get(s.id) || {}).vehicleId).find(id => id !== undefined)
     const available = oldVehicleId === undefined ? vehicles : vehicles.filter(v => v.id === oldVehicleId)
-    const matching = available.filter(v => members.every(s => s.trip.mode === 'shared' && v.pickupPointIds.indexOf(s.trip.pickupPointId) !== -1))
+    const matching = available.filter(v => members.every(s => isVehicleTraveller(s) && v.pickupPointIds.indexOf(s.trip.pickupPointId) !== -1))
     const vehicle = matching.find(v => passengerCapacity(v) - assignments.filter(a => a.vehicleId === v.id).length >= remaining.length)
     if (!vehicle) {
       const reason = !available.length ? 'no_vehicle'

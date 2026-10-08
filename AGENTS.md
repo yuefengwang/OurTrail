@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — OurTrail
 
-**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Base commit:** `1acd55e`
+**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Base commit:** `72e4520`
 
 ---
 
@@ -164,6 +164,7 @@ node tools/meteogram-multiday-test.js        # Multi-Day Horizon 48/72h（44）
 node tools/outdoor-cloud-sea-test.js         # 云海机会窗口判定（20）
 node tools/outdoor-intelligence-test.js      # Outdoor Intelligence 条件态/机会判定（24）
 node tools/outdoor-intelligence-ui-test.js   # OI 呈现层 + 天气页集成（46）
+node tools/trip-mode-test.js                  # 出行方式 self/shared：Case 1-10 业务态 + 投影/动作/导出/detailState（78）
 node tools/weather-v2-visual-audit-test.js   # Weather V2 视觉保真审计：跨宽度几何归一化/YOU 锚点/covered 透传/OI 卡契约（38）
 
 # 端到端两层（A 层计入门禁；B 层需开发者工具，不计入门禁）
@@ -204,7 +205,8 @@ node tools/weather-page-test.js && node tools/weather-v2-test.js && node tools/m
 node tools/cloud-field-svg-test.js && node tools/weather-cloud-field-test.js && \
 node tools/meteogram-svg-test.js && node tools/meteogram-multiday-test.js && \
 node tools/outdoor-cloud-sea-test.js && node tools/outdoor-intelligence-test.js && \
-node tools/outdoor-intelligence-ui-test.js && node tools/weather-v2-visual-audit-test.js && \
+node tools/outdoor-intelligence-ui-test.js && node tools/trip-mode-test.js && \
+node tools/weather-v2-visual-audit-test.js && \
 node tools/watch-points-test.js && \
 node tools/weather-model-test.js && node tools/space-time-test.js && \
 node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
@@ -355,6 +357,7 @@ await mp.disconnect()
 16. **Seat grid is 4 seats + 1 aisle per row.** Seat width `calc((100% - 48px) / 4)`, aisle a fixed `flex: 0 0 16px`. A `25%` width once made the aisle consume a seat slot and misalign the row.
 17. **Never put `WXSS` literals in a component** — use `app.wxss` tokens via `var()`. `app.wxss` is the only place a new semantic color may be introduced, and it must be registered in `design-system.md` too. **「禁止发明新色值」**
 18. **Do not trust English marker comments.** This repo writes its rules in Chinese. Grep `禁止|不要|务必|坑|注意|严禁` — `DO NOT`/`NEVER`/`DEPRECATED` return almost nothing. The highest-signal rules are inline comments at the top of the file that owns the bug.
+19. **Never infer a domain state from a display label.** 出行方式只有一个来源：`Signup.trip.mode` → `permissions.js` 的义务谓词（`isVehicleTraveller` / `needsVehicleService` / `needsSeatAssignment` / `needsOutboundBoarding` / `needsReturnBoarding`）→ `selectors.rowView` 的 `tripMode` + 派生布尔 → UI 读这些布尔。UI/WXML 里出现 `pickup === '自行前往'`、或域内再写一遍 `trip.mode === 'shared' && !driver`，就是复发点（`SYNC.md` 2026-10-08 记的 D2/D3/D4）。文案在 `utils/format.js` 定义一次（`TRIP_MODE_LABELS` / `TRIP_MODE_OPTIONS` / `RETURN_PLAN_LABELS`），并且**只允许向下**：domain → projection → label，反向一律禁止。`self` 永远不需要车辆/座位/上车点/boarding；`shared` 的全部既有约束一个都不许放松（不要为了 self 去放宽 invariant，也不要加 `noVehicle`/`skipVehicle`/`skipDriver` 这类 Activity 级开关）。
 
 ---
 

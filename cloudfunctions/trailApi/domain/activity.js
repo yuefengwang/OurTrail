@@ -4,7 +4,7 @@
 const S = require('./schema')
 const { failure, deepClone } = require('./contracts')
 const { registerParticipants } = require('./signup')
-const { isCurrentSignup } = require('./permissions')
+const { isCurrentSignup, isVehicleTraveller, needsOutboundBoarding } = require('./permissions')
 
 const success = ids => ({ ok: true, value: ids })
 const uniqueIds = ids => new Set(ids).size === ids.length
@@ -31,7 +31,7 @@ function validateInput(state, ownerId, input, full, activityId) {
     const roster = state.signups.filter(s => s.activityId === activityId)
     if (roster.filter(s => s.status === 'pending' || s.status === 'confirmed').length > input.capacity) return failure('CAPACITY', '活动名额不能低于待确认和已确认总人数。')
     const pickups = new Set(input.pickupPoints.map(p => p.id))
-    if (roster.some(s => s.trip.mode === 'shared' && !pickups.has(s.trip.pickupPointId))
+    if (roster.some(s => isVehicleTraveller(s) && !pickups.has(s.trip.pickupPointId))
       || state.vehicles.some(v => v.activityId === activityId && v.pickupPointIds.some(id => !pickups.has(id)))) {
       return failure('INVALID_INPUT', '已有报名或车辆引用的上车点不能删除。')
     }
@@ -163,8 +163,9 @@ function handleActivity(state, command, context) {
         for (const signup of confirmed) {
           const record = records.find(a => a.signupId === signup.id)
           if (!record || !record.departure) return failure('UNRESOLVED_DEPARTURE', '请逐一核实已确认参与者的出发情况。')
-          const participantDriver = state.vehicles.some(v => v.activityId === activity.id && v.drivers.some(d => d.kind === 'participant' && d.signupId === signup.id))
-          if (record.departure.kind === 'joined' && (!record.checkIn || (signup.trip.mode === 'shared' && !participantDriver && !record.boardingByLeg.outbound))) {
+          // 去程上车要求只有一处定义（permissions.needsOutboundBoarding）：
+          // 自行前往的人与兼任参与者的司机天然为 false，所以全员 self 的活动不需要任何车辆也能推进。
+          if (record.departure.kind === 'joined' && (!record.checkIn || needsOutboundBoarding(state, signup))) {
             return failure('UNRESOLVED_DEPARTURE', '实际出行者需要签到；拼车乘客还需要去程上车确认。')
           }
         }

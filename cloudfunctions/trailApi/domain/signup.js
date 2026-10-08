@@ -28,9 +28,13 @@ function normalizedPerson(input) {
   return { ok: true, value: person }
 }
 
+/** 出行方式是参与者级语义：self 不需要上车点；shared 必须挂在本场仍然存在的集合点上。 */
 function validTrip(activity, trip) {
-  return S.validate(S.Trip, trip)
-    && (trip.mode === 'self' || activity.pickupPoints.some(point => point.id === trip.pickupPointId))
+  if (!S.validate(S.Trip, trip)) return failure('INVALID_INPUT', '请选择出行方式。')
+  if (trip.mode === 'self') return { ok: true, value: trip }
+  return activity.pickupPoints.some(point => point.id === trip.pickupPointId)
+    ? { ok: true, value: trip }
+    : failure('INVALID_INPUT', '需要乘车的参与者必须选择本场有效的上车点。')
 }
 
 /** 提交与发布时本人参与共用：整批校验通过后才写入。 */
@@ -55,7 +59,8 @@ function registerParticipants(state, activity, inputs, userId, keepTogether, sta
     }
     const person = normalizedPerson(item.participant)
     if (!person.ok) return person
-    if (!validTrip(activity, item.trip)) return failure('INVALID_INPUT', '请选择本场活动有效的上车点。')
+    const trip = validTrip(activity, item.trip)
+    if (!trip.ok) return trip
     prepared.push({ personRef: item.personRef, participant: person.value, trip: item.trip, consent: item.consent })
   }
   const fits = occupied(state, activity.id) + prepared.length <= activity.capacity
@@ -73,9 +78,17 @@ function registerParticipants(state, activity, inputs, userId, keepTogether, sta
   state.signups.push.apply(state.signups, records)
   state.attendance.push.apply(state.attendance, records.map(signup => ({
     signupId: signup.id, checkIn: null, boardingByLeg: { outbound: null, return: null },
-    returnPlan: { kind: 'assigned' }, departure: null, nodes: [], home: null,
+    // 返程安排只在「搭乘活动车辆」时才有意义：自行前往的人永远拿不到座位（invariants 里
+    // 「自行到达者不能分配乘客座位」），给他们写 assigned 等于写入一条永远无法满足的脏事实。
+    returnPlan: returnPlanFor(signup.trip),
+    departure: null, nodes: [], home: null,
   })))
   return { ok: true, value: records.map(s => s.id) }
+}
+
+/** 出行方式 → 返程安排的唯一映射：self ⇒ 自行往返；shared ⇒ 默认原车返程（待现场核实可改另行）。 */
+function returnPlanFor(trip) {
+  return { kind: trip.mode === 'self' ? 'own' : 'assigned' }
 }
 
 /** 不把人从既有上车事实或已发车的车辆上剥离。 */
@@ -154,11 +167,24 @@ function handleSignup(state, command, context) {
       }
       const person = normalizedPerson(p.participant)
       if (!person.ok) return person
-      if (!validTrip(activity, p.trip)) return failure('INVALID_INPUT', '请选择本场活动有效的上车点。')
-      const tripChanged = signup.trip.mode !== p.trip.mode || (signup.trip.mode === 'shared' && p.trip.mode === 'shared' && signup.trip.pickupPointId !== p.trip.pickupPointId)
+      const trip = validTrip(activity, p.trip)
+      if (!trip.ok) return trip
+      const modeChanged = signup.trip.mode !== p.trip.mode
+      const tripChanged = modeChanged
+        || (signup.trip.mode === 'shared' && p.trip.mode === 'shared' && signup.trip.pickupPointId !== p.trip.pickupPointId)
       signup.participant = person.value
       signup.trip = deepClone(p.trip)
+      // 出行方式或上车点变了 ⇒ 旧的乘客座位安排不再成立。travelLocked 已保证此刻不存在任何
+      // 上车/出发事实，所以这里是「解除」而不是「抹去历史」。self→shared 只回到待安排车辆，
+      // 绝不自动伪造 assignment。
       if (tripChanged) state.assignments = state.assignments.filter(a => a.signupId !== signup.id)
+      if (modeChanged) {
+        const record = state.attendance.find(a => a.signupId === signup.id)
+        // 只在两个「车辆返程默认值/派生值」之间转换；already 核实过的 independent 带证据，保留不动。
+        if (record && (record.returnPlan.kind === 'assigned' || record.returnPlan.kind === 'own')) {
+          record.returnPlan = returnPlanFor(p.trip)
+        }
+      }
       return { ok: true, value: [signup.id] }
     }
     case 'group.setTogether': {

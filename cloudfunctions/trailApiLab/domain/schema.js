@@ -227,6 +227,11 @@ const CheckIn = specUnion('method', {
 const ReturnPlan = specUnion('kind', {
   assigned: specObj({ kind: specEnum(['assigned']) }),
   independent: specObj({ kind: specEnum(['independent']), evidence: Evidence }),
+  // own = 自行往返：由 trip.mode === 'self' 派生，不是领队核实出来的事实，因此不带 evidence。
+  // 只由域内写入（signup.js），attendance.returnPlan 命令不接受它——领队无法替别人决定自行返程之外的事。
+  // 老数据里的 self + 'assigned' 仍然合法（不迁移），但 permissions.js 的返程门对它取「不适用」，
+  // 所以它不再产生任何义务；新写入一律不再产生这种不可满足的事实。
+  own: specObj({ kind: specEnum(['own']) }),
 })
 const NodeVisit = specObj({ pointId: specId, evidence: Evidence })
 const Attendance = specObj({

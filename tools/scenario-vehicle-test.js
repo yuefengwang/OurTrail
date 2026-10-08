@@ -122,13 +122,19 @@ function schemaOk(payload) {
 
 // ---- vehicleTask 视图夹具（形状对齐 selectors.js:386 的 vehicleTask 投影） ----
 function passenger(over) {
-  return Object.assign({
+  const p = Object.assign({
     signupId: 's2', groupId: 'g1', name: '李四', status: 'confirmed',
     pickup: '东门集合点', vehicle: '1号车', seat: '01',
     checkedIn: true, outboundBoarded: false, returnBoarded: false,
     returnPlan: 'assigned', departure: 'joined', home: false,
     avatar: '', phone: '13800000002',
   }, over || {})
+  // 车长页现在直接消费域内标志（returnBoardingApplies / needsOutboundBoarding），
+  // 不再自己用 returnPlan 重述「谁要清点」这条规则；夹具按服务端同一口径补齐这两个键。
+  p.returnBoardingApplies = p.returnPlan === 'assigned'
+  p.needsReturnBoarding = p.returnBoardingApplies && p.departure === 'joined' && !p.returnBoarded
+  p.needsOutboundBoarding = !p.outboundBoarded
+  return p
 }
 function vehicleView(over) {
   over = over || {}
