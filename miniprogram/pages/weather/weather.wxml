@@ -137,13 +137,17 @@
       <!-- Weather V2 OI Phase 2：今天值得关注（additive）。
            三级分层：Meteogram = 天气事实；本卡 = OurTrail 解读 + 机会窗口。
            时间轴与 Meteogram 共用同一 timeScale；点窗口/条目 → selectHour 联动。
-           OI 数据缺失/异常时整卡隐藏（不影响天气主功能）。 -->
-      <view wx:if="{{oiCard}}" class="card oi-card">
+           OI 数据缺失/异常时整卡隐藏（不影响天气主功能）。
+           外层 gate 必须是 oiCard || oiHorizon：两者按 viewSpan 互斥构建
+           （24h → oiCard，48/72h → oiHorizon），单挂 oiCard 会让 Phase 4
+           的 horizon 卡（Phase 4 §17 按日分组，设计文档明文交付）整卡不可见——
+           Task 4 真机实证（chengdu-48h .oi-card count=0）。 -->
+      <view wx:if="{{oiCard || oiHorizon}}" class="card oi-card">
         <view class="oi-hdr">
           <text class="oi-title">今天值得关注</text>
-          <text class="oi-sub small muted">{{oiCard.astroNote}}</text>
+          <text class="oi-sub small muted">{{oiCard ? oiCard.astroNote : oiHorizon.astroNote}}</text>
         </view>
-        <view class="oi-timeline">
+        <view class="oi-timeline" wx:if="{{oiCard}}">
           <image class="oi-tl-img" src="{{oiCard.timelineSrc}}" mode="widthFix"/>
           <view
             wx:for="{{oiCard.tapZones}}"
@@ -207,8 +211,8 @@
             <text class="small muted">{{oiHorizon.silenceNote}}</text>
           </view>
         </block>
-        <!-- 24h 视图：单日机会列表 -->
-        <view class="oi-list" wx:if="{{viewSpan === 24}}">
+        <!-- 24h 视图：单日机会列表（&& oiCard：切窗瞬时 viewSpan 已翻、卡数据未翻，防 null.items） -->
+        <view class="oi-list" wx:if="{{viewSpan === 24 && oiCard}}">
           <view
             wx:for="{{oiCard.items}}"
             wx:key="index"
@@ -282,7 +286,7 @@
           </view>
           <text class="small muted oi-day-hint">点某天查看当日 24 小时机会详情</text>
         </view>
-        <view wx:if="{{oiCard.silenceNote}}" class="oi-silence">
+        <view wx:if="{{oiCard && oiCard.silenceNote}}" class="oi-silence">
           <text class="small muted">{{oiCard.silenceNote}}</text>
         </view>
         <text class="chart-caption small muted">OurTrail 户外解读由当日天气数据推导 · 天文时刻为确定性事件 · 天气窗口标注置信</text>

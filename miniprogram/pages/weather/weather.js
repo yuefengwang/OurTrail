@@ -603,8 +603,10 @@ Page({
       oiCard: oiCard,
       oiHorizon: oiHorizon,
       /* Phase 3 §十二：OI 卡可见时，Agenda 里的 L2「OurTrail 分析」窗口与 OI 重复
-         —— 页面级过滤（agenda.js 不动），Agenda 保留天气节奏与天文时刻（L1） */
-      agenda: (unified && oiCard) ? agendaView.filter(e => !e.l2) : agendaView,
+         —— 页面级过滤（agenda.js 不动），Agenda 保留天气节奏与天文时刻（L1）。
+         可见判据须同时覆盖 oiHorizon：24h 与 48/72h 按 viewSpan 互斥构建，
+         只认 oiCard 会让 48/72h（horizon 卡渲染修复后）L2 窗口与卡内条目重复。 */
+      agenda: (unified && (oiCard || oiHorizon)) ? agendaView.filter(e => !e.l2) : agendaView,
     }), () => this.probeStageWidth())
   },
 
@@ -907,9 +909,13 @@ Page({
     this.setData({ oiCard: card })
   },
 
-  /* OI 时间轴/列表点击 → selectHour（Meteogram crosshair + 读数联动闭环） */
+  /* OI 时间轴/列表点击 → selectHour（Meteogram crosshair + 读数联动闭环）。
+     dataset 键双兜底：24h 元素传 data-hour（dataset.hour），horizon 卡传 data-h
+     （dataset.h）——handler 只读 .h 时 24h tap 全部 NaN 早退（Task 4 真机实证）。 */
   onOiTap(e) {
-    const h = Number(e.currentTarget.dataset.h)
+    const ds = e.currentTarget.dataset
+    const raw = ds.h != null ? ds.h : ds.hour
+    const h = Number(raw)
     if (!Number.isFinite(h) || h < 0) return
     if (h >= 24 && this.data.viewSpan !== 24) {
       /* Phase 4：horizon 卡传绝对小时 → 对应日期 */

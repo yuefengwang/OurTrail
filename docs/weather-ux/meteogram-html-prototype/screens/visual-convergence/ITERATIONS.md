@@ -42,9 +42,14 @@ Baseline: cf89b94 · 2026-10-07 · 基线套件读数 38 套件 / 2488 断言（
 
 - **（Iteration 6 更正）** 原条目前提被证伪：白圆原型同参存在（`meteogram.js` L705，r=2.3）；chip 高亮随 Iter5 删 cf-hours 网格已消失；列洗 0.035、竖线 0.5/0.4、时间牌 22×11 双侧同参。真实缺口是**反向的**——运行时缺原型三件克制小高亮（降水柱 outline 0.7 / 风圆 r=2·0.8 / 阵风圆 r=1.7·0.7），Iteration 6 补齐。
 
-### P2-1 OI presentation 去重（Task 4 专章）
+### P2-1 OI presentation 去重（Task 4 专章）——**前提证伪，Task 4 关闭（2026-10-08）**
 
-- chengdu-48h 底部已见「今天值得关注」卡；重复情况需滚到页尾补拍核验，Task 4 处理（只动 `oi-presentation.js`，禁改 model）。
+- ~~chengdu-48h 底部已见「今天值得关注」卡；重复情况需滚到页尾补拍核验，Task 4 处理（只动 `oi-presentation.js`，禁改 model）。~~
+- **实测证伪**：48/72h 不是「重复」而是**整卡缺失**——`applyWeather` 按 `viewSpan` 互斥构建（24h→`oiCard`，48/72h→`oiHorizon`），但 WXML 外层 gate 只有 `wx:if="{{oiCard}}"`，horizon 卡被整块挡死（probe：`oiCard=false oiHorizon=true`，`.oi-card count=0`）；且 `.oi-card count=0` 自 `18bbb3a`（早于基线）即如此。设计意图佐证 `docs/weather-ux/outdoor-intelligence/README.md` L42-43（Phase 4 明文定义 horizon 卡按日分组）。
+- **Phase-0 矛盾（记录不追查）**：排名「chengdu-48h 底部已见卡」与代码史矛盾（gate 从一开始就挡死，不可能见到），无法解释，以现状取证为准。
+- **反向缺陷（真机实证）**：24h `onOiTap` 死接线——元素传 `data-hour`、handler 只读 `dataset.h` → NaN 早退，tap 全部无效（`probe-oi-tap.js`：修复前 tapZone/oi-item 快照不变；修复后双 CHANGED=true）。
+- **范围调整（先例同 P1-4）**：改码落在页面表现层 `weather.wxml` / `weather.js`（外层 gate、agenda 过滤、`onOiTap` 双键兜底），非排名预设的 `oi-presentation.js`——后者零改动，model/sky 红线未触。
+- 留置不处理：`weather.wxml` L266 `oiMultiDay` 分支从未赋值（死分支，删之超范围）。
 
 ### P2-2 图例形态
 
@@ -168,3 +173,22 @@ Change: `meteogram-svg.js` +15 行（temp 白圆后、时间牌前）——① �
 Before: iter-6-emeishan-24h-sel12-before.png、iter-6-litang-24h-sel13-before.png（选中层仅竖线+temp 白圆+时间牌+列洗）
 After: iter-6-emeishan-24h-sel12-after.png、iter-6-litang-24h-sel13-after.png + 4 张裁图（三件高亮全部落地，参数与原型 ⑨ 段一致）
 Decision: KEEP / Reason: P1-4 排名前提证伪并更正（见 Ranking）；反向缺口补齐后选中层与原型同构；四套门禁全绿；无新问题（无新色值，全部 #163e35/token 白）。
+
+## Task 4 — P2-1 OI 去重 · 前提证伪与反向缺陷修复
+
+Problem: P2-1 排名前提是「chengdu-48h 底部已见『今天值得关注』卡，重复需核验」。实测前提**证伪**——48/72h 不是重复而是**整卡缺失**：`applyWeather` 按 `viewSpan` 互斥构建（24h→`oiCard`，48/72h→`oiHorizon`），WXML 外层 gate 却只有 `wx:if="{{oiCard}}"`，horizon 卡（含按日分组 L2、timeline、silenceNote）被整块挡死（probe：`oiCard=false oiHorizon=true`，`.oi-card count=0`；自 `18bbb3a` 即如此，早于基线）。设计意图佐证 `outdoor-intelligence/README.md` L42-43。附带发现第二个真机缺陷：24h `onOiTap` 死接线——元素传 `data-hour`、handler 只读 `dataset.h` → NaN 早退，时间轴/列表 tap 全部无效（只能靠 `selectHour` api 回退）。
+Hypothesis: 外层 gate 放宽为 `oiCard || oiHorizon` 并给 24h 专属块加互斥门，horizon 卡即渲染且 24h 块不串位；`onOiTap` 双键兜底（`ds.h ?? ds.hour`）恢复 tap 联动；agenda L2 过滤扩至 `oiHorizon` 完成 48/72h 去重（原过滤只看 `oiCard`，48/72h 下永真 → L2 与 horizon 卡重复）。
+范围: 仅 `weather.wxml`（外层 gate / astroNote 三元 / 24h timeline 门 / oi-list 门 / silenceNote 门）与 `weather.js`（agenda 过滤 L607 扩 `oiHorizon`、`onOiTap` 双键兜底）。**`oi-presentation.js` / model / sky 零改动**（范围调整：改码落在页面表现层，非排名预设文件，先例同 Iteration 4/6 的排名更正）。
+
+### Task 4 — Change / Before / After / Decision
+
+Change: ① `weather.wxml` L141 外层 `wx:if` → `{{oiCard || oiHorizon}}`，astroNote 改三元取活跃卡；② 24h timeline 块加 `wx:if="{{oiCard}}"`、oi-list 门改 `{{viewSpan === 24 && oiCard}}`（防切窗瞬时 `viewSpan` 已翻、卡数据未翻的 `null.items`）、silenceNote 门改 `{{oiCard && oiCard.silenceNote}}`；③ `weather.js` L607 agenda 过滤 → `(unified && (oiCard || oiHorizon))`；④ `onOiTap` 读键 `ds.h != null ? ds.h : ds.hour` 双兜底（24h 元素 `data-hour`、horizon 元素 `data-h`）。标题「今天值得关注」保持静态（48/72h 无设计规格文案，最小 diff）。
+测试: 门禁 7 套实跑——check ✓ / check-handlers weather ✓（19 handlers）/ meteogram-svg 25/0 / visual-audit 38/0 / weather-page 136/0 / multiday 44/0 / **outdoor-intelligence-ui 46 过 1 败**。该败例（`applySelection 命中 IN_CLOUD 窗口` L118）**与本任务无关**：`git stash` 后在 HEAD 同败（隔离证实）；`probe-incloud.js` 归因——测试实时抓取今日真实预报，`items[0]` 银河窗口 00:00–05:00 与 `items[2]` IN_CLOUD 03:00–04:00 重叠，`applySelection(3)` 首匹配被银河抢走（数据依赖的既有测试脆弱性，非回归；红线不改测试制造 PASS，留记录）。grep 确认无测试 pin `data-hour`/`onOiTap`/`oiCard`/agenda 过滤。
+证据（2026-10-08，375 机位、真实数据、改码后 cli close→open→auto 重开）:
+- 48h 卡渲染: `probe-oi.js` `.oi-card count: 1`（修复前 0）、`oiHorizon=true oiGroups=2`、`.oi-title found: true`；截图 task4-before/chengdu-48h（纯 agenda，无卡）→ task4-after/chengdu-48h（「今天值得关注」horizon 卡 + 今天/明天分组 + timeline 全渲染）。
+- 24h tap 恢复: `probe-oi-tap.js`（已修伪阴性——tapZone 先选中 item[0] 同小时，直接再点快照必同；改为先 `selectHour` 挪到 10:00 再点回 00:00）——tapZone CHANGED=true、oi-item CHANGED=true、selectHour api CHANGED=true；48h 视图 `data-h` tap 同 CHANGED=true。
+- 24h 无回归: task4-24h（修复前）vs task4-after/chengdu-24h（修复后）逐张对照——卡内容、timeline、silenceNote、下方 agenda 完全一致。
+- 留置: `weather.wxml` L266 `oiMultiDay` 死分支（从未赋值）；「海拔 undefined m 云量 null%」既有隐患（Iter6 已记，另开一轮）；Phase-0 排名与代码史矛盾（见 Ranking，记录不追查）。
+Before: ~/.ourtrail-mp-auto/shots/task4-before/chengdu-48h-375px.png、~/.ourtrail-mp-auto/shots/task4-24h/chengdu-24h-375px.png
+After: ~/.ourtrail-mp-auto/shots/task4-after/chengdu-{48h,24h}-375px.png
+Decision: KEEP / Reason: P2-1 前提证伪（去重→整卡缺失）并按设计文档修复渲染；反向缺陷 24h 死 tap 同轮修复且真机三信号全通；24h 像素级无回归；6/7 门禁全绿，唯一败例 stash 隔离 + probe 归因为既有数据依赖，非本轮引入。
