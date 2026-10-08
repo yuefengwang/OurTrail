@@ -5,7 +5,7 @@ Baseline: cf89b94 · 2026-10-07 · 基线套件读数 38 套件 / 2488 断言（
 - 基线矩阵：13 张 = 375 主矩阵 9（litang/emeishan/chengdu × 24/48/72）+ 375 选时 2（litang sel16 / emeishan sel6）+ 390 抽查 1（chengdu-24h）+ 414 抽查 1（litang-72h），全部真实数据（天气缓存过门，无 setData 合成）。
 - 驱动：`~/.ourtrail-mp-auto/drive-shots.js` · ws 9421 · 微信开发者工具服务端口 61253 · 截图时机型 iPhone 6/7/8（375，localstorage index 1）。
 - **收尾提醒：机型当前为 375，用户原设置是 index 7（iPhone 12/13 Pro，390）——Task 9 结束前用 `set-device.js` 还原。**
-- 判读工具：`look_at` 本会话不可用（multimodal-looker 无响应），全部改用 `read` 直接读 PNG 逐张判读；对照物 `screens/horizon-{litang,emeishan,chengdu}-{24,48,72}-375.png` 与 `screens/375-default.png`。
+- 判读工具：`look_at` 本会话不可用（multimodal-looker 无响应），全部改用 `read` 直接读 PNG 逐张判读；对照物 `screens/horizon-{litang,emeishan,chengdu}-{24,48,72}-375.png` 与 `screens/375-default.png`。**对照物身份注（Iteration 4 核验）**：`horizon-*.svg` 是运行时 `meteogram-svg.js` 的输出快照（行标题 x=0 @ y=18/82/130/326 = Iter3 前坐标、day header 用 今天/明天/后天——HTML 原型 `meteogram.js` 两者皆无；screens/README「与小程序 `<image>` 逐字节一致的源图」自证），**不是 HTML 原型**；HTML 原型对照物是 `375-default.png` / `real-*.png` / `v1–v6/`。
 
 ## Visual Issue Ranking（Phase 0 实测产出）
 
@@ -23,13 +23,14 @@ Baseline: cf89b94 · 2026-10-07 · 基线套件读数 38 套件 / 2488 断言（
 - 「云量·高度 m」与 `6000` 刻度**逐字重叠**成乱码状（全部 9 张 375 主矩阵 + 390/414 抽查均复现）。
 - 「风 km/h」被截成「风 k…」且与 `2000` 刻度重叠（同上全量复现）。
 - 温度 hi/lo 双行刻度（成都 `23°/18°`、理塘 `7°/−2°`）与「降水 mm/h」标签及 `0.x` 刻度挤在同一行（chengdu-24h、litang-24h/48h/72h）。
-- ~~原型同位置：标签与刻度**不叠字** → 这是小程序实现回归~~ **（Iteration 3 前提证伪）**：逐项比对冻结原型 SVG 与运行时坐标——标题 y、刻度锚点、L 值**完全相同**，原型同样叠字，只是 1x 截图模糊不易察觉。P1-1 是**共同的设计缺陷**而非小程序实现回归，但 375 是绝对第一优先级，此项与 P0-1 并列首轮必修的结论不变（Iteration 3 处置见下）。
+- ~~原型同位置：标签与刻度**不叠字** → 这是小程序实现回归~~ **（Iteration 3 前提证伪；Iteration 4 对照物身份再修正）**：Iter3 所比的「冻结原型 SVG」实为 `horizon-*.svg` = **运行时渲染器快照**（见头部身份注）——HTML 原型 V3 起已删面板标题条、`meteogram.js` 行标题 **0 处**，故**行标题×刻度互撞是运行时独有**（标题为满足 visual-audit `x="0"` 契约保留），「原型同样叠字／共同设计缺陷」表述不成立；刻度×刻度互叠（temp 三档 4px）才是原型同款恒等。375 绝对第一优先级下「首轮必修 + Iter3 挪标题 KEEP」结论不变（Iteration 3 处置见下）。
 
 ### P1-2 Cloud Field 视觉权重
 
 - **成立的部分（KEEP 方向）**：理塘 24h 高层深核（≈5000–5800m）是图内第一主角，与原型一致；峨眉 sel6 的 YOU 琥珀段清晰可读。
 - **问题**：成都 72h 右侧深灰块下探 2500m 以下，压住「你 · 500 m（剖面下方）」标签右端（chengdu-72h-375px）；峨眉 72h 中部大斜带灰阶过渡偏糊、深核边界拖尾比原型 horizon-emeishan-48 长（需同数据对照确认是否数据差异而非渲染差异）。
 - **白色斜纹缝隙**（emeishan-72 / chengdu-72 灰块内斜向白缝）：与原型 horizon-chengdu-72 **同款**（等值带拓扑同源），暂记非缺陷，迭代中复核。
+- **Iteration 4 关闭（2026-10-08）**：三子项均非渲染缺陷——① YOU 标签运行时与 horizon 同款 paint-order 白描边，fresh 重拍完整可读（灰块邻近≠遮挡）；② 「拖尾比原型 horizon-emeishan-48 长」的对照无效（horizon=运行时快照且 48 vs 72 窗口+数据批次不同；`cloud-field-svg.js` 自基线零漂移、`meteogram-svg.js` 仅 Iter1/Iter3 改动）；③ 白斜纹与 horizon 同款拓扑维持非缺陷。无改码，本项关闭；KEEP 方向（理塘深核主角、峨眉琥珀段）不变。详见 Iteration 4。
 
 ### P1-3 小时 chip 网格挤占首屏 + 读数条层级倒置
 
@@ -98,7 +99,7 @@ Hypothesis: 行标题（x=0）与刻度（x=L-5 end 锚定）在同一 y 带水�
 
 ### Iteration 3 — 前提证伪 + Change / Before / After / Decision
 
-前提证伪: 冻结原型 SVG 与运行时**坐标逐项相同**（标题 y=18/82/130/326、刻度锚点 x=L-5、L=38）→ 原型同款叠字，「实现回归」表述已同步修正至上方 Ranking P1-1。这不是回归修复，是**共同设计缺陷的修复**。
+前提证伪: 冻结对照 SVG 与运行时**坐标逐项相同**（标题 y=18/82/130/326、刻度锚点 x=L-5、L=38）→ 当时据此判「原型同款叠字，是共同设计缺陷而非实现回归」。**（Iteration 4 更正）**：该对照 SVG 实为 `horizon-*.svg` = 运行时渲染器自身快照，比对是运行时 vs 运行时；HTML 原型（`meteogram.js`）V3 起已删面板标题条、行标题 0 处，行标题×刻度互撞实为**运行时独有**。修复动作与 KEEP 结论不受影响（挪走的是真实运行时叠字），仅「共同设计缺陷」定性作废，已同步修正至上方 Ranking P1-1。
 冲突清单（CJK 字形 ≈ y−7.2..y，数字 ≈ y−5.4..y）: 降水标题 82 ↔ max 86.5（~1px）；云量标题 130 ↔ precip `0` 128.5（重 ~5px）、↔ `6000 m` 134.5（~1px）；风标题 326 ↔ cloud `2000` 324.5（重 ~5px）。temp 三档 62.5/66.5/70.5 互叠 4px 系数据无关恒等（tzTop=56/tzBot=72 仅 16px），原型同款，**判定出本轮范围，仅记录**。
 Hypothesis: 行标题移入各行左侧 gutter 净空带（各行 y+12~+16），保持 x=0/字号/颜色不变——刻度一字不动，只挪标题。
 Change: `meteogram-svg.js` L416-419 四行标题 y：18→36（`ROWS.iconTemp.y+16`）、82→100（`ROWS.precip.y+16`）、130→148（`ROWS.cloud.y+16`）、326→340（`ROWS.wind.y+12`）；x=0、font-size 7.5、fill 不动；行顶注释改为记录避让原因的中文注释。
@@ -106,3 +107,26 @@ Change: `meteogram-svg.js` L416-419 四行标题 y：18→36（`ROWS.iconTemp.y+
 Before: baseline/chengdu-24h-375px.png、baseline/litang-24h-375px.png（标题贴行顶压最近刻度）
 After: iter-3-litang-24.png、iter-3-chengdu-24.png（放大裁图判读：`0.1`→`降水 mm/h`→`0`→`6000 m`→`云量 · 高度 m`→5000/4000/3000/2000→`风 km/h`→45/23/0 全链相邻字形净距 ≥4px；三条分隔线与标题净距 ≥11px；云量标题尾部越 L=38 的 ~3px 压云带风险两地点 6000m 一带均为空白，未兑现；温度标题与图标 x 向错开）
 Decision: KEEP / Reason: P1-1 三个复现点（云量/风/降水标题互撞）全部消除；温度标题同步归位保持四标签同构；temp 三档互叠为原型同款恒等，按范围约束不动；四套门禁全绿；无新问题。截断问题（「风 k…」）同因消除——叠字源移走后标题完整可读。
+
+## Iteration 4 — P1-2 Cloud Field 视觉权重（证据关闭，无改码）
+
+Problem: P1-2 三个子项需在现行构建上核验——① 成都 72h 右侧深灰块是否压住「你 · 500 m（剖面下方）」标签右端；② 峨眉 72h 中部大斜带拖尾是否比 horizon-emeishan-48 长（渲染差异 vs 数据差异）；③ 灰块内白色斜纹是否缺陷。附带核验对照物 `horizon-*` 的真实身份与 Iter3 修复在 72h 的保持性。
+Hypothesis: 三子项均非渲染缺陷——① YOU 标签运行时与 horizon 同款 paint-order 白描边（`meteogram-svg.js` ↔ `meteogram.js` 同一编码），灰块邻近≠遮挡；② `horizon-*.svg` 实为运行时渲染器快照（非 HTML 原型），48 vs 72 窗口与数据批次都不同，「比原型长」的对照本身不成立；③ 等值带拓扑同源，同渲染器同款。
+证据（2026-10-08，375 机位、真实数据、门禁过后重拍）:
+- 环境注记: 首轮截图 GATE-FAIL（dayCards=0，`cloud.callFunction:fail Error: access_token missing`，DevTools 云凭证失效）→ 全量重启开发者工具（quit + pkill → open → auto 9421）后 gate READY（dayCards=7，updatedAt 09:33）；非代码问题。
+- 对照物身份: `horizon-*.svg` 行标题 `x="0"` @ y=18/82/130/326（= Iter3 前运行时坐标）+ day header 用 今天/明天/后天（`meteogram-svg.js:424` 同源，`meteogram.js` 0 处）→ = 运行时快照；HTML 原型 V3 起删面板标题条，`meteogram.js` 行标题 0 处。已同步修正头部身份注 / Ranking P1-1 / Iter3 前提证伪段。
+- 渲染器漂移: `git diff cf89b94..HEAD -- miniprogram/utils/cloud-field-svg.js` 为空（最后改动 ef35517 在基线前）；`meteogram-svg.js` 仅 19 行（Iter1 降水柱 + Iter3 标题 y）。
+- ① 标签: fresh 裁图（成都 72h label/tight + 峨眉 3,079 m）白描边完整、全字可读；灰块邻近未遮挡。
+- ② 拖尾: fresh 峨眉 72h 与 horizon-em72 同窗对照结构同源（48h 对照窗口不可比）；hi/lo 读数差异 = 数据批次差。
+- ③ 白斜纹: fresh 两地点裁图与 horizon 同款（marching-squares 等值带拓扑），维持非缺陷。
+- 保持性: 72h 左轴四行标题与刻度全链净距清晰（Iter3 修复跨窗口成立）；temp 三档互叠仍为记录在案的出范围项（原型同款恒等）。
+- 门禁（无改码复跑）: check.js ✓ / check-handlers weather ✓（19 handlers）/ meteogram-svg-test 25/0 / weather-v2-visual-audit 38/0。
+范围: 无 Change——三子项均非红线内可修的渲染缺陷，不改码（CF 核心数学本身也在红线内）。
+对照: baseline/chengdu-72h-375px.png、baseline/emeishan-72h-375px.png vs 本会话 fresh 重拍（同机位同参数）。
+
+### Iteration 4 — Change / Before / After / Decision
+
+Change: 无代码改动；仅本文档（Iteration 4 条目 + 对照物身份四处修正）。
+Before: baseline/chengdu-72h-375px.png、baseline/emeishan-72h-375px.png
+After: iter-4-chengdu-72.png、iter-4-emeishan-72.png（09:34 重拍归档：标签可读、左轴净空、斜带/斜纹与 horizon 同款、无新问题）
+Decision: CLOSE（证据关闭，无改码故无回滚对象）/ Reason: ①③非缺陷（白描边按设计工作、拓扑同款）；②对照物身份与窗口差异解释全部形状差，渲染器自基线零漂移；KEEP 方向不变，P1-2 关闭。
