@@ -1,8 +1,13 @@
 # 合并窗口交接 — Phase 8/9/10A 一条分支待并入 master（2026-10-08）
 
-· 待并分支：`win/phase10a-c3-error-semantics` @ `00cb53c`（worktree `D:/OurTrail-p10a`）
-· 目标：`master`（当前本地与线上均以 `686fa7c` 为基准）
-· 本会话结束时中继不可达（`git fetch origin` 报 access/exists），所以**什么都没推**；本文就是推的那一次要照做的清单。
+· 待并分支：`win/phase10a-c3-error-semantics`（worktree `D:/OurTrail-p10a`）
+· 目标：`master`（合并前基线 `686fa7c`）
+· **本合并已按 §2-A 执行**：中继换 IP 后恢复可达（`origin` = `ssh://yfwang@192.168.3.15/...`；
+  其 ed25519 指纹与 known_hosts 里 `yfwangmacbook-pro.local`/`192.168.2.22` 的条目**逐字节一致** ⇒ 同一台 Mac，
+  不是新主机，中间人风险排除）；`git fetch` 后 `origin/master` 仍是 `686fa7c` ⇒ 0-behind 成立 ⇒ 纯 fast-forward。
+  因为是 ff，合并后 `master` 就等于本分支 tip（也就是含本文这一版的那个 commit），GitHub 由 `post-receive` 立刻转发。
+  ⚠ 遗留：`relay` 这个 remote 还指着旧 IP `192.168.2.22`（改 remote 属 git 配置动作，业主自己做的 origin，
+  relay 那条要一并改才对称）。
 
 ## 1. 形状：这是纯 fast-forward，零冲突风险
 
