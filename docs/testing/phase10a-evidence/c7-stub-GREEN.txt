@@ -1,0 +1,67 @@
+== C0 夹具：真信封建档案 + 建活动 ==
+  ✓ C0 夹具：活动建档、读回 revision 为整数
+  ✓ C0 夹具：权威读 title=基线标题
+== C1 BUG-C1：A=陈旧编辑器实例（真 editor.js），B=守规矩客户端 ==
+  ✓ C1 前置：A 开页无 denied、表单装出的是开页那一刻的服务端值
+  ✓ C1 B 的合法保存成功：R0 → R0+1
+  ✓ C1 B 落库后权威读为 B 的标题与说明
+  ✓ C1 前置：A 的保存真的发出一条命令（不是本地校验提前拦下）
+  ✓ C1-① A 发出的 expectedRevision 是整数（病灶：undefined ⇒ 两层 CAS 同时放弃）
+  ✓ C1-② A 发出的 expectedRevision === 开页读到的 R0（表单与 revision 必须成对；写前现读等于自证通过）
+  ✓ C1-③ A 的陈旧保存被拒绝（ok=false）
+  ✓ C1-④ 拒绝码是 CONFLICT（而非 INVALID_INPUT/WRONG_PHASE 一类夹具错）
+  ✓ C1-⑤ revision 未因 A 的尝试推进（停在 R0+1）
+  ✓ C1-⑥ B 的修改仍然存活（title 与 description 都没被陈旧表单覆盖）
+  ✓ C1-⑦ 全量文档逐字节零副作用（14 集合 + ot_meta/main 全未变：rows/receipts/events 无一被写）
+  ✓ C1-⑧ 败者内容零残留：A 写的那句话在整库里不存在
+  ✓ C1-⑨ 用户可见反馈：A 收到冲突提示（toast 或页面 failure），不是静默成功
+  ✓ C1-⑩ A 的 busy 态被释放（拒绝路径不能把按钮永久锁死）
+== C2 正控制：本机无草稿时重开编辑器（读到最新 R）保存必须成功——排除"夹具坏造成 C1 假红" ==
+  ✓ C2 前置：重开后表单跟到 B 的值（无草稿时以服务端为准）
+  ✓ C2 前置：重开后 this.revision 跟到服务端最新值（成对抓取的闭环）
+  ✓ C2 新鲜实例保存成功（C1 的红来自陈旧 revision，不来自 schema/权限/夹具）
+  ✓ C2 新鲜实例带整数 expectedRevision
+  ✓ C2 revision 因这次合法写入推进 +1（反空断言：链路真能写）
+== C5 常驻红测 BUG-C2：CONFLICT 后「草稿优先 + 已刷新的 revision」二次保存仍覆盖他人写入（本轮只归档不修） ==
+  ✓ C5 前置：第一次保存按预期被 CONFLICT 拒绝（BUG-C1 修复后的正确行为）
+  ✓ C5 定性依据：这二次写带的是【最新】revision（说明它不是 CAS 绕过，而是草稿优先的盲覆盖）
+  ✗ [CONFIRMED BUG BUG-C2] 他人（B）刚落的修改被本机陈旧草稿在"重试"后静默覆盖——CAS 层无错，错在冲突解决策略（草稿优先、无字段合并、无二次确认）
+      证据：R5=4 B 写入后 R6=5 第一次=CONFLICT 第二次 expectedRevision=5 → title="B 的标题（必须存活）"
+== C3 同一 revision 生命周期覆盖到的其它命令（delete / copy / publish） ==
+  ✓ C3-delete 破坏性命令 activity.delete 的第一条出口也必须带整数 expectedRevision
+  ✓ C3-delete 命令本身被服务端接受（否则下面的"消失"断言是自证）
+  ✓ C3-delete 反空断言：这条命令确实被执行了（活动已从组织者视图消失），不是没发出去
+  ✓ C3-copy 新建态编辑器的 activity.copy 也必须带整数 expectedRevision
+  ✓ C3-publish 不报名那条支路（用 this.revision）也必须带整数 expectedRevision
+  ✓ C3-publish 反空断言：发布真的把 phase 推到 published
+== C4 客户端漏斗：任何页面缺 revision 都不得触网（把这一类钉死，不止 editor） ==
+  ✓ C4-① api.dispatch 缺 expectedRevision 时本地拒绝（fail closed），而不是发出去让云端猜
+  ✓ C4-② 该拒绝零网络调用（一次 callFunction 都没发）
+  ✓ C4-③ dispatchAndSync 同样不得把缺 revision 的命令发出去
+  ✓ C4-④ 拒绝错误带专用 code 与可行动文案（页面要能区分「客户端漏传」与「云端冲突」）
+  ✓ C4-⑤ 反空断言：漏斗门不误伤合法写（带 revision 时恰好一次调用、revision +1）
+== C7 BUG-C3：真并发（两请求同时基于同一个 R）在 SDK 类型擦除下仍须是 CONFLICT，且客户端必须进入恢复路径 ==
+  ✓ C7-① 恰好一个成功（串行化基座下既不许双胜、也不许两个都失败）
+  ✓ C7-② 败者的错误码是 CONFLICT（真云端实测给的是 STORAGE_UNAVAILABLE ⇒ 这一条就是病灶）
+  ✓ C7-③ 败者页面进入恢复路径：needRefresh ⇒ page.reload() 恰好一次
+  ✓ C7-④ 胜者页面不被误触发重读（恢复路径只属于冲突那一方）
+  ✓ C7-⑤ 用户看到的是"已被他人更新、请重试"，不是"云存储不可用/服务异常"
+  ✓ C7-⑥ 数据完好：revision 只因胜者推进一次
+  ✓ C7-⑦ 败者内容零残留：整库快照里只出现一笔写入的标记
+  ✓ C7-⑧ 选择性：SDK 自身的存储异常仍然报 STORAGE_UNAVAILABLE（修复不得把一切判成冲突）
+== 证据通道与遗留（一律不转 PASS） ==
+  ▶ [P1 · BUG-C1] 客户端 CAS 绕过。本套件＝STUB / CLIENT-LIFECYCLE PROOF：真 editor.js + 真 api.js + 真 index.js/domain/store，仅 DB 为内存桩。REAL CLOUD PROOF 见 Phase 9 报告 §B（真机双编辑器实例）。
+  ▶ [STUB LIMITATION · C1-LOAD] 内存 Map 写入即刻可见 ⇒ 本套件复现不了真云端「ot_meta 主键读新 / 业务集合分页读旧」的可见性差与事务锁粒度。C1 证「客户端没送 revision」这一因，不证云端读滞后这一果。
+  ▶ [P2 · INDEX-122] index.js:122「非整数 expectedRevision ⇒ 缺省成 before.revision」这条支路仍在。C4 漏斗门使任何已发布页面都走不到它，但支路本身没拆：拆它要同步给 A 层 4 套 + B 层 3 套里所有"不传 revision"的调用点补 revision（B 层只能在开发者工具里验）。按任务书 §3「最小范围修复、禁止借机大 refactor」本轮未动，作为待批决策项上报。
+  ▶ [P2 · S4/S4b] e2e-concurrency 的 S4 常驻红测（服务端层缺 revision ⇒ lost update）在客户端修复后依旧成立——它测的就是那条未拆的支路，故保持 bugs 计数、不转绿、不删。
+  ▶ [P2 · BUG-C2] 见 C5 常驻红测：CONFLICT 后 dispatchAndSync 会 reload()，editor reload 在有本机草稿时以草稿盖表单，同时把 revision 刷成最新 ⇒ 用户按提示「重试」即以最新 R 提交陈旧草稿。CAS 层没有漏洞（第二次写带的是合法 revision），缺的是冲突解决策略（字段合并或二次确认）。属产品决策，任务书 §3 未授权，本轮只登记不修。
+
+判定汇总：
+  [BUG（红测常驻） · BUG-C2] 他人（B）刚落的修改被本机陈旧草稿在"重试"后静默覆盖——CAS 层无错，错在冲突解决策略（草稿优先、无字段合并、无二次确认）
+  [P1 · BUG-C1] 客户端 CAS 绕过。本套件＝STUB / CLIENT-LIFECYCLE PROOF：真 editor.js + 真 api.js + 真 index.js/domain/store，仅 DB 为内存桩。REAL CLOUD PROOF 见 Phase 9 报告 §B（真机双编辑器实例）。
+  [STUB LIMITATION · C1-LOAD] 内存 Map 写入即刻可见 ⇒ 本套件复现不了真云端「ot_meta 主键读新 / 业务集合分页读旧」的可见性差与事务锁粒度。C1 证「客户端没送 revision」这一因，不证云端读滞后这一果。
+  [P2 · INDEX-122] index.js:122「非整数 expectedRevision ⇒ 缺省成 before.revision」这条支路仍在。C4 漏斗门使任何已发布页面都走不到它，但支路本身没拆：拆它要同步给 A 层 4 套 + B 层 3 套里所有"不传 revision"的调用点补 revision（B 层只能在开发者工具里验）。按任务书 §3「最小范围修复、禁止借机大 refactor」本轮未动，作为待批决策项上报。
+  [P2 · S4/S4b] e2e-concurrency 的 S4 常驻红测（服务端层缺 revision ⇒ lost update）在客户端修复后依旧成立——它测的就是那条未拆的支路，故保持 bugs 计数、不转绿、不删。
+  [P2 · BUG-C2] 见 C5 常驻红测：CONFLICT 后 dispatchAndSync 会 reload()，editor reload 在有本机草稿时以草稿盖表单，同时把 revision 刷成最新 ⇒ 用户按提示「重试」即以最新 R 提交陈旧草稿。CAS 层没有漏洞（第二次写带的是合法 revision），缺的是冲突解决策略（字段合并或二次确认）。属产品决策，任务书 §3 未授权，本轮只登记不修。
+
+passed=42 failed=0 bugs=1 drift=0

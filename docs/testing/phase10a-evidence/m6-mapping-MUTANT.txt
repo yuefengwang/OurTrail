@@ -1,0 +1,22 @@
+FAIL e2e-concurrency               passed=40 failed=4
+        ✗ S1 恰好一个 CONFLICT（{"b":"STORAGE_UNAVAILABLE"}）
+        ✗ [CONFIRMED BUG BUG-C1/ON] 编辑器首条命令（不传 expectedRevision）吞掉他人刚落的写入，双方都收到成功 （barrier ON）
+        ✗ [CONFIRMED BUG BUG-C1/OFF] 编辑器首条命令（不传 expectedRevision）吞掉他人刚落的写入，双方都收到成功 （barrier OFF）
+        ✗ S5 恰好一次成功、一次 CONFLICT（{"b":"STORAGE_UNAVAILABLE"}）
+        ✗ S8 败者必须是 CONFLICT（真云端实测给的是 STORAGE_UNAVAILABLE ⇒ 客户端恢复链路失效）（{"code":"STORAGE_UNAVAILABLE","message":"这次修改没有保存，原安排未改变。请保留输入后重试。"}）
+        ✗ S8 对照（wrapping OFF）：同样恰好一胜、败者 CONFLICT ⇒ 证明上面那条红的唯一变量是类型擦除（["OK","STORAGE_UNAVAILABLE"]）
+FAIL e2e-client-cas                passed=39 failed=3
+        ✗ [CONFIRMED BUG BUG-C2] 他人（B）刚落的修改被本机陈旧草稿在"重试"后静默覆盖——CAS 层无错，错在冲突解决策略（草稿优先、无字段合并、无二次确认）
+        ✗ C7-② 败者的错误码是 CONFLICT（真云端实测给的是 STORAGE_UNAVAILABLE ⇒ 这一条就是病灶）（{"code":"STORAGE_UNAVAILABLE","message":"这次修改没有保存，原安排未改变。请保留输入后重试。"}）
+        ✗ C7-③ 败者页面进入恢复路径：needRefresh ⇒ page.reload() 恰好一次（reloadCalls=0）
+        ✗ C7-⑤ 用户看到的是"已被他人更新、请重试"，不是"云存储不可用/服务异常"（[]）
+FAIL e2e-interleave                passed=66 failed=1
+        ✗ C1 同基线双签到：恰好一个 CONFLICT（["OK","STORAGE_UNAVAILABLE"]）
+ok   e2e-panel-sync                passed=40 failed=0
+ok   e2e                           passed=71 failed=0
+ok   e2e-permission                passed=96 failed=0
+ok   e2e-domain-negative           passed=83 failed=0
+ok   smoke                         passed=173 failed=0
+ok   e2e-release-gap               passed=51 failed=0
+
+== TOTAL passed=659 failed=8 suites=9 nonzero_exit=3 → e2e-concurrency,e2e-client-cas,e2e-interleave
