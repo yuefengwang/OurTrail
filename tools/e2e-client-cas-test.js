@@ -160,7 +160,11 @@ async function snapshot() {
 async function main() {
   /* ================= C0 夹具（真实信封） ================= */
   section('C0 夹具：真信封建档案 + 建活动')
-  await cloud('dispatch', { payload: { type: 'profile.save', person: person('林溪', '00000000001', '林母', '00000000051') } })
+  // 夹具也必须守服务器契约：原写法省略 expectedRevision，靠的是服务器把缺省值当"当前 revision"
+  // ——那正是 index.js 的盲写洞（现由 e2e-revision-guard-test.js 失败关闭）。真实客户端在页面 onLoad
+  // 时就会 read 一次拿到 revision，这里照做。
+  const revBoot = (await cloud('read', { request: { kind: 'profile' } })).revision
+  await cloud('dispatch', { payload: { type: 'profile.save', person: person('林溪', '00000000001', '林母', '00000000051') }, expectedRevision: revBoot })
   const revSeed = (await cloud('read', { request: { kind: 'profile' } })).revision
   const created = await cloud('dispatch', { payload: { type: 'activity.create', input: input('基线标题', '基线说明') }, expectedRevision: revSeed })
   ACT = created.targetIds[0]
@@ -506,7 +510,7 @@ async function main() {
   finding('BUG-C1', 'P1', '客户端 CAS 绕过。本套件＝STUB / CLIENT-LIFECYCLE PROOF：真 editor.js + 真 api.js + 真 index.js/domain/store，仅 DB 为内存桩。REAL CLOUD PROOF 见 Phase 9 报告 §B（真机双编辑器实例）。')
   finding('C1-LOAD', 'STUB LIMITATION', '内存 Map 写入即刻可见 ⇒ 本套件复现不了真云端「ot_meta 主键读新 / 业务集合分页读旧」的可见性差与事务锁粒度。C1 证「客户端没送 revision」这一因，不证云端读滞后这一果。')
   finding('INDEX-122', 'P2', 'index.js:122「非整数 expectedRevision ⇒ 缺省成 before.revision」这条支路仍在。C4 漏斗门使任何已发布页面都走不到它，但支路本身没拆：拆它要同步给 A 层 4 套 + B 层 3 套里所有"不传 revision"的调用点补 revision（B 层只能在开发者工具里验）。按任务书 §3「最小范围修复、禁止借机大 refactor」本轮未动，作为待批决策项上报。')
-  finding('S4/S4b', 'P2', 'e2e-concurrency 的 S4 常驻红测（服务端层缺 revision ⇒ lost update）在客户端修复后依旧成立——它测的就是那条未拆的支路，故保持 bugs 计数、不转绿、不删。')
+  finding('S4/S4b', 'P2', 'e2e-concurrency 的 S4 常驻红测（服务端层缺 revision ⇒ lost update）已在本轮拆掉：index.js 对缺 revision 的命令失败关闭（NO_REVISION），探针按本仓规程转正为正式断言，另由 tools/e2e-revision-guard-test.js 从信封面守住。')
   finding('BUG-C2', 'P2', '见 C5 常驻红测：CONFLICT 后 dispatchAndSync 会 reload()，editor reload 在有本机草稿时以草稿盖表单，同时把 revision 刷成最新 ⇒ 用户按提示「重试」即以最新 R 提交陈旧草稿。CAS 层没有漏洞（第二次写带的是合法 revision），缺的是冲突解决策略（字段合并或二次确认）。属产品决策，任务书 §3 未授权，本轮只登记不修。')
 
   console.log('')

@@ -41,6 +41,12 @@ This trips people up, so check which family you are calling. `call()` resolves t
 
 `dispatch` auto-generates `requestId = 'req-' + base36(Date.now()) + random` when the caller omits it, and tags `err.needRefresh = true` on `CONFLICT`. `dispatchAndSync(payload, expectedRevision, page)` is what pages actually call: on `CONFLICT` it toasts 「安排已被他人更新，已刷新，请重试」 and invokes `page.reload()`. **It requires an argument with a duck-typed `reload()` method** — that is the interface contract.
 
+**写失败有两种语义，别把它们混成一句「网络异常」**（2026-10-09 可靠性第二轮）：
+- `needRefresh`：服务端回了信封且 `code=CONFLICT` ⇒ 明确没落库，别人的改动在前面 → 重读 + 「已被他人更新」。
+- `outcomeUnknown`：传输层失败（超时 `-504003`、断网、云函数没回话，`code=NETWORK`）⇒ **结果未知**：事务可能已经提交，只是响应丢了。做法是重读一次对齐服务端状态，话术是「结果未确认，已重读最新安排」。
+  绝不自动重发——`requestId` 每次都是新生成的，服务端按 requestId 判重放，自动重发等于把一次不确定变成两次写。也绝不写成「本次修改没有保存」，那句话会诱导用户再点一次。
+  回归：`tools/failure-semantics-test.js`（含"calls.length 恒为 1"这种不自动重发的硬判据）。
+
 ## `notices-page.js` — THE FACTORY PATTERN
 
 `module.exports = function makeNoticesPage(getActivityId) { return { data, onLoad, onShow, … } }`

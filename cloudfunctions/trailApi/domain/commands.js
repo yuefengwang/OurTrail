@@ -85,12 +85,35 @@ function recordChange(before, after, command, targetIds, context) {
   }
 }
 
-/** 回执上限：只保留最近的回执，幂等窗口之外的重放按新请求处理。 */
+/**
+ * 「保留最近 N 条」必须按时间判，不能按数组位置判。
+ * 落库再重读之后，这些数组的顺序会变成文档键的字典序：receipts 的键是 `actorId__requestId`
+ * （store.js:27），而 openid 是随机串，与写入时间毫无关系。按位置砍就等于砍掉「字典序最靠前的
+ * 那几个人」的最新记录——对 receipts 来说，那是唯一的幂等记忆：记忆被错删的人重发同一条命令
+ * （响应丢包 / 超时重试）不再得到 replayed:true，而是把业务写第二次。
+ * 判据：tools/receipt-window-test.js（先复现，后修复）。
+ * 时间并列时按文档键定序：同一批数据反复截断必须得到同一个集合，否则每次写入都会换掉一批记忆。
+ */
+const RECEIPT_LIMIT = 600
+const EVENT_LIMIT = 800
+const NOTICE_LIMIT = 800
+
+function pruneRecent(list, limit, keyOf, atOf) {
+  if (list.length <= limit) return list
+  const sorted = list.slice().sort((a, b) => {
+    const d = Date.parse(atOf(a)) - Date.parse(atOf(b))
+    if (d !== 0) return d
+    const ka = keyOf(a)
+    const kb = keyOf(b)
+    return ka < kb ? -1 : ka > kb ? 1 : 0
+  })
+  return sorted.slice(sorted.length - limit)
+}
+
+/** 回执上限：只保留最近 LIMIT 条（按时间），幂等窗口之外的重放按新请求处理。 */
 function pruneReceipts(state) {
-  const LIMIT = 600
-  if (state.receipts.length > LIMIT) {
-    state.receipts = state.receipts.slice(state.receipts.length - LIMIT)
-  }
+  state.receipts = pruneRecent(state.receipts, RECEIPT_LIMIT,
+    r => r.actorId + '__' + r.requestId, r => r.appliedAt)
 }
 
 /**
@@ -131,9 +154,10 @@ function reduceCommand(state, input, context) {
     targetIds: result.value.slice(), appliedAt: context.now,
   })
   pruneReceipts(candidate)
-  // 事件与通知也限量，防止状态无限膨胀
-  if (candidate.events.length > 800) candidate.events = candidate.events.slice(candidate.events.length - 800)
-  if (candidate.notices.length > 800) candidate.notices = candidate.notices.slice(candidate.notices.length - 800)
+  // 事件与通知也限量，防止状态无限膨胀。同样按时间留最近的那批：读回顺序是文档键序，
+  // 而通知页是拿数组顺序倒序展示的（notices-page.js:62），按位置砍会把同一毫秒内的顺序交出去。
+  candidate.events = pruneRecent(candidate.events, EVENT_LIMIT, e => e.id, e => e.occurredAt)
+  candidate.notices = pruneRecent(candidate.notices, NOTICE_LIMIT, n => n.id, n => n.publishedAt)
   const valid = assertInvariants(candidate)
   if (!valid.ok) return valid
   return { ok: true, value: { state: candidate, targetIds: result.value, replayed: false } }

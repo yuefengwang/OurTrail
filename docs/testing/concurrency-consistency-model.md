@@ -78,7 +78,7 @@ store.js:127-131   非 ConflictError 的一切异常 → STORAGE_UNAVAILABLE
 
 | # | 现象 | 根因位置 | 分类 |
 |---|---|---|---|
-| R1 | 编辑器首条命令无乐观并发保护（lost update 暴露面） | `editor.js:134-172`/`:580`/`:583` + `index.js:122` | **BUG-C1（已定罪）**：确定性红测常驻 `tools/e2e-concurrency-test.js`（见 §10），production 未动 |
+| R1 | 编辑器首条命令无乐观并发保护（lost update 暴露面） | `editor.js:134-172`/`:580`/`:583` + `index.js:122` | **BUG-C1 —— 已于 2026-10-09 在服务器侧拆掉**：`index.js:128` 缺整数 `expectedRevision` 直接 `NO_REVISION`；常驻红测 `S4/S4b` 按 DRIFT 规程转正为正式断言（见文末附录，逐条取证与变异自证见 `docs/superpowers/specs/2026-10-09-reliability-production-hardening.md` §5-F-1）|
 | R2 | 面板连点窗口的一致性后果**已判完**（不会 lost update），只剩文案误导 | 见下方「R2 细目」+ `stub:48-63` | 降为 **UI 文案误导（低危）**；真机只需回答「第二次点击是否可能发生」 |
 
 **R2 细目（本次核对过，措辞比初版收窄）**：`roster-panel.wxml` 共 17 处 `bindtap`，其中 8 处的绑定表达式不含 `busy`（含 `:155 onRevokeMembership` 这类写命令）。批量四按钮经 Phase 5 已有 `canXxx && !busy ? 'onBatch' : ''` 门（`roster-panel.wxml:61-66`），但那是 **WXML 绑定态、依赖 `setData` 重渲染才生效**，而 `busy: true` 是在 handler 内部才置位的（`roster-panel.js:210`）——同帧两次点击是否真能发出两条命令，取决于渲染时序，桩里测不出来，需真机。
@@ -111,7 +111,7 @@ store.js:127-131   非 ConflictError 的一切异常 → STORAGE_UNAVAILABLE
 
 - **D1 = A（已实施）**：桩加可控事务串行化 barrier，见 §10.1。
 - **D2 = A（已实施）**：删除 permission 套件的 `fs.readFileSync` 字符串门；第二层改由 smoke 行为门常驻，见 §10.1。
-- **D3**：BUG-C1 只定罪不修（任务书 §19），转 Phase 9 或单独批准。
+- **D3**：BUG-C1 只定罪不修（任务书 §19），转 Phase 9 或单独批准。**（2026-10-09 状态更新：已在服务器侧拆掉，见文末附录；本节其余历史读数按原样保留，不改写取证记录。）**
 
 ## 10. 第一轮落地：barrier、并发套件、变异归因（2026-10-07）
 
@@ -176,3 +176,29 @@ M3（拆幂等收据）与 M4（放宽 phase 边界，需先建 §13 的状态�
 **第二次单点变异**（正确）：`:140 const confirmed = []`——保留边合法，只让逐人核实失去对象（副作用：`:171-181` 的 coordinating→late 转化同时被跳过，如实标注）。
 **RED 实测（行为变化，不是字符串匹配）**：未核实的越级 transition **成功落库**，`phase: gathering → active`、`revision 18 → 19`，而两名 confirmed 参与者仍 `checkedIn=false` 且无任何出发核实记录 ⇒ 活动进入「已出发」而全员去向未核实，正是该 boundary 存在的目的；套件 `31/6`。
 **RESTORE**：`git checkout -- domain/activity.js` 后 `37/0`，全套回归 smoke 173/0、fault 34/0、A 层 71/0、permission 96/0、domain-negative 83/0、check ALL PASSED、check-handlers exit 0；residue 仅 `tools/e2e-concurrency-test.js`。⇒ **M1/M2/M3/M4 = 4/4 有效，RESIDUE=0。**
+
+---
+
+## 附录 · 2026-10-09 服务器侧收口（本文上方的历史读数一律不改写）
+
+**BUG-C1 的状态从「只定罪不修」变为「服务器侧已拆」**：`cloudfunctions/trailApi/index.js:128` 现在要求
+`expectedRevision` 必须是整数，否则 `fail('NO_REVISION', …)`。旧写法 `Number.isInteger(x) ? x : before.revision`
+一次废掉两道保护——本文 §3 的 `commands.js:122` 层①门变成永真，schema 的 `specCount` 又吃到合法假值，
+于是「不传 revision 的首条命令」在**服务器**这一侧也失去 CAS（客户端 `utils/api.js` 的门管不到旧包）。
+
+- **常驻红测转正**：`S4/S4b` 由 `bugCheck`（计入 `bugs`、套件仍 exit 0）改成正式断言 ——
+  「A（不传 revision）被拒」「B 的写入未被吞」「revision 只 +1」，barrier ON/OFF 各一遍。
+  按本文 §10.2 自己写的 DRIFT 规程走：缺陷被修不允许静默变成一条从未存在过的绿灯。
+- **变异自证**：把 `index.js` 那一行改回旧写法 ⇒ `e2e-concurrency` 50→44 过／6 红（红条内容即
+  「竟然成功了 + revision 前进」＝ lost update 复现），新套件 `e2e-revision-guard` 16→9 过／7 红；还原后回到 50/0 与 16/0。
+- **§10.2 表头的「25 断言」是旧登记**：本轮实测该套件为 **50 项检查**（44 过 + 6 常驻红 → 转正后 50 全过），
+  根 `AGENTS.md:190` 的登记数字已同步更正。
+- **夹具收紧**：`e2e-test` / `e2e-permission` / `e2e-domain-negative` / `e2e-concurrency` / `e2e-client-cas` /
+  `e2e-panel-sync` 六套原先有「省略 expectedRevision 让服务器补」的写法——那是在依赖这条洞。现全部改为
+  先读后写（与真实客户端一致），6 套复跑 0 失败。
+- **本轮同批新增 3 套回归**：`tools/e2e-revision-guard-test.js`（16）、`tools/meta-revision-guard-test.js`（18，
+  全局版本号被读故障清零的另一条 P1）、`tools/cold-start-work-test.js`（10，每请求工作量上限）。
+- **本轮门禁终读**：55 个无头 `tools` 套件 + smoke（共 56 份读数）= 3750 过／0 败，`bugs=1`（BUG-C2 常驻实锤，仍未授权改），
+  `inconclusive=7`，`drift=0`。真云端并发（REAL_CONCURRENCY）依旧只能在部署后由真机定论，本文 §11 的三条
+  INCONCLUSIVE 一条都没有转成 PASS。
+  逐条取证：`docs/superpowers/specs/2026-10-09-reliability-production-hardening.md`。

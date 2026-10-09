@@ -174,7 +174,11 @@ async function rosterExport(env, purpose) {
 async function main() {
   /* ---------- 夹具：published + 2 名已确认（面板命令需要真名单） ---------- */
   section('P0 夹具（真信封：建档 → 建活动 → 发布并报名 → 第二人报名并确认）')
-  await cloud('dispatch', { payload: { type: 'profile.save', person: person('林溪', '00000000001', '林母', '00000000051') } })
+  // 真实客户端从不上报空 revision：页面 onLoad 先 read 拿 revision，命令才带着它发出。
+  // 夹具若省掉这一步，就会把「服务器缺省成当前值」的盲写洞当成便利——P1 修复后该洞已封，
+  // 所以这里必须和客户端一样先读后写。
+  const boot = (await cloud('read', { request: { kind: 'profile' } })).revision
+  await cloud('dispatch', { payload: { type: 'profile.save', person: person('林溪', '00000000001', '林母', '00000000051') }, expectedRevision: boot })
   const seed = (await cloud('read', { request: { kind: 'profile' } })).revision
   const created = await cloud('dispatch', { payload: { type: 'activity.create', input: input('P 工作台') }, expectedRevision: seed })
   ACT = created.targetIds[0]

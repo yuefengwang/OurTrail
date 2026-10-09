@@ -45,7 +45,19 @@ function as(openid) {
     readAccess: activityId => call('readAccess', { activityId }),
     readExport: (activityId, signupIds, mode, purpose) => call('readExport', { activityId, signupIds, mode, purpose }),
     previewAssignments: activityId => call('previewAssignments', { activityId }),
-    dispatch: (payload, expectedRevision, requestId) => call('dispatch', { payload, expectedRevision, requestId }),
+    // 夹具一律扮演"守规矩的客户端"：省略 revision 时先读一次（服务器已不再替客户端缺省，
+    // 见 index.js 的 NO_REVISION 与 tools/e2e-revision-guard-test.js）。读不到就原样送出，
+    // 让本该出现的错误码（AUTH_REQUIRED 等）照常暴露，不被夹具掩盖。
+    dispatch: async (payload, expectedRevision, requestId) => {
+      let rev = expectedRevision
+      if (!Number.isInteger(rev)) {
+        try {
+          const r = await call('read', { request: { kind: 'profile' } })
+          if (r && r.ok) rev = r.data.revision
+        } catch (e) { /* 忽略：按原值发出 */ }
+      }
+      return call('dispatch', { payload, expectedRevision: rev, requestId })
+    },
   }
 }
 const lin = as(LIN)
@@ -108,8 +120,10 @@ async function main() {
 
   section('2. 报名链：常用同行人 → 整组提交 → 审核 → 幂等重放')
   {
-    // expectedRevision 传 undefined → 服务端按当前 revision 提交（建档是幂等安全的准备步骤）
-    let r = await chen.dispatch({ type: 'profile.save', person: person('陈屿', '00000000002', '陈父', '00000000052') })
+    // 建档也先读后写：旧写法在这里省略 expectedRevision，靠 index.js 把缺省值当"当前 revision"
+    // 才成功——那是盲写洞（BUG-C1 的服务器侧），现由 tools/e2e-revision-guard-test.js 失败关闭。
+    const bootRev = (await chen.read({ kind: 'profile' })).data.revision
+    let r = await chen.dispatch({ type: 'profile.save', person: person('陈屿', '00000000002', '陈父', '00000000052') }, bootRev)
     check('陈屿建档 ok', r.ok === true, JSON.stringify(r.error || ''))
     const rev = r.data.revision
     r = await chen.dispatch({ type: 'companion.save', companionId: null, person: person('王五', '00000000003', '王母', '00000000053') }, rev)

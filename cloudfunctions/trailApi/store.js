@@ -51,33 +51,75 @@ async function loadCollection(db, name) {
   return out
 }
 
+// 容器内只建一次集合：`exports.main` 每次调用都会走 ensureCollections，而集合在首次部署后
+// 就一直存在 ⇒ 之前每个请求都白付 16 次 createCollection 往返（14 业务集合 + ot_meta + weather_cache）。
+// 记的是 **db 实例**而不是布尔量：测试会在同一进程里换内存桩的 db，布尔量会让新库跳过建集合；
+// 存 promise 让容器冷启动时的并发首调共享同一次建集合，失败则清空、下次重试（不把瞬时故障固化）。
+let ensuredFor = null
+let ensuringPromise = null
+
 async function ensureCollections(db) {
-  await Promise.all(ALL_COLLECTIONS.map(name =>
-    db.createCollection(COLLECTIONS[name]).catch(() => null)))
-  await db.createCollection('ot_meta').catch(() => null)
-  await db.createCollection('weather_cache').catch(() => null)
+  if (ensuredFor === db) return
+  if (!ensuringPromise) {
+    ensuringPromise = (async () => {
+      await Promise.all(ALL_COLLECTIONS.map(name =>
+        db.createCollection(COLLECTIONS[name]).catch(() => null)))
+      await db.createCollection('ot_meta').catch(() => null)
+      await db.createCollection('weather_cache').catch(() => null)
+    })().then(() => { ensuredFor = db })
+      .catch(e => { ensuredFor = null; throw e })
+      .finally(() => { ensuringPromise = null })
+  }
+  await ensuringPromise
 }
 
-async function ensureMeta(db) {
-  const res = await db.collection('ot_meta').doc('main').get().catch(() => null)
-  if (res && res.data && typeof res.data.revision === 'number') return res.data
+async function createMeta(db) {
   const data = { revision: 0, savedAt: new Date().toISOString() }
   await db.collection('ot_meta').doc('main').set({ data }).catch(() => null)
   return data
 }
 
-// 读取整个 State（与原型的内存态一致；V1 规模下开销可接受）。
+// 「文档不存在」与「这一刻读不出来」必须分开。改造前两者都落进同一个 `.catch(() => null)`，
+// 然后无条件 `set({ revision: 0 })` ⇒ 一次 meta 读超时就把全局计数器从 N 清零：所有在线客户端
+// 缓存的 revision 同时变陈旧，接下来的写一律 CONFLICT（实测可复现），而这是一次**读请求
+// 造成的不可逆写**。不是静默丢写（persistState 在事务内重读 meta 才判 CAS），但代价是
+// 全场误冲突 + 版本号失去单调性，只能靠重读恢复。
+// 判不出存在性时用一次不抛错的集合扫描复核；仍复核不到才失败关闭。
+function notExistsError(e) {
+  return /not exists/i.test(String((e && (e.errMsg || e.message)) || ''))
+}
+
+async function ensureMeta(db) {
+  let res = null
+  let readError = null
+  try { res = await db.collection('ot_meta').doc('main').get() } catch (e) { readError = e }
+  if (res && res.data && typeof res.data.revision === 'number') return res.data
+  // 缺档在不同 SDK 形状下有两种表现：抛错，或返回没有 data 的结果。两种都算「确实没有」。
+  if (res && !res.data) return createMeta(db)
+  if (res && res.data) {
+    throw Object.assign(new Error('状态版本记录已损坏，本次请求不使用它。请联系维护者核对 ot_meta/main。'), { code: 'CORRUPT_SNAPSHOT' })
+  }
+  if (!readError || notExistsError(readError)) return createMeta(db)
+  const scan = await db.collection('ot_meta').orderBy('_id', 'asc').limit(1000).skip(0).get().catch(() => null)
+  if (scan && Array.isArray(scan.data) && !scan.data.some(row => row && row._id === 'main')) return createMeta(db)
+  throw Object.assign(new Error('状态读取失败，本次请求没有使用可能过期的数据。请重试。'), { code: 'STORAGE_UNAVAILABLE' })
+}
+
+// 读取整个 State（与原型的内存态一致；集合数不动，但往返必须并发）。
 async function loadState(db) {
-  const meta = await ensureMeta(db)
+  // 15 个读（ot_meta + 14 个业务集合）并发发出：串行 await 会把每次网络往返首尾相接，
+  // 墙钟 = 15×RTT，这笔开销冷启动和低并发时段是直接加在用户等待上的；并发后 = 1×RTT。
+  // 一致性没有因此变差：这个快照本来就不是原子读（改造前后都可能被并发写切开），
+  // 真正防脏写的是 persistState 里的 revision CAS，不是读取顺序。
+  const reads = [ensureMeta(db)].concat(ALL_COLLECTIONS.map(name => loadCollection(db, name)))
+  const [meta, ...records] = await Promise.all(reads)
   const state = {
     schemaVersion: 1, revision: meta.revision, savedAt: meta.savedAt,
     profiles: [], routes: [], activities: [], groups: [], signups: [], vehicles: [],
     assignments: [], memberships: [], attendance: [], positions: [], incidents: [],
     events: [], notices: [], receipts: [],
   }
-  for (const name of ALL_COLLECTIONS) {
-    state[name] = await loadCollection(db, name)
-  }
+  ALL_COLLECTIONS.forEach((name, i) => { state[name] = records[i] })
   return state
 }
 

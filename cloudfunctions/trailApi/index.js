@@ -7,7 +7,7 @@ const {
   fetchForecast, gcjToWgs, isWeatherFreeAction, weatherCacheKey, resolvePointQuery, pointResponse, PROVIDER,
 } = require('./lib/weather')
 const store = require('./store')
-const { canonicalPayload, deepClone, genId } = require('./domain/contracts')
+const { canonicalPayload, deepClone, genId, ERROR_CODES } = require('./domain/contracts')
 const { reduceCommand } = require('./domain/commands')
 const { assertInvariants } = require('./domain/invariants')
 const {
@@ -59,6 +59,9 @@ function validDateStr(s) {
 /* ---------- 读取类 ---------- */
 
 async function actionRead(payload, openid) {
+  // 入参形状在入口就判，不留给 selector 抛 TypeError：那会被归类成 INTERNAL，
+  // 而这明明是客户端少传了字段，应当是 INVALID_INPUT。
+  if (!payload || !payload.request || typeof payload.request !== 'object') fail('INVALID_INPUT', '缺少读取请求内容。')
   const state = await store.loadState(db)
   const now = nowIso()
   const view = selectView(state, { userId: openid }, payload.request, now)
@@ -119,7 +122,16 @@ async function actionDispatch(payload, openid) {
   const clean = deepClone(payload.payload)
   overrideEvidence(clean, now, actorId)
   const requestId = typeof payload.requestId === 'string' && payload.requestId ? payload.requestId : genId('request')
-  const expectedRevision = Number.isInteger(payload.expectedRevision) ? payload.expectedRevision : before.revision
+  // 漏斗门（服务器侧，BUG-C1 的另一半）：客户端 utils/api.js 早就拒绝发无 revision 的命令，但
+  // **小程序包会滞后于云函数**——旧版本客户端照样能把 expectedRevision=undefined 打进来。
+  // 原先这里缺省成 before.revision，等于一次废掉两道保护：commands.js 的
+  // 「state.revision !== expectedRevision ⇒ CONFLICT」变成永真，schema 的 specCount 也被喂了假值，
+  // 结果是后写者静默覆盖前写者（数据无损、无人报错、事后查不出来）。
+  // 现在失败关闭，错误码与客户端同词汇（NO_REVISION），页面才会走「重开页面」而不是「保留输入重试」。
+  if (!Number.isInteger(payload.expectedRevision)) {
+    fail('NO_REVISION', '页面数据尚未读取完成，本次修改没有保存。请重新打开该页面后再试。')
+  }
+  const expectedRevision = payload.expectedRevision
   const fingerprint = sha256(canonicalPayload(clean))
   const result = reduceCommand(before, {
     actor: { userId: actorId }, requestId, expectedRevision, fingerprint, payload: clean,
@@ -260,18 +272,72 @@ const ROUTES = {
   getPhoneNumber: actionGetPhoneNumber,
 }
 
+// 一次请求一行结构化日志（可观测性的唯一落点：本轮改造之前整个后端零 console 调用，
+// 「用户说没保存」在云端查不到任何痕迹）。字段刻意又小又稳：
+//   a=action c=命令类型 rid=客户端请求号 u=actor 的单向散列（前 8 位）ok/code/ms/rp(是否重放)
+// 绝不写 payload 内容、姓名、电话、健康备注、坐标——那些是排查用不上的敏感面。
+// det 只在未归类异常时出现，且截断：这类信息是给维护者看的，不进用户界面。
+function logRequest(event, openid, outcome) {
+  const payload = event && event.payload
+  console.log(JSON.stringify({
+    ev: 'api',
+    a: String((event && event.action) || ''),
+    c: payload && typeof payload === 'object' && typeof payload.type === 'string' ? payload.type : '',
+    rid: typeof (event && event.requestId) === 'string' ? String(event.requestId).slice(0, 64) : '',
+    u: openid ? sha256(openid).slice(0, 8) : '',
+    ok: outcome.ok ? 1 : 0,
+    code: outcome.code || '',
+    ms: outcome.ms,
+    rp: outcome.replayed ? 1 : 0,
+    rev: Number.isInteger(outcome.revision) ? outcome.revision : 0,
+    det: outcome.detail || '',
+  }))
+}
+
+// 归类：只有明确带业务码的失败才原样回给客户端。其余一律 INTERNAL——
+// 未捕获的 TypeError/ReferenceError 的原文是英文，既会被当成「你填错了」（code 伪装成
+// INVALID_INPUT），又等于把内部实现细节发到用户手机上；原文只进上面的日志。
+const BUSINESS_CODES = ERROR_CODES
+
 exports.main = async (event) => {
-  await store.ensureCollections(db)
-  const wxContext = cloud.getWXContext()
-  const openid = wxContext.OPENID || ''
-  const handler = event && ROUTES[event.action]
+  const startedAt = Date.now()
+  let openid = ''
   try {
+    await store.ensureCollections(db)
+    const wxContext = cloud.getWXContext()
+    openid = wxContext.OPENID || ''
+    const handler = event && ROUTES[event.action]
     if (!handler) fail('INVALID_INPUT', '未知操作：' + (event && event.action))
     if (!openid && !isWeatherFreeAction(event.action)) fail('AUTH_REQUIRED', '请先登录微信后再使用。')
     const data = await handler(event || {}, openid)
+    const replayed = !!(data && data.replayed)
+    const revision = data && data.revision
+    logRequest(event, openid, { ok: true, ms: Date.now() - startedAt, replayed, revision })
     return { ok: true, data }
   } catch (e) {
-    return { ok: false, error: { code: (e && e.code) || 'INVALID_INPUT', message: (e && e.message) || '操作失败，请稍后再试' } }
+    const known = !!(e && typeof e.code === 'string' && BUSINESS_CODES.indexOf(e.code) !== -1)
+    // dispatch 是唯一写路径，别的 action 都是读——话术必须分开：对读请求说「本次修改没有生效」
+    // 是凭空承诺了一件根本没发生的事，用户会以为自己写坏了。
+    const isWrite = !!event && event.action === 'dispatch'
+    const outcome = {
+      ok: false,
+      code: known ? e.code : 'INTERNAL',
+      ms: Date.now() - startedAt,
+      // 原文只进日志：JSON.stringify 会把换行转义成 \n，所以「一次请求一行日志」不会被堆栈打断。
+      detail: known ? '' : String((e && (e.stack || e.message)) || e).slice(0, 300),
+    }
+    logRequest(event, openid, outcome)
+    return {
+      ok: false,
+      error: known
+        ? { code: e.code, message: e.message }
+        : {
+          code: 'INTERNAL',
+          message: isWrite
+            ? '服务端处理这一步时出错了，本次修改没有生效。请重试一次；若反复出现，请截图本页并联系发起者。'
+            : '服务端没能把这一页的内容取回来。请返回上一页再进来一次；若反复出现，请截图本页并联系发起者。',
+        },
+    }
   }
 }
 

@@ -48,7 +48,20 @@ function as(openid) {
     readSensitive: (activityId, signupId, purpose) => call('readSensitive', { activityId, signupId, purpose }),
     readContact: (activityId, signupId) => call('readContact', { activityId, signupId }),
     readExport: (activityId, signupIds, mode, purpose) => call('readExport', { activityId, signupIds, mode, purpose }),
-    dispatch: (payload, expectedRevision, requestId) => call('dispatch', { payload, expectedRevision, requestId }),
+    // 服务器已不再替客户端缺省 revision（BUG-C1 的漏斗门在 index.js 失败关闭）。本套件测的是权限矩阵，
+    // 夹具必须扮演"守规矩的客户端"：省略时由夹具自己先读一次当前 revision。
+    // 刻意不带 revision 的攻击路径由 tools/e2e-revision-guard-test.js 用 raw 信封覆盖，不在此重复。
+    dispatch: async (payload, expectedRevision, requestId) => {
+      let rev = expectedRevision
+      if (!Number.isInteger(rev)) {
+        // 夹具读不到 revision 时（例如未选账号，本来就该被拒）原样送出，让真实错误码说话
+        try {
+          const r = await call('read', { request: { kind: 'profile' } })
+          if (r && r.ok) rev = r.data.revision
+        } catch (e) { /* 忽略：下面按原值发出去 */ }
+      }
+      return call('dispatch', { payload, expectedRevision: rev, requestId })
+    },
   }
 }
 const person = (name, phone, ename, ephone) => ({ name, phone, emergency: { name: ename, phone: ephone }, medical: '', avatar: '' })

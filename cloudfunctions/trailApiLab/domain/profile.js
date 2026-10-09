@@ -62,8 +62,12 @@ function handleProfile(state, command, context) {
 
 // membership.id 由服务端保证存在（客户端可不传）。
 function ensureMembershipId(payload) {
-  if (payload.type === 'membership.save' && !payload.membership.id) {
-    payload.membership = Object.assign({}, payload.membership, { id: genId('membership') })
+  // 这是「校验之前」的归一化步骤，所以它必须对任意入参都成立：曾经直接读 payload.membership.id，
+  // 于是 membership.save 带 null/缺字段时抛 TypeError，被 main 当成 INVALID_INPUT 原文（英文）返回给用户。
+  // 缺什么就由 schema 校验说什么——授权与校验的顺序不能反过来。
+  const membership = payload && payload.membership
+  if (payload && payload.type === 'membership.save' && membership && !membership.id) {
+    payload.membership = Object.assign({}, membership, { id: genId('membership') })
   }
   return payload
 }

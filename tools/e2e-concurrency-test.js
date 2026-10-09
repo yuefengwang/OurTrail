@@ -108,8 +108,12 @@ function ledger(o) {
 }
 
 async function setup() {
-  await OWNER.dispatch({ type: 'profile.save', person: { name: '林溪', phone: '00000000001', emergency: { name: '林母', phone: '00000000051' }, medical: '' } })
-  const r = await OWNER.dispatch({ type: 'activity.create', input: input('基线标题', '基线说明') })
+  // 夹具先读后写：省略 expectedRevision 的旧写法依赖 index.js 的"缺省成当前 revision"，
+  // 那是盲写洞（现由 tools/e2e-revision-guard-test.js 在服务端失败关闭）。
+  const boot = await OWNER.read({ kind: 'profile' })
+  await OWNER.dispatch({ type: 'profile.save', person: { name: '林溪', phone: '00000000001', emergency: { name: '林母', phone: '00000000051' }, medical: '' } }, boot.data.revision)
+  const afterBoot = await OWNER.read({ kind: 'profile' })
+  const r = await OWNER.dispatch({ type: 'activity.create', input: input('基线标题', '基线说明') }, afterBoot.data.revision)
   activityId = r.data.targetIds[0]
   check('S-00 夹具：draft 活动建档（真实信封）', r.ok === true && !!activityId, r.error)
 }
@@ -224,20 +228,21 @@ async function main() {
     const a = await OWNER.dispatch({ type: 'activity.edit', activityId, input: Object.assign(staleForm, { title: 'A 的标题' + barrier }) }, undefined)
     const finalRev = await rev()
     const f = await act()
-    const bothOk = a.ok === true && b.ok === true
-    const bSwallowed = bothOk && f.description !== 'B 的写入存活' + barrier
-    bugCheck('BUG-C1/' + barrier,
-      '编辑器首条命令（不传 expectedRevision）吞掉他人刚落的写入，双方都收到成功 ' + tag,
-      bothOk && bSwallowed,
-      'R=' + R + ' finalRev=' + finalRev + ' A.ok=' + a.ok + ' B.ok=' + b.ok +
-        ' → title=' + JSON.stringify(f.title) + ' description=' + JSON.stringify(f.description))
+    // BUG-C1 的服务器侧已于本轮拆掉（index.js 缺 revision 失败关闭 = NO_REVISION）。
+    // 原来这里是 bugCheck 常驻红测；按本仓规程（转绿即 DRIFT，须转正）改成正式断言：
+    // A 必须被拒、B 的写入必须存活、revision 只前进 B 那一次。谁把它改回盲写，这里就红。
+    check('S4 A（不传 expectedRevision）被服务器拒绝 ' + tag,
+      a.ok === false && !!(a.error && a.error.code === 'NO_REVISION'), JSON.stringify(a.error || a.data || {}))
+    check('S4 B 的写入未被吞 ' + tag, f.description === 'B 的写入存活' + barrier, JSON.stringify(f.description))
+    check('S4 revision 只 +1（A 零落库）' + tag, finalRev === R + 1, R + '→' + finalRev)
     ledger({ id: 'S4/' + barrier, actorA: 'Owner(复刻 editor 首存：revision 缺省)', actorB: 'Owner(正确客户端 @R)', initialRevision: R,
       barrier: barrier, ordering: 'sequential（B 先提交，A 后发；A 的表单来自 B 提交之前）',
       opA: 'edit {title:"A 的标题", description:<开页时的旧值>} @undefined', opB: 'edit description="B 的写入存活" @R',
       expectedWinner: 'B（A 至少必须 CONFLICT，或不得吞掉 B）', expectedLoser: 'A → CONFLICT',
       expectedError: 'CONFLICT', finalRevision: finalRev, finalState: 'title=' + f.title + ' / description=' + f.description,
-      readBack: '权威读 activity/organizer', loserSideEffects: 'A 未收到任何错误，却把 B 的写入抹了',
-      verdict: bothOk && bSwallowed ? 'BUG（CLIENT CAS BYPASS / lost update）' : '未复现（需复查）' })
+      readBack: '权威读 activity/organizer', loserSideEffects: '零（A 收到 NO_REVISION，未落库）',
+      verdict: (a.ok === false && f.description === 'B 的写入存活' + barrier && finalRev === R + 1)
+        ? 'PASS（BUG-C1 服务器侧已拆，常驻红测转正）' : 'REGRESSION（盲写回来了）' })
   }
 
   // ============================================================
@@ -371,14 +376,17 @@ async function main() {
 
     /** 真实信封建到 gathering：create→publish→submit→review→transition。不碰 DB、不伪造 phase、不 mock handler */
     async function buildGathering(tag) {
-      let r = await OWNER.dispatch({ type: 'activity.create', input: input(tag + ' 状态链', 'S7 夹具') })
+      // 两处准备写同样先读后写：省略 expectedRevision 靠服务器缺省=盲写，该洞已在 index.js 失败关闭
+      const revBoot7 = (await OWNER.read({ kind: 'profile' })).data.revision
+      let r = await OWNER.dispatch({ type: 'activity.create', input: input(tag + ' 状态链', 'S7 夹具') }, revBoot7)
       const id = r.data.targetIds[0]
       const linProfile = (await OWNER.read({ kind: 'profile' })).data.view.profile
       r = await OWNER.dispatch({ type: 'activity.publish', activityId: id, participation: {
         personRef: { kind: 'user', userId: LIN }, participant: linProfile.person,
         trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } }, await rev7(id))
       check(tag + ' publish（组织者本人报名）ok', r.ok === true, JSON.stringify(r.error || ''))
-      await chen.dispatch({ type: 'profile.save', person: person('陈屿S7', '00000000092', '陈父S7', '00000000052') })
+      const chenBoot = (await chen.read({ kind: 'profile' })).data.revision
+      await chen.dispatch({ type: 'profile.save', person: person('陈屿S7', '00000000092', '陈父S7', '00000000052') }, chenBoot)
       const chenProfile = (await chen.read({ kind: 'profile' })).data.view.profile
       r = await chen.dispatch({ type: 'signup.submit', activityId: id, keepTogether: false, mode: 'apply', participants: [{
         personRef: { kind: 'user', userId: CHEN }, participant: chenProfile.person,

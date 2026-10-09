@@ -41,7 +41,13 @@ function as(openid) {
   return {
     read: request => call('read', { request }),
     readTransport: activityId => call('readTransport', { activityId }),
-    dispatch: (payload, expectedRevision, requestId) => call('dispatch', { payload, expectedRevision, requestId }),
+    // 同上：夹具扮演守规矩的客户端，省略 revision 时先读一次（服务器已失败关闭，见 index.js）。
+    // 攻击面（刻意不传 revision / 类型擦除）仍由本套件的其它用例与 e2e-revision-guard-test.js 覆盖。
+    dispatch: async (payload, expectedRevision, requestId) => {
+      const rev = Number.isInteger(expectedRevision) ? expectedRevision
+        : (await call('read', { request: { kind: 'profile' } })).data.revision
+      return call('dispatch', { payload, expectedRevision: rev, requestId })
+    },
   }
 }
 const person = (name, phone, ename, ephone) => ({ name, phone, emergency: { name: ename, phone: ephone }, medical: '', avatar: '' })

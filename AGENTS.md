@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — OurTrail
 
-**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Gate recount 3:** 2026-10-08 全生命周期审计（**50 门禁套件 / 3546 断言**，新增 6 套 `tools/lifecycle-*-test.js` 共 699，`e2e-domain-negative` 83→86；常驻红仍是天气线那 1 条。报告 `docs/superpowers/specs/2026-10-08-full-domain-lifecycle-audit.md`）· **Gate recount 4:** 2026-10-08 旅程可解释性重构（**52 门禁套件 / 3698 断言**，新增 `tools/journey-test.js` 138 与 `tools/journey-graph-test.js` 12；客户端多出 `utils/journey.js` 322 行＝状态与下一步的唯一翻译层。报告 `docs/superpowers/specs/2026-10-08-user-journey-ux-audit.md`；常驻红仍是天气线那 1 条）· **Base commit:** `2e504f2`
+**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Gate recount 3:** 2026-10-08 全生命周期审计（**50 门禁套件 / 3546 断言**，新增 6 套 `tools/lifecycle-*-test.js` 共 699，`e2e-domain-negative` 83→86；常驻红仍是天气线那 1 条。报告 `docs/superpowers/specs/2026-10-08-full-domain-lifecycle-audit.md`）· **Gate recount 4:** 2026-10-08 旅程可解释性重构（**52 门禁套件 / 3698 断言**，新增 `tools/journey-test.js` 138 与 `tools/journey-graph-test.js` 12；客户端多出 `utils/journey.js` 322 行＝状态与下一步的唯一翻译层。报告 `docs/superpowers/specs/2026-10-08-user-journey-ux-audit.md`）· **Gate recount 5:** 2026-10-09 可靠性与生产化加固两轮（**57 门禁套件 / 3805 断言 / 全部 exit 0**：第一轮 +3 套 revision/meta/cold-start 44，第二轮 +2 套 `receipt-window` 19 与 `failure-semantics` 37。生产代码只动 `index.js`/`store.js`/`domain/{commands,contracts,profile}.js` 与客户端 `utils/api.js`。报告 `docs/superpowers/specs/2026-10-09-reliability-production-hardening.md`（§1–§10 第一轮、§11–§18 第二轮）· **Base commit:** `2e504f2`
 
 ---
 
@@ -64,9 +64,9 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── store.js        # 16 ot_* collections, loadState, persistState CAS
 │   ├── domain/         # 13 pure modules — see .../domain/AGENTS.md
 │   ├── lib/weather.js  # Open-Meteo proxy (duplicates gcjToWgs — keep in sync)
-│   └── smoke-test.js   # 167 cases, needs no wx-server-sdk
-├── tools/             # 61 个零依赖 node 脚本（实测 2026-10-08 旅程可解释性重构后）：54 个 `*-test.js`
-│                      #   （51 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
+│   └── smoke-test.js   # 173 cases (measured 2026-10-09), needs no wx-server-sdk
+├── tools/             # 67 个零依赖 node 脚本（实测 2026-10-09 可靠性加固第二轮后）：59 个 `*-test.js`
+│                      #   （56 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
 │                      #   `e2e-ui-state-test` / `e2e-golden-path-test`）+ 2 个静态检查 +
 │                      #   `e2e-result.js`（结果账本，被上述 3 套真机层与变异自证 require）+
 │                      #   `lifecycle-harness.js`（6 套 lifecycle-* 套件共用的世界驱动器，本身不是套件）+
@@ -142,7 +142,7 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Gated suites — 52（51 个 tools/*-test.js + smoke-test.js）. 2026-10-08 旅程可解释性重构后共 3698 断言；
+# Gated suites — 57（56 个 tools/*-test.js + smoke-test.js）. 2026-10-09 可靠性加固两轮后共 3805 断言；
 # 全量复跑唯一红 = tools/outdoor-intelligence-ui-test.js 的常驻非确定性用例，打线上 Open-Meteo + 真实时钟，已归档归因、非本轮改动引入.
 # ⚠ 断言总数是**快照**，不是恒定值：
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
@@ -187,7 +187,14 @@ node tools/e2e-test.js                         # A 层服务链路 E2E（71 项�
 node tools/e2e-fault-probe-test.js             # 结果模型变异自证（34 项）
 node tools/e2e-permission-test.js              # A 层权限矩阵：角色×命令×阶段×归属（96 断言，8 actor 全走真实信封）
 node tools/e2e-domain-negative-test.js         # A 层 Domain 负矩阵：17 种错误码的确定性拒绝 + 败者零副作用快照对比（86 断言）
-node tools/e2e-concurrency-test.js             # A 层并发基座（Phase 8）：barrier 对照/同 R 双写/陈旧写/幂等（37 断言，bugs=2 常驻红测、4 INCONCLUSIVE，exit 0 可进门禁）
+node tools/e2e-concurrency-test.js             # A 层并发基座（Phase 8）：barrier 对照/同 R 双写/陈旧写/幂等（50 断言，4 INCONCLUSIVE，exit 0 可进门禁；S4/S4b 常驻红测已于 2026-10-09 转正）
+node tools/e2e-revision-guard-test.js          # P1 盲写洞回归（2026-10-09）：缺/坏 expectedRevision 一律 NO_REVISION 且零落库（16 断言）
+node tools/meta-revision-guard-test.js         # P1 版本号回卷回归（2026-10-09）：ot_meta 读故障必须失败关闭，不得 set revision:0（18 断言，含首次部署反向门）
+node tools/cold-start-work-test.js             # 每请求工作量上限（2026-10-09）：建集合仅首次调用付一次；loadState 的 14 个集合读必须并发发出（RTT 建模，10 断言）
+
+# 幂等窗口与失败语义两套（2026-10-09 可靠性加固第二轮；判据一律检查落库后的最终数据）
+node tools/receipt-window-test.js               # receipts 越过 600 之后必须按 appliedAt 淘汰：文档键是 actorId__requestId，重读会重排 ⇒ 按位置砍会砍掉最新回执 ⇒ 重放多出第二场活动（19 断言 + 2 INCONCLUSIVE）
+node tools/failure-semantics-test.js           # 写失败两语义分离（超时=结果未知→重读、绝不自动重发）+ 服务端错误归类（INTERNAL 不泄露英文原文、原文只进单行结构化日志、日志无 PII）+ 发出的码必须 ∈ ERROR_CODES（37 断言 + 2 INCONCLUSIVE）
 node tools/e2e-client-cas-test.js              # BUG-C1/C3 回归（Phase 9/10A）：真 editor.js + 真 api.js → 真 trailApi（54 断言，bugs=1：BUG-C2 草稿优先覆盖；C7=层①冲突不得依赖异常类型跨边界，C8=平台事务中止的窄映射，含 C8-⓪ 有效性门与 C8-⑨⑩⑪ 选择性三对照）
 node tools/e2e-interleave-test.js              # §13 多步骤并发交错 C1~C6（67 断言，3 INCONCLUSIVE；两层 CAS + baseRevision 内层 + 阶段门次序）
 node tools/e2e-panel-sync-test.js              # §14 工作台/面板 revision 同步 P1~P6（40 断言；含 api.js 吞掉 reload 的后果判定）
@@ -226,6 +233,9 @@ node tools/watch-points-test.js && \
 node tools/weather-model-test.js && node tools/space-time-test.js && \
 node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
 node tools/e2e-test.js && node tools/e2e-fault-probe-test.js && \
+node tools/e2e-revision-guard-test.js && node tools/meta-revision-guard-test.js && \
+node tools/cold-start-work-test.js && \
+node tools/receipt-window-test.js && node tools/failure-semantics-test.js && \
 node tools/e2e-permission-test.js && node tools/e2e-domain-negative-test.js && \
 node tools/e2e-concurrency-test.js && node tools/e2e-client-cas-test.js && \
 node tools/e2e-interleave-test.js && node tools/e2e-panel-sync-test.js && \
@@ -390,6 +400,8 @@ await mp.disconnect()
 20. **整库 invariant 有一条锁库风险**：`assertInvariants` 校验的是整个 State，任何「线上历史数据可能已经长成那样」的规则写进这里，都会让**此后全库每一次写入**一起被拒（本项目无迁移/回填脚本，`ensureCollections` 也不是迁移）。判据：只有「任何历史数据都不可能违反」的约束才放进 `invariants.js`；可能已有脏形态的，改在**写入端各拦一次** + 放进 `tools/lifecycle-harness.js` 的 `checkOracles` 看守新数据。`activity.delete` 的 positions 级联（F3）就是这个形态的活教材。另：`vehicle.depart` 与「本车参与者司机记为未出发」这类矛盾属 F1，本轮按此原则处理，没有写进 invariants。
 21. **元素数量不是 UI 证据。** `tools/e2e-ui-test.js` 曾拿「面板里有没有 `.list-row`」证明「分车弹层渲染出来了」，而 `.list-row` 同时存在于面板正文的车辆卡与同行组列表——弹层根本没开时也记 PASS（2026-10-08 实测 `planOpen=false` 仍 ✓）。UI 判据必须来自**那个对象的那个状态读数**（`planOpen` / `planChanged.length` / 点击前的 `busy`），不是同名的泛指元素。同理：`bindtap="{{cond ? '' : 'onX'}}"` 的按钮在 `cond` 为真时是「样式正常、文案正确、点了没反应」，tap 返回成功也不代表任何事情。
 22. **状态与「下一步」只有一个翻译层：`miniprogram/utils/journey.js`。** 三条可机器校验的界线，由 `tools/journey-graph-test.js` 常驻守着（不是靠自觉）：① **WXML 不比较服务端枚举原文**——`wx:if="{{phase === 'draft'}}"` / `{{transitionNext === 'cancelled' ? 'danger' : …}}` 一律改成 JS 或投影算好的布尔（`isDraft` / `transitionDanger` / `showPositions`），模板只认布尔与插值；② **受管中文状态词只出现在 `format.js` 与 `journey.js`**——页面 JS 里再打一份 `'待签到'` / `'草稿'` / `'自行前往'` 就是第二次定义，`roster-panel` 的旧 `STATUS_OPTIONS`（「候补」vs 标签表「候补中」）与 workspace 的 `SUBTITLES` 都是这么烂掉的；③ **页面图必须闭合**——每一页要么 tabBar/有跳进来的路由，要么登记进 `DEV_ONLY` 并写明为什么（`lab` / `cloud-field-poc`），登记页还得自声明内部身份、且不许出现在用户页里。同一门还查「有入口没返回路径」与「denied 态一屏红字没有出路」（`vehicle` / `signup` / `workspace` / `lab` / `privacy` 本轮各中一次）。方向仍然只允许 domain → projection → label（见铁律 19）。
+23. **落库会重排数组：任何「保留最近 N 条」都必须按时间字段判，不许按数组位置判。** `store.loadCollection` 以 `orderBy('_id','asc')` 回读，所以进程内那条"push 序＝时间序"的数组**只活在当前这次请求里**，下一次请求拿到的是文档键的字典序。`receipts` 的键是 `actorId + '__' + requestId`（`store.js:27`），openid 是随机串，键序与写入时间毫无关系。`pruneReceipts` 原来写 `slice(len-600)`：纯 domain 套件（smoke / lifecycle-*，同进程连写）永远全绿，而真实 store 往返下会砍掉「openid 字典序最靠前那个人」的最新回执——回执是唯一的幂等记忆，被砍掉的人重发同一条命令＝第二次执行（实测复现：多出一场活动）。现在三处上限（receipts 600 / events 800 / notices 800）统一走 `commands.js` 的 `pruneRecent(list, limit, keyOf, atOf)`，按 `appliedAt`/`occurredAt`/`publishedAt` 留最近、并列按文档键定序。判据 `tools/receipt-window-test.js`。**通用推论**：凡"截断 / 取最后一条 / 依赖数组顺序"的逻辑，必须在真实 store 往返之后测；纯内存断言证明不了顺序语义。
+24. **未捕获异常不许冒充业务错误。** `exports.main` 只把 `ERROR_CODES` 内的已知码原样回给客户端，其余归类 `INTERNAL`：英文原文与堆栈只进单行结构化日志（`ev/a/c/rid/u/ok/code/ms/rp/rev/det`；`u` 是 openid 的 sha256 前 8 位——**不落 openid 原文、不落 payload 内容**）。话术按读/写分岔：对读请求说「本次修改没有生效」是凭空承诺一件没发生的事。新增错误码必须**同时**进 `contracts.js` 的 `ERROR_CODES` 与 `journey.js` 的 `CODE_TITLES`，否则「每个错误码都有人话」那条门会静默跳过它（`NO_REVISION` 就这么漏过一次）。客户端写失败分两语义：`needRefresh`（CONFLICT＝别人改了→重读）与 `outcomeUnknown`（传输层失败＝**结果未知**，事务可能已提交→重读对齐，**绝不自动重发**）。判据 `tools/failure-semantics-test.js`。
 
 ---
 

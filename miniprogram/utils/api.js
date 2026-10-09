@@ -107,13 +107,22 @@ function dispatch(payload, expectedRevision, requestId) {
     requestId: requestId || ('req-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10)),
   }).catch(e => {
     if (e && e.code === 'CONFLICT') e.needRefresh = true
+    // 写命令的失败分两类，语义完全不同：
+    //   · 服务端回了信封并明确拒绝（有 code）＝确定没落库，用户改一改可以再发；
+    //   · 传输层失败（超时 / 断网 / 云函数没回话，统一 code=NETWORK）＝**结果未知**：
+    //     事务很可能已经提交，只是响应没回到这台手机。
+    // 结果未知绝不能和"没保存"用同一套话术：同一条意图的 requestId 每次都是新生成的（见上面的
+    // requestId 兜底），用户以为没成功而再点一次，服务端看到的就是一条全新命令，
+    // 幂等记忆（按 requestId 判）救不了它 ⇒ 第二次业务写。这里不自动重发（那是把一次不确定变成两次写），只标记出来，
+    // 由 dispatchAndSync 重读页面：服务端状态是权威，读到什么就显示什么。
+    else if (e && e.code === 'NETWORK') e.outcomeUnknown = true
     throw e
   })
 }
 
 /**
- * dispatch 的页面封装：并发冲突（CONFLICT）时自动重读页面数据并提示，
- * 下次再点就能基于最新 revision 提交，避免「一直冲突」。
+ * dispatch 的页面封装：并发冲突（CONFLICT）与结果未知（超时/断网）都要重读页面数据，
+ * 区别只在话术——前者是"别人改了"，后者是"没确认，先看现在到底是什么状态"。
  * page 需提供 reload()。
  */
 function dispatchAndSync(payload, expectedRevision, page) {
@@ -124,8 +133,13 @@ function dispatchAndSync(payload, expectedRevision, page) {
     if (page && typeof page.triggerEvent === 'function') page.triggerEvent('written')
     return res
   }).catch(e => {
-    if (e && e.needRefresh && page && typeof page.reload === 'function') {
+    const canReload = page && typeof page.reload === 'function'
+    if (e && e.needRefresh && canReload) {
       toast('安排已被他人更新，已刷新，请重试')
+      Promise.resolve(page.reload()).catch(() => {})
+    } else if (e && e.outcomeUnknown && canReload) {
+      // 重读是这一步唯一的恢复动作：确认到底落没落库，而不是让用户对着一句「网络异常」再点一次。
+      toast('结果未确认，已重读最新安排', 'none')
       Promise.resolve(page.reload()).catch(() => {})
     }
     throw e

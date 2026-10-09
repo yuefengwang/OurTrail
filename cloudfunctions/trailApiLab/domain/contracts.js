@@ -6,6 +6,12 @@ const ERROR_CODES = [
   'REQUEST_REUSED', 'CAPACITY', 'DUPLICATE_PERSON', 'GROUP_SCOPE', 'VEHICLE_FULL',
   'SEAT_TAKEN', 'PICKUP_MISMATCH', 'DRIVER_CONFLICT', 'UNRESOLVED_DEPARTURE',
   'UNRESOLVED_SAFETY', 'CONSENT_REQUIRED', 'STORAGE_UNAVAILABLE', 'OFFLINE', 'CORRUPT_SNAPSHOT',
+  // NO_REVISION 由 index.js 的漏斗门发出（缺 expectedRevision 一律失败关闭），NETWORK 只来自客户端
+  // 传输层——两者都曾不在本表里，于是「每个错误码都要有人话」那条门直接跳过了它们。
+  'NO_REVISION', 'NETWORK',
+  // 未归类的服务端异常：绝不允许把英文原文/堆栈当业务错误发给用户，也不允许伪装成 INVALID_INPUT
+  // 让用户以为是自己填错了。原文只进云端日志。
+  'INTERNAL',
 ]
 
 function failure(code, message, fieldErrors) {

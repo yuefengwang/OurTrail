@@ -294,6 +294,7 @@ const CODE_TITLES = {
   REQUEST_REUSED: '这条请求已经用于别的内容',
   OFFLINE: '现在没有网络',
   CORRUPT_SNAPSHOT: '本地数据与云端不一致',
+  INTERNAL: '服务端这一步出错了',
 }
 
 /**
