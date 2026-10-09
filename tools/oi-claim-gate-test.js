@@ -139,5 +139,53 @@ section('6 同一份数据必须稳定复现')
 const a = types(run(nightOnly)), b = types(run(nightOnly))
 check('两次构建机会清单逐字一致（相同输入稳定产出）', JSON.stringify(a) === JSON.stringify(b), a.join(',') + ' vs ' + b.join(','))
 
+/* ---------- 7. 证据冲突时不许挑乐观的那一张（星空/银河 vs 垂直剖面） ---------- */
+section('7 夜间天空与垂直剖面的一致性')
+function fieldOf (v) {
+  const altitudes = []
+  for (let a = 0; a <= 7000; a += 250) altitudes.push(a)
+  return { times: [...Array(24).keys()], altitudes, values: [...Array(24).keys()].map(() => altitudes.map(() => v)), covered: { lo: 250, hi: 6750 } }
+}
+const skyRows = day(() => ({ low: 0, mid: 0, high: 0, rh: 40 }))   // 地表聚合说「天上没云」
+const ocTypes2 = types(run(skyRows, { cloudField: fieldOf(100) }))
+check('剖面全是 100% 云 ⇒ 银河/星空卡必须消失（不能只信地表聚合那一份证据）',
+  !has(ocTypes2, 'MILKY_WAY') && !has(ocTypes2, 'STARGAZING'), ocTypes2.join(','))
+const clTypes2 = types(run(skyRows, { cloudField: fieldOf(0) }))
+check('反对照：剖面同样晴朗时银河/星空卡仍会出现（省略闸不是无脑删卡）',
+  has(clTypes2, 'MILKY_WAY') || has(clTypes2, 'STARGAZING'), clTypes2.join(','))
+const nightEv = []
+run(skyRows, { cloudField: fieldOf(0) }).opportunities.forEach(o => {
+  if (o.type === 'MILKY_WAY' || o.type === 'STARGAZING') (o.evidence || []).forEach(e => nightEv.push(String(e.fact || e)))
+})
+check('星空/银河卡显式声明未纳入光污染与地形遮挡（不假装已经考虑过）',
+  nightEv.length > 0 && nightEv.every(f => !/光污染|遮挡/.test(f) || /未纳入/.test(f)) &&
+  nightEv.some(f => /光污染.*未纳入|未纳入.*光污染/.test(f)), nightEv.slice(0, 3).join(' / '))
+const gaps = run(skyRows, { cloudField: fieldOf(0) }).meta.evidenceGaps
+check('evidenceGaps 只列真的缺项（有日出日落数据时不得把 sunTimes 报成缺失）',
+  Array.isArray(gaps) && gaps.indexOf('sunTimes') < 0 && gaps.indexOf('lightPollution') >= 0, JSON.stringify(gaps))
+const gaps2 = run(skyRows, {}).meta.evidenceGaps
+check('「证据不足」与「不成立」分开记账：无剖面时 cloudField 进 gaps（而不是被当成晴空）',
+  gaps2.indexOf('cloudField') >= 0, JSON.stringify(gaps2))
+
+/* ---------- 8. 三层边界：事实 / 解释 / 建议（任务书 §八） ---------- */
+section('8 建议层单源且不越权')
+const FMT = require('../miniprogram/utils/format.js')
+const SKY = require('../miniprogram/utils/sky.js')
+check('每条建议都挂在一个真实现象上（PHENO_ADVICE 的 key 必须出现在 sky 结论项里）',
+  Object.keys(FMT.PHENO_ADVICE).every(k => (SKY.PHENO_KEYS || []).indexOf(k) >= 0 || ['cloudSea', 'golden', 'blueHour', 'star', 'galaxy', 'rainbow', 'alpenglow'].indexOf(k) >= 0),
+  JSON.stringify(Object.keys(FMT.PHENO_ADVICE)))
+check('建议句只说"怎么做"，不下天气结论（不得出现"会有/一定有/预报"）',
+  Object.values(FMT.PHENO_ADVICE).every(v => !/(会有|一定有|必然|预报有)/.test(v)),
+  JSON.stringify(Object.values(FMT.PHENO_ADVICE)))
+const seaOpp = run(day(h => (h >= 5 && h <= 8) ? { low: 95, mid: 0, high: 5, rh: 95, band: { base: 3000, top: 3600, cover: 92 } } : { low: 5 }), { cloudField: fieldOf(0) })
+  .opportunities.filter(o => o.type === 'CLOUD_SEA')
+check('有建议的现象必须同时有可核对的证据（建议不得脱离证据单独存在）',
+  seaOpp.length === 0 || seaOpp.every(o => (o.evidence || []).length > 0), '云海卡数 ' + seaOpp.length)
+const wxml = fs.readFileSync(path.join(MG, 'pages/weather/weather.wxml'), 'utf8')
+check('WXML 里不再硬编码建议句子（受管中文文案单源，铁律 22）',
+  !/建议：[^{]/.test(wxml), (wxml.match(/建议：[^\n{]*/) || ['—'])[0].trim().slice(0, 40))
+check('建议文案只在 format.js 定义一次',
+  files.filter(p => /PHENO_ADVICE = /.test(fs.readFileSync(p, 'utf8'))).length === 1)
+
 console.log('\npassed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)

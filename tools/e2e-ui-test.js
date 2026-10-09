@@ -157,7 +157,26 @@ async function main() {
     }
     return r
   }
-  // 幂等收敛：cleanup/stage 的每条删除/建档都幂等，超时（-504003）重试会接着上次进度推进
+  /* 服务端已不再把缺失的 expectedRevision 默认成当前值（076bf11 的 P1 盲写洞收口：
+     index.js 的 NO_REVISION 漏斗门）。本套件的建档/发布调用当时没跟上，于是整条 B 层链
+     从第一步就 NO_REVISION —— 2026-10-09 真机实测 5 条 BUSINESS FAIL 全是这一句。
+     这里补一个「每次尝试都重读全局 revision」的写封装：CONFLICT/STORAGE 才重试，
+     业务错误码原样返回（重试不能把业务失败洗成通过）。 */
+  const globalRev = async () => {
+    const p = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
+    return p && p.data ? p.data.revision : undefined
+  }
+  const dispatchRev = async (payload, tries) => {
+    let last = null
+    for (let i = 0; i < (tries || 4); i++) {
+      last = await cloudCall('trailApi', 'dispatch', { payload, expectedRevision: await globalRev() })
+      if (last && last.ok) return last
+      const code = last && last.error && last.error.code
+      if (code !== 'CONFLICT' && code !== 'STORAGE_UNAVAILABLE') return last
+      await sleep(2500)
+    }
+    return last
+  }
   const converge = async (name, action, data, tries) => {
     let r = null
     for (let i = 0; i < (tries || 6); i++) {
@@ -224,12 +243,12 @@ async function main() {
     // 回执（Receipt）没有 activityId 字段，确定性请求号只能靠这一步复位；演员档案由阶段 0 幂等重建。
     const cl = await converge('trailApiLab', 'cleanup', { profiles: true })
     console.log('  · lab cleanup（设计复位）：' + JSON.stringify((cl && cl.data && cl.data.removed) || (cl && (cl.error || cl.err)) || '多次重试后仍超时').slice(0, 160))
-    const created = await converge('trailApi', 'dispatch', { payload: { type: 'activity.create', input: sandboxInput } }, 3)
+    const created = await dispatchRev({ type: 'activity.create', input: sandboxInput }, 3)
     L.b('建 [预演] 活动草稿', !!created && created.ok === true, JSON.stringify((created && (created.error || created.err)) || 'ok').slice(0, 200))
     sandboxId = created && created.ok ? created.data.targetIds[0] : ''
     const prof = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
     const me = prof && prof.ok ? prof.data.view.profile : null
-    const published = me ? await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me.id }, participant: me.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } }) : { ok: false, err: '没有档案' }
+    const published = me ? await dispatchRev({ type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me.id }, participant: me.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } }) : { ok: false, err: '没有档案' }
     L.b('发布（发布即报名本人）', published.ok === true, JSON.stringify(published.error || published.err || 'ok').slice(0, 200))
   }, () => ({ ok: true }))
 
@@ -263,12 +282,12 @@ async function main() {
         console.log('  · 阶段 1 命中 REQUEST_REUSED → 设计复位（cleanup profiles:true）后重建沙盒')
         const reset = await converge('trailApiLab', 'cleanup', { profiles: true })
         L.b('阶段 1 复位（cleanup profiles:true）幂等收敛', !!reset && reset.ok === true, JSON.stringify((reset && (reset.error || reset.err)) || 'ok').slice(0, 160))
-        const created2 = await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.create', input: sandboxInput } })
+        const created2 = await dispatchRev({ type: 'activity.create', input: sandboxInput })
         if (created2 && created2.ok) sandboxId = created2.data.targetIds[0]
         const prof2 = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
         const me2 = prof2 && prof2.ok ? prof2.data.view.profile : null
         if (me2) {
-          const republish = await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me2.id }, participant: me2.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } })
+          const republish = await dispatchRev({ type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me2.id }, participant: me2.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } })
           L.b('沙盒重建后重新发布', republish.ok === true, JSON.stringify(republish.error || republish.err || 'ok').slice(0, 160))
         }
         const reseed0 = await converge('trailApiLab', 'seed', { stage: 0 })
@@ -299,7 +318,18 @@ async function main() {
       }
       throw new Error('organizer read 多次失败')
     }
-    const revNow = async () => (await readOrg()).data.revision
+    /* revision 取用不能假设「沙盒活动已经存在」：建活动这一步本身就要在
+       activityId 还不存在时拿到 revision，而 kind:'activity' 的 denied 视图里没有 revision
+       ⇒ 服务端新加的 NO_REVISION 漏斗门会把第一步整体打死（2026-10-09 真机实测：
+       5 条 BUSINESS FAIL 全是这一句）。全局 revision 用 profile 读兜底。 */
+    const revNow = async () => {
+      try {
+        const r = await readOrg()
+        if (r && r.data && Number.isInteger(r.data.revision)) return r.data.revision
+      } catch (e) { /* 沙盒尚未建立或读失败：走下面的全局兜底 */ }
+      const p = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
+      return p && p.data ? p.data.revision : undefined
+    }
     // 写操作健壮封装：STORAGE_UNAVAILABLE/CONFLICT 等瞬时失败自动重读 revision 重试；
     // 其余错误码原样返回（重试不能把业务失败洗成通过）。
     const robustDispatch = async payload => {
@@ -887,12 +917,12 @@ async function main() {
   let suPage = null
   let suData = null
   await L.block('报名沙盒装配', 5, async () => {
-    const suCreated = await converge('trailApi', 'dispatch', { payload: { type: 'activity.create', input: suInput } }, 3)
+    const suCreated = await dispatchRev({ type: 'activity.create', input: suInput }, 3)
     L.b('建报名沙盒活动', !!suCreated && suCreated.ok === true, JSON.stringify((suCreated && (suCreated.error || suCreated.err)) || 'ok').slice(0, 140))
     suId = suCreated && suCreated.ok ? suCreated.data.targetIds[0] : ''
     const profS = await cloudCall('trailApi', 'read', { request: { kind: 'profile' } })
     const meS = profS && profS.ok ? profS.data.view.profile : null
-    const pub = await cloudCall('trailApi', 'dispatch', { payload: { type: 'activity.publish', activityId: suId, participation: { personRef: { kind: 'user', userId: meS.id }, participant: meS.person, trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } })
+    const pub = await dispatchRev({ type: 'activity.publish', activityId: suId, participation: { personRef: { kind: 'user', userId: meS.id }, participant: meS.person, trip: { mode: 'self' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } })
     L.b('发布报名沙盒（发布即报名本人）', pub.ok === true, JSON.stringify(pub.error || pub.err || 'ok').slice(0, 140))
     // 常用同行人是勾选候选的来源；没有就按 fixture 造一个（环境准备，记 BUSINESS）
     if (!((meS.companions || []).length)) {

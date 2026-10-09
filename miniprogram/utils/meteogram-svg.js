@@ -316,12 +316,34 @@ function renderUnifiedBase(geo, opts) {
   })
   s += '<rect x="' + geo.L + '" y="' + ROWS.iconTemp.y + '" width="' + geo.plotW + '" height="' + (ROWS.axis.y - ROWS.iconTemp.y) + '" fill="none" stroke="' + C.frame + '" stroke-width="0.8"/>'
 
-  /* --- 图标 + 温度行 --- */
+  /* --- 图标 + 温度行 ---
+   * 缺测小时（r.temp == null）必须**断开曲线**，不许补值：
+   * 旧写法把它替换成量程中点 `(lo+hi)/2`，等于在图上凭空画一个从未观测到的温度
+   * （实测：24h 序列去掉 5/6 两小时后，曲线在这两小时的顶点恰好落在量程中点 y=64.00）。
+   * 现在按「连续有值段」分别成线；孤立的一小时画点，不至于整点消失。 */
   const temp = geo.temp
-  const tz = geo.surface.map((r, h) => ({ x: geo.X(h), y: temp.y(r.temp == null ? (geo.temp.lo + geo.temp.hi) / 2 : r.temp) }))
-  const curve = smooth(tz)
-  s += '<path d="' + curve + ' L' + (geo.L + geo.plotW) + ',' + (ROWS.iconTemp.y + ROWS.iconTemp.h - 6) + ' L' + geo.L + ',' + (ROWS.iconTemp.y + ROWS.iconTemp.h - 6) + ' Z" fill="' + C.tempFill + '"/>'
-  s += '<path d="' + curve + '" fill="none" stroke="' + C.temp + '" stroke-width="1.5"/>'
+  const tempRuns = []
+  let run = null
+  geo.surface.forEach((r, h) => {
+    if (r.temp == null) { if (run) { tempRuns.push(run); run = null } return }
+    if (!run) run = []
+    run.push({ x: geo.X(h), y: temp.y(r.temp) })
+  })
+  if (run) tempRuns.push(run)
+  const baseline = ROWS.iconTemp.y + ROWS.iconTemp.h - 6
+  let fillD = '', lineD = '', loneDots = ''
+  tempRuns.forEach(function (seg) {
+    if (seg.length >= 2) {
+      const d = smooth(seg)
+      lineD += (lineD ? ' ' : '') + d
+      fillD += d + ' L' + seg[seg.length - 1].x.toFixed(2) + ',' + baseline + ' L' + seg[0].x.toFixed(2) + ',' + baseline + ' Z'
+    } else {
+      loneDots += '<circle cx="' + fmt(seg[0].x) + '" cy="' + fmt(seg[0].y) + '" r="1.6" fill="' + C.temp + '"/>'
+    }
+  })
+  if (fillD) s += '<path d="' + fillD + '" fill="' + C.tempFill + '"/>'
+  if (lineD) s += '<path d="' + lineD + '" fill="none" stroke="' + C.temp + '" stroke-width="1.5"/>'
+  if (loneDots) s += loneDots
   const rows = geo.surface
   let icons = ''
   const iconStep = HZ <= 24 ? 3 : HZ <= 48 ? 4 : 6
@@ -347,21 +369,27 @@ function renderUnifiedBase(geo, opts) {
     s += '<text x="' + (geo.L - 5) + '" y="' + fmt(y + 2.5) + '" text-anchor="end" font-size="7.5" fill="' + C.muted + '">' + Math.round(v) + '°</text>'
   })
 
-  /* --- 降水行：pop≥50 底带 + 双柱 --- */
+  /* --- 降水行：pop≥50 底带 + 双柱 ---
+   * 柱宽与底带宽都必须随 horizon 走（旧写法一律按 24 算：72h 时 cell 只有 4.5px，
+   * 而雨+阵雨两根柱加间隙要 8.2px ⇒ 相邻小时的柱子互相压叠，柱子也不再对齐它所属的小时）。
+   * 微量降水给 1.2px 的可见下限（0.1mm 在线性量程下只有 0.2px，等于看不见），
+   * 但只做下限、不改比例 ⇒ 不夸大微量降水的相对大小。 */
+  const HZcell = geo.plotW / HZ
+  const bw = Math.max(1.1, HZcell * 0.30)
+  const MIN_BAR = 1.2
   let pw = ''
   rows.forEach(function (r, h) {
     if ((r.pop || 0) >= 50) {
-      pw += '<rect x="' + fmt(geo.x0(h)) + '" y="' + ROWS.precip.y + '" width="' + fmt(geo.plotW / 24) + '" height="' + ROWS.precip.h + '" fill="' + C.popWash + '"/>'
+      pw += '<rect x="' + fmt(geo.x0(h)) + '" y="' + ROWS.precip.y + '" width="' + fmt(HZcell) + '" height="' + ROWS.precip.h + '" fill="' + C.popWash + '"/>'
     }
   })
   rows.forEach(function (r, h) {
     const p = r.precip || 0, sh = r.showers || 0
     if (p + sh < 0.05) return
-    const bw = Math.max(1.5, geo.plotW / 24 * 0.2635)
     const cx = geo.X(h)
     const base = ROWS.precip.y + ROWS.precip.h
-    const hP = (p / geo.precip.max) * (ROWS.precip.h - 6)
-    const hS = (sh / geo.precip.max) * (ROWS.precip.h - 6)
+    const barH = v => v > 0 ? Math.max(MIN_BAR, (v / geo.precip.max) * (ROWS.precip.h - 6)) : 0
+    const hP = barH(p), hS = barH(sh)
     if (p >= 0.05) pw += '<rect x="' + fmt(cx - bw - 0.5) + '" y="' + fmt(base - hP) + '" width="' + fmt(bw) + '" height="' + fmt(hP) + '" fill="' + C.rain + '" fill-opacity="0.55"/>'
     if (sh >= 0.05) pw += '<rect x="' + fmt(cx + 0.5) + '" y="' + fmt(base - hS) + '" width="' + fmt(bw) + '" height="' + fmt(hS) + '" fill="' + C.showers + '" fill-opacity="0.55"/>'
   })
@@ -459,15 +487,21 @@ function renderUnifiedSelection(geo, opts) {
   s += '<rect x="0" y="0" width="' + w + '" height="' + H + '" fill="none"/>'
   s += '<rect x="' + fmt(geo.x0(selAbs)) + '" y="' + ROWS.iconTemp.y + '" width="' + fmt(geo.plotW / HZ) + '" height="' + (ROWS.axis.y - ROWS.iconTemp.y) + '" fill="rgba(22,62,53,0.035)"/>'
   s += '<line x1="' + fmt(sx) + '" y1="' + (ROWS.iconTemp.y - 2) + '" x2="' + fmt(sx) + '" y2="' + (ROWS.axis.y + 2) + '" stroke="#163e35" stroke-width="0.5" opacity="0.4"/>'
-  s += '<circle cx="' + fmt(sx) + '" cy="' + fmt(geo.temp.y(row.temp == null ? (geo.temp.lo + geo.temp.hi) / 2 : row.temp)) + '" r="2.3" fill="#fff" stroke="#163e35" stroke-width="0.9"/>'
+  /* 温度读数点只在真的有值时画：缺测时宁可少一个圆点，也不在量程中点放一个假数据 */
+  if (row.temp != null) {
+    s += '<circle cx="' + fmt(sx) + '" cy="' + fmt(geo.temp.y(row.temp)) + '" r="2.3" fill="#fff" stroke="#163e35" stroke-width="0.9"/>'
+  }
   /* ⑨ 选中时刻克制小高亮：降水柱描边 + 风/阵风交点圆（原型 meteogram.js ⑨ 段 L707-716 逐参对齐；
      描边框住基础层实际画出的双柱并四周留 1px，不复用 yPrec——它的 h-4 刻度与柱高 h-6 不同源） */
   const p = row.precip || 0, sh = row.showers || 0
   if (p + sh >= 0.05 && (p >= 0.05 || sh >= 0.05)) {
-    const bw = Math.max(1.5, geo.plotW / 24 * 0.2635)
+    /* 高亮框必须套住基础层真正画出的柱子：柱宽/下限高度与 renderUnifiedBase 同源（随 horizon 缩放） */
+    const cellW = geo.plotW / HZ
+    const bw = Math.max(1.1, cellW * 0.30)
+    const MIN_BAR = 1.2
     const precBase = ROWS.precip.y + ROWS.precip.h
-    const hP = (p / geo.precip.max) * (ROWS.precip.h - 6)
-    const hS = (sh / geo.precip.max) * (ROWS.precip.h - 6)
+    const barH = v => v > 0 ? Math.max(MIN_BAR, (v / geo.precip.max) * (ROWS.precip.h - 6)) : 0
+    const hP = barH(p), hS = barH(sh)
     const maxH = Math.max(p >= 0.05 ? hP : 0, sh >= 0.05 ? hS : 0)
     s += '<rect x="' + fmt(sx - bw - 1.5) + '" y="' + fmt(precBase - maxH - 1) + '" width="' + fmt(2 * bw + 3) + '" height="' + fmt(maxH + 1) + '" fill="none" stroke="#163e35" stroke-width="0.7"/>'
   }

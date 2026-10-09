@@ -995,12 +995,67 @@ async function localCases() {
 
 
 
+/* 路线模式的海拔语义（2026-10-09 Weather V2 审计 §5.3）
+ * 逐节点各用自己的高程：切换节点后图上的参考线、云场 userAltitude、判读都必须跟着走；
+ * 节点自己没有高程时退回模型值并显式标来源，绝不沿用上一个节点的海拔（那是最像"对"的错）。 */
+async function routeElevCases () {
+  section('12. 路线模式：海拔必须跟着节点走')
+  const C = { lat: 30.9, lng: 103.48 }
+  const pts = [
+    { id: 'p1', name: '垭口', time: '2026-10-03T08:00:00+08:00', coordinates: C, ele: 4200, eleSource: 'gpx' },
+    { id: 'p2', name: '营地', time: '2026-10-03T15:00:00+08:00', coordinates: C, ele: 5000, eleSource: 'gpx' },
+    { id: 'p3', name: '无名点', time: '2026-10-03T18:00:00+08:00', coordinates: C },
+  ]
+  const read = {
+    revision: 1, now: '2026-10-03T09:00:00+08:00',
+    view: {
+      kind: 'activity', permittedActions: [],
+      activity: { id: 'a1', title: '测试活动', startAt: '2026-10-03T07:00:00+08:00', routeSnapshot: { points: pts } },
+    },
+  }
+  global.Page = cfg => { global.__PAGE_CFG = cfg }
+  delete require.cache[PAGE_PATH]
+  require(PAGE_PATH)
+  const cfg = global.__PAGE_CFG
+  api.read = () => Promise.resolve(read)
+  api.getWeather = () => Promise.resolve({
+    status: 'ready', updatedAt: '2026-10-03T09:00:00+08:00', pointElevation: 3650,
+    days: fakeDays('2026-10-03', 7), detail: [], series: fakeSeries('2026-10-03', 7),
+  })
+  const page = makePage(cfg)
+  page.onLoad({ id: 'a1', date: '2026-10-03' })
+  await page.reload()
+  await waitFor(() => page.data.dayCards && page.data.dayCards.length > 0)
+
+  check('节点 1：图上参考线海拔 = 该节点自己的 4200（不是活动起点、不是模型值）',
+    page.data.chartElev === 4200, '实际 ' + page.data.chartElev)
+  check('节点 1：出处记为 gpx（活动模式没有点卡——pointCard 只在 local 单点模式出现，海拔出处靠 elevSource 驱动图上标签）',
+    page.elevSource === 'gpx', '实际 ' + page.elevSource)
+  check('活动模式不渲染点卡（因此也不会在路线模式下写"此点海拔 X m"这类无来源文案）',
+    page.data.pointCard === null)
+  page.onPoint({ detail: { value: 1 } })
+  await waitFor(() => page.data.chartElev === 5000)
+  check('切到节点 2：海拔跟着换成 5000（没有沿用上一节点）', page.data.chartElev === 5000, '实际 ' + page.data.chartElev)
+  page.onPoint({ detail: { value: 2 } })
+  await waitFor(() => page.data.chartElev === 3650)
+  check('节点 3 无高程：退回模型值 3650，且出处标 model（不是沿用 5000）',
+    page.data.chartElev === 3650 && page.elevSource === 'model',
+    page.data.chartElev + ' / ' + page.elevSource)
+  check('节点 3 的标签必须带「模型估算」：用页面此刻真实状态（chartElev + elevSource）合成图上文案',
+    /模型估算/.test(require('../miniprogram/utils/format').elevLineLabel('3,650', page.elevSource)),
+    'elevSource=' + page.elevSource)
+  check('出处标签单源：model → 「模型地形估算」（页面不再自己写一份）',
+    require('../miniprogram/utils/format').elevSourceLabel('model') === '模型地形估算')
+}
+
 raceCases()
   .catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') })
   .then(windowCases)
   .catch(e => { failed++; console.error('  ✗ 窗口用例执行异常（' + e.message + '）') })
   .then(localCases)
   .catch(e => { failed++; console.error('  ✗ local 模式用例执行异常（' + e.message + '）') })
+  .then(routeElevCases)
+  .catch(e => { failed++; console.error('  ✗ 路线海拔用例执行异常（' + e.message + '）') })
   .then(() => {
     console.log('\npassed=' + passed + ' failed=' + failed)
   process.exit(failed ? 1 : 0)

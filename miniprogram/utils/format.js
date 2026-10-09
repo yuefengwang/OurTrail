@@ -192,10 +192,19 @@ function elevLineLabel(altText, source) {
   return ELEV_SUBJECT + ' ' + altText + ' m' + (source === 'model' ? ELEV_MODEL_SUFFIX : '')
 }
 
+/* 建议层（任务书 §八第三层）：只有「怎么做」的话，且必须挂在有依据可核对的那张卡上。
+ * 原来这句建议写死在 weather.wxml 里（受管中文文案的第二处出处，违反铁律 22），
+ * 而且对所有 featured 卡说同一句。现在按现象逐条给，页面只查表。 */
+const PHENO_ADVICE = {
+  cloudSea: '想在云顶之上看到云海，需在窗口结束前抵达高于云带的观景点。',
+}
+function phenoAdvice (key) { return PHENO_ADVICE[key] || '' }
+
 module.exports = {
   pad, WEEK, cnParts, dateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
   minutesLabel, relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
   UNASSIGNED_LABELS, TRIP_MODE_LABELS, TRIP_MODE_HINTS, TRIP_MODE_OPTIONS, RETURN_PLAN_LABELS,
   PICKUP_MISSING, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase, windDirText,
   ELEV_SUBJECT, ELEV_SOURCE_LABELS, ELEV_MODEL_SUFFIX, elevSourceLabel, elevLineLabel, resolveElev,
+  PHENO_ADVICE, phenoAdvice,
 }

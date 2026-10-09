@@ -395,7 +395,7 @@
           </view>
           <text class="reason-note">评级来自 sky.js 同源判定；点「看图」定位到对应小时自行核对。</text>
         </view>
-        <view wx:if="{{item.featured}}" class="pheno-advice">建议：日出前抵达高处观景点。</view>
+        <view wx:if="{{item.advice}}" class="pheno-advice">建议：{{item.advice}}</view>
         <text class="pheno-disclaimer small muted">基于天气数据估算，非气象预报。</text>
       </view>
 

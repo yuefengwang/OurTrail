@@ -41,8 +41,11 @@ const OPPORTUNITY = {
   MILKY_WAY: '银河窗口',
 }
 
-/* Rank：静态基础优先级（稀有性 × 户外价值），不伪装成科学评分 */
-const BASE_RANK = {
+/* 夜间天空类的边界声明：本项目只算了云量与月照（astro.moonInfo 是真天文量），
+ * 光污染与地形遮挡没有可靠数据源，必须写出来，否则读者会以为已经纳入。 */
+const NIGHT_LIMIT = '只看云量与月照：光污染与地形遮挡无数据源，未纳入判断'
+
+/* Rank：静态基础优先级（稀有性 × 户外价值），不伪装成科学评分 */const BASE_RANK = {
   CLOUD_SEA: 'primary',
   ALPENGLOW: 'primary',
   MILKY_WAY: 'primary',
@@ -374,6 +377,10 @@ function buildOpportunities(ctx, conditions) {
     }
     const hours = detailHours(detail, from, to)
     const ev = (ctx.factsFor && ctx.factsFor(c.key)) || []
+    if (NIGHT_TYPES[type]) {
+      if (skyBlocked(conditions, from, to)) return   // 剖面说头顶有云 ⇒ 这张卡不成立，省略
+      ev.push({ fact: NIGHT_LIMIT, at: from })
+    }
     out.push(makeWindow(type, from, to, ev, extra, hours, ctx))
   })
 
@@ -480,6 +487,21 @@ function meanOf(list, get) {
   return Math.round(vals.reduce(function (a, b) { return a + b }, 0) / vals.length)
 }
 
+/* 夜间天空类机会的一致性闸：星空/银河的标记只看地表高中云量聚合（cloud.mid/high），
+ * 而垂直剖面是另一份证据。两者冲突时旧实现取了更乐观的那一张卡——
+ * 剖面显示此点上方全是 100% 云时，「银河窗口」仍然出卡（实测复现）。
+ * 规则：剖面判为「你在云中」或「头顶有云层」的小时，一律不发星空/银河卡（明确不成立 ⇒ 省略）。 */
+const NIGHT_TYPES = { STARGAZING: true, MILKY_WAY: true }
+const NIGHT_BLOCKED = { IN_CLOUD: true, CLOUD_ABOVE: true }
+function skyBlocked (conditions, from, to) {
+  if (!conditions || !conditions.length) return false
+  const f = sky.hourMin(from), t = sky.hourMin(to)
+  return conditions.some(function (c) {
+    const m = sky.hourMin(c.t)
+    return m >= f - 30 && m <= t + 30 && NIGHT_BLOCKED[c.key] === true
+  })
+}
+
 function makeWindow(type, from, to, evidence, extra, hours, ctx) {
   return Object.assign({
     type: type,
@@ -566,6 +588,18 @@ function buildOutdoorIntelligence(ctx) {
     cloudSeaDebug = { candidates: sea.candidates, rejected: sea.rejected }
   }
 
+  /* 「不成立」与「证据不足」必须分开（任务书 §6.2）：
+     不成立 = 上面的各条省略闸；证据不足 = 这里显式列出的缺失输入。
+     下游文案据此说「缺少 X，未作判断」，而不是把沉默粉饰成结论。 */
+  const evidenceGaps = []
+  if (full.elevOK === false || !Number.isFinite(full.userAltitude)) evidenceGaps.push('userAltitude')
+  if (!full.cloudField) evidenceGaps.push('cloudField')
+  if (!full.sun || !full.sun.sunrise) evidenceGaps.push('sunTimes')
+  if (!full.moon) evidenceGaps.push('moon')
+  if (!(full.detail || []).some(h => Number.isFinite(h.visibility))) evidenceGaps.push('visibility')
+  if (!(full.detail || []).some(h => Number.isFinite(h.rh))) evidenceGaps.push('humidity')
+  evidenceGaps.push('lightPollution')   // 永远缺：无数据源，星空/银河类只能声明边界
+
   return {
     conditions: conditions,
     opportunities: opportunities,
@@ -573,6 +607,7 @@ function buildOutdoorIntelligence(ctx) {
       sources: ctx.cloudField ? ['cloud-field', 'hour-marks', 'astro'] : ['hour-view', 'astro'],
       silence: opportunities.length === 0,
       cloudSea: cloudSeaDebug,   // 负证据（模型内部保留；生产 UI 不展示）
+      evidenceGaps: evidenceGaps,
     },
   }
 }

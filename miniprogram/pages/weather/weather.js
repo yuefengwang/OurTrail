@@ -1007,6 +1007,7 @@ Page({
         gradeLabel: it.label,
         stars: cond.starsOf(it.score),
         featured: it.key === 'cloudSea',
+        advice: F.phenoAdvice(it.key),
         evidence: cond.factsFor(it.key, ctx),
       }))
     cards.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
