@@ -1,0 +1,1474 @@
+{
+  "generatedAt": "2026-10-09T12:10:10.344Z",
+  "snapshot": {
+    "fetchedAt": "2026-10-09T06:04:28.010Z",
+    "date": "2026-10-09"
+  },
+  "fixedScan": {
+    "lo": 2000,
+    "hi": 6000
+  },
+  "constants": {
+    "LAYER_COVER_MIN": 80,
+    "LAYER_THICKNESS_MIN": 300,
+    "CLEARANCE_MIN": 200,
+    "SCAN_STEP": 50
+  },
+  "places": {
+    "chengdu": {
+      "name": "成都",
+      "elevation": 489,
+      "days": [
+        {
+          "day": "2026-10-09",
+          "covered": {
+            "lo": 146,
+            "hi": 6674
+          },
+          "hoursWithMissedLayer": 0,
+          "missedLayerCount": 0,
+          "hoursMissedBelowFixed": 0,
+          "hoursMissedAboveFixed": 0,
+          "hoursCandidateFlipsWholeLayer": 0,
+          "hoursCandidateFlipsByTruncation": 0,
+          "hoursWithEdgeArtifact": 0,
+          "thicknessUnderstatedMean_m": 0,
+          "thicknessUnderstatedMax_m": 46,
+          "sampleHours": []
+        },
+        {
+          "day": "2026-10-10",
+          "covered": {
+            "lo": 155,
+            "hi": 6671
+          },
+          "hoursWithMissedLayer": 0,
+          "missedLayerCount": 0,
+          "hoursMissedBelowFixed": 0,
+          "hoursMissedAboveFixed": 0,
+          "hoursCandidateFlipsWholeLayer": 0,
+          "hoursCandidateFlipsByTruncation": 0,
+          "hoursWithEdgeArtifact": 0,
+          "thicknessUnderstatedMean_m": 0,
+          "thicknessUnderstatedMax_m": 5,
+          "sampleHours": []
+        },
+        {
+          "day": "2026-10-11",
+          "covered": {
+            "lo": 120,
+            "hi": 6673
+          },
+          "hoursWithMissedLayer": 1,
+          "missedLayerCount": 1,
+          "hoursMissedBelowFixed": 1,
+          "hoursMissedAboveFixed": 0,
+          "hoursCandidateFlipsWholeLayer": 0,
+          "hoursCandidateFlipsByTruncation": 0,
+          "hoursWithEdgeArtifact": 0,
+          "thicknessUnderstatedMean_m": -1,
+          "thicknessUnderstatedMax_m": 20,
+          "sampleHours": [
+            {
+              "h": 15,
+              "mode": "A-整层被排除",
+              "scanFixed": [],
+              "scanEnvelope": [
+                [
+                  1701,
+                  1770,
+                  88
+                ]
+              ],
+              "候选_固定": false,
+              "候选_包络": false,
+              "missed": [
+                [
+                  1701,
+                  1770,
+                  88,
+                  69
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "emeishan": {
+      "name": "峨眉山",
+      "elevation": 3004,
+      "days": [
+        {
+          "day": "2026-10-09",
+          "covered": {
+            "lo": 161,
+            "hi": 6684
+          },
+          "hoursWithMissedLayer": 3,
+          "missedLayerCount": 3,
+          "hoursMissedBelowFixed": 3,
+          "hoursMissedAboveFixed": 0,
+          "hoursCandidateFlipsWholeLayer": 0,
+          "hoursCandidateFlipsByTruncation": 1,
+          "hoursWithEdgeArtifact": 18,
+          "thicknessUnderstatedMean_m": 121,
+          "thicknessUnderstatedMax_m": 337,
+          "sampleHours": [
+            {
+              "h": 2,
+              "mode": "B-跨界层被截断",
+              "scanFixed": [
+                [
+                  2281,
+                  2800,
+                  83,
+                  519
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  2281,
+                  2811,
+                  83,
+                  530
+                ]
+              ],
+              "候选_固定": "成立",
+              "候选_包络": "USER_NOT_ABOVE_CLOUD"
+            },
+            {
+              "h": 5,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  3400,
+                  92,
+                  1400
+                ],
+                [
+                  4474,
+                  4500,
+                  83,
+                  26
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1992,
+                  3411,
+                  92,
+                  1419
+                ],
+                [
+                  4491,
+                  4511,
+                  81,
+                  20
+                ]
+              ],
+              "候选_固定": "NO_LAYER_BELOW",
+              "候选_包络": "NO_LAYER_BELOW"
+            },
+            {
+              "h": 6,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  3650,
+                  96,
+                  1650
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1979,
+                  3661,
+                  96,
+                  1682
+                ]
+              ],
+              "候选_固定": "NO_LAYER_BELOW",
+              "候选_包络": "NO_LAYER_BELOW"
+            },
+            {
+              "h": 7,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  4150,
+                  96,
+                  2150
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1718,
+                  4161,
+                  95,
+                  2443
+                ]
+              ],
+              "候选_固定": "NO_LAYER_BELOW",
+              "候选_包络": "NO_LAYER_BELOW"
+            }
+          ]
+        },
+        {
+          "day": "2026-10-10",
+          "covered": {
+            "lo": 169,
+            "hi": 6681
+          },
+          "hoursWithMissedLayer": 0,
+          "missedLayerCount": 0,
+          "hoursMissedBelowFixed": 0,
+          "hoursMissedAboveFixed": 0,
+          "hoursCandidateFlipsWholeLayer": 0,
+          "hoursCandidateFlipsByTruncation": 1,
+          "hoursWithEdgeArtifact": 12,
+          "thicknessUnderstatedMean_m": 102,
+          "thicknessUnderstatedMax_m": 414,
+          "sampleHours": [
+            {
+              "h": 0,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  6000,
+                  97,
+                  4000
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1678,
+                  5969,
+                  97,
+                  4291
+                ]
+              ],
+              "候选_固定": "NO_LAYER_BELOW",
+              "候选_包络": "NO_LAYER_BELOW"
+            },
+            {
+              "h": 1,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  5600,
+                  97,
+                  3600
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1659,
+                  5619,
+                  97,
+                  3960
+                ]
+              ],
+              "候选_固定": "NO_LAYER_BELOW",
+              "候选_包络": "NO_LAYER_BELOW"
+            },
+            {
+              "h": 2,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  5550,
+                  99,
+                  3550
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1631,
+                  5519,
+                  99,
+                  3888
+                ]
+              ],
+              "候选_固定": "NO_LAYER_BELOW",
+              "候选_包络": "NO_LAYER_BELOW"
+            },
+            {
+              "h": 3,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  5550,
+                  99,
+                  3550
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1610,
+                  5569,
+                  98,
+                  3959
+                ]
+              ],
+              "候选_固定": "NO_LAYER_BELOW",
+              "候选_包络": "NO_LAYER_BELOW"
+            }
+          ]
+        },
+        {
+          "day": "2026-10-11",
+          "covered": {
+            "lo": 131,
+            "hi": 6682
+          },
+          "hoursWithMissedLayer": 0,
+          "missedLayerCount": 0,
+          "hoursMissedBelowFixed": 0,
+          "hoursMissedAboveFixed": 0,
+          "hoursCandidateFlipsWholeLayer": 0,
+          "hoursCandidateFlipsByTruncation": 2,
+          "hoursWithEdgeArtifact": 7,
+          "thicknessUnderstatedMean_m": 64,
+          "thicknessUnderstatedMax_m": 246,
+          "sampleHours": [
+            {
+              "h": 15,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  2100,
+                  92,
+                  100
+                ],
+                [
+                  2471,
+                  2500,
+                  82,
+                  29
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1785,
+                  2131,
+                  89,
+                  346
+                ],
+                [
+                  2471,
+                  2481,
+                  81,
+                  10
+                ]
+              ],
+              "候选_固定": "INSUFFICIENT_THICKNESS",
+              "候选_包络": "INSUFFICIENT_THICKNESS"
+            },
+            {
+              "h": 16,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  2550,
+                  92,
+                  550
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1821,
+                  2581,
+                  91,
+                  760
+                ]
+              ],
+              "候选_固定": "成立",
+              "候选_包络": "成立"
+            },
+            {
+              "h": 17,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  2200,
+                  90,
+                  200
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1857,
+                  2231,
+                  88,
+                  374
+                ]
+              ],
+              "候选_固定": "INSUFFICIENT_THICKNESS",
+              "候选_包络": "成立"
+            },
+            {
+              "h": 18,
+              "mode": "C-扫描边界被当成云界",
+              "scanFixed": [
+                [
+                  2000,
+                  2100,
+                  89,
+                  100
+                ]
+              ],
+              "scanEnvelope": [
+                [
+                  1871,
+                  2081,
+                  88,
+                  210
+                ]
+              ],
+              "候选_固定": "INSUFFICIENT_THICKNESS",
+              "候选_包络": "INSUFFICIENT_THICKNESS"
+            }
+          ]
+        }
+      ]
+    },
+    "litang": {
+      "name": "理塘",
+      "elevation": 4058,
+      "days": [
+        {
+          "day": "2026-10-09",
+          "covered": {
+            "lo": 135,
+            "hi": 6673
+          },
+          "hoursWithMissedLayer": 2,
+          "missedLayerCount": 2,
+          "hoursMissedBelowFixed": 0,
+          "hoursMissedAboveFixed": 2,
+          "hoursCandidateFlipsWholeLayer": 0,
+          "hoursCandidateFlipsByTruncation": 0,
+          "hoursWithEdgeArtifact": 0,
+          "thicknessUnderstatedMean_m": 0,
+          "thicknessUnderstatedMax_m": 0,
+          "sampleHours": [
+            {
+              "h": 13,
+              "mode": "A-整层被排除",
+              "scanFixed": [],
+              "scanEnvelope": [
+                [
+                  6190,
+                  6285,
+                  87
+                ]
+              ],
+              "候选_固定": false,
+              "候选_包络": false,
+              "missed": [
+                [
+                  6190,
+                  6285,
+                  87,
+                  95
+                ]
+              ]
+            },
+            {
+              "h": 15,
+              "mode": "A-整层被排除",
+              "scanFixed": [],
+              "scanEnvelope": [
+                [
+                  6152,
+                  6285,
+                  87
+                ]
+              ],
+              "候选_固定": false,
+              "候选_包络": false,
+              "missed": [
+                [
+                  6152,
+                  6285,
+                  87,
+                  133
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "day": "2026-10-10",
+          "covered": {
+            "lo": 126,
+            "hi": 6669
+          },
+          "hoursWithMissedLayer": 1,
+          "missedLayerCount": 1,
+          "hoursMissedBelowFixed": 0,
+          "hoursMissedAboveFixed": 1,
+          "hoursCandidateFlipsWholeLayer": 0,
+          "hoursCandidateFlipsByTruncation": 0,
+          "hoursWithEdgeArtifact": 0,
+          "thicknessUnderstatedMean_m": -24,
+          "thicknessUnderstatedMax_m": -24,
+          "sampleHours": [
+            {
+              "h": 13,
+              "mode": "A-整层被排除",
+              "scanFixed": [],
+              "scanEnvelope": [
+                [
+                  6218,
+                  6226,
+                  81
+                ]
+              ],
+              "候选_固定": false,
+              "候选_包络": false,
+              "missed": [
+                [
+                  6218,
+                  6226,
+                  81,
+                  8
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "day": "2026-10-11",
+          "covered": {
+            "lo": 136,
+            "hi": 6675
+          },
+          "hoursWithMissedLayer": 3,
+          "missedLayerCount": 3,
+          "hoursMissedBelowFixed": 0,
+          "hoursMissedAboveFixed": 3,
+          "hoursCandidateFlipsWholeLayer": 0,
+          "hoursCandidateFlipsByTruncation": 0,
+          "hoursWithEdgeArtifact": 0,
+          "thicknessUnderstatedMean_m": 0,
+          "thicknessUnderstatedMax_m": 0,
+          "sampleHours": [
+            {
+              "h": 13,
+              "mode": "A-整层被排除",
+              "scanFixed": [],
+              "scanEnvelope": [
+                [
+                  6226,
+                  6236,
+                  82
+                ]
+              ],
+              "候选_固定": false,
+              "候选_包络": false,
+              "missed": [
+                [
+                  6226,
+                  6236,
+                  82,
+                  10
+                ]
+              ]
+            },
+            {
+              "h": 14,
+              "mode": "A-整层被排除",
+              "scanFixed": [],
+              "scanEnvelope": [
+                [
+                  6180,
+                  6386,
+                  88
+                ]
+              ],
+              "候选_固定": false,
+              "候选_包络": false,
+              "missed": [
+                [
+                  6180,
+                  6386,
+                  88,
+                  206
+                ]
+              ]
+            },
+            {
+              "h": 15,
+              "mode": "A-整层被排除",
+              "scanFixed": [],
+              "scanEnvelope": [
+                [
+                  6177,
+                  6536,
+                  93
+                ]
+              ],
+              "候选_固定": false,
+              "候选_包络": false,
+              "missed": [
+                [
+                  6177,
+                  6536,
+                  93,
+                  359
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "shadowRuns": [
+    {
+      "place": "成都",
+      "day": "2026-10-09",
+      "alt": null,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-09",
+      "alt": 489,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-09",
+      "alt": 489,
+      "basis": "estimated",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-09",
+      "alt": 489,
+      "basis": "none",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-10",
+      "alt": null,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-10",
+      "alt": 489,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-10",
+      "alt": 489,
+      "basis": "estimated",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-10",
+      "alt": 489,
+      "basis": "none",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-11",
+      "alt": null,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-11",
+      "alt": 489,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-11",
+      "alt": 489,
+      "basis": "estimated",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "成都",
+      "day": "2026-10-11",
+      "alt": 489,
+      "basis": "none",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-09",
+      "alt": null,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-09",
+      "alt": 3004,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-09",
+      "alt": 3004,
+      "basis": "estimated",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-09",
+      "alt": 3004,
+      "basis": "none",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-10",
+      "alt": null,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-10",
+      "alt": 3004,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-10",
+      "alt": 3004,
+      "basis": "estimated",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-10",
+      "alt": 3004,
+      "basis": "none",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-11",
+      "alt": null,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-11",
+      "alt": 3004,
+      "basis": "measured",
+      "opportunitiesIdentical": false,
+      "conditionsIdentical": true,
+      "added": [
+        [
+          "CLOUD_SEA",
+          "16:00",
+          "18:00",
+          "高",
+          5
+        ]
+      ],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 1
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-11",
+      "alt": 3004,
+      "basis": "estimated",
+      "opportunitiesIdentical": false,
+      "conditionsIdentical": true,
+      "added": [
+        [
+          "CLOUD_SEA",
+          "16:00",
+          "18:00",
+          "高",
+          5
+        ]
+      ],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 1
+    },
+    {
+      "place": "峨眉山",
+      "day": "2026-10-11",
+      "alt": 3004,
+      "basis": "none",
+      "opportunitiesIdentical": false,
+      "conditionsIdentical": true,
+      "added": [
+        [
+          "CLOUD_SEA",
+          "16:00",
+          "18:00",
+          "高",
+          5
+        ]
+      ],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 1
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-09",
+      "alt": null,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-09",
+      "alt": 4058,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-09",
+      "alt": 4058,
+      "basis": "estimated",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-09",
+      "alt": 4058,
+      "basis": "none",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-10",
+      "alt": null,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-10",
+      "alt": 4058,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-10",
+      "alt": 4058,
+      "basis": "estimated",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-10",
+      "alt": 4058,
+      "basis": "none",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-11",
+      "alt": null,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-11",
+      "alt": 4058,
+      "basis": "measured",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-11",
+      "alt": 4058,
+      "basis": "estimated",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    },
+    {
+      "place": "理塘",
+      "day": "2026-10-11",
+      "alt": 4058,
+      "basis": "none",
+      "opportunitiesIdentical": true,
+      "conditionsIdentical": true,
+      "added": [],
+      "removed": [],
+      "seaCountFixed": 0,
+      "seaCountEnvelope": 0
+    }
+  ],
+  "synthetic": [
+    {
+      "场景": "① 云完全在固定带内（1500m 厚层）",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        1000,
+        6000
+      ],
+      "固定扫描层": [
+        [
+          2217,
+          3500,
+          92,
+          1283
+        ]
+      ],
+      "包络扫描层": [
+        [
+          2217,
+          3500,
+          92,
+          1283
+        ]
+      ],
+      "候选_固定": "成立",
+      "候选_包络": "成立",
+      "结论翻转": false
+    },
+    {
+      "场景": "② 云全部低于固定带（云海漏报主案）",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        900,
+        6000
+      ],
+      "固定扫描层": [],
+      "包络扫描层": [
+        [
+          963,
+          1750,
+          94,
+          787
+        ]
+      ],
+      "候选_固定": "NO_LAYER_BELOW",
+      "候选_包络": "成立",
+      "结论翻转": true
+    },
+    {
+      "场景": "③ 云全部高于固定带",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        900,
+        6800
+      ],
+      "固定扫描层": [],
+      "包络扫描层": [
+        [
+          6222,
+          6500,
+          90,
+          278
+        ]
+      ],
+      "候选_固定": "NO_LAYER_BELOW",
+      "候选_包络": "NO_LAYER_BELOW",
+      "结论翻转": false
+    },
+    {
+      "场景": "④ 多层：低层 + 带内层",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        800,
+        6000
+      ],
+      "固定扫描层": [
+        [
+          2977,
+          3500,
+          88,
+          523
+        ]
+      ],
+      "包络扫描层": [
+        [
+          972,
+          1500,
+          90,
+          528
+        ],
+        [
+          2977,
+          3500,
+          88,
+          523
+        ]
+      ],
+      "候选_固定": "成立",
+      "候选_包络": "成立",
+      "结论翻转": false
+    },
+    {
+      "场景": "⑤ 云横跨固定带下边界",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        900,
+        6000
+      ],
+      "固定扫描层": [
+        [
+          2000,
+          2500,
+          92,
+          500
+        ]
+      ],
+      "包络扫描层": [
+        [
+          1717,
+          2500,
+          92,
+          783
+        ]
+      ],
+      "候选_固定": "成立",
+      "候选_包络": "成立",
+      "结论翻转": false
+    },
+    {
+      "场景": "⑥ 云量低于业务阈值（79%）",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        900,
+        6000
+      ],
+      "固定扫描层": [],
+      "包络扫描层": [],
+      "候选_固定": "NO_LAYER_BELOW",
+      "候选_包络": "NO_LAYER_BELOW",
+      "结论翻转": false
+    },
+    {
+      "场景": "⑦ 云量临界（80%）",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        900,
+        6000
+      ],
+      "固定扫描层": [],
+      "包络扫描层": [
+        [
+          1000,
+          1750,
+          80,
+          750
+        ]
+      ],
+      "候选_固定": "NO_LAYER_BELOW",
+      "候选_包络": "成立",
+      "结论翻转": true
+    },
+    {
+      "场景": "⑧ 薄层（厚度 < 300m）在带下",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        900,
+        6000
+      ],
+      "固定扫描层": [],
+      "包络扫描层": [
+        [
+          1211,
+          1250,
+          95,
+          39
+        ]
+      ],
+      "候选_固定": "NO_LAYER_BELOW",
+      "候选_包络": "INSUFFICIENT_THICKNESS",
+      "结论翻转": false
+    },
+    {
+      "场景": "⑨ 净空不足（云顶距点 <200m）",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        900,
+        6000
+      ],
+      "固定扫描层": [
+        [
+          2000,
+          4000,
+          92,
+          2000
+        ]
+      ],
+      "包络扫描层": [
+        [
+          967,
+          4000,
+          92,
+          3033
+        ]
+      ],
+      "候选_固定": "成立",
+      "候选_包络": "成立",
+      "结论翻转": false
+    },
+    {
+      "场景": "⑩ 无有效云层（晴空）",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        900,
+        6000
+      ],
+      "固定扫描层": [],
+      "包络扫描层": [],
+      "候选_固定": "NO_LAYER_BELOW",
+      "候选_包络": "NO_LAYER_BELOW",
+      "结论翻转": false
+    },
+    {
+      "场景": "⑪ 站点范围只到 2500（带下无测量）",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        2000,
+        2500
+      ],
+      "固定扫描层": [
+        [
+          2000,
+          2250,
+          92,
+          250
+        ]
+      ],
+      "包络扫描层": [
+        [
+          2000,
+          2250,
+          92,
+          250
+        ]
+      ],
+      "候选_固定": "INSUFFICIENT_THICKNESS",
+      "候选_包络": "INSUFFICIENT_THICKNESS",
+      "结论翻转": false
+    },
+    {
+      "场景": "⑫ 点在带下、云在带内（无高程场景对照）",
+      "点": null,
+      "basis": "none",
+      "包络": [
+        900,
+        6000
+      ],
+      "固定扫描层": [
+        [
+          2467,
+          3000,
+          92,
+          533
+        ]
+      ],
+      "包络扫描层": [
+        [
+          2467,
+          3000,
+          92,
+          533
+        ]
+      ],
+      "候选_固定": "NO_LAYER_BELOW",
+      "候选_包络": "NO_LAYER_BELOW",
+      "结论翻转": false
+    },
+    {
+      "场景": "⑬ 模型估算高程（点带误差）",
+      "点": 4100,
+      "basis": "estimated",
+      "包络": [
+        900,
+        6000
+      ],
+      "固定扫描层": [
+        [
+          2000,
+          3750,
+          92,
+          1750
+        ]
+      ],
+      "包络扫描层": [
+        [
+          967,
+          3750,
+          92,
+          2783
+        ]
+      ],
+      "候选_固定": "成立",
+      "候选_包络": "成立",
+      "结论翻转": false
+    },
+    {
+      "场景": "⑭ 跨界层被截断（真实厚 500m，固定带内只剩 200m）",
+      "点": 4200,
+      "basis": "measured",
+      "包络": [
+        900,
+        6000
+      ],
+      "固定扫描层": [
+        [
+          2000,
+          2000,
+          94,
+          0
+        ]
+      ],
+      "包络扫描层": [
+        [
+          1713,
+          2000,
+          94,
+          287
+        ]
+      ],
+      "候选_固定": "INSUFFICIENT_THICKNESS",
+      "候选_包络": "INSUFFICIENT_THICKNESS",
+      "结论翻转": false
+    },
+    {
+      "场景": "⑮ 扫描上边界被当成云顶",
+      "点": 6900,
+      "basis": "measured",
+      "包络": [
+        900,
+        7000
+      ],
+      "固定扫描层": [
+        [
+          5713,
+          6000,
+          94,
+          287
+        ]
+      ],
+      "包络扫描层": [
+        [
+          5713,
+          6500,
+          94,
+          787
+        ]
+      ],
+      "候选_固定": "INSUFFICIENT_THICKNESS",
+      "候选_包络": "成立",
+      "结论翻转": true
+    }
+  ],
+  "envelopeCensus": [
+    {
+      "note": "站点范围之外适配器写 0（= 无测量），因此「扫全部高度」若超出实测包络就会把无测量读成无云"
+    }
+  ]
+}
