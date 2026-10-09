@@ -872,6 +872,11 @@ function oldServerResult(today, selectedDate) {
     check('11b-F 无海拔：r1-r4 无 undefined/null 泄漏', noLeak(card), dump(card))
     check('11b-F 无海拔：云区事实行照给（数据本身有效，只是判不出与它的高低关系）',
       !!card && /^云量 \d+% · 云区 /.test(card.r2), card && card.r2)
+    /* 真机取证抓到的原错：没有高程时图例走了「点在窗外」那一支，拼出
+       「此点在剖面下方 null m」——把「不知道」又写成了一个数值。图例必须分清这两种「没有虚线」。 */
+    check('11b-F 无海拔：图例说「海拔未知」，不得出现 null/NaN，也不得谎称有虚线',
+      !!card && card.elevShown === false && card.legendElev === require('../miniprogram/utils/format').cloudLegendNoElev() &&
+        !/null|NaN/.test(card.legendElev), card && card.legendElev)
   }
 
   // G：模型估算海拔（±300–600m）而云带底缘就落在这一带 → 判不出方向，不是「晴空」也不是「云在上方」
@@ -887,6 +892,42 @@ function oldServerResult(today, selectedDate) {
     check('11b-G 反向对照：同一个 3650m 若是可信高程 ⇒ 明确判「云层在此点上方」',
       !!trusted && trusted.r3 === '云层在此点上方' && trusted.stKey === 'mid', trusted && (trusted.r3 + '/' + trusted.stKey))
     check('11b-G r1-r4 无 undefined/null 泄漏', noLeak(est) && noLeak(trusted), dump(est) + ' || ' + dump(trusted))
+  }
+  // H：图例跟着图走 + 判读不随显示窗漂移（页面级，2026-10-09 显示窗自适应轮）
+  {
+    const FMT = require('../miniprogram/utils/format')
+    const insideCard = runPick([{ alt: 1000, cov: 5 }, { alt: 2500, cov: 90 }, { alt: 3200, cov: 88 }, { alt: 4000, cov: 5 }],
+      { ele: 3000, eleSrc: 'picked' }, DATE + 'T10:07:00+08:00')
+    const gp = insideCard._page._unified.geo.profile
+    check('11b-H 点在窗内：图例写「虚线 = 此点海拔」且画板开关为真',
+      insideCard.elevShown === true && insideCard.legendElev === FMT.cloudLegendElev() &&
+        3000 >= gp.lo && 3000 <= gp.hi, JSON.stringify([gp.lo, gp.hi, insideCard.legendElev]))
+    const outCard = runPick([{ alt: 1000, cov: 5 }, { alt: 2500, cov: 90 }, { alt: 3200, cov: 88 }, { alt: 4000, cov: 5 }],
+      { ele: 6200, eleSrc: 'picked' }, DATE + 'T10:08:00+08:00')
+    const gp2 = outCard._page._unified.geo.profile
+    check('11b-H 点在窗外：图例不谎称有虚线，且那句话与图上印的逐字相同（图例=图，不是两套话）',
+      outCard.elevShown === false && gp2.pointOutside === 'above' &&
+        (() => {
+          const UMGx = require('../miniprogram/utils/meteogram-svg')
+          const svg = UMGx.renderUnifiedBase(outCard._page._unified.geo, {}).svg
+          return outCard.legendElev.length > 0 && svg.indexOf(outCard.legendElev) >= 0
+        })(),
+      JSON.stringify([gp2.pointOutside, gp2.pointOutsideDelta, outCard.legendElev]))
+    /* 判读必须是显示窗的无关量：把跨度上限改到极小（窗一定会变），同一小时同一海拔的 r3 不许变。
+       这一条防的是「窗反过来污染判读」——那会让同一份数据因为图怎么画而给出不同结论。 */
+    const CFFm = require('../miniprogram/utils/cloud-field-svg.js')
+    const snap = Object.assign({}, CFFm.PROFILE)
+    const before = { r1: insideCard.r1, r2: insideCard.r2, r3: insideCard.r3, stKey: insideCard.stKey }
+    CFFm.PROFILE.MAX_SPAN = 1000
+    CFFm.PROFILE.PAD_M = 0
+    const shrunk = runPick([{ alt: 1000, cov: 5 }, { alt: 2500, cov: 90 }, { alt: 3200, cov: 88 }, { alt: 4000, cov: 5 }],
+      { ele: 3000, eleSrc: 'picked' }, DATE + 'T10:07:00+08:00')
+    Object.keys(snap).forEach(k => { CFFm.PROFILE[k] = snap[k] })
+    check('11b-H 变异证明：窗被压缩后页面判读逐字不变（r3/stKey/r2 全部相同）',
+      shrunk.r3 === before.r3 && shrunk.stKey === before.stKey &&
+        shrunk._page._unified.geo.profile.hi - shrunk._page._unified.geo.profile.lo <= 1000 &&
+        before.r3 !== '', JSON.stringify([before.r3, shrunk.r3,
+          [shrunk._page._unified.geo.profile.lo, shrunk._page._unified.geo.profile.hi]]))
   }
 }
 

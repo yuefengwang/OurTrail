@@ -1,0 +1,13 @@
+viewport=390x753 dpr=3 set=after
+  REAL emeishan/24h fresh=true 图例="虚线 = 此点海拔" r3="此点正处于云中"
+  REAL emeishan/72h fresh=true 图例="虚线 = 此点海拔" r3="此点正处于云中"
+  REAL litang/24h fresh=true 图例="虚线 = 此点海拔" r3="云层在此点上方"
+  REAL litang/48h fresh=true 图例="虚线 = 此点海拔" r3=""
+  REAL chengdu/24h fresh=true 图例="此点在剖面下方 511 m" r3="云层在此点上方"
+  SYNTH deck-below card=true fresh=true pick=none+programmatic 图例="虚线 = 此点海拔" r3="云带在此点下方" null泄漏=true
+  SYNTH deck-above card=true fresh=true pick=none+programmatic 图例="虚线 = 此点海拔" r3="云层在此点上方" null泄漏=true
+  SYNTH deck-cross card=true fresh=true pick=none+programmatic 图例="虚线 = 此点海拔" r3="云带在此点下方" null泄漏=true
+  SYNTH clear card=true fresh=true pick=none+programmatic 图例="虚线 = 此点海拔" r3="" null泄漏=true
+  SYNTH no-altitude card=true fresh=true pick=none+programmatic 图例="此点海拔未知（未画参考线）" r3="" null泄漏=true
+  SYNTH no-cloudfield card=false fresh=no-card pick=— 图例="—" r3="—" null泄漏=undefined
+done → D:/OurTrail/docs/weather-ux/qa/v2-window-adaptive-2026-10-09

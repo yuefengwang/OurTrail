@@ -183,5 +183,104 @@ check('windDir=90（东风）→ 270°（吹向西），映射是「吹向」而
     n === Math.ceil(geo.nT / step) && cell * step >= 10, '箭头 ' + n + ' 支，间距 ' + (cell * step).toFixed(1) + 'px')
 })
 
+/* ---------- 8 剖面显示窗的可读性（2026-10-09 显示窗自适应轮） ---------- */
+section('8 显示窗：范围自证 / 边注 / 刻度 / 裁切定义 / 小屏不重叠')
+function renderDeck (decks, alt, n, width, elevSource) {
+  const alts = CLOUD.altitudes
+  const values = [...Array(n).keys()].map(() => alts.map(a => {
+    let v = 0
+    decks.forEach(d => { if (a >= d.lo && a <= d.hi) v = Math.max(v, d.cov) })
+    return v
+  }))
+  const cf = { times: [...Array(n).keys()], altitudes: alts, values: values, covered: { lo: 250, hi: 6750 } }
+  const geo = UMG.buildUnified({ surface: surface(n), cloudField: cf, userAltitude: alt, elevSource: elevSource || 'picked', width: width, horizon: n })
+  return { geo: geo, svg: UMG.renderUnifiedBase(geo, {}).svg }
+}
+const ROW = UMG.ROWS.cloud
+const CJK = c => c.charCodeAt(0) > 0x2e80
+function estWidth (txt, fs) {
+  let w = 0
+  for (const ch of txt) w += CJK(ch) ? fs : fs * 0.55
+  return w
+}
+function cloudTexts (svg) {
+  const out = []
+  const re = /<text x="([-\d.]+)" y="([-\d.]+)"[^>]*font-size="([\d.]+)"[^>]*>([^<]*)<\/text>/g
+  let m
+  while ((m = re.exec(svg))) {
+    const x = +m[1], y = +m[2], fs = +m[3], txt = m[4]
+    if (y < ROW.y - 2 || y > ROW.y + ROW.h + 2) continue
+    const anchor = /text-anchor="middle"/.test(m[0]) ? 'middle' : /text-anchor="end"/.test(m[0]) ? 'end' : 'start'
+    const w = estWidth(txt, fs)
+    out.push({ x: x, y: y, txt: txt, x0: anchor === 'middle' ? x - w / 2 : anchor === 'end' ? x - w : x, x1: anchor === 'middle' ? x + w / 2 : anchor === 'end' ? x : x + w })
+  }
+  return out
+}
+{
+  const clear = renderDeck([], 3000, 24, 390)
+  check('晴空（实测包络内没有有意义云量）：图上写明原因，不再是一片空白让人读成「没数据」',
+    /实测高度范围内没有有意义云量/.test(clear.svg) && clear.geo.profile.decks.length === 0)
+  check('晴空也印出自己的高度范围（这一行画的到底是哪一段）',
+    new RegExp('剖面 ' + clear.geo.profile.lo.toLocaleString('en-US') + '–' + clear.geo.profile.hi.toLocaleString('en-US') + ' m').test(clear.svg),
+    JSON.stringify([clear.geo.profile.lo, clear.geo.profile.hi]))
+  const low = renderDeck([{ lo: 900, hi: 1650, cov: 92 }], 4058, 24, 390)
+  check('云全在旧固定窗之下：新窗把云框进来（等值带不再为 0）',
+    low.geo.stats.pathCount > 0 && low.geo.profile.lo <= 900 && low.geo.profile.hi >= 1650,
+    JSON.stringify([low.geo.profile.lo, low.geo.profile.hi, low.geo.stats.pathCount]))
+  const hiDeck = renderDeck([{ lo: 6100, hi: 6450, cov: 88 }], 4058, 24, 390)
+  check('云全在旧固定窗之上：同样框进来，且不再与「晴空」同形',
+    hiDeck.geo.stats.pathCount > 0 && hiDeck.geo.profile.hi >= 6450)
+  const trimmed = renderDeck([{ lo: 600, hi: 1200, cov: 96 }, { lo: 6000, hi: 6600, cov: 97 }], 3300, 24, 390)
+  check('装不下的那一侧必须说：边注「窗外上方/下方还有云带」出现且方向与旗标一致',
+    (trimmed.geo.profile.clippedAbove ? /窗外上方还有云带/.test(trimmed.svg) : true) &&
+      (trimmed.geo.profile.clippedBelow ? /窗外下方还有云带/.test(trimmed.svg) : true) &&
+      (trimmed.geo.profile.clippedAbove || trimmed.geo.profile.clippedBelow),
+    JSON.stringify([trimmed.geo.profile.lo, trimmed.geo.profile.hi, trimmed.geo.profile.clippedAbove, trimmed.geo.profile.clippedBelow]))
+  check('旗标没说的就不许印（点在窗外 ≠ 窗外有云带）',
+    (() => {
+      const only = renderDeck([{ lo: 2500, hi: 3200, cov: 90 }], 6200, 24, 390)
+      return !/窗外(上方|下方)还有云带/.test(only.svg) && /此点在剖面上方 [\d,]+ m/.test(only.svg) &&
+        only.geo.profile.clippedAbove === false && only.geo.profile.clippedBelow === false
+    })())
+  check('云行裁切必须有定义（引用悬空的 clip-path 在严格实现下会让整行云场消失）',
+    (() => {
+      const s = low.svg
+      return /<clipPath id="cfclipu">/.test(s) && s.indexOf('clip-path="url(#cfclipu)"') > s.indexOf('<clipPath id="cfclipu">')
+    })())
+}
+{
+  const g = renderDeck([{ lo: 3150, hi: 3850, cov: 85 }], 3500, 24, 390)
+  const ticks = [...g.svg.matchAll(/<text x="33" y="([-\d.]+)" text-anchor="end" font-size="7.5" fill="#5F6E66">([\d,]+)<\/text>/g)]
+    .map(m => ({ y: +m[1], v: +m[2].replace(/,/g, '') }))
+    .filter(t => t.y >= ROW.y - 2 && t.y <= ROW.y + ROW.h + 2)
+  check('云行刻度全部落在窗内、互不重复、且是 250 的倍数',
+    ticks.length >= 2 && ticks.every(t => t.v >= g.geo.profile.lo && t.v <= g.geo.profile.hi && t.v % 250 === 0) &&
+      new Set(ticks.map(t => t.v)).size === ticks.length, JSON.stringify(ticks.map(t => t.v)))
+  check('刻度间距 ≥ 11px（高度尺度不至于挤到读不出）',
+    ticks.slice().sort((a, b) => a.y - b.y).every((t, i, arr) => i === 0 || t.y - arr[i - 1].y >= 11),
+    JSON.stringify(ticks.map(t => +t.y.toFixed(1))))
+  check('参考线标签与图例同一主语（此点 …），且没有「你」',
+    g.svg.indexOf('此点 3,500 m') >= 0 && g.svg.indexOf('你') < 0)
+}
+;[375, 390, 414].forEach(W => {
+  const cases = [
+    ['晴', renderDeck([], 3000, 24, W)],
+    ['云+点在窗外', renderDeck([{ lo: 2500, hi: 3200, cov: 90 }], 6200, 24, W)],
+    ['双层云被裁', renderDeck([{ lo: 600, hi: 1200, cov: 96 }, { lo: 6000, hi: 6600, cov: 97 }], 3300, 24, W)],
+    ['正常', renderDeck([{ lo: 3150, hi: 3850, cov: 85 }], 3500, 24, W)],
+  ]
+  cases.forEach(([nm, r]) => {
+    const ts = cloudTexts(r.svg)
+    const rowTexts = ts.filter(t => /剖面|窗外|此点|有意义云量/.test(t.txt))
+    let overlap = null
+    rowTexts.forEach((a, i) => rowTexts.slice(i + 1).forEach(b => {
+      if (Math.abs(a.y - b.y) < 6 && a.x0 < b.x1 - 1 && b.x0 < a.x1 - 1) overlap = [a.txt, b.txt]
+    }))
+    check(W + 'px · ' + nm + '：云行说明文字不越界、互不重叠',
+      rowTexts.every(t => t.x0 >= 0 && t.x1 <= W - 2 && t.y >= ROW.y && t.y <= ROW.y + ROW.h) && !overlap,
+      overlap ? '重叠 ' + JSON.stringify(overlap) : JSON.stringify(rowTexts.map(t => [t.txt, +t.x0.toFixed(0), +t.x1.toFixed(0), t.y])))
+  })
+})
+
 console.log('\npassed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)

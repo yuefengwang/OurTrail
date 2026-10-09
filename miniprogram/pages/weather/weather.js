@@ -645,6 +645,9 @@ Page({
       })
       this._unified = { key: key, geo: geo, surface: detail, horizon: effHorizon, baseUri: this.cfUri(base.svg) }
     }
+    const gp = this._unified.geo.profile, gu = this._unified.geo.cloud
+    const hasElev = gu.userAlt != null
+    const elevShown = hasElev && gu.userAlt >= gp.lo && gu.userAlt <= gp.hi
     const card = {
       src: this._unified.baseUri,
       selSrc: '',
@@ -654,6 +657,13 @@ Page({
       /* 图例里那句「琥珀段 = …」必须与 r3 同一套词：从 format 的三态表取，
          WXML 里再打一遍就是第二次定义（铁律 22）。 */
       legendIn: F.cloudPositionLabel('in'),
+      /* 图例也不能声称图上没有的东西，而且必须分得清两种「没有虚线」：
+         ① 点在窗外（图上是高差边注）② 根本没有可信高程（图上什么都没有）。
+         把 ② 走成 ① 会拼出「此点在剖面下方 null m」——真机取证抓到过。 */
+      elevShown: elevShown,
+      legendElev: !hasElev ? F.cloudLegendNoElev()
+        : elevShown ? F.cloudLegendElev()
+          : F.pointOutsideLabel(gp.pointOutside, cfFmtM(gp.pointOutsideDelta)),
       readout: '点图上任意小时查看读数。',
     }
     const pick = this.data.chartPick

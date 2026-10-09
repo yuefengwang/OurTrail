@@ -146,12 +146,24 @@ function buildUnified(opts) {
     userAlt: Number.isFinite(opts.userAltitude) ? Math.round(opts.userAltitude) : null,
     elevSource: opts.elevSource || null,
   }
-  cloud.yAlt = a => cloud.bot - (a - CFF.ALT0) / (CFF.ALT1 - CFF.ALT0) * (cloud.bot - cloud.top)
+  /* 显示窗由有效数据 + 有效云层 + 查询点联合决定（cloud-field-svg.planProfile，纯显示层）。
+     没给出处时按「点自己的高程」处理，与 inferState 的默认一致；有 elevSource 就走唯一映射函数。 */
+  const elevBasis = opts.elevBasis || (cloud.elevSource ? F.elevBasis(cloud.elevSource)
+    : (cloud.userAlt != null ? 'measured' : 'none'))
+  const profT0 = Date.now()
+  cloud.profile = CFF.planProfile({
+    sample: cloudSample, covered: cloud.covered, hours: horizon,
+    queryAlt: cloud.userAlt, basis: elevBasis,
+  })
+  cloud.elevBasis = elevBasis
+  cloud.yAlt = a => cloud.bot - (a - cloud.profile.lo) / (cloud.profile.hi - cloud.profile.lo) * (cloud.bot - cloud.top)
 
   const gridMs0 = Date.now()
-  const F2 = CFF.buildFieldGrid(cloudSample, cf.times.length, { hours: horizon })
+  const profMs = gridMs0 - profT0
+  const F2 = CFF.buildFieldGrid(cloudSample, cf.times.length, { hours: horizon, altLo: cloud.profile.lo, altHi: cloud.profile.hi })
   const xOfCloud = i => L + ((F2.t0 + i * F2.dt) / horizon) * plotW
-  const yOfCloud = j => cloud.bot - (F2.a0 + j * F2.da - CFF.ALT0) / (CFF.ALT1 - CFF.ALT0) * (cloud.bot - cloud.top)
+  /* y 映射只有一个来源：等值带网格自己带的高度窗（窗变了网格与像素必然同步） */
+  const yOfCloud = j => cloud.bot - (F2.a0 + j * F2.da - F2.altLo) / (F2.altHi - F2.altLo) * (cloud.bot - cloud.top)
   const bands = []
   let pathCount = 0, pointCount = 0
   CFF.BINS.forEach(b => {
@@ -165,13 +177,16 @@ function buildUnified(opts) {
   })
   const gridMs = Date.now() - gridMs0
 
-  /* 入云交线：field(t, userAlt) ≥ 60 的连续段 */
+  /* 入云交线：field(t, 查询点) ≥ 60 的连续段。
+     查询点不在这一窗里时一条都不画——琥珀段是「此点在云里」的图形语言，
+     点不在图上就没有「此处」可言（与判读侧同向由 cloud-position-test §5 钉住）。 */
   const userAlt = cloud.userAlt
+  const prof = cloud.profile
   const inRuns = []
-  if (userAlt != null && userAlt >= CFF.ALT0 && userAlt <= CFF.ALT1) {
+  if (userAlt != null && userAlt >= prof.lo && userAlt <= prof.hi) {
     let run = null
     for (let h = 0; h < nT; h++) {
-      if (cloudSample(h, Math.max(CFF.ALT0, Math.min(CFF.ALT1, userAlt))) >= 60) {
+      if (cloudSample(h, userAlt) >= 60) {
         if (run && run.to === h - 1) run.to = h
         else { if (run) inRuns.push(run); run = { from: h, to: h } }
       } else if (run) { inRuns.push(run); run = null }
@@ -209,6 +224,7 @@ function buildUnified(opts) {
   const stats = {
     calcMs: Date.now() - t0,
     gridMs: gridMs,
+    profMs: profMs,
     pathCount: pathCount,
     pointCount: pointCount,
     pMax: Math.round(pMax * 10) / 10,
@@ -235,6 +251,7 @@ function buildUnified(opts) {
     width: width, plotW: plotW, L: L, R: R,
     horizon: horizon, dayBounds: dayBounds, days: days,
     covered: cf.covered || null,
+    profile: cloud.profile,
     X: X, x0: x0,
     sample: cloudSample,
     cloud: cloud, bands: bands, inRuns: inRuns,
@@ -397,27 +414,24 @@ function renderUnifiedBase(geo, opts) {
   s += '<text x="' + (geo.L - 5) + '" y="' + (ROWS.precip.y + ROWS.precip.h + 2.5) + '" text-anchor="end" font-size="7.5" fill="' + C.muted + '">0</text>'
   s += '<text x="' + (geo.L - 5) + '" y="' + (ROWS.precip.y + 2.5) + '" text-anchor="end" font-size="7.5" fill="' + C.muted + '">' + geo.precip.max + '</text>'
 
-  /* --- Cloud Field（冻结等值带 + YOU 线 + 入云交线） --- */
+  /* --- Cloud Field（等值带 + 参考线 + 入云交线 + 刻度 + 窗外提示 + 窗范围） --- */
   const cloud = geo.cloud
   let bands = ''
   geo.bands.forEach(function (b) { bands += '<path d="' + b.d + '" fill="' + b.fill + '" fill-rule="evenodd"/>' })
+  /* clipPath 必须真的被定义：这里长期只写了 url(#cfclipu)，而全文件从未生成过这个 id。
+     引用悬空时 Skia 按「不裁切」画（所以截图上看得见云带），但 SVG 1.1 的严格实现是
+     「被引元素不渲染」——也就是整行云场随时可能凭空消失。
+     外扩一圈的出血本来就必须靠裁切才成立（铁律 25），这一轮补上定义。 */
+  s += '<defs><clipPath id="cfclipu"><rect x="' + geo.L + '" y="' + cloud.top + '" width="' + geo.plotW + '" height="' + (cloud.bot - cloud.top) + '"/></clipPath></defs>'
   s += '<g clip-path="url(#cfclipu)">' + bands + '</g>'
-  /* 海拔参考线：只有查询点自己有可信海拔才画。
-     旧实现无条件画：userAlt=null 时 Math.min(ALT1,null)=0 → 线钉在 2000m、
-     标成「此点 null m」——一个凭空捏造的位置关系（本轮语义统一要消灭的正是这个）。 */
-  if (cloud.userAlt != null) {
-    const youY = cloud.yAlt(Math.max(CFF.ALT0, Math.min(CFF.ALT1, cloud.userAlt)))
-    const youTag = cloud.userAlt < CFF.ALT0 ? '（剖面下方）' : cloud.userAlt > CFF.ALT1 ? '（剖面上方）' : ''
-    s += '<line x1="' + geo.L + '" y1="' + fmt(youY) + '" x2="' + (geo.L + geo.plotW) + '" y2="' + fmt(youY) + '" stroke="' + C.you + '" stroke-width="1" stroke-dasharray="4 3"/>'
-    geo.inRuns.forEach(function (r) {
-      s += '<line x1="' + fmt(geo.x0(r.from)) + '" y1="' + fmt(youY) + '" x2="' + fmt(geo.x0(r.to + 1)) + '" y2="' + fmt(youY) + '" stroke="' + C.inCloud + '" stroke-width="2.5" stroke-linecap="round"/>'
-    })
-    s += '<text x="' + (geo.L + geo.plotW - 4) + '" y="' + fmt(youY - 4) + '" text-anchor="end" font-size="7.5" font-weight="600" fill="' + C.you + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.elevLineLabel(fmtM(cloud.userAlt), cloud.elevSource) + youTag + '</text>'
-  }
-  ;[2000, 3000, 4000, 5000].forEach(function (a) {
-    s += '<text x="' + (geo.L - 5) + '" y="' + fmt(cloud.yAlt(a) + 2.5) + '" text-anchor="end" font-size="7.5" fill="' + C.muted + '">' + a + '</text>'
+  s += CFF.renderProfileChrome({
+    profile: cloud.profile, yAlt: cloud.yAlt, L: geo.L, plotW: geo.plotW,
+    rowTop: cloud.top, rowBot: cloud.bot,
+    userAlt: cloud.userAlt, elevSource: cloud.elevSource, inRuns: geo.inRuns,
+    xA: function (h) { return geo.x0(h) }, xB: function (h) { return geo.x0(h + 1) },
+    num: function (v) { return fmtM(Math.round(v)) },
+    colors: { line: C.you, amber: C.inCloud, muted: C.muted, gridLine: C.grid },
   })
-  s += '<text x="' + (geo.L - 5) + '" y="' + fmt(cloud.yAlt(6000) + 2.5) + '" text-anchor="end" font-size="7.5" fill="' + C.muted + '">6000 m</text>'
 
   /* --- 风行：每小时风向箭头（指向吹去方向）+ 风速/阵风曲线 --- */
   let arrows = ''

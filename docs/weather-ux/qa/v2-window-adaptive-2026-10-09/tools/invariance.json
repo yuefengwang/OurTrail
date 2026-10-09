@@ -1,0 +1,99 @@
+{
+  "comparedVerdicts": 432,
+  "verdictDiffs": 0,
+  "firstDiffs": {},
+  "fixedWindowHoursWithZeroInk": 11,
+  "ofThoseCloudActuallyExistedOffWindow": 0,
+  "placesWhoseAdaptiveWindowDiffersFromFixed": 3,
+  "windows": [
+    {
+      "place": "成都",
+      "elevation": 489,
+      "oldWindow": [
+        2000,
+        6000
+      ],
+      "newWindow": [
+        1000,
+        5000
+      ],
+      "windowSpanPx": 190,
+      "clippedAbove": true,
+      "clippedBelow": false,
+      "pointOutside": "below",
+      "pointOutsideDelta": 511,
+      "anchorCount": 2,
+      "decks": [
+        {
+          "lo": 1396,
+          "hi": 6496,
+          "peak": 100
+        }
+      ],
+      "paths": 5,
+      "profMs": 2,
+      "calcMs": 23
+    },
+    {
+      "place": "峨眉山",
+      "elevation": 3004,
+      "oldWindow": [
+        2000,
+        6000
+      ],
+      "newWindow": [
+        0,
+        4000
+      ],
+      "windowSpanPx": 190,
+      "clippedAbove": true,
+      "clippedBelow": false,
+      "pointOutside": null,
+      "pointOutsideDelta": null,
+      "anchorCount": 2,
+      "decks": [
+        {
+          "lo": 161,
+          "hi": 6611,
+          "peak": 100
+        }
+      ],
+      "paths": 5,
+      "profMs": 1,
+      "calcMs": 9
+    },
+    {
+      "place": "理塘",
+      "elevation": 4058,
+      "oldWindow": [
+        2000,
+        6000
+      ],
+      "newWindow": [
+        3750,
+        6750
+      ],
+      "windowSpanPx": 190,
+      "clippedAbove": false,
+      "clippedBelow": true,
+      "pointOutside": null,
+      "pointOutsideDelta": null,
+      "anchorCount": 3,
+      "decks": [
+        {
+          "lo": 1385,
+          "hi": 1485,
+          "peak": 26.308000000000003
+        },
+        {
+          "lo": 5135,
+          "hi": 6585,
+          "peak": 90.84400000000004
+        }
+      ],
+      "paths": 4,
+      "profMs": 1,
+      "calcMs": 7
+    }
+  ]
+}

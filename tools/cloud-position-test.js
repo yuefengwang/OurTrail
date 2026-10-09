@@ -328,9 +328,50 @@ check('呈现层不再有第二张标题表（引用同一对象，不是内容�
     /function inferState/.test(fs.readFileSync(path.join(ROOT, 'utils/cloud-field-svg.js'), 'utf8')) &&
       !/inferState|bandPeak|denseSpan|ALT_TOL/.test(stripComments(fs.readFileSync(path.join(ROOT, 'utils/format.js'), 'utf8'), true)),
     'format.js 的注释里允许提到 inferState（那是在指路），代码里不允许')
-  check('海拔出处分类也只有一个来源：resolveElev 同时给出 basis（页面不再自己分三类）',
-    /basis: 'measured'/.test(fs.readFileSync(path.join(ROOT, 'utils/format.js'), 'utf8')) &&
-      /this\.elevBasis = EV\.basis/.test(pageJs) && /this\.elevBasis = EVr\.basis/.test(pageJs))
+  const fmtSrc = stripComments(fs.readFileSync(path.join(ROOT, 'utils/format.js'), 'utf8'), true)
+  check('海拔出处分类只有一个函数：resolveElev 走 elevBasis(source)，全文件不内联基准字面量',
+    /function elevBasis \(source\)/.test(fmtSrc) && /basis: elevBasis\(/.test(fmtSrc) &&
+      !/basis: '(measured|estimated|none)'/.test(fmtSrc),
+    (fmtSrc.match(/basis: [^,}\n]*/g) || []).join(' | '))
+  const elevAssigns = stripComments(pageJs, true).match(/elevBasis = [^;\n]*/g) || []
+  check('页面只搬运分类结果：两处查询路径都只写 elevBasis = EV….basis，没有任何自造分类',
+    elevAssigns.length === 2 && elevAssigns.every(a => /^elevBasis = EV[a-z]*\.basis$/.test(a.trim())),
+    elevAssigns.join(' | '))
+}
+
+/* ---------- 8. 显示窗与业务判读隔离（2026-10-09 显示窗自适应轮） ---------- */
+section('8 天象与位置判读不得随显示窗漂移')
+{
+  const bothSidesField = () => fieldOf([{ lo: 1750, hi: 2600, cov: 92 }, { lo: 4300, hi: 5000, cov: 80 }], { lo: 1000, hi: 5000 })
+  const digest = oi => JSON.stringify([oi.conditions.map(c => [c.t, c.key, c.reason, c.holds]),
+    (oi.opportunities || []).map(o => [o.type, o.from, o.to, o.confidence])])
+  const run = () => digest(oiRun(day(h => (h < 6 || h >= 21) ? {} : { low: 30 }), 3500, 'measured', bothSidesField()))
+  const before = run()
+  const snap = Object.assign({}, CFF.PROFILE)
+  CFF.PROFILE.MAX_SPAN = 1000
+  CFF.PROFILE.PAD_M = 0
+  CFF.PROFILE.DECK_MIN = 60
+  const after = run()
+  Object.keys(snap).forEach(k => { CFF.PROFILE[k] = snap[k] })
+  check('把显示窗参数改到极端（跨度上限 4000→1000、呼吸位→0、选材门槛 25→60），条件态与机会窗口逐项不变',
+    before === after, before.slice(0, 160) + ' || ' + after.slice(0, 160))
+  check('还原后与改前一致（证明上面那次比较用的是同一份数据）', run() === before)
+  const oiSrc = stripComments(fs.readFileSync(path.join(ROOT, 'utils/outdoor-intelligence.js'), 'utf8'), true)
+  check('云层的扫描范围仍然钉在固定基准上（剖面显示窗不参与天象成立条件）',
+    /for \(let alt = CFF\.ALT0; alt <= CFF\.ALT1; alt \+= step\)/.test(oiSrc) &&
+      !/profile|planProfile|PROFILE/.test(oiSrc),
+    'cloudLayersAt 必须继续扫 ALT0–ALT1')
+  const cfs = stripComments(fs.readFileSync(path.join(ROOT, 'utils/cloud-field-svg.js'), 'utf8'), true)
+  /* 先用原文定位边界（分节标题本身是注释，去注释后就找不到了），再对截出来的函数体去注释 */
+  const raw = fs.readFileSync(path.join(ROOT, 'utils/cloud-field-svg.js'), 'utf8')
+  const from = raw.indexOf('function inferState')
+  const mark = raw.indexOf('/* ---------- 剖面显示窗', from)
+  const body = stripComments(raw.slice(from, mark > from ? mark : raw.indexOf('function buildGeometry', from)), true)
+  check('inferState 的函数体里没有任何显示窗量（不读 profile/PROFILE/ALT0/ALT1）',
+    !/PROFILE|planProfile|\.profile|ALT0|ALT1/.test(body),
+    (body.match(/PROFILE|ALT0|ALT1/g) || []).join(','))
+  check('判读仍然只吃实测包络（covered 缺失一律 no-data，不退回显示窗）',
+    /if \(!covOk\) return unknown\('no-data'\)/.test(body) && /SCAN_MIN = 0, SCAN_MAX = 7000/.test(cfs))
 }
 
 console.log('\npassed=' + passed + ' failed=' + failed)

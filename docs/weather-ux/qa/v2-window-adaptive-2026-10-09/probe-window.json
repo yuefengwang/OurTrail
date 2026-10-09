@@ -1,0 +1,1190 @@
+{
+  "probedAt": "2026-10-09T10:43:05.655Z",
+  "windowConstants": {
+    "ALT0": 2000,
+    "ALT1": 6000,
+    "note": "两个渲染器与 OI buildLayers 共用的固定剖面窗"
+  },
+  "samples": [
+    {
+      "name": "1 云全部在窗下方",
+      "meta": {
+        "说明": "整层浓云 900–1700m，窗口下边界 2000m 之下"
+      },
+      "covered": {
+        "lo": 900,
+        "hi": 2500
+      },
+      "decksGe25": [
+        {
+          "lo": 900,
+          "hi": 1650
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 950,
+          "hi": 1550
+        }
+      ],
+      "queryAlt": 4058,
+      "basis": "measured",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 1,
+        "insideWindow": 0,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 0,
+        "areaPx": 0,
+        "ymin": null,
+        "ymax": null,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": "ok",
+        "reason": null,
+        "word": "云带在此点下方",
+        "span": {
+          "lo": 950,
+          "hi": 1550,
+          "peak": 92
+        }
+      },
+      "oiLayers": {
+        "inWindow": [],
+        "inMeasuredEnvelope": [
+          {
+            "base": 967,
+            "top": 1500,
+            "thickness": 533
+          }
+        ]
+      },
+      "oiMissedLayers": 1,
+      "blankPicture": true
+    },
+    {
+      "name": "2 云全部在窗上方",
+      "meta": {
+        "说明": "高层云在窗口上边界之上"
+      },
+      "covered": {
+        "lo": 6300,
+        "hi": 6900
+      },
+      "decksGe25": [
+        {
+          "lo": 6350,
+          "hi": 6900
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 6450,
+          "hi": 6800
+        }
+      ],
+      "queryAlt": 4058,
+      "basis": "measured",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 0,
+        "insideWindow": 0,
+        "aboveWindow": 1
+      },
+      "ink": {
+        "loops": 0,
+        "areaPx": 0,
+        "ymin": null,
+        "ymax": null,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": "mid",
+        "reason": null,
+        "word": "云层在此点上方",
+        "span": {
+          "lo": 6450,
+          "hi": 6800,
+          "peak": 88
+        }
+      },
+      "oiLayers": {
+        "inWindow": [],
+        "inMeasuredEnvelope": [
+          {
+            "base": 6477,
+            "top": 6750,
+            "thickness": 273
+          }
+        ]
+      },
+      "oiMissedLayers": 1,
+      "blankPicture": true
+    },
+    {
+      "name": "3 云跨越窗下边界",
+      "meta": {
+        "说明": "云体被窗口切断，只剩一截可见"
+      },
+      "covered": {
+        "lo": 1700,
+        "hi": 2400
+      },
+      "decksGe25": [
+        {
+          "lo": 1700,
+          "hi": 2400
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 1700,
+          "hi": 2300
+        }
+      ],
+      "queryAlt": 3004,
+      "basis": "measured",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 0,
+        "insideWindow": 1,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 5,
+        "areaPx": 30730,
+        "ymin": 299.2,
+        "ymax": 324.1,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": "ok",
+        "reason": null,
+        "word": "云带在此点下方",
+        "span": {
+          "lo": 1700,
+          "hi": 2300,
+          "peak": 90
+        }
+      },
+      "oiLayers": {
+        "inWindow": [
+          {
+            "base": 2000,
+            "top": 2250,
+            "thickness": 250
+          }
+        ],
+        "inMeasuredEnvelope": [
+          {
+            "base": 1722,
+            "top": 2250,
+            "thickness": 528
+          }
+        ]
+      },
+      "oiMissedLayers": 0,
+      "blankPicture": false
+    },
+    {
+      "name": "4 云在窗内",
+      "meta": {
+        "说明": "现状最好的那一类"
+      },
+      "covered": {
+        "lo": 3150,
+        "hi": 3850
+      },
+      "decksGe25": [
+        {
+          "lo": 3150,
+          "hi": 3850
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 3200,
+          "hi": 3800
+        }
+      ],
+      "queryAlt": 3500,
+      "basis": "measured",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 0,
+        "insideWindow": 1,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 4,
+        "areaPx": 50190,
+        "ymin": 228.1,
+        "ymax": 273.4,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": "in",
+        "reason": null,
+        "word": "此点正处于云中",
+        "span": {
+          "lo": 3225,
+          "hi": 3775,
+          "peak": 85
+        }
+      },
+      "oiLayers": {
+        "inWindow": [
+          {
+            "base": 3235,
+            "top": 3750,
+            "thickness": 515
+          }
+        ],
+        "inMeasuredEnvelope": [
+          {
+            "base": 3235,
+            "top": 3750,
+            "thickness": 515
+          }
+        ]
+      },
+      "oiMissedLayers": 0,
+      "blankPicture": false
+    },
+    {
+      "name": "5 窗内无云窗外有云",
+      "meta": {
+        "说明": "窗口正中是晴空，两侧窗外都有云"
+      },
+      "covered": {
+        "lo": 1000,
+        "hi": 6800
+      },
+      "decksGe25": [
+        {
+          "lo": 1000,
+          "hi": 1650
+        },
+        {
+          "lo": 6350,
+          "hi": 6800
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 1000,
+          "hi": 1550
+        },
+        {
+          "lo": 6500,
+          "hi": 6750
+        }
+      ],
+      "queryAlt": 4058,
+      "basis": "measured",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 1,
+        "insideWindow": 0,
+        "aboveWindow": 1
+      },
+      "ink": {
+        "loops": 0,
+        "areaPx": 0,
+        "ymin": null,
+        "ymax": null,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": null,
+        "reason": "both-sides",
+        "word": "",
+        "span": {
+          "lo": 1000,
+          "hi": 1550,
+          "peak": 90
+        }
+      },
+      "oiLayers": {
+        "inWindow": [],
+        "inMeasuredEnvelope": [
+          {
+            "base": 1000,
+            "top": 1500,
+            "thickness": 500
+          },
+          {
+            "base": 6500,
+            "top": 6750,
+            "thickness": 250
+          }
+        ]
+      },
+      "oiMissedLayers": 2,
+      "blankPicture": true
+    },
+    {
+      "name": "6 有效数据里没有成带云",
+      "meta": {
+        "说明": "确认晴空（判据 reason=clear）"
+      },
+      "covered": {
+        "lo": 0,
+        "hi": 7000
+      },
+      "decksGe25": [],
+      "decksGe68": [],
+      "queryAlt": 3500,
+      "basis": "measured",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 0,
+        "insideWindow": 0,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 0,
+        "areaPx": 0,
+        "ymin": null,
+        "ymax": null,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": null,
+        "reason": "clear",
+        "word": "",
+        "span": null
+      },
+      "oiLayers": {
+        "inWindow": [],
+        "inMeasuredEnvelope": []
+      },
+      "oiMissedLayers": 0,
+      "blankPicture": true
+    },
+    {
+      "name": "7a 云层数据缺失",
+      "meta": {
+        "说明": "covered=null：没有实测包络"
+      },
+      "covered": null,
+      "decksGe25": null,
+      "decksGe68": null,
+      "queryAlt": 3500,
+      "basis": "measured",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 0,
+        "insideWindow": 0,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 5,
+        "areaPx": 57746,
+        "ymin": 239.8,
+        "ymax": 285.4,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": null,
+        "reason": "no-data",
+        "word": "",
+        "span": null
+      },
+      "oiLayers": null,
+      "oiMissedLayers": null,
+      "blankPicture": false
+    },
+    {
+      "name": "7b 仅部分高度层有效",
+      "meta": {
+        "说明": "很窄的一段实测"
+      },
+      "covered": {
+        "lo": 2500,
+        "hi": 2750
+      },
+      "decksGe25": [
+        {
+          "lo": 2500,
+          "hi": 2750
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 2500,
+          "hi": 2750
+        }
+      ],
+      "queryAlt": 3500,
+      "basis": "measured",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 0,
+        "insideWindow": 1,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 4,
+        "areaPx": 34462,
+        "ymin": 275.5,
+        "ymax": 309.1,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": "ok",
+        "reason": null,
+        "word": "云带在此点下方",
+        "span": {
+          "lo": 2500,
+          "hi": 2750,
+          "peak": 88
+        }
+      },
+      "oiLayers": {
+        "inWindow": [
+          {
+            "base": 2477,
+            "top": 2750,
+            "thickness": 273
+          }
+        ],
+        "inMeasuredEnvelope": [
+          {
+            "base": 2500,
+            "top": 2750,
+            "thickness": 250
+          }
+        ]
+      },
+      "oiMissedLayers": 0,
+      "blankPicture": false
+    },
+    {
+      "name": "8a 查询点高程缺失",
+      "meta": {
+        "说明": "elevation=null"
+      },
+      "covered": {
+        "lo": 3150,
+        "hi": 3850
+      },
+      "decksGe25": [
+        {
+          "lo": 3150,
+          "hi": 3850
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 3200,
+          "hi": 3800
+        }
+      ],
+      "queryAlt": null,
+      "basis": "none",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 0,
+        "insideWindow": 1,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 4,
+        "areaPx": 50190,
+        "ymin": 228.1,
+        "ymax": 273.4,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": null,
+      "verdict": {
+        "key": null,
+        "reason": "no-altitude",
+        "word": "",
+        "span": {
+          "lo": 3225,
+          "hi": 3775,
+          "peak": 85
+        }
+      },
+      "oiLayers": {
+        "inWindow": [
+          {
+            "base": 3235,
+            "top": 3750,
+            "thickness": 515
+          }
+        ],
+        "inMeasuredEnvelope": [
+          {
+            "base": 3235,
+            "top": 3750,
+            "thickness": 515
+          }
+        ]
+      },
+      "oiMissedLayers": 0,
+      "blankPicture": false
+    },
+    {
+      "name": "8b 查询点可信",
+      "meta": {
+        "说明": "GPX/选点/手填"
+      },
+      "covered": {
+        "lo": 3150,
+        "hi": 3850
+      },
+      "decksGe25": [
+        {
+          "lo": 3150,
+          "hi": 3850
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 3200,
+          "hi": 3800
+        }
+      ],
+      "queryAlt": 3004,
+      "basis": "measured",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 0,
+        "insideWindow": 1,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 4,
+        "areaPx": 50190,
+        "ymin": 228.1,
+        "ymax": 273.4,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": "mid",
+        "reason": null,
+        "word": "云层在此点上方",
+        "span": {
+          "lo": 3225,
+          "hi": 3775,
+          "peak": 85
+        }
+      },
+      "oiLayers": {
+        "inWindow": [
+          {
+            "base": 3235,
+            "top": 3750,
+            "thickness": 515
+          }
+        ],
+        "inMeasuredEnvelope": [
+          {
+            "base": 3235,
+            "top": 3750,
+            "thickness": 515
+          }
+        ]
+      },
+      "oiMissedLayers": 0,
+      "blankPicture": false
+    },
+    {
+      "name": "8c 查询点是模型估算",
+      "meta": {
+        "说明": "±600m 带与云带底缘重叠"
+      },
+      "covered": {
+        "lo": 3150,
+        "hi": 3850
+      },
+      "decksGe25": [
+        {
+          "lo": 3150,
+          "hi": 3850
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 3200,
+          "hi": 3800
+        }
+      ],
+      "queryAlt": 2700,
+      "basis": "estimated",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 0,
+        "insideWindow": 1,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 4,
+        "areaPx": 50190,
+        "ymin": 228.1,
+        "ymax": 273.4,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": null,
+        "reason": "within-uncertainty",
+        "word": "",
+        "span": {
+          "lo": 3225,
+          "hi": 3775,
+          "peak": 85
+        }
+      },
+      "oiLayers": {
+        "inWindow": [
+          {
+            "base": 3235,
+            "top": 3750,
+            "thickness": 515
+          }
+        ],
+        "inMeasuredEnvelope": [
+          {
+            "base": 3235,
+            "top": 3750,
+            "thickness": 515
+          }
+        ]
+      },
+      "oiMissedLayers": 0,
+      "blankPicture": false
+    },
+    {
+      "name": "9 云与点的不确定范围重叠",
+      "meta": {
+        "说明": "点略高于云带顶，差值在带内"
+      },
+      "covered": {
+        "lo": 3000,
+        "hi": 3300
+      },
+      "decksGe25": [
+        {
+          "lo": 3000,
+          "hi": 3300
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 3000,
+          "hi": 3300
+        }
+      ],
+      "queryAlt": 3450,
+      "basis": "estimated",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 0,
+        "insideWindow": 1,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 5,
+        "areaPx": 37276,
+        "ymin": 251.7,
+        "ymax": 285.4,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": null,
+        "reason": "within-uncertainty",
+        "word": "",
+        "span": {
+          "lo": 3000,
+          "hi": 3300,
+          "peak": 90
+        }
+      },
+      "oiLayers": {
+        "inWindow": [
+          {
+            "base": 2972,
+            "top": 3250,
+            "thickness": 278
+          }
+        ],
+        "inMeasuredEnvelope": [
+          {
+            "base": 3000,
+            "top": 3250,
+            "thickness": 250
+          }
+        ]
+      },
+      "oiMissedLayers": 0,
+      "blankPicture": false
+    },
+    {
+      "name": "10 极端高度跨度",
+      "meta": {
+        "说明": "三层云横跨 200–6800m"
+      },
+      "covered": {
+        "lo": 200,
+        "hi": 6800
+      },
+      "decksGe25": [
+        {
+          "lo": 200,
+          "hi": 650
+        },
+        {
+          "lo": 2350,
+          "hi": 2900
+        },
+        {
+          "lo": 5100,
+          "hi": 6800
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 250,
+          "hi": 500
+        },
+        {
+          "lo": 2450,
+          "hi": 2800
+        },
+        {
+          "lo": 5250,
+          "hi": 6750
+        }
+      ],
+      "queryAlt": 3500,
+      "basis": "measured",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 1,
+        "insideWindow": 2,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 5,
+        "areaPx": 95202,
+        "ymin": 129.9,
+        "ymax": 309.2,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": true,
+      "verdict": {
+        "key": null,
+        "reason": "both-sides",
+        "word": "",
+        "span": {
+          "lo": 2450,
+          "hi": 2800,
+          "peak": 90
+        }
+      },
+      "oiLayers": {
+        "inWindow": [
+          {
+            "base": 2472,
+            "top": 2750,
+            "thickness": 278
+          }
+        ],
+        "inMeasuredEnvelope": [
+          {
+            "base": 250,
+            "top": 500,
+            "thickness": 250
+          },
+          {
+            "base": 2472,
+            "top": 2750,
+            "thickness": 278
+          }
+        ]
+      },
+      "oiMissedLayers": 1,
+      "blankPicture": false
+    },
+    {
+      "name": "10b 点在极端云系之下",
+      "meta": {
+        "说明": "成都形态：低海拔 + 中云带"
+      },
+      "covered": {
+        "lo": 200,
+        "hi": 6800
+      },
+      "decksGe25": [
+        {
+          "lo": 200,
+          "hi": 650
+        },
+        {
+          "lo": 2350,
+          "hi": 2900
+        },
+        {
+          "lo": 5100,
+          "hi": 6800
+        }
+      ],
+      "decksGe68": [
+        {
+          "lo": 250,
+          "hi": 500
+        },
+        {
+          "lo": 2450,
+          "hi": 2800
+        },
+        {
+          "lo": 5250,
+          "hi": 6750
+        }
+      ],
+      "queryAlt": 489,
+      "basis": "estimated",
+      "window": [
+        2000,
+        6000
+      ],
+      "decks": {
+        "belowWindow": 1,
+        "insideWindow": 2,
+        "aboveWindow": 0
+      },
+      "ink": {
+        "loops": 5,
+        "areaPx": 95202,
+        "ymin": 129.9,
+        "ymax": 309.2,
+        "rowTop": 132,
+        "rowBot": 322
+      },
+      "pointInsideWindow": false,
+      "verdict": {
+        "key": null,
+        "reason": "within-uncertainty",
+        "word": "",
+        "span": {
+          "lo": 2450,
+          "hi": 2800,
+          "peak": 90
+        }
+      },
+      "oiLayers": {
+        "inWindow": [
+          {
+            "base": 2472,
+            "top": 2750,
+            "thickness": 278
+          }
+        ],
+        "inMeasuredEnvelope": [
+          {
+            "base": 250,
+            "top": 500,
+            "thickness": 250
+          },
+          {
+            "base": 2472,
+            "top": 2750,
+            "thickness": 278
+          }
+        ]
+      },
+      "oiMissedLayers": 1,
+      "blankPicture": false
+    }
+  ],
+  "real": {
+    "fetchedAt": "2026-10-09T06:04:28.010Z",
+    "date": "2026-10-09",
+    "places": {
+      "chengdu": {
+        "name": "成都",
+        "elevation": 489,
+        "covered": {
+          "lo": 146,
+          "hi": 6674
+        },
+        "hours": 24,
+        "hoursNoDeck": 0,
+        "hoursDeckBelowWindowOnly": 0,
+        "hoursDeckAboveWindowOnly": 0,
+        "hoursDeckInsideWindow": 24,
+        "hoursOiMissesLayer": 0,
+        "picture": {
+          "loops": 5,
+          "areaPx": 167241,
+          "ymin": 130.7,
+          "ymax": 323.9,
+          "rowTop": 132,
+          "rowBot": 322
+        },
+        "pointOutsideWindow": true,
+        "sampleHours": [
+          {
+            "h": 0,
+            "decksGe25": [
+              [
+                2996,
+                3396
+              ],
+              [
+                3546,
+                4296
+              ]
+            ],
+            "decksInsideWindow": 2,
+            "verdict": "mid",
+            "span": [
+              3721,
+              4021
+            ]
+          },
+          {
+            "h": 10,
+            "decksGe25": [
+              [
+                1396,
+                1646
+              ],
+              [
+                1846,
+                3796
+              ],
+              [
+                4296,
+                5296
+              ]
+            ],
+            "decksInsideWindow": 2,
+            "verdict": "mid",
+            "span": [
+              2246,
+              3371
+            ]
+          },
+          {
+            "h": 21,
+            "decksGe25": [
+              [
+                1946,
+                5746
+              ],
+              [
+                6146,
+                6396
+              ]
+            ],
+            "decksInsideWindow": 1,
+            "verdict": "mid",
+            "span": [
+              2646,
+              4221
+            ]
+          }
+        ]
+      },
+      "emeishan": {
+        "name": "峨眉山",
+        "elevation": 3004,
+        "covered": {
+          "lo": 161,
+          "hi": 6684
+        },
+        "hours": 24,
+        "hoursNoDeck": 0,
+        "hoursDeckBelowWindowOnly": 0,
+        "hoursDeckAboveWindowOnly": 0,
+        "hoursDeckInsideWindow": 24,
+        "hoursOiMissesLayer": 3,
+        "picture": {
+          "loops": 5,
+          "areaPx": 236613,
+          "ymin": 130,
+          "ymax": 324.1,
+          "rowTop": 132,
+          "rowBot": 322
+        },
+        "pointOutsideWindow": false,
+        "sampleHours": [
+          {
+            "h": 0,
+            "decksGe25": [
+              [
+                911,
+                3661
+              ],
+              [
+                3911,
+                4411
+              ]
+            ],
+            "decksInsideWindow": 2,
+            "verdict": "in",
+            "span": [
+              2361,
+              3361
+            ]
+          },
+          {
+            "h": 10,
+            "decksGe25": [
+              [
+                761,
+                5761
+              ],
+              [
+                6161,
+                6311
+              ]
+            ],
+            "decksInsideWindow": 1,
+            "verdict": "in",
+            "span": [
+              1686,
+              5561
+            ]
+          },
+          {
+            "h": 21,
+            "decksGe25": [
+              [
+                161,
+                6511
+              ]
+            ],
+            "decksInsideWindow": 1,
+            "verdict": "in",
+            "span": [
+              1586,
+              5686
+            ]
+          }
+        ]
+      },
+      "litang": {
+        "name": "理塘",
+        "elevation": 4058,
+        "covered": {
+          "lo": 135,
+          "hi": 6673
+        },
+        "hours": 24,
+        "hoursNoDeck": 11,
+        "hoursDeckBelowWindowOnly": 0,
+        "hoursDeckAboveWindowOnly": 0,
+        "hoursDeckInsideWindow": 13,
+        "hoursOiMissesLayer": 2,
+        "picture": {
+          "loops": 3,
+          "areaPx": 15946,
+          "ymin": 130,
+          "ymax": 323.4,
+          "rowTop": 132,
+          "rowBot": 322
+        },
+        "pointOutsideWindow": false,
+        "sampleHours": [
+          {
+            "h": 0,
+            "decksGe25": [],
+            "decksInsideWindow": 0,
+            "verdict": "∅/clear",
+            "span": null
+          },
+          {
+            "h": 10,
+            "decksGe25": [
+              [
+                5235,
+                5685
+              ]
+            ],
+            "decksInsideWindow": 1,
+            "verdict": "mid",
+            "span": null
+          },
+          {
+            "h": 21,
+            "decksGe25": [],
+            "decksInsideWindow": 0,
+            "verdict": "∅/clear",
+            "span": null
+          }
+        ]
+      }
+    }
+  }
+}

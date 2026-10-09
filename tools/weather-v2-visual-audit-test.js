@@ -90,13 +90,44 @@ check('阈值未变（五档色仍为冻结色板）', ['#eeeeea', '#d4d6d0', '#
 check('coverage 语义未变（covered 透传）', gA.covered.lo === 2000 && gA.covered.hi === 6000)
 
 /* ---------- YOU 线 ---------- */
-section('YOU 线：位置 / 边界 / 钳位')
-const b24 = UMG.renderUnifiedBase(build(24, 3500, 375), {})
-check('YOU 标签恰好一次', (b24.svg.match(/此点 3,500 m/g) || []).length === 1)
-const yA = build(24, 500, 375)
-check('500m → 剖面下方（不画虚假入云）', UMG.renderUnifiedBase(yA, {}).svg.indexOf('（剖面下方）') >= 0)
-const yB = build(24, 6200, 375)
-check('6200m → 剖面上方', UMG.renderUnifiedBase(yB, {}).svg.indexOf('（剖面上方）') >= 0)
+section('YOU 线：参考线只画在真实高度，点在窗外就写明差多少米')
+/* 旧实现：窗固定 2000–6000，点不在窗内时用 Math.max/Math.min 把参考线**钳到窗边**，
+   再补一句「（剖面下方）」。线的位置因此是捏造的——读者按线读高度就读错了。
+   现在窗自适应：点能被框进来就框进来（画在真实 y），框不下就不画线，只在贴边处给出高差。 */
+function dashedLineY (svg) {
+  const m = svg.match(/<line[^>]*stroke-dasharray="4 3"[^>]*>/)
+  if (!m) return null
+  const y = m[0].match(/y1="([\d.]+)"/)
+  return y ? +y[1] : null
+}
+function youSemantics (geo, svg) {
+  const p = geo.profile, alt = geo.cloud.userAlt, y = dashedLineY(svg)
+  if (!Number.isFinite(alt)) return { ok: y === null, why: '无高程 ⇒ 不得有任何参考线' }
+  if (alt >= p.lo && alt <= p.hi) {
+    return { ok: y != null && Math.abs(y - geo.cloud.yAlt(alt)) < 0.11,
+      why: '窗内 ⇒ 线必须画在 yAlt(' + alt + ')=' + geo.cloud.yAlt(alt).toFixed(1) + '，实际 ' + y }
+  }
+  return { ok: y === null && /此点在剖面(上方|下方) [\d,]+ m/.test(svg) && geo.inRuns.length === 0,
+    why: '窗外 ⇒ 无线 + 边注高差 + 不得有琥珀入云交线（实际 line=' + y + ' inRuns=' + geo.inRuns.length + '）' }
+}
+;[[24, 3500], [24, 500], [24, 6200], [72, 500]].forEach(([hz, alt]) => {
+  const g = build(hz, alt, 375)
+  const r = youSemantics(g, UMG.renderUnifiedBase(g, {}).svg)
+  check(hz + 'h ' + alt + 'm 参考线语义（窗 ' + g.profile.lo + '–' + g.profile.hi + '，点在窗外=' + g.profile.pointOutside + '）', r.ok, r.why)
+})
+{
+  const all = [24, 72].reduce((acc, hz) => acc.concat([500, 3500, 6200].map(alt => UMG.renderUnifiedBase(build(hz, alt, 375), {}).svg)), [])
+  check('钳位时代的边注字符串已彻底退出生产（「（剖面下方）/（剖面上方）」零出现）',
+    all.every(s => s.indexOf('（剖面下方）') < 0 && s.indexOf('（剖面上方）') < 0))
+  check('每幅图都把自己画的是哪一段高度印在图上（图例与实际显示范围一致的前提）',
+    all.every(s => /剖面 [\d,]+–[\d,]+ m/.test(s)))
+  check('YOU 标签恰好一次（3,500m 那张，重复标签=两套坐标在打架）',
+    (UMG.renderUnifiedBase(build(24, 3500, 375), {}).svg.match(/此点 3,500 m/g) || []).length === 1)
+  check('等值带真的被裁在云行内（cfclipu 有定义——引用悬空时严格实现会整组不渲染）', (() => {
+    const s = UMG.renderUnifiedBase(build(24, 3500, 375), {}).svg
+    return /<clipPath id="cfclipu">/.test(s) && s.indexOf('clip-path="url(#cfclipu)"') > s.indexOf('<clipPath id="cfclipu">')
+  })())
+}
 
 /* ---------- Horizon / Selection 对齐 ---------- */
 section('Horizon / Selection：不漂移')

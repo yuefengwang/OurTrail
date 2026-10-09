@@ -69,13 +69,17 @@ function buildGrid(sample, nT, opts) {
      hours = 场覆盖的小时数（24/48/72）；采样步长随窗长降密（渲染分辨率，
      内部数据不丢——sample 可在任意连续时刻求值）。CR/marching/Chaikin 数学未动。 */
   var hours = (opts && Number.isFinite(opts.hours) && opts.hours > 0) ? opts.hours : 24
+  /* 显示窗由 planProfile 给出；没给就是历史固定窗（逐字节同旧行为）。
+     边界一定落在 QUANT(250m) 的整数倍上 ⇒ na 恒为整数，网格不会因窗而少一格。 */
+  var lo = (opts && Number.isFinite(opts.altLo)) ? opts.altLo : ALT0
+  var hi = (opts && Number.isFinite(opts.altHi) && opts.altHi > lo) ? opts.altHi : (lo === ALT0 ? ALT1 : lo + (ALT1 - ALT0))
   var TS = hours <= 24 ? 0.25 : 0.5, AS = 50
   var nt = Math.round(hours / TS) + 1
-  var na = Math.round((ALT1 - ALT0) / AS) + 1
+  var na = Math.round((hi - lo) / AS) + 1
   var g = []
   for (var j = 0; j < na; j++) {
     var row = []
-    var alt = ALT0 + j * AS
+    var alt = lo + j * AS
     for (var i = 0; i < nt; i++) row.push(sample(i * TS, alt))
     g.push(row)
   }
@@ -120,7 +124,7 @@ function buildGrid(sample, nT, opts) {
     }
     gp.push(rp)
   }
-  return { g: gp, nx: nt + 2, ny: na + 2, t0: -TS, dt: TS, a0: ALT0 - AS, da: AS }
+  return { g: gp, nx: nt + 2, ny: na + 2, t0: -TS, dt: TS, a0: lo - AS, da: AS, altLo: lo, altHi: hi }
 }
 
 /* ---------- marching squares isoband（按网格边身份链接，不做坐标量化） ----------
@@ -355,6 +359,220 @@ function inferState(sample, h, userAlt, coverage, opts) {
   return unknown('clear')
 }
 
+/* ---------- 剖面显示窗（纯显示层：只决定「这张图画哪一段高度」） ----------
+ *
+ * 为什么存在（取证 qa/v2-window-adaptive-2026-10-09/probe-window.json）：
+ * ALT0/ALT1 这对常量原本同时承担三件事——渲染网格与裁切、这张图画哪一段、
+ * 以及 OI 沿海拔找云层的扫描范围。前两件用固定窗的后果实测到了：
+ *   样本 1（云 900–1650m）／样本 2（云 6350–6900m）／样本 5（上下各一段、窗内恰是晴空）
+ *   都渲染出 **0 条等值带、0 px² 墨迹**，而判读分别是 ok / mid / both-sides ——
+ *   图上一片空白与「确认晴空」（样本 6，同样 0 环 0 px²）**一模一样**，
+ *   读者只能把「裁掉了」读成「没有云」。
+ *
+ * 规则（只用有效数据，不外推）：
+ *   anchors = 实测包络内 cover ≥DECK_MIN 的高度段
+ *           ∪ 查询点：可信高程按真实高度纳入；模型估算按 ±误差带纳入
+ *             （把估算值当精确锚点正是要防的事，所以估算值只会撑大窗口、不会收窄）；
+ *             没有高程 ⇒ 不参与。
+ *   window  = 候选窗中得分最高的那个：候选 = 任意两个 anchor 的并集 ±PAD_M（量化到 QUANT_M，
+ *             跨度夹在 [MIN_SPAN, MAX_SPAN]）；得分先比窗内云带墨量（峰值×厚度×重叠比例），
+ *             同分时才由「是否框住查询点」决定。装不下就保云带、把点写在窗外——
+ *             点的数字本来就在读数行里，而一片空白的云场图没有意义。
+ *             留在窗外的锚点由 clippedAbove/Below 与 pointOutside 各自如实报告（不混用）。
+ *   没有锚点 ⇒ 退回历史固定窗（行为与改前逐像素一致），并标 fallback=true。
+ *
+ * 判读一律与本窗无关：inferState / denseSpanAt / peakCover 扫**实测范围**，
+ * OI 的 cloudLayersAt 继续扫**固定基准**（天象成立条件不得随显示窗漂移，
+ * 这条由 tools/cloud-position-test.js §8 钉住）。 */
+var PROFILE = {
+  DECK_MIN: 25,      // 参与布局的「有意义云量」下界 = 等值带第二档（10% 是发丝级底纹，不足以决定窗）
+  PAD_M: 250,        // 一格的呼吸位（等于适配器的海拔步长），贴边的云不至于看不见
+  QUANT: 250,        // 窗的边界量化到 250 m ⇒ 刻度落在整数上、换时间窗不至于每帧抖动
+  MIN_SPAN: 1500,    // 再窄就没有高度感了
+  MAX_SPAN: 4000,    // 与历史固定窗同尺度（190px 行高 ⇒ 21 m/px），不至于把云带压成一条线
+  LO_FLOOR: 0,
+  HI_CEIL: 7000,     // 与 SCAN_MIN/SCAN_MAX 同源：这是实测网格的物理边界
+}
+var ESTIMATE_TOL_M = 600   // Open-Meteo 地形高度的误差带上界（与 ALT_TOL.estimated 同一个数）
+
+function finiteNum (v) { return Number.isFinite(v) ? v : null }
+
+/* 有效云层段：在实测包络内扫 ≥DECK_MIN 的连续高度段（50m 步长，与等值带网格同密）。
+   这是显示层的选材依据，不参与任何业务判读。 */
+function profileDeckRuns (sample, h, lo, hi) {
+  var runs = [], run = null
+  var from = Math.max(PROFILE.LO_FLOOR, Math.floor(lo)), to = Math.min(PROFILE.HI_CEIL, Math.ceil(hi))
+  for (var alt = from; alt <= to; alt += 50) {
+    var v = sample(h, alt)
+    if (v >= PROFILE.DECK_MIN) { run = run || { lo: alt, hi: alt, peak: 0 } ; run.hi = alt; if (v > run.peak) run.peak = v }
+    else if (run) { runs.push(run); run = null }
+  }
+  if (run) runs.push(run)
+  return runs
+}
+
+function quantWindow (lo, hi, bounds) {
+  var wLo = Math.max(bounds.lo, Math.floor(lo / PROFILE.QUANT) * PROFILE.QUANT)
+  var wHi = Math.min(bounds.hi, Math.ceil(hi / PROFILE.QUANT) * PROFILE.QUANT)
+  if (wHi - wLo < PROFILE.MIN_SPAN) {
+    var mid = (wLo + wHi) / 2
+    wLo = mid - PROFILE.MIN_SPAN / 2; wHi = mid + PROFILE.MIN_SPAN / 2
+    wLo = Math.max(bounds.lo, Math.floor(wLo / PROFILE.QUANT) * PROFILE.QUANT)
+    wHi = Math.min(bounds.hi, wLo + PROFILE.MIN_SPAN)
+  }
+  if (wHi - wLo > PROFILE.MAX_SPAN) wHi = Math.min(bounds.hi, wLo + PROFILE.MAX_SPAN)
+  return { lo: wLo, hi: wHi }
+}
+
+/* 允许的范围：实测包络 ± 一格呼吸位；查询点自己是已知量（不是外推的云），
+   它比包络更低/更高时允许把窗扩到它那里——但只在跨度装得下时才会真的被选中。
+   边界一律**向内**量化到 QUANT：网格行数 = 跨度/50 必须是整数，否则 y 映射与网格错位，
+   刻度也会出现 6,923 m 这种没人能读的数（实测踩过）。 */
+function quantBounds (lo, hi) {
+  return { lo: Math.max(PROFILE.LO_FLOOR, Math.ceil(lo / PROFILE.QUANT) * PROFILE.QUANT), hi: Math.min(PROFILE.HI_CEIL, Math.floor(hi / PROFILE.QUANT) * PROFILE.QUANT) }
+}
+function windowBounds (covered, pointA) {
+  var lo = PROFILE.LO_FLOOR, hi = PROFILE.HI_CEIL
+  if (covered) { lo = covered.lo - PROFILE.PAD_M; hi = covered.hi + PROFILE.PAD_M }
+  if (pointA) {
+    lo = Math.min(lo, pointA.lo - PROFILE.PAD_M)
+    hi = Math.max(hi, pointA.hi + PROFILE.PAD_M)
+  }
+  var q = quantBounds(lo, hi)
+  /* 极窄包络（例如只有一层）时向内量化可能压不出一个可读的窗：改为**向外**量化，
+     跨度不足 MIN_SPAN 由 quantWindow 的补宽逻辑接手；边界仍然必须是 QUANT 的整数倍。 */
+  if (q.hi - q.lo < PROFILE.MIN_SPAN) {
+    return {
+      lo: Math.max(PROFILE.LO_FLOOR, Math.floor(lo / PROFILE.QUANT) * PROFILE.QUANT),
+      hi: Math.min(PROFILE.HI_CEIL, Math.ceil(hi / PROFILE.QUANT) * PROFILE.QUANT),
+    }
+  }
+  return q
+}
+
+function planProfile (opts) {
+  var covered = opts.covered && Number.isFinite(opts.covered.lo) && Number.isFinite(opts.covered.hi) && opts.covered.hi > opts.covered.lo
+    ? { lo: opts.covered.lo, hi: opts.covered.hi } : null
+  var res = {
+    lo: ALT0, hi: ALT1, fallback: true, anchorCount: 0,
+    clippedAbove: false, clippedBelow: false, pointOutside: null, pointOutsideDelta: null, decks: [],
+  }
+  var alt = finiteNum(opts.queryAlt)
+  if (!covered || !opts.sample) return res
+  /* 窗必须对整张图稳定：同一条时间轴上逐小时各开一窗，切换小时时高度尺度会跳动，
+     刻度与判读行也会互相打脸。所以锚点是逐小时云段的并集（见下面的合并）。 */
+  var hours = finiteNum(opts.hours) || 24
+  var runs = []
+  for (var h = 0; h < hours; h++) profileDeckRuns(opts.sample, h, covered.lo, covered.hi).forEach(function (r) { runs.push(r) })
+  /* 跨小时取并集：同一扇云在不同小时只是边缘挪几十米，合并后锚点通常 ≤4 个，
+     候选窗数量才不会随小时数平方增长（72h 视图也要保持一次算清）。 */
+  runs.sort(function (a, b) { return a.lo - b.lo })
+  var merged = []
+  runs.forEach(function (r) {
+    var last = merged[merged.length - 1]
+    if (last && r.lo <= last.hi + PROFILE.PAD_M) {
+      last.hi = Math.max(last.hi, r.hi)
+      last.peak = Math.max(last.peak || 0, r.peak || 0)
+    } else merged.push({ lo: r.lo, hi: r.hi, peak: r.peak })
+  })
+  var anchors = merged.map(function (r) { return { lo: r.lo, hi: r.hi, peak: r.peak } })
+  if (alt != null) {
+    var tol = opts.basis === 'estimated' ? ESTIMATE_TOL_M : 0
+    anchors.push({ lo: alt - tol, hi: alt + tol, peak: 0, isPoint: true })
+  }
+  res.anchorCount = anchors.length
+  if (!anchors.length) return res
+    var pad = PROFILE.PAD_M
+  var pointA = null
+  anchors.forEach(function (a) { if (a.isPoint) pointA = a })
+  var bounds = windowBounds(covered, pointA)
+  var best = null
+  for (var i = 0; i < anchors.length; i++) {
+    for (var j = i; j < anchors.length; j++) {
+      var w = quantWindow(Math.min(anchors[i].lo, anchors[j].lo) - pad, Math.max(anchors[i].hi, anchors[j].hi) + pad, bounds)
+      /* 跨度上限由 quantWindow 统一夹（超出就从上端截断，clippedAbove 会把它报成边注），
+         所以这里不需要再判一次——判也判不到，窗已经被夹过了。 */
+      var ink = 0, hasPoint = false
+      anchors.forEach(function (a) {
+        if (a.isPoint) { if (a.lo >= w.lo && a.hi <= w.hi) hasPoint = true; return }
+        var ov = Math.min(a.hi, w.hi) - Math.max(a.lo, w.lo)
+        if (ov > 0) ink += ov / Math.max(1, a.hi - a.lo) * (a.peak || 0) * (a.hi - a.lo)
+      })
+      var score = ink * 1000 + (hasPoint ? 1 : 0)
+      if (!best || score > best.score + 1e-9 || (Math.abs(score - best.score) < 1e-9 && w.lo < best.w.lo)) best = { w: w, score: score }
+    }
+  }
+  if (!best) {
+    /* 单个锚点本身就比 MAX_SPAN 还宽（极端厚云）：以最强那一层的中心开窗，两端如实报窗外 */
+    var wide = anchors.slice().sort(function (a, b) { return (b.peak || 0) - (a.peak || 0) })[0]
+    var c = quantWindow(wide.lo + (wide.hi - wide.lo - PROFILE.MAX_SPAN) / 2, wide.lo + (wide.hi - wide.lo + PROFILE.MAX_SPAN) / 2, bounds)
+    best = { w: c, score: 0 }
+  }
+  res.lo = best.w.lo; res.hi = best.w.hi; res.fallback = false
+  res.decks = merged
+  /* clipped* 只说「云带被窗裁掉了」，不含查询点——点不在窗里是另一件事（pointOutside），
+     两者混在一个旗标上会让边注说出「窗外下方还有云带」这种其实没有云的话。 */
+  res.clippedAbove = runs.some(function (r) { return r.hi > res.hi })
+  res.clippedBelow = runs.some(function (r) { return r.lo < res.lo })
+  if (alt != null) {
+    res.pointOutside = alt < res.lo ? 'below' : alt > res.hi ? 'above' : null
+    /* 高差给成整数米：页面图例与图上边注用的是同一个数（谁也不许自己再算一遍） */
+    res.pointOutsideDelta = res.pointOutside ? Math.round(Math.abs(alt - (res.pointOutside === 'above' ? res.hi : res.lo))) : null
+  }
+  return res
+}
+
+/* 刻度：窗内均匀取点，边界量化到 250 ⇒ 步长只会是 500/1000，标签总是整数 */
+function profileTicks (lo, hi) {
+  var step = (hi - lo) >= 4000 ? 1000 : 500
+  var out = []
+  for (var a = Math.ceil(lo / step) * step; a <= hi; a += step) out.push(a)
+  return out
+}
+
+/* ---------- 剖面「这一窗画了什么」的图形语言（两个渲染器共用） ----------
+ * POC（本模块 renderBaseSvg）与生产统一 Meteogram（meteogram-svg renderUnifiedBase）
+ * 调同一个函数 ⇒ 参考线、琥珀交线、刻度、窗外提示、窗范围不可能各画一套。
+ * o = { profile, yAlt, num, L, plotW, rowTop, rowBot, userAlt, elevSource, inRuns,
+ *       xA, xB, colors:{line,amber,ink,muted}, grid }  —— xA/xB 把小时映射成 x（各渲染器的时间轴不同源）
+ */
+function renderProfileChrome (o) {
+  var p = o.profile
+  var s = ''
+  var lo = p.lo, hi = p.hi
+  var num = o.num || function (v) { return String(Math.round(v)) }
+  var hasPoint = Number.isFinite(o.userAlt)
+  var inside = hasPoint && o.userAlt >= lo && o.userAlt <= hi
+  /* 刻度（+可选水平网格） */
+  profileTicks(lo, hi).forEach(function (a) {
+    var y = o.yAlt(a)
+    if (o.grid) s += '<line x1="' + o.L + '" y1="' + y.toFixed(1) + '" x2="' + (o.L + o.plotW) + '" y2="' + y.toFixed(1) + '" stroke="' + o.colors.gridLine + '" stroke-width="0.6"/>'
+    s += '<text x="' + (o.L - 5) + '" y="' + (y + 2.5).toFixed(1) + '" text-anchor="end" font-size="7.5" fill="' + o.colors.muted + '">' + num(a) + '</text>'
+  })
+  if (inside) {
+    var uy = o.yAlt(o.userAlt)
+    s += '<line x1="' + o.L + '" y1="' + uy.toFixed(1) + '" x2="' + (o.L + o.plotW) + '" y2="' + uy.toFixed(1) + '" stroke="' + o.colors.line + '" stroke-width="1" stroke-dasharray="4 3"/>'
+    ;(o.inRuns || []).forEach(function (r) {
+      s += '<line x1="' + o.xA(r.from).toFixed(1) + '" y1="' + uy.toFixed(1) + '" x2="' + o.xB(r.to).toFixed(1) + '" y2="' + uy.toFixed(1) + '" stroke="' + o.colors.amber + '" stroke-width="2.5" stroke-linecap="round"/>'
+    })
+    s += '<text x="' + (o.L + o.plotW - 4) + '" y="' + (uy - 4).toFixed(1) + '" text-anchor="end" font-size="7.5" font-weight="600" fill="' + o.colors.line + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.elevLineLabel(num(o.userAlt), o.elevSource) + '</text>'
+  } else if (hasPoint) {
+    /* 点在窗外：不画参考线、不钳到窗边冒充位置，只在贴着的那一侧如实标出还差多少米 */
+    var above = p.pointOutside === 'above'
+    var edge = above ? o.rowTop + 9 : o.rowBot - 3
+    s += '<text x="' + (o.L + o.plotW - 4) + '" y="' + edge.toFixed(1) + '" text-anchor="end" font-size="7.5" font-weight="600" fill="' + o.colors.line + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' +
+      (above ? '▲ ' : '▼ ') + F.pointOutsideLabel(p.pointOutside, num(p.pointOutsideDelta)) + '</text>'
+  }
+  /* 云带被窗裁掉的那一侧：一句边注，空白就不再是「没有云」 */
+  if (p.clippedAbove) s += '<text x="' + (o.L + 4) + '" y="' + (o.rowTop + 9).toFixed(1) + '" font-size="7.5" fill="' + o.colors.muted + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">▲ ' + F.cloudWindowNote('clipped-above') + '</text>'
+  if (p.clippedBelow) s += '<text x="' + (o.L + 4) + '" y="' + (o.rowBot - 3).toFixed(1) + '" font-size="7.5" fill="' + o.colors.muted + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">▼ ' + F.cloudWindowNote('clipped-below') + '</text>'
+  if (!p.decks.length && !p.fallback) s += '<text x="' + (o.L + 4) + '" y="' + (o.rowTop + 9).toFixed(1) + '" font-size="7.5" fill="' + o.colors.muted + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.cloudWindowNote('no-deck') + '</text>'
+  /* 窗范围自证：图例里的「此点海拔/琥珀段」说的是哪一段高度，写在图上而不是猜。
+     放顶边正中：左边是「窗外上方还有云带」、右边是「此点在剖面上方 …」，三段各占其位不重叠。 */
+  s += '<text x="' + (o.L + o.plotW / 2).toFixed(1) + '" y="' + (o.rowTop + 9).toFixed(1) + '" text-anchor="middle" font-size="7" fill="' + o.colors.muted + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.profileRangeLabel(num(lo), num(hi)) + '</text>'
+  return s
+}
+
 /* ---------- 几何构建（昂贵，按数据集缓存） ---------- */
 
 /* 手工构造的 field（POC fixtures、部分判据）没有 covered 字段，它们的网格整段都是
@@ -383,12 +601,20 @@ function buildGeometry(cf, opts) {
   var column = makeColumnSampler(cf)
   var nT = cf.times.length
   var sample = function (t, alt) { return sampleAt(column, nT, t, alt) }
+  var covered = cf.covered || altExtent(cf.altitudes) || null
+  var userAlt = Number.isFinite(opts.userAltitude) ? opts.userAltitude : null
+  /* 查询点：没有可信海拔就没有锚点。旧写法在这里塞了个 3500 的假值——
+     POC 页看不出来、判据也抓不到，正是「null 被钳成某个高程」那类错的重演点。 */
+  var basis = opts.elevBasis || (opts.elevSource ? F.elevBasis(opts.elevSource) : (userAlt != null ? 'measured' : 'none'))
+  var profT0 = Date.now()
+  var profile = planProfile({ sample: sample, covered: covered, hours: nT, queryAlt: userAlt, basis: basis })
+  var profMs = Date.now() - profT0
   /* 局部名不叫 F：模块顶上的 F 是 format.js（三态文案唯一出处），同名遮蔽迟早出错 */
-  var GRID = buildGrid(sample, nT)
+  var GRID = buildGrid(sample, nT, { altLo: profile.lo, altHi: profile.hi })
 
   var top = 0, plotBot = plotH
   var xOf = function (i) { return L + ((GRID.t0 + i * GRID.dt) / 24) * plotW }
-  var yOf = function (j) { return plotBot - (GRID.a0 + j * GRID.da - ALT0) / (ALT1 - ALT0) * plotH }
+  var yOf = function (j) { return plotBot - (GRID.a0 + j * GRID.da - profile.lo) / (profile.hi - profile.lo) * plotH }
 
   var isoMs0 = Date.now()
   var bands = []
@@ -404,15 +630,19 @@ function buildGeometry(cf, opts) {
   })
   var isoMs = Date.now() - isoMs0
 
-  /* 入云时段（field(t,userAlt) ≥ IN_C 的连续段）→ 海拔线上琥珀交线 */
-  var userAlt = opts.userAltitude != null ? opts.userAltitude : 3500
+  /* 入云时段（field(t,查询点) ≥ IN_C 的连续段）→ 海拔线上琥珀交线。
+     查询点不在这一窗里时一条都不画：琥珀段是「此点在云里」的图形语言，
+     点不在图上就没有「此处」可言（判读侧同向由 cloud-position-test §5 钉住）。 */
   var inRuns = []
-  HOURS_SCAN(nT, function (h) {
-    return sample(h, Math.max(ALT0, Math.min(ALT1, userAlt))) >= IN_C
-  }, inRuns)
+  if (userAlt != null && userAlt >= profile.lo && userAlt <= profile.hi) {
+    HOURS_SCAN(nT, function (h) {
+      return sample(h, userAlt) >= IN_C
+    }, inRuns)
+  }
 
   var stats = {
-    gridMs: Date.now() - t0ms - isoMs,
+    gridMs: Date.now() - t0ms - isoMs - profMs,
+    profMs: profMs,
     isoMs: isoMs,
     calcMs: Date.now() - t0ms,
     pathCount: pathCount,
@@ -425,7 +655,9 @@ function buildGeometry(cf, opts) {
     xOf: xOf, yOf: yOf, sample: sample,
     userAlt: userAlt, inRuns: inRuns,
     elevSource: opts.elevSource || null,
-    covered: cf.covered || altExtent(cf.altitudes) || null,
+    elevBasis: basis,
+    covered: covered,
+    profile: profile,
     bands: bands, stats: stats,
   }
 }
@@ -498,19 +730,15 @@ function renderBaseSvg(geo, opts) {
   })
   s += '<g clip-path="url(#' + clipId + ')">' + bands + '</g>'
 
-  /* 海拔参考线与刻度 */
-  var youY = geo.yAlt(Math.max(ALT0, Math.min(ALT1, geo.userAlt)))
-  var youTag = geo.userAlt < ALT0 ? '（剖面下方）' : geo.userAlt > ALT1 ? '（剖面上方）' : ''
-  s += '<line x1="' + geo.L + '" y1="' + fmt(youY) + '" x2="' + (geo.L + geo.plotW) + '" y2="' + fmt(youY) + '" stroke="#163e35" stroke-width="1" stroke-dasharray="4 3"/>'
-  geo.inRuns.forEach(function (r) {
-    var xA = geo.x0(r.from), xB = geo.x0(r.to + 1)
-    s += '<line x1="' + fmt(xA) + '" y1="' + fmt(youY) + '" x2="' + fmt(xB) + '" y2="' + fmt(youY) + '" stroke="rgba(180,118,26,0.65)" stroke-width="2.5" stroke-linecap="round"/>'
+  /* 海拔参考线、刻度、窗外提示、窗范围 —— 与生产统一 Meteogram 同一个函数 */
+  s += renderProfileChrome({
+    profile: geo.profile, yAlt: geo.yAlt, L: geo.L, plotW: geo.plotW,
+    rowTop: geo.plotTop, rowBot: geo.plotBot,
+    userAlt: geo.userAlt, elevSource: geo.elevSource, inRuns: geo.inRuns,
+    xA: function (h) { return geo.x0(h) }, xB: function (h) { return geo.x0(h + 1) },
+    num: function (v) { return Math.round(v).toLocaleString('en-US') },
+    colors: { line: '#163e35', amber: 'rgba(180,118,26,0.65)', muted: '#8a8f8a', gridLine: '#e9eae4' },
   })
-  s += '<text x="' + (geo.L + geo.plotW - 4) + '" y="' + fmt(youY - 4) + '" text-anchor="end" font-size="7.5" font-weight="600" fill="#163e35" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.elevLineLabel(geo.userAlt.toLocaleString('en-US'), geo.elevSource) + youTag + '</text>'
-  ;[2000, 3000, 4000, 5000].forEach(function (a) {
-    s += '<text x="' + (geo.L - 5) + '" y="' + fmt(geo.yAlt(a) + 2.5) + '" text-anchor="end" font-size="7.5" fill="#8a8f8a">' + a + '</text>'
-  })
-  s += '<text x="' + (geo.L - 5) + '" y="' + fmt(geo.yAlt(6000) + 2.5) + '" text-anchor="end" font-size="7.5" fill="#8a8f8a">6000 m</text>'
 
   /* 时间轴 */
   var axis = ''
@@ -524,8 +752,10 @@ function renderBaseSvg(geo, opts) {
   if (opts.debugSamples && opts.debugSamples.length) {
     var dots = ''
     opts.debugSamples.forEach(function (sp) {
-      if (sp.alt < ALT0 - 150 || sp.alt > ALT1 + 150) return
-      dots += '<circle cx="' + fmt(geo.X(sp.t)) + '" cy="' + fmt(geo.yAlt(Math.max(ALT0, Math.min(ALT1, sp.alt)))) + '" r="1.8" fill="#fff" fill-opacity="0.85" stroke="#163e35" stroke-width="0.7"/>'
+      /* 用这一张图自己的窗筛点，并且**不钳位**：钳到窗边会把采样点画在一个它从没测过的高度上，
+         与本轮消灭的「参考线钉在窗边」是同一类错（POC 的调试图层也不能例外）。 */
+      if (sp.alt < geo.profile.lo || sp.alt > geo.profile.hi) return
+      dots += '<circle cx="' + fmt(geo.X(sp.t)) + '" cy="' + fmt(geo.yAlt(sp.alt)) + '" r="1.8" fill="#fff" fill-opacity="0.85" stroke="#163e35" stroke-width="0.7"/>'
     })
     s += '<g clip-path="url(#' + clipId + ')">' + dots + '</g>'
     s += '<text x="' + (geo.L + 4) + '" y="' + (geo.plotTop + 10) + '" font-size="7" fill="#163e35" stroke="#fff" stroke-width="2" paint-order="stroke">○ 原始采样点</text>'
@@ -557,7 +787,7 @@ function renderSelectionSvg(geo, opts) {
 function enrich(geo) {
   geo.X = function (h) { return geo.L + (h + 0.5) * (geo.plotW / 24) }
   geo.x0 = function (h) { return geo.L + h * (geo.plotW / 24) }
-  geo.yAlt = function (a) { return geo.plotBot - (a - ALT0) / (ALT1 - ALT0) * geo.plotH }
+  geo.yAlt = function (a) { return geo.plotBot - (a - geo.profile.lo) / (geo.profile.hi - geo.profile.lo) * geo.plotH }
   geo.heightOf = function () { return 14 + 9 + geo.plotH + 18 }
   return geo
 }
@@ -579,4 +809,11 @@ module.exports = {
   ALT1: ALT1,
   BINS: THRESHOLDS,
   denseSpanAt: denseSpanAt,
+  /* --- 剖面显示窗（纯显示层）---
+     planProfile 只决定「这张图画哪一段高度」；判读一律用实测范围或固定基准，与本窗无关。
+     renderProfileChrome 是两个渲染器共用的图形语言：参考线/交线/刻度/窗外提示/窗范围一套逻辑。 */
+  PROFILE: PROFILE,
+  planProfile: planProfile,
+  profileTicks: profileTicks,
+  renderProfileChrome: renderProfileChrome,
 }

@@ -380,5 +380,149 @@ const sad = grid(mkField(24, (h, a) => {
 auditLoops('对角带 @50%（鞍点邻域）', bandsOf(sad, 50), cellDiagOf(sad))
 check('对角带保持连通（1 个区，不被误切成两块）', bandsOf(sad, 50).length === 1, '环数 ' + bandsOf(sad, 50).length)
 
+/* ---------- 14 剖面显示窗（planProfile，2026-10-09 显示窗自适应轮） ---------- */
+section('14 剖面显示窗：只用有效数据开窗，且窗不参与任何判读')
+function deckField (decks, covered, hours) {
+  const altitudes = []
+  for (let a = 0; a <= 7000; a += 250) altitudes.push(a)
+  const n = hours || 24
+  const times = []
+  for (let h = 0; h < n; h++) times.push(h)
+  const values = times.map(() => altitudes.map(a => {
+    let v = 0
+    decks.forEach(d => { if (a >= d.lo && a <= d.hi) v = Math.max(v, d.cov) })
+    return v
+  }))
+  return { times, altitudes, values, covered: covered, meta: { hours: n } }
+}
+function planOf (field, alt, basis, hours) {
+  const column = CFF.makeColumnSampler(field)
+  const sample = (t, a) => CFF.sampleAtStations(column, field.times.length, t, a)
+  return { p: CFF.planProfile({ sample: sample, covered: field.covered, hours: hours || field.times.length, queryAlt: alt, basis: basis }), sample: sample }
+}
+const ENVEL = { lo: 500, hi: 6500 }
+const LOW = deckField([{ lo: 900, hi: 1650, cov: 92 }], { lo: 800, hi: 2000 })
+const HIGH = deckField([{ lo: 6100, hi: 6450, cov: 88 }], { lo: 3000, hi: 6500 })
+const CROSS = deckField([{ lo: 1700, hi: 2400, cov: 90 }], { lo: 1500, hi: 5000 })
+const planLow = planOf(LOW, 4058, 'measured')
+const planHigh = planOf(HIGH, 4058, 'measured')
+const planCross = planOf(CROSS, 3004, 'measured')
+check('云全在旧固定窗下方：新窗把那段云框进来（旧实现这里画 0 条等值带，与晴空同形）',
+  planLow.p.lo <= 900 && planLow.p.hi >= 1650 && !planLow.p.fallback, JSON.stringify([planLow.p.lo, planLow.p.hi]))
+check('云全在旧固定窗上方：同理框进来',
+  planHigh.p.lo <= 6100 && planHigh.p.hi >= 6450, JSON.stringify([planHigh.p.lo, planHigh.p.hi]))
+check('云跨旧窗下边界：整段框进来，且不外推到包络之外（窗 ⊇ 云段，窗 ⊂ 包络±一格）',
+  planCross.p.lo <= 1700 && planCross.p.hi >= 2400 &&
+    planCross.p.lo >= 1500 - CFF.PROFILE.PAD_M && planCross.p.hi <= 5000 + CFF.PROFILE.PAD_M,
+  JSON.stringify([planCross.p.lo, planCross.p.hi]))
+check('没有实测包络 ⇒ 退回历史固定窗（fallback 可查，不拿显示窗冒充实测范围）',
+  (() => {
+    const f = deckField([{ lo: 3000, hi: 3500, cov: 90 }], null)
+    const p = planOf(f, 3500, 'measured').p
+    return p.fallback === true && p.lo === CFF.ALT0 && p.hi === CFF.ALT1
+  })())
+check('窗边界恒为 250 的整数倍（网格行数必须整除，否则 y 映射与网格错位、刻度出现 6,923 这种数）',
+  [planLow, planHigh, planCross].every(x => x.p.lo % 250 === 0 && x.p.hi % 250 === 0),
+  JSON.stringify([planLow.p, planHigh.p, planCross.p].map(x => [x.lo, x.hi])))
+check('跨度夹在 [MIN_SPAN, MAX_SPAN]（云带不至于压成一条线，也不至于撑满空白）',
+  [planLow, planHigh, planCross].every(x => x.p.hi - x.p.lo >= CFF.PROFILE.MIN_SPAN && x.p.hi - x.p.lo <= CFF.PROFILE.MAX_SPAN))
+{
+  const geo = CFF.buildGeometry(CROSS, { width: 375, plotHeight: 300, userAltitude: 3004 })
+  const F = CFF.buildFieldGrid(geo.sample, geo.cf.times.length, { altLo: geo.profile.lo, altHi: geo.profile.hi })
+  check('等值带网格的行数 = 窗跨度/50 + 1（窗与网格必须同源，否则 y 映射与网格错位）',
+    F.ny - 2 === (geo.profile.hi - geo.profile.lo) / 50 + 1 && (geo.profile.hi - geo.profile.lo) % 50 === 0,
+    JSON.stringify([F.ny - 2, geo.profile.lo, geo.profile.hi]))
+  check('云行的上下边界就是窗的上下界（一个仿射映射，图层不可能各画一套）',
+    Math.abs(geo.yAlt(geo.profile.hi) - geo.plotTop) < 0.01 && Math.abs(geo.yAlt(geo.profile.lo) - geo.plotBot) < 0.01,
+    JSON.stringify([geo.yAlt(geo.profile.hi), geo.yAlt(geo.profile.lo), geo.plotTop, geo.plotBot]))
+}
+check('可信高程把点框进窗；模型估算按 ±600 带框；没有高程时点不参与开窗',
+  (() => {
+    const f = deckField([{ lo: 2246, hi: 3371, cov: 95 }], { lo: 2000, hi: 6000 })
+    const trusted = planOf(f, 489, 'measured').p
+    const est = planOf(f, 489, 'estimated').p
+    const none = planOf(f, null, 'none').p
+    return (trusted.lo <= 489 && trusted.hi >= 3371) &&
+      (est.lo <= Math.max(0, 489 - 600) || est.lo <= 489) && est.hi >= 3371 &&
+      none.lo > 489 && none.anchorCount >= 1
+  })(), JSON.stringify([planOf(deckField([{ lo: 2246, hi: 3371, cov: 95 }], { lo: 2000, hi: 6000 }), 489, 'measured').p.lo,
+    planOf(deckField([{ lo: 2246, hi: 3371, cov: 95 }], { lo: 2000, hi: 6000 }), 489, 'estimated').p.lo]))
+check('裁切旗标只说「云带」，不说「点」：点在窗外而云全在窗内时，不得写出「窗外还有云带」这句假话',
+  (() => {
+    const f = deckField([{ lo: 2500, hi: 3200, cov: 90 }], { lo: 2000, hi: 4000 })
+    const p = planOf(f, 6200, 'measured').p
+    return p.pointOutside === 'above' && p.clippedAbove === false && p.clippedBelow === false
+  })(), JSON.stringify(planOf(deckField([{ lo: 2500, hi: 3200, cov: 90 }], { lo: 2000, hi: 4000 }), 6200, 'measured').p))
+check('超出跨度上限时保最强的那一层，其余如实报窗外（不静默丢弃）',
+  (() => {
+    const f = deckField([{ lo: 600, hi: 1200, cov: 96 }, { lo: 3000, hi: 3600, cov: 40 }, { lo: 6000, hi: 6600, cov: 97 }], { lo: 500, hi: 6700 })
+    const p = planOf(f, 3300, 'measured').p
+    const keep = (p.lo <= 600 && p.hi >= 1200) || (p.lo <= 6000 && p.hi >= 6600)
+    return keep && (p.clippedAbove || p.clippedBelow) && p.hi - p.lo <= CFF.PROFILE.MAX_SPAN
+  })(), JSON.stringify((() => {
+    const f = deckField([{ lo: 600, hi: 1200, cov: 96 }, { lo: 3000, hi: 3600, cov: 40 }, { lo: 6000, hi: 6600, cov: 97 }], { lo: 500, hi: 6700 })
+    const p = planOf(f, 3300, 'measured').p
+    return [p.lo, p.hi, p.clippedAbove, p.clippedBelow]
+  })()))
+check('退化输入不抛、窗仍合法：NaN/Infinity/空数组/lo>hi/负海拔/包络越界',
+  (() => {
+    const cases = [
+      [deckField([{ lo: 3000, hi: 3500, cov: 90 }], { lo: 2000, hi: 6000 }), NaN, 'measured'],
+      [deckField([{ lo: 3000, hi: 3500, cov: 90 }], { lo: 2000, hi: 6000 }), Infinity, 'measured'],
+      [deckField([{ lo: 3000, hi: 3500, cov: 90 }], { lo: 2000, hi: 6000 }), -500, 'measured'],
+      [deckField([], { lo: 2000, hi: 6000 }), 3500, 'measured'],
+      [deckField([{ lo: 3000, hi: 3500, cov: 90 }], { lo: 6000, hi: 2000 }), 3500, 'measured'],
+      [deckField([{ lo: 3000, hi: 3500, cov: 90 }], { lo: -800, hi: 99000 }), 3500, 'measured'],
+    ]
+    return cases.every(c => {
+      const p = planOf(c[0], c[1], c[2]).p
+      return Number.isFinite(p.lo) && Number.isFinite(p.hi) && p.hi > p.lo && p.lo >= 0 && p.hi <= 7000
+    })
+  })())
+check('长时窗包含短时窗（同一批数据，48h 已画出的云不被 72h 挤掉）',
+  (() => {
+    const f24 = deckField([{ lo: 2200, hi: 2800, cov: 90 }, { lo: 4200, hi: 4800, cov: 88 }], { lo: 2000, hi: 6000 }, 24)
+    const f72 = deckField([{ lo: 2200, hi: 2800, cov: 90 }, { lo: 4200, hi: 4800, cov: 88 }], { lo: 2000, hi: 6000 }, 72)
+    const a = planOf(f24, 3500, 'measured', 24).p, b = planOf(f72, 3500, 'measured', 72).p
+    return b.lo <= a.lo && b.hi >= a.hi && !a.clippedAbove && !b.clippedAbove
+  })(), JSON.stringify([planOf(deckField([{ lo: 2200, hi: 2800, cov: 90 }, { lo: 4200, hi: 4800, cov: 88 }], { lo: 2000, hi: 6000 }, 24), 3500, 'measured', 24).p.lo,
+    planOf(deckField([{ lo: 2200, hi: 2800, cov: 90 }, { lo: 4200, hi: 4800, cov: 88 }], { lo: 2000, hi: 6000 }, 72), 3500, 'measured', 72).p.hi]))
+/* 变异自证：显示窗若是「可调参数」，判读就必须对它完全无感。
+   把 MAX_SPAN 与 PAD_M 改小/改大 → 窗必须变（证明这一节真的在测窗），
+   而同一批场同一海拔的 inferState 结论必须逐字节不变（证明窗没有偷偷参与判读）。 */
+{
+  const mutFields = [
+    ['低云 4058m', LOW, 4058], ['高云 4058m', HIGH, 4058],
+    ['跨边界 3004m', CROSS, 3004], ['窗内 3500m', deckField([{ lo: 3150, hi: 3850, cov: 85 }], ENVEL), 3500],
+    ['上下两层 3500m', deckField([{ lo: 1000, hi: 1600, cov: 90 }, { lo: 6000, hi: 6500, cov: 80 }], ENVEL), 3500],
+    ['估算点 2700m', deckField([{ lo: 3150, hi: 3850, cov: 85 }], ENVEL), 2700],
+  ]
+  const snap = Object.assign({}, CFF.PROFILE)
+  const verdict = (field, alt, sample) => {
+    const st = CFF.inferState(sample, 10, alt, field.covered, { basis: alt === 2700 ? 'estimated' : 'measured' })
+    return JSON.stringify([st.key, st.reason, st.holds, st.cUser, st.span && [st.span.lo, st.span.hi]])
+  }
+  const base = mutFields.map(([nm, f, alt]) => {
+    const o = planOf(f, alt, alt === 2700 ? 'estimated' : 'measured')
+    return { nm: nm, w: [o.p.lo, o.p.hi], v: verdict(f, alt, o.sample) }
+  })
+  CFF.PROFILE.MAX_SPAN = 1500
+  CFF.PROFILE.PAD_M = 0
+  const after = mutFields.map(([nm, f, alt]) => {
+    const o = planOf(f, alt, alt === 2700 ? 'estimated' : 'measured')
+    return { nm: nm, w: [o.p.lo, o.p.hi], v: verdict(f, alt, o.sample) }
+  })
+  Object.keys(snap).forEach(k => { CFF.PROFILE[k] = snap[k] })
+  const restored = planOf(LOW, 4058, 'measured').p
+  check('变异（跨度上限 4000→1500、呼吸位 250→0）确实改变了显示窗（否则这一节是空断言）',
+    after.some((x, i) => x.w[0] !== base[i].w[0] || x.w[1] !== base[i].w[1]),
+    JSON.stringify([base.map(x => x.w), after.map(x => x.w)]))
+  check('同一变异下判读逐字节不变：显示窗不是判读输入（6 组 × key/reason/holds/cUser/span）',
+    after.every((x, i) => x.v === base[i].v),
+    after.map((x, i) => (x.v === base[i].v ? '' : x.nm + ' ' + base[i].v + '→' + x.v)).join(' | '))
+  check('PROFILE 改完必须还原（还原后低云那张的窗回到 ' + base[0].w.join('–') + '）',
+    restored.lo === base[0].w[0] && restored.hi === base[0].w[1], JSON.stringify([restored.lo, restored.hi]))
+}
+
 console.log('\npassed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)

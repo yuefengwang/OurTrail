@@ -177,15 +177,17 @@ function elevSourceLabel(source) { return ELEV_SOURCE_LABELS[source] || ELEV_SOU
  * 点没有高程而天气返回体带模型地形高度 ⇒ 用模型值并记 source='model'（图上必须显式标注）；
  * 两者都没有 ⇒ elevation=null，调用方不得显示任何确定数值。
  */
+/** 出处 → 判定基准的唯一映射（渲染层没有 opts.basis 时也只能调它，不许再抄一份三元式） */
+function elevBasis (source) { return source === 'model' ? 'estimated' : source ? 'measured' : 'none' }
 function resolveElev(pointEle, pointEleSource, modelEle) {
   const hasEle = Number.isFinite(pointEle)
   const hasModel = Number.isFinite(modelEle)
   if (hasEle) {
     const s = pointEleSource === 'gpx' || pointEleSource === 'picked' ? pointEleSource : 'manual'
-    return { elevation: pointEle, source: s, ok: true, basis: 'measured' }
+    return { elevation: pointEle, source: s, ok: true, basis: elevBasis(s) }
   }
-  if (hasModel) return { elevation: modelEle, source: 'model', ok: false, basis: 'estimated' }
-  return { elevation: null, source: null, ok: false, basis: 'none' }
+  if (hasModel) return { elevation: modelEle, source: 'model', ok: false, basis: elevBasis('model') }
+  return { elevation: null, source: null, ok: false, basis: elevBasis(null) }
 }
 /** @param altText 已按各自千分位格式化好的数字；@param source gpx|picked|manual|model */
 function elevLineLabel(altText, source) {
@@ -229,12 +231,37 @@ function cloudPositionReason(reason) {
   return Object.prototype.hasOwnProperty.call(CLOUD_POSITION_REASONS, reason) ? CLOUD_POSITION_REASONS[reason] : ''
 }
 
+/* ---------- 剖面显示窗（2026-10-09 显示窗自适应轮） ----------
+ * 「图上一片空白」有两种完全不同的原因：真的没云，和云整扇在画的那一段之外。
+ * 裁切必须由图上自己说清楚，否则读者会把后者读成前者（判据见 probe-window.json 样本 1/2/5 与 6）。
+ * 这些字符串只在这里定义，渲染层与页面图例都调它——显示窗一句话也不能有第二个出处（铁律 22）。 */
+const CLOUD_WINDOW_NOTES = {
+  'clipped-above': '窗外上方还有云带',
+  'clipped-below': '窗外下方还有云带',
+  'no-deck': '实测高度范围内没有有意义云量',
+}
+function cloudWindowNote(key) {
+  if (!key) return ''
+  return Object.prototype.hasOwnProperty.call(CLOUD_WINDOW_NOTES, key) ? CLOUD_WINDOW_NOTES[key] : ''
+}
+/** @param loText/hiText 已各自格式化好的整数海拔 */
+function profileRangeLabel(loText, hiText) { return '剖面 ' + loText + '–' + hiText + ' m' }
+/* 图例里「虚线 = 此点海拔」这一句：主语从 ELEV_SUBJECT 拼，图例与图上标签不可能各写一套主语；
+   而且只在参考线真的画出来时才给（点在窗外时图上没有虚线，图例就不许说有）。 */
+function cloudLegendElev() { return '虚线 = ' + ELEV_SUBJECT + '海拔' }
+/* 完全没有可信高程时图例说这一句。真机取证抓到的原错：图例走「点在窗外」那一支，
+   拼出「此点在剖面下方 null m」——把「不知道」又写成了一个数值（本轮明令不得重现的那一类）。 */
+function cloudLegendNoElev() { return ELEV_SUBJECT + '海拔未知（未画参考线）' }
+/** 查询点落在显示窗外时的说明——此时绝不把参考线钳在窗边冒充它的位置 */
+function pointOutsideLabel(side, deltaText) { return ELEV_SUBJECT + '在剖面' + (side === 'above' ? '上方' : '下方') + ' ' + deltaText + ' m' }
+
 module.exports = {
   pad, WEEK, cnParts, dateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
   minutesLabel, relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
   UNASSIGNED_LABELS, TRIP_MODE_LABELS, TRIP_MODE_HINTS, TRIP_MODE_OPTIONS, RETURN_PLAN_LABELS,
   PICKUP_MISSING, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase, windDirText,
-  ELEV_SUBJECT, ELEV_SOURCE_LABELS, ELEV_MODEL_SUFFIX, elevSourceLabel, elevLineLabel, resolveElev,
+  ELEV_SUBJECT, ELEV_SOURCE_LABELS, ELEV_MODEL_SUFFIX, elevSourceLabel, elevLineLabel, resolveElev, elevBasis,
   CLOUD_POSITION_LABELS, CLOUD_POSITION_REASONS, cloudPositionLabel, cloudPositionReason,
+  CLOUD_WINDOW_NOTES, cloudWindowNote, profileRangeLabel, pointOutsideLabel, cloudLegendElev, cloudLegendNoElev,
   PHENO_ADVICE, phenoAdvice,
 }

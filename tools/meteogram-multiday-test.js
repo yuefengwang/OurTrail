@@ -105,7 +105,23 @@ check('72h 几何点数 > 48h（信息密度保持）', g72.stats.pointCount > g
 check('72h dayBounds = [24, 48]', JSON.stringify(g72.dayBounds) === '[24,48]')
 check('48h dayBounds = [24]', JSON.stringify(g48.dayBounds) === '[24]')
 check('72h days 标签 + 每日 hi/lo', g72.days.length === 3 && g72.days[0].label === '今天' && g72.days[1].hi != null && g72.days[2].lo != null)
-check('高度尺度跨日稳定（0–7000 不变）', Math.abs(g72.cloud.yAlt(2000) - g48.cloud.yAlt(2000)) < 0.01)
+check('高度映射在一张图内是单一仿射函数（跨日不可能各用一套尺度）', (() => {
+  const y = a => g72.cloud.yAlt(a)
+  const d1 = y(2000) - y(1000), d2 = y(4000) - y(3000), d3 = y(6000) - y(5000)
+  return Math.abs(d1 - d2) < 0.01 && Math.abs(d2 - d3) < 0.01
+})(), [g72.cloud.yAlt(1000), g72.cloud.yAlt(2000), g72.cloud.yAlt(3000)].join('/'))
+check('显示窗是数据的确定函数：同参数重复构建完全一致（切来回不漂移）', (() => {
+  const again = buildGeo(48, 3500)
+  const pick = p => [p.lo, p.hi, p.clippedAbove, p.clippedBelow].join('|')
+  return pick(again.profile) === pick(g48.profile)
+})(), JSON.stringify(g48.profile && { lo: g48.profile.lo, hi: g48.profile.hi }))
+/* 旧断言写的是「48h 与 72h 的 yAlt(2000) 相等」——那是固定窗下的一句恒等式。
+   窗自适应之后两图的窗本来就不同（72h 多一天、云带更高），等价于没测。
+   换成这一轮真正要保的性质：长窗不得把短窗已经画出的云挤掉。 */
+check('长窗包含短窗（两窗都未裁切时，72h 不会挤掉 48h 已画出的云带）',
+  !g48.profile.clippedAbove && !g48.profile.clippedBelow && !g72.profile.clippedAbove && !g72.profile.clippedBelow &&
+    g72.profile.lo <= g48.profile.lo && g72.profile.hi >= g48.profile.hi,
+  JSON.stringify([[g48.profile.lo, g48.profile.hi], [g72.profile.lo, g72.profile.hi]]))
 
 /* ---------- Selection：跨日单一 crosshair ---------- */
 section('Selection：Day 1/2/3 单一 crosshair')
@@ -123,14 +139,24 @@ check('Day3 22:00 日期牌「后天 22:00」', sel70.svg.indexOf('后天 22:00'
 check('全图只有一根 crosshair 线', (sel38.svg.match(/stroke="#163e35" stroke-width="0.5"/g) || []).length === 1)
 
 /* ---------- YOU 海拔 ---------- */
-section('YOU 海拔：单线贯穿 + 钳位')
+section('YOU 海拔：单线贯穿 + 点在窗外时写明差多少米')
 check('YOU 标签只出现一次', (b72.svg.match(/此点 3,500 m/g) || []).length === 1)
 const g500 = buildGeo(72, 500)
 const b500 = UMG.renderUnifiedBase(g500, {})
-check('500m → 剖面下方标注', b500.svg.indexOf('（剖面下方）') >= 0)
+/* 旧写法：窗固定 2000–6000，500m 的点被 Math.max(ALT0,…) 钳到窗边画一条虚线，再补一句「（剖面下方）」。
+   线的位置是假的。现在要么把点框进窗里画在真实高度，要么根本不画线、只在窗边写明差多少米。 */
+check('500m 在 72h 窗外下方：不画参考线，边注写明还差多少米',
+  g500.profile.pointOutside === 'below' && b500.svg.indexOf('stroke-dasharray="4 3"') < 0 &&
+    /此点在剖面下方 [\d,]+ m/.test(b500.svg), b500.svg.slice(b500.svg.indexOf('此点在剖面'), b500.svg.indexOf('此点在剖面') + 40))
+check('500m 那种「点在窗外」绝不被画成琥珀入云交线',
+  g500.inRuns.length === 0 && b500.svg.indexOf('rgba(180,118,26') < 0, g500.inRuns.length)
 const g6200 = buildGeo(72, 6200)
 const b6200 = UMG.renderUnifiedBase(g6200, {})
-check('6200m → 剖面上方标注', b6200.svg.indexOf('（剖面上方）') >= 0)
+check('6200m 在窗外上方：同样不画假线，边注朝上并给出高差',
+  g6200.profile.pointOutside === 'above' && b6200.svg.indexOf('stroke-dasharray="4 3"') < 0 &&
+    /此点在剖面上方 [\d,]+ m/.test(b6200.svg), String(g6200.profile.pointOutside))
+check('窗范围自己印在图上（读者不必猜这一行画的是哪一段高度）',
+  /剖面 [\d,]+–[\d,]+ m/.test(b72.svg), JSON.stringify([g72.profile.lo, g72.profile.hi]))
 
 /* ---------- Evidence：跨日锚点 ---------- */
 section('Evidence：机会 → focusAbs → 正确日期的 crosshair')
