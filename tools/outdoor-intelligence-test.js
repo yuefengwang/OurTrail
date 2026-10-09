@@ -92,9 +92,20 @@ const sea = oi1.opportunities.find(w => w.type === 'CLOUD_SEA')
 check('CLOUD_SEA 与民用晨昏取交集（agenda 同规则）',
   sea && sea.from >= '06:00' && sea.to <= '18:00' + '', sea && sea.from + '–' + sea.to)
 check('CLOUD_SEA evidence 可解释（云层位置/净空/覆盖/持续）',
-  sea && sea.evidence.some(e => e.fact.indexOf('云层位于') >= 0) &&
-  sea.evidence.some(e => e.fact.indexOf('此点高于云层底部约') >= 0) && sea.evidence.length >= 3,
+  sea && sea.evidence.some(e => /云层位于 |云底低于剖面扫描窗下界|云顶高于剖面扫描窗上界|浓云贯穿剖面扫描窗/.test(e.fact)) &&
+  sea.evidence.some(e => e.fact.indexOf('此点高于该云层顶约') >= 0) && sea.evidence.length >= 3,
   sea && JSON.stringify(sea.evidence))
+/* 净空 = userAltitude − layer.top，说的是「高于云顶」；旧文案写成「云层底部」是反的
+   （R2 顺带修正，数值一字未动）。 */
+check('净空那句说的是云顶不是云底，且数字 = layers[].clearance 的最小值',
+  sea && !sea.evidence.some(e => e.fact.indexOf('云层底部') >= 0) &&
+    (() => {
+      const m = (sea.evidence.map(e => String(e.fact)).join('\n')).match(/此点高于该云层顶约 ([\d,]+) m/)
+      if (!m) return false
+      const n = +m[1].replace(/,/g, '')
+      const minClear = Math.min.apply(null, sea.layers.map(l => l.clearance))
+      return n === minClear
+    })(), sea && JSON.stringify(sea.layers))
 check('CLOUD_SEA 强度分级存在（WEAK/MODERATE/STRONG）',
   sea && ['WEAK', 'MODERATE', 'STRONG'].indexOf(sea.strength) >= 0, sea && sea.strength)
 check('CLOUD_SEA 与日出重叠时带 enrichment 证据',

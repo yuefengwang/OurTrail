@@ -1,0 +1,53 @@
+[
+  {
+    "place": "峨眉山",
+    "denied": "",
+    "loading": false,
+    "loadingWeather": false,
+    "dayCards": 7,
+    "items": 3,
+    "seaCount": 0,
+    "summaries": [
+      "IN_CLOUD | 云区 1,712–3,987 m（峰值 100%）穿过此点海拔 3,004 m",
+      "RAINBOW | 降水时段 24 小时",
+      "RAINBOW | 降水时段 24 小时"
+    ],
+    "boundaryText": false,
+    "hasOiCard": true,
+    "shotError": "el.screenshot is not a function"
+  },
+  {
+    "place": "理塘",
+    "denied": "",
+    "loading": false,
+    "loadingWeather": false,
+    "dayCards": 7,
+    "items": 3,
+    "seaCount": 0,
+    "summaries": [
+      "MILKY_WAY | 夜段高层云 2% · 中层云 21%",
+      "RAINBOW | 降水时段 12 小时",
+      "RAINBOW | 降水时段 12 小时"
+    ],
+    "boundaryText": false,
+    "hasOiCard": true,
+    "shotError": "el.screenshot is not a function"
+  },
+  {
+    "place": "成都",
+    "denied": "",
+    "loading": false,
+    "loadingWeather": false,
+    "dayCards": 7,
+    "items": 3,
+    "seaCount": 0,
+    "summaries": [
+      "ALPENGLOW | 全日低云 17%（少则光能到山体）",
+      "ALPENGLOW | 全日低云 17%（少则光能到山体）",
+      "RAINBOW | 降水时段 3 小时"
+    ],
+    "boundaryText": false,
+    "hasOiCard": true,
+    "shotError": "el.screenshot is not a function"
+  }
+]

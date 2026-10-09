@@ -138,8 +138,13 @@ const multi = OI.buildOutdoorIntelligence(makeCtx(
   h => (h >= 5 && h < 10) ? { low: 90, mid: 20, high: 95 } : { low: 5, mid: 5, high: 5 },
   { userAltitude: 3500 }))
 check('双层云：低层成云海窗口、高层不干扰', !!findSea(multi))
-check('双层云：evidence 引用低层（云层位于 2,0xx m）',
-  findSea(multi) && findSea(multi).evidence.some(e => e.fact.indexOf('云层位于 2,0') >= 0))
+/* 旧断言写的是「云层位于 2,0xx m」——那个 2,000 恰好等于扫描窗下界，
+   等于把「扫描边界」当成「测出来的云底」钉进了测试（R2 审计 §3 模式 C 的活教材）。
+   现在要求证据句如实说云底未测得。 */
+check('双层云：低层云底恰在扫描下界 ⇒ 证据不许把 2,000 说成云底',
+  findSea(multi) && findSea(multi).evidence.some(e => e.fact.indexOf('云底低于剖面扫描窗下界') === 0) &&
+    !findSea(multi).evidence.some(e => /^云层位于 /.test(e.fact)),
+  findSea(multi) && JSON.stringify(findSea(multi).evidence.map(e => e.fact)))
 
 /* ---------- Wind ---------- */
 section('Wind：强风降级强度')
@@ -163,6 +168,110 @@ const t1 = Date.now()
 for (let i = 0; i < 20; i++) OI.buildOutdoorIntelligence(makeCtx(SEA_BANDS, SEA_CLOUDS, { userAltitude: 3500 }))
 const ms = (Date.now() - t1) / 20
 check('单次构建 < 30ms（含云海检测）', ms < 30, ms.toFixed(2) + 'ms')
+
+/* ---------- R2：扫描窗边界不是云界（2026-10-09 审计迁移第一步） ---------- */
+section('R2 边界语义：窗边界不得冒充云底/云顶，且业务判据一字不动')
+const ALT_LO = require('../miniprogram/utils/cloud-field-svg.js').ALT0
+const ALT_HI = require('../miniprogram/utils/cloud-field-svg.js').ALT1
+function seaCase (base, top, userAlt) {
+  return OI.buildOutdoorIntelligence(makeCtx(
+    h => (h >= 5 && h < 10) ? { base: base, top: top, cover: 95 } : null,
+    h => (h >= 5 && h < 10) ? { low: 95, mid: 20, high: 20 } : { low: 5, mid: 5, high: 5 },
+    { userAltitude: userAlt }))
+}
+const factsOf = w => (w ? w.evidence.map(e => String(e.fact)) : [])
+/* 每种边界形态都钉三件事：① 层记录上的来源标记 ② 证据文案的说法 ③ 窗口与层数值本身。
+ * ③ 的数值取自在 6d7a1dc（R2 之前）与当前工作树各跑一遍的实测，两侧逐字相同；
+ * 跨版本对拍不在本文件里做（自己实现一遍"旧版本"就是镜像被测层，等于没测），
+ * 见 qa/v2-oi-scan-r2-2026-10-09/tools/ab-r2.js 与 ab-r2.json。 */
+const num = f => { const m = String(f).match(/([\d,]+)/); return m ? +m[1].replace(/,/g, '') : NaN }
+const fullWin = findSea(seaCase(2400, 3300, 4200))
+check('完整落在窗内：证据说「云层位于 2,179–3,294 m」，两端都不带「未测得」，业务数值 = R2 之前实测值',
+  !!fullWin && fullWin.from === '06:51' && fullWin.to === '10:00' && fullWin.confidence === '高' &&
+    fullWin.strength === 'STRONG' &&
+    fullWin.layers.length === 5 &&
+    fullWin.layers.every(l => l.base === 2179 && l.top === 3294 && l.cover === 93 && l.clearance === 906 &&
+      l.baseBoundary === false && l.topBoundary === false) &&
+    factsOf(fullWin)[0] === '云层位于 2,179–3,294 m' &&
+    !factsOf(fullWin).some(f => /未测得|下限值|上限/.test(f)),
+  factsOf(fullWin).join(' / '))
+const lowWin = findSea(seaCase(ALT_LO, 2900, 4200))
+check('下边界触碰：base 恰为窗下界 ⇒ baseBoundary=true，证据说云底未测得而不是「云层位于 2,000…」',
+  !!lowWin && lowWin.layers.every(l => l.base === ALT_LO && l.baseBoundary === true && l.topBoundary === false) &&
+    /^云底低于剖面扫描窗下界 /.test(factsOf(lowWin)[0]) && num(factsOf(lowWin)[0]) === ALT_LO &&
+    factsOf(lowWin)[0].indexOf('窗内云层顶约 2,794 m') > 0 &&
+    !factsOf(lowWin).some(f => /^云层位于 /.test(f)) &&
+    lowWin.layers.every(l => l.top === 2794 && l.cover === 95 && l.clearance === 1406) &&
+    lowWin.from === '06:51' && lowWin.to === '10:00' && lowWin.confidence === '高',
+  factsOf(lowWin).join(' / '))
+const topWin = findSea(seaCase(5300, ALT_HI + 600, 6900))
+check('上边界触碰：top 恰为窗上界 ⇒ topBoundary=true，净空那句标注为上限而不是实测',
+  !!topWin && topWin.layers.every(l => l.top === ALT_HI && l.topBoundary === true && l.baseBoundary === false) &&
+    /^云顶高于剖面扫描窗上界 /.test(factsOf(topWin)[0]) && num(factsOf(topWin)[0]) === ALT_HI &&
+    factsOf(topWin)[0].indexOf('窗内云层底约 5,450 m') > 0 &&
+    /云顶未测得，此为上限/.test(factsOf(topWin)[1]) && factsOf(topWin)[1].indexOf('约 900 m') > 0 &&
+    topWin.layers.every(l => l.base === 5450 && l.cover === 95 && l.clearance === 900) &&
+    topWin.from === '06:51' && topWin.to === '10:00' && topWin.confidence === '高',
+  factsOf(topWin).join(' / '))
+const thruWin = findSea(seaCase(ALT_LO - 500, ALT_HI + 500, 6900))
+check('贯穿整窗：两端都说未测得，层厚 4000 m 明确是「窗内可见部分」的下限值',
+  !!thruWin && thruWin.layers.every(l => l.base === ALT_LO && l.top === ALT_HI &&
+      l.baseBoundary === true && l.topBoundary === true) &&
+    /^浓云贯穿剖面扫描窗 2,000–6,000 m/.test(factsOf(thruWin)[0]) &&
+    factsOf(thruWin).some(f => f.indexOf('层厚 4000 m 按扫描窗内可见部分计算，是下限值而不是实测厚度') === 0) &&
+    thruWin.layers.every(l => l.cover === 95 && l.clearance === 900) &&
+    thruWin.from === '06:51' && thruWin.to === '10:00' && thruWin.confidence === '高',
+  factsOf(thruWin).join(' / '))
+check('通用不变量：任何云海证据里「云层位于 X–Y m」的 X/Y 都不得等于扫描窗边界',
+  [findSea(sea), findSea(multi), fullWin, lowWin, topWin, thruWin].reduce(function (acc, w) {
+    if (!w) return acc
+    return acc && !factsOf(w).some(function (f) {
+      const m = f.match(/^云层位于 ([\d,]+)–([\d,]+) m$/)
+      if (!m) return false
+      return +m[1].replace(/,/g, '') === ALT_LO || +m[2].replace(/,/g, '') === ALT_HI
+    })
+  }, true) && !!findSea(sea) && !!findSea(multi))
+check('来源标记自洽：flag=true 的那一端，层数值必须恰好等于窗边界（不许标了边界却报出一个窗内的数）',
+  [fullWin, lowWin, topWin, thruWin].every(w => !!w && w.layers.every(l =>
+    (!l.baseBoundary || l.base === ALT_LO) && (!l.topBoundary || l.top === ALT_HI))))
+check('R2 不改候选集合：四种边界形态都各自成窗，且每例都只有 1 个 CLOUD_SEA 窗口（没有多出候选）',
+  [fullWin, lowWin, topWin, thruWin].every(Boolean) &&
+    [seaCase(2400, 3300, 4200), seaCase(ALT_LO, 2900, 4200), seaCase(5300, ALT_HI + 600, 6900),
+      seaCase(ALT_LO - 500, ALT_HI + 500, 6900)].every(oi =>
+      oi.opportunities.filter(w => w.type === 'CLOUD_SEA').length === 1))
+check('晴空（无 ≥80% 层）仍然零窗口——边界修复没有制造出候选',
+  !!findSea(seaCase(2400, 3300, 4200)) &&
+    !findSea(OI.buildOutdoorIntelligence(makeCtx(() => null, () => ({ low: 3, mid: 3, high: 3 }), { userAltitude: 3500 }))))
+check('缺失数据（无 cloudField）不产出云海窗口，也不抛出任何边界文案',
+  (() => {
+    const base = makeCtx(() => null, () => ({ low: 0, mid: 0, high: 0 }), { userAltitude: 3500 })
+    const oi = OI.buildOutdoorIntelligence({ date: base.date, detail: base.detail, userAltitude: 3500, elevOK: true, cloudField: null, days: [] })
+    return !findSea(oi) && oi.opportunities.every(o => !(o.evidence || []).some(e => /剖面扫描窗/.test(String(e.fact))))
+  })())
+/* 呈现层耦合钉：`oi-presentation.summaryOf` 只在 evidence 里找「云区/云层位于」，
+ * 找不到就退回 evidence[0]。R2 让被切的那三种说法都不再含「云层位于」，
+ * 卡片摘要全靠"位置那句排第一"这条次序。次序一旦变动，卡片会静默换成别的事实——
+ * 这条判据把该依赖显式钉住，而不是留给运气。 */
+const OIP = require('../miniprogram/utils/oi-presentation.js')
+const summaryOfSea = oi => {
+  const card = OIP.buildOiCard(oi, { width: 375 })
+  const it = (card.items || []).filter(i => i.type === 'CLOUD_SEA')[0]
+  return it && it.summaryText
+}
+check('卡片摘要：四种边界形态都取到"位置那句"，被切的形态不会退化成一句通用事实',
+  [
+    [seaCase(2400, 3300, 4200), /^云层位于 /],
+    [seaCase(ALT_LO, 2900, 4200), /^云底低于剖面扫描窗下界 /],
+    [seaCase(5300, ALT_HI + 600, 6900), /^云顶高于剖面扫描窗上界 /],
+    [seaCase(ALT_LO - 500, ALT_HI + 500, 6900), /^浓云贯穿剖面扫描窗 /],
+  ].every(function (pair) {
+    const s = summaryOfSea(pair[0])
+    return !!s && pair[1].test(s) && s === findSea(pair[0]).evidence[0].fact
+  }))
+check('净空那句主语与对象都对：说的是「高于该云层顶」，不是「云层底部」（净空 = 此点 − 云顶）',
+  [fullWin, lowWin, topWin, thruWin].every(w => !!w &&
+    w.evidence.some(e => /此点高于该云层顶约 [\d,]+ m/.test(String(e.fact))) &&
+    !w.evidence.some(e => /云层底部/.test(String(e.fact)))))
 
 console.log('\npassed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)

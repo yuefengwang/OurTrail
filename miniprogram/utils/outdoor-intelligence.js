@@ -105,29 +105,37 @@ function cloudLayersAt(sample, t, opts) {
     const prev = i > 0 ? pts[i - 1] : null
     if (on && !run) {
       /* 进入点：与上一采样点线性插值（上一格已在层内则直接取该点） */
-      const base = prev && prev.cover < o.LAYER_COVER_MIN
+      const crossed = !!(prev && prev.cover < o.LAYER_COVER_MIN)
+      const base = crossed
         ? prev.alt + (o.LAYER_COVER_MIN - prev.cover) / (pts[i].cover - prev.cover) * (pts[i].alt - prev.alt)
         : pts[i].alt
-      run = { base: base, top: pts[i].alt, covers: [pts[i].cover] }
+      /* R2（2026-10-09 扫描范围审计）：第一个采样点就已经是浓云 ⇒ 这个 base 是**扫描下界**，
+         不是测出来的云底。数值一律不动（候选集合、层厚、净空、置信度都不许被这次改动影响），
+         只加一个来源标记，交给证据文案如实说。 */
+      run = { base: base, top: pts[i].alt, covers: [pts[i].cover], baseBoundary: !crossed }
     } else if (on && run) {
       run.top = pts[i].alt
       run.covers.push(pts[i].cover)
     } else if (!on && run) {
-      /* 退出点：插值到阈值（云在边缘变薄消失） */
+      /* 退出点：插值到阈值（云在边缘变薄消失）——这是测出来的云顶 */
       run.top = prev.cover > o.LAYER_COVER_MIN
         ? prev.alt + (o.LAYER_COVER_MIN - prev.cover) / (pts[i].cover - prev.cover) * (pts[i].alt - prev.alt)
         : prev.alt
+      run.topBoundary = false
       layers.push(run)
       run = null
     }
   }
-  if (run) { run.top = CFF.ALT1; layers.push(run) }
+  /* 扫到上界还在浓云：云顶落在扫描范围之外，6000 只是窗的边界。
+     数值保持与旧实现逐字相同（run.top = CFF.ALT1），只补边界标记。 */
+  if (run) { run.top = CFF.ALT1; run.topBoundary = true; layers.push(run) }
   return layers
     .map(function (l) {
       return {
         base: Math.round(l.base), top: Math.round(l.top), thickness: Math.round(l.top - l.base),
         meanCover: Math.round(l.covers.reduce(function (a, b) { return a + b }, 0) / l.covers.length),
         peakCover: Math.round(Math.max.apply(null, l.covers)),
+        baseBoundary: l.baseBoundary === true, topBoundary: l.topBoundary === true,
       }
     })
     .sort(function (a, b) { return a.base - b.base })
@@ -333,9 +341,28 @@ function detectCloudSea(conditions, fieldSample, userAlt, opts) {
       overlapsSunrise = sky.hourMin(from) <= opts.sunriseMin && opts.sunriseMin <= sky.hourMin(to)
     }
     const evidence = []
-    evidence.push({ fact: '云层位于 ' + fmtM(run.baseMin) + '–' + fmtM(run.topMax) + ' m', at: from })
-    evidence.push({ fact: FMT.ELEV_SUBJECT + '高于云层底部约 ' + fmtM(clearMin) + ' m', at: from })
-    evidence.push({ fact: '层均覆盖 ' + coverPeak + '% · 层厚最大 ' + thickMax + ' m', at: from })
+    /* R2：扫描窗边界不是云界。层提取的数值一个都不改（候选、净空、强度、置信度与改前逐字相同），
+       但证据句不许再把「2,000」「6,000」这种窗边界写成测出来的云底/云顶——
+       审计实测峨眉山 18/12/7 小时的层 base 恰好等于扫描下界（AUDIT.md §3 模式 C）。 */
+    const baseBoundary = run.candidates.some(function (c) { return c.layer.baseBoundary })
+    const topBoundary = run.candidates.some(function (c) { return c.layer.topBoundary })
+    const winLo = fmtM(CFF.ALT0), winHi = fmtM(CFF.ALT1)
+    if (!baseBoundary && !topBoundary) {
+      evidence.push({ fact: '云层位于 ' + fmtM(run.baseMin) + '–' + fmtM(run.topMax) + ' m', at: from })
+    } else if (baseBoundary && topBoundary) {
+      evidence.push({ fact: '浓云贯穿剖面扫描窗 ' + winLo + '–' + winHi + ' m：云底低于窗下界、云顶高于窗上界，两端都未测得', at: from })
+    } else if (baseBoundary) {
+      evidence.push({ fact: '云底低于剖面扫描窗下界 ' + winLo + ' m（未测得）；窗内云层顶约 ' + fmtM(run.topMax) + ' m', at: from })
+    } else {
+      evidence.push({ fact: '云顶高于剖面扫描窗上界 ' + winHi + ' m（未测得）；窗内云层底约 ' + fmtM(run.baseMin) + ' m', at: from })
+    }
+    evidence.push({ fact: FMT.ELEV_SUBJECT + '高于该云层顶约 ' + fmtM(clearMin) + ' m' +
+      (topBoundary ? '（云顶未测得，此为上限）' : ''), at: from })
+    if (baseBoundary || topBoundary) {
+      evidence.push({ fact: '层厚 ' + thickMax + ' m 按扫描窗内可见部分计算，是下限值而不是实测厚度', at: from })
+    } else {
+      evidence.push({ fact: '层均覆盖 ' + coverPeak + '% · 层厚最大 ' + thickMax + ' m', at: from })
+    }
     evidence.push({ fact: '预计持续约 ' + run.len + ' 小时', at: from })
     if (windPeak > 0) evidence.push({ fact: '风速 ≤ ' + windPeak + ' km/h', at: from })
     if (overlapsSunrise) evidence.push({ fact: '窗口与日出重叠（日出云海）', at: from })
@@ -346,7 +373,14 @@ function detectCloudSea(conditions, fieldSample, userAlt, opts) {
       confidence: confidenceOf(coverPeak, 90),
       rank: BASE_RANK.CLOUD_SEA,
       strength: strength,
-      layers: run.candidates.map(function (c) { return { t: c.t, base: c.layer.base, top: c.layer.top, cover: c.layer.meanCover, clearance: c.clearance } }),
+      layers: run.candidates.map(function (c) {
+        return {
+          t: c.t, base: c.layer.base, top: c.layer.top, cover: c.layer.meanCover, clearance: c.clearance,
+          /* 边界来源标记：数值与改前逐字相同，多出来的只有这两个布尔——
+             测试与 UI 据此判断「这层是完整测到的」还是「被扫描窗切了一刀」，不必解析证据文案 */
+          baseBoundary: c.layer.baseBoundary === true, topBoundary: c.layer.topBoundary === true,
+        }
+      }),
       overlapsSunrise: overlapsSunrise,
       evidence: evidence,
       source: 'cloud-field',
