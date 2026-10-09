@@ -791,45 +791,102 @@ function oldServerResult(today, selectedDate) {
     updatedAt,
     cloudLevels: mkCloudLevels(covers),
   })
-  const runPick = (covers, elevation, updatedAt) => {
+  const runPick = (covers, q, updatedAt) => {
+    /* q = { ele, eleSrc, modelEle }：走真实分类器 format.resolveElev，
+       页面拿到的 elevation / elevSource / elevBasis 与线上完全同路（不在测试里另判一次）。 */
     const page = makePage(pageConfig())
     page.data.date = DATE
     page.data.viewSpan = 24
     page.data.chartPick = { date: DATE, t: '13:00' }
-    return page.buildUnifiedCard(mkResult(covers, updatedAt), elevation)
+    const EV = require('../miniprogram/utils/format').resolveElev(q.ele, q.eleSrc, q.modelEle)
+    page.elevSource = EV.source
+    page.elevBasis = EV.basis
+    page._runPickEV = EV
+    const card = page.buildUnifiedCard(mkResult(covers, updatedAt), EV.elevation)
+    if (card) card._page = page   // 判据要看 geo / 分类结果；不给生产卡加字段
+    return card
   }
   const noLeak = card => !!card && !/undefined|null/.test([card.r1, card.r2, card.r3, card.r4].join(' '))
   const dump = card => card ? [card.r1, card.r2, card.r3, card.r4].join(' | ') : 'card=null'
 
-  // A：用户 3500m 在覆盖区 [1000,5000] 内，该海拔云量 65% ≥ IN_C(60) → 你在云中
+  // A：此点 3500m 在覆盖区 [1000,5000] 内，该海拔云量 65% ≥ IN_C(60) → 三态之一「此点正处于云中」
   {
-    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 65 }, { alt: 5000, cov: 20 }], 3500, DATE + 'T10:00:00+08:00')
+    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 65 }, { alt: 5000, cov: 20 }], { ele: 3500, eleSrc: 'picked' }, DATE + 'T10:00:00+08:00')
     check('11b-A 卡构建成功（src/selSrc 非空）', !!card && !!card.src && !!card.selSrc, dump(card))
     check('11b-A r1 = 13:00 · 12° …', !!card && /^13:00 · 12° /.test(card.r1), card && card.r1)
     check('11b-A r2 = 海拔 3,500 m 云量 65%', !!card && card.r2 === '海拔 3,500 m 云量 65%', card && card.r2)
-    check('11b-A r3 = 你在云中（stKey=in）', !!card && card.r3 === '你在云中' && card.stKey === 'in',
+    check('11b-A r3 = 此点正处于云中（stKey=in）', !!card && card.r3 === '此点正处于云中' && card.stKey === 'in',
       card && (card.r3 + '/' + card.stKey))
     check('11b-A r1-r4 无 undefined/null 泄漏', noLeak(card), dump(card))
   }
 
   // B：云量 80% 厚层 → span 云区行（span 不读 userAlt，改前即绿 = 回归护栏）
   {
-    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 80 }, { alt: 5000, cov: 20 }], 3500, DATE + 'T10:01:00+08:00')
+    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 80 }, { alt: 5000, cov: 20 }], { ele: 3500, eleSrc: 'picked' }, DATE + 'T10:01:00+08:00')
     check('11b-B 卡构建成功（src/selSrc 非空）', !!card && !!card.src && !!card.selSrc, dump(card))
     check('11b-B r2 = 云量 80% · 云区 3,150–3,750 m', !!card && card.r2 === '云量 80% · 云区 3,150–3,750 m', card && card.r2)
-    check('11b-B r3 = 你在云中（stKey=in）', !!card && card.r3 === '你在云中' && card.stKey === 'in',
+    check('11b-B r3 = 此点正处于云中（stKey=in）', !!card && card.r3 === '此点正处于云中' && card.stKey === 'in',
       card && (card.r3 + '/' + card.stKey))
     check('11b-B r1-r4 无 undefined/null 泄漏', noLeak(card), dump(card))
   }
 
-  // C：用户 500m 低于覆盖区（lo=max(ALT0,1000)=2000）→ 头顶有云层；cUser 不可采样 → 云量 —
+  // C：此点 500m 低于覆盖区（lo=max(SCAN_MIN,1000)=1000）→ 云层在此点上方；cUser 不可采样 → 云量 —
   {
-    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 65 }, { alt: 5000, cov: 20 }], 500, DATE + 'T10:02:00+08:00')
+    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 65 }, { alt: 5000, cov: 20 }], { ele: 500, eleSrc: 'gpx' }, DATE + 'T10:02:00+08:00')
     check('11b-C 卡构建成功（src/selSrc 非空）', !!card && !!card.src && !!card.selSrc, dump(card))
     check('11b-C r2 = 海拔 500 m 云量 —', !!card && card.r2 === '海拔 500 m 云量 —', card && card.r2)
-    check('11b-C r3 = 头顶有云层（stKey=mid）', !!card && card.r3 === '头顶有云层' && card.stKey === 'mid',
+    check('11b-C r3 = 云层在此点上方（stKey=mid）', !!card && card.r3 === '云层在此点上方' && card.stKey === 'mid',
       card && (card.r3 + '/' + card.stKey))
     check('11b-C r1-r4 无 undefined/null 泄漏', noLeak(card), dump(card))
+  }
+
+  // D：浓云整体在此点之下 → 第三态；r3 必须与图例同源
+  {
+    const card = runPick([{ alt: 1000, cov: 5 }, { alt: 2000, cov: 90 }, { alt: 2500, cov: 90 }, { alt: 5000, cov: 5 }],
+      { ele: 4200, eleSrc: 'picked' }, DATE + 'T10:03:00+08:00')
+    check('11b-D r3 = 云带在此点下方（stKey=ok）', !!card && card.r3 === '云带在此点下方' && card.stKey === 'ok',
+      card && (card.r3 + '/' + card.stKey))
+    check('11b-D 图例与 r3 同源：入云小时的「琥珀段」文字 = r3 那一档',
+      !!card && card.legendIn === '此点正处于云中' && card.legendIn !== card.r3, card && card.legendIn)
+  }
+
+  // E：主语治理——地图选点与手填坐标都不得写成「你」
+  ;[['picked', '地图选点'], ['manual', '手动填写'], ['gpx', 'GPX 记录']].forEach(([src, nm]) => {
+    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 80 }, { alt: 5000, cov: 20 }], { ele: 3500, eleSrc: src }, DATE + 'T10:04:00+08:00')
+    check('11b-E ' + nm + '（3500m 在云带里）：r3 用查询点主语、不出现「你」',
+      !!card && card.r3 === '此点正处于云中' && card.r3.indexOf('你') === -1 && card.readout.indexOf('你') === -1,
+      card && card.r3)
+  })
+
+  // F：完全没有可信海拔（点没有高程，返回体也没有模型地形高度）
+  {
+    const card = runPick([{ alt: 1000, cov: 10 }, { alt: 3500, cov: 80 }, { alt: 5000, cov: 20 }], {}, DATE + 'T10:05:00+08:00')
+    check('11b-F 无海拔：不给任何三态结论（r3 空、stKey 空）', !!card && card.r3 === '' && card.stKey === '', dump(card))
+    check('11b-F 无海拔：图上不画「此点」参考线（旧实现会把 null 钳成 2000m 并标出字来，凭空捏造一个位置）',
+      (() => {
+        const UMG = require('../miniprogram/utils/meteogram-svg')
+        const geo = card._page._unified.geo
+        const svg = UMG.renderUnifiedBase(geo, {}).svg
+        return geo.cloud.userAlt === null && !/此点 /.test(svg)
+      })(), '见 renderUnifiedBase 输出')
+    check('11b-F 无海拔：r1-r4 无 undefined/null 泄漏', noLeak(card), dump(card))
+    check('11b-F 无海拔：云区事实行照给（数据本身有效，只是判不出与它的高低关系）',
+      !!card && /^云量 \d+% · 云区 /.test(card.r2), card && card.r2)
+  }
+
+  // G：模型估算海拔（±300–600m）而云带底缘就落在这一带 → 判不出方向，不是「晴空」也不是「云在上方」
+  {
+    const covers = [{ alt: 4000, cov: 90 }, { alt: 4600, cov: 90 }]
+    const est = runPick(covers, { modelEle: 3650 }, DATE + 'T10:06:00+08:00')
+    check('11b-G 出处分类走 estimated（由 format.resolveElev 判，页面不再自造分类）',
+      !!est && est._page._runPickEV.basis === 'estimated', est && est._page._runPickEV.basis)
+    check('11b-G 模型海拔 3650 + 云带 4000–4600：不给确定结论（r3 空）', !!est && est.r3 === '' && est.stKey === '', dump(est))
+    /* 反向对照（同一条数据、同一个数字 3650，只把出处换成可信高程）：必须给出「云层在此点上方」。
+       没有这条对照，"r3 为空"可能只是判据坏了而不是在弃权。 */
+    const trusted = runPick(covers, { ele: 3650, eleSrc: 'picked' }, DATE + 'T10:06:00+08:00')
+    check('11b-G 反向对照：同一个 3650m 若是可信高程 ⇒ 明确判「云层在此点上方」',
+      !!trusted && trusted.r3 === '云层在此点上方' && trusted.stKey === 'mid', trusted && (trusted.r3 + '/' + trusted.stKey))
+    check('11b-G r1-r4 无 undefined/null 泄漏', noLeak(est) && noLeak(trusted), dump(est) + ' || ' + dump(trusted))
   }
 }
 
@@ -1018,9 +1075,17 @@ async function routeElevCases () {
   require(PAGE_PATH)
   const cfg = global.__PAGE_CFG
   api.read = () => Promise.resolve(read)
+  /* 一条恒定云场：浓云带 4000–4600m，其余高度几乎无云。
+     三个节点各自的海拔（4200 在带里 / 5000 在带下 / 无高程→模型 3650 在带内误差带上）
+     必须给出三个不同的判读——「判读跟着节点走」才是真的按节点高程算，
+     只测参考线数字换了而判读沿用第一个节点，是这个洞最常见的穿帮方式。 */
+  const lvTimes = []
+  for (let i = 0; i < 7 * 24; i++) lvTimes.push(addDays('2026-10-03', Math.floor(i / 24)) + 'T' + String(i % 24).padStart(2, '0') + ':00')
+  const decks = [{ alt: 1000, cov: 5 }, { alt: 3900, cov: 10 }, { alt: 4000, cov: 92 }, { alt: 4600, cov: 90 }, { alt: 4700, cov: 10 }, { alt: 6000, cov: 5 }]
   api.getWeather = () => Promise.resolve({
     status: 'ready', updatedAt: '2026-10-03T09:00:00+08:00', pointElevation: 3650,
     days: fakeDays('2026-10-03', 7), detail: [], series: fakeSeries('2026-10-03', 7),
+    cloudLevels: { times: lvTimes, levels: decks.map(d => ({ altitudes: lvTimes.map(() => d.alt), cloudCover: lvTimes.map(() => d.cov) })) },
   })
   const page = makePage(cfg)
   page.onLoad({ id: 'a1', date: '2026-10-03' })
@@ -1033,9 +1098,24 @@ async function routeElevCases () {
     page.elevSource === 'gpx', '实际 ' + page.elevSource)
   check('活动模式不渲染点卡（因此也不会在路线模式下写"此点海拔 X m"这类无来源文案）',
     page.data.pointCard === null)
+  /* 判读必须跟着节点走：先点 13:00，读一次；切节点后重新点同一小时再读。
+     只测「参考线数字换了」不够——那正是最容易穿帮的地方：图上的线跟着节点走了，
+     r3 却还沿用第一个节点的海拔判出来的词。 */
+  const pickRead = async () => {
+    page.onChartPickHour({ detail: { date: '2026-10-03', t: '13:00' } })
+    await waitFor(() => page.data.unified && page.data.unified.r1)
+    const u = page.data.unified
+    return { r3: u.r3, stKey: u.stKey, r2: u.r2 }
+  }
+  const n1 = await pickRead()
+  check('节点 1（4200m，GPX 高程）判读：此点正处于云中',
+    n1.r3 === '此点正处于云中' && n1.stKey === 'in', JSON.stringify(n1))
   page.onPoint({ detail: { value: 1 } })
   await waitFor(() => page.data.chartElev === 5000)
   check('切到节点 2：海拔跟着换成 5000（没有沿用上一节点）', page.data.chartElev === 5000, '实际 ' + page.data.chartElev)
+  const n2 = await pickRead()
+  check('节点 2（5000m）判读换成「云带在此点下方」——没有沿用节点 1 的结论',
+    n2.r3 === '云带在此点下方' && n2.stKey === 'ok', JSON.stringify(n2))
   page.onPoint({ detail: { value: 2 } })
   await waitFor(() => page.data.chartElev === 3650)
   check('节点 3 无高程：退回模型值 3650，且出处标 model（不是沿用 5000）',
@@ -1046,6 +1126,11 @@ async function routeElevCases () {
     'elevSource=' + page.elevSource)
   check('出处标签单源：model → 「模型地形估算」（页面不再自己写一份）',
     require('../miniprogram/utils/format').elevSourceLabel('model') === '模型地形估算')
+  const n3 = await pickRead()
+  check('节点 3（无高程 → 模型估算 3650，云带底缘 4000 就在误差带里）不给确定结论：r3 空',
+    n3.r3 === '' && n3.stKey === '', JSON.stringify(n3))
+  check('节点 3 弃权不等于「什么都没显示」：云区事实行照给（事实层不随解释层弃权）',
+    /^云量 \d+% · 云区 /.test(n3.r2), n3.r2)
 }
 
 raceCases()

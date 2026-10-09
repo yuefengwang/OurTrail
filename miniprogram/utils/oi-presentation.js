@@ -21,20 +21,12 @@
 'use strict'
 
 const UMG = require('./meteogram-svg.js')
+const OI = require('./outdoor-intelligence.js')
 
-/* 类型 → 展示标题（与 outdoor-intelligence.OPPORTUNITY 对齐，缺省兜底） */
-const TITLES = {
-  CLOUD_SEA: '云海窗口',
-  IN_CLOUD: '入云时段',
-  CLOUD_BELOW: '云在脚下',
-  VIEW_WINDOW: '远眺窗口',
-  GOLDEN_LIGHT: '黄金光',
-  BLUE_HOUR: '蓝调时刻',
-  ALPENGLOW: '晨昏光染',
-  RAINBOW: '彩虹可能',
-  STARGAZING: '星空条件',
-  MILKY_WAY: '银河窗口',
-}
+/* 类型 → 展示标题：直接引用模型侧同一张表（2026-10-09 语义统一轮）。
+   这里原来自己抄了一份，云层位置的两个状态与 r3/图例各说各话——
+   词汇表有两个出处就没有「一致」可言，删表留引用。 */
+const TITLES = OI.OPPORTUNITY
 
 /* 时间轴语义色（克制：低饱和底 + 语义色顶线；与 app.wxss token 同族） */
 const TYPE_COLOR = {

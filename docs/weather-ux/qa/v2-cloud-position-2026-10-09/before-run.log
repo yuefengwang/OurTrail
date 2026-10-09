@@ -1,0 +1,11 @@
+viewport=390x753 dpr=3 set=before
+  ok emeishan-24h elev=3004 r3="" card=— tap={"beforeSel":false,"afterSel":true,"hour":10,"r2after":"云量 100% · 云区 1,686–5,561 m","r3after":"你在云中"}
+  ok emeishan-48h elev=3004 r3="" card=— tap={"beforeSel":false,"afterSel":true,"hour":21,"r2after":"云量 100% · 云区 1,586–5,686 m","r3after":"你在云中"}
+  ok emeishan-72h elev=3004 r3="" card=— tap={"beforeSel":false,"afterSel":true,"hour":8,"r2after":"云量 100% · 云区 1,506–5,556 m","r3after":"你在云中"}
+  ok litang-24h elev=4058 r3="" card=— tap={"beforeSel":false,"afterSel":true,"hour":10,"r2after":"海拔 4,058 m 云量 0%","r3after":"头顶有云层"}
+  ok litang-48h elev=4058 r3="" card=— tap={"beforeSel":false,"afterSel":true,"hour":21,"r2after":"海拔 4,058 m 云量 0%","r3after":""}
+  ok litang-72h elev=4058 r3="" card=— tap={"beforeSel":false,"afterSel":true,"hour":8,"r2after":"海拔 4,058 m 云量 2%","r3after":"头顶有云层"}
+  ok chengdu-24h elev=489 r3="" card=— tap={"beforeSel":false,"afterSel":true,"hour":10,"r2after":"云量 99% · 云区 2,246–3,371 m","r3after":"头顶有云层"}
+  ok chengdu-48h elev=489 r3="" card=— tap={"beforeSel":false,"afterSel":true,"hour":21,"r2after":"云量 100% · 云区 2,646–4,221 m","r3after":"头顶有云层"}
+  ok chengdu-72h elev=489 r3="" card=— tap={"beforeSel":false,"afterSel":true,"hour":8,"r2after":"云量 100% · 云区 2,220–4,620 m","r3after":"头顶有云层"}
+done → D:/OurTrail/docs/weather-ux/qa/v2-cloud-position-2026-10-09

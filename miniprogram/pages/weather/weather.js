@@ -490,6 +490,9 @@ Page({
        而当数值只是 Open-Meteo 的地形高度（±300–600 m）时，还要显式标出「模型估算」，
        否则估算值会以测量值的口气出现在决策界面（审计 §五）。判定本身在 format.resolveElev。 */
     this.elevSource = EV.source
+    /* 判定基准与出处同源（format.resolveElev 是唯一分类点）：模型估算海拔有 ±300–600m
+       误差带，落在带内的高差不足以判定云在上方还是下方——页面不再自己分类。 */
+    this.elevBasis = EV.basis
     const skyCtx = {
       date: this.data.date,
       lat: point.coordinates.lat,
@@ -648,6 +651,9 @@ Page({
       hour: null,
       stKey: '',
       r1: '', r2: '', r3: '', r4: '',
+      /* 图例里那句「琥珀段 = …」必须与 r3 同一套词：从 format 的三态表取，
+         WXML 里再打一遍就是第二次定义（铁律 22）。 */
+      legendIn: F.cloudPositionLabel('in'),
       readout: '点图上任意小时查看读数。',
     }
     const pick = this.data.chartPick
@@ -673,7 +679,7 @@ Page({
        r3 解读行整行缺失。elevation 缺失时传 undefined（而非 null）保持「无解读」语义，
        回归钉子：tools/weather-page-test.js §11b（in / span / mid 三形态）。 */
     const userAlt = u.geo.cloud && Number.isFinite(u.geo.cloud.userAlt) ? u.geo.cloud.userAlt : undefined
-    const st = CFF.inferState(u.geo.sample, hour, userAlt, u.geo.covered)
+    const st = CFF.inferState(u.geo.sample, hour, userAlt, u.geo.covered, { basis: this.elevBasis })
     card.selSrc = this.cfUri(ov.svg)
     card.hour = hour % 24
     card.absHour = hour
@@ -815,6 +821,7 @@ Page({
         detail: detail,
         userAltitude: elevation,
         elevOK: Number.isFinite(elevation),
+        elevBasis: this.elevBasis,
         lat: Number.isFinite(coords.lat) ? coords.lat : null,
         lng: Number.isFinite(coords.lng) ? coords.lng : null,
         cloudField: field,
@@ -857,6 +864,7 @@ Page({
             detail: dayDetail,
             userAltitude: elevation,
             elevOK: Number.isFinite(elevation),
+            elevBasis: this.elevBasis,
             lat: Number.isFinite(coords.lat) ? coords.lat : null,
             lng: Number.isFinite(coords.lng) ? coords.lng : null,
             cloudField: WCFF.buildCloudFieldRange(result, { startDate: d, hours: 24, userAltitude: elevation }),
@@ -1155,6 +1163,7 @@ Page({
     const EVr = F.resolveElev(point.ele, point.eleSource, result.pointElevation)
     const elevation = EVr.elevation
     this.elevSource = EVr.source   // 与 applyWeather 同一判定，避免两条路径给出不同出处
+    this.elevBasis = EVr.basis     // 同上：判定基准也只能有一个来源
     let unified = null
     try { unified = this.buildUnifiedCard(result, elevation) } catch (e) { unified = null }
     let oiCard = null

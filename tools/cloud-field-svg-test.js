@@ -22,25 +22,29 @@ check('等值带 path 数在 3–8 之间（五档嵌套，允许某档为空）
 check('几何点数充足（>200，曲线非退化）', mockGeo.stats.pointCount > 200, '实际 ' + mockGeo.stats.pointCount)
 check('计算耗时 < 300ms（Node 基准，预算宽松）', mockGeo.stats.calcMs < 300, '实际 ' + mockGeo.stats.calcMs + 'ms')
 
-const mock16 = renderer.inferState(mockGeo.sample, 16, 3500)
-check('16h 云态 = 你在云中（mock band 3150–3880 罩住 3500）', mock16.key === 'in', '实际 ' + mock16.key + ' cUser=' + mock16.cUser)
+/* covered 必须传：三态判定的范围是「哪些高度有实测层」，不是显示窗。
+   fixtures 是手工构造的全高度网格（0–7000m 都有测量），buildGeometry 会据 altitudes 兜底出 covered。 */
+const mock16 = renderer.inferState(mockGeo.sample, 16, 3500, mockGeo.covered)
+check('16h = 此点正处于云中（mock band 3150–3880 罩住 3500）', mock16.key === 'in' && mock16.word === '此点正处于云中', '实际 ' + mock16.key + '/' + mock16.word + ' cUser=' + mock16.cUser)
 check('16h 云区含 3500', mock16.span && mock16.span.lo <= 3500 && mock16.span.hi >= 3500)
-const mock07 = renderer.inferState(mockGeo.sample, 7, 3500)
-check('07h 云态 = 云在脚下（mock band 顶 2920 < 3500）', mock07.key === 'ok', '实际 ' + mock07.key + ' cUser=' + mock07.cUser)
-const mock22 = renderer.inferState(mockGeo.sample, 22, 3500)
-check('22h 无成带（近晴空）或云在头顶，不误报入云', mock22.key === null || mock22.key === 'mid', '实际 ' + mock22.key)
+const mock07 = renderer.inferState(mockGeo.sample, 7, 3500, mockGeo.covered)
+check('07h = 云带在此点下方（mock band 顶 2920 < 3500）', mock07.key === 'ok' && mock07.word === '云带在此点下方', '实际 ' + mock07.key + '/' + mock07.word + ' cUser=' + mock07.cUser)
+const mock22 = renderer.inferState(mockGeo.sample, 22, 3500, mockGeo.covered)
+check('22h 无成带（晴空）或云层在此点上方，不误报入云', mock22.key === null || mock22.key === 'mid', '实际 ' + mock22.key)
+check('22h 若无结论，必须说明是「判过是晴」而不是证据不足', mock22.key !== null || mock22.reason === 'clear', '实际 reason=' + mock22.reason)
 
 /* ---------- 峨眉山：真实冻结数据 ---------- */
 section('峨眉山真实场（3079m，冻结 Open-Meteo）')
 const emeGeo = renderer.buildGeometry(fixtures.emeishan, { width: 375, plotHeight: 300, userAltitude: 3079 })
 check('构建完成', !!emeGeo.stats)
 check('等值带 path 数在 2–8 之间', emeGeo.stats.pathCount >= 2 && emeGeo.stats.pathCount <= 8, '实际 ' + emeGeo.stats.pathCount)
-const eme01 = renderer.inferState(emeGeo.sample, 1, 3079)
-check('01h = 你在云中（冻结数据 96.5%@3500）', eme01.key === 'in', '实际 ' + eme01.key + ' cUser=' + eme01.cUser)
-const eme12 = renderer.inferState(emeGeo.sample, 12, 3079)
+const eme01 = renderer.inferState(emeGeo.sample, 1, 3079, emeGeo.covered)
+check('01h = 此点正处于云中（冻结数据 96.5%@3500）', eme01.key === 'in', '实际 ' + eme01.key + ' cUser=' + eme01.cUser)
+const eme12 = renderer.inferState(emeGeo.sample, 12, 3079, emeGeo.covered)
 check('12h 不误报入云（午后转晴）', eme12.key !== 'in', '实际 ' + eme12.key)
-const eme03 = renderer.inferState(emeGeo.sample, 3, 3079)
-check('03h 云态 ∈ {mid, null, in}（真实数据不预设）', ['mid', null, 'in'].indexOf(eme03.key) >= 0, '实际 ' + eme03.key)
+const eme03 = renderer.inferState(emeGeo.sample, 3, 3079, emeGeo.covered)
+check('03h key ∈ {in,ok,mid,null}（真实数据不预设方向）', ['mid', 'in', 'ok', null].indexOf(eme03.key) >= 0, '实际 ' + eme03.key)
+check('03h 有结论必不带 reason、无结论必带 reason（两者不许同时出现）', (!!eme03.key) === (eme03.reason === null), JSON.stringify({ key: eme03.key, reason: eme03.reason }))
 
 /* ---------- 理塘：真实冻结数据 ---------- */
 section('理塘真实场（3500m，冻结 Open-Meteo）')

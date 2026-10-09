@@ -1,0 +1,14 @@
+viewport=390x753 dpr=3 set=after
+  ok emeishan-24h fresh=true r3="此点正处于云中" subject=true
+  ok emeishan-48h fresh=true r3="此点正处于云中" subject=true
+  ok emeishan-72h fresh=true r3="此点正处于云中" subject=true
+  ok litang-24h fresh=true r3="云层在此点上方" subject=true
+  ok litang-48h fresh=true r3="" subject=true
+  ok litang-72h fresh=true r3="云层在此点上方" subject=true
+  ok chengdu-24h fresh=true r3="云层在此点上方" subject=true
+  ok chengdu-48h fresh=true r3="云层在此点上方" subject=true
+  ok chengdu-72h fresh=true r3="云层在此点上方" subject=true
+  ok litang-manual-24h fresh=true r3="云层在此点上方" subject=true
+  ok litang-manual-48h fresh=true r3="" subject=true
+  ok litang-manual-72h fresh=true r3="云层在此点上方" subject=true
+done → D:/OurTrail/docs/weather-ux/qa/v2-cloud-position-2026-10-09

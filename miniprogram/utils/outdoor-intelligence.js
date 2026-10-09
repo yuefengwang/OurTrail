@@ -28,10 +28,14 @@ const agenda = require('./agenda')
 const CFF = require('./cloud-field-svg.js')
 const FMT = require('./format.js')
 
+/* 云层位置三态的标题一律从 format.CLOUD_POSITION_LABELS 取（2026-10-09 语义统一轮）。
+ * 这里原来自己打了一份「入云时段 / 云在脚下」，与读数行 r3、图例各说各话——
+ * 同一张卡上的同一状态出现两套中文，就是铁律 22 说的词汇漂移。 */
 const OPPORTUNITY = {
   CLOUD_SEA: '云海窗口',
-  IN_CLOUD: '入云时段',
-  CLOUD_BELOW: '云在脚下',
+  IN_CLOUD: FMT.cloudPositionLabel('in'),
+  CLOUD_BELOW: FMT.cloudPositionLabel('ok'),
+  CLOUD_ABOVE: FMT.cloudPositionLabel('mid'),
   VIEW_WINDOW: '远眺窗口',
   GOLDEN_LIGHT: '黄金光',
   BLUE_HOUR: '蓝调时刻',
@@ -144,14 +148,22 @@ function buildConditions(ctx) {
   for (const h of detail) {
     const hourIdx = sky.hourMin(h.t) / 60   // 'HH:mm' → 小时（浮点，场采样是连续的）
     if (cloud && cloud.sample) {
-      const st = CFF.inferState(cloud.sample, hourIdx, ctx.userAltitude, cloud.covered)
-      const key = st.key === 'in' ? CONDITION.IN_CLOUD
-        : st.key === 'ok' ? CONDITION.CLOUD_BELOW
-        : st.key === 'mid' ? CONDITION.CLOUD_ABOVE
-        : (st.key === null && isClearHour(st, cloud.sample, hourIdx) ? CONDITION.CLEAR : null)
+      const st = CFF.inferState(cloud.sample, hourIdx, ctx.userAltitude, cloud.covered, { basis: ctx.elevBasis })
+      const holds = st.holds || []
+      /* 条件态读 holds（哪几侧真的有浓云带），不读被压成单个位置的那个词：
+         「上下都有云带」在读数行上不给单一结论，但脚下的云带依然是云海的必要条件。 */
+      const key = holds.indexOf('in') !== -1 ? CONDITION.IN_CLOUD
+        : holds.indexOf('ok') !== -1 ? CONDITION.CLOUD_BELOW
+        : holds.indexOf('mid') !== -1 ? CONDITION.CLOUD_ABOVE
+        /* 「晴空」只能由「判过了、两侧都没云」得出。没有可信海拔、没有实测层、
+           误差带内判不出方向、上下都有浓云——这几类都不是晴空，必须留空（null）。
+           旧实现只看 st.key===null 就往下问 isClearHour，把「无法判断」读成「晴」。 */
+        : (st.reason === 'clear' && isClearHour(st, cloud.sample, hourIdx) ? CONDITION.CLEAR : null)
       out.push({
         t: h.t,
         key: key,
+        reason: st.reason || null,
+        holds: holds,
         source: 'cloud-field',
         evidence: conditionEvidence(key, st, h, ctx),
       })
@@ -170,7 +182,13 @@ function buildConditions(ctx) {
       key = CONDITION.CLOUD_BELOW
       evidence.push({ fact: '低云带在' + FMT.ELEV_SUBJECT + '下方（覆盖 ≥80%）', at: h.t })
     }
-    out.push({ t: h.t, key: key, source: 'hour-view', evidence: evidence })
+    /* 这一支没有云场（buildCloudField 返回 null 才会走到这里），
+       所以「云与此点的位置关系」是判不了的——如实记 no-data，而不是留空让人猜。 */
+    out.push({
+      t: h.t, key: key, reason: key ? null : 'no-data',
+      holds: key === CONDITION.IN_CLOUD ? ['in'] : key === CONDITION.CLOUD_BELOW ? ['ok'] : [],
+      source: 'hour-view', evidence: evidence,
+    })
   }
   return out
 }
@@ -206,6 +224,12 @@ function conditionEvidence(key, st, h, ctx) {
     out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m 在' + FMT.ELEV_SUBJECT + '海拔 ' + fmtM(ctx.userAltitude) + ' m 上方', at: h.t })
   } else if (key === CONDITION.CLEAR) {
     out.push({ fact: '此海拔与上下邻域云量均 <15%', at: h.t })
+  }
+  /* 判不出三态时，证据链里必须留一句「为什么判不出」——
+     否则读的人无法区分「判过是晴」与「证据不足」，未知就会被当成否定。 */
+  if (!key) {
+    const why = FMT.cloudPositionReason(st.reason)
+    if (why) out.push({ fact: why, at: h.t })
   }
   return out
 }
@@ -490,7 +514,9 @@ function meanOf(list, get) {
 /* 夜间天空类机会的一致性闸：星空/银河的标记只看地表高中云量聚合（cloud.mid/high），
  * 而垂直剖面是另一份证据。两者冲突时旧实现取了更乐观的那一张卡——
  * 剖面显示此点上方全是 100% 云时，「银河窗口」仍然出卡（实测复现）。
- * 规则：剖面判为「你在云中」或「头顶有云层」的小时，一律不发星空/银河卡（明确不成立 ⇒ 省略）。 */
+ * 规则：剖面判为「此点正处于云中」或「此点上方有浓云」的小时，一律不发星空/银河卡（明确不成立 ⇒ 省略）。
+ * 判据取 holds 而不是 key——「上下都有云带」那一小时 key 记的是 CLOUD_BELOW
+ * （云海的必要条件要用它），只看 key 就会把头顶那层云漏掉，正是要防的乐观取值。 */
 const NIGHT_TYPES = { STARGAZING: true, MILKY_WAY: true }
 const NIGHT_BLOCKED = { IN_CLOUD: true, CLOUD_ABOVE: true }
 function skyBlocked (conditions, from, to) {
@@ -498,7 +524,8 @@ function skyBlocked (conditions, from, to) {
   const f = sky.hourMin(from), t = sky.hourMin(to)
   return conditions.some(function (c) {
     const m = sky.hourMin(c.t)
-    return m >= f - 30 && m <= t + 30 && NIGHT_BLOCKED[c.key] === true
+    if (!(m >= f - 30 && m <= t + 30)) return false
+    return NIGHT_BLOCKED[c.key] === true || (c.holds || []).indexOf('mid') !== -1
   })
 }
 

@@ -27,14 +27,17 @@ function section (t) { console.log('\n== ' + t + ' ==') }
 
 /* ---------- 1. 出处判定 ---------- */
 section('1 resolveElev：四种查询模式各自的海拔语义')
+/* basis = 三态判定的误差带基准（format.resolveElev 是唯一分类点）：
+   点自己的高程按 measured（tol=0）；Open-Meteo 地形模型按 estimated（±600m 带内不判方向）；
+   两个来源都没有 ⇒ none ⇒ 三态一律不给结论。 */
 const cases = [
-  ['路线 GPX 节点', [3820, 'gpx', 489], { elevation: 3820, source: 'gpx', ok: true }],
-  ['地图选点', [2150, 'picked', 489], { elevation: 2150, source: 'picked', ok: true }],
-  ['手动坐标（手填高程）', [1500, 'manual', 489], { elevation: 1500, source: 'manual', ok: true }],
-  ['手动坐标（只有经纬度）', [null, null, 489], { elevation: 489, source: 'model', ok: false }],
-  ['模型值也没有', [null, null, null], { elevation: null, source: null, ok: false }],
-  ['海平面 0 m 是合法值，不被当成缺失', [0, 'picked', 489], { elevation: 0, source: 'picked', ok: true }],
-  ['NaN / 字符串高程视同缺失', [NaN, 'gpx', 489], { elevation: 489, source: 'model', ok: false }],
+  ['路线 GPX 节点', [3820, 'gpx', 489], { elevation: 3820, source: 'gpx', ok: true, basis: 'measured' }],
+  ['地图选点', [2150, 'picked', 489], { elevation: 2150, source: 'picked', ok: true, basis: 'measured' }],
+  ['手动坐标（手填高程）', [1500, 'manual', 489], { elevation: 1500, source: 'manual', ok: true, basis: 'measured' }],
+  ['手动坐标（只有经纬度）', [null, null, 489], { elevation: 489, source: 'model', ok: false, basis: 'estimated' }],
+  ['模型值也没有', [null, null, null], { elevation: null, source: null, ok: false, basis: 'none' }],
+  ['海平面 0 m 是合法值，不被当成缺失', [0, 'picked', 489], { elevation: 0, source: 'picked', ok: true, basis: 'measured' }],
+  ['NaN / 字符串高程视同缺失', [NaN, 'gpx', 489], { elevation: 489, source: 'model', ok: false, basis: 'estimated' }],
 ]
 cases.forEach(([nm, args, want]) => {
   const got = F.resolveElev.apply(null, args)

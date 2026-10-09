@@ -4,7 +4,7 @@
  * 逐函数提取，数学逻辑未改：Catmull-Rom 时间插值（端点/值域双钳制）、
  * 0.25h × 50m 场网格、3×3 平滑 ×1、marching squares 等值带
  * （10/25/50/75/90%）、Chaikin 圆化、微环过滤（<12px²）、嵌套 evenodd 填充、
- * 云态推导（你在云中/云在脚下/云在头顶）。
+ * 云层位置三态推导（此点云中 / 云在下方 / 云在上方 + 未知原因，见 inferState）。
  *
  * 环境差异（相对 prototype，本模块不依赖）：
  *   无 window / DOM / getComputedStyle / 事件——产出静态 SVG 字符串，
@@ -234,14 +234,45 @@ function isoLoops (F, T, xOf, yOf) {
   })
 }
 
-/* ---------- 云态推导（全部由场采样，ELEV 任意海拔） ----------
- * coverage = { lo, hi }：真实数据覆盖的海拔范围（由适配器给出，缺省视为全轴）。
+/* ---------- 云层位置三态判定（唯一出口，页面与 OI 都只读结论） ----------
+ *
+ * 三个**互斥、各自可造反例**的确定态。key 沿用线上既有取值（'in'/'ok'/'mid'）——
+ * 它们同时是 CSS 类名与账本字段，换 key 的爆炸半径远大于收益，故只统一词、不统一键：
+ *   in   此点正处于云中：查询点自己的海拔落在浓云里
+ *   ok   云带在此点下方：浓云只在此点之下
+ *   mid  云层在此点上方：浓云只在此点之上
+ * 其余一律是「没有结论」，并回一个可核对的 reason（不与三态混列）：
+ *   no-altitude         没有可信海拔（elevation=null，或 basis='none'）
+ *   no-data             没有实测海拔包络（cloudLevels 缺失 → covered=null）——
+ *                       「无测量」绝不写成「晴空」
+ *   within-uncertainty  云顶/云底与此点的高差落在海拔误差带内，方向判不出来
+ *   both-sides          此点上下都有浓云，不属于「某一个位置」——此时三态的 word 不给，
+ *                       但 holds 仍如实带出 ['ok','mid']，下游按侧取用
+ *   partial-at-point    此点自身有中等云量：既谈不上入云，也不算判定成功
+ *   clear               实测包络内没有有意义云量（这是否定式事实，不是缺证据）
+ *
+ * 文案不在这里（铁律 22）：word/reasonText 从 format.js 的表里查，判定与显示分层。
+ * 主语永远是**查询点**（选点 / 手填坐标 / 路线节点各自的 ele），不是「你」——
+ * 本项目没有任何定位来源，永远不知道用户本人站在哪儿。
+ *
+ * coverage = { lo, hi }：真实数据覆盖的海拔范围（由适配器给出）。
  * 判读范围取**实测数据范围**，不取剖面显示窗（ALT0/ALT1）：
  * 显示窗是「这张图画哪一段」，判读是「云在哪儿」。把两者混在一起时，
- * 一整层位于 1500–1900m 的浓云对 4058m 的用户就是「云在脚下」，
+ * 一整层位于 1500–1900m 的浓云对 4058m 的此点就是「云带在此点下方」，
  * 但因为全部落在 ALT0=2000 以下，旧实现会答成「无结论」。
- * 适配器已把实测范围之外置 0，所以按 covered 取值不会读到外插值。 */
+ * 适配器已把实测范围之外置 0，所以按 covered 取值不会读到外插值。
+ *
+ * opts.basis（由 format.resolveElev 的出处判定给出，页面不再自己分类）：
+ *   'measured'  点自带高程（GPX / 地图选点 / 手填）
+ *   'estimated' Open-Meteo 地形模型高度（±300–600 m）——落在误差带内的高差不判
+ *   'none'      没有可信海拔
+ * 未显式给 basis 的调用按 'measured'（tol=0，判据与旧实现逐字一致）。
+ * ⚠ 边界如实记录：GPX/选点/手填三条来源本项目都没有可量化的误差资料，
+ *   只能按「点自己的高程」处理；误差带只对模型地形这一个来源生效。 */
 var SCAN_MIN = 0, SCAN_MAX = 7000
+var EDGE_GUARD = 200            // 与此点至少隔 200m 才算「在一侧」
+var MODERATE_AT_POINT = 45      // 点上有中等云量时不判上下（旧实现的 cUser<45 守卫，语义保留）
+var ALT_TOL = { measured: 0, estimated: 600, none: Infinity }
 function denseSpanAt(sample, h, lo, hi) {
   var run = null, runs = [], peak = 0
   for (var alt = Math.max(SCAN_MIN, lo); alt <= Math.min(SCAN_MAX, hi); alt += 25) {
@@ -258,27 +289,88 @@ function denseSpanAt(sample, h, lo, hi) {
   return runs[0]
 }
 
-function inferState(sample, h, userAlt, coverage) {
-  var lo = (coverage && Number.isFinite(coverage.lo)) ? Math.max(SCAN_MIN, coverage.lo) : ALT0
-  var hi = (coverage && Number.isFinite(coverage.hi)) ? Math.min(SCAN_MAX, coverage.hi) : ALT1
-  var inCovered = userAlt >= lo && userAlt <= hi
-  var cUser = inCovered ? Math.round(sample(h, userAlt)) : null
-  if (inCovered && cUser >= IN_C) return { key: 'in', word: '你在云中', cUser: cUser, span: denseSpanAt(sample, h, lo, hi) }
-  var belowPeak = 0, abovePeak = 0
-  var belowHi = Math.min(userAlt - 200, hi)
-  if (belowHi > lo) {
-    for (var alt = lo; alt <= belowHi; alt += 100) belowPeak = Math.max(belowPeak, sample(h, alt))
+function inferState(sample, h, userAlt, coverage, opts) {
+  var asked = opts && opts.basis
+  var basis = (asked === 'measured' || asked === 'estimated' || asked === 'none')
+    ? asked : (Number.isFinite(userAlt) ? 'measured' : 'none')
+  var span = null, cUser = null
+  /* holds = 三态里「单独成立」的那些。key 只有一个（或没有）——那是给读数行的
+     单一位置结论；但「脚下有云带」与「头顶也有云带」在物理上可以同时为真，
+     下游（云海必要条件、夜间天空一致性闸）要读的是 holds，不是被压扁后的那一个词。 */
+  function pack (key, reason, holds) {
+    return {
+      key: key, word: F.cloudPositionLabel(key),
+      reason: reason || null, reasonText: F.cloudPositionReason(reason),
+      holds: holds, cUser: cUser, span: span,
+    }
   }
-  if (belowPeak >= SEA_C && (!inCovered || cUser < 45)) return { key: 'ok', word: '云在脚下', cUser: cUser, span: denseSpanAt(sample, h, lo, hi) }
-  var aboveLo = Math.max(lo, userAlt + 200)
+  function state (key) { return pack(key, null, [key]) }
+  function unknown (reason, holds) { return pack(null, reason, holds || []) }
+  var covOk = !!(coverage && Number.isFinite(coverage.lo) && Number.isFinite(coverage.hi) && coverage.hi > coverage.lo)
+  if (!covOk) return unknown('no-data')
+  var lo = Math.max(SCAN_MIN, coverage.lo)
+  var hi = Math.min(SCAN_MAX, coverage.hi)
+  var tol = ALT_TOL[basis]
+  /* 没有可信海拔 ⇒ 凡涉及「此点」的位置关系一概不判；但云带本身是事实，
+     实测包络有效就照常带出 span，否则「不知道这儿有多高」会把这一小时
+     有用的云区数字一起带走（三层边界：事实层不随解释层弃权）。 */
+  span = denseSpanAt(sample, h, lo, hi)
+  if (basis === 'none' || !Number.isFinite(userAlt)) return unknown('no-altitude')
+  if (userAlt >= lo && userAlt <= hi) cUser = Math.round(sample(h, userAlt))
+
+  /* 误差带内的最值：basis='measured' 时 tol=0，带塌成查询点这一个高度，
+     判据与旧实现（只看 cUser）逐字一致；'estimated' 时带是 ±600m。 */
+  var bLo = Math.max(lo, userAlt - tol), bHi = Math.min(hi, userAlt + tol)
+  var bandPeak = 0, bandFloor = 100
+  for (var alt = bLo; alt <= bHi; alt += 25) {
+    var v = sample(h, alt)
+    if (v > bandPeak) bandPeak = v
+    if (v < bandFloor) bandFloor = v
+  }
+  if (cUser != null) { bandPeak = Math.max(bandPeak, cUser); bandFloor = Math.min(bandFloor, cUser) }
+  if (cUser != null && cUser >= IN_C) {
+    /* 此点自身就在浓云里。误差带处处浓 → 真实海拔落在带内哪一处都在云中；
+       带内有薄区 → 「在不在云里」取决于那几百米，不给结论。 */
+    if (bandFloor >= IN_C) return state('in')
+    return unknown('within-uncertainty')
+  }
+  /* 带上出现了浓云而此点自身不浓（含此点在包络外、被误差带够到云带底那一类）：
+     真实海拔完全可能就落在云带里，上下关系无从判起。
+     tol=0（可信高程）时这一条永远不触发——带就是这一个点。 */
+  if (bandPeak >= IN_C) return unknown('within-uncertainty')
+  if (cUser != null && cUser >= MODERATE_AT_POINT) return unknown('partial-at-point')
+
+  var belowPeak = 0, abovePeak = 0
+  var belowHi = Math.min(userAlt - tol - EDGE_GUARD, hi)
+  if (belowHi > lo) {
+    for (alt = lo; alt <= belowHi; alt += 100) belowPeak = Math.max(belowPeak, sample(h, alt))
+  }
+  var aboveLo = Math.max(lo, userAlt + tol + EDGE_GUARD)
   if (aboveLo <= hi) {
     for (alt = aboveLo; alt <= hi; alt += 100) abovePeak = Math.max(abovePeak, sample(h, alt))
   }
-  if (abovePeak >= OVER_C && (!inCovered || cUser < 45)) return { key: 'mid', word: '头顶有云层', cUser: cUser, span: denseSpanAt(sample, h, lo, hi) }
-  return { key: null, word: '', cUser: cUser, span: denseSpanAt(sample, h, lo, hi) }
+  if (belowPeak >= SEA_C && abovePeak >= OVER_C) return unknown('both-sides', ['ok', 'mid'])
+  if (belowPeak >= SEA_C) return state('ok')
+  if (abovePeak >= OVER_C) return state('mid')
+  return unknown('clear')
 }
 
 /* ---------- 几何构建（昂贵，按数据集缓存） ---------- */
+
+/* 手工构造的 field（POC fixtures、部分判据）没有 covered 字段，它们的网格整段都是
+   「有测量」的，所以退回网格自身的高度范围；生产适配器一定会给 covered，两者不冲突。
+   绝不退回显示窗 ALT0/ALT1——那是「这张图画哪一段」，不是「哪些高度有数据」（铁律 25）。 */
+function altExtent (alts) {
+  if (!alts || !alts.length) return null
+  var lo = Infinity, hi = -Infinity
+  for (var i = 0; i < alts.length; i++) {
+    var a = alts[i]
+    if (!Number.isFinite(a)) continue
+    if (a < lo) lo = a
+    if (a > hi) hi = a
+  }
+  return lo < hi ? { lo: lo, hi: hi } : null
+}
 
 function buildGeometry(cf, opts) {
   opts = opts || {}
@@ -291,17 +383,18 @@ function buildGeometry(cf, opts) {
   var column = makeColumnSampler(cf)
   var nT = cf.times.length
   var sample = function (t, alt) { return sampleAt(column, nT, t, alt) }
-  var F = buildGrid(sample, nT)
+  /* 局部名不叫 F：模块顶上的 F 是 format.js（三态文案唯一出处），同名遮蔽迟早出错 */
+  var GRID = buildGrid(sample, nT)
 
   var top = 0, plotBot = plotH
-  var xOf = function (i) { return L + ((F.t0 + i * F.dt) / 24) * plotW }
-  var yOf = function (j) { return plotBot - (F.a0 + j * F.da - ALT0) / (ALT1 - ALT0) * plotH }
+  var xOf = function (i) { return L + ((GRID.t0 + i * GRID.dt) / 24) * plotW }
+  var yOf = function (j) { return plotBot - (GRID.a0 + j * GRID.da - ALT0) / (ALT1 - ALT0) * plotH }
 
   var isoMs0 = Date.now()
   var bands = []
   var pathCount = 0, pointCount = 0
   THRESHOLDS.forEach(function (bd) {
-    var loops = isoLoops(F, bd.t, xOf, yOf)
+    var loops = isoLoops(GRID, bd.t, xOf, yOf)
     var d = ''
     loops.forEach(function (lp) {
       d += 'M' + lp.map(function (pt) { return pt.x.toFixed(1) + ',' + pt.y.toFixed(1) }).join('L') + 'Z'
@@ -332,7 +425,7 @@ function buildGeometry(cf, opts) {
     xOf: xOf, yOf: yOf, sample: sample,
     userAlt: userAlt, inRuns: inRuns,
     elevSource: opts.elevSource || null,
-    covered: cf.covered || null,
+    covered: cf.covered || altExtent(cf.altitudes) || null,
     bands: bands, stats: stats,
   }
 }

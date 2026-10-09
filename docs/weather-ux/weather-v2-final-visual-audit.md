@@ -321,7 +321,7 @@ IDE 据此注册了一个新项目，此后每次编译都报「app.json 未找�
    修复前 `r2` = 「云区 **2,000**–5,550 m」（起点恰是剖面窗下界 2000 m，说明真实云底被裁掉），
    修复后 = 「云区 **1,686**–5,561 m」（实测云底）。这条是 §二「判读范围 ≠ 显示窗」的现场证据。
 
-### 6.1 新发现（🟠 已确认，本轮未改）：卡片内主语不一致
+### 6.1 新发现（✅ 续轮已修，见 §九）：卡片内主语不一致
 
 修复后真机卡片上同时出现 **「此点 3,004 m」**（海拔线，本轮已改）与图例/读数里的 **「你在云中」**
 （`weather.wxml` 图例、`cloud-field-svg.inferState` 的三态词、`r3` 文案）。
@@ -329,6 +329,11 @@ IDE 据此注册了一个新项目，此后每次编译都报「app.json 未找�
 建议下一轮：三态词收进 `format.js` 单源（`此点在云中 / 云带在此点下方 / 云层在此点上方`），
 连带 `weather-model.js`、`oi-presentation.js`、`meteogram`/`space-time` 的 layout 与图例共约 12 处生产点、
 10 处测试断言一起换——**本轮刻意没有做**：它牵动 8 套断言与图例文案，在真机取证中途大改词汇表风险大于收益。
+
+> **续轮更正与结果**：上面那句「约 12 处生产点」是按 grep 命中行数估的，重新清点后**实际是 6 个用户可见点 + 2 张重复标题表**，
+> 其余命中都在注释里。三态词已按建议收进 `format.js` 单源，图例改为绑定同一张表，
+> 并顺带把「判不出」拆成有名有姓的几类（缺海拔 / 无实测层 / 误差带内 / 上下都有云 / 点上有中等云量）。
+> 完整定义、判据与真机前后对照见 **§九**。
 
 ### 6.2 截图索引
 
@@ -376,7 +381,7 @@ IDE 据此注册了一个新项目，此后每次编译都报「app.json 未找�
 
 | # | 项 | 状态 | 为什么现在不做 / 建议怎么做 |
 |---|---|---|---|
-| 1 | 图例与 `r3` 三态词仍是「你在云中 / 云在脚下」，与本轮改后的「此点 3,004 m」**同一张卡两种主语** | 🟠 已确认未修 | 牵动 12 处生产点（含 `weather-model.js`、`space-time/layout.js`、`meteogram/layout.js`、`weather.wxml` 图例）与 8 套断言里 10 余条；在真机取证中途大改词汇表，回归面大于收益。建议：三态词收进 `format.js`（`此点在云中 / 云带在此点下方 / 云层在此点上方`），连同图例与 `journey-graph-test` 的词汇漂移门一次改完 |
+| 1 | 图例与 `r3` 三态词仍是「你在云中 / 云在脚下」，与本轮改后的「此点 3,004 m」**同一张卡两种主语** | ✅ 续轮已修（§九） | 三态词与原因句收进 `format.js` 单源，图例改为 `{{unified.legendIn}}`，OI/OIP 的重复标题表删除并引用同一对象；旧词由 `tools/cloud-position-test.js` §7 的静态门（扫 WXML 全文 + 去注释后的 JS）常驻守着。「判不出」不再压成三态之一，共 5 类各有反例 |
 | 2 | 375 与 414 两档**真机**未拍 | 🟡 受环境限制 | 本机模拟器固定 390×753。这两档由 `meteogram-readability` §5 与 `cloud-field-geometry` §12 在 SVG/几何层覆盖，另有 Chromium 光栅化 2× 放大对照。建议：换设备档位后跑 `qa/…/tools/render-zoom.js` 的 18 组 |
 | 3 | OI「不成立 / 证据不足 / 有支持」三态在**卡片层**仍未分离 | 🟠 部分完成 | 本轮落了 `meta.evidenceGaps`（缺项显式记账）+ 各省略闸；卡片仍只有 `confidence` 一个词维度。建议给窗口加 `basis: 'measured' \| 'inference' \| 'gap'`，展示层据此决定"给窗口"还是"给一句缺什么" |
 | 4 | 跨日「哪天更好」的综合排序缺失 | ⛔ 未实现 | 日卡只有 hi/lo/降水/风，没有把三层证据合成可解释的日际比较。这是产品口径问题，需业主先定"要不要给推荐日" |
@@ -387,5 +392,145 @@ IDE 据此注册了一个新项目，此后每次编译都报「app.json 未找�
 **一句话结论**：Cloud Field 的尖角/空洞/斜边不是渲染参数问题，是**外扩圈填法导致等值环闭不上**之后两套启发式在硬凑；
 海拔类文案的问题不是措辞，是**系统根本不知道用户在哪**；机会卡的问题不是卡片太少，是**证据冲突时挑了乐观的那一张**。
 三处都按「先取证 → 改数据/拓扑/语义 → 用会红的门钉住」处理，视觉只是随之变干净。
+
+---
+
+## 九、云层位置语义统一轮（2026-10-09 续，分支 `win/weather-v2-cloud-position`，基线 `3627079`）
+
+本轮范围就是 §6.1 与 §八 表第 1 行欠下的那一件事：**把「云在这个查询点的哪里」收敛成可测的三态，
+并把主语从「你」改成查询点**。没有动架构、没有动云函数、没有新增数据源。
+
+### 9.1 三态与「判不出」的定义（互斥、各有反例）
+
+判定全部住在模型层 `miniprogram/utils/cloud-field-svg.js` 的 `inferState(sample, h, userAlt, coverage, {basis})`，
+文案全部住在 `miniprogram/utils/format.js`（`CLOUD_POSITION_LABELS` / `CLOUD_POSITION_REASONS`）。
+key 沿用线上既有值 `'in' | 'ok' | 'mid'`——它们同时是 CSS 类名与账本字段，换 key 的爆炸半径远大于收益，
+所以**只统一词、不统一键**。
+
+| 结论 | key | 中文（唯一出处） | 成立条件 |
+|---|---|---|---|
+| ① 此点在云里 | `in` | 此点正处于云中 | 查询点海拔处云量 ≥60%，且海拔误差带内**处处** ≥60% |
+| ② 云在下方 | `ok` | 云带在此点下方 | 误差带内无浓云；实测包络内**只有下方**有 ≥68% 的成层云 |
+| ③ 云在上方 | `mid` | 云层在此点上方 | 同上，只有上方有 ≥40% |
+
+判不出时**不落到上面任何一格**，各带回一个 `reason` 与一句可核对的中文：
+
+| reason | 中文 | 触发 |
+|---|---|---|
+| `no-altitude` | 缺少可信海拔，未判断云与此点的上下关系 | `basis='none'` 或海拔不是有限数 |
+| `no-data` | 该高度范围没有实测层，未判断云与此点的上下关系 | `coverage` 缺失/退化（**「无测量」绝不写成「晴空」**） |
+| `within-uncertainty` | 云顶/云底与此点的高差落在海拔误差带内，不足以判定上下 | 误差带里出现了浓云但此点自身不在其中 |
+| `both-sides` | 此点上下都有浓云，不属于单一位置 | 下方 ≥68% 且上方 ≥40% 同时成立 |
+| `partial-at-point` | 此点自身有中等云量，未判定云与它的高低关系 | 此点云量 45–59%（旧实现的 `cUser<45` 守卫，语义保留但有名有姓） |
+| `clear` | （空串——这是**否定式事实**，不是缺证据） | 实测包络内上下都没有有意义云量 |
+
+`key` 非空 ⇔ `reason===null`，这条互斥关系由 `tools/cloud-position-test.js` §1/§2 与
+`tools/cloud-field-svg-test.js` 各钉一次（有结论必不带原因、无结论必带原因，两边都不许静默）。
+
+### 9.2 海拔出处 = 判定基准（不再由页面分类）
+
+`format.resolveElev` 除 `elevation/source/ok` 外新增 **`basis`**：
+
+- `gpx`/`picked`/`manual` → `measured` ⇒ 误差带宽度 0 ⇒ **判据与旧实现逐字一致**（带塌成查询点那一个高度）；
+- `model`（Open-Meteo 地形高度，±300–600 m）→ `estimated` ⇒ 误差带 ±600 m，落在带内的高差不判方向；
+- 两者皆无 → `none` ⇒ 一律不判。
+
+页面（`weather.js`）只做 `this.elevBasis = EV.basis` 的搬运，把 `basis` 送进 `inferState` 与 OI 的 ctx；
+分类只有一处（判据 §7 静态门查这一点：页面里不许再出现第二套 `=== 'model'` 之类的归类）。
+
+**如实记录的边界**：本项目对 GPX/地图选点/手填这三类来源**没有任何可量化的误差资料**，
+只能按「点自己的高程」处理——误差带只对模型地形这一个来源生效。这不等于手填一定准，
+而是「我们不知道它差多少，所以不敢替它编一个带宽」。
+
+### 9.3 一个被本轮自己制造又当场消灭的回归：`both-sides` 抹掉了云海
+
+把「上下都有浓云」从旧实现的「云在脚下」改成不给结论之后，`tools/outdoor-cloud-sea-test.js` 立刻红两条：
+低层成云海窗口消失。根因是 OI 的 `buildConditions` 把三态压成**一个** key，而 `detectCloudSea` 的必要条件读的就是那个 key。
+
+「脚下的云带」与「头顶也有云带」在物理上**同时为真**，被压扁成单一位置词是给读数行用的，不是给下游用的。
+所以 `inferState` 除 `key` 外再带一个 `holds`（三态中单独成立的那些，`both-sides ⇒ ['ok','mid']`）：
+
+- 读数行 / 图例 / OI 标题：只认 `key`（单一位置，判不出就不给）；
+- 云海必要条件：认 `holds`，脚下的云带仍然成立 ⇒ 云海窗口回来了（`outdoor-cloud-sea` 20/0）；
+- 夜间天空一致性闸：也认 `holds`——**这一改顺带补了一个真缺陷**：`both-sides` 那一小时 `key` 是 `CLOUD_BELOW`，
+  旧闸只看 `key`，于是「头顶 100% 云」的夜照样能出银河卡，正是 §三 要防的乐观取值。
+  判据：`cloud-position-test` §6 用「晴空夜出卡 / 双层云夜不出卡」成对锁死。
+
+### 9.4 主语治理与顺带发现的一个渲染假事实
+
+- 三态词、原因句收进 `format.js`；`weather.wxml` 图例改成 `琥珀段 = {{unified.legendIn}}`，
+  `legendIn` 由页面用 `F.cloudPositionLabel('in')` 生成 ⇒ 图例与 `r3` 结构上不可能再分家。
+- `outdoor-intelligence.OPPORTUNITY` 的云位置三档改为引用同一张表；
+  `oi-presentation.js` 自带的第二张 `TITLES` 表删除，改为引用 `OI.OPPORTUNITY`（对象同一性由 §7 断言）。
+  本轮前实测词汇分布：**6 个用户可见点 + 2 张重复表**（不是旧报告写的「约 12 处生产点」——其余 11 处命中是注释）。
+- **顺带发现并已修**：`meteogram-svg.renderUnifiedBase` 在 `cloud.userAlt===null` 时照样画海拔参考线——
+  `Math.min(ALT1, null)=0` 把线钉在 2000 m，标签拼成「此点 null m」。这是「凭空捏造一个位置关系」，
+  与本轮主题同源，故一并收口：无高程 ⇒ 不画线、不写标签、琥珀交线一条不出（等值带照画）。
+- 未改：经典 canvas meteogram 的泳道标签「入云」（`components/meteogram/layout.js`）来自 `sky.js` 的 hourMarks，
+  是**另一条数据通路**上的两字图元而非本三态的句子，且与统一卡互斥渲染（`wx:if/wx:else`）——
+  同一张卡上不会两种主语并存。留此记录以免下轮误当成漏网。
+
+### 9.5 判据（任务书 §五九项逐条落点）
+
+| # | 要求 | 落点 | 结果 |
+|---|---|---|---|
+| 1 | 三个状态各自显示正确 | `cloud-position-test` §1（判读层）＋ `weather-page-test` §11b A/B/D（真页面 `r3`） | 三层都在：key、词、真机 `r3` |
+| 2 | 缺少可信海拔时不给确定结论 | 同上 §2 ＋ §11b F（含「无高程不画参考线」的 SVG 判据） | ✅ |
+| 3 | 云层数据不足时不给确定结论 | §2 `no-data`（`coverage=null`）＋ §6 OI 侧 hour-view 一支不许写成晴空 | ✅（生产不可达性见 9.6） |
+| 4 | 地图选点不显示「你在云中」 | §11b E 三种来源成对 ＋ §7 旧词静态门 ＋ 真机 `subjectOk` 12/12 | ✅ |
+| 5 | 手动坐标不显示「你在云中」 | 同 §11b E（`manual` 档）＋ 真机 `litang-manual-*` 4 张 | ✅ |
+| 6 | 路线各节点各用自己的高程判读 | `weather-page-test` §12 路线段：节点 1 in / 节点 2 ok / 节点 3 弃权，逐节点重采样后重读 | ✅ |
+| 7 | 同一张卡不混用查询点与用户位置语义 | §7 静态门（扫 `miniprogram/**` 的 WXML 与去注释后的 JS）＋ §11b E | ✅ |
+| 8 | 图例 / r3 / 详情卡一致 | §7（`legendIn` 绑表、OI/OIP 同一对象）＋ §6 窗口标题 === 三态词 | ✅ |
+| 9 | 既有 Cloud Field / 可读性 / 海拔 / OI 判据继续通过 | 全量扫描：`cloud-field-geometry 190`、`meteogram-readability 55`、`elevation-semantics 34`、`oi-claim-gate 25`、`outdoor-cloud-sea 20`、`outdoor-intelligence 24`、`outdoor-intelligence-ui 47`、`meteogram-svg 25`、`meteogram-multiday 44`、`weather-cloud-field 31` | 全绿 |
+
+新套件 **`tools/cloud-position-test.js`＝54 断言**（§1 三态 8 / §2 未知 10 / §3 误差带 6 / §4 适配器接线 2 /
+§5 渲染 7 / §6 OI 消费侧 8 / §7 静态门 13）。改动套件：`cloud-field-svg-test` 27→29（并把 3 参数旧调用补成
+带 `covered` 的真实契约调用——缺 `covered` 现在**失败关闭**为 `no-data`，不再拿显示窗冒充实测范围），
+`weather-page-test` 156→173，`elevation-semantics-test` 的 `resolveElev` 深比对补 `basis` 字段（7 条），
+`cloud-field-poc` 页两处调用补 `covered` 并显示弃权原因。
+
+### 9.6 已知边界（不做样子货的几条）
+
+1. **`no-data` 在生产里走不到**：适配器只要有一个小时拿到 ≥2 层就给出有限 `covered`，
+   全取不到时整个 `cloudField` 为 null（云场卡直接不出现）。所以页面级的「云数据不足」=「这张卡不出」，
+   `inferState` 的 `no-data` 分支是防御性的，由单元判据覆盖，**真机取证里没有它**。如实分级，不夸口。
+2. **`±600 m` 只作用在 model 来源**；`within-uncertainty` 的带宽是 Open-Meteo 文档给的误差上界，
+   不是本项目实测——所以它只用于「弃权」，从不用于「加强某个结论」。
+3 **POC 页（`pages/cloud-field-poc`，DEV_ONLY）仍保留 `userAltitude` 缺省 3500 的老写法**：
+   它是取证工具不是产品界面，改它会牵动 POC 的 fixtures 对照；生产路径（`buildUnified`）没有这个缺省。
+4 **OI 窗口级 `basis: 'measured'|'inference'|'gap'` 字段重构没做**（§八 表第 3 行仍然开着）。
+   本轮只把**海拔出处**这条链接通，没有把每个机会的成立方式都重新建模。
+
+### 9.7 真机证据
+
+`docs/weather-ux/qa/v2-cloud-position-2026-10-09/`（390×753，线上真实预报；before **18** 张 / after **24** 张 PNG
+= 9 与 12 个场景各含 full+tap 两张，外加 2 份 manifest、2 份运行日志、B 层套件原文）。
+before 9 个场景 = 基线 `3627079`；after 12 个场景 = 本轮（含新增的「手填坐标」一档）。
+
+每行 manifest 都带 **bundle 新鲜度探针** `bundleFresh`：`unified.legendIn` 是本轮新字段，before 组根本没有它，
+after 组 12/12 `fresh=true` ⇒ 这些截图不可能是旧编译产物。
+before/after 逐行对照（同地点、同海拔入参、同点击小时；两组 `updatedAt` 相差约 25 分钟，云区数字随预报更新，
+本包主张的是**词汇与主语**而非数字）：峨眉山 3 档「你在云中 → 此点正处于云中」、
+理塘 2 档「头顶有云层 → 云层在此点上方」、成都 3 档同、理塘 48h 第 21 时前后都是空（`r2`「海拔 4,058 m 云量 0%」= **判过是晴空**，不是证据不足）。
+`subjectOk` 12/12 = 点击后屏上的 `r3` 与图例都不含「你」字。
+
+B 层真机套件在本轮代码上：**BUSINESS 26/0/0 PASS，UI 64 通过 / 0 失败 / 1 未验证，OVERALL INCONCLUSIVE（exit=2）**；
+唯一那 1 项仍是原生 `<picker>` 的 tap-through，**按任务书要求保持 INCONCLUSIVE**。
+`e2e-ui-state-test` / `e2e-golden-path-test` 本轮未跑（需 9420 端口，无头扫描里记 ENV 前置不成立）。
+
+**仍未覆盖**：375 与 414 两档真机（本机模拟器固定 390，这两档只有 SVG/几何层判据）；
+「无高程不画参考线」与「误差带内弃权」两态**没有真机截图**——生产上单点查询一定带 `pointElevation`，
+要撞出这两态得人为构造没有高程的返回体，属测试级判据（§11b F/G + `cloud-position-test` §5），
+不当作真机已验证。
+
+### 9.8 现场
+
+分支 `win/weather-v2-cloud-position`（未推送、未并入 master）。改动全部在客户端与 `tools/`，
+`cloudfunctions/` **零改动 ⇒ 不需要重新部署 `trailApi`**。
+生产文件：`miniprogram/utils/{cloud-field-svg,meteogram-svg,format,outdoor-intelligence,oi-presentation}.js`
+＋ `miniprogram/pages/weather/{weather.js,weather.wxml}` ＋ `miniprogram/pages/cloud-field-poc/cloud-field-poc.js`。
+开发者工具全程只 `cli open` / `cli auto`（端口 9452→9453），**未 quit / close**。
+
 
 

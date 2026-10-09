@@ -1,0 +1,125 @@
+  ✓ [BUSINESS] 本脚本源码完整性自检（0 违规）
+  ✓ [ENV] 找到开发者工具 cli.bat
+  ✓ [ENV] automator 连接开发者工具（自动化端口 9420）
+  ✓ [ENV] 模拟器运行中
+  · UI 元素通道：healthy（$$ view → 640 个元素）
+  ✓ [UI] 首页装配完成（loading=false 且未 denied）
+  ✓ [UI] 首页卡片渲染自洽（每张卡都有 id 与标题）
+== 工作台全链（[预演] 沙盒） ==
+  · lab cleanup（设计复位）：{"activities":0,"groups":7,"signups":9,"vehicles":1,"assignments":4,"memberships":1,"incidents":0,"events":48,"notices":14,"attendance":9,"positions":0,"profile
+  ✓ [BUSINESS] 建 [预演] 活动草稿
+  ✓ [BUSINESS] 发布（发布即报名本人）
+  ✓ [UI] 详情页装配（非 denied / 非 loading，且标题就是这场沙盒）
+  ✓ [BUSINESS] lab 阶段 0：建档演员与同行人
+  ✓ [BUSINESS] lab 阶段 1：演员报名多组（含整组与候补）
+  ✓ [BUSINESS] 演员报名落库：organizer 回读得到待审核行
+  · UI 元素通道：healthy（$$ view → 61 个元素）
+  ✓ [UI] 工作台装配（organizer 视角非 denied、loading 落位）
+  ✓ [UI] 页头待审核数与云端回读一致
+  ✓ [UI] 四个分区 tab 渲染（总览/名单/分车/现场）
+  ✓ [UI] 点「名单」分区 tab
+  ✓ [UI] 名单面板可见（hide 类已摘除——类名方案的真机回归点）
+  ✓ [UI] 名单行数与云端一致（面板真实渲染报名数据）
+  ✓ [BUSINESS] 审核确认全部待审核（组织者动作）
+  ✓ [UI] 审核后工作台指标归零（页面响应环境变化）
+  ✓ [BUSINESS] 已确认乘客在案（车辆表单的前提）
+  ✓ [UI] 点「分车」分区 tab
+  ✓ [UI] 点「添加车辆」打开编辑弹层
+  ✓ [UI] 车辆编辑弹层打开（editorOpen=true 且 vform 就绪）
+  ✓ [UI] 点「添加司机」（默认服务司机，不踩 picker）
+  ✓ [UI] 表单渲染出名称/车牌/核载/预留/司机姓名/电话输入位
+  ✓ [UI] 表单字段落到 vform（名称/核载/司机姓名）
+  ✓ [UI] 点「覆盖的上车点」第 1 项（真实勾选）
+  ✓ [UI] 勾选落到 vform.pickupIds（UI 操作 → 组件状态，BUG-1 修复验证）
+  ✓ [UI] 逐个勾选其余上车点均累加进 vform.pickupIds（多选真实可用）
+  ✓ [UI] 勾选「使用明确座号」
+  ✓ [UI] 「使用明确座号」勾选生效（BUG-2 修复验证）
+  ✓ [UI] 座号配置区随勾选出现（wx:if 生效）
+  ✓ [UI] 点「保存车辆安排」
+  ✓ [UI] 保存后面板无报错且弹层关闭（前端校验放行 → 命令下发）
+  ✓ [BUSINESS] readTransport 回读：车辆在案且 pickupPointIds 含所勾集合点（UI → 后端）
+  ✓ [BUSINESS] readTransport 回读：seatLabels 与 UI 自动填充一致（8 个唯一座号）
+  ✓ [UI] 重开车辆编辑（回显验证入口）
+  ✓ [UI] 重开弹层：pickupIds 回显含所勾集合点、座号开关仍开、渲染态 checked=true
+  ✓ [UI] 第二次保存落地：弹层关闭且 busy 复位（下一步 tap 的前提）
+  ✓ [UI] 分车面板渲染出车辆卡（保存后面板自重读）
+      · [诊断] 预览点击前：buttons=1 busy=false vehicles=1 planOpen=false error=""
+  ✓ [UI] 点「预览自动分车」按钮
+  ✓ [UI] 预览自动分车 → 弹层真的打开（planOpen=true）
+  ✓ [UI] 预览产出差异行（allocation 惰性 require 的真机回归点）
+  ✓ [UI] 点「明确确认并提交此方案」按钮
+  ✓ [BUSINESS] UI 提交后云端确实落库安排
+  · UI 元素通道：healthy（$$ view → 156 个元素）
+  ✓ [UI] 回到「分车」分区看座位示意
+  ✓ [UI] 座位示意渲染出已占座（分车提交的可视结果）
+  ✓ [UI] 点「开始集合」
+  ✓ [UI] 阶段确认弹层打开
+  ✓ [UI] 填写阶段变更原因（落到 data.reason）
+  ✓ [UI] 点「确认变更，不跳过检查」
+  ✓ [BUSINESS] 推进 gathering 并回读到阶段值（经真实工作台按钮）
+  ✓ [UI] 阶段推进后已挂载的现场面板随 syncKey 重读到新 phase
+  · UI 元素通道：healthy（$$ view → 164 个元素）
+  ✓ [UI] 点「现场」分区 tab
+  ✓ [UI] 现场区渲染已确认名单
+  ✓ [UI] 点第一名参与者的「现场记录」
+  ✓ [UI] 现场记录弹层打开（组件 data.sheetOpen=true）
+  ✓ [UI] 在弹层里填写核实依据
+  ✓ [UI] 核实依据落到组件状态（data.note 等于所填文本）
+  ✓ [UI] 点「确认现场签到」
+  ✓ [BUSINESS] 弹层签到经服务端落库（真机-self-shared checkedIn）
+  ✓ [BUSINESS] 环境准备：membership.save 自授车辆联络（授权本体不充当 UI 证据）
+  · [UI INCONCLUSIVE] 「组织者在授权弹层经角色 picker 授予车辆联络」的 tap-through：role/scope/授权截止时间都是原生 <picker>：tap 后弹层不在可查询树（探针实测 .wx-picker/picker-view 全部 0 命中、截图无弹层）⇒ 无法自动化；picker 数据源已修复在案（roleOptions=现场协作/车辆联络），保存链契约由 A 层 4b 钉住
+  · UI 元素通道：healthy（$$ view → 36 个元素）
+  ✓ [UI] 车长任务页对本人可进（车辆联络授权生效）
+  ✓ [UI] 车长页点「确认上车」（真机-self-shared）
+  ✓ [BUSINESS] 上车经车长任务页真实点击落库（outboundBoarded=true）
+  · UI 元素通道：healthy（$$ view → 164 个元素）
+  ✓ [UI] 再次点开「现场记录」弹层
+  ✓ [UI] 第二次开层同样成功（弹层可复用，不是一次性控件）
+  ✓ [UI] 点「核实已随队出发」
+  ✓ [BUSINESS] 弹层出发核实经服务端落库（departure=joined）
+  ✓ [BUSINESS] 批量签到/上车/出发核实全部成功（7 人）
+    · 真机-self-shared checkedIn=true departure=joined vehicle=1号车
+    · 演员大壮 checkedIn=true departure=joined vehicle=无
+    · 演员小二 checkedIn=true departure=joined vehicle=1号车
+    · 同伴小六 checkedIn=true departure=joined vehicle=1号车
+    · 演员张三 checkedIn=true departure=joined vehicle=无
+    · 同伴小七 checkedIn=true departure=joined vehicle=无
+    · 演员李四 checkedIn=true departure=joined vehicle=1号车
+    · 演员王五 checkedIn=true departure=joined vehicle=无
+  ✓ [BUSINESS] 推进 active（出发核实硬门通过）
+  ✓ [BUSINESS] 路线节点确认 ok
+  ✓ [BUSINESS] 推进 closing
+  · UI 元素通道：healthy（$$ view → 159 个元素）
+  ✓ [UI] 点第一名参与者的「现场记录」（closing 阶段）
+  ✓ [UI] closing 阶段弹层可再次打开
+  ✓ [UI] 点「核实安全到家」
+  ✓ [BUSINESS] 弹层到家确认经服务端落库
+  ✓ [BUSINESS] 其余人员到家确认全部成功（含逐人返回值核对）
+  ✓ [BUSINESS] 全员闭环后归档 ok
+  ✓ [UI] 归档后工作台「待到家」归零
+  · 沙盒活动已走完全履约链并归档（[预演] 工作台E2E，可在预演面板 cleanup 清理）
+  ✓ [BUSINESS] 建报名沙盒活动
+  ✓ [BUSINESS] 发布报名沙盒（发布即报名本人）
+  ✓ [BUSINESS] 取消本人报名行以腾出可报名状态
+  · UI 元素通道：healthy（$$ view → 10 个元素）
+  ✓ [UI] 报名页装配（准入闸放行、mode=new、参与人列表非空）
+  ✓ [UI] 本人资料来自档案回填
+  ✓ [UI] 紧急联系人回填（档案有则直接展示）
+  ✓ [UI] 候选区渲染出同行人勾选行（data-key 在 checkbox-group 上）
+  ✓ [UI] 点同行人候选行的勾选框
+  ✓ [UI] 勾选后同行人进入参与人列表（真实用户路径可完成多人报名）
+  ✓ [UI] 再点一次取消勾选
+  ✓ [UI] 取消勾选后同行人被移出参与人列表
+  · UI 元素通道：healthy（$$ view → 447 个元素）
+  ✓ [UI] 我的页装配（档案姓名可见）
+
+==== VERDICT ====
+BUSINESS: PASS         （26 通过 / 0 失败 / 0 未验证）
+UI:       INCONCLUSIVE （64 通过 / 0 失败 / 1 未验证）
+ENV:      3 项前置（0 项不成立）
+OVERALL:  INCONCLUSIVE
+reason:
+  - UI 未验证：「组织者在授权弹层经角色 picker 授予车辆联络」的 tap-through——role/scope/授权截止时间都是原生 <picker>：tap 后弹层不在可查询树（探针实测 .wx-picker/picker-view 全部 0 命中、截图无弹层）⇒ 无法自动化；picker 数据源已修复在案（roleOptions=现场协作/车辆联络），保存链契约由 A 层 4b 钉住
+passed=90 failed=0 unverified=1
+截图目录（仅作 Evidence，不参与任何判定）：C:\Users\thinkbook\.ourtrail-e2e\shots

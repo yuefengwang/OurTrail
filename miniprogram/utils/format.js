@@ -182,10 +182,10 @@ function resolveElev(pointEle, pointEleSource, modelEle) {
   const hasModel = Number.isFinite(modelEle)
   if (hasEle) {
     const s = pointEleSource === 'gpx' || pointEleSource === 'picked' ? pointEleSource : 'manual'
-    return { elevation: pointEle, source: s, ok: true }
+    return { elevation: pointEle, source: s, ok: true, basis: 'measured' }
   }
-  if (hasModel) return { elevation: modelEle, source: 'model', ok: false }
-  return { elevation: null, source: null, ok: false }
+  if (hasModel) return { elevation: modelEle, source: 'model', ok: false, basis: 'estimated' }
+  return { elevation: null, source: null, ok: false, basis: 'none' }
 }
 /** @param altText 已按各自千分位格式化好的数字；@param source gpx|picked|manual|model */
 function elevLineLabel(altText, source) {
@@ -200,11 +200,41 @@ const PHENO_ADVICE = {
 }
 function phenoAdvice (key) { return PHENO_ADVICE[key] || '' }
 
+/* ---------- 云层位置三态（2026-10-09 语义统一轮） ----------
+ * 主语永远是**查询点**（地图选点 / 手填坐标 / 路线节点），不是「你」：
+ * 本项目没有任何定位来源，永远不知道用户本人站在哪儿（见 resolveElev 上方注释）。
+ * 判定逻辑不在这里——那属于 `cloud-field-svg.inferState`（天气模型层），
+ * 本文件只管「同一个状态只有一套中文」这一件事（根 AGENTS.md 铁律 22）。
+ * key 沿用线上既有取值（'in'/'ok'/'mid'）：它们同时是 CSS 类名与账本字段，
+ * 换 key 的爆炸半径远大于收益，故只统一词、不统一键。 */
+const CLOUD_POSITION_LABELS = {
+  in: '此点正处于云中',
+  ok: '云带在此点下方',
+  mid: '云层在此点上方',
+}
+/* 未归入三态时的原因词。三态是「有结论」，这几条是「没结论」——两者必须能分开，
+ * 否则「证据不足」会被读成「晴空无云」。阈值数字不写在这里（判据只有一个出处：
+ * cloud-field-svg.inferState），否则改阈值时这句解释会静默变成假话。 */
+const CLOUD_POSITION_REASONS = {
+  'no-altitude': '缺少可信海拔，未判断云与此点的上下关系',
+  'no-data': '该高度范围没有实测层，未判断云与此点的上下关系',
+  'within-uncertainty': '云顶/云底与此点的高差落在海拔误差带内，不足以判定上下',
+  'both-sides': '此点上下都有浓云，不属于单一位置',
+  'partial-at-point': '此点自身有中等云量，未判定云与它的高低关系',
+  clear: '',
+}
+function cloudPositionLabel(key) { return CLOUD_POSITION_LABELS[key] || '' }
+function cloudPositionReason(reason) {
+  if (!reason) return ''
+  return Object.prototype.hasOwnProperty.call(CLOUD_POSITION_REASONS, reason) ? CLOUD_POSITION_REASONS[reason] : ''
+}
+
 module.exports = {
   pad, WEEK, cnParts, dateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
   minutesLabel, relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
   UNASSIGNED_LABELS, TRIP_MODE_LABELS, TRIP_MODE_HINTS, TRIP_MODE_OPTIONS, RETURN_PLAN_LABELS,
   PICKUP_MISSING, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase, windDirText,
   ELEV_SUBJECT, ELEV_SOURCE_LABELS, ELEV_MODEL_SUFFIX, elevSourceLabel, elevLineLabel, resolveElev,
+  CLOUD_POSITION_LABELS, CLOUD_POSITION_REASONS, cloudPositionLabel, cloudPositionReason,
   PHENO_ADVICE, phenoAdvice,
 }

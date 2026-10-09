@@ -91,7 +91,7 @@ Page({
     })
     const buildMs = Date.now() - t0
     this.fieldUri = toDataUri(base.svg)
-    const st = renderer.inferState(this.geo.sample, this.data.sel, this.elev)
+    const st = renderer.inferState(this.geo.sample, this.data.sel, this.elev, this.geo.covered)
     const st0 = Date.now()
     const ov = renderer.renderSelectionSvg(this.geo, { selectedTime: this.data.sel })
     const updateMs = Date.now() - st0
@@ -113,7 +113,7 @@ Page({
     const t0 = Date.now()
     const sel = Number(e.currentTarget.dataset.h)
     const ov = renderer.renderSelectionSvg(this.geo, { selectedTime: sel })
-    const st = renderer.inferState(this.geo.sample, sel, this.elev)
+    const st = renderer.inferState(this.geo.sample, sel, this.elev, this.geo.covered)
     this.setData({
       sel: sel,
       selSrc: toDataUri(ov.svg),
@@ -131,6 +131,7 @@ Page({
       parts.push('海拔 ' + fmtM(this.elev) + ' m 云量 ' + st.cUser + '%')
     }
     if (st.key) parts.push('→ ' + st.word)
+    else if (st.reasonText) parts.push('→ ' + st.reasonText)
     return parts.join('  ')
   },
 

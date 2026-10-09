@@ -402,13 +402,18 @@ function renderUnifiedBase(geo, opts) {
   let bands = ''
   geo.bands.forEach(function (b) { bands += '<path d="' + b.d + '" fill="' + b.fill + '" fill-rule="evenodd"/>' })
   s += '<g clip-path="url(#cfclipu)">' + bands + '</g>'
-  const youY = cloud.yAlt(Math.max(CFF.ALT0, Math.min(CFF.ALT1, cloud.userAlt)))
-  const youTag = cloud.userAlt < CFF.ALT0 ? '（剖面下方）' : cloud.userAlt > CFF.ALT1 ? '（剖面上方）' : ''
-  s += '<line x1="' + geo.L + '" y1="' + fmt(youY) + '" x2="' + (geo.L + geo.plotW) + '" y2="' + fmt(youY) + '" stroke="' + C.you + '" stroke-width="1" stroke-dasharray="4 3"/>'
-  geo.inRuns.forEach(function (r) {
-    s += '<line x1="' + fmt(geo.x0(r.from)) + '" y1="' + fmt(youY) + '" x2="' + fmt(geo.x0(r.to + 1)) + '" y2="' + fmt(youY) + '" stroke="' + C.inCloud + '" stroke-width="2.5" stroke-linecap="round"/>'
-  })
-  s += '<text x="' + (geo.L + geo.plotW - 4) + '" y="' + fmt(youY - 4) + '" text-anchor="end" font-size="7.5" font-weight="600" fill="' + C.you + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.elevLineLabel(fmtM(cloud.userAlt), cloud.elevSource) + youTag + '</text>'
+  /* 海拔参考线：只有查询点自己有可信海拔才画。
+     旧实现无条件画：userAlt=null 时 Math.min(ALT1,null)=0 → 线钉在 2000m、
+     标成「此点 null m」——一个凭空捏造的位置关系（本轮语义统一要消灭的正是这个）。 */
+  if (cloud.userAlt != null) {
+    const youY = cloud.yAlt(Math.max(CFF.ALT0, Math.min(CFF.ALT1, cloud.userAlt)))
+    const youTag = cloud.userAlt < CFF.ALT0 ? '（剖面下方）' : cloud.userAlt > CFF.ALT1 ? '（剖面上方）' : ''
+    s += '<line x1="' + geo.L + '" y1="' + fmt(youY) + '" x2="' + (geo.L + geo.plotW) + '" y2="' + fmt(youY) + '" stroke="' + C.you + '" stroke-width="1" stroke-dasharray="4 3"/>'
+    geo.inRuns.forEach(function (r) {
+      s += '<line x1="' + fmt(geo.x0(r.from)) + '" y1="' + fmt(youY) + '" x2="' + fmt(geo.x0(r.to + 1)) + '" y2="' + fmt(youY) + '" stroke="' + C.inCloud + '" stroke-width="2.5" stroke-linecap="round"/>'
+    })
+    s += '<text x="' + (geo.L + geo.plotW - 4) + '" y="' + fmt(youY - 4) + '" text-anchor="end" font-size="7.5" font-weight="600" fill="' + C.you + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.elevLineLabel(fmtM(cloud.userAlt), cloud.elevSource) + youTag + '</text>'
+  }
   ;[2000, 3000, 4000, 5000].forEach(function (a) {
     s += '<text x="' + (geo.L - 5) + '" y="' + fmt(cloud.yAlt(a) + 2.5) + '" text-anchor="end" font-size="7.5" fill="' + C.muted + '">' + a + '</text>'
   })
