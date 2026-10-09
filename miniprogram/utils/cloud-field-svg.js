@@ -17,6 +17,8 @@
  */
 'use strict'
 
+var F = require('./format.js')
+
 var ALT0 = 2000, ALT1 = 6000
 var THRESHOLDS = [
   { t: 10, c: '#eeeeea' }, { t: 25, c: '#d4d6d0' }, { t: 50, c: '#b0b2ab' },
@@ -98,81 +100,102 @@ function buildGrid(sample, nT, opts) {
     }
     g = g2
   }
-  /* 外扩一圈复制边缘值：贴边云自然出血，等值环全部闭合（clip 裁掉出界段） */
+  /* 外扩一圈填 0（低于所有阈值），不再复制边缘值。
+     复制边缘值时，贴边的云带在整个网格内永远找不到「降到阈值以下」的地方 ⇒ 等值线闭不上环，
+     旧实现只能在事后「按 mean-y 把开链两两配对 + 用 SVG 的 Z 把首尾直连」凑出多边形。
+     2026-10-09 用真实气压层剖面（成都/峨眉山/理塘，168h×22 层）实测到这条路的后果：
+     49 条断链、15 个自交环（evenodd 把真云区挖成洞）、32 条 >30px 的直线斜边（最长 371px，
+     横贯整张图）、1 个把 x 重叠仅 2% 的两条链连成的 12688px² 假云块。
+     填 0 之后每条环都在格外那一格内自然闭合，而那一格在 clipPath 之外
+     （垂直方向 3.75px、时间方向 ~0.84px），看到的仍是「云带冲出图外」的平切边——
+     视觉不变，拓扑不再依赖任何启发式配对。 */
   var gp = []
   for (j = 0; j < na + 2; j++) {
     var jr = Math.max(0, Math.min(na - 1, j - 1))
     var rp = []
     for (i = 0; i < nt + 2; i++) {
       var ir = Math.max(0, Math.min(nt - 1, i - 1))
-      rp.push(g[jr][ir])
+      var onRing = (j === 0 || j === na + 1 || i === 0 || i === nt + 1)
+      rp.push(onRing ? 0 : g[jr][ir])
     }
     gp.push(rp)
   }
   return { g: gp, nx: nt + 2, ny: na + 2, t0: -TS, dt: TS, a0: ALT0 - AS, da: AS }
 }
 
-/* ---------- marching squares isoband ---------- */
-
-function isoLoops(F, T, xOf, yOf) {
-  function lerpPt(x0, y0, v0, x1, y1, v1) {
-    var s = (T - v0) / (v1 - v0)
+/* ---------- marching squares isoband（按网格边身份链接，不做坐标量化） ----------
+ * 交叉点的唯一身份是它跨过的那条网格边（'h'/v' + 左端点索引），不是四舍五入后的坐标：
+ * 一条边上至多一个交叉点，而这条边恰好被两个 cell 共用 ⇒ 每个交叉点的度数恒等于 2，
+ * 走线不存在「任取一条未用线段」的岔口。旧实现用 0.1px 坐标键，两个不同的捏合点可能
+ * 被并进同一个键（度数变 4）从而走错弯，实测产生自交环，evenodd 又把真云区挖成洞。
+ * 鞍点（idx 5/10）按 cell 中心值定连接方向，不再固定偏好一种解释。 */
+function isoLoops (F, T, xOf, yOf) {
+  var pts = {}   // 边键 → 交叉点（同一条边的两个 cell 取到同一个键、同一个坐标）
+  var adj = {}   // 边键 → 对端边键列表（每个键恰好 2 个）
+  function mix (x0, y0, v0, x1, y1, v1) {
+    var s = (v1 === v0) ? 0.5 : (T - v0) / (v1 - v0)
     return { x: x0 + (x1 - x0) * s, y: y0 + (y1 - y0) * s }
   }
-  var segs = []
+  function link (ka, kb) {
+    if (!adj[ka]) adj[ka] = []
+    if (!adj[kb]) adj[kb] = []
+    adj[ka].push(kb); adj[kb].push(ka)
+  }
   for (var j = 0; j < F.ny - 1; j++) {
     for (var i = 0; i < F.nx - 1; i++) {
       var a = F.g[j][i], b = F.g[j][i + 1], c = F.g[j + 1][i + 1], d = F.g[j + 1][i]
       var idx = (a >= T ? 8 : 0) | (b >= T ? 4 : 0) | (c >= T ? 2 : 0) | (d >= T ? 1 : 0)
       if (idx === 0 || idx === 15) continue
       var x0 = xOf(i), x1 = xOf(i + 1), y0 = yOf(j), y1 = yOf(j + 1)
-      function topE() { return lerpPt(x0, y0, a, x1, y0, b) }
-      function rightE() { return lerpPt(x1, y0, b, x1, y1, c) }
-      function botE() { return lerpPt(x0, y1, d, x1, y1, c) }
-      function leftE() { return lerpPt(x0, y0, a, x0, y1, d) }
-      function push(p1, p2) { segs.push([p1, p2]) }
+      var eT = 'h' + j + '_' + i, eB = 'h' + (j + 1) + '_' + i
+      var eL = 'v' + j + '_' + i, eR = 'v' + j + '_' + (i + 1)
+      pts[eT] = mix(x0, y0, a, x1, y0, b)
+      pts[eB] = mix(x0, y1, d, x1, y1, c)
+      pts[eL] = mix(x0, y0, a, x0, y1, d)
+      pts[eR] = mix(x1, y0, b, x1, y1, c)
+      var pairs
       switch (idx) {
-        case 1: case 14: push(leftE(), botE()); break
-        case 2: case 13: push(botE(), rightE()); break
-        case 3: case 12: push(leftE(), rightE()); break
-        case 4: case 11: push(topE(), rightE()); break
-        case 6: case 9: push(topE(), botE()); break
-        case 7: case 8: push(topE(), leftE()); break
-        case 5: push(topE(), rightE()); push(botE(), leftE()); break
-        case 10: push(topE(), leftE()); push(botE(), rightE()); break
+        case 1: case 14: pairs = [[eL, eB]]; break
+        case 2: case 13: pairs = [[eB, eR]]; break
+        case 3: case 12: pairs = [[eL, eR]]; break
+        case 4: case 11: pairs = [[eT, eR]]; break
+        case 6: case 9: pairs = [[eT, eB]]; break
+        case 7: case 8: pairs = [[eT, eL]]; break
+        /* 高角在 b(TR)/d(BL)：中心也高 ⇒ 高区成对角带，切出的是低角 a、c */
+        case 5: pairs = (a + b + c + d) / 4 >= T ? [[eT, eL], [eB, eR]] : [[eT, eR], [eB, eL]]; break
+        /* 高角在 a(TL)/c(BR)：中心高 ⇒ 对角带切出低角 b、d */
+        case 10: pairs = (a + b + c + d) / 4 >= T ? [[eT, eR], [eB, eL]] : [[eT, eL], [eB, eR]]; break
+        default: pairs = []
       }
+      for (var pi = 0; pi < pairs.length; pi++) link(pairs[pi][0], pairs[pi][1])
     }
   }
-  function key(p) { return Math.round(p.x * 10) + '_' + Math.round(p.y * 10) }
-  var map = {}
-  segs.forEach(function (sg, id) {
-    ;(map[key(sg[0])] = map[key(sg[0])] || []).push(id)
-    ;(map[key(sg[1])] = map[key(sg[1])] || []).push(id)
+  var linkId = function (ka, kb) { return ka < kb ? ka + '|' + kb : kb + '|' + ka }
+  var used = {}
+  var raw = []
+  Object.keys(pts).forEach(function (k0) {
+    var list = adj[k0] || []
+    for (var n = 0; n < list.length; n++) {
+      if (used[linkId(k0, list[n])]) continue
+      var lp = [], cur = k0, guard = 0, closed = false
+      while (guard++ < 200000) {
+        lp.push(pts[cur])
+        var cands = (adj[cur] || []).filter(function (nb) { return !used[linkId(cur, nb)] })
+        if (!cands.length) break
+        var nxt = cands[0]
+        used[linkId(cur, nxt)] = true
+        cur = nxt
+        if (cur === k0) { closed = true; break }
+      }
+      if (lp.length >= 3) { lp.__truncated = !closed; raw.push(lp) }
+    }
   })
-  var used = segs.map(function () { return false })
-  var loops = []
-  for (var si = 0; si < segs.length; si++) {
-    if (used[si]) continue
-    used[si] = true
-    var loop = [segs[si][0], segs[si][1]]
-    var guard = 0
-    while (guard++ < 40000) {
-      if (key(loop[loop.length - 1]) === key(loop[0])) break
-      var endK = key(loop[loop.length - 1])
-      var cands = (map[endK] || []).filter(function (id) { return !used[id] })
-      if (!cands.length) break
-      var nxt = cands[0]
-      used[nxt] = true
-      var pA = segs[nxt][0], pB = segs[nxt][1]
-      loop.push(key(pA) === endK ? pB : pA)
-    }
-    if (loop.length >= 4) loops.push(loop)
-  }
-  /* 几何清理（P1 修复续）：碎片过滤 = 面积≥12px² 或 路径长度≥24px（满足其一即保留）。
-     单用长度会误杀小而实的闭合核（90% 档 mock 核 area 13.2 / len 17.4——云顶最深色块，
-     单长度阈值下整档消失）；单用面积会整层删除开链（平坦成层云的顶/底边界隐式弦与
-     边界重合，鞋履面积恒≈0）。OR 规则：噪声碎片（1–2 cell，area<12 且 len<24）被滤，
-     真实小核与真实云边界（数百 px）都保留。 */
+  /* 碎片过滤只看面积，并且下限随 cell 尺寸缩放：
+     一条只有一个 cell 厚的真实云带，面积≈cellW×cellH，所以 0.6×cellArea 以下必然是
+     噪声；旧的「或 路径长度≥24px」是当年开链面积为 0 时留的逃生门，它同时放进了
+     面积 1–20px² 的针状碎片（真实数据里 7 枚），环闭合之后这扇门不再需要。 */
+  var cellArea = Math.abs((xOf(1) - xOf(0)) * (yOf(1) - yOf(0)))
+  var AREA_MIN = Math.max(12, cellArea * 0.6)
   var areaOf = function (lp) {
     var s = 0
     for (var i2 = 0; i2 < lp.length; i2++) {
@@ -189,36 +212,16 @@ function isoLoops(F, T, xOf, yOf) {
     }
     return s2
   }
-  /* P1 修复（Cloud Field 消失）：触及时间窗边界的带状云场，其等值线是「顶边链 +
-     底边链」两条开链——隐式弦与近水平边界重合 → 弦面积≈0 → 曾被微环过滤整幅删除。
-     修复：开链沿网格边界按 mean-y 配对闭合（band 多边形 = 顶链 + 底链逆序），
-     面积过滤恢复正确。场数学（CR/marching/阈值）未动。 */
-  var openChains = [], closedChains = []
-  var edgeX0 = xOf(1), edgeX1 = xOf(F.nx - 2)
-  /* 边界容差必须随 cellW 缩放：开链端点落在最外 padding 列 xOf(0)/xOf(nx-1)，
-     距 edgeX0/edgeX1 恰为一个 cellW。固定 2px 只在 cellW<2（窄窗/72h 细网格）下成立，
-     cellW≥2（24h 全部生产宽度、414 设备 72h）时配对静默失败 → 顶/底链各留一条
-     贴弦窄条，带内部空心。实测阈值恰在 cellW=2 处翻转（W=318 72h 成功 / W=336 失败）。 */
-  var edgeTol = Math.max(2, (xOf(1) - xOf(0)) * 1.05)
-  loops.forEach(function (lp) {
-    var onEdge = function (p) { return Math.abs(p.x - edgeX0) < edgeTol || Math.abs(p.x - edgeX1) < edgeTol }
-    if (onEdge(lp[0]) && onEdge(lp[lp.length - 1])) openChains.push(lp)
-    else closedChains.push(lp)
+  var kept = []
+  raw.forEach(function (lp) {
+    var ar = areaOf(lp)
+    if (ar < AREA_MIN) return
+    /* __diag：只读探针（渲染只看点序），几何回归门用它断言「每条环都自然闭合」 */
+    lp.__diag = { area: Math.round(ar), len: Math.round(pathLen(lp)), truncated: !!lp.__truncated }
+    kept.push(lp)
   })
-  if (openChains.length >= 2) {
-    var meanY = function (lp) { var s2 = 0; lp.forEach(function (pt) { s2 += pt.y }); return s2 / lp.length }
-    openChains.sort(function (p, q) { return meanY(q) - meanY(p) })
-    for (var oi = 0; oi + 1 < openChains.length; oi += 2) {
-      closedChains.push(openChains[oi].concat(openChains[oi + 1].slice().reverse()))
-    }
-    if (openChains.length % 2 === 1) closedChains.push(openChains[openChains.length - 1])
-  } else {
-    closedChains = closedChains.concat(openChains)
-  }
-  loops = closedChains
-  loops = loops.filter(function (lp) { return areaOf(lp) >= 12 || pathLen(lp) >= 24 })
   /* Chaikin 圆化一轮 */
-  return loops.map(function (loop) {
+  return kept.map(function (loop) {
     if (loop.length < 3) return loop
     var out = []
     for (var i2 = 0; i2 < loop.length; i2++) {
@@ -226,17 +229,22 @@ function isoLoops(F, T, xOf, yOf) {
       out.push({ x: p.x * 0.75 + q.x * 0.25, y: p.y * 0.75 + q.y * 0.25 })
       out.push({ x: p.x * 0.25 + q.x * 0.75, y: p.y * 0.25 + q.y * 0.75 })
     }
+    if (loop.__diag) out.__diag = loop.__diag
     return out
   })
 }
 
 /* ---------- 云态推导（全部由场采样，ELEV 任意海拔） ----------
  * coverage = { lo, hi }：真实数据覆盖的海拔范围（由适配器给出，缺省视为全轴）。
- * 用户海拔在覆盖范围之外时，该处云量为外插值不可采样——云态按「覆盖区与用户的
- * 相对位置」推导：覆盖区全在用户上方 → 云在头顶；全在下方 → 云在脚下。 */
+ * 判读范围取**实测数据范围**，不取剖面显示窗（ALT0/ALT1）：
+ * 显示窗是「这张图画哪一段」，判读是「云在哪儿」。把两者混在一起时，
+ * 一整层位于 1500–1900m 的浓云对 4058m 的用户就是「云在脚下」，
+ * 但因为全部落在 ALT0=2000 以下，旧实现会答成「无结论」。
+ * 适配器已把实测范围之外置 0，所以按 covered 取值不会读到外插值。 */
+var SCAN_MIN = 0, SCAN_MAX = 7000
 function denseSpanAt(sample, h, lo, hi) {
   var run = null, runs = [], peak = 0
-  for (var alt = Math.max(ALT0, lo); alt <= Math.min(ALT1, hi); alt += 25) {
+  for (var alt = Math.max(SCAN_MIN, lo); alt <= Math.min(SCAN_MAX, hi); alt += 25) {
     var v = sample(h, alt)
     if (v >= SPAN_C) {
       if (!run) run = { lo: alt, hi: alt }
@@ -251,8 +259,8 @@ function denseSpanAt(sample, h, lo, hi) {
 }
 
 function inferState(sample, h, userAlt, coverage) {
-  var lo = (coverage && Number.isFinite(coverage.lo)) ? Math.max(ALT0, coverage.lo) : ALT0
-  var hi = (coverage && Number.isFinite(coverage.hi)) ? Math.min(ALT1, coverage.hi) : ALT1
+  var lo = (coverage && Number.isFinite(coverage.lo)) ? Math.max(SCAN_MIN, coverage.lo) : ALT0
+  var hi = (coverage && Number.isFinite(coverage.hi)) ? Math.min(SCAN_MAX, coverage.hi) : ALT1
   var inCovered = userAlt >= lo && userAlt <= hi
   var cUser = inCovered ? Math.round(sample(h, userAlt)) : null
   if (inCovered && cUser >= IN_C) return { key: 'in', word: '你在云中', cUser: cUser, span: denseSpanAt(sample, h, lo, hi) }
@@ -323,6 +331,7 @@ function buildGeometry(cf, opts) {
     plotTop: top, plotBot: plotBot,
     xOf: xOf, yOf: yOf, sample: sample,
     userAlt: userAlt, inRuns: inRuns,
+    elevSource: opts.elevSource || null,
     covered: cf.covered || null,
     bands: bands, stats: stats,
   }
@@ -404,7 +413,7 @@ function renderBaseSvg(geo, opts) {
     var xA = geo.x0(r.from), xB = geo.x0(r.to + 1)
     s += '<line x1="' + fmt(xA) + '" y1="' + fmt(youY) + '" x2="' + fmt(xB) + '" y2="' + fmt(youY) + '" stroke="rgba(180,118,26,0.65)" stroke-width="2.5" stroke-linecap="round"/>'
   })
-  s += '<text x="' + (geo.L + geo.plotW - 4) + '" y="' + fmt(youY - 4) + '" text-anchor="end" font-size="7.5" font-weight="600" fill="#163e35" stroke="#fff" stroke-width="2.5" paint-order="stroke">你 · ' + geo.userAlt.toLocaleString('en-US') + ' m' + youTag + '</text>'
+  s += '<text x="' + (geo.L + geo.plotW - 4) + '" y="' + fmt(youY - 4) + '" text-anchor="end" font-size="7.5" font-weight="600" fill="#163e35" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.elevLineLabel(geo.userAlt.toLocaleString('en-US'), geo.elevSource) + youTag + '</text>'
   ;[2000, 3000, 4000, 5000].forEach(function (a) {
     s += '<text x="' + (geo.L - 5) + '" y="' + fmt(geo.yAlt(a) + 2.5) + '" text-anchor="end" font-size="7.5" fill="#8a8f8a">' + a + '</text>'
   })

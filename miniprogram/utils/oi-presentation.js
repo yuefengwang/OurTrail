@@ -30,7 +30,7 @@ const TITLES = {
   VIEW_WINDOW: '远眺窗口',
   GOLDEN_LIGHT: '黄金光',
   BLUE_HOUR: '蓝调时刻',
-  ALPENGLOW: '日照金山',
+  ALPENGLOW: '晨昏光染',
   RAINBOW: '彩虹可能',
   STARGAZING: '星空条件',
   MILKY_WAY: '银河窗口',

@@ -55,7 +55,7 @@ check('降水双柱 = info 蓝 + showers 青', base.svg.indexOf('#346583') >= 0 
 check('风向箭头存在（指向吹去方向）', base.svg.indexOf('rotate(') >= 0)
 check('天气图标 glyphs 存在', base.svg.indexOf('i-sun') >= 0 && base.svg.indexOf('i-moon') >= 0)
 check('云场等值带五档灰阶齐全', ['#eeeeea', '#d4d6d0', '#b0b2ab', '#84867f', '#5a5c56'].every(c => base.svg.indexOf(c) >= 0))
-check('YOU 海拔线存在（3079m）', base.svg.indexOf('你 · 3,079 m') > 0)
+check('YOU 海拔线存在（3079m）', base.svg.indexOf('此点 3,079 m') > 0)
 check('无 blur/filter/foreignObject（小程序 SVG 安全）',
   ['filter', 'blur', 'foreignObject', 'xlink', '<script'].every(k => base.svg.indexOf(k) < 0))
 

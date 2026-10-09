@@ -59,7 +59,7 @@ const base = renderer.renderBaseSvg(mockGeo, {
 check('基础层含 <svg> 根', base.svg.indexOf('<svg') === 0)
 check('含 clipPath（贴边云出血必需）', base.svg.indexOf('clipPath') > 0)
 check('含五档灰阶填充色', ['#eeeeea', '#d4d6d0', '#b0b2ab', '#84867f', '#5a5c56'].every(c => base.svg.indexOf(c) >= 0))
-check('含观景点海拔线标签', base.svg.indexOf('你 · 3,500 m') > 0)
+check('含此点海拔参考线标签（主体不再是「你」）', base.svg.indexOf('此点 3,500 m') > 0)
 check('无外来命名空间/脚本（data-URI 安全）', base.svg.indexOf('script') < 0 && base.svg.indexOf('xlink') < 0)
 check('SVG 生成 < 50ms', base.svgMs < 50, '实际 ' + base.svgMs + 'ms')
 

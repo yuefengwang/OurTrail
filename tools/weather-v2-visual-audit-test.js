@@ -51,7 +51,7 @@ section('Layout：gutter / safe area 不变量（375/390/414）')
   const L = 38
   check(W + 'px：左轴锚点 x=' + (L - 5) + ' ≥ 最长刻度宽（26px）', L - 5 >= 26)
   check(W + 'px：YOU 标签右缘 ≤ 绘图区右缘', (() => {
-    const m = b.svg.match(/<text x="([0-9.]+)"[^>]*>你 · 3,500 m/)
+    const m = b.svg.match(/<text x="([0-9.]+)"[^>]*>此点 3,500 m/)
     return m && +m[1] <= L + g.plotW - 1
   })())
   check(W + 'px：行标题贴 SVG 左缘（x=0，由卡片 16px 内边距保护）', b.svg.indexOf('<text x="0"') >= 0)
@@ -92,7 +92,7 @@ check('coverage 语义未变（covered 透传）', gA.covered.lo === 2000 && gA.
 /* ---------- YOU 线 ---------- */
 section('YOU 线：位置 / 边界 / 钳位')
 const b24 = UMG.renderUnifiedBase(build(24, 3500, 375), {})
-check('YOU 标签恰好一次', (b24.svg.match(/你 · 3,500 m/g) || []).length === 1)
+check('YOU 标签恰好一次', (b24.svg.match(/此点 3,500 m/g) || []).length === 1)
 const yA = build(24, 500, 375)
 check('500m → 剖面下方（不画虚假入云）', UMG.renderUnifiedBase(yA, {}).svg.indexOf('（剖面下方）') >= 0)
 const yB = build(24, 6200, 375)

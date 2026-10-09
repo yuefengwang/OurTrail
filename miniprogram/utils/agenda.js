@@ -24,7 +24,7 @@ const AGENDA_KEYS = ['cloudSea', 'alpenglow', 'rainbow', 'galaxy', 'star']
 
 const TITLES = {
   cloudSea: '云海观察窗口',
-  alpenglow: '日照金山可能',
+  alpenglow: '晨昏光染可能',
   rainbow: '彩虹可能',
   galaxy: '银河窗口',
   star: '星空条件',

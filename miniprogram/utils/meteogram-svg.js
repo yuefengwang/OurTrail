@@ -22,6 +22,7 @@
 'use strict'
 
 const CFF = require('./cloud-field-svg.js')
+const F = require('./format.js')
 
 /* 行布局（逻辑 px；375–414 全宽通用，间距自适应由 plotW 承担） */
 const ROWS = {
@@ -143,6 +144,7 @@ function buildUnified(opts) {
     top: ROWS.cloud.y, bot: ROWS.cloud.y + ROWS.cloud.h,
     covered: cf.covered || null,
     userAlt: Number.isFinite(opts.userAltitude) ? Math.round(opts.userAltitude) : null,
+    elevSource: opts.elevSource || null,
   }
   cloud.yAlt = a => cloud.bot - (a - CFF.ALT0) / (CFF.ALT1 - CFF.ALT0) * (cloud.bot - cloud.top)
 
@@ -378,7 +380,7 @@ function renderUnifiedBase(geo, opts) {
   geo.inRuns.forEach(function (r) {
     s += '<line x1="' + fmt(geo.x0(r.from)) + '" y1="' + fmt(youY) + '" x2="' + fmt(geo.x0(r.to + 1)) + '" y2="' + fmt(youY) + '" stroke="' + C.inCloud + '" stroke-width="2.5" stroke-linecap="round"/>'
   })
-  s += '<text x="' + (geo.L + geo.plotW - 4) + '" y="' + fmt(youY - 4) + '" text-anchor="end" font-size="7.5" font-weight="600" fill="' + C.you + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">你 · ' + fmtM(cloud.userAlt) + ' m' + youTag + '</text>'
+  s += '<text x="' + (geo.L + geo.plotW - 4) + '" y="' + fmt(youY - 4) + '" text-anchor="end" font-size="7.5" font-weight="600" fill="' + C.you + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.elevLineLabel(fmtM(cloud.userAlt), cloud.elevSource) + youTag + '</text>'
   ;[2000, 3000, 4000, 5000].forEach(function (a) {
     s += '<text x="' + (geo.L - 5) + '" y="' + fmt(cloud.yAlt(a) + 2.5) + '" text-anchor="end" font-size="7.5" fill="' + C.muted + '">' + a + '</text>'
   })

@@ -124,7 +124,7 @@ check('全图只有一根 crosshair 线', (sel38.svg.match(/stroke="#163e35" str
 
 /* ---------- YOU 海拔 ---------- */
 section('YOU 海拔：单线贯穿 + 钳位')
-check('YOU 标签只出现一次', (b72.svg.match(/你 · 3,500 m/g) || []).length === 1)
+check('YOU 标签只出现一次', (b72.svg.match(/此点 3,500 m/g) || []).length === 1)
 const g500 = buildGeo(72, 500)
 const b500 = UMG.renderUnifiedBase(g500, {})
 check('500m → 剖面下方标注', b500.svg.indexOf('（剖面下方）') >= 0)

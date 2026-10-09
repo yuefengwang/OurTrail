@@ -39,19 +39,25 @@ function validPairs(cl, gi) {
   return pairs
 }
 
-/* 单列重采样：层间线性插值到统一海拔网格（端点钳制） */
+/* 单列重采样：层间线性插值到统一海拔网格。
+ * 实测范围之外置 0（不再把端点层的云量平推到 0m/7000m）——旧写法等于凭空补出一段
+ * 没有测量依据的云：真实数据里成都实测 146–6674m，被平推成整轴有值；层底在 4300m 的
+ * 高台站点会把剖面下半幅涂成有云。0 的语义是「此处无数据」，渲染据此留白，
+ * 判读据 covered 说相对位置，两侧都不再外插。
+ * 实测范围内保持线性内插：三地点 24h 全量实测相邻层最大间隙仅 489m（>600m 的规则试过，
+ * 它的 min() 兜底会抹掉两侧取值差异大的真实厚云带——负结果，见审计 §四）。 */
 function resampleColumn(pairs, altitudes) {
   return altitudes.map(function (alt) {
-    if (alt <= pairs[0].alt) return pairs[0].cover
-    if (alt >= pairs[pairs.length - 1].alt) return pairs[pairs.length - 1].cover
+    if (alt < pairs[0].alt || alt > pairs[pairs.length - 1].alt) return 0
     for (let k = 1; k < pairs.length; k++) {
       if (alt <= pairs[k].alt) {
-        const s = (alt - pairs[k - 1].alt) / (pairs[k].alt - pairs[k - 1].alt)
-        const v = pairs[k - 1].cover + (pairs[k].cover - pairs[k - 1].cover) * s
+        const gap = pairs[k].alt - pairs[k - 1].alt
+        const s2 = gap === 0 ? 0 : (alt - pairs[k - 1].alt) / gap
+        const v = pairs[k - 1].cover + (pairs[k].cover - pairs[k - 1].cover) * s2
         return Math.max(0, Math.min(100, Math.round(v * 10) / 10))
       }
     }
-    return pairs[pairs.length - 1].cover
+    return 0
   })
 }
 

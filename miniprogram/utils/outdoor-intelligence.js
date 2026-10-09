@@ -26,6 +26,7 @@
 const sky = require('./sky')
 const agenda = require('./agenda')
 const CFF = require('./cloud-field-svg.js')
+const FMT = require('./format.js')
 
 const OPPORTUNITY = {
   CLOUD_SEA: '云海窗口',
@@ -34,7 +35,7 @@ const OPPORTUNITY = {
   VIEW_WINDOW: '远眺窗口',
   GOLDEN_LIGHT: '黄金光',
   BLUE_HOUR: '蓝调时刻',
-  ALPENGLOW: '日照金山',
+  ALPENGLOW: '晨昏光染',
   RAINBOW: '彩虹可能',
   STARGAZING: '星空条件',
   MILKY_WAY: '银河窗口',
@@ -164,7 +165,7 @@ function buildConditions(ctx) {
       evidence.push({ fact: '此点处于云带 ' + Math.round(h.band.base) + '–' + Math.round(h.band.top) + ' m（覆盖 ' + h.band.cover + '%）', at: h.t })
     } else if (list.indexOf('cloudSea') !== -1) {
       key = CONDITION.CLOUD_BELOW
-      evidence.push({ fact: '低云带在你脚下（覆盖 ≥80%），此点在带上方', at: h.t })
+      evidence.push({ fact: '低云带在' + FMT.ELEV_SUBJECT + '下方（覆盖 ≥80%）', at: h.t })
     }
     out.push({ t: h.t, key: key, source: 'hour-view', evidence: evidence })
   }
@@ -180,8 +181,12 @@ function isClearHour(st, sample, hours) {
 }
 
 function peakCover(sample, hours) {
+  /* 扫**实测网格**（0–7000m）而不是剖面显示窗（2000–6000m）：
+     判「这一小时是不是晴空」要看完用户处与其上下全部有测量的高度，
+     显示窗只是这张图画了哪一段。适配器已保证实测范围之外为 0（不外插），
+     所以这里不会因此把「无数据」读成「有云」。 */
   let peak = 0
-  for (let alt = CFF.ALT0; alt <= CFF.ALT1; alt += 250) {
+  for (let alt = 0; alt <= 7000; alt += 250) {
     peak = Math.max(peak, sample(hours, alt))
   }
   return peak
@@ -191,11 +196,11 @@ function peakCover(sample, hours) {
 function conditionEvidence(key, st, h, ctx) {
   const out = []
   if (key === CONDITION.IN_CLOUD && st.span) {
-    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m（峰值 ' + st.span.peak + '%）穿过你的海拔 ' + fmtM(ctx.userAltitude) + ' m', at: h.t })
+    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m（峰值 ' + st.span.peak + '%）穿过' + FMT.ELEV_SUBJECT + '海拔 ' + fmtM(ctx.userAltitude) + ' m', at: h.t })
   } else if (key === CONDITION.CLOUD_BELOW && st.span) {
-    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m 在你的海拔 ' + fmtM(ctx.userAltitude) + ' m 下方', at: h.t })
+    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m 在' + FMT.ELEV_SUBJECT + '海拔 ' + fmtM(ctx.userAltitude) + ' m 下方', at: h.t })
   } else if (key === CONDITION.CLOUD_ABOVE && st.span) {
-    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m 在你的海拔 ' + fmtM(ctx.userAltitude) + ' m 上方', at: h.t })
+    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m 在' + FMT.ELEV_SUBJECT + '海拔 ' + fmtM(ctx.userAltitude) + ' m 上方', at: h.t })
   } else if (key === CONDITION.CLEAR) {
     out.push({ fact: '此海拔与上下邻域云量均 <15%', at: h.t })
   }
@@ -302,7 +307,7 @@ function detectCloudSea(conditions, fieldSample, userAlt, opts) {
     }
     const evidence = []
     evidence.push({ fact: '云层位于 ' + fmtM(run.baseMin) + '–' + fmtM(run.topMax) + ' m', at: from })
-    evidence.push({ fact: '你在云层上方约 ' + fmtM(clearMin) + ' m', at: from })
+    evidence.push({ fact: FMT.ELEV_SUBJECT + '高于云层底部约 ' + fmtM(clearMin) + ' m', at: from })
     evidence.push({ fact: '层均覆盖 ' + coverPeak + '% · 层厚最大 ' + thickMax + ' m', at: from })
     evidence.push({ fact: '预计持续约 ' + run.len + ' 小时', at: from })
     if (windPeak > 0) evidence.push({ fact: '风速 ≤ ' + windPeak + ' km/h', at: from })

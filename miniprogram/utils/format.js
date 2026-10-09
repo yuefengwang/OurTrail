@@ -160,9 +160,42 @@ function minutesLabel(mins) {
   return pad(Math.floor(m / 60)) + ':' + pad(m % 60)
 }
 
+/* ---------- 海拔语义（2026-10-09 Weather V2 审计 §五） ----------
+ * 天气页拿到的海拔永远不是「用户脚下的海拔」：本项目没有任何 wx.getLocation 路径，
+ * 数值只有四个出处——GPX 记录的高程点、地图选点的地形高程、用户手填，
+ * 以及 Open-Meteo 返回的模型地形高度（±300–600 m）。
+ * 所以剖面参考线的主体只能是「此点」；模型来源还必须显式标注，
+ * 否则一个估算值会以测量值的口气出现在决策界面上。
+ * 方向仍然只允许 domain → projection → label：文案在此定义一次，两处渲染器共用。 */
+const ELEV_SUBJECT = '此点'
+const ELEV_SOURCE_LABELS = { gpx: 'GPX 记录', picked: '地图选点', manual: '手动填写', model: '模型地形估算' }
+const ELEV_MODEL_SUFFIX = '（模型估算）'
+function elevSourceLabel(source) { return ELEV_SOURCE_LABELS[source] || ELEV_SOURCE_LABELS.manual }
+/**
+ * 海拔出处判定（唯一权威，页面不许再写一份）：
+ * 点自己有高程（GPX 记录 / 地图选点 / 手填）⇒ 用点的值并带该出处；
+ * 点没有高程而天气返回体带模型地形高度 ⇒ 用模型值并记 source='model'（图上必须显式标注）；
+ * 两者都没有 ⇒ elevation=null，调用方不得显示任何确定数值。
+ */
+function resolveElev(pointEle, pointEleSource, modelEle) {
+  const hasEle = Number.isFinite(pointEle)
+  const hasModel = Number.isFinite(modelEle)
+  if (hasEle) {
+    const s = pointEleSource === 'gpx' || pointEleSource === 'picked' ? pointEleSource : 'manual'
+    return { elevation: pointEle, source: s, ok: true }
+  }
+  if (hasModel) return { elevation: modelEle, source: 'model', ok: false }
+  return { elevation: null, source: null, ok: false }
+}
+/** @param altText 已按各自千分位格式化好的数字；@param source gpx|picked|manual|model */
+function elevLineLabel(altText, source) {
+  return ELEV_SUBJECT + ' ' + altText + ' m' + (source === 'model' ? ELEV_MODEL_SUFFIX : '')
+}
+
 module.exports = {
   pad, WEEK, cnParts, dateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
   minutesLabel, relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
   UNASSIGNED_LABELS, TRIP_MODE_LABELS, TRIP_MODE_HINTS, TRIP_MODE_OPTIONS, RETURN_PLAN_LABELS,
   PICKUP_MISSING, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase, windDirText,
+  ELEV_SUBJECT, ELEV_SOURCE_LABELS, ELEV_MODEL_SUFFIX, elevSourceLabel, elevLineLabel, resolveElev,
 }

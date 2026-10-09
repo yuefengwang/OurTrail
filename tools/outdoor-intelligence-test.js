@@ -93,7 +93,7 @@ check('CLOUD_SEA 与民用晨昏取交集（agenda 同规则）',
   sea && sea.from >= '06:00' && sea.to <= '18:00' + '', sea && sea.from + '–' + sea.to)
 check('CLOUD_SEA evidence 可解释（云层位置/净空/覆盖/持续）',
   sea && sea.evidence.some(e => e.fact.indexOf('云层位于') >= 0) &&
-  sea.evidence.some(e => e.fact.indexOf('你在云层上方') >= 0) && sea.evidence.length >= 3,
+  sea.evidence.some(e => e.fact.indexOf('此点高于云层底部约') >= 0) && sea.evidence.length >= 3,
   sea && JSON.stringify(sea.evidence))
 check('CLOUD_SEA 强度分级存在（WEAK/MODERATE/STRONG）',
   sea && ['WEAK', 'MODERATE', 'STRONG'].indexOf(sea.strength) >= 0, sea && sea.strength)

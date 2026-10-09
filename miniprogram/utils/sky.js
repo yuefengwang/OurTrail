@@ -203,7 +203,7 @@ function alpenglowConclusion(ctx) {
   const isDawn = dawnList.length > 0
   const list = isDawn ? dawnList : duskList
   const side = isDawn ? '晨光' : '昏光'
-  const item = { key: 'alpenglow', title: '日照金山', window: '', look: '', text: '' }
+  const item = { key: 'alpenglow', title: '晨昏光染', window: '', look: '', text: '' }
   if (!list.length) {
     item.text = '今天' + side + '前后云量或降水条件不足，山体被光染的概率很低。'
     item.look = heading == null ? '' : '前进方向朝' + A.bearingLabel(heading)
@@ -234,6 +234,7 @@ function alpenglowConclusion(ctx) {
   }
   const g = grade(score)
   item.text = side + '在 ' + windowText(list) + ' 有山体被光染的可能（' + reasons.join('、') + '）。'
+    + '这里只用了云量与降水：本工具没有目标山峰的位置、坡向、遮挡（DEM）数据，给不出「某座山会不会金山」。'
   item.look = (isDawn ? '朝东至东北' : '朝西至西北') + '看山脊线'
     + (heading == null ? '' : '（按轨迹走向朝' + A.bearingLabel(heading) + '，为粗判）')
   item.window = windowText(list)

@@ -59,11 +59,6 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 // 与 overallGrade/starsFor。本页只消费其产出，不再持有安全规则的字面副本。
 
 
-// 海拔来源标签：活动模式沿用「GPX 记录」；自由查询按 eleSource 如实标注
-function elevLabel(eleSource) {
-  return eleSource === 'gpx' ? 'GPX 记录' : eleSource === 'picked' ? '地图选点' : '手动填写'
-}
-
 /* ---------- V2 图表装配（纯函数，wx-free；weather-v2-test 直接覆盖） ---------- */
 
 // 某分钟的日照相位：night（天文暗夜）/ astro（暮光）/ blue / golden / ''（白昼）。
@@ -385,7 +380,7 @@ Page({
           name: this.displayPointName(p0),
           coordText: p0.coordinates.lat.toFixed(4) + ', ' + p0.coordinates.lng.toFixed(4),
           eleText: Number.isFinite(p0.ele)
-            ? Math.round(p0.ele) + ' m · ' + elevLabel(p0.eleSource)
+            ? Math.round(p0.ele) + ' m · ' + F.elevSourceLabel(p0.eleSource)
             : '海拔未知 · 按模型推算（±300-600 m）',
         } : null,
       }, () => { if (points.length) this.fetchWeather() })
@@ -488,8 +483,13 @@ Page({
     const detail = series.filter(h => h.d === this.data.date)
     const day = (result.days || []).find(x => x.date === this.data.date) || {}
     // 海拔优先用真实高程（GPX/手填），缺失时退回模型降尺度值并说明来源
-    const elevOK = Number.isFinite(point.ele)
-    const elevation = elevOK ? point.ele : result.pointElevation
+    const EV = F.resolveElev(point.ele, point.eleSource, result.pointElevation)
+    const elevOK = EV.ok
+    const elevation = EV.elevation
+    /* 出处必须一路带到图上：图上那条参考线标的是「此点」而不是「你」，
+       而当数值只是 Open-Meteo 的地形高度（±300–600 m）时，还要显式标出「模型估算」，
+       否则估算值会以测量值的口气出现在决策界面（审计 §五）。判定本身在 format.resolveElev。 */
+    this.elevSource = EV.source
     const skyCtx = {
       date: this.data.date,
       lat: point.coordinates.lat,
@@ -628,12 +628,12 @@ Page({
     const detail = (result.series || []).slice(startIdx, startIdx + horizon)
     if (detail.length < 24) return null
     const effHorizon = Math.min(horizon, detail.length)
-    const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' + this.cfWidth() + '|h' + effHorizon
+    const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' + this.cfWidth() + '|h' + effHorizon + '|' + (this.elevSource || 'na')
     if (!this._unified || this._unified.key !== key) {
       const geo = UMG.buildUnified({
         surface: detail, cloudField: field,
         userAltitude: elevation, width: this.cfWidth(),
-        horizon: effHorizon,
+        elevSource: this.elevSource || null, horizon: effHorizon,
         dayLabels: this.cfDayLabels(this.data.date, effHorizon),
       })
       const base = UMG.renderUnifiedBase(geo, {
@@ -1151,7 +1151,9 @@ Page({
     if (!result || !point) return
     const _co = point.coordinates || {}
     this._oiCoords = { lat: Number.isFinite(_co.lat) ? _co.lat : null, lng: Number.isFinite(_co.lng) ? _co.lng : null }
-    const elevation = Number.isFinite(point.ele) ? point.ele : result.pointElevation
+    const EVr = F.resolveElev(point.ele, point.eleSource, result.pointElevation)
+    const elevation = EVr.elevation
+    this.elevSource = EVr.source   // 与 applyWeather 同一判定，避免两条路径给出不同出处
     let unified = null
     try { unified = this.buildUnifiedCard(result, elevation) } catch (e) { unified = null }
     let oiCard = null

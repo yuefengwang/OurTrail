@@ -72,7 +72,14 @@ clHigh.levels = [
 ]
 const fHigh = WCFF.buildCloudField({ cloudLevels: clHigh }, { date: '2026-10-07', userAltitude: 3500 })
 check('高海拔地点（地下层缺失）仍可构建', !!fHigh)
-check('缺失层区间由有效层钳位（2000m 处 = 最低有效层 30%）', fHigh.values[0][fHigh.altitudes.indexOf(2000)] === 30)
+check('实测范围之外不补云：2000m 无测量 ⇒ 0（旧契约把最低有效层 30% 平推下来，等于凭空画出一层没有依据的云）',
+  fHigh.values[0][fHigh.altitudes.indexOf(2000)] === 0, '实际 ' + fHigh.values[0][fHigh.altitudes.indexOf(2000)])
+check('实测范围内照常线性插值，未被一刀切清零（3250m 略高于最低层 30、3750m 介于 30–60）',
+  fHigh.values[0][fHigh.altitudes.indexOf(3250)] > 30 && fHigh.values[0][fHigh.altitudes.indexOf(3250)] < 35 &&
+  fHigh.values[0][fHigh.altitudes.indexOf(3750)] > 30 && fHigh.values[0][fHigh.altitudes.indexOf(3750)] < 60,
+  '3250m=' + fHigh.values[0][fHigh.altitudes.indexOf(3250)] + ' 3750m=' + fHigh.values[0][fHigh.altitudes.indexOf(3750)])
+check('covered 透出实测区间（3180–5840），判读层据此说「云在头顶」而不是沉默',
+  fHigh.covered && fHigh.covered.lo === 3180 && fHigh.covered.hi === 5840, JSON.stringify(fHigh.covered))
 
 /* ---------- Interpretation：三态 + 沉默（3079m 与 3500m） ---------- */
 section('Interpretation：三态与沉默优先')
@@ -117,7 +124,7 @@ check('覆盖范围随数据导出（2000–3000m）', geoLow.covered && geoLow.
 section('Renderer 契约')
 const base = CFF.renderBaseSvg(geoState, { userAltitude: 3500, sunrise: 7.1, sunset: 19.08, dateLabel: '周二 · 2026.10.07' })
 check('生产管线 SVG 含五档灰阶', ['#eeeeea', '#d4d6d0', '#b0b2ab', '#84867f', '#5a5c56'].every(c => base.svg.indexOf(c) >= 0))
-check('含观景点海拔线（你 · 3,500 m）', base.svg.indexOf('你 · 3,500 m') > 0)
+check('含观景点海拔线（此点 3,500 m）', base.svg.indexOf('此点 3,500 m') > 0)
 const t0sel = Date.now()
 const selSvg = CFF.renderSelectionSvg(geoState, { selectedTime: 1 })
 const selMs = Date.now() - t0sel
