@@ -76,9 +76,12 @@ PowerShell 下必须用 `npm.cmd`（执行策略拦 `npm.ps1`）。
 ## 改完代码一定要重开项目
 
 ```bash
-cli close --project D:\OurTrail --port 33278
-cli open  --project D:\OurTrail --port 33278
-cli auto  --project D:\OurTrail --auto-port 9421 --trust-project --port 33278
+# ⚠ 路径必须加单引号：Git Bash 会把未加引号的 D:\OurTrail 吃成 D:OurTrail（驱动器相对路径），
+#   开发者工具照它注册一个新项目并写进 last_compiled，此后每次编译都报
+#   「app.json: 在项目根目录未找到 app.json」——见 SYNC.md 2026-10-09。
+cli close --project 'D:\OurTrail' --port 33278
+cli open  --project 'D:\OurTrail' --port 33278
+cli auto  --project 'D:\OurTrail' --auto-port 9421 --trust-project --port 33278
 ```
 
 只调 `auto` 不会重新编译，模拟器会用旧 bundle —— 这会让人误以为修复没生效。

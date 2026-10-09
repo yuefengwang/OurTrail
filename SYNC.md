@@ -471,6 +471,17 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
   **门禁**：check.js（含 Phase 4 硬门禁）/ check-handlers / smoke 160/0（Profile 补洞后口径）/ fault probes 34/0 / A 层 71/0 / 16 个 scenario 套件 0 失败 / **UI-State：green-c4b 74 过 0 败 2 INCONCLUSIVE（原生 picker 平台限制 + 阶段推进 30s 读窗口 skip）** / **GP 十连跑（Phase 5 树）10/10 轮 0 失败**（187/0/7 逐轮同读数，失败集合恒为空，7 条平台 INCONCLUSIVE 同签名；OVERALL=INCONCLUSIVE 如实保留）。B 层完整账本仍受 trailApiLab 3s 超时阻塞（见 Phase 4 条目）。
 
   **是否需要重新部署 trailApi：不需要**（本轮 `cloudfunctions/` 零改动）。
+- 2026-10-09（**「app.json: 在项目根目录未找到 app.json」根因收口：不是 IDE 注册态玄学，是 shell 吃掉了反斜杠**）：症状是「GUI 里能用，一调试就报」——同一份日志里 GUI 项目窗（`win:s0`）三次 `simulator launch success`，CLI 起的那扇（`win:s1`）每次编译必报此错。
+
+  **根因**：`WeappLog/logs/2026-10-09-14-43-22-206.log:2267` 留下 `open_project_window request { source: 'cli', projectpath: 'D:OurTrail' }`——反斜杠没了。实测 `echo D:\OurTrail` 与 `node -e process.argv` 在 Git Bash 下都收到 `D:OurTrail`，所以吃它的是 shell（未加引号时 `\O` 被当转义），不是 CLI 也不是 Node。`D:OurTrail` 是**驱动器相对路径**：`path.resolve('D:OurTrail')` 从 `D:\OurTrail\tools` 得到 `D:\OurTrail\tools\OurTrail`。IDE 拿这个根去拼 `miniprogramRoot: 'miniprogram/'`，`getAppJSON` 必然找不到 `app.json`——它甚至在日志里报 `found config in shallow root`，即配置读到了、根却是错的。
+
+  **持久污染面**（比一次报错更麻烦）：`WeappLocalData/hash_key_map_2.json` 里 `toolbar_D:OurTrail` 与 `toolbar_D:\OurTrail` 并存，前者 mtime 10-06 07:06 正是下面那条「注册态损坏」记录的时刻；`last_compiled` 被写成 `project2_D:OurTrail`，所以重启 IDE 会自动恢复出坏窗口——今天 14:43 的报错就早于当天任何一次 CLI 调用。**据此更正 `SYNC.md:249` 的归因**：不需要「清理开发者工具用户数据或重装」，坏注册只有这一条，定点删除即可，「复制到新路径开模拟器」的 workaround 也不再需要。
+
+  **处置**：`cli quit` → 轮询到进程数 0（IDE 退出时会回写 localstorage，没退净就改会被覆盖）→ 摘掉坏映射 + `last_compiled` 改回 `project2_D:\OurTrail` + 坏 toolbar 数据改名 `.disabled-D-Colon-OurTrail`（未删；三个文件的原件备份在 `%LOCALAPPDATA%\Temp\ourtrail-ide-fix-backup`）→ `cli open --project 'D:\OurTrail'`。改前用脚本做现场断言（坏映射在、正确项在、`last_compiled` 现值精确匹配），任一不满足即整体退出——第一版守卫把 `hash → keyName` 的映射方向按反了，误报「正确项不存在」而 ABORT，现场零改动（已验证备份目录未创建）。
+
+  **断掉复发源**：`AGENTS.md`「每轮流程」、`docs/e2e-mp/README.md`、`docs/testing/ui-action-map.md`、`docs/testing/golden-path-v1.md` 四处示例命令的 `--project D:\OurTrail` 全部补上单引号并写明为什么（`docs/e2e-mp/automation-playbook.md:31-33` 早就是带引号的，是其余四处没跟上它）。全仓 `grep -- "--project D:"` 现为 0。
+
+  **复验**（新会话日志 `2026-10-09-14-59-23-456.log`）：`projectpath` 只出现 `D:\OurTrail` ×3、`D:OurTrail` 0 次、`未找到 app.json` 0 次、`simulator launch success` ×2、appservice 正常加载 `pages/home/home`；真实会话写回后 `last_compiled` 仍是正确值、坏映射未复现。本轮只改 4 个 `.md` + IDE 用户数据，`miniprogram/` 与 `cloudfunctions/` 零改动，`node tools/check.js` 复跑全绿。**是否需要重新部署 trailApi：不需要**。
 - 2026-10-09（**可靠性加固第二轮：幂等窗口的淘汰依据、失败归类与可观测性**，基线同上 `3c11cd1`，接手时工作区含第一轮**未提交**的变更——全部保留未覆盖，先逐条复跑取证再在其之上继续）：**需重新部署 trailApi + trailApiLab —— 未部署**（本轮又动了 `index.js` 与 `domain/{commands,contracts,profile}.js`；`cloudfunctions/trailApiLab/store.js` 与 domain 副本已由 `node tools/sync-lab.js` 同步，`lab-dryrun` 165✓ 复验）。报告续写在同一份文件的 §11–§18：`docs/superpowers/specs/2026-10-09-reliability-production-hardening.md`（没有另开新文件）。
 
   **R-1（P1，已修）幂等窗口按数组位置淘汰，而落库重读会重排数组。** `pruneReceipts` 的 `slice(len-600)` 在单个进程里完全正确（push 序＝时间序），所以 smoke / lifecycle-* 三轮审计全绿；但 `store.loadCollection` 以 `orderBy('_id','asc')` 回读，而 receipt 的文档键是 `actorId + '__' + requestId`（`store.js:27`）——openid 是随机串，键序与写入时间毫无关系。于是越过上限后的那一刀砍掉的是「字典序最靠前那个人」的记录，而不是最旧的。真实 store 往返复现：被淘汰的恰是刚写入的 `req-A-probe-activity-create`（最旧的是 `req-3`），随后重发同一条命令不再得到 `replayed:true`，而是**落库多出第二场活动**。修复＝三处上限（receipts 600 / events 800 / notices 800）统一走新的 `pruneRecent(list, limit, keyOf, atOf)`：按 `appliedAt`/`occurredAt`/`publishedAt` 留最近，并列按文档键定序（同批数据反复截断必须得到同一集合）。没有把这条塞进 `invariants.js`（铁律 20：那会锁库），改在写入端 + 套件看守。

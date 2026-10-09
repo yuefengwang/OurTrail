@@ -10,9 +10,10 @@
 
 ```bash
 # 改码后必须重开项目重编译（只调 auto 不重编译，会对着旧 bundle 误判）
-cli close --project D:\OurTrail --port 33278
-cli open  --project D:\OurTrail --port 33278 && sleep 25
-cli auto  --project D:\OurTrail --auto-port 9421 --trust-project --port 33278
+# 路径必须加单引号，否则 Git Bash 会把它吃成 D:OurTrail —— 见 AGENTS.md「每轮流程」的 ⚠ 注释
+cli close --project 'D:\OurTrail' --port 33278
+cli open  --project 'D:\OurTrail' --port 33278 && sleep 25
+cli auto  --project 'D:\OurTrail' --auto-port 9421 --trust-project --port 33278
 # 驱动库装仓库外： %LOCALAPPDATA%\Temp\opencode\mp-auto && npm.cmd i miniprogram-automator
 ```
 

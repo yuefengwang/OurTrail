@@ -298,10 +298,13 @@ P4 的 5 个真机 bug 里，**只有 1 个是逻辑正确性问题，其余 4 �
 
 ```bash
 # 1) 改完代码后**必须**重开项目，否则模拟器仍用旧 bundle（这是最容易误判「改了没生效」的地方）
-cli close --project D:\OurTrail --port 33278
-cli open  --project D:\OurTrail --port 33278
+# ⚠ 路径必须加单引号：Git Bash 会把未加引号的 D:\OurTrail 吃成 D:OurTrail（驱动器相对路径），
+#   开发者工具照它注册一个新项目并写进 last_compiled，此后每次编译都报
+#   「app.json: 在项目根目录未找到 app.json」——见 SYNC.md 2026-10-09。
+cli close --project 'D:\OurTrail' --port 33278
+cli open  --project 'D:\OurTrail' --port 33278
 sleep 25
-cli auto  --project D:\OurTrail --auto-port 9421 --trust-project --port 33278
+cli auto  --project 'D:\OurTrail' --auto-port 9421 --trust-project --port 33278
 #    → 期望输出 {"autoPort": 942, ...}；AppID 会回显，确认是本项目的
 
 # 2) 驱动库装在**仓库外**（本仓库零 npm 依赖是铁律，不能污染）

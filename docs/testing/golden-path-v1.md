@@ -202,9 +202,9 @@ CONFLICT 被 `dispatchAndSync` 重读吞掉、以及云端写失败。这一轮�
 
 ```bash
 # 前置（一次性）：开发者工具设置→安全→服务端口开启；项目已登录并能打开 D:\OurTrail
-"C:\Program Files (x86)\Tencent\微信web开发者工具\cli.bat" close --project D:\OurTrail --port 33278
-"C:\Program Files (x86)\Tencent\微信web开发者工具\cli.bat" open  --project D:\OurTrail --port 33278
-"C:\Program Files (x86)\Tencent\微信web开发者工具\cli.bat" auto  --project D:\OurTrail --auto-port 9420 --trust-project --port 33278
+"C:\Program Files (x86)\Tencent\微信web开发者工具\cli.bat" close --project 'D:\OurTrail' --port 33278
+"C:\Program Files (x86)\Tencent\微信web开发者工具\cli.bat" open  --project 'D:\OurTrail' --port 33278
+"C:\Program Files (x86)\Tencent\微信web开发者工具\cli.bat" auto  --project 'D:\OurTrail' --auto-port 9420 --trust-project --port 33278
 node tools/e2e-golden-path-test.js      # 逐节点账本 + VERDICT；退出码 0/1/2
 ```
 
