@@ -86,6 +86,22 @@ function grade(score) {
   return { score: Math.round(s), tone: 'neutral', label: GRADES[GRADES.length - 1].label }
 }
 
+/* 结论的三态判定（呈现层据此决定"出不出这张卡"，不再靠分数恰好为 0 的巧合）：
+   possible —— 必要条件成立，有戏；分数只回答"多有戏"，不回答"要不要露出来"。
+   excluded —— **判过了**，必要条件不成立（暗夜晴空 0%、没有成层低云带、此点不在云上、
+               太阳能不能照出来都不成立）⇒ 页面沉默。乌漆嘛黑的一天还挂着
+               「朝西南 231 度找银心带」，是把"不可能"包装成"建议"。
+   unknown  —— 缺输入判不出（没有可信海拔、没有暗夜时段数据）⇒ **必须仍然出现并说明缺什么**，
+               否则未知会被读成"没有云/没有机会"（铁律 26②）。
+   分档阈值一个都没动：这是给已有分支结论起名字，不是新增判据。 */
+const VERDICT = { POSSIBLE: 'possible', EXCLUDED: 'excluded', UNKNOWN: 'unknown' }
+
+/* 页面/呈现层只问这一句，不各自比较枚举原文（铁律 22：模板不比较枚举字面量）。
+   没有 verdict 的一律算"不沉默"——判不出不能读成不成立，缺字段也不能把卡吃掉。 */
+function isSilent(item) {
+  return !!item && item.verdict === VERDICT.EXCLUDED
+}
+
 /* ---------- 逐小时速览 ---------- */
 
 function hourCloud(h) {
@@ -219,7 +235,8 @@ function alpenglowConclusion(ctx) {
   if (!list.length) {
     item.text = '今天' + side + '前后云量或降水条件不足，山体被光染的概率很低。'
     item.look = heading == null ? '' : '前进方向朝' + A.bearingLabel(heading)
-    return Object.assign(item, grade(0))
+    /* 判过了：晨昏窗口内没有一小时满足"低云少 + 无降水" ⇒ 必要条件不成立，页面沉默 */
+    return Object.assign(item, grade(0), { verdict: VERDICT.EXCLUDED })
   }
   const first = list[0]
   const c = hourCloud(first)
@@ -250,7 +267,7 @@ function alpenglowConclusion(ctx) {
   item.look = (isDawn ? '朝东至东北' : '朝西至西北') + '看山脊线'
     + (heading == null ? '' : '（按轨迹走向朝' + A.bearingLabel(heading) + '，为粗判）')
   item.window = windowText(list)
-  return Object.assign(item, g)
+  return Object.assign(item, g, { verdict: VERDICT.POSSIBLE })
 }
 
 // 云海：五信号合成（低层湿层 / 清晨时段 / 高层干净 / 观察点在带顶之上 / 微风），另参考前日降水
@@ -261,12 +278,13 @@ function cloudSeaConclusion(ctx) {
   const item = { key: 'cloudSea', title: '云海', window: '', look: '站在此点向低处与远处看云顶', text: '' }
   if (!elevOK) {
     item.text = '此点缺少可信海拔（GPX 未记录高程），无法判断是否高过云层带。'
-    return Object.assign(item, grade(0))
+    /* 判不出 ≠ 不成立：没有海拔不能断言"这里看不到云海"，卡片必须留着说缺什么 */
+    return Object.assign(item, grade(0), { verdict: VERDICT.UNKNOWN })
   }
   const solid = detail.filter(h => CLF.isCloudBand(h.band))
   if (!solid.length) {
     item.text = '今天没有成层的低云带（无 ' + CLF.LAYER_LIMITS.CLOUD_BAND_COVER_MIN + '% 以上云量的层），云海无从形成。'
-    return Object.assign(item, grade(0))
+    return Object.assign(item, grade(0), { verdict: VERDICT.EXCLUDED })
   }
   let score = 20
   const reasons = []
@@ -295,7 +313,9 @@ function cloudSeaConclusion(ctx) {
     ? '清晨 ' + windowText(list) + ' 有在云顶之上看云海的机会（' + reasons.join('、') + '）。'
     : '今天有云带但此点在云带内或云带偏高，云海机会低（' + reasons.join('、') + '）。'
   item.window = above ? windowText(list) : ''
-  return Object.assign(item, g)
+  /* above===false 是"判过了"：有可信海拔、有成层云带，但此点不在带顶之上 ⇒ 站在这里看不到云顶。
+     这正是"海拔明显不在云层之上，怎么可能看到云海"那一类，沉默。 */
+  return Object.assign(item, g, { verdict: above ? VERDICT.POSSIBLE : VERDICT.EXCLUDED })
 }
 
 // 星空：天文暗夜窗口 + 晴空率 + 月照
@@ -307,7 +327,8 @@ function starConclusion(ctx) {
   const item = { key: 'star', title: '星空', window: '', look: '关掉手电、避开城镇光害，找开阔北向视野', text: '' }
   if (!night.length) {
     item.text = '天文暗夜时段数据不足（今日极昼/极夜或无数据）。'
-    return Object.assign(item, grade(0))
+    /* 没有暗夜时段的读数 ⇒ 没判过，不能断言"看不到星空" */
+    return Object.assign(item, grade(0), { verdict: VERDICT.UNKNOWN })
   }
   const sight = A.starSight(night, moon, A.galaxySeason(date))
   const cs = night.map(hourCloud)
@@ -324,7 +345,8 @@ function starConclusion(ctx) {
   item.text = '天文暗夜 ' + windowText(night) + '（' + night.length + ' 小时，夜段延续到次日，晨段属前夜尾段），'
     + sight.star.text
     + '（暗夜晴空 ' + clearRate + '%，' + moon.name + '月照 ' + moon.illumination + '%）。'
-  return Object.assign(item, g)
+  /* 暗夜晴空 0% ⇒ 整个天文暗夜里没有一小时"中高层云少且无降水"，星空是被判掉的、不是没判的 */
+  return Object.assign(item, g, { verdict: clearRate === 0 ? VERDICT.EXCLUDED : VERDICT.POSSIBLE })
 }
 
 // 银河：银心季 + 暗夜晴空 + 月照 + 方位
@@ -336,11 +358,12 @@ function galaxyConclusion(ctx) {
   const item = { key: 'galaxy', title: '银河', window: '', look: '', text: '' }
   if (!A.galaxySeason(date)) {
     item.text = '不在银心季节（约 3-10 月），此时夜空以亮星为主，银河不明显。'
-    return Object.assign(item, grade(0))
+    /* 银心季是客观天文事实：不在季就是判过了的不成立，不是"数据不足" */
+    return Object.assign(item, grade(0), { verdict: VERDICT.EXCLUDED })
   }
   if (!night.length) {
     item.text = '天文暗夜时段数据不足。'
-    return Object.assign(item, grade(0))
+    return Object.assign(item, grade(0), { verdict: VERDICT.UNKNOWN })
   }
   const cs = night.map(hourCloud)
   const clearRate = Math.round(cs.filter(c => (c.high + c.mid) / 2 < 30 && c.precip === 0).length / cs.length * 100)
@@ -365,7 +388,8 @@ function galaxyConclusion(ctx) {
   item.text = clearRate >= 70 && moon.illumination < 35
     ? '银心季 + 暗夜晴（' + clearRate + '%）+ 月照 ' + moon.illumination + '%，银河可见概率较大。'
     : '银心季，但' + (clearRate < 70 ? '暗夜有云（晴 ' + clearRate + '%）' : '月照 ' + moon.illumination + '% 偏亮') + '，银河不建议抱太大期望。'
-  return Object.assign(item, g)
+  /* 同上：暗夜晴空 0% 时还给「朝西南 231 度找银心带」，是把不可能包装成建议 */
+  return Object.assign(item, g, { verdict: clearRate === 0 ? VERDICT.EXCLUDED : VERDICT.POSSIBLE })
 }
 
 // 彩虹：反日点 42 度半径，太阳越高虹越低
@@ -377,7 +401,8 @@ function rainbowConclusion(ctx) {
   if (!list.length) {
     item.text = '今天没有"太阳照得出来 + 空气有水分"同时成立的钟点，彩虹概率很低'
       + '（彩虹要求太阳在身后且高度低于约 40 度，还得真能看到太阳——满天云时这个条件不成立）。'
-    return Object.assign(item, grade(0))
+    /* 逐小时都判过了（太阳高度、遮光、水分三项），没有任何一小时同时成立 ⇒ 沉默 */
+    return Object.assign(item, grade(0), { verdict: VERDICT.EXCLUDED })
   }
   const first = list[0]
   const solar = A.solarPosition(A.cnToMs(date, first.t), lat, lng)
@@ -399,7 +424,7 @@ function rainbowConclusion(ctx) {
   item.look = '背对太阳，朝' + A.bearingLabel(anti) + '（约 ' + Math.round(anti) + ' 度）看，主虹顶部仰角约 ' + top + ' 度'
   item.text = (solar.altitude < 12 ? '太阳压得低，' : '太阳偏高，') + '在 ' + windowText(list)
     + ' 有降水或高湿，彩虹出现的可能性存在；彩虹只在太阳对侧且太阳低于约 40 度时可见。'
-  return Object.assign(item, g)
+  return Object.assign(item, g, { verdict: VERDICT.POSSIBLE })
 }
 
 // 摄影窗口：黄金时刻与蓝调时刻（客观时刻，无概率）
@@ -414,6 +439,8 @@ function lightConclusion(ctx) {
     score: 100,
     tone: '',
     label: '客观时刻',
+    /* 客观时刻不是"概率判断"，永远不因天气被沉默（页面本来也不渲染这张卡） */
+    verdict: VERDICT.POSSIBLE,
     window: '',
     look: '',
     text: '日出 ' + (sun.sunrise || '--') + ' · 日落 ' + (sun.sunset || '--')
@@ -448,4 +475,5 @@ function summarize(ctx) {
 module.exports = {
   hourMin, num, mean, bearingBetween, inArc, inWindow, hourTouches, addDays,
   grade, hourCloud, nightHours, hourMarks, hourSegments, summarize, LIGHT_WINDOW_MIN,
+  VERDICT, isSilent,
 }

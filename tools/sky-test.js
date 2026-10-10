@@ -285,5 +285,83 @@ section('11. 工具函数')
   check('summarize 缺坐标返回 null', S.summarize({ date: DATE, detail: day() }) === null)
 }
 
+section('12. 三态判定 verdict：判过不成立要沉默，判不出仍要说话')
+{
+  /* 用户真机三连问的第二半：满天云那天页面上挂着「星空 ★★／银河 ★★★／彩虹 ★★★★」，
+     银河卡还给出一句可执行指令（朝西南约 231 度找银心带）。分数低不等于不存在——
+     「要不要出现」以前是分数恰好为 0 的巧合，现在由 verdict 显式回答：
+       possible 判得出来且有戏 / excluded 判过了、必要条件不成立 ⇒ 页面沉默
+       unknown 缺输入判不出 ⇒ 卡片必须留着说明缺什么（铁律 26②：未知不得读成"没有"）。
+     分档阈值一个都没动，这是给已有分支起名字。 */
+  const V = S.VERDICT
+  const PHENO = ['alpenglow', 'cloudSea', 'star', 'galaxy', 'rainbow']
+  const closed = it => it.verdict === V.POSSIBLE || it.verdict === V.EXCLUDED || it.verdict === V.UNKNOWN
+  const band = { cover: 95, base: 1000, top: 1400 }
+
+  // ① 闭集门：每张卡都必须带 verdict——页面据此出卡，undefined 就是没判
+  const sweeps = [
+    S.summarize(ctx(day({ '*': { low: 5, mid: 5, high: 10 } }), { date: '2026-07-15' })),
+    S.summarize(ctx(day({ '*': { low: 95, mid: 90, high: 90, precip: 2, pop: 90 } }))),
+    S.summarize(ctx(day({ '*': { low: 80, mid: 5, high: 5, band } }), { elevation: null, elevOK: false })),
+    S.summarize(ctx(day({ '*': {} }), { date: '2026-01-15' })),
+    S.summarize(ctx(day({ '*': { low: 5, mid: 5, high: 10 } }), { lat: 70, date: '2026-06-21' })),
+  ]
+  check('5 组天气 × 每张卡都有闭集 verdict（无 undefined）',
+    sweeps.every(r => r && r.items.every(closed)),
+    sweeps.map(r => r.items.map(i => i.key + ':' + String(i.verdict)).join(',')).join(' | ').slice(0, 260))
+
+  // ② 复现用户截图那天气：满云 + 持续降水，五项全部"判过了不成立"
+  const oc = S.summarize(ctx(day({ '*': { low: 95, mid: 90, high: 90, precip: 2, pop: 90 } })))
+  check('满云有雨：五项全 excluded（一张都不该出现在页面上）',
+    PHENO.every(k => byKey(oc, k).verdict === V.EXCLUDED),
+    PHENO.map(k => k + ':' + byKey(oc, k).verdict).join(' '))
+  /* 这两条把"截图里的星"钉住：它们此前靠 score 出现在页面上（36→★★、48→★★★），
+     现在必须靠 verdict 消失，所以断言"分数还在那儿但被沉默"——分数不是出现与否的凭据。 */
+  check('星空/银河的分数未改动（36/48），改的是"要不要出现"',
+    byKey(oc, 'star').score === 36 && byKey(oc, 'galaxy').score === 48,
+    'star=' + byKey(oc, 'star').score + ' galaxy=' + byKey(oc, 'galaxy').score)
+  check('客观时刻（light）永远 possible：它是钟点不是概率判断',
+    byKey(oc, 'light').verdict === V.POSSIBLE)
+
+  // ③ 反向对照：晴空无月夜必须"有戏"，不许把可能误沉默
+  const cl = S.summarize(ctx(day({ '*': { low: 5, mid: 5, high: 10 } }), { date: '2026-07-15' }))
+  check('晴空无月夜：星空与银河 possible（且银河仍给方位）',
+    byKey(cl, 'star').verdict === V.POSSIBLE && byKey(cl, 'galaxy').verdict === V.POSSIBLE && /找银心带/.test(byKey(cl, 'galaxy').look),
+    byKey(cl, 'galaxy').look)
+
+  // ④ 判不出 ≠ 不成立：缺可信海拔时云海是 unknown，卡片必须留着
+  const noAlt = S.summarize(ctx(day({ '*': { low: 80, mid: 5, high: 5, band } }), { elevation: null, elevOK: false }))
+  check('缺可信海拔：云海 unknown 而不是 excluded（没有海拔无权断言看不到）',
+    byKey(noAlt, 'cloudSea').verdict === V.UNKNOWN, byKey(noAlt, 'cloudSea').text)
+  // 同一份云数据，海拔补上且此点在带顶之上 ⇒ possible；落在带内 ⇒ excluded
+  check('补上海拔（同份云数据）此点在带上 → 云海 possible',
+    byKey(S.summarize(ctx(day({ '*': { low: 80, mid: 5, high: 5, band } }), { elevation: 2000 })), 'cloudSea').verdict === V.POSSIBLE)
+  const below = S.summarize(ctx(day({ '*': { low: 80, mid: 5, high: 5, band } }), { elevation: 1200 }))
+  check('此点在带内（判过了）→ 云海 excluded', byKey(below, 'cloudSea').verdict === V.EXCLUDED)
+  /* 这条是总评必须剔除被沉默卡的实据：被排除的云海卡手里还攥着 64 分（≥45 会进 live），
+     若继续参与平均，页面看不见它却受它影响——看不见的证据不能决定看得见的结论。 */
+  check('被沉默的卡可以带着不低的分数（' + byKey(below, 'cloudSea').score + ' ≥45）',
+    byKey(below, 'cloudSea').score >= 45, 'score=' + byKey(below, 'cloudSea').score)
+
+  // ⑤ 没有暗夜小时（极昼形态）＝没判过 ⇒ unknown，不得写成"看不到星空"
+  const polar = S.summarize(ctx(day({ '*': { low: 5, mid: 5, high: 10 } }), { lat: 70, date: '2026-06-21' }))
+  check('极昼无暗夜小时：星空/银河 unknown（不是 excluded）',
+    byKey(polar, 'star').verdict === V.UNKNOWN && byKey(polar, 'galaxy').verdict === V.UNKNOWN,
+    byKey(polar, 'star').text)
+
+  // ⑥ 非银心季是客观天文事实 ⇒ excluded（与"缺数据"分开）；同一天星空只看云，仍 possible
+  const off = S.summarize(ctx(day({ '*': { low: 5, mid: 5, high: 10 } }), { date: '2026-01-15' }))
+  check('1 月非银心季：银河 excluded、星空 possible',
+    byKey(off, 'galaxy').verdict === V.EXCLUDED && byKey(off, 'star').verdict === V.POSSIBLE,
+    byKey(off, 'galaxy').text)
+
+  // ⑦ isSilent 是页面唯一的问法：缺字段必须失败开放（不把卡吃掉）
+  check('isSilent 只对 excluded 为真，unknown/possible/缺字段都为假',
+    S.isSilent({ verdict: V.EXCLUDED }) === true
+      && S.isSilent({ verdict: V.UNKNOWN }) === false
+      && S.isSilent({ verdict: V.POSSIBLE }) === false
+      && S.isSilent({}) === false && S.isSilent(undefined) === false)
+}
+
 console.log('\npassed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)

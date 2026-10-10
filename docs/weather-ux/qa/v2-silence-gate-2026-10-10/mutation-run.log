@@ -1,0 +1,20 @@
+有效性门：未变异副本 3 套 + 对拍全绿
+
+✓ S1 isSilent 恒假（整个沉默闸拆掉）
+    被抓于 sky-test.js (exit 1)；weather-v2-test.js (exit 1)；weather-page-test.js (exit 1)；ab-silence.js 对拍 → 越界/空改/阳性对照之一未过
+✓ S2 把"判不出"当成"判过不成立"（unknown 一起吃掉）
+    被抓于 sky-test.js (exit 1)；weather-page-test.js (exit 1)；ab-silence.js 对拍 → 越界/空改/阳性对照之一未过
+✓ S3 页面照常出卡（buildCondCards 的过滤拆掉）
+    被抓于 weather-page-test.js (exit 1)；ab-silence.js 对拍 → 越界/空改/阳性对照之一未过
+✓ S4 减了卡却不点名（沉默行永远不出现）
+    被抓于 weather-page-test.js (exit 1)；ab-silence.js 对拍 → 越界/空改/阳性对照之一未过
+✓ S5 缺海拔被写成"看不到云海"（unknown → excluded）
+    被抓于 sky-test.js (exit 1)；weather-page-test.js (exit 1)；ab-silence.js 对拍 → 越界/空改/阳性对照之一未过
+✓ S6 此点在云带内仍算有戏（云海永不排除）
+    被抓于 sky-test.js (exit 1)；weather-page-test.js (exit 1)
+✓ S7 暗夜晴空 0% 的银河继续建议找银心带
+    被抓于 sky-test.js (exit 1)；weather-page-test.js (exit 1)
+✓ S8 总评继续听被沉默那张卡的（overallGrade 过滤拆掉）
+    被抓于 weather-v2-test.js (exit 1)；weather-page-test.js (exit 1)
+
+变异 8 条，漏网 0 条

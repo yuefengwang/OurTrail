@@ -137,6 +137,8 @@
 
 /* V2 户外条件卡：总评 + 评级卡（与事实层用同款卡片语言，靠文案与星级承载差异） */
 .cond-card { border-left: 3px solid var(--forest); }
+/* 沉默说明行：不是结论、也没有评级，左边条降为分隔线色，避免与 `.cond-card` 抢注意力 */
+.cond-silent { border-left: 3px solid var(--line); }
 .cond-pheno { display: flex; flex-direction: column; gap: 6px; }
 .cond-pheno.featured { border-left: 3px solid var(--info); }
 .cond-main { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }

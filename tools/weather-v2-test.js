@@ -248,6 +248,24 @@ section('6. overallGrade 与星级语言')
   check('<45 → ★★☆☆☆（最低两星，不打一星）', cond.starsOf(10) === '★★☆☆☆')
   check('空清单 → 条件较差不炸', cond.overallGrade([]).label === '条件较差')
   check('全为 light → 用其余项（空）走较差档', cond.overallGrade([{ key: 'light', score: 100 }]).label === '条件较差')
+  /* 沉默闸（第十轮）：页面上已经不出现的卡，不能再替总评投票。
+     被排除的云海可以攥着 64 分（≥45 会进 live），旧规则下它会把 90 的星空拉成 77——
+     看不见的证据决定看得见的结论。 */
+  check('excluded 的高分项不进 live（只剩星空 90 说话）', (() => {
+    const g2 = cond.overallGrade([
+      { key: 'cloudSea', score: 64, tone: 'warning', label: '条件一般', verdict: 'excluded' },
+      { key: 'star', score: 90, tone: 'success', label: '条件较好', verdict: 'possible' },
+    ])
+    return g2.score === 90
+  })(), JSON.stringify(cond.overallGrade([
+    { key: 'cloudSea', score: 64, verdict: 'excluded' },
+    { key: 'star', score: 90, verdict: 'possible' },
+  ])))
+  /* 反向：没有 verdict 的旧形状必须照常参与（isSilent 失败开放）。
+     上面那组 65 分的用例就是这一条的活证据，这里再点名一次，免得以后有人
+     把"缺 verdict"当成"已被沉默"来减卡。 */
+  check('缺 verdict 的项不被当成 excluded（失败开放）',
+    cond.overallGrade(items).score === 65, JSON.stringify(cond.overallGrade(items)))
 }
 
 console.log('\npassed=' + passed + ' failed=' + failed)

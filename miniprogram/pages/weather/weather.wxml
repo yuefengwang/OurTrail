@@ -399,6 +399,11 @@
         <text class="pheno-disclaimer small muted">基于天气数据估算，非气象预报。</text>
       </view>
 
+      <!-- 不出卡 ≠ 不说明：这里点名"哪几项被判过不成立"，与"缺数据判不出"（那些卡仍在）分开 -->
+      <view wx:if="{{condSilent}}" class="card cond-silent">
+        <text class="pheno-text">{{condSilent.text}}</text>
+      </view>
+
       <!-- 逐小时明细（折叠，V2 Numbers：全字段横滚表，专业用户深度数据；默认收起） -->
       <view class="button text" hover-class="button-hover" bindtap="toggleDetail">{{showDetail ? '收起逐小时数据' : '展开逐小时数据'}}</view>
       <view wx:if="{{showDetail}}" class="card num-sheet">

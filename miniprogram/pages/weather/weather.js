@@ -164,6 +164,7 @@ Page({
     spaceArriveT: '',
     // V2 户外条件：总评 + 评级卡（Evidence 锚点在 Phase 4 由 factsFor 注入）
     condOverall: null,
+    condSilent: null,
     condCards: [],
     openEvidence: {},
     // 自由查询单点：静态点卡替代节点 picker（P3 §5.1）
@@ -435,7 +436,7 @@ Page({
       chartView: [], chartSunBands: {}, chartSunLines: {}, chartNow: null, chartElev: null,
       chartPick: null, hourChip: null, agenda: [],
       unified: null, oiCard: null, oiHorizon: null,
-      condOverall: null, condCards: [], openEvidence: {},
+      condOverall: null, condSilent: null, condCards: [], openEvidence: {},
     }
     // 兜底：日期尚未落定时不外呼（云函数会回"日期无效"，那句话对用户没意义）。
     // resolveDate 兜底链必然产出合法日期，收敛一次即可，不会循环。
@@ -583,6 +584,7 @@ Page({
       callouts: cond.buildCallouts(day, detail, elevation),
       detailRows: this.buildDetailRows(detail),
       condOverall: skyOut ? cond.overallGrade(skyOut.items) : null,
+      condSilent: this.buildCondSilent(skyOut),
       condCards: this.buildCondCards(skyOut, {
         date: this.data.date,
         detail,
@@ -1011,10 +1013,13 @@ Page({
   // V2 户外条件卡：sky.summarize 的产出原样换容器（文案/时段/往哪看零重写），
   // 只新增评级语言（starsOf）与 Evidence 事实清单（factsFor，全部图上可核对的事实）。
   // 客观时刻（light）不进卡片——黄金/蓝调/日出日落是事实，由日照轴与 Agenda 表达。
+  // verdict==='excluded'（判过不成立）的项不出卡：乌漆嘛黑的一天还挂着「朝西南 231 度找银心带」，
+  // 是把"不可能"包装成"建议"。判不出（unknown）的必须继续出现并说明缺什么（铁律 26②）。
   buildCondCards(skyOut, ctx) {
     if (!skyOut) return []
     const cards = skyOut.items
       .filter(it => it.key !== 'light')
+      .filter(it => !sky.isSilent(it))
       .map(it => ({
         key: it.key,
         title: it.title,
@@ -1030,6 +1035,21 @@ Page({
       }))
     cards.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
     return cards
+  },
+
+  /* 沉默要有名有姓（铁律 27③）：减卡不等于悄悄少了几行——页面必须说清"这几项是判过的不成立"，
+     否则用户无从区分"今天没戏"与"工具坏了/没数据"。 */
+  buildCondSilent(skyOut) {
+    if (!skyOut) return null
+    const titles = skyOut.items
+      .filter(it => it.key !== 'light' && sky.isSilent(it))
+      .map(it => it.title)
+    if (!titles.length) return null
+    return {
+      count: titles.length,
+      titles: titles.join('、'),
+      text: '这些天相今天条件不成立，就不单独列出：' + titles.join('、') + '。',
+    }
   },
 
   // Evidence 开合（「为什么？」）

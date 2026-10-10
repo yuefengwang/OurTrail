@@ -1,0 +1,411 @@
+{
+  "generatedAt": "2026-10-10T08:23:37.208Z",
+  "pre": "5351231",
+  "场景数": 40,
+  "被沉默卡总数": 107,
+  "unknown存活数": 1,
+  "总评变化场景": 21,
+  "越界读数": 0,
+  "明细": [
+    {
+      "场景": "满云有雨（用户截图那天气）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "",
+      "被沉默": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:excluded galaxy:excluded rainbow:excluded",
+      "总评改前": 48,
+      "总评改后": 0,
+      "越界": []
+    },
+    {
+      "场景": "满云无雨（低云 100%，一滴没下）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "",
+      "被沉默": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:excluded galaxy:excluded rainbow:excluded",
+      "总评改前": 48,
+      "总评改后": 0,
+      "越界": []
+    },
+    {
+      "场景": "高云遮日（低云少但卷层云铺满）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow",
+      "被沉默": "cloudSea,star,galaxy,rainbow",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:excluded galaxy:excluded rainbow:excluded",
+      "总评改前": 70,
+      "总评改后": 92,
+      "越界": []
+    },
+    {
+      "场景": "晴空无月夜（星空银河都有戏）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy",
+      "被沉默": "cloudSea,alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 81,
+      "总评改后": 81,
+      "越界": []
+    },
+    {
+      "场景": "晴空但无染色云（光染判过不成立）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy",
+      "被沉默": "cloudSea,alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 81,
+      "总评改后": 81,
+      "越界": []
+    },
+    {
+      "场景": "云开有雨（彩虹成立的对照）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy,rainbow",
+      "被沉默": "cloudSea,alpenglow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 87,
+      "总评改后": 87,
+      "越界": []
+    },
+    {
+      "场景": "清晨有云带 · 此点在带顶之上",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "cloudSea,star,galaxy",
+      "被沉默": "alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:possible star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 83,
+      "总评改后": 83,
+      "越界": []
+    },
+    {
+      "场景": "清晨有云带 · 此点在带内（判过了）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy",
+      "被沉默": "cloudSea,alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 75,
+      "总评改后": 81,
+      "越界": []
+    },
+    {
+      "场景": "清晨有云带 · 缺可信海拔（判不出）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "cloudSea,star,galaxy",
+      "被沉默": "alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:unknown star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 81,
+      "总评改后": 81,
+      "越界": []
+    },
+    {
+      "场景": "极昼形态（无暗夜小时）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy",
+      "被沉默": "cloudSea,alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 81,
+      "总评改后": 81,
+      "越界": []
+    },
+    {
+      "场景": "非银心季（1 月晴夜）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star",
+      "被沉默": "cloudSea,alpenglow,galaxy,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:excluded rainbow:excluded",
+      "总评改前": 73,
+      "总评改后": 73,
+      "越界": []
+    },
+    {
+      "场景": "五项同时有戏的对照日（夜里晴 + 清晨带下云海 + 晨昏染色云 + 阵雨彩虹）",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "被沉默": "",
+      "verdicts": "light:possible alpenglow:possible cloudSea:possible star:possible galaxy:possible rainbow:possible",
+      "总评改前": 88,
+      "总评改后": 88,
+      "越界": []
+    },
+    {
+      "场景": "成都 2026-10-09",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow,star,galaxy",
+      "被沉默": "cloudSea,rainbow",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 56,
+      "总评改后": 58,
+      "越界": []
+    },
+    {
+      "场景": "成都 2026-10-10",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow",
+      "被沉默": "cloudSea,star,galaxy,rainbow",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:excluded galaxy:excluded rainbow:excluded",
+      "总评改前": 55,
+      "总评改后": 66,
+      "越界": []
+    },
+    {
+      "场景": "成都 2026-10-11",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow,star,galaxy",
+      "被沉默": "cloudSea,rainbow",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 63,
+      "总评改后": 63,
+      "越界": []
+    },
+    {
+      "场景": "成都 2026-10-12",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow,star,galaxy",
+      "被沉默": "cloudSea,rainbow",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 76,
+      "总评改后": 80,
+      "越界": []
+    },
+    {
+      "场景": "成都 2026-10-13",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow,star,galaxy",
+      "被沉默": "cloudSea,rainbow",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 63,
+      "总评改后": 67,
+      "越界": []
+    },
+    {
+      "场景": "成都 2026-10-14",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow,star,galaxy,rainbow",
+      "被沉默": "cloudSea",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 65,
+      "总评改后": 70,
+      "越界": []
+    },
+    {
+      "场景": "成都 2026-10-15",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow,star,galaxy",
+      "被沉默": "cloudSea,rainbow",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 63,
+      "总评改后": 70,
+      "越界": []
+    },
+    {
+      "场景": "峨眉山 2026-10-09",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "cloudSea",
+      "被沉默": "alpenglow,star,galaxy,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:possible star:excluded galaxy:excluded rainbow:excluded",
+      "总评改前": 68,
+      "总评改后": 88,
+      "越界": []
+    },
+    {
+      "场景": "峨眉山 2026-10-10",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy",
+      "被沉默": "cloudSea,alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 56,
+      "总评改后": 48,
+      "越界": []
+    },
+    {
+      "场景": "峨眉山 2026-10-11",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy,rainbow",
+      "被沉默": "cloudSea,alpenglow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 71,
+      "总评改后": 74,
+      "越界": []
+    },
+    {
+      "场景": "峨眉山 2026-10-12",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "cloudSea,star,galaxy",
+      "被沉默": "alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:possible star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 83,
+      "总评改后": 83,
+      "越界": []
+    },
+    {
+      "场景": "峨眉山 2026-10-13",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "",
+      "被沉默": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:excluded galaxy:excluded rainbow:excluded",
+      "总评改前": 48,
+      "总评改后": 0,
+      "越界": []
+    },
+    {
+      "场景": "峨眉山 2026-10-14",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "",
+      "被沉默": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:excluded galaxy:excluded rainbow:excluded",
+      "总评改前": 49,
+      "总评改后": 0,
+      "越界": []
+    },
+    {
+      "场景": "峨眉山 2026-10-15",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "",
+      "被沉默": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:excluded galaxy:excluded rainbow:excluded",
+      "总评改前": 56,
+      "总评改后": 0,
+      "越界": []
+    },
+    {
+      "场景": "理塘 2026-10-09",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy,rainbow",
+      "被沉默": "cloudSea,alpenglow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 64,
+      "总评改后": 68,
+      "越界": []
+    },
+    {
+      "场景": "理塘 2026-10-10",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy,rainbow",
+      "被沉默": "cloudSea,alpenglow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 64,
+      "总评改后": 68,
+      "越界": []
+    },
+    {
+      "场景": "理塘 2026-10-11",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow,star,galaxy,rainbow",
+      "被沉默": "cloudSea",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 74,
+      "总评改后": 80,
+      "越界": []
+    },
+    {
+      "场景": "理塘 2026-10-12",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow,star,galaxy",
+      "被沉默": "cloudSea,rainbow",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 80,
+      "总评改后": 80,
+      "越界": []
+    },
+    {
+      "场景": "理塘 2026-10-13",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy,rainbow",
+      "被沉默": "cloudSea,alpenglow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 77,
+      "总评改后": 77,
+      "越界": []
+    },
+    {
+      "场景": "理塘 2026-10-14",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow,star,galaxy,rainbow",
+      "被沉默": "cloudSea",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 74,
+      "总评改后": 74,
+      "越界": []
+    },
+    {
+      "场景": "理塘 2026-10-15",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy",
+      "被沉默": "cloudSea,alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 81,
+      "总评改后": 81,
+      "越界": []
+    },
+    {
+      "场景": "稻城 2026-10-09",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy,rainbow",
+      "被沉默": "cloudSea,alpenglow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 73,
+      "总评改后": 80,
+      "越界": []
+    },
+    {
+      "场景": "稻城 2026-10-10",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy,rainbow",
+      "被沉默": "cloudSea,alpenglow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 73,
+      "总评改后": 80,
+      "越界": []
+    },
+    {
+      "场景": "稻城 2026-10-11",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "alpenglow,star,galaxy",
+      "被沉默": "cloudSea,rainbow",
+      "verdicts": "light:possible alpenglow:possible cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 76,
+      "总评改后": 76,
+      "越界": []
+    },
+    {
+      "场景": "稻城 2026-10-12",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy,rainbow",
+      "被沉默": "cloudSea,alpenglow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:possible",
+      "总评改前": 74,
+      "总评改后": 74,
+      "越界": []
+    },
+    {
+      "场景": "稻城 2026-10-13",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy",
+      "被沉默": "cloudSea,alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 81,
+      "总评改后": 81,
+      "越界": []
+    },
+    {
+      "场景": "稻城 2026-10-14",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy",
+      "被沉默": "cloudSea,alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 81,
+      "总评改后": 81,
+      "越界": []
+    },
+    {
+      "场景": "稻城 2026-10-15",
+      "改前卡": "cloudSea,alpenglow,star,galaxy,rainbow",
+      "改后卡": "star,galaxy",
+      "被沉默": "cloudSea,alpenglow,rainbow",
+      "verdicts": "light:possible alpenglow:excluded cloudSea:excluded star:possible galaxy:possible rainbow:excluded",
+      "总评改前": 81,
+      "总评改后": 81,
+      "越界": []
+    }
+  ]
+}
