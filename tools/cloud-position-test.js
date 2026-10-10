@@ -356,11 +356,30 @@ section('8 天象与位置判读不得随显示窗漂移')
   check('把显示窗参数改到极端（跨度上限 4000→1000、呼吸位→0、选材门槛 25→60），条件态与机会窗口逐项不变',
     before === after, before.slice(0, 160) + ' || ' + after.slice(0, 160))
   check('还原后与改前一致（证明上面那次比较用的是同一份数据）', run() === before)
+  /* 原来这条是静态源码门（在 outdoor-intelligence.js 里正则找
+     `for (let alt = CFF.ALT0; alt <= CFF.ALT1; alt += step)`）。
+     层提取已于 2026-10-10 搬到 `cloud-layer-facts.js`，源码位置变了但那不是行为变了——
+     静态门在这里只会把"搬家"误判成"改判据"。改钉行为：业务扫描范围必须**仍然等于**
+     固定基准、必须**自报来源**、且显示窗参数怎么改它都不动。 */
+  const CLF = require(path.join(ROOT, 'utils/cloud-layer-facts.js'))
+  const defScan = CLF.resolveRanges({}).scan
+  check('业务扫描范围仍等于固定基准 ALT0–ALT1，且自报来源是显示窗（R1 待解耦，本轮未解耦）',
+    defScan.lo === CFF.ALT0 && defScan.hi === CFF.ALT1 && defScan.source === 'display-window',
+    JSON.stringify(defScan))
+  const scanWithExtremeProfile = (function () {
+    const snap = Object.assign({}, CFF.PROFILE)
+    CFF.PROFILE.MAX_SPAN = 9999; CFF.PROFILE.PAD_M = 5000; CFF.PROFILE.DECK_MIN = 5
+    const r = CLF.resolveRanges({}).scan
+    Object.keys(snap).forEach(k => { CFF.PROFILE[k] = snap[k] })
+    return r
+  })()
+  check('把显示窗参数改到极端 ⇒ 业务扫描范围一个数都不动（显示层不进出云层的扫描）',
+    JSON.stringify(scanWithExtremeProfile) === JSON.stringify(defScan),
+    JSON.stringify(scanWithExtremeProfile) + ' vs ' + JSON.stringify(defScan))
   const oiSrc = stripComments(fs.readFileSync(path.join(ROOT, 'utils/outdoor-intelligence.js'), 'utf8'), true)
-  check('云层的扫描范围仍然钉在固定基准上（剖面显示窗不参与天象成立条件）',
-    /for \(let alt = CFF\.ALT0; alt <= CFF\.ALT1; alt \+= step\)/.test(oiSrc) &&
-      !/profile|planProfile|PROFILE/.test(oiSrc),
-    'cloudLayersAt 必须继续扫 ALT0–ALT1')
+  check('机会层源码里不出现剖面显示窗（profile/planProfile/PROFILE）——它只能拿到 L1 给的扫描范围',
+    !/profile|planProfile|PROFILE/.test(oiSrc),
+    'outdoor-intelligence.js 不得引用剖面显示窗')
   const cfs = stripComments(fs.readFileSync(path.join(ROOT, 'utils/cloud-field-svg.js'), 'utf8'), true)
   /* 先用原文定位边界（分节标题本身是注释，去注释后就找不到了），再对截出来的函数体去注释 */
   const raw = fs.readFileSync(path.join(ROOT, 'utils/cloud-field-svg.js'), 'utf8')

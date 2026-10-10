@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — OurTrail
 
-**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Gate recount 3:** 2026-10-08 全生命周期审计（**50 门禁套件 / 3546 断言**，新增 6 套 `tools/lifecycle-*-test.js` 共 699，`e2e-domain-negative` 83→86；常驻红仍是天气线那 1 条。报告 `docs/superpowers/specs/2026-10-08-full-domain-lifecycle-audit.md`）· **Gate recount 4:** 2026-10-08 旅程可解释性重构（**52 门禁套件 / 3698 断言**，新增 `tools/journey-test.js` 138 与 `tools/journey-graph-test.js` 12；客户端多出 `utils/journey.js` 322 行＝状态与下一步的唯一翻译层。报告 `docs/superpowers/specs/2026-10-08-user-journey-ux-audit.md`）· **Gate recount 5:** 2026-10-09 可靠性与生产化加固两轮（**57 门禁套件 / 3805 断言 / 全部 exit 0**：第一轮 +3 套 revision/meta/cold-start 44，第二轮 +2 套 `receipt-window` 19 与 `failure-semantics` 37。生产代码只动 `index.js`/`store.js`/`domain/{commands,contracts,profile}.js` 与客户端 `utils/api.js`。报告 `docs/superpowers/specs/2026-10-09-reliability-production-hardening.md`（§1–§10 第一轮、§11–§18 第二轮）· **Gate recount 6:** 2026-10-09 Weather V2 审计（**61 门禁读数 / 4118 断言 / 全部 exit 0**：新增 4 套——`cloud-field-geometry-test.js` 190、`elevation-semantics-test.js` 34、`meteogram-readability-test.js` 55、`oi-claim-gate-test.js` 25；`weather-cloud-field` 29→31 是一条**旧契约被证伪**后的替换而非削弱，`weather-page` 149→156 加了路线海拔。生产代码动客户端 10 个文件（含 `sky.js`/`agenda.js`/`oi-presentation.js` 的「日照金山→晨昏光染」主张改名），`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。真机前后 30 张 + 2 张 2× 放大对照在 `docs/weather-ux/qa/v2-audit-2026-10-09/`，报告 `docs/weather-ux/weather-v2-final-visual-audit.md`，铁律见 25）· **Gate recount 7:** 2026-10-09 云层位置语义统一（**62 门禁读数 / 4191 断言**：新增 `tools/cloud-position-test.js` 54；`weather-page-test` 156→**173**（真页面 `r3` 三态 + 逐节点各用自己的高程判读 + 无高程/误差带弃权两态）；`cloud-field-svg-test` 27→**29**（`inferState` 一律带 `covered`——缺则**失败关闭**为 `no-data`，不再拿显示窗冒充实测范围）。三段增量都取各脚本自己打印的 `passed=N` 实测值，总数 = recount 6 的 4118 加这三段，不另立新账。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。铁律见 26，报告续 §九，真机前后 42 张（21 个场景 × full+tap）在 `docs/weather-ux/qa/v2-cloud-position-2026-10-09/`）· **Gate recount 8:** 2026-10-09 剖面显示窗自适应（**62 门禁读数 / 4248 断言 / 全绿**，本轮新增 57 条全部落在既有 6 套里，不另开框架：`cloud-field-geometry 190→206`（§14 planProfile + 变异证明）、`meteogram-readability 55→77`（§8 范围自证/边注/刻度/clipPath/375·390·414 不重叠）、`cloud-position 54→60`（§8 窗与判读隔离）、`weather-page 173→177`（§11b-F/H 图例三分支）、`meteogram-multiday 44→48`、`weather-v2-visual-audit 38→43`。真实数据 432 条 `inferState` 前后逐字节相同。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。铁律见 27，报告续 §十，证据包 `docs/weather-ux/qa/v2-window-adaptive-2026-10-09/`（含 11 张**判定无效**的受控场景截图，留在 `invalid/`）· **Gate recount 9:** 2026-10-09 OI 扫描窗 R2 边界语义（**62 门禁套件 / 4260 断言 / 全部 exit 0**，本轮 +12 条全部落在既有两套里：`outdoor-cloud-sea-test 20→31`（四种边界形态 + 通用不变量 + 标记自洽 + 候选不增 + 缺数据 + 卡片摘要次序 + 净空主语）、`outdoor-intelligence-test 24→25`；一条**钉住旧 bug** 的断言（`evidence[0]` 必须是 `云层位于 2,0…`，那个 2,000 恰为扫描下界）被重推为替换而非削弱。生产代码只动 `miniprogram/utils/outdoor-intelligence.js`（+42 −8，层提取数值表达式零改动），`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。「只改文案不动判据」由跨版本 A/B 实测：42 组比对**业务判据差异 0 组**、证据文本差异 3 组；9 条变异 0 漏网。真机：3 地 × 24/72h 共 66 条机会条目里 CLOUD_SEA = **0 个**（真实点击），故新文案**没有**自然样本可拍，只有 4 张注入式排版核验（文本出自仓库真实模型）＋ 有效性门；设备 bundle 新鲜度未证（重开项目会动共享开发者工具会话，未擅自执行），这两项在报告里记 UNVERIFIED。R1 阈值口径取证：`300m/P50` 的样本与脚本从未入库 ⇒ **无法从现有仓库确认**，本轮未改阈值。铁律见 28，报告 `docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md`）· **Gate recount 10:** 2026-10-09/10-10 R1 前置决策审计 + Q5/Q6 判定噪声审计（**门禁计数不变：仍是 62 套 / 4260 断言 / 全部 exit 0**，因为两轮生产文件改动数为 **0**——`git diff --stat` 空，只新增报告与只读探针）。但这两轮改的是**结论的可信度**：第五轮报告里"扫描相位噪声足以决定发不发云海卡"一条被第六轮用生产规则重测**推翻**（候选级翻转实测 0 / 888 小时、50 m 步长对 1 m 参照偏差 0 m），而它当初否掉的"相对带上界夹到点海拔会误判"**其实成立**。铁律见 29，报告 `docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/README.md` 与 `docs/weather-ux/qa/v2-q56-noise-audit-2026-10-10/README.md`）· **Base commit:** `2e504f2`
+**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Gate recount 3:** 2026-10-08 全生命周期审计（**50 门禁套件 / 3546 断言**，新增 6 套 `tools/lifecycle-*-test.js` 共 699，`e2e-domain-negative` 83→86；常驻红仍是天气线那 1 条。报告 `docs/superpowers/specs/2026-10-08-full-domain-lifecycle-audit.md`）· **Gate recount 4:** 2026-10-08 旅程可解释性重构（**52 门禁套件 / 3698 断言**，新增 `tools/journey-test.js` 138 与 `tools/journey-graph-test.js` 12；客户端多出 `utils/journey.js` 322 行＝状态与下一步的唯一翻译层。报告 `docs/superpowers/specs/2026-10-08-user-journey-ux-audit.md`）· **Gate recount 5:** 2026-10-09 可靠性与生产化加固两轮（**57 门禁套件 / 3805 断言 / 全部 exit 0**：第一轮 +3 套 revision/meta/cold-start 44，第二轮 +2 套 `receipt-window` 19 与 `failure-semantics` 37。生产代码只动 `index.js`/`store.js`/`domain/{commands,contracts,profile}.js` 与客户端 `utils/api.js`。报告 `docs/superpowers/specs/2026-10-09-reliability-production-hardening.md`（§1–§10 第一轮、§11–§18 第二轮）· **Gate recount 6:** 2026-10-09 Weather V2 审计（**61 门禁读数 / 4118 断言 / 全部 exit 0**：新增 4 套——`cloud-field-geometry-test.js` 190、`elevation-semantics-test.js` 34、`meteogram-readability-test.js` 55、`oi-claim-gate-test.js` 25；`weather-cloud-field` 29→31 是一条**旧契约被证伪**后的替换而非削弱，`weather-page` 149→156 加了路线海拔。生产代码动客户端 10 个文件（含 `sky.js`/`agenda.js`/`oi-presentation.js` 的「日照金山→晨昏光染」主张改名），`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。真机前后 30 张 + 2 张 2× 放大对照在 `docs/weather-ux/qa/v2-audit-2026-10-09/`，报告 `docs/weather-ux/weather-v2-final-visual-audit.md`，铁律见 25）· **Gate recount 7:** 2026-10-09 云层位置语义统一（**62 门禁读数 / 4191 断言**：新增 `tools/cloud-position-test.js` 54；`weather-page-test` 156→**173**（真页面 `r3` 三态 + 逐节点各用自己的高程判读 + 无高程/误差带弃权两态）；`cloud-field-svg-test` 27→**29**（`inferState` 一律带 `covered`——缺则**失败关闭**为 `no-data`，不再拿显示窗冒充实测范围）。三段增量都取各脚本自己打印的 `passed=N` 实测值，总数 = recount 6 的 4118 加这三段，不另立新账。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。铁律见 26，报告续 §九，真机前后 42 张（21 个场景 × full+tap）在 `docs/weather-ux/qa/v2-cloud-position-2026-10-09/`）· **Gate recount 8:** 2026-10-09 剖面显示窗自适应（**62 门禁读数 / 4248 断言 / 全绿**，本轮新增 57 条全部落在既有 6 套里，不另开框架：`cloud-field-geometry 190→206`（§14 planProfile + 变异证明）、`meteogram-readability 55→77`（§8 范围自证/边注/刻度/clipPath/375·390·414 不重叠）、`cloud-position 54→60`（§8 窗与判读隔离）、`weather-page 173→177`（§11b-F/H 图例三分支）、`meteogram-multiday 44→48`、`weather-v2-visual-audit 38→43`。真实数据 432 条 `inferState` 前后逐字节相同。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。铁律见 27，报告续 §十，证据包 `docs/weather-ux/qa/v2-window-adaptive-2026-10-09/`（含 11 张**判定无效**的受控场景截图，留在 `invalid/`）· **Gate recount 9:** 2026-10-09 OI 扫描窗 R2 边界语义（**62 门禁套件 / 4260 断言 / 全部 exit 0**，本轮 +12 条全部落在既有两套里：`outdoor-cloud-sea-test 20→31`（四种边界形态 + 通用不变量 + 标记自洽 + 候选不增 + 缺数据 + 卡片摘要次序 + 净空主语）、`outdoor-intelligence-test 24→25`；一条**钉住旧 bug** 的断言（`evidence[0]` 必须是 `云层位于 2,0…`，那个 2,000 恰为扫描下界）被重推为替换而非削弱。生产代码只动 `miniprogram/utils/outdoor-intelligence.js`（+42 −8，层提取数值表达式零改动），`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。「只改文案不动判据」由跨版本 A/B 实测：42 组比对**业务判据差异 0 组**、证据文本差异 3 组；9 条变异 0 漏网。真机：3 地 × 24/72h 共 66 条机会条目里 CLOUD_SEA = **0 个**（真实点击），故新文案**没有**自然样本可拍，只有 4 张注入式排版核验（文本出自仓库真实模型）＋ 有效性门；设备 bundle 新鲜度未证（重开项目会动共享开发者工具会话，未擅自执行），这两项在报告里记 UNVERIFIED。R1 阈值口径取证：`300m/P50` 的样本与脚本从未入库 ⇒ **无法从现有仓库确认**，本轮未改阈值。铁律见 28，报告 `docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md`）· **Gate recount 10:** 2026-10-09/10-10 R1 前置决策审计 + Q5/Q6 判定噪声审计（**门禁计数不变：仍是 62 套 / 4260 断言 / 全部 exit 0**，因为两轮生产文件改动数为 **0**——`git diff --stat` 空，只新增报告与只读探针）。但这两轮改的是**结论的可信度**：第五轮报告里"扫描相位噪声足以决定发不发云海卡"一条被第六轮用生产规则重测**推翻**（候选级翻转实测 0 / 888 小时、50 m 步长对 1 m 参照偏差 0 m），而它当初否掉的"相对带上界夹到点海拔会误判"**其实成立**。铁律见 29，报告 `docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/README.md` 与 `docs/weather-ux/qa/v2-q56-noise-audit-2026-10-10/README.md`）· **Gate recount 11:** 2026-10-10 三层架构首个纵向切片（**63 门禁套件 / 4299 断言 / 全部 exit 0**：新增 `tools/cloud-layer-facts-test.js` 37，`cloud-position-test` 60→**62** —— 后者是把一条**静态源码门**换成三条行为断言，见铁律 30）。生产代码动 2 个文件：新增 `miniprogram/utils/cloud-layer-facts.js`（L1→L2 接缝：三个高度范围分开命名 + 云层事实 + 候选层选择），`outdoor-intelligence.js` 的层提取搬过去并**把业务扫描范围变成显式入参**（此前它直接读剖面显示窗常量 `ALT0/ALT1`），另补 `meta.cloudSea.notEvaluated`/`scanRanges` 与证据句改取实际扫描范围。**业务结果零变化且可证**：跨版本对拍 111 组比对**业务判据差异 0 组**、附加字段结构差异 0 组，唯一变化是 48 条内部负证据的 detail 文案；对拍器自身经 8 条业务级变异自证 0 漏网（其中一条正是上一轮 Q6 犯的那个错）。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。真机未跑并如实标 UNVERIFIED（纯函数搬家，用户可见输出经 A/B 证为逐字相同）。ADR `docs/weather-ux/architecture/weather-v2-three-layer-evolution.md`，铁律见 30）· **Base commit:** `2e504f2`
 
 ---
 
@@ -65,8 +65,8 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── domain/         # 13 pure modules — see .../domain/AGENTS.md
 │   ├── lib/weather.js  # Open-Meteo proxy (duplicates gcjToWgs — keep in sync)
 │   └── smoke-test.js   # 173 cases (measured 2026-10-09), needs no wx-server-sdk
-├── tools/             # 67 个零依赖 node 脚本（实测 2026-10-09 可靠性加固第二轮后）：59 个 `*-test.js`
-│                      #   （56 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
+├── tools/             # 72 个零依赖 node 脚本（实测 2026-10-10 三层切片后）：65 个 `*-test.js`
+│                      #   （62 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
 │                      #   `e2e-ui-state-test` / `e2e-golden-path-test`）+ 2 个静态检查 +
 │                      #   `e2e-result.js`（结果账本，被上述 3 套真机层与变异自证 require）+
 │                      #   `lifecycle-harness.js`（6 套 lifecycle-* 套件共用的世界驱动器，本身不是套件）+
@@ -142,7 +142,7 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Gated suites — 57（56 个 tools/*-test.js + smoke-test.js）. 2026-10-09 可靠性加固两轮后共 3805 断言；
+# Gated suites — 63（62 个 tools/*-test.js + smoke-test.js）. 2026-10-10 Weather V2 三层架构首个纵向切片后共 4299 断言；
 # 全量复跑唯一红 = tools/outdoor-intelligence-ui-test.js 的常驻非确定性用例，打线上 Open-Meteo + 真实时钟，已归档归因、非本轮改动引入.
 # ⚠ 断言总数是**快照**，不是恒定值：
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
@@ -203,13 +203,17 @@ node tools/oi-claim-gate-test.js               # 机会卡证据门：星空/银
 node tools/meteogram-readability-test.js       # 统一 Meteogram 可读性：降水柱宽随时间窗且不压叠、缺测温度断开不补中点、微量降水可见不夸大、风向映射与密度、多日昼夜分段、375/390/414 标签不重叠（77 断言，全部解析 SVG 图元判定；§8 显示窗范围自证与边注）
 
 # 云层位置语义三态（2026-10-09 审计续轮；铁律 26）
-node tools/cloud-position-test.js              # 三态互斥（in/ok/mid）+ 五类「判不出」各有反例（no-altitude/no-data/within-uncertainty/both-sides/partial-at-point/clear）+ 海拔出处=误差带基准（measured tol=0 与旧实现逐字一致，model ±600m 带内弃权）+ holds 不被压扁（云海与夜间天空闸）+ 无高程不画参考线 + 图例/r3/OI 同一张词表的静态词汇门（60 断言）
+node tools/cloud-position-test.js              # 三态互斥（in/ok/mid）+ 五类「判不出」各有反例（no-altitude/no-data/within-uncertainty/both-sides/partial-at-point/clear）+ 海拔出处=误差带基准（measured tol=0 与旧实现逐字一致，model ±600m 带内弃权）+ holds 不被压扁（云海与夜间天空闸）+ 无高程不画参考线 + 图例/r3/OI 同一张词表的静态词汇门（62 断言；§8 原来是正则匹配源码的静态门，已换成三条行为断言，见铁律 30）
+
 node tools/e2e-client-cas-test.js              # BUG-C1/C3 回归（Phase 9/10A）：真 editor.js + 真 api.js → 真 trailApi（54 断言，bugs=1：BUG-C2 草稿优先覆盖；C7=层①冲突不得依赖异常类型跨边界，C8=平台事务中止的窄映射，含 C8-⓪ 有效性门与 C8-⑨⑩⑪ 选择性三对照）
 node tools/e2e-interleave-test.js              # §13 多步骤并发交错 C1~C6（67 断言，3 INCONCLUSIVE；两层 CAS + baseRevision 内层 + 阶段门次序）
 node tools/e2e-panel-sync-test.js              # §14 工作台/面板 revision 同步 P1~P6（40 断言；含 api.js 吞掉 reload 的后果判定）
 node tools/e2e-release-gap-test.js             # Release Gate 缺口 G1~G6（51 断言；CONSENT_REQUIRED / GROUP_SCOPE / incident / swap / vehicle.remove / companion.remove）
 node tools/e2e-ui-test.js                      # B 层真模拟器 UI E2E（两维账本，退出码 0/1/2）
 node tools/e2e-ui-state-test.js                # B 层 Phase 5 UI 状态矩阵（需开发者工具 9420，不计入门禁）
+
+# 三层架构接缝（2026-10-10 首个纵向切片；ADR docs/weather-ux/architecture/weather-v2-three-layer-evolution.md，铁律 30）
+node tools/cloud-layer-facts-test.js           # L1→L2 接缝：三个高度范围分开命名（显示窗/实测覆盖/业务扫描）+ 超出覆盖必须说明读到的是填充值 0 + 云层事实不带判定 + topmostBelow 净空不取整（199.6≠200）+ 薄层遮蔽缺陷的特征化用例（钉住现状不修，改候选集合要产品裁决）+ OI 集成与活接缝注入 + 分层静态门（37 断言）
 
 # Page-level scenarios
 node tools/scenario-editor-test.js           # 142
@@ -248,6 +252,7 @@ node tools/receipt-window-test.js && node tools/failure-semantics-test.js && \
 node tools/cloud-field-geometry-test.js && node tools/elevation-semantics-test.js && \
 node tools/oi-claim-gate-test.js && node tools/meteogram-readability-test.js && \
 node tools/cloud-position-test.js && \
+node tools/cloud-layer-facts-test.js && \
 node tools/e2e-permission-test.js && node tools/e2e-domain-negative-test.js && \
 node tools/e2e-concurrency-test.js && node tools/e2e-client-cas-test.js && \
 node tools/e2e-interleave-test.js && node tools/e2e-panel-sync-test.js && \
@@ -496,6 +501,24 @@ await mp.disconnect()
    ⑤ 敏感性分析 ≠ 概率 ≠ 置信度：Q5 的 ±600 m 摆动只回答"输入挪一下会怎样"；
    且 `ALT_TOL.measured = 0` 是**断言不是测量**（`cloud-field-svg.js:276–277` 自陈 GPX/选点/手填无误差资料），
    所以"候选净空余量 9–424 m"是**该问什么**的证据，不是"缓冲取多少"的答案。
+
+30. **分层边界要钉行为，不许钉源码文本。** Weather V2 第七轮（三层架构首个纵向切片，
+   ADR `docs/weather-ux/architecture/weather-v2-three-layer-evolution.md`）：
+   `cloud-position-test` 原来用正则匹配 `outdoor-intelligence.js` 的**源码**来钉
+   "业务扫描范围仍等于显示窗常量"（找 `for (let alt = CFF\.ALT0; alt <= CFF\.ALT1; alt \+= step)`）。
+   把层提取搬到 `cloud-layer-facts.js` 后这条门立刻报红 —— **它把"搬家"误判成"改判据"**，
+   而它声称保护的行为其实一点没变。规矩：
+   ① 静态源码门只能证明"代码长什么样"，一旦合法重构就会假红，久了就会被当成噪音忽略 —— 那比没有门更糟；
+   ② 边界要写成**可执行的行为断言**：缺省扫描范围仍等于固定基准且**自报来源**
+      （`resolveRanges().scan.source === 'display-window'`）、把 `PROFILE.MAX_SPAN/PAD_M/DECK_MIN`
+      改到极端 ⇒ 业务扫描范围一个数都不动、机会层源码不出现 `profile|planProfile|PROFILE`
+      （最后这条是**允许**的，因为它查的是"不该存在的依赖"，重构不会让它假红）；
+   ③ 留接缝就要**把接缝测活**：`ctx.cloudSeaScan.scanRange` 若只测缺省值，等于没留接口 ——
+      注入用例的做法是"只把扫描下沿从 2,000 降到 1,100 ⇒ 同一份数据的截断消失、证据改口为实测云底"，
+      顺带证明"边界"是范围给的而不是云给的；
+   ④ 对拍器自身必须有牙齿：`architecture/tools/mutate-ab.js` 注入 8 条业务级变异要求每次都报出差异，
+      其中 V5（去掉退出点插值）正是上一轮 Q6 犯错的那一处 —— 同样的错在今天会被当场抓住。
+   判据：`tools/cloud-layer-facts-test.js`（37）、`tools/cloud-position-test.js` §8（60→62）。
 
 ---
 
