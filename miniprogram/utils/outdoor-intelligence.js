@@ -26,6 +26,7 @@
 const sky = require('./sky')
 const agenda = require('./agenda')
 const CFF = require('./cloud-field-svg.js')
+const CLF = require('./cloud-layer-facts.js')
 const FMT = require('./format.js')
 
 /* 云层位置三态的标题一律从 format.CLOUD_POSITION_LABELS 取（2026-10-09 语义统一轮）。
@@ -89,56 +90,17 @@ function pad2(n) { return (n < 10 ? '0' : '') + n }
  * 对某时刻 t 沿海拔扫描，提取 ≥LAYER_COVER_MIN 的连续云层（不做厚度过滤——
  * 厚度阈值是 Cloud Sea 检测器的判定条件，拒绝原因需要它）。
  * 层边界在采样点间线性插值（子步长精度）。
- * @returns [{ base, top, thickness, meanCover, peakCover }]（按 base 升序）
+ *
+ * 算法本体已搬到 `cloud-layer-facts.js`（L1→L2 边界），这里只剩一层薄封装：把本模块的
+ * 阈值默认值传下去、保留旧签名。**扫描范围的来源现在看得见**——缺省仍是剖面显示窗
+ * （`ALT0/ALT1`），但那件事由 L1 模块在返回值里如实标注，不再靠读代码行号考古。
+ * @returns [{ base, top, thickness, meanCover, peakCover, baseBoundary, topBoundary, ... }]
  */
 function cloudLayersAt(sample, t, opts) {
   const o = Object.assign({}, CLOUD_SEA, opts || {})
-  const step = o.SCAN_STEP_M
-  const pts = []
-  for (let alt = CFF.ALT0; alt <= CFF.ALT1; alt += step) {
-    pts.push({ alt: alt, cover: sample(t, Math.min(alt, CFF.ALT1)) })
-  }
-  const layers = []
-  let run = null
-  for (let i = 0; i < pts.length; i++) {
-    const on = pts[i].cover >= o.LAYER_COVER_MIN
-    const prev = i > 0 ? pts[i - 1] : null
-    if (on && !run) {
-      /* 进入点：与上一采样点线性插值（上一格已在层内则直接取该点） */
-      const crossed = !!(prev && prev.cover < o.LAYER_COVER_MIN)
-      const base = crossed
-        ? prev.alt + (o.LAYER_COVER_MIN - prev.cover) / (pts[i].cover - prev.cover) * (pts[i].alt - prev.alt)
-        : pts[i].alt
-      /* R2（2026-10-09 扫描范围审计）：第一个采样点就已经是浓云 ⇒ 这个 base 是**扫描下界**，
-         不是测出来的云底。数值一律不动（候选集合、层厚、净空、置信度都不许被这次改动影响），
-         只加一个来源标记，交给证据文案如实说。 */
-      run = { base: base, top: pts[i].alt, covers: [pts[i].cover], baseBoundary: !crossed }
-    } else if (on && run) {
-      run.top = pts[i].alt
-      run.covers.push(pts[i].cover)
-    } else if (!on && run) {
-      /* 退出点：插值到阈值（云在边缘变薄消失）——这是测出来的云顶 */
-      run.top = prev.cover > o.LAYER_COVER_MIN
-        ? prev.alt + (o.LAYER_COVER_MIN - prev.cover) / (pts[i].cover - prev.cover) * (pts[i].alt - prev.alt)
-        : prev.alt
-      run.topBoundary = false
-      layers.push(run)
-      run = null
-    }
-  }
-  /* 扫到上界还在浓云：云顶落在扫描范围之外，6000 只是窗的边界。
-     数值保持与旧实现逐字相同（run.top = CFF.ALT1），只补边界标记。 */
-  if (run) { run.top = CFF.ALT1; run.topBoundary = true; layers.push(run) }
-  return layers
-    .map(function (l) {
-      return {
-        base: Math.round(l.base), top: Math.round(l.top), thickness: Math.round(l.top - l.base),
-        meanCover: Math.round(l.covers.reduce(function (a, b) { return a + b }, 0) / l.covers.length),
-        peakCover: Math.round(Math.max.apply(null, l.covers)),
-        baseBoundary: l.baseBoundary === true, topBoundary: l.topBoundary === true,
-      }
-    })
-    .sort(function (a, b) { return a.base - b.base })
+  return CLF.layersAt(sample, t, o.scanRanges || CLF.resolveRanges(o), {
+    coverMin: o.LAYER_COVER_MIN, step: o.SCAN_STEP_M,
+  })
 }
 
 /* ---------- L2：逐时 Outdoor Condition ---------- */
@@ -255,23 +217,47 @@ const CLOUD_SEA_STRENGTH = {
 /**
  * 逐时 Cloud Sea 候选检测：云场层提取 → 用户净空/覆盖/厚度校验。
  * CLOUD_BELOW 是必要条件之一，不是云海本身——这里做进一步验证。
- * @returns { candidates, rejected }（rejected 为负证据，模型内部保留，UI 不展示）
+ *
+ * 三层账本分开记（Q5 审计要求的"三类不确定"各有各的名字，不许静默合并）：
+ *   candidates    —— 被接受的逐时候选
+ *   rejected      —— L2 说「云在脚下」但 L3 门槛没过（业务口径拒绝，附具体门槛）
+ *   notEvaluated  —— L2 根本没给出 CLOUD_BELOW，因此 L3 从未运行：
+ *                    可能是判过了不成立（IN_CLOUD/CLOUD_ABOVE/CLEAR = 否定式事实），
+ *                    也可能是**判不出**（no-altitude / no-data / within-uncertainty /
+ *                    both-sides / partial-at-point）。两者都不是"没有云海"。
+ * @returns { candidates, rejected, notEvaluated }（后两者为负证据，模型内部保留，UI 不展示）
  */
 function detectCloudSeaCandidates(conditions, fieldSample, userAlt, opts) {
   const o = Object.assign({}, CLOUD_SEA, opts || {})
   const candidates = []
   const rejected = []
+  const notEvaluated = []
+  /* 扫描范围契约交给 L1：本轮缺省仍是显示窗常量，但实测覆盖一并传进去，
+     让"扫到数据之外"这件事在 ranges.notes 里留痕（不影响任何数值）。 */
+  const scanRanges = CLF.resolveRanges({
+    scanRange: o.scanRange, dataCoverage: o.dataCoverage, displayRange: o.displayRange,
+  })
   conditions.forEach(function (c) {
-    if (c.key !== CONDITION.CLOUD_BELOW) return
+    if (c.key !== CONDITION.CLOUD_BELOW) {
+      notEvaluated.push({
+        t: c.t,
+        condition: c.key || null,
+        abstain: c.key ? null : (c.reason || null),
+        detail: c.key
+          ? 'L2 判为 ' + c.key + '（不是「云在此点下方」），未进入云海判定'
+          : 'L2 判不出（' + (c.reason || 'no-reason') + '：' + FMT.cloudPositionReason(c.reason) + '），未进入云海判定',
+      })
+      return
+    }
     const hour = sky.hourMin(c.t) / 60
-    const allLayers = cloudLayersAt(fieldSample, hour, o)
-    const below = allLayers.filter(function (l) { return l.top <= userAlt })
-    if (!below.length) {
+    const allLayers = cloudLayersAt(fieldSample, hour, Object.assign({}, o, { scanRanges: scanRanges }))
+    const picked = CLF.topmostBelow(allLayers, userAlt)
+    if (!picked) {
       rejected.push({ t: c.t, reason: 'NO_LAYER_BELOW', detail: '用户下方无 ≥' + o.LAYER_COVER_MIN + '% 连续层' })
       return
     }
-    const L = below[below.length - 1] // 离用户最近的合格层
-    const clearance = userAlt - L.top
+    const L = picked.layer // 点下方最高的那一层（薄层屏蔽风险见 cloud-layer-facts.topmostBelow 注释）
+    const clearance = picked.clearance
     if (clearance < o.CLEARANCE_MIN) {
       rejected.push({ t: c.t, reason: clearance < 0 ? 'USER_INSIDE_CLOUD' : 'USER_NOT_ABOVE_CLOUD', detail: '净空 ' + Math.round(clearance) + ' m < ' + o.CLEARANCE_MIN + ' m' })
       return
@@ -281,7 +267,7 @@ function detectCloudSeaCandidates(conditions, fieldSample, userAlt, opts) {
       return
     }
     if (L.thickness < o.LAYER_THICKNESS_MIN) {
-      rejected.push({ t: c.t, reason: 'INSUFFICIENT_THICKNESS', detail: '层厚 ' + L.thickness + ' m < ' + o.LAYER_THICKNESS_MIN + ' m' })
+      rejected.push({ t: c.t, reason: 'INSUFFICIENT_THICKNESS', detail: '层厚 ' + L.thickness + ' m < ' + o.LAYER_THICKNESS_MIN + ' m' + (L.baseBoundary || L.topBoundary ? '（该层有一端是扫描窗边界，厚度是窗内可见部分）' : '') })
       return
     }
     candidates.push({
@@ -290,12 +276,12 @@ function detectCloudSeaCandidates(conditions, fieldSample, userAlt, opts) {
       wind: o.windAt ? o.windAt(hour) : 0,
     })
   })
-  return { candidates: candidates, rejected: rejected }
+  return { candidates: candidates, rejected: rejected, notEvaluated: notEvaluated, scanRanges: scanRanges }
 }
 
 /**
  * 候选 → 窗口：时间合并（缺口容忍）→ civil 可见性交集 → 强度 → 证据。
- * @returns { windows, candidates, rejected }
+ * @returns { windows, candidates, rejected, notEvaluated, scanRanges }
  */
 function detectCloudSea(conditions, fieldSample, userAlt, opts) {
   opts = opts || {}
@@ -346,7 +332,10 @@ function detectCloudSea(conditions, fieldSample, userAlt, opts) {
        审计实测峨眉山 18/12/7 小时的层 base 恰好等于扫描下界（AUDIT.md §3 模式 C）。 */
     const baseBoundary = run.candidates.some(function (c) { return c.layer.baseBoundary })
     const topBoundary = run.candidates.some(function (c) { return c.layer.topBoundary })
-    const winLo = fmtM(CFF.ALT0), winHi = fmtM(CFF.ALT1)
+    /* 报出来的必须是**实际扫过**的那个范围，而不是显示窗常量。
+       今天两者恒等（扫描范围缺省就是显示窗），所以这句与 `CFF.ALT0/ALT1` 逐字相同；
+       但 R1 把扫描范围换成相对带之后，再读常量就会说出与实际相反的数 —— 那是个静默的谎。 */
+    const winLo = fmtM(det.scanRanges.scan.lo), winHi = fmtM(det.scanRanges.scan.hi)
     if (!baseBoundary && !topBoundary) {
       evidence.push({ fact: '云层位于 ' + fmtM(run.baseMin) + '–' + fmtM(run.topMax) + ' m', at: from })
     } else if (baseBoundary && topBoundary) {
@@ -401,7 +390,7 @@ function detectCloudSea(conditions, fieldSample, userAlt, opts) {
     }
   })
   flush()
-  return { windows: windows, candidates: det.candidates, rejected: rejected }
+  return { windows: windows, candidates: det.candidates, rejected: rejected, notEvaluated: det.notEvaluated, scanRanges: det.scanRanges }
 }
 
 /**
@@ -641,12 +630,25 @@ function buildOutdoorIntelligence(ctx) {
       sunriseMin: full.sun ? sky.hourMin(full.sun.sunrise) : null,
       sun: full.sun,
       windAt: windAt,
+      /* 扫描范围契约的三段输入在此摊开：本轮只传实测覆盖（L1 事实），
+         业务扫描范围仍缺省取显示窗常量 —— 传进来只为了让"扫到数据之外"留痕，不改任何数值。
+         `ctx.cloudSeaScan` 是给 R1 留的接缝：不传 = 今天的行为；传了 = 用调用方给的扫描范围，
+         判定与证据句都跟着走（由 tools/cloud-layer-facts-test.js 的注入用例钉住）。 */
+      scanRange: (ctx.cloudSeaScan && ctx.cloudSeaScan.scanRange) || null,
+      dataCoverage: full.cloudField.covered || null,
+      displayRange: (ctx.cloudSeaScan && ctx.cloudSeaScan.displayRange) || full.cloudField.displayRange || null,
     })
     opportunities = opportunities
       .filter(function (w2) { return w2.type !== 'CLOUD_SEA' })
       .concat(sea.windows)
       .sort(function (a, b) { return sky.hourMin(a.from) - sky.hourMin(b.from) })
-    cloudSeaDebug = { candidates: sea.candidates, rejected: sea.rejected }
+    cloudSeaDebug = {
+      candidates: sea.candidates, rejected: sea.rejected,
+      /* 「没进判定」与「判定后拒绝」是两件事（Q5 三分归因）；
+         没有这一栏，用户侧无法区分"理塘那周没云海天气"和"云在脚下但厚度不够" */
+      notEvaluated: sea.notEvaluated,
+      scanRanges: sea.scanRanges,
+    }
   }
 
   /* 「不成立」与「证据不足」必须分开（任务书 §6.2）：
