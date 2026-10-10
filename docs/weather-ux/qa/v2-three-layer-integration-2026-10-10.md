@@ -13,7 +13,8 @@
 | 开工（阶段 1） | `50d657a19ad0fe341e90d96a8c4a662a08955ebf` |
 | 推送前最后一次复核（阶段 4） | `50d657a19ad0fe341e90d96a8c4a662a08955ebf`（**无漂移**，另一台未推进） |
 | 推送回执 | `50d657a..7f05d4b  master -> master`（快进，**未使用 `--force`**） |
-| 结束时（阶段 5 重新读取） | **`7f05d4be27f93eb092dd420d822e5951b666a059`** |
+| 结束时（阶段 5 重新读取，代码集成完成那一刻） | **`7f05d4be27f93eb092dd420d822e5951b666a059`** |
+| 事后补记（本报告与 SYNC 记录作为 docs 提交快进推于其后） | `50d657a..7f05d4b`（代码集成）→ `7f05d4b..84d9f1c`（docs：本报告 + SYNC.md 集成条目），两次都是快进、都不是 force。**任务结束时 `git ls-remote origin refs/heads/master` = `84d9f1caacdcc92ffb1e355fba36e4debbe98224`**；本行写的是 `84d9f1c` 之后的这次 docs 修订，所以它自己就是"结束后再往前走一步"的那类提交——代码内容自 `7f05d4b` 起未再变动（`git diff 7f05d4b..HEAD -- miniprogram/ tools/ cloudfunctions/` 为空可由读者复核）。 |
 
 GitHub 侧：中转裸仓库的 `post-receive` 回执原文 `remote: 中转成功：已同步到 GitHub (yuefengwang/OurTrail)`。
 **本环境 `gh` CLI 未登录（`gh auth` 无凭据），因此没有独立向 GitHub 直接核对 ref**。按 PARALLEL_DEV §一，中转成功回执即转发成功；如需第三方核验，请在有凭据的机器上比对 GitHub `master` 是否等于 `7f05d4b`。这一条在下面 §5 记作"部分验证"，不当作已验证。
