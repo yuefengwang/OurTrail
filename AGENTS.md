@@ -1,6 +1,6 @@
 # PROJECT KNOWLEDGE BASE — OurTrail
 
-**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Gate recount 3:** 2026-10-08 全生命周期审计（**50 门禁套件 / 3546 断言**，新增 6 套 `tools/lifecycle-*-test.js` 共 699，`e2e-domain-negative` 83→86；常驻红仍是天气线那 1 条。报告 `docs/superpowers/specs/2026-10-08-full-domain-lifecycle-audit.md`）· **Gate recount 4:** 2026-10-08 旅程可解释性重构（**52 门禁套件 / 3698 断言**，新增 `tools/journey-test.js` 138 与 `tools/journey-graph-test.js` 12；客户端多出 `utils/journey.js` 322 行＝状态与下一步的唯一翻译层。报告 `docs/superpowers/specs/2026-10-08-user-journey-ux-audit.md`）· **Gate recount 5:** 2026-10-09 可靠性与生产化加固两轮（**57 门禁套件 / 3805 断言 / 全部 exit 0**：第一轮 +3 套 revision/meta/cold-start 44，第二轮 +2 套 `receipt-window` 19 与 `failure-semantics` 37。生产代码只动 `index.js`/`store.js`/`domain/{commands,contracts,profile}.js` 与客户端 `utils/api.js`。报告 `docs/superpowers/specs/2026-10-09-reliability-production-hardening.md`（§1–§10 第一轮、§11–§18 第二轮）· **Gate recount 6:** 2026-10-09 Weather V2 审计（**61 门禁读数 / 4118 断言 / 全部 exit 0**：新增 4 套——`cloud-field-geometry-test.js` 190、`elevation-semantics-test.js` 34、`meteogram-readability-test.js` 55、`oi-claim-gate-test.js` 25；`weather-cloud-field` 29→31 是一条**旧契约被证伪**后的替换而非削弱，`weather-page` 149→156 加了路线海拔。生产代码动客户端 10 个文件（含 `sky.js`/`agenda.js`/`oi-presentation.js` 的「日照金山→晨昏光染」主张改名），`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。真机前后 30 张 + 2 张 2× 放大对照在 `docs/weather-ux/qa/v2-audit-2026-10-09/`，报告 `docs/weather-ux/weather-v2-final-visual-audit.md`，铁律见 25）· **Gate recount 7:** 2026-10-09 云层位置语义统一（**62 门禁读数 / 4191 断言**：新增 `tools/cloud-position-test.js` 54；`weather-page-test` 156→**173**（真页面 `r3` 三态 + 逐节点各用自己的高程判读 + 无高程/误差带弃权两态）；`cloud-field-svg-test` 27→**29**（`inferState` 一律带 `covered`——缺则**失败关闭**为 `no-data`，不再拿显示窗冒充实测范围）。三段增量都取各脚本自己打印的 `passed=N` 实测值，总数 = recount 6 的 4118 加这三段，不另立新账。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。铁律见 26，报告续 §九，真机前后 42 张（21 个场景 × full+tap）在 `docs/weather-ux/qa/v2-cloud-position-2026-10-09/`）· **Gate recount 8:** 2026-10-09 剖面显示窗自适应（**62 门禁读数 / 4248 断言 / 全绿**，本轮新增 57 条全部落在既有 6 套里，不另开框架：`cloud-field-geometry 190→206`（§14 planProfile + 变异证明）、`meteogram-readability 55→77`（§8 范围自证/边注/刻度/clipPath/375·390·414 不重叠）、`cloud-position 54→60`（§8 窗与判读隔离）、`weather-page 173→177`（§11b-F/H 图例三分支）、`meteogram-multiday 44→48`、`weather-v2-visual-audit 38→43`。真实数据 432 条 `inferState` 前后逐字节相同。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。铁律见 27，报告续 §十，证据包 `docs/weather-ux/qa/v2-window-adaptive-2026-10-09/`（含 11 张**判定无效**的受控场景截图，留在 `invalid/`）· **Gate recount 9:** 2026-10-09 OI 扫描窗 R2 边界语义（**62 门禁套件 / 4260 断言 / 全部 exit 0**，本轮 +12 条全部落在既有两套里：`outdoor-cloud-sea-test 20→31`（四种边界形态 + 通用不变量 + 标记自洽 + 候选不增 + 缺数据 + 卡片摘要次序 + 净空主语）、`outdoor-intelligence-test 24→25`；一条**钉住旧 bug** 的断言（`evidence[0]` 必须是 `云层位于 2,0…`，那个 2,000 恰为扫描下界）被重推为替换而非削弱。生产代码只动 `miniprogram/utils/outdoor-intelligence.js`（+42 −8，层提取数值表达式零改动），`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。「只改文案不动判据」由跨版本 A/B 实测：42 组比对**业务判据差异 0 组**、证据文本差异 3 组；9 条变异 0 漏网。真机：3 地 × 24/72h 共 66 条机会条目里 CLOUD_SEA = **0 个**（真实点击），故新文案**没有**自然样本可拍，只有 4 张注入式排版核验（文本出自仓库真实模型）＋ 有效性门；设备 bundle 新鲜度未证（重开项目会动共享开发者工具会话，未擅自执行），这两项在报告里记 UNVERIFIED。R1 阈值口径取证：`300m/P50` 的样本与脚本从未入库 ⇒ **无法从现有仓库确认**，本轮未改阈值。铁律见 28，报告 `docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md`）· **Gate recount 10:** 2026-10-09/10-10 R1 前置决策审计 + Q5/Q6 判定噪声审计（**门禁计数不变：仍是 62 套 / 4260 断言 / 全部 exit 0**，因为两轮生产文件改动数为 **0**——`git diff --stat` 空，只新增报告与只读探针）。但这两轮改的是**结论的可信度**：第五轮报告里"扫描相位噪声足以决定发不发云海卡"一条被第六轮用生产规则重测**推翻**（候选级翻转实测 0 / 888 小时、50 m 步长对 1 m 参照偏差 0 m），而它当初否掉的"相对带上界夹到点海拔会误判"**其实成立**。铁律见 29，报告 `docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/README.md` 与 `docs/weather-ux/qa/v2-q56-noise-audit-2026-10-10/README.md`）· **Gate recount 11:** 2026-10-10 三层架构首个纵向切片（**63 门禁套件 / 4299 断言 / 全部 exit 0**：新增 `tools/cloud-layer-facts-test.js` 37，`cloud-position-test` 60→**62** —— 后者是把一条**静态源码门**换成三条行为断言，见铁律 30）。生产代码动 2 个文件：新增 `miniprogram/utils/cloud-layer-facts.js`（L1→L2 接缝：三个高度范围分开命名 + 云层事实 + 候选层选择），`outdoor-intelligence.js` 的层提取搬过去并**把业务扫描范围变成显式入参**（此前它直接读剖面显示窗常量 `ALT0/ALT1`），另补 `meta.cloudSea.notEvaluated`/`scanRanges` 与证据句改取实际扫描范围。**业务结果零变化且可证**：跨版本对拍 111 组比对**业务判据差异 0 组**、附加字段结构差异 0 组，唯一变化是 48 条内部负证据的 detail 文案；对拍器自身经 8 条业务级变异自证 0 漏网（其中一条正是上一轮 Q6 犯的那个错）。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。真机未跑并如实标 UNVERIFIED（纯函数搬家，用户可见输出经 A/B 证为逐字相同）。ADR `docs/weather-ux/architecture/weather-v2-three-layer-evolution.md`，铁律见 30）· **Gate recount 12:** 2026-10-10 切片二（阈值单源 + 证据字段化）（**套件数不变：仍是 63 套 / 4318 断言 / 失败合计 0 / 全部 exit 0**，本轮 +19 条全部落在既有三套里：`cloud-layer-facts-test 37→45`（§7 影子常量）、`outdoor-intelligence-test 25→35`（证据 kind 契约）、`outdoor-cloud-sea-test 31→32`（三本账分区不变量，一条钉旧账本布局的断言被**替换**为两条更强判据）。生产改动 5 个 utils：新增 `miniprogram/utils/evidence-kind.js`（封闭词表，零 require），`cloud-layer-facts.js` 收 `LAYER_LIMITS`（对象引用，不是三个 const——影子改得动才算单源）+ `isCloudBand`，`sky.js`/`conditions.js` 的三处 `band.cover >= 80` 全部改为引用该判据（含**印给用户的那个 80**），`outdoor-intelligence.js` 的 `CLOUD_SEA.LAYER_COVER_MIN/SCAN_STEP_M` 改成 getter，18+13 处证据在产生处带 `kind`，`oi-presentation.summaryOf` 不再用 `indexOf('云区')` 挑摘要、且「摘要」与「看图」锚点统一读 `primaryEvidence`，`meta.cloudSea` 把窗口级拒绝拆成 `noWindow`。铁律 31。**用户可见输出零变化且可证**：新对拍器 `architecture/tools/ab-slice2.js` 把两边各自的呈现层跑到底，**123 组比对业务判据 0 / 用户可见（卡片摘要、锚点、时间轴 SVG、tapZones、silenceNote）0 / 附加字段结构 0**；架构级变异 `mutate-slice2.js` **9 条 0 漏网**（含"恢复重复阈值""摘要退回文案匹配""改优先级""未评估混进拒绝""窗口级拒绝塞回逐时""判不出不留痕"）。副作用如实登记：切片一的 `ab-slice.js` 因账本搬家报了 2 组**假**业务红，已改为比"具名拒绝全集"，复跑 111 组 0 差异、`mutate-ab` 8 条 0 漏网（V1/V4 锚点随搬家搬到 `LAYER_LIMITS`）。ADR `docs/weather-ux/architecture/weather-v2-three-layer-slice-2.md`；真机 UNVERIFIED（`pages/`、`components/` 零改动）；显示层残留 `meteogram.js:472/:503` 两处 80 未收（需真机证据）。**Base commit:** `2e504f2`
+**Generated:** 2026-09-29 · **Recalibrated:** 2026-10-04（数量全部重新实测：13 组件目录 / 13 actions / 39 commands）· **Gate recount:** 2026-10-08 Phase 10A（**43 门禁套件 / 2750 断言 / smoke 173 / 17 页**；其中 1 条常驻非确定性红属天气线 `outdoor-intelligence-ui`，见 SYNC.md 2026-10-07/10-08 两条）· **Gate recount 2:** 2026-10-08 出行方式解耦（**44 门禁套件 / 2845 断言**，新增 `tools/trip-mode-test.js` 78；常驻非确定性红仍只有天气线那 1 条）· **Gate recount 3:** 2026-10-08 全生命周期审计（**50 门禁套件 / 3546 断言**，新增 6 套 `tools/lifecycle-*-test.js` 共 699，`e2e-domain-negative` 83→86；常驻红仍是天气线那 1 条。报告 `docs/superpowers/specs/2026-10-08-full-domain-lifecycle-audit.md`）· **Gate recount 4:** 2026-10-08 旅程可解释性重构（**52 门禁套件 / 3698 断言**，新增 `tools/journey-test.js` 138 与 `tools/journey-graph-test.js` 12；客户端多出 `utils/journey.js` 322 行＝状态与下一步的唯一翻译层。报告 `docs/superpowers/specs/2026-10-08-user-journey-ux-audit.md`）· **Gate recount 5:** 2026-10-09 可靠性与生产化加固两轮（**57 门禁套件 / 3805 断言 / 全部 exit 0**：第一轮 +3 套 revision/meta/cold-start 44，第二轮 +2 套 `receipt-window` 19 与 `failure-semantics` 37。生产代码只动 `index.js`/`store.js`/`domain/{commands,contracts,profile}.js` 与客户端 `utils/api.js`。报告 `docs/superpowers/specs/2026-10-09-reliability-production-hardening.md`（§1–§10 第一轮、§11–§18 第二轮）· **Gate recount 6:** 2026-10-09 Weather V2 审计（**61 门禁读数 / 4118 断言 / 全部 exit 0**：新增 4 套——`cloud-field-geometry-test.js` 190、`elevation-semantics-test.js` 34、`meteogram-readability-test.js` 55、`oi-claim-gate-test.js` 25；`weather-cloud-field` 29→31 是一条**旧契约被证伪**后的替换而非削弱，`weather-page` 149→156 加了路线海拔。生产代码动客户端 10 个文件（含 `sky.js`/`agenda.js`/`oi-presentation.js` 的「日照金山→晨昏光染」主张改名），`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。真机前后 30 张 + 2 张 2× 放大对照在 `docs/weather-ux/qa/v2-audit-2026-10-09/`，报告 `docs/weather-ux/weather-v2-final-visual-audit.md`，铁律见 25）· **Gate recount 7:** 2026-10-09 云层位置语义统一（**62 门禁读数 / 4191 断言**：新增 `tools/cloud-position-test.js` 54；`weather-page-test` 156→**173**（真页面 `r3` 三态 + 逐节点各用自己的高程判读 + 无高程/误差带弃权两态）；`cloud-field-svg-test` 27→**29**（`inferState` 一律带 `covered`——缺则**失败关闭**为 `no-data`，不再拿显示窗冒充实测范围）。三段增量都取各脚本自己打印的 `passed=N` 实测值，总数 = recount 6 的 4118 加这三段，不另立新账。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。铁律见 26，报告续 §九，真机前后 42 张（21 个场景 × full+tap）在 `docs/weather-ux/qa/v2-cloud-position-2026-10-09/`）· **Gate recount 8:** 2026-10-09 剖面显示窗自适应（**62 门禁读数 / 4248 断言 / 全绿**，本轮新增 57 条全部落在既有 6 套里，不另开框架：`cloud-field-geometry 190→206`（§14 planProfile + 变异证明）、`meteogram-readability 55→77`（§8 范围自证/边注/刻度/clipPath/375·390·414 不重叠）、`cloud-position 54→60`（§8 窗与判读隔离）、`weather-page 173→177`（§11b-F/H 图例三分支）、`meteogram-multiday 44→48`、`weather-v2-visual-audit 38→43`。真实数据 432 条 `inferState` 前后逐字节相同。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。铁律见 27，报告续 §十，证据包 `docs/weather-ux/qa/v2-window-adaptive-2026-10-09/`（含 11 张**判定无效**的受控场景截图，留在 `invalid/`）· **Gate recount 9:** 2026-10-09 OI 扫描窗 R2 边界语义（**62 门禁套件 / 4260 断言 / 全部 exit 0**，本轮 +12 条全部落在既有两套里：`outdoor-cloud-sea-test 20→31`（四种边界形态 + 通用不变量 + 标记自洽 + 候选不增 + 缺数据 + 卡片摘要次序 + 净空主语）、`outdoor-intelligence-test 24→25`；一条**钉住旧 bug** 的断言（`evidence[0]` 必须是 `云层位于 2,0…`，那个 2,000 恰为扫描下界）被重推为替换而非削弱。生产代码只动 `miniprogram/utils/outdoor-intelligence.js`（+42 −8，层提取数值表达式零改动），`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。「只改文案不动判据」由跨版本 A/B 实测：42 组比对**业务判据差异 0 组**、证据文本差异 3 组；9 条变异 0 漏网。真机：3 地 × 24/72h 共 66 条机会条目里 CLOUD_SEA = **0 个**（真实点击），故新文案**没有**自然样本可拍，只有 4 张注入式排版核验（文本出自仓库真实模型）＋ 有效性门；设备 bundle 新鲜度未证（重开项目会动共享开发者工具会话，未擅自执行），这两项在报告里记 UNVERIFIED。R1 阈值口径取证：`300m/P50` 的样本与脚本从未入库 ⇒ **无法从现有仓库确认**，本轮未改阈值。铁律见 28，报告 `docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md`）· **Gate recount 10:** 2026-10-09/10-10 R1 前置决策审计 + Q5/Q6 判定噪声审计（**门禁计数不变：仍是 62 套 / 4260 断言 / 全部 exit 0**，因为两轮生产文件改动数为 **0**——`git diff --stat` 空，只新增报告与只读探针）。但这两轮改的是**结论的可信度**：第五轮报告里"扫描相位噪声足以决定发不发云海卡"一条被第六轮用生产规则重测**推翻**（候选级翻转实测 0 / 888 小时、50 m 步长对 1 m 参照偏差 0 m），而它当初否掉的"相对带上界夹到点海拔会误判"**其实成立**。铁律见 29，报告 `docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/README.md` 与 `docs/weather-ux/qa/v2-q56-noise-audit-2026-10-10/README.md`）· **Gate recount 11:** 2026-10-10 三层架构首个纵向切片（**63 门禁套件 / 4299 断言 / 全部 exit 0**：新增 `tools/cloud-layer-facts-test.js` 37，`cloud-position-test` 60→**62** —— 后者是把一条**静态源码门**换成三条行为断言，见铁律 30）。生产代码动 2 个文件：新增 `miniprogram/utils/cloud-layer-facts.js`（L1→L2 接缝：三个高度范围分开命名 + 云层事实 + 候选层选择），`outdoor-intelligence.js` 的层提取搬过去并**把业务扫描范围变成显式入参**（此前它直接读剖面显示窗常量 `ALT0/ALT1`），另补 `meta.cloudSea.notEvaluated`/`scanRanges` 与证据句改取实际扫描范围。**业务结果零变化且可证**：跨版本对拍 111 组比对**业务判据差异 0 组**、附加字段结构差异 0 组，唯一变化是 48 条内部负证据的 detail 文案；对拍器自身经 8 条业务级变异自证 0 漏网（其中一条正是上一轮 Q6 犯的那个错）。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。真机未跑并如实标 UNVERIFIED（纯函数搬家，用户可见输出经 A/B 证为逐字相同）。ADR `docs/weather-ux/architecture/weather-v2-three-layer-evolution.md`，铁律见 30）· **Gate recount 12:** 2026-10-10 切片二（阈值单源 + 证据字段化）（**套件数不变：仍是 63 套 / 4318 断言 / 失败合计 0 / 全部 exit 0**，本轮 +19 条全部落在既有三套里：`cloud-layer-facts-test 37→45`（§7 影子常量）、`outdoor-intelligence-test 25→35`（证据 kind 契约）、`outdoor-cloud-sea-test 31→32`（三本账分区不变量，一条钉旧账本布局的断言被**替换**为两条更强判据）。生产改动 5 个 utils：新增 `miniprogram/utils/evidence-kind.js`（封闭词表，零 require），`cloud-layer-facts.js` 收 `LAYER_LIMITS`（对象引用，不是三个 const——影子改得动才算单源）+ `isCloudBand`，`sky.js`/`conditions.js` 的三处 `band.cover >= 80` 全部改为引用该判据（含**印给用户的那个 80**），`outdoor-intelligence.js` 的 `CLOUD_SEA.LAYER_COVER_MIN/SCAN_STEP_M` 改成 getter，18+13 处证据在产生处带 `kind`，`oi-presentation.summaryOf` 不再用 `indexOf('云区')` 挑摘要、且「摘要」与「看图」锚点统一读 `primaryEvidence`，`meta.cloudSea` 把窗口级拒绝拆成 `noWindow`。铁律 31。**用户可见输出零变化且可证**：新对拍器 `architecture/tools/ab-slice2.js` 把两边各自的呈现层跑到底，**123 组比对业务判据 0 / 用户可见（卡片摘要、锚点、时间轴 SVG、tapZones、silenceNote）0 / 附加字段结构 0**；架构级变异 `mutate-slice2.js` **9 条 0 漏网**（含"恢复重复阈值""摘要退回文案匹配""改优先级""未评估混进拒绝""窗口级拒绝塞回逐时""判不出不留痕"）。副作用如实登记：切片一的 `ab-slice.js` 因账本搬家报了 2 组**假**业务红，已改为比"具名拒绝全集"，复跑 111 组 0 差异、`mutate-ab` 8 条 0 漏网（V1/V4 锚点随搬家搬到 `LAYER_LIMITS`）。ADR `docs/weather-ux/architecture/weather-v2-three-layer-slice-2.md`；真机 UNVERIFIED（`pages/`、`components/` 零改动）；显示层残留 `meteogram.js:472/:503` 两处 80 未收（需真机证据）· **Gate recount 13:** 2026-10-10 彩虹遮光闸（第九轮，用户真机截图触发）（**63 套 / 4324 断言 / 失败合计 0 / 全部 exit 0**（`sky-test 65→70`、`oi-claim-gate-test 25→26`，其余未动）。生产代码只动 `miniprogram/utils/sky.js`：彩虹的"水分"信号里那句 `c.low >= 70` 是**把遮光物当成水分**——全天 100% 云、一滴雨没下也能拿 70 分「条件较好 ★★★★」（真实快照峨眉山 7 天里 6 天给 100 分），而同一天光染判 0 分并明说云量不足 ⇒ **两个现象对同一份云量数据互相矛盾**。修法加"太阳照得出来"闸，两个数都复用本文件已有口径（`low<40` ← 光染、`(mid+high)/2<30` ← 星空/银河的晴空口径），**没有新造阈值**；顺带修 `item.look` 印出「约 284.15999999999997 度」的未取整浮点。这是**故意的业务变化**，验收因此不是零差异而是两条：`ab-rainbow.js` 33 场景 **非彩虹判据越界 0 处 + 彩虹变化 19 处**（为 0 即空改，两者都 exit 1）。变异自证 `mutate-rainbow.js` 5 条 0 漏网，并留下两条方法学教训：R3「闸只看低云」第一版测试全绿（⇒ 补了中高云遮日断言）；R1「把 `low>=70` 加回去」也全绿，但那**不是漏网而是等价变异体**（与 `low<40` 互斥的死分支）。新写的否定文案含「不会有」被 `weather-model-test` 的断言式承诺门当场拦下 ⇒ 改条件语气。**真机 VERIFIED**（开发者工具模拟器，用户授权；驱动 v4 用 `page.callMethod('applyWeather', …)` 喂生产形状载荷，A 满云 ⇒ 彩虹 ★★ + 新文案，B 云开有雨 ⇒ 彩虹 ★★★★ + 方位角整数 276；三轮被作废的尝试留在 `device/invalid/`，见铁律 32⑥）；银河"月黑给到第三颗星"的星级/文案张力只登记未改。铁律见 32，报告 `docs/weather-ux/qa/v2-rainbow-gate-2026-10-10/README.md`）· **Gate recount 14:** 2026-10-10 天相沉默闸（第十轮，用户第二次就同一屏追问）（**63 套 / 4350 断言 / 失败合计 0 / 全部 exit 0**，本轮 +26 条全部落在既有三套：`sky-test 70→82`、`weather-page-test 177→189`、`weather-v2-test 45→47`；套件数与工具数不变，两个新脚本在 `docs/weather-ux/qa/` 下）。生产代码动 5 个客户端文件（`utils/sky.js`、`utils/conditions.js`、`pages/weather/weather.{js,wxml,wxss}`），**阈值改动数 0**：缺陷不是判据错，而是**一个字段被当两件事用**——`score` 只该回答"多有戏"，页面却由它顺带决定"露不露出来"，于是满云日挂着星空 ★★／银河 ★★★，银河卡还写着「朝西南（约 231 度）找银心带」。修法：`sky.js` 加显式三态 `VERDICT={possible,excluded,unknown}` 与 `isSilent()`（6 个结论函数**每条 return 路径**共 14 处都带判定；`excluded` 沉默、**`unknown` 必须仍出卡并说明缺什么**、缺字段失败开放、客观时刻永远 possible），页面 `buildCondCards` 据此减卡并新增 `buildCondSilent` 点名被减项（减卡不能长成"工具坏了"，铁律 27③ 换主体），`overallGrade` 同步剔除 excluded（挖出的真不一致：被排除的云海卡手里还攥着 64 分 ≥45 会进 live 池——**看不见的证据在替看得见的结论投票**）。**故意的用户可见变化不拿零差异当验收**：`ab-silence.js` 两侧各走自己的 `sky.summarize` 与**自己的真页面 `buildCondCards`**（`git archive 5351231`），40 场景（12 合成 + 28 天真实快照）读数＝六卡可见字段逐字节差异 **0** / 被沉默 **107** 张（云海 35、彩虹 28、光染 27、银河 9、星空 8）/ 仍出现 **93** 张（107+93=200=40×5 分区闭合）/ 越界 **0** / `unknown` 存活 1/1 / 总评变化 21 场景全部可归因；三条空改门之一 `untouched===0` 是第一版跑出来才发现缺的——**前 11 组每组都减卡，没有"一张都不减"的阳性对照就分不清是闸在判还是无条件减卡**。变异 `mutate-silence.js` **8 条 0 漏网**（含"把 unknown 当 excluded 吃掉""减卡不点名""总评继续听被沉默卡"），S5 首次是**注入失败**（偏移 +1 落在中文注释上）⇒ 计漏网并 exit 1，不静默改错行充数。真实快照分布：28 天没有一天五项全活，峨眉山 10-13/14/15 五项全灭 ⇒ 页面只剩总评 + 沉默行。**真机 VERIFIED**（三用例 PASS：A 满云 → 结论卡 0 张 + 沉默行 1 行点名五项；B 五项有戏 → 5 卡 0 沉默行、银河「朝东南（约 157 度）找银心带」照旧；C 无高程 → 云海 ★★☆☆☆ 且自带「此点缺少可信海拔」；每用例 reLaunch + 独立 `updatedAt` + 三用例读数互不相同的污染自证，截图前先断言 `dayCards/unified/chartSeries` 门槛链，星级串取自 `el.text()` 而非 data 推断；bundle 新鲜度由新文案自证。中途一次会话僵死（`cli auto` 挂起、端口从不 LISTENING、无可杀孤儿会话）经用户授权 `cli quit` + 重开后恢复；B 第一版只有 4 张卡，**三个原因全在夹具**——快照 `places` 键是拼音 `emeishan` 写成中文 ⇒ 静默回落到 489 m 的成都 ⇒ 云海被**正确地**判 excluded，另两处是 `altitudes[0]` 与 `hourOf` 取错小时，见铁律 33⑧）。**未做并留裁决**：黄金/蓝调时刻本轮不动——仓库里没有可追溯的"斜射暖光被挡住"口径，拿 `sunVisible` 去裁会造出假否定（卷层云被判遮死）。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。铁律见 33，报告 `docs/weather-ux/qa/v2-silence-gate-2026-10-10/README.md`）· **Gate recount 15:** 2026-10-10 摄影窗口事实后缀（第十一轮，用户选 A："时间不删，把话说准"）（**63 套 / 4364 断言 / 失败合计 0 / 全部 exit 0**，本轮 +14 全落在 `weather-v2-test 47→61` 的 §2b）。生产文件 2 个：`utils/sky.js` 把光染注释里一直在用的「低云少（光能到山体）」命名成 `LIGHT_LIMITS.LOW_CLOUD_MAX`（导出对象、按引用读）+ `lightReachesGround(c)`，光染判据与彩虹 `sunVisible` 前半句同时改调它；`utils/agenda.js` 给蓝调（晨）/黄金（晨）/黄金（昏）/蓝调（昏）四条接上「当时低云 X%，斜射暖光可能到不了山体 / 天空可能只发灰不发蓝」的 sub 后缀，**时刻与标题一字未改、条目一条不裁**。阈值改动数 **0**（40 不是新数）。**先收回上一轮一句错话**：第十轮报告写"仓库里没有可追溯的『斜射暖光被挡住』口径"——口径就在光染注释里，我当时把它和彩虹那道含中高云项的闸混为一谈；原文只加前向指针不删。**单源是真的可测**：影子把 40 改到 95 ⇒ 同一份低云 60% 的数据光染标记变多、彩虹标记变多、窗口后缀归零（三处一起动），还原后逐项相同；另配静态门盯 `agenda.js` 里的字面量副本。判据只看低云顺带**不误伤卷层云**（全天 95% 中高云 + 低云 5% ⇒ 0 处后缀）。`Number(null) === 0` 的坑单独钉：`lowCloudAt` 只认 `typeof === 'number'`，否则"没有读数"会被印成"低云 0%，光好"= 凭空造有利事实。对拍 `ab-photo-note.js`（改前侧 `git archive eded900`，两侧各走自己的 agenda/sky/真页面装配）：36 场景（8 合成 + 28 天真实快照）新增后缀 46 处、零后缀阳性对照 21 个、越界 0，越界定义含"改名必须是纯改名"（六卡九字段 + marks + 页面卡集合 + 总评逐字节相同）。变异 `mutate-photo-note.js` **8 条 0 漏网**，其中 **P7 第一次漏网的原因在夹具不在判据**——"缺读数"用例只铺一行 `00:00` 却去查 `06:40`，`lowCloudAt` 查无此小时直接返回 null，那条断言从未走到 null 分支（假绿），铺满 24 小时 `{low:null}`/`{}` 后才会红。**真机 VERIFIED**（端口重绑 9423；A 满云 4/4 条带后缀 + 像素层 `.ag-sub` 命中 4 行、B/C 后缀 0 行且卡 5 张；日出日落/天文晨光始/暗夜始一条不少）；第一版假红同样是驱动查错容器（`.timeline-card` 是 `wx:if="{{!unified}}"` 的兜底块）。`cloudfunctions/`、`pages/`、`components/` 零改动 ⇒ **不需要重新部署**。**发现未动**：时间轴「天文暗夜始」的 sub 仍写「银河与深空窗口」——满云那晚银河卡已被沉默闸收掉，这半句是同一类"把不可能包装成建议"，等裁决。铁律见 34，报告 `docs/weather-ux/qa/v2-photo-window-note-2026-10-10/README.md`）· **Gate recount 16:** 2026-10-10 「天文暗夜始」机会句改由同源标记决定（第十二轮，用户选 A）（**weather-v2-test 61→67**，其余套件未动；63 个可无头套件逐套独立跑 **62 套 exit 0**，读数合计 4299）。生产文件 **1 个**：`miniprogram/utils/agenda.js`——时间轴那行 `20:03 天文暗夜始 · 银河与深空窗口` 里其实藏着两件事：前半句是客观钟点（任何天气都发生，不许裁），后半句是**机会主张**；而满天云那晚银河卡已被沉默闸收掉，同一屏两处互相打脸。修法零新阈值零第二实现：机会句改为读 `sky.hourMarks` 已经打出来的 `galaxy` 标记（银心季 + 月照 <35% + 暗夜晴空三合一），有则说、无则只剩时刻；`hasMark` 按页面级键 `date + 'T' + HH:mm` 查（写成 `h.t` 会静默恒 false，变异 D4 专抓）。**减话类改动必须双向可证**：只测"被摘掉"会放过"永远不说"这种一刀切，故判据含双向一致 + 对拍"保留数 > 0"门；与卡片的一致性只写**单向**（有机会句 ⇒ 银河卡 possible）——标记比卡片多一个月照门槛，写成双向等价就是编出来的对称。对拍 `ab-dark-window.js`（改前侧 `git archive d2e9d70`）34 场景（6 合成 + 28 天真实快照）：摘掉 9、保留 25（9+25=34 闭合）、越界 0，越界定义含"上一轮摄影后缀条数不得回退"与"非目标条目 sub 一动即红"；变异 `mutate-dark-window.js` **6 条 0 漏网**。**真机 VERIFIED**（端口重绑 9424：A 满云 → 时刻 20:03 在、sub = null、像素不含机会句；B/C → 时刻在、sub 照旧「银河与深空窗口」、摄影后缀 0 条、卡 5 张）。**跑出一条与本轮无关的红并如实归因**：`tools/e2e-test.js:72` 把 `deadlineAt` 写成绝对时刻 `'2026-10-10T20:00+08:00'`，本地钟过 20:00 后 `signup.submit → WRONG_PHASE` 并在 `:145` 抛错中断整条 && 链（71 条不计入总数）；已在 `git archive origin/master`（`abf08f0`，不含我方 5 个提交）的干净副本复现**同样的红、同样的行号** ⇒ 归属清楚；修法＝夹具时间改用 `Date.now()` 偏移，但动的是公共门禁，未擅自改，留用户裁决（教训：门禁夹具里的绝对日期就是时间引信）。`cloudfunctions/`、`pages/`、`components/` 零改动 ⇒ **不需要重新部署**。铁律见 35，报告 `docs/weather-ux/qa/v2-dark-window-note-2026-10-10/README.md`。**Base commit:** `2e504f2`
 
 ---
 
@@ -142,8 +142,13 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Gated suites — 63（62 个 tools/*-test.js + smoke-test.js）. 2026-10-10 Weather V2 切片二（阈值单源 + 证据字段化）后共 4318 断言；
-# 全量复跑唯一红 = tools/outdoor-intelligence-ui-test.js 的常驻非确定性用例，打线上 Open-Meteo + 真实时钟，已归档归因、非本轮改动引入.
+# Gated suites — 63（62 个 tools/*-test.js + smoke-test.js）. 2026-10-10 拆掉 e2e 时间引信后共 4371 断言；
+# 常驻非确定性红 1 条 = tools/outdoor-intelligence-ui-test.js（打线上 Open-Meteo + 真实时钟，已归档归因；
+#   2026-10-10 20:40 整链里红、单跑 47/0 ⇒ 偶发性质与归档一致，别重诊）。
+# 曾有的"确定性时间引信"已修：tools/e2e-test.js 夹具里的 deadlineAt/startAt/endAt/meetingAt/expiresAt
+#   一律改为按 Date.now() 偏移推导（写死日历＝埋引信；2026-10-10 20:00 过点后曾中断整条 && 链）。
+#   自证：E2E_SHIFT_MINUTES=+2880 复跑仍 72/0；=-2880（窗口被关掉）时**首条即有效性门**、
+#   退出码 2 = 本次运行 INVALID，不再伪装成一串产品红 + 末尾 undefined 抛错。
 # ⚠ 断言总数是**快照**，不是恒定值：
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
 #   那些改动会增删用例（例：smoke 104→106→167、workspace 104→111 均非本轮 P4 改动）。
@@ -151,12 +156,12 @@ node tools/check-handlers.js weather   # optional: single page/component target
 node cloudfunctions/trailApi/smoke-test.js   # 领域层（167）
 node tools/astro-test.js                     # 天文（60）
 node tools/gpx-test.js                       # GPX + 坐标转换（57）
-node tools/sky-test.js                       # 天相结论（65）
+node tools/sky-test.js                       # 天相结论（82；§3 彩虹遮光闸成对反例，§12 三态 verdict 沉默闸）
 node tools/route-schedule-test.js            # 日程推算（41）
-node tools/weather-page-test.js              # 云函数→页面→组件契约（177）
+node tools/weather-page-test.js              # 云函数→页面→组件契约（189；§13 天相卡沉默闸走真页面 buildCondCards）
 node tools/watch-points-test.js              # 观察点/轨迹点组（37）
 node tools/weather-model-test.js             # P4 轨迹层编排（wx-free 纯函数）（82）
-node tools/weather-v2-test.js                # Weather V2：WMO 雪码/云海可见性/Evidence/optional 降级（45）
+node tools/weather-v2-test.js                # Weather V2：WMO 雪码/云海可见性/Evidence/optional 降级/总评剔除被沉默卡/摄影窗口事实后缀/暗夜机会句同源标记（67）
 node tools/meteogram-draw-test.js            # meteogram 真实 draw()：V2 云带剖面/风/日照轴（记录式 2D）（30）
 node tools/space-time-test.js                # P4 时空天相图几何 + 漫游读数（109）
 node tools/space-time-draw-test.js           # P4 真实 draw() 执行（记录式 2D 上下文）（55）
@@ -183,7 +188,7 @@ node tools/lifecycle-projection-test.js      # 逐行标志↔域内结论差分
 node tools/lifecycle-concurrency-test.js     # 8 类命令同 requestId 重放、同版本并发败者零副作用、归档后迟到操作、递补整批原子（126）
 node tools/lifecycle-fuzz-test.js            # 60×45 随机场景零违背 + 13 条终态性质 + 20 类变异自证 + 固化种子（47）
 # 端到端两层（A 层计入门禁；B 层需开发者工具，不计入门禁）
-node tools/e2e-test.js                         # A 层服务链路 E2E（71 项，真信封打 exports.main）
+node tools/e2e-test.js                         # A 层服务链路 E2E（72 项，真信封打 exports.main；夹具时间按 now 偏移，E2E_SHIFT_MINUTES 可自证与钟点无关，窗口不成立时 exit 2 记 INVALID 不记产品红）
 node tools/e2e-fault-probe-test.js             # 结果模型变异自证（34 项）
 node tools/e2e-permission-test.js              # A 层权限矩阵：角色×命令×阶段×归属（96 断言，8 actor 全走真实信封）
 node tools/e2e-domain-negative-test.js         # A 层 Domain 负矩阵：17 种错误码的确定性拒绝 + 败者零副作用快照对比（86 断言）
@@ -199,7 +204,7 @@ node tools/failure-semantics-test.js           # 写失败两语义分离（超�
 # Weather V2 几何、海拔语义与机会卡主张三套门（2026-10-09 审计第一轮；铁律 25）
 node tools/cloud-field-geometry-test.js        # 等值带按业务规格写期望拓扑：晴空/满云/单层/多层分离/生灭分裂/临界/锋面/缺失回填/高度边界/噪声极端 + 图与数据的点格一致率 + 变异自证（206 断言；真实三地点 × 24·48·72h × 375·390·414 + §14 显示窗规划）
 node tools/elevation-semantics-test.js         # 海拔出处单源 resolveElev 五态 + 「此点」主语 + 模型来源必须标注 + 判读不受剖面窗钳制 + 静态门（34 断言）
-node tools/oi-claim-gate-test.js               # 机会卡证据门：星空/银河/彩虹/云海/光染的「不成立必须无卡 + 成立必须有卡」成对用例 + 「日照金山」主张静态门 + 分数不得伪装成成功率（25 断言）
+node tools/oi-claim-gate-test.js               # 机会卡证据门：星空/银河/彩虹/云海/光染的「不成立必须无卡 + 成立必须有卡」成对用例（彩虹现为三例：干燥 / 云开有雨 / 有雨但满天云）+ 「日照金山」主张静态门 + 分数不得伪装成成功率（26 断言）
 node tools/meteogram-readability-test.js       # 统一 Meteogram 可读性：降水柱宽随时间窗且不压叠、缺测温度断开不补中点、微量降水可见不夸大、风向映射与密度、多日昼夜分段、375/390/414 标签不重叠（77 断言，全部解析 SVG 图元判定；§8 显示窗范围自证与边注）
 
 # 云层位置语义三态（2026-10-09 审计续轮；铁律 26）
@@ -556,6 +561,140 @@ await mp.disconnect()
    判据：`tools/cloud-layer-facts-test.js` §7（37→45）、`tools/outdoor-intelligence-test.js`（25→35）、
    `tools/outdoor-cloud-sea-test.js`（31→32）；对拍 `architecture/tools/ab-slice2.js`
    （123 组：业务 0 / **用户可见 0** / 附加字段 0）。
+
+32. **有利信号不能由"遮光物"本身充当；判"漏网"之前先确认变异体真的不等价。**
+   Weather V2 第九轮（彩虹遮光闸，2026-10-10，报告 `docs/weather-ux/qa/v2-rainbow-gate-2026-10-10/README.md`）：
+   ① 缺陷本体：`sky.hourMarks` 的彩虹"水分"信号里写着 `c.low >= 70` —— 把**满天低云**当成有水分，
+      而低云恰恰是遮住太阳的东西；彩虹打分只有 `40 + 湿小时≥2 → 30`，于是全天 100% 云、一滴雨没下
+      照样 70 分「条件较好 ★★★★」（真实快照上峨眉山 7 天里 6 天给 100 分）。
+      **同一份云量数据，光染（alpenglow）判 0 分并明说"云量不足"** —— 两个现象互相矛盾就是最省事的自查信号。
+   ② 修法不许新造阈值：加"太阳照得出来"闸，两个数都从本文件已有口径里取
+      （`c.low < 40` ← 光染那句「低云少（光能到山体）」；`(mid+high)/2 < 30` ← 星空/银河的「暗夜晴空」口径）；
+      水分只看真降水与高湿。方向性局限要写进文档：模型没有方向分辨能力，
+      这道闸会用"漏报"换掉"误报"——这是取舍，不是免费修复。
+   ③ **故意的业务变化不能拿"零差异"当验收**：`ab-rainbow.js` 同时要求
+      非彩虹判据越界 = 0（其余五类结论的分数/档位、除 RAINBOW 外的机会窗口逐字相同）
+      **且** 彩虹变化 > 0（为 0 说明这道闸在生产数据上从没生效 = 空改）；两种情况都 exit 1。
+   ④ 变异自证双向都在用：R3「把闸改成只看低云」让第一版测试**全绿**（中高云遮日那一半没被测到）⇒ 补断言；
+      而 R1「把 `low >= 70` 加回水分信号」也全绿 —— 那**不是漏网，是等价变异体**
+      （`low >= 70` 与闸的 `low < 40` 互斥，加回去是死分支）。规矩：报"漏网"前先判断变异体在行为上
+      是否真的不等价；把死分支抄回来不构成回归，反之把等价变异当牙齿也不构成证明。
+   ⑤ 文案门是活的、会拦新写的句子：本轮新写的否定句里有「不会有」，被
+      `weather-model-test` 的"不含断言式承诺"门当场拦下（铁律 12）⇒ 改成条件语言「这个条件不成立」。
+      **否定式陈述同样要用概率/条件语气，绝对断言（哪怕断言的是"不会"）一律不许出现。**
+   ⑥ **真机核验的三道门槛，缺一张就不算页面级证据**（本轮连犯三次，全留在
+      `docs/weather-ux/qa/v2-rainbow-gate-2026-10-10/device/invalid/`）：
+      (a) 注入载荷必须是**生产形状的全集**——只给 `series` 不给 `days` ⇒ `dayCards` 空 ⇒
+          `weather.wxml:37` 的 `wx:elif="{{dayCards.length}}"` 不成立，整块内容不渲染，
+          而 `page.data('condCards')` 读数完全正常（**data 读数不是像素证据**，铁律 21 换了主体）；
+      (b) 少给 `cloudLevels` ⇒ `buildCloudFieldRange` 返回 null ⇒ `unified=null` ⇒ 页面回退经典
+          canvas meteogram、OI 卡不出，截图看着就是"旧版本页面"。所以驱动要先断言
+          `dayCards>0 / unified!=null / oiCard!=null / chartSeries 长度` 再截图；
+      (c) 多用例必须**打穿缓存**：`weather.js:824` 的键是
+          `updatedAt|date|elevation|lat2dp|width`，两个用例共用一个 `updatedAt` 就会让 B 复用 A 的
+          云场图与 OI 卡（而结论卡每次重算 ⇒ 一半新一半旧，最难发现）。做法：每用例前 `reLaunch`
+          （清 `_unified`/`_oiCache` 这类实例属性）+ 给不同 `updatedAt` + **污染自证**
+          （两用例的 `unified`/OI 读数必须不同，相同就 `exit 1` 判整批截图无效）。
+   判据：`tools/sky-test.js` 65→70（成对反例 + 中高云遮日 + 方位角整数度 + 六卡"N 度"读数不得带小数）、
+   `tools/oi-claim-gate-test.js` 25→26（干燥 / 云开有雨 / 有雨但满天云 三例成对）、
+   变异 `qa/v2-rainbow-gate-2026-10-10/tools/mutate-rainbow.js`（5 条 0 漏网，先过未变异全绿的有效性门）。
+
+33. **「要不要出现」必须是显式字段，不得由分数顺带决定；弃权不算否定，减卡必须点名。**
+    Weather V2 第十轮（天相沉默闸，2026-10-10，报告 `docs/weather-ux/qa/v2-silence-gate-2026-10-10/README.md`）：
+    ① 缺陷本体不是判据错，而是**一个字段被当两件事用**：`score` 只回答"多有戏"，页面却由它顺带决定
+       "露不露出来"，于是满云日挂着星空 ★★、银河 ★★★，银河卡还写着**「朝西南（约 231 度）找银心带」**——
+       **把"不可能"包装成"可执行建议"**。低分卡照样有"往哪看"、照样有"为什么？▾"证据行，用户无从分辨。
+    ② 三态而非两态：`VERDICT = {possible, excluded, unknown}`。**只有 `excluded` 沉默**。
+       `unknown`（无可信海拔 / 没有暗夜小时）**必须仍出卡并说明缺什么** —— 这是铁律 26② 的反向：
+       把弃权读成"不可能"而减卡，等于把"没数据"冒充"没有"。`isSilent()` 对缺字段**失败开放**（不沉默）。
+       客观时刻（黄金/蓝调/日出日落）永远 `possible`：它是钟点，不是概率判断。
+    ③ 每条沉默条件都必须能指回**本文件已有的一句判据**（光染"晨昏窗口内没有一小时低云少且无降水"、
+       云海"此点不在带顶之上"与"整天没有 ≥80% 成层云带"、星空/银河"暗夜晴空 0%"、银河"不在银心季"、
+       彩虹"没有任何一小时同时满足太阳照得出来 + 有水分"）。本轮**阈值改动数 0**：
+       给已有分支起名字 ≠ 新增判据；反之"看着合理的新闸门"（如拿 `sunVisible` 去裁黄金时刻）会造出
+       **假否定**——卷层云被判"遮死"，而它恰恰是日落好光的一部分。
+    ④ **减卡不能长成"工具坏了"**：铁律 27③ 的主体从"图"换到"卡"——被沉默的项要在页面上点名
+       （`buildCondSilent` + `weather.wxml:403` 一行说明），否则用户分不清"今天没戏"与"数据没取到"。
+    ⑤ **看不见的证据不能决定看得见的结论**：被排除的云海卡手里还攥着分数（实测 64 ≥ 45 会进
+       `overallGrade` 的 live 池），旧规则下页面上已经不出现的卡仍在替看得见的"徒步条件"投票。
+       `conditions.js` 的候选集必须与可见卡集**同构**（晴空 90 + 被排除 64：旧 77，新 90）。
+    ⑥ **故意的用户可见变化：对拍必须同时含"阳性对照"**。本轮第一版 40 场景减了 107 张卡、越界 0，
+       看起来已经很硬，但前 11 组**每组都减卡**，没有"一张都不减"的场景 ⇒ 分不清是闸在判还是无条件减卡。
+       现在 `ab-silence.js` 有三条 exit 1 的空改门：`silencedTotal===0` / `unknownKept===0` / `untouched===0`。
+       分区闭合也要报：107 被沉默 + 93 仍出现 = 200 = 40×5，缺一条就是漏算。
+    ⑦ 真机通道卡住时按 **ENV-ABORT** 记，不猜也不硬来：本轮 `islogin` 正常、33278 在听，但
+       `cli open` 挂起 15 分钟、`cli auto`（9421/9422）从未让端口进入 LISTENING，进程表里没有第二个
+       automator/node 会话可杀 ⇒ playbook §3 的下一步是 `cli quit` + 重开，**那会动共享的开发者工具会话，
+       未经批准不执行**；批准后再 `quit` → `sleep 15` → `open --project 'D:\OurTrail'`（路径必须是注册表里
+       的反斜杠形式）→ `sleep 30` → `auto`，拿到 `{"autoPort":9421}` 且端口 LISTENING 才算通道可用。
+       驱动里的 bundle 新鲜度门可以**由文案自证**：本轮那行沉默文案只存在于新代码，屏幕上出现它即证明新 bundle。
+    ⑧ **阳性对照在真机上最容易翻车，因为夹具是数据不是断言**：本轮 B 用例第一版只有 4 张卡，三个原因
+       全在驱动自己：快照 `places` 的键是拼音 `emeishan`，写成中文 `'峨眉山'` 拿到 `undefined` ⇒
+       **静默回落到第一个站点（成都 489 m）** ⇒ "此点不在 1,000 m 云带之上"被**正确地**判成 excluded；
+       另两处是覆盖函数取了 `lvl.altitudes[0]`（应逐时取 `altitudes[i]`）与 `hourOf` 用 `slice(0,2)`
+       读 `'2026-10-09T07:00'` 得到 `"20"`。规矩：注入夹具后必须先断言"这份夹具确实让各必要条件成立"
+       （海拔 / 层高度 / 小时三者对齐）——**页面少显示一张卡，既可能是判据对，也可能是夹具错。**
+    真机结果：**三用例 VERIFIED**（A 满云 → 0 卡 + 1 沉默行点名五项；B 五项有戏 → 5 卡 0 沉默行、
+    银河「朝东南（约 157 度）找银心带」照旧；C 无高程 → 云海 ★★☆☆☆ 且自带"此点缺少可信海拔"），
+    像素与 DOM 双读数（星级串取自 `el.text()`，不是 data 侧推断），证据在 `device/` 与 `device/readings.json`。
+    判据：`tools/sky-test.js` 70→82（闭集门 + 满云五项全 excluded + **分数未动只改出现** + 晴空反向对照 +
+    缺海拔 unknown vs 带内 excluded + 极昼 unknown + `isSilent` 失败开放）、
+    `tools/weather-page-test.js` 177→189（§13 走**真页面** `buildCondCards`/`buildCondSilent`，不在测试里镜像页面逻辑）、
+    `tools/weather-v2-test.js` 45→47；对拍 `qa/…/tools/ab-silence.js`（40 场景 / 可见字段逐字节差异 0 / 越界 0）、
+    变异 `qa/…/tools/mutate-silence.js`（8 条 0 漏网；S5 首次是**注入失败**——偏移 +1 落在中文注释上，
+    脚本计一条漏网并 exit 1，没有静默改错行充数）。
+
+34. **"不删事实，只补一句"也要有牙齿；缺输入类断言必须让被查时刻真的落在夹具里。**
+    Weather V2 第十一轮（摄影窗口事实后缀，2026-10-10，报告 `docs/weather-ux/qa/v2-photo-window-note-2026-10-10/README.md`）：
+    ① 用户点名"蓝调、黄金也别放不可能"，但**客观时刻不是概率判断**：日出日落/黄金/蓝调是太阳高度角穿越点，
+       删掉它们等于把行程规划要用的钟点藏了。正确形态是**时间一条不裁，只在 sub 上补一句当时的云**。
+       "补一句"同样要有判据：非摄影窗口的任何条目任何字段变、`t/title/key/l2/window` 变、条目数变，全算越界。
+    ② **上一轮的否定句要收回**：我写过"仓库里没有可追溯的『斜射暖光被挡住』口径"——不成立，
+       口径一直在光染判据的注释里（「低云少（光能到山体）」= `low < 40`），是我把它和彩虹那道含中高云项的
+       `sunVisible` 混成了一句。**"没有口径"这种话必须先 grep 自己的注释再讲**；被推翻的原文只加前向指针不删（铁律 29③）。
+    ③ 新判据一律**命名 + 单源 + 影子可改**：`sky.LIGHT_LIMITS.LOW_CLOUD_MAX` 放进导出对象、三处按引用读
+       （光染、彩虹前半句、日程后缀）；影子把 40 改到 95 ⇒ 光染标记变多、彩虹标记变多、后缀归零，
+       三处一起动才算同一个数。同值不同义**不合并**：`(mid+high)/2 < 30`（天上有没有云）与 `low < 40`
+       （光到不到地面）是两把尺（铁律 31②）。判据只看低云还有一个副作用是**不误伤卷层云**——
+       全天 95% 中高云 + 低云 5% 那天 0 处后缀，而卷层云恰恰是日落最好光的一部分。
+    ④ **后缀是"加"上去的**：原话一个字都不许被改写（断言盯前缀 `天空最蓝的十几分钟（`），
+       措辞按窗口物理分岔（黄金说"暖光到不了山体"、蓝调说"只发灰不发蓝"），语气一律条件式（铁律 12）。
+    ⑤ **缺读数不能混成有利事实**：`lowCloudAt` 只认 `typeof === 'number'`，因为 `Number(null) === 0`
+       会把"这一小时没有云量"印成"低云 0%，光好"——那是凭空造有利证据，与把晴空冒充成云同等严重。
+    ⑥ **缺输入类断言的夹具必须真的覆盖被查时刻**：P7（`Number(low)` 版）第一次**漏网**，不是判据弱，
+       而是我的"缺读数"用例只铺了一行 `00:00`、却去查 `06:40` 的低云 ⇒ `lowCloudAt` 查无此小时直接返回 null，
+       那条断言从未真正走到 null 分支（**假绿**）。铺满 24 小时的 `{low:null}` / `{}` 两份夹具后 P7 才会红。
+       同理真机第一版的假红来自查 `.timeline-card`——那是 `wx:if="{{!unified}}"` 的兜底块，统一图在时整块不渲染。
+    判据：`tools/weather-v2-test.js` 47→61（§2b 十四条：不裁时间 / 时刻逐项相同 / 措辞分岔 / 前缀不被改写 /
+    39 不加 40 加 / 缺读数不加话 / 影子三处一起动 + 还原对照 / agenda.js 无字面量副本）、
+    对拍 `qa/…/tools/ab-photo-note.js`（36 场景 / 46 处后缀 / 21 个零后缀阳性对照 / 越界 0）、
+    变异 `qa/…/tools/mutate-photo-note.js`（8 条 0 漏网）。
+
+35. **一句话是"钟点"还是"机会主张"，决定它能不能被天气裁掉；机会主张读已打出的标记，不再判第二遍。**
+    Weather V2 第十二轮（「天文暗夜始」机会句，2026-10-10，报告 `docs/weather-ux/qa/v2-dark-window-note-2026-10-10/README.md`）：
+    ① 同一行文案里可以藏着两件事：`20:03 天文暗夜始 · 银河与深空窗口`——前半句是客观钟点（任何天气都发生，
+       不许裁），后半句是**机会主张**（满天云或不在银心季时它就是那句"把不可能包装成建议"，
+       而且此时银河卡已被沉默闸收掉，同一屏两处互相打脸）。修法是把两件事分开：时刻照旧出，
+       机会句只在**判得出来**时出。
+    ② 机会句的依据直接读 `sky.hourMarks` 已经打出来的 `galaxy` 标记（银心季 + 月照 <35% + 暗夜晴空三合一），
+       不在日程层重算晴空率、也不读卡片 verdict ⇒ 零新阈值、零第二实现（铁律 30①/31②）。
+       标记键格式必须用页面级的 `date + 'T' + HH:mm`——写成 `h.t` 会静默查不到、恒为 false，
+       看起来"更安全"其实是把功能关掉（变异 D4 专抓这一条）。
+    ③ **减话类改动必须双向可证**：只测"被摘掉"会放过"永远不说"这种一刀切（它把用户报的现象治好了，
+       同时把真有机会的夜晚一起抹掉，肉眼看不出）。所以判据含双向一致
+       （没 galaxy 却仍说 = 红；有 galaxy 却被摘 = 红）+ 变异 D2 + 对拍的"保留数 > 0"门。
+       与卡片的一致性只写**单向**（有机会句 ⇒ 银河卡 possible）：标记比卡片多一个月照门槛，
+       晴夜满月时卡片 possible 而标记不打——把它写成双向等价就是编出来的对称。
+    ④ 跨轮回归门：本轮对拍同时要求上一轮（摄影窗口后缀）的条数不回退，且非目标条目的 `sub` 一动就算越界。
+    判据：`tools/weather-v2-test.js` 61→67（§2c：时刻永远在 / 满云夜 sub 空且卡 excluded /
+    晴夜银心季残月照旧说 / 1 月不说且卡沉默 / 单向一致 / agenda.js 里该文案只许出现一次）、
+    对拍 `qa/…/tools/ab-dark-window.js`（34 场景 / 摘掉 9、保留 25 / 越界 0）、
+    变异 `qa/…/tools/mutate-dark-window.js`（6 条 0 漏网）。真机 VERIFIED（端口重绑 9424，
+    A 满云 20:03 无 sub 且像素不含机会句、B/C 时刻在且 sub 照旧；截图 `device/A-overcast-2.png`）。
+    **顺带跑出一条与本轮无关的红**：`tools/e2e-test.js` 的夹具把 `deadlineAt` 写成绝对时刻
+    `'2026-10-10T20:00+08:00'`，过点后 `signup.submit → WRONG_PHASE` 并在 `:145` 抛错中断整条 && 链；
+    已在 `git archive origin/master`（`abf08f0`）干净副本复现同样红与同样行号 ⇒ **归属清楚，不是天气线改动**。
+    教训：**门禁夹具里的绝对日期就是时间引信**，写夹具时用 `Date.now()` 偏移，别写日历。
 
 ---
 

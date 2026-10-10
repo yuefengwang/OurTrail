@@ -64,12 +64,18 @@ const ocTypes = types(run(overcastNight))
 check('夜间满云 ⇒ STARGAZING 与 MILKY_WAY 都必须消失',
   !has(ocTypes, 'STARGAZING') && !has(ocTypes, 'MILKY_WAY'), ocTypes.join(','))
 
-/* ---------- 2. 彩虹：干燥不许出现，有水分才允许（成对） ---------- */
-section('2 彩虹：水分信号是必要条件')
+/* ---------- 2. 彩虹：水分与"看得到太阳"都是必要条件（成对） ---------- */
+section('2 彩虹：干燥不许出现，满天云也不许出现，云开有雨才允许')
 const dry = day(h => (h >= 6 && h <= 9) ? { low: 10, mid: 0, high: 0, rh: 25 } : {})
 check('干燥清晨（无降水、湿度 25%）不生成彩虹窗口', !has(types(run(dry)), 'RAINBOW'), types(run(dry)).join(','))
-const wet = day(h => (h >= 6 && h <= 9) ? { low: 75, mid: 0, high: 0, rh: 92, precip: 0.2, pop: 55 } : {})
-check('反对照：低云+高湿+微量降水的清晨给出彩虹窗口', has(types(run(wet)), 'RAINBOW'), types(run(wet)).join(','))
+/* 旧判据里 `low >= 70` 被当成水分信号，所以这条反照原来写的是 low:75——
+   那是"满天低云"，恰恰是太阳照不出来的情形。改成"云开 + 有雨"，
+   并补一条真正的负向对照：有雨但云遮死 ⇒ 必须无卡。 */
+const wet = day(h => (h >= 6 && h <= 9) ? { low: 30, mid: 10, high: 10, rh: 92, precip: 0.2, pop: 55 } : {})
+check('反对照：低云少 + 高湿 + 微量降水的清晨给出彩虹窗口', has(types(run(wet)), 'RAINBOW'), types(run(wet)).join(','))
+const covered = day(h => (h >= 6 && h <= 9) ? { low: 95, mid: 90, high: 90, rh: 98, precip: 0.6, pop: 90 } : {})
+check('有降水但满天云 ⇒ 彩虹窗口必须消失（没有太阳就没有虹，截图那张 4 星卡的成因）',
+  !has(types(run(covered)), 'RAINBOW'), types(run(covered)).join(','))
 
 /* ---------- 3. 云海：缺海拔 / 无成层低云 / 民用晨昏外 三种「不成立」都要沉默 ---------- */
 section('3 云海：三种不成立都不许出卡')

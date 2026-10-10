@@ -79,10 +79,14 @@ function starsOf(score) {
  * 徒步条件总评：与 utils/weather-model.js judge() 同规则——只把 sky.js 判为「有戏」的项
  * 计入均值（score ≥ 45；「没有彩虹」不是这条线路的缺陷），客观时刻（light）不参与，
  * 分档仍交给 sky.grade。**不新增任何阈值。**
+ *
+ * 判过不成立（verdict==='excluded'）的项必须一起退出：它们在页面上已经不出现，
+ * 却可能带着不低的分数（云海"此点不在带顶上方"最高可到 62 = 条件一般 ★★★）——
+ * 让看不见的卡决定看得见的总评，等于用被撤回的证据下结论。
  * @returns { score, tone, label, stars }
  */
 function overallGrade(items) {
-  const all = (items || []).filter(it => it.key !== 'light')
+  const all = (items || []).filter(it => it.key !== 'light' && !sky.isSilent(it))
   const live = all.filter(it => it.score >= 45)
   const pool = live.length ? live : all
   if (!pool.length) {

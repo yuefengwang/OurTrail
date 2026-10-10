@@ -10,6 +10,7 @@ const { gcjToWgs: gcjToWcsHelper } = require('../miniprogram/utils/gpx')
 const sky = require('../miniprogram/utils/sky')
 const A = require('../miniprogram/utils/astro')
 const RS = require('../miniprogram/utils/route-schedule')
+const cond = require('../miniprogram/utils/conditions')
 
 let passed = 0
 let failed = 0
@@ -1172,6 +1173,80 @@ async function routeElevCases () {
     n3.r3 === '' && n3.stKey === '', JSON.stringify(n3))
   check('节点 3 弃权不等于「什么都没显示」：云区事实行照给（事实层不随解释层弃权）',
     /^云量 \d+% · 云区 /.test(n3.r2), n3.r2)
+}
+
+section('13. 天相卡沉默闸：真页面 buildCondCards / condSilent / 总评')
+{
+  /* 用户报的是页面现象：满天云那天挂着「星空 ★★／银河 ★★★／彩虹 ★★★★」，银河卡还写着
+     「朝西南（约 231 度）找银心带」。sky-test §12 证明判据会标 excluded，这里证明**真页面**
+     真的据此减卡，并且减卡不是悄悄少几行——沉默行要点名被沉默的是哪几项（铁律 27③）。
+     判据不在此重述：喂给页面装配函数的 skyOut 由真实 sky.summarize 产出。 */
+  const page = makePage(pageConfig())
+  const hourOf = (o) => fakeSeries(DATE, 1).map(h => Object.assign({}, h, o))
+  const ctxOf = (detail, elevation, elevOK) => ({
+    date: DATE, lat: COORD.lat, lng: COORD.lng, elevation, elevOK, detail, days: [], heading: 75,
+  })
+  const cardArg = (skyOut, detail, elevation) => ({
+    date: DATE, detail, days: [], elevation, sun: skyOut.sun, moon: skyOut.moon,
+  })
+  const band = { cover: 95, base: 1000, top: 1400 }
+
+  // ① 复现截图那天气：满云 + 降水
+  const ocDetail = hourOf({ cloud: { low: 95, mid: 90, high: 90 }, precip: 2, pop: 90, rh: 95 })
+  const ocSky = sky.summarize(ctxOf(ocDetail, 2000, true))
+  const ocCards = page.buildCondCards(ocSky, cardArg(ocSky, ocDetail, 2000))
+  const ocSilent = page.buildCondSilent(ocSky)
+  check('满云日：页面一张天相卡都不出（' + ocCards.length + '）', ocCards.length === 0,
+    ocCards.map(c => c.key + ':' + c.stars).join(','))
+  check('沉默行点名全部 5 项（不是悄悄少几行）',
+    !!ocSilent && ocSilent.count === 5 && ['晨昏光染', '云海', '星空', '银河', '彩虹']
+      .every(t => ocSilent.titles.indexOf(t) !== -1), ocSilent && ocSilent.text)
+  check('沉默行不出现星级与建议（只剩一句说明）',
+    !!ocSilent && !/★/.test(ocSilent.text) && !/找银心带|往哪看/.test(ocSilent.text), ocSilent && ocSilent.text)
+
+  // ② 判不出的必须留着：缺可信海拔的云海卡继续出现并说明缺什么
+  const naDetail = hourOf({ cloud: { low: 80, mid: 5, high: 5 }, band })
+  const naSky = sky.summarize(ctxOf(naDetail, null, false))
+  const naCards = page.buildCondCards(naSky, cardArg(naSky, naDetail, null))
+  const naKeys = naCards.map(c => c.key)
+  check('缺海拔：云海卡仍在（unknown 不是 excluded，页面不得替它下结论）',
+    naKeys.indexOf('cloudSea') !== -1, naKeys.join(','))
+  check('该卡自带"缺少可信海拔"的说明', (() => {
+    const it = naSky.items.filter(i => i.key === 'cloudSea')[0]
+    return /可信海拔/.test(it.text)
+  })())
+
+  // ③ 混合日：有戏的与判不出的都出现，只有"判过不成立"的消失
+  const mixDetail = hourOf({ cloud: { low: 5, mid: 5, high: 10 } })
+  const mixSky = sky.summarize(ctxOf(mixDetail, null, false))
+  const mixKeys = page.buildCondCards(mixSky, cardArg(mixSky, mixDetail, null)).map(c => c.key)
+  const mixSilent = page.buildCondSilent(mixSky)
+  check('晴空+无海拔：星空/银河/云海(unknown) 三张出现（' + mixKeys.join(',') + '）',
+    mixKeys.length === 3 && mixKeys.indexOf('star') !== -1 && mixKeys.indexOf('galaxy') !== -1
+      && mixKeys.indexOf('cloudSea') !== -1, mixKeys.join(','))
+  check('沉默行只剩晨昏光染与彩虹两项（' + (mixSilent && mixSilent.count) + '）',
+    !!mixSilent && mixSilent.count === 2 && mixSilent.titles === '晨昏光染、彩虹',
+    mixSilent && mixSilent.titles)
+
+  // ④ 没有一项被沉默时不给沉默行（不制造空话）
+  check('skyOut 缺失时不出沉默行', page.buildCondSilent(null) === null)
+  const allOk = { items: [{ key: 'star', title: '星空', verdict: 'possible' }] }
+  check('一项都没被沉默时也不出沉默行', page.buildCondSilent(allOk) === null)
+
+  // ⑤ 总评：看不见的那张卡不能替看得见的结论投票
+  const belowSky = sky.summarize(ctxOf(naDetail, 1200, true))
+  const sea = belowSky.items.filter(i => i.key === 'cloudSea')[0]
+  check('此点在云带内：云海 excluded 且分数不低（' + sea.score + '）',
+    sea.verdict === 'excluded' && sea.score >= 45, sea.score + ' ' + sea.text)
+  check('总评不再计入被沉默卡（星空单独说话）', (() => {
+    const withSilent = cond.overallGrade(belowSky.items)
+    const onlyVisible = cond.overallGrade(belowSky.items.filter(i => !sky.isSilent(i) && i.key !== 'light'))
+    return withSilent.score === onlyVisible.score
+  })(), cond.overallGrade(belowSky.items).score + ' vs ' + cond.overallGrade(belowSky.items.filter(i => !sky.isSilent(i) && i.key !== 'light')).score)
+  check('全被沉默时总评仍给出合法分档（不炸、不 null）', (() => {
+    const g = cond.overallGrade(ocSky.items)
+    return Number.isFinite(g.score) && !!g.label && !!g.stars
+  })(), JSON.stringify(cond.overallGrade(ocSky.items)))
 }
 
 raceCases()
