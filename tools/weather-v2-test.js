@@ -127,6 +127,117 @@ section('2. 云海可见性：Agenda 只给看得见的窗口')
     String(noSun.filter(e => e.l2 && e.key === 'cloudSea').length))
 }
 
+/* ---------- 2b. 摄影窗口的事实后缀：时间不裁，但当时的云要说 ---------- */
+
+section('2b. 黄金/蓝调窗口：满云时加事实后缀，但一条都不许消失')
+{
+  const sun = A.sunTimes(DATE, COORD.lat, COORD.lng, ELEV)
+  const win = A.photoWindows(DATE, COORD.lat, COORD.lng, ELEV)
+  const dayWith = low => {
+    const out = []
+    for (let hh = 0; hh < 24; hh++) out.push({
+      d: DATE, t: String(hh).padStart(2, '0') + ':00', temp: 8, pop: 0, precip: 0, showers: 0,
+      code: 2, wind: 6, rh: 60, cloud: { low: low, mid: 10, high: 10 }, band: null,
+    })
+    return out
+  }
+  const events = low => agenda.buildDayAgenda({ date: DATE, detail: dayWith(low), marks: {}, sun, win })
+  const photo = low => events(low).filter(e => /黄金时刻|蓝调时刻/.test(e.title))
+
+  // ① 不裁时间：满云与晴日的条目数与时刻必须完全一致（用户要的是"别把不可能当建议"，不是藏钟点）
+  const oc = photo(100), cl = photo(10)
+  check('满云日仍是 4 条摄影窗口（一条都没被裁掉）', oc.length === 4, oc.map(e => e.t + e.title).join('/'))
+  check('满云与晴日的时刻与标题逐项相同（时间层不受天气影响）',
+    oc.map(e => e.t + '|' + e.title).join(' ') === cl.map(e => e.t + '|' + e.title).join(' '),
+    oc.map(e => e.t).join(' ') + ' vs ' + cl.map(e => e.t).join(' '))
+
+  // ② 后缀只在满云时出现，且措辞按窗口分岔（黄金说暖光、蓝调说天色）
+  check('满云四条都带"当时低云 100%"', oc.every(e => /当时低云 100%/.test(e.sub || '')),
+    oc.map(e => e.sub).join(' | '))
+  check('黄金说"斜射暖光可能到不了山体"',
+    oc.filter(e => /黄金/.test(e.title)).every(e => /斜射暖光可能到不了山体/.test(e.sub)),
+    oc.filter(e => /黄金/.test(e.title)).map(e => e.sub).join(' | '))
+  check('蓝调说"天空可能只发灰不发蓝"',
+    oc.filter(e => /蓝调/.test(e.title)).every(e => /天空可能只发灰不发蓝/.test(e.sub)),
+    oc.filter(e => /蓝调/.test(e.title)).map(e => e.sub).join(' | '))
+  check('晴日：晨两条仍是原固定文案、昏两条仍是 null（没凭空加话）',
+    cl.filter(e => /晨/.test(e.title)).every(e => /^(天空最蓝的十几分钟|斜射暖光开始)$/.test(e.sub || ''))
+      && cl.filter(e => /昏/.test(e.title)).every(e => e.sub == null),
+    cl.map(e => e.title + '=' + e.sub).join(' | '))
+  check('原话没被改写：后缀是"加"上去的（晨蓝调仍以"天空最蓝的十几分钟"开头）',
+    (oc.filter(e => e.title === '蓝调时刻（晨）')[0].sub || '').indexOf('天空最蓝的十几分钟（') === 0,
+    oc.filter(e => e.title === '蓝调时刻（晨）')[0].sub)
+
+  // ③ 边界与口径同源：40 是"光到不到山体"的那把尺，不是新造的数
+  check('低云 39 不加后缀、40 加（与 sky.lightReachesGround 同一边界）',
+    photo(39).every(e => !/当时低云/.test(e.sub || '')) && photo(40).every(e => /当时低云 40%/.test(e.sub || '')),
+    photo(39).map(e => e.sub).join(' | '))
+  check('边界值确实等于 lightReachesGround 的判据（不是两处各写一遍）',
+    sky.lightReachesGround({ low: 39 }) === true && sky.lightReachesGround({ low: 40 }) === false
+      && sky.LIGHT_LIMITS.LOW_CLOUD_MAX === 40)
+
+  // ④ 缺云量读数 ⇒ 不编造（既不说看得到，也不说看不到）。形状取生产真能发出来的那种：
+  //    lib/weather 的 hourView 写 `cloud: { low: (h.cloud_cover_low || [])[i] }`，
+  //    缺数组时是 undefined、Open-Meteo 给 null 时是 null —— 而 cloud 对象本身一定在。
+  //    夹具必须**铺满 24 小时**：只给一行 00:00 的话，06:40 根本找不到所属小时，
+  //    "返回 null"是查无此小时给的，不是判据给的 —— 第一版就假绿在这里。
+  const fillDay = cloud => {
+    const out = []
+    for (let hh = 0; hh < 24; hh++) out.push({
+      d: DATE, t: String(hh).padStart(2, '0') + ':00', temp: 8, pop: 0, precip: 0, showers: 0,
+      code: 2, wind: 6, rh: 60, cloud, band: null,
+    })
+    return out
+  }
+  const nullDay = fillDay({ low: null, mid: null, high: null })
+  const undefDay = fillDay({})
+  check('cloud.low = null 不得被 Number(null)=0 混成"低云 0%，光好"（不造有利事实）',
+    agenda.lowCloudAt(nullDay, '06:40') === null && agenda.lowCloudAt(undefDay, '06:40') === null
+      && agenda.lightNote(nullDay, win.morningGolden.from, 'golden') === null,
+    'nullDay → ' + String(agenda.lowCloudAt(nullDay, '06:40')))
+  check('整日缺读数 ⇒ 四条摄影窗口都不带后缀（判不出不写成结论）',
+    [nullDay, undefDay].every(d => agenda.buildDayAgenda({ date: DATE, detail: d, marks: {}, sun, win })
+      .filter(e => /黄金时刻|蓝调时刻/.test(e.title))
+      .every(e => !/当时低云/.test(e.sub || ''))))
+
+  // ⑤ 影子改口径：数字只有一个出处 ⇒ 光染标记 / 彩虹标记 / 窗口后缀 必须一起动，还原后逐项相同
+  const mkDetail = wet => {
+    const out = []
+    for (let hh = 0; hh < 24; hh++) out.push({
+      d: DATE, t: String(hh).padStart(2, '0') + ':00', temp: 8,
+      pop: wet && hh >= 8 && hh <= 9 ? 30 : 0, precip: wet && hh >= 8 && hh <= 9 ? 0.3 : 0,
+      showers: 0, code: 2, wind: 6, rh: wet && hh >= 8 && hh <= 9 ? 92 : 60,
+      cloud: { low: 60, mid: 20, high: 10 }, band: null,
+    })
+    return out
+  }
+  const markCount = (detail, key) => {
+    const m = sky.hourMarks({ date: DATE, lat: COORD.lat, lng: COORD.lng, elevation: ELEV, elevOK: true, detail, days: [] })
+    return Object.keys(m).filter(t => (m[t] || []).indexOf(key) !== -1).length
+  }
+  const snap = () => ({
+    alp: markCount(mkDetail(false), 'alpenglow'),
+    rb: markCount(mkDetail(true), 'rainbow'),
+    note: photo(60).filter(e => /当时低云/.test(e.sub || '')).length,
+  })
+  const before = snap()
+  sky.LIGHT_LIMITS.LOW_CLOUD_MAX = 95
+  const during = snap()
+  sky.LIGHT_LIMITS.LOW_CLOUD_MAX = 40
+  const after = snap()
+  /* 把"光到得了山体"的低云上限放宽到 95%：同一份低云 60% 的数据 ⇒ 光染与彩虹**变成有戏**，
+     而窗口后缀**全部消失**（60 < 95 就是"光到得了"）。三处一起动才算引用同一个数；
+     任何一处不动，就说明那里还抄了一份自己的 40。 */
+  check('影子把上限 40 改到 95 ⇒ 光染/彩虹标记变多、窗口后缀归零（三处同源）',
+    during.alp > before.alp && during.rb > before.rb && before.note === 4 && during.note === 0,
+    JSON.stringify({ before, during }))
+  check('还原后逐项相同（门不是空转）',
+    after.alp === before.alp && after.rb === before.rb && after.note === before.note,
+    JSON.stringify({ before, after }))
+  check('agenda.js 里不得再出现这把尺的字面量（数字只许在 sky.LIGHT_LIMITS 一处）',
+    !/[<>]=?\s*40\b/.test(require('fs').readFileSync(require('path').join(__dirname, '../miniprogram/utils/agenda.js'), 'utf8')))
+}
+
 /* ---------- 3. Evidence：每张卡都有事实与锚点 ---------- */
 
 section('3. Evidence 事实清单（factsFor）')

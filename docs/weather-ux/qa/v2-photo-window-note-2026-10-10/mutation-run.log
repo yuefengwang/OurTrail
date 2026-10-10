@@ -1,0 +1,20 @@
+有效性门：未变异副本 1 套 + 对拍全绿
+
+✓ P1 后缀无条件加（低云判据拆掉）
+    被抓于 weather-v2-test.js (exit 1)；ab-photo-note.js → !! 越界：本轮只允许给 黄金/蓝调 加 sub 后缀
+✓ P2 后缀永远不加（整条功能空转）
+    被抓于 weather-v2-test.js (exit 1)；ab-photo-note.js → !! 越界：本轮只允许给 黄金/蓝调 加 sub 后缀
+✓ P3 边界写成严格大于（>= 改 >）
+    被抓于 weather-v2-test.js (exit 1)；ab-photo-note.js → !! 越界：本轮只允许给 黄金/蓝调 加 sub 后缀
+✓ P4 后缀越界到别的条目（日落也加话）
+    被抓于 ab-photo-note.js → !! 越界：本轮只允许给 黄金/蓝调 加 sub 后缀
+✓ P5 满云时把摄影窗口整条裁掉（用户明确说不要的那种做法）
+    被抓于 weather-v2-test.js (exit 1)；ab-photo-note.js → !! 越界：本轮只允许给 黄金/蓝调 加 sub 后缀
+✓ P6 把口径抄成 agenda.js 自己的字面量（"单源"当场变假）
+    被抓于 weather-v2-test.js (exit 1)
+✓ P7 用 Number(low) 把 null 混成 0（缺读数被写成"光好"）
+    被抓于 weather-v2-test.js (exit 1)
+✓ P8 sky 的两处消费改回内联 40（不再引用 LIGHT_LIMITS）
+    被抓于 weather-v2-test.js (exit 1)
+
+变异 8 条，漏网 0 条

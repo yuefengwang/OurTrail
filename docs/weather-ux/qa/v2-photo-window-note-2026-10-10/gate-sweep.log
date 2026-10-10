@@ -1,0 +1,73 @@
+# 全量无头门禁复跑（第十一轮 摄影窗口事实后缀，2026-10-10）
+# 命令 = AGENTS.md「Full pre-commit sweep」那一条 && 链（63 个可无头套件 + check.js + check-handlers.js）。
+# 本轮增量：weather-v2-test 47→61（§2b 摄影窗口后缀 + 低云口径单源）；总数 4350→4364。
+# 原始日志不入库，需要全文就复跑同一条命令。
+
+  静态门  ALL CHECKS PASSED（tools/check.js）+ check-handlers.js 全绿
+
+  173  ✓  smoke-test.js
+   60  ✓  astro-test.js
+   57  ✓  gpx-test.js
+   82  ✓  sky-test.js
+   41  ✓  route-schedule-test.js
+  189  ✓  weather-page-test.js
+   61  ✓  weather-v2-test.js
+   30  ✓  meteogram-draw-test.js
+   29  ✓  cloud-field-svg-test.js
+   31  ✓  weather-cloud-field-test.js
+   25  ✓  meteogram-svg-test.js
+   48  ✓  meteogram-multiday-test.js
+   32  ✓  outdoor-cloud-sea-test.js
+   35  ✓  outdoor-intelligence-test.js
+   47  ✓  outdoor-intelligence-ui-test.js
+   78  ✓  trip-mode-test.js
+   43  ✓  weather-v2-visual-audit-test.js
+   37  ✓  watch-points-test.js
+   82  ✓  weather-model-test.js
+  109  ✓  space-time-test.js
+   55  ✓  space-time-draw-test.js
+   33  ✓  roam-scrubber-test.js
+   71  ✓  e2e-test.js
+   34  ✓  e2e-fault-probe-test.js
+   16  ✓  e2e-revision-guard-test.js
+   18  ✓  meta-revision-guard-test.js
+   10  ✓  cold-start-work-test.js
+   19  ✓  receipt-window-test.js
+   37  ✓  failure-semantics-test.js
+  206  ✓  cloud-field-geometry-test.js
+   34  ✓  elevation-semantics-test.js
+   26  ✓  oi-claim-gate-test.js
+   77  ✓  meteogram-readability-test.js
+   62  ✓  cloud-position-test.js
+   45  ✓  cloud-layer-facts-test.js
+   96  ✓  e2e-permission-test.js
+   86  ✓  e2e-domain-negative-test.js
+   50  ✓  e2e-concurrency-test.js
+   54  ✓  e2e-client-cas-test.js
+   67  ✓  e2e-interleave-test.js
+   40  ✓  e2e-panel-sync-test.js
+   51  ✓  e2e-release-gap-test.js
+  214  ✓  lifecycle-transitions-test.js
+   71  ✓  lifecycle-cancellation-test.js
+  109  ✓  lifecycle-allocation-test.js
+  132  ✓  lifecycle-projection-test.js
+  126  ✓  lifecycle-concurrency-test.js
+   47  ✓  lifecycle-fuzz-test.js
+  138  ✓  journey-test.js
+   12  ✓  journey-graph-test.js
+  142  ✓  scenario-editor-test.js
+  136  ✓  scenario-activity-test.js
+  114  ✓  scenario-workspace-test.js
+  104  ✓  scenario-signup-test.js
+  143  ✓  scenario-me-test.js
+   67  ✓  scenario-notices-test.js
+   57  ✓  scenario-vehicle-test.js
+   27  ✓  scenario-api-test.js
+   21  ✓  scenario-discover-test.js
+   20  ✓  scenario-lab-test.js
+   18  ✓  scenario-staff-test.js
+   25  ✓  trailapilab-test.js
+  165  ✓  lab-dryrun-test.js
+
+SWEEP_EXIT=0
+# 套件读数 63 个 ｜ 断言合计 4364 ｜ 失败合计 0

@@ -102,6 +102,15 @@ function isSilent(item) {
   return !!item && item.verdict === VERDICT.EXCLUDED
 }
 
+/* 「光到不到得了山体」的唯一口径：低云 < 40%。
+   三处消费同一个数：逐小时光染判据、彩虹的"太阳照得出来"闸、时间轴摄影窗口的事实后缀。
+   放进**导出的对象**而不是 const 字面量，是为了让影子测试改得动（铁律 31③）——
+   写成 const + 快照赋值的话，影子改了不跟着动，那条门就是假的。
+   它与"暗夜晴空口径" (mid+high)/2 < 30 不是一回事（那说的是天上有没有云，这说的是光到不到地面），
+   同值不同义一律不合并（铁律 31②）。 */
+const LIGHT_LIMITS = { LOW_CLOUD_MAX: 40 }
+function lightReachesGround(c) { return c.low < LIGHT_LIMITS.LOW_CLOUD_MAX }
+
 /* ---------- 逐小时速览 ---------- */
 
 function hourCloud(h) {
@@ -188,7 +197,7 @@ function hourMarks(ctx) {
     // 晨昏光染：落在晨昏窗口内，且低云少（光能到山体）、中高云有（被染色）、无降水
     const inLightWindow = hourTouches(m, riseMin, riseMin + LIGHT_WINDOW_MIN)
       || hourTouches(m, setMin - LIGHT_WINDOW_MIN, setMin)
-    if (inLightWindow && c.precip < 0.3 && c.pop < 40 && c.low < 40 && c.mid + c.high >= 25) {
+    if (inLightWindow && c.precip < 0.3 && c.pop < 40 && lightReachesGround(c) && c.mid + c.high >= 25) {
       add(h, 'alpenglow')
     }
     if (win.morningGolden && hourTouches(m, hourMin(win.morningGolden.from), hourMin(win.morningGolden.to))) add(h, 'golden')
@@ -206,7 +215,7 @@ function hourMarks(ctx) {
     //   (mid + high) / 2 < 30 ← 星空/银河那句「暗夜晴空」口径
     const solar = A.solarPosition(A.cnToMs(date, h.t), lat, lng)
     const wet = c.precip > 0.05 || c.showers > 0.05 || (c.rh != null && c.rh >= 88)
-    const sunVisible = c.low < 40 && (c.mid + c.high) / 2 < 30
+    const sunVisible = lightReachesGround(c) && (c.mid + c.high) / 2 < 30
     if (solar.altitude < 40 && solar.altitude > -2 && wet && sunVisible) add(h, 'rainbow')
 
     // 星空 / 银河：天文暗夜 + 高中层云少 + 无降水；银河另需银心季且月照低
@@ -475,5 +484,5 @@ function summarize(ctx) {
 module.exports = {
   hourMin, num, mean, bearingBetween, inArc, inWindow, hourTouches, addDays,
   grade, hourCloud, nightHours, hourMarks, hourSegments, summarize, LIGHT_WINDOW_MIN,
-  VERDICT, isSilent,
+  VERDICT, isSilent, LIGHT_LIMITS, lightReachesGround,
 }
