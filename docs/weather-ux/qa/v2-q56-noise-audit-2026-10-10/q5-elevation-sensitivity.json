@@ -1,0 +1,750 @@
+{
+  "generatedAt": "2026-10-10T01:17:01.581Z",
+  "口径": {
+    "海拔出处": "measured=tol 0（GPX/选点/手填）；estimated=tol 600（Open-Meteo 地形模型）；来源 cloud-field-svg.ALT_TOL",
+    "条件阈值": {
+      "IN_C": 60,
+      "SEA_C": 68,
+      "OVER_C": 40,
+      "SPAN_C": 70,
+      "EDGE_GUARD": 200,
+      "MODERATE_AT_POINT": 45
+    },
+    "业务阈值": {
+      "LAYER_COVER_MIN": 80,
+      "CLEARANCE_MIN": 200,
+      "LAYER_THICKNESS_MIN": 300,
+      "MIN_RUN_H": 2,
+      "扫描带": [
+        2000,
+        6000
+      ]
+    },
+    "性质": "敏感性分析，不是概率也不是置信度"
+  },
+  "快照": [
+    {
+      "快照": "3 站 × 72h",
+      "取数日": "2026-10-09",
+      "地点": [
+        "成都 489m",
+        "峨眉山 3004m",
+        "理塘 4058m"
+      ],
+      "日列数": 9,
+      "矩阵": [
+        [
+          {
+            "偏移": -600,
+            "出处": "measured",
+            "CLOUD_BELOW小时": 0,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 3,
+            "判不出构成": {
+              "partial-at-point": 3
+            },
+            "判过但晴空": 19,
+            "判过且上下都有云": 0,
+            "拒绝原因": {},
+            "条件态": {
+              "CLOUD_ABOVE": 112,
+              "事实:clear": 19,
+              "CLEAR": 25,
+              "IN_CLOUD": 57,
+              "判不出:partial-at-point": 3
+            }
+          },
+          {
+            "偏移": -300,
+            "出处": "measured",
+            "CLOUD_BELOW小时": 0,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 11,
+            "判不出构成": {
+              "partial-at-point": 11
+            },
+            "判过但晴空": 20,
+            "判过且上下都有云": 0,
+            "拒绝原因": {},
+            "条件态": {
+              "CLOUD_ABOVE": 110,
+              "事实:clear": 20,
+              "CLEAR": 25,
+              "IN_CLOUD": 50,
+              "判不出:partial-at-point": 11
+            }
+          },
+          {
+            "偏移": 0,
+            "出处": "measured",
+            "CLOUD_BELOW小时": 10,
+            "候选小时": 1,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 1,
+            "判不出构成": {
+              "partial-at-point": 1
+            },
+            "判过但晴空": 20,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NO_LAYER_BELOW": 3,
+              "INSUFFICIENT_THICKNESS": 6,
+              "LOW_PERSISTENCE": 1
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 106,
+              "事实:clear": 20,
+              "CLEAR": 25,
+              "IN_CLOUD": 54,
+              "判不出:partial-at-point": 1,
+              "CLOUD_BELOW": 10
+            }
+          },
+          {
+            "偏移": 300,
+            "出处": "measured",
+            "CLOUD_BELOW小时": 9,
+            "候选小时": 1,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 4,
+            "判不出构成": {
+              "partial-at-point": 4
+            },
+            "判过但晴空": 23,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NO_LAYER_BELOW": 2,
+              "INSUFFICIENT_THICKNESS": 6,
+              "LOW_PERSISTENCE": 1
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 103,
+              "事实:clear": 23,
+              "CLEAR": 25,
+              "IN_CLOUD": 52,
+              "判不出:partial-at-point": 4,
+              "CLOUD_BELOW": 9
+            }
+          },
+          {
+            "偏移": 600,
+            "出处": "measured",
+            "CLOUD_BELOW小时": 14,
+            "候选小时": 5,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 6,
+            "判不出构成": {
+              "partial-at-point": 6
+            },
+            "判过但晴空": 24,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NOT_VISIBLE": 1,
+              "NO_LAYER_BELOW": 3,
+              "INSUFFICIENT_THICKNESS": 6,
+              "LOW_PERSISTENCE": 1
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 103,
+              "事实:clear": 24,
+              "CLEAR": 25,
+              "CLOUD_BELOW": 14,
+              "判不出:partial-at-point": 6,
+              "IN_CLOUD": 44
+            }
+          }
+        ],
+        [
+          {
+            "偏移": -600,
+            "出处": "estimated",
+            "CLOUD_BELOW小时": 0,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 31,
+            "判不出构成": {
+              "within-uncertainty": 31
+            },
+            "判过但晴空": 18,
+            "判过且上下都有云": 0,
+            "拒绝原因": {},
+            "条件态": {
+              "CLOUD_ABOVE": 107,
+              "事实:clear": 18,
+              "CLEAR": 25,
+              "判不出:within-uncertainty": 31,
+              "IN_CLOUD": 35
+            }
+          },
+          {
+            "偏移": -300,
+            "出处": "estimated",
+            "CLOUD_BELOW小时": 0,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 27,
+            "判不出构成": {
+              "within-uncertainty": 27
+            },
+            "判过但晴空": 22,
+            "判过且上下都有云": 0,
+            "拒绝原因": {},
+            "条件态": {
+              "CLOUD_ABOVE": 103,
+              "事实:clear": 22,
+              "CLEAR": 25,
+              "判不出:within-uncertainty": 27,
+              "IN_CLOUD": 39
+            }
+          },
+          {
+            "偏移": 0,
+            "出处": "estimated",
+            "CLOUD_BELOW小时": 0,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 30,
+            "判不出构成": {
+              "within-uncertainty": 29,
+              "partial-at-point": 1
+            },
+            "判过但晴空": 22,
+            "判过且上下都有云": 0,
+            "拒绝原因": {},
+            "条件态": {
+              "CLOUD_ABOVE": 103,
+              "事实:clear": 22,
+              "CLEAR": 25,
+              "判不出:within-uncertainty": 29,
+              "IN_CLOUD": 36,
+              "判不出:partial-at-point": 1
+            }
+          },
+          {
+            "偏移": 300,
+            "出处": "estimated",
+            "CLOUD_BELOW小时": 6,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 25,
+            "判不出构成": {
+              "within-uncertainty": 24,
+              "partial-at-point": 1
+            },
+            "判过但晴空": 23,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NO_LAYER_BELOW": 1,
+              "INSUFFICIENT_THICKNESS": 5
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 102,
+              "事实:clear": 23,
+              "CLEAR": 25,
+              "判不出:within-uncertainty": 24,
+              "IN_CLOUD": 35,
+              "判不出:partial-at-point": 1,
+              "CLOUD_BELOW": 6
+            }
+          },
+          {
+            "偏移": 600,
+            "出处": "estimated",
+            "CLOUD_BELOW小时": 8,
+            "候选小时": 1,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 20,
+            "判不出构成": {
+              "within-uncertainty": 20
+            },
+            "判过但晴空": 24,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NO_LAYER_BELOW": 1,
+              "INSUFFICIENT_THICKNESS": 6,
+              "LOW_PERSISTENCE": 1
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 99,
+              "事实:clear": 24,
+              "判不出:within-uncertainty": 20,
+              "CLEAR": 25,
+              "IN_CLOUD": 40,
+              "CLOUD_BELOW": 8
+            }
+          }
+        ]
+      ],
+      "翻转归因": {
+        "measured": {
+          "变候选": 7,
+          "变判不出": 22,
+          "变门槛拒": 5,
+          "不变": 182
+        },
+        "estimated": {
+          "变候选": 3,
+          "变判不出": 35,
+          "变门槛拒": 0,
+          "不变": 178
+        },
+        "两出处结论不同的小时": 1,
+        "小时格数": 216
+      },
+      "基准格读数_同海拔两出处": {
+        "measured": {
+          "CLOUD_BELOW小时": 10,
+          "候选小时": 1,
+          "窗口数": 0,
+          "窗口覆盖小时": 0,
+          "净空": [],
+          "条件态": {
+            "CLOUD_ABOVE": 106,
+            "事实:clear": 20,
+            "CLEAR": 25,
+            "IN_CLOUD": 54,
+            "判不出:partial-at-point": 1,
+            "CLOUD_BELOW": 10
+          },
+          "拒绝原因": {
+            "NO_LAYER_BELOW": 3,
+            "INSUFFICIENT_THICKNESS": 6,
+            "LOW_PERSISTENCE": 1
+          }
+        },
+        "estimated": {
+          "CLOUD_BELOW小时": 0,
+          "候选小时": 0,
+          "窗口数": 0,
+          "窗口覆盖小时": 0,
+          "净空": [],
+          "条件态": {
+            "CLOUD_ABOVE": 103,
+            "事实:clear": 22,
+            "CLEAR": 25,
+            "判不出:within-uncertainty": 29,
+            "IN_CLOUD": 36,
+            "判不出:partial-at-point": 1
+          },
+          "拒绝原因": {}
+        }
+      }
+    },
+    {
+      "快照": "4 站 × 168h（含稻城）",
+      "取数日": "2026-10-09",
+      "地点": [
+        "成都 489m",
+        "峨眉山 3004m",
+        "理塘 4058m",
+        "稻城 3749m"
+      ],
+      "日列数": 28,
+      "矩阵": [
+        [
+          {
+            "偏移": -600,
+            "出处": "measured",
+            "CLOUD_BELOW小时": 7,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 12,
+            "判不出构成": {
+              "partial-at-point": 11,
+              "within-uncertainty": 1
+            },
+            "判过但晴空": 94,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NO_LAYER_BELOW": 1,
+              "INSUFFICIENT_THICKNESS": 6
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 261,
+              "事实:clear": 94,
+              "CLEAR": 228,
+              "IN_CLOUD": 70,
+              "判不出:partial-at-point": 11,
+              "判不出:within-uncertainty": 1,
+              "CLOUD_BELOW": 7
+            }
+          },
+          {
+            "偏移": -300,
+            "出处": "measured",
+            "CLOUD_BELOW小时": 6,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 17,
+            "判不出构成": {
+              "partial-at-point": 17
+            },
+            "判过但晴空": 96,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NO_LAYER_BELOW": 1,
+              "INSUFFICIENT_THICKNESS": 5
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 252,
+              "事实:clear": 96,
+              "CLEAR": 228,
+              "IN_CLOUD": 73,
+              "判不出:partial-at-point": 17,
+              "CLOUD_BELOW": 6
+            }
+          },
+          {
+            "偏移": 0,
+            "出处": "measured",
+            "CLOUD_BELOW小时": 10,
+            "候选小时": 5,
+            "窗口数": 1,
+            "窗口覆盖小时": 3,
+            "净空中位数": 218,
+            "净空最小": 216,
+            "净空最大": 219,
+            "判不出小时": 24,
+            "判不出构成": {
+              "partial-at-point": 23,
+              "within-uncertainty": 1
+            },
+            "判过但晴空": 96,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NO_LAYER_BELOW": 2,
+              "INSUFFICIENT_THICKNESS": 2,
+              "USER_NOT_ABOVE_CLOUD": 1,
+              "LOW_PERSISTENCE": 2
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 242,
+              "事实:clear": 96,
+              "CLEAR": 228,
+              "IN_CLOUD": 72,
+              "判不出:partial-at-point": 23,
+              "CLOUD_BELOW": 10,
+              "判不出:within-uncertainty": 1
+            }
+          },
+          {
+            "偏移": 300,
+            "出处": "measured",
+            "CLOUD_BELOW小时": 19,
+            "候选小时": 9,
+            "窗口数": 1,
+            "窗口覆盖小时": 7,
+            "净空中位数": 516,
+            "净空最小": 493,
+            "净空最大": 696,
+            "判不出小时": 29,
+            "判不出构成": {
+              "partial-at-point": 29
+            },
+            "判过但晴空": 106,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NO_LAYER_BELOW": 4,
+              "INSUFFICIENT_THICKNESS": 6,
+              "NOT_VISIBLE": 1
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 216,
+              "事实:clear": 106,
+              "CLEAR": 228,
+              "IN_CLOUD": 74,
+              "判不出:partial-at-point": 29,
+              "CLOUD_BELOW": 19
+            }
+          },
+          {
+            "偏移": 600,
+            "出处": "measured",
+            "CLOUD_BELOW小时": 31,
+            "候选小时": 13,
+            "窗口数": 1,
+            "窗口覆盖小时": 7,
+            "净空中位数": 816,
+            "净空最小": 793,
+            "净空最大": 996,
+            "判不出小时": 14,
+            "判不出构成": {
+              "partial-at-point": 13,
+              "within-uncertainty": 1
+            },
+            "判过但晴空": 110,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NOT_VISIBLE": 2,
+              "NO_LAYER_BELOW": 8,
+              "INSUFFICIENT_THICKNESS": 10
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 209,
+              "事实:clear": 110,
+              "CLEAR": 228,
+              "CLOUD_BELOW": 31,
+              "判不出:partial-at-point": 13,
+              "IN_CLOUD": 80,
+              "判不出:within-uncertainty": 1
+            }
+          }
+        ],
+        [
+          {
+            "偏移": -600,
+            "出处": "estimated",
+            "CLOUD_BELOW小时": 0,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 66,
+            "判不出构成": {
+              "within-uncertainty": 60,
+              "partial-at-point": 6
+            },
+            "判过但晴空": 94,
+            "判过且上下都有云": 0,
+            "拒绝原因": {},
+            "条件态": {
+              "CLOUD_ABOVE": 251,
+              "事实:clear": 94,
+              "CLEAR": 228,
+              "判不出:within-uncertainty": 60,
+              "IN_CLOUD": 33,
+              "判不出:partial-at-point": 6
+            }
+          },
+          {
+            "偏移": -300,
+            "出处": "estimated",
+            "CLOUD_BELOW小时": 0,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 68,
+            "判不出构成": {
+              "within-uncertainty": 64,
+              "partial-at-point": 4
+            },
+            "判过但晴空": 102,
+            "判过且上下都有云": 0,
+            "拒绝原因": {},
+            "条件态": {
+              "CLOUD_ABOVE": 232,
+              "事实:clear": 102,
+              "CLEAR": 228,
+              "判不出:within-uncertainty": 64,
+              "IN_CLOUD": 42,
+              "判不出:partial-at-point": 4
+            }
+          },
+          {
+            "偏移": 0,
+            "出处": "estimated",
+            "CLOUD_BELOW小时": 0,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 87,
+            "判不出构成": {
+              "within-uncertainty": 78,
+              "partial-at-point": 9
+            },
+            "判过但晴空": 101,
+            "判过且上下都有云": 0,
+            "拒绝原因": {},
+            "条件态": {
+              "CLOUD_ABOVE": 212,
+              "事实:clear": 101,
+              "CLEAR": 228,
+              "判不出:within-uncertainty": 78,
+              "IN_CLOUD": 44,
+              "判不出:partial-at-point": 9
+            }
+          },
+          {
+            "偏移": 300,
+            "出处": "estimated",
+            "CLOUD_BELOW小时": 3,
+            "候选小时": 0,
+            "窗口数": 0,
+            "窗口覆盖小时": 0,
+            "净空中位数": null,
+            "净空最小": null,
+            "净空最大": null,
+            "判不出小时": 83,
+            "判不出构成": {
+              "within-uncertainty": 81,
+              "partial-at-point": 2
+            },
+            "判过但晴空": 107,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NO_LAYER_BELOW": 2,
+              "INSUFFICIENT_THICKNESS": 1
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 206,
+              "事实:clear": 107,
+              "CLEAR": 228,
+              "判不出:within-uncertainty": 81,
+              "IN_CLOUD": 45,
+              "CLOUD_BELOW": 3,
+              "判不出:partial-at-point": 2
+            }
+          },
+          {
+            "偏移": 600,
+            "出处": "estimated",
+            "CLOUD_BELOW小时": 15,
+            "候选小时": 8,
+            "窗口数": 1,
+            "窗口覆盖小时": 7,
+            "净空中位数": 816,
+            "净空最小": 793,
+            "净空最大": 996,
+            "判不出小时": 82,
+            "判不出构成": {
+              "within-uncertainty": 82
+            },
+            "判过但晴空": 108,
+            "判过且上下都有云": 0,
+            "拒绝原因": {
+              "NO_LAYER_BELOW": 4,
+              "INSUFFICIENT_THICKNESS": 3,
+              "LOW_PERSISTENCE": 1
+            },
+            "条件态": {
+              "CLOUD_ABOVE": 198,
+              "判不出:within-uncertainty": 82,
+              "事实:clear": 108,
+              "CLEAR": 228,
+              "IN_CLOUD": 41,
+              "CLOUD_BELOW": 15
+            }
+          }
+        ]
+      ],
+      "翻转归因": {
+        "measured": {
+          "变候选": 16,
+          "变判不出": 70,
+          "变门槛拒": 15,
+          "不变": 571
+        },
+        "estimated": {
+          "变候选": 5,
+          "变判不出": 102,
+          "变门槛拒": 0,
+          "不变": 565
+        },
+        "两出处结论不同的小时": 5,
+        "小时格数": 672
+      },
+      "基准格读数_同海拔两出处": {
+        "measured": {
+          "CLOUD_BELOW小时": 10,
+          "候选小时": 5,
+          "窗口数": 1,
+          "窗口覆盖小时": 3,
+          "净空": [
+            218,
+            219,
+            216
+          ],
+          "条件态": {
+            "CLOUD_ABOVE": 242,
+            "事实:clear": 96,
+            "CLEAR": 228,
+            "IN_CLOUD": 72,
+            "判不出:partial-at-point": 23,
+            "CLOUD_BELOW": 10,
+            "判不出:within-uncertainty": 1
+          },
+          "拒绝原因": {
+            "NO_LAYER_BELOW": 2,
+            "INSUFFICIENT_THICKNESS": 2,
+            "USER_NOT_ABOVE_CLOUD": 1,
+            "LOW_PERSISTENCE": 2
+          }
+        },
+        "estimated": {
+          "CLOUD_BELOW小时": 0,
+          "候选小时": 0,
+          "窗口数": 0,
+          "窗口覆盖小时": 0,
+          "净空": [],
+          "条件态": {
+            "CLOUD_ABOVE": 212,
+            "事实:clear": 101,
+            "CLEAR": 228,
+            "判不出:within-uncertainty": 78,
+            "IN_CLOUD": 44,
+            "判不出:partial-at-point": 9
+          },
+          "拒绝原因": {}
+        }
+      }
+    }
+  ]
+}

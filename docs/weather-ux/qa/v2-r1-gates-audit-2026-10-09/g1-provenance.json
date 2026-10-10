@@ -1,0 +1,235 @@
+{
+  "generatedAt": "2026-10-09T13:42:29.510Z",
+  "D1_原始主张出处": [
+    {
+      "file": "docs/weather-ux/outdoor-intelligence/cloud-sea.md",
+      "line": 15,
+      "text": "↓  层厚 ≥ 300m（§十.C，真实分布 P50=300m）"
+    },
+    {
+      "file": "docs/weather-ux/outdoor-intelligence/cloud-sea.md",
+      "line": 28,
+      "text": "| LAYER_THICKNESS_MIN | 300 m | 真实分布 P50=300m（4 地点 × 48h，48 个 ≥80% 层）|"
+    },
+    {
+      "file": "miniprogram/utils/outdoor-intelligence.js",
+      "line": 75,
+      "text": "LAYER_THICKNESS_MIN: 300,  // 层厚下限 m（真实分布 P50=300m；50% 的真实 ≥80% 层达到）"
+    },
+    {
+      "file": "miniprogram/utils/outdoor-intelligence.js",
+      "line": 283,
+      "text": "if (L.thickness < o.LAYER_THICKNESS_MIN) {"
+    },
+    {
+      "file": "miniprogram/utils/outdoor-intelligence.js",
+      "line": 284,
+      "text": "rejected.push({ t: c.t, reason: 'INSUFFICIENT_THICKNESS', detail: '层厚 ' + L.thickness + ' m < ' + o.LAYER_THICKNESS_MIN + ' m' })"
+    }
+  ],
+  "D1_后续转述": [
+    "AGENTS.md:3",
+    "AGENTS.md:467",
+    "AGENTS.md:469",
+    "docs/weather-ux/qa/v2-oi-cloud-scan-audit-2026-10-09/AUDIT.md:117",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md:152",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md:153",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md:154",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md:156",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md:169",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md:177",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md:178",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md:179",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md:192",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/tools/r1-thickness-forensics.js:6",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/tools/r1-thickness-forensics.js:55",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/tools/r1-thickness-forensics.js:69",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/tools/r1-thickness-forensics.js:118",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/tools/r1-thickness-forensics.js:154",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:7",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:38",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:55",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:58",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:82",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:168",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:170",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:186",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:187",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:188",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:189",
+    "SYNC.md:589",
+    "docs/weather-ux/qa/v2-oi-cloud-scan-audit-2026-10-09/AUDIT.md:58",
+    "docs/weather-ux/qa/v2-oi-cloud-scan-audit-2026-10-09/AUDIT.md:104",
+    "docs/weather-ux/qa/v2-oi-cloud-scan-audit-2026-10-09/AUDIT.md:116",
+    "docs/weather-ux/qa/v2-oi-cloud-scan-audit-2026-10-09/tools/oi-scan-audit.js:24",
+    "docs/weather-ux/qa/v2-oi-cloud-scan-audit-2026-10-09/tools/oi-scan-audit.js:63",
+    "docs/weather-ux/qa/v2-oi-cloud-scan-audit-2026-10-09/tools/oi-scan-audit.js:110",
+    "docs/weather-ux/qa/v2-oi-cloud-scan-audit-2026-10-09/tools/oi-scan-audit.js:125",
+    "docs/weather-ux/qa/v2-oi-cloud-scan-audit-2026-10-09/tools/oi-scan-audit.js:264",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/README.md:146",
+    "docs/weather-ux/qa/v2-oi-scan-r2-2026-10-09/tools/r1-thickness-forensics.js:1",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:1",
+    "docs/weather-ux/qa/v2-r1-gates-audit-2026-10-09/tools/g1-provenance.js:39"
+  ],
+  "D1_是否互相独立": [
+    "docs/weather-ux/outdoor-intelligence/cloud-sea.md:15",
+    "docs/weather-ux/outdoor-intelligence/cloud-sea.md:28",
+    "miniprogram/utils/outdoor-intelligence.js:75"
+  ],
+  "D2_引入阈值的提交": [
+    {
+      "sha": "56afd6b",
+      "date": "2026-10-07",
+      "subject": "feat(weather-v2): Outdoor Intelligence——条件态/机会窗口/云海检测/呈现适配",
+      "文件数": 11,
+      "其中数据样本": [],
+      "其中统计脚本": [],
+      "该提交是否同时引入说法": true
+    }
+  ],
+  "D2_提到该说法的后续提交": [
+    "60cc908 2026-10-09 fix(weather-v2): R2 扫描窗边界不再冒充云底/云顶 — 层提取数值零改动，证据文案按来源分四支",
+    "6d7a1dc 2026-10-09 docs(weather-v2): OI 云层扫描范围审计 — 只读对拍与安全迁移方案（生产判据零改动）",
+    "56afd6b 2026-10-07 feat(weather-v2): Outdoor Intelligence——条件态/机会窗口/云海检测/呈现适配",
+    "6112bc8 2026-10-06 docs(weather): meteoblue meteogramweb 技术 POC（部分可实现：取数据 PASS / 成品位图 FAIL）",
+    "52a63d9 2026-10-06 docs(weather): meteoblue meteogramweb 技术 POC（部分可实现：取数据 PASS / 成品位图 FAIL）"
+  ],
+  "D3_不可达对象检查": {
+    "不可达blob数": 21,
+    "命中关键词的对象": [
+      {
+        "sha": "8b05fd8e",
+        "bytes": 113192,
+        "形态": "文档转述",
+        "首行": "# OurTrail 原型落地小程序 · 进度同步文档"
+      },
+      {
+        "sha": "e90cf300",
+        "bytes": 104539,
+        "形态": "文档转述",
+        "首行": "# OurTrail 原型落地小程序 · 进度同步文档"
+      },
+      {
+        "sha": "44dd5599",
+        "bytes": 104530,
+        "形态": "文档转述",
+        "首行": "# OurTrail 原型落地小程序 · 进度同步文档"
+      }
+    ],
+    "其中数据或脚本": 0,
+    "stash": 0,
+    "结论": "不可达对象里只有历轮文档的转述，没有这份样本或脚本 ⇒ 原始样本不可恢复"
+  },
+  "D4_可复现性": [
+    {
+      "快照": "3 站 × 72h（v2-window / v2-oi-scan-audit 两份副本）",
+      "sha": "6b985aef8377",
+      "取数日": "2026-10-09",
+      "地点": [
+        "成都 489m",
+        "峨眉山 3004m",
+        "理塘 4058m"
+      ],
+      "结果": [
+        {
+          "口径": "生产带 2,000–6,000",
+          "小时列": 9,
+          "层数": 158,
+          "P25": 299,
+          "P50": 867,
+          "P75": 1911,
+          "三百米所处百分位": "25%",
+          "三百米是否等于P50": false
+        },
+        {
+          "口径": "全实测范围",
+          "小时列": 9,
+          "层数": 169,
+          "P25": 281,
+          "P50": 769,
+          "P75": 1705,
+          "三百米所处百分位": "27%",
+          "三百米是否等于P50": false
+        }
+      ]
+    },
+    {
+      "快照": "3 站 × 72h 的第二份副本",
+      "状态": "与另一份逐字节相同（哈希 6b985aef8377），不重复计入样本量",
+      "sha": "6b985aef8377"
+    },
+    {
+      "快照": "4 站 × 168h（本轮新抓，含稻城）",
+      "sha": "aedf26598464",
+      "取数日": "2026-10-09",
+      "地点": [
+        "成都 489m",
+        "峨眉山 3004m",
+        "理塘 4058m",
+        "稻城 3749m"
+      ],
+      "结果": [
+        {
+          "口径": "生产带 2,000–6,000",
+          "小时列": 28,
+          "层数": 263,
+          "P25": 179,
+          "P50": 519,
+          "P75": 1144,
+          "三百米所处百分位": "32%",
+          "三百米是否等于P50": false
+        },
+        {
+          "口径": "全实测范围",
+          "小时列": 28,
+          "层数": 281,
+          "P25": 165,
+          "P50": 484,
+          "P75": 1162,
+          "三百米所处百分位": "35%",
+          "三百米是否等于P50": false
+        }
+      ]
+    }
+  ],
+  "判定": {
+    "维度一_说法有历史出处": true,
+    "维度一_原始主张位置": [
+      "docs/weather-ux/outdoor-intelligence/cloud-sea.md:15",
+      "docs/weather-ux/outdoor-intelligence/cloud-sea.md:28",
+      "miniprogram/utils/outdoor-intelligence.js:75",
+      "miniprogram/utils/outdoor-intelligence.js:283",
+      "miniprogram/utils/outdoor-intelligence.js:284"
+    ],
+    "维度一_是否互相独立": [
+      "docs/weather-ux/outdoor-intelligence/cloud-sea.md:15",
+      "docs/weather-ux/outdoor-intelligence/cloud-sea.md:28",
+      "miniprogram/utils/outdoor-intelligence.js:75"
+    ],
+    "维度二_引入阈值的提交": [
+      {
+        "sha": "56afd6b",
+        "date": "2026-10-07",
+        "subject": "feat(weather-v2): Outdoor Intelligence——条件态/机会窗口/云海检测/呈现适配",
+        "文件数": 11,
+        "其中数据样本": [],
+        "其中统计脚本": [],
+        "该提交是否同时引入说法": true
+      }
+    ],
+    "维度二_该提交是否带样本或脚本": false,
+    "维度三_原始样本可否恢复": "不可达对象里只有历轮文档的转述，没有这份样本或脚本 ⇒ 原始样本不可恢复",
+    "维度四_现存快照上能否复现P50等于300": false,
+    "维度四_现存快照给出的P50区间": [
+      [
+        "生产带 2,000–6,000 P50=867（300 在 P25）",
+        "全实测范围 P50=769（300 在 P27）"
+      ],
+      [
+        "生产带 2,000–6,000 P50=519（300 在 P32）",
+        "全实测范围 P50=484（300 在 P35）"
+      ]
+    ],
+    "读法": "维度一说明「这句话写过」；维度二/三说明「凭据没入库、找不回来」；维度四说明「现存数据上复现不出 P50=300」，但三份快照的 P50 本身就相差数倍 ⇒ 既不能据此判定 300 错，也不能据此判定 300 对。"
+  }
+}
