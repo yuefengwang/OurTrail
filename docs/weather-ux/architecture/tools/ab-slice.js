@@ -81,7 +81,16 @@ function biz (oi) {
       .map(o => (o.layers || []).map(l => [l.baseBoundary === true, l.topBoundary === true])),
     conditions: (oi.conditions || []).map(c => [c.t, c.key, c.reason, (c.holds || []).join('')]),
     candidates: ((oi.meta.cloudSea || {}).candidates || []).map(c => [c.t, c.layer.base, c.layer.top, c.layer.thickness, c.clearance]),
-    rejectedReasons: ((oi.meta.cloudSea || {}).rejected || []).map(r => [r.t != null ? r.t : r.from + '-' + r.to, r.reason]),
+    /* 具名拒绝的全集（rejected ++ noWindow）。切片二把**窗口级**拒绝
+       （LOW_PERSISTENCE / NOT_VISIBLE）从 `rejected` 挪进自己的账本，
+       这里如果只比 `rejected`，一次合法的账本搬迁会被读成"业务判据变了"——
+       那是把布局当判据（铁律 30 的同一类错）。挪账本不算差异；
+       少一条原因码、或原因码改名，才算。次序仍可比：两边的逐时拒绝先入账，
+       窗口级拒绝都在其后按 flush 时间序追加。 */
+    rejectedReasons: [].concat(
+      ((oi.meta.cloudSea || {}).rejected || []),
+      ((oi.meta.cloudSea || {}).noWindow || [])
+    ).map(r => [r.t != null ? r.t : r.from + '-' + r.to, r.reason]),
   }
 }
 /* 非业务字段：只允许"新增键"，不许删键、不许改已有键的值（值由 biz() 逐字段比过） */
@@ -93,7 +102,11 @@ function extras (oi) {
 
     notEvaluatedLen: ((oi.meta.cloudSea || {}).notEvaluated || []).length,
     hasScanRanges: !!((oi.meta.cloudSea || {}).scanRanges),
-    rejectedDetails: ((oi.meta.cloudSea || {}).rejected || []).map(r => r.detail),
+    /* 同 biz()：detail 也比两本账的并集，否则账本一搬位，这里就报出一堆假"文案差异" */
+    rejectedDetails: [].concat(
+      ((oi.meta.cloudSea || {}).rejected || []),
+      ((oi.meta.cloudSea || {}).noWindow || [])
+    ).map(r => r.detail),
   }
 }
 /* PRE 的每一个键，POST 都必须还在；多出来的键允许（那就是本轮加的溯源字段） */

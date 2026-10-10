@@ -27,6 +27,7 @@ const sky = require('./sky')
 const agenda = require('./agenda')
 const CFF = require('./cloud-field-svg.js')
 const CLF = require('./cloud-layer-facts.js')
+const K = require('./evidence-kind.js').KIND
 const FMT = require('./format.js')
 
 /* 云层位置三态的标题一律从 format.CLOUD_POSITION_LABELS 取（2026-10-09 语义统一轮）。
@@ -72,13 +73,21 @@ const CONDITION = {
 /* ---------- Cloud Sea 检测阈值（集中定义；依据见 cloud-sea.md §阈值） ---------- */
 
 const CLOUD_SEA = {
-  LAYER_COVER_MIN: 80,       // 层内逐高度云量门槛（继承生产 cloudBandAt ≥80% 规则）
+  /* 「什么算一层云」是 L1 云层事实的定义，不在 L3 抄第二遍（切片二）：
+     LAYER_COVER_MIN / SCAN_STEP_M 直接引用 `cloud-layer-facts` 的唯一出处，
+     数值与改名前逐字相同（80 / 50），只是不再有第二个字面量。
+     ⚠ 这个 80 与 provider 的成带判据 `CLOUD_BAND_COVER_MIN` **同为 80 但不同义**
+     （前者扫连续剖面、多层、可插值；后者是离散气压层合并出的单条 band）。
+     两处的理由与不可合并证据见 utils/cloud-layer-facts.js 文件头与切片二 ADR §3。 */
+  /* getter 而不是快照：L3 每次组 opts 都从 L1 那张表读当前值，
+     这样影子测试改 `CLF.LAYER_LIMITS` 时这里会一起动（改不动就说明还留了第二份字面量）。 */
+  get LAYER_COVER_MIN () { return CLF.LAYER_LIMITS.FIELD_LAYER_COVER_MIN },
+  get SCAN_STEP_M () { return CLF.LAYER_LIMITS.FIELD_LAYER_STEP_M },
   LAYER_THICKNESS_MIN: 300,  // 层厚下限 m（真实分布 P50=300m；50% 的真实 ≥80% 层达到）
   CLEARANCE_MIN: 200,        // 用户高出云顶的最小净空 m（与 Phase 1 ±200m 邻域语义一致）
   GAP_TOLERANCE_H: 1,        // 窗口合并允许的缺口（小时）
   MIN_RUN_H: 2,              // 窗口最少持续小时（时间连续性）
   WIND_CALM: 15,             // 风 >此值计入强度削弱因子（km/h；产品既有语义）
-  SCAN_STEP_M: 50,           // 剖面扫描步长（m）
 }
 
 function fmtM(v) { return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ',') }
@@ -109,7 +118,8 @@ function cloudLayersAt(sample, t, opts) {
  * 逐时条件态。云场可用时以 Phase 1 inferState（60/68/70/40，覆盖感知）为源；
  * 否则退回 hour-view band + sky 标记（inCloud/cloudSea）做有限推断。
  * 沉默原则：证据不足的小时条件为 null（不强行归类）。
- * @returns [{ t, key|null, source: 'cloud-field'|'hour-view', evidence:[{fact, at?}] }]
+ * @returns [{ t, key|null, source: 'cloud-field'|'hour-view', evidence:[{fact, at?, kind}] }]
+ *   evidence 的 `kind` 是结构化类别（`utils/evidence-kind.js`），呈现层据此挑摘要。
  */
 function buildConditions(ctx) {
   const detail = ctx.detail || []
@@ -147,10 +157,11 @@ function buildConditions(ctx) {
     if (list.indexOf('inCloud') !== -1 && h.band && Number.isFinite(h.band.base)
       && h.band.base <= ctx.userAltitude && ctx.userAltitude <= h.band.top) {
       key = CONDITION.IN_CLOUD
-      evidence.push({ fact: '此点处于云带 ' + Math.round(h.band.base) + '–' + Math.round(h.band.top) + ' m（覆盖 ' + h.band.cover + '%）', at: h.t })
+      evidence.push({ fact: '此点处于云带 ' + Math.round(h.band.base) + '–' + Math.round(h.band.top) + ' m（覆盖 ' + h.band.cover + '%）', at: h.t, kind: K.LAYER_POSITION })
     } else if (list.indexOf('cloudSea') !== -1) {
       key = CONDITION.CLOUD_BELOW
-      evidence.push({ fact: '低云带在' + FMT.ELEV_SUBJECT + '下方（覆盖 ≥80%）', at: h.t })
+      /* 那句「≥80%」是 provider 成带规则的重述，不是第二个阈值：写的是同一个唯一出处 */
+      evidence.push({ fact: '低云带在' + FMT.ELEV_SUBJECT + '下方（覆盖 ≥' + CLF.LAYER_LIMITS.CLOUD_BAND_COVER_MIN + '%）', at: h.t, kind: K.LAYER_POSITION })
     }
     /* 这一支没有云场（buildCloudField 返回 null 才会走到这里），
        所以「云与此点的位置关系」是判不了的——如实记 no-data，而不是留空让人猜。 */
@@ -183,23 +194,27 @@ function peakCover(sample, hours) {
   return peak
 }
 
-/* 条件态证据（L2 自身可解释） */
+/* 条件态证据（L2 自身可解释）。每条都带 `kind`（词表见 utils/evidence-kind.js）：
+   「这一小时与云的位置关系」是 LAYER_POSITION，判不出是 ABSTAIN ——
+   呈现层据此挑摘要，不再解析中文文案。 */
 function conditionEvidence(key, st, h, ctx) {
   const out = []
   if (key === CONDITION.IN_CLOUD && st.span) {
-    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m（峰值 ' + st.span.peak + '%）穿过' + FMT.ELEV_SUBJECT + '海拔 ' + fmtM(ctx.userAltitude) + ' m', at: h.t })
+    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m（峰值 ' + st.span.peak + '%）穿过' + FMT.ELEV_SUBJECT + '海拔 ' + fmtM(ctx.userAltitude) + ' m', at: h.t, kind: K.LAYER_POSITION })
   } else if (key === CONDITION.CLOUD_BELOW && st.span) {
-    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m 在' + FMT.ELEV_SUBJECT + '海拔 ' + fmtM(ctx.userAltitude) + ' m 下方', at: h.t })
+    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m 在' + FMT.ELEV_SUBJECT + '海拔 ' + fmtM(ctx.userAltitude) + ' m 下方', at: h.t, kind: K.LAYER_POSITION })
   } else if (key === CONDITION.CLOUD_ABOVE && st.span) {
-    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m 在' + FMT.ELEV_SUBJECT + '海拔 ' + fmtM(ctx.userAltitude) + ' m 上方', at: h.t })
+    out.push({ fact: '云区 ' + fmtM(st.span.lo) + '–' + fmtM(st.span.hi) + ' m 在' + FMT.ELEV_SUBJECT + '海拔 ' + fmtM(ctx.userAltitude) + ' m 上方', at: h.t, kind: K.LAYER_POSITION })
   } else if (key === CONDITION.CLEAR) {
-    out.push({ fact: '此海拔与上下邻域云量均 <15%', at: h.t })
+    /* 「判过了是晴空」是**否定式事实**，不是弃权（铁律 26）；<15% 是 sky 侧的晴空口径，
+       与成带判据 80 无关，所以它不是 LAYER_POSITION 而是 SKY_CLARITY。 */
+    out.push({ fact: '此海拔与上下邻域云量均 <15%', at: h.t, kind: K.SKY_CLARITY })
   }
   /* 判不出三态时，证据链里必须留一句「为什么判不出」——
      否则读的人无法区分「判过是晴」与「证据不足」，未知就会被当成否定。 */
   if (!key) {
     const why = FMT.cloudPositionReason(st.reason)
-    if (why) out.push({ fact: why, at: h.t })
+    if (why) out.push({ fact: why, at: h.t, kind: K.ABSTAIN })
   }
   return out
 }
@@ -220,8 +235,8 @@ const CLOUD_SEA_STRENGTH = {
  *
  * 三层账本分开记（Q5 审计要求的"三类不确定"各有各的名字，不许静默合并）：
  *   candidates    —— 被接受的逐时候选
- *   rejected      —— L2 说「云在脚下」但 L3 门槛没过（业务口径拒绝，附具体门槛）
- *   notEvaluated  —— L2 根本没给出 CLOUD_BELOW，因此 L3 从未运行：
+ *   rejected      —— L2 说「云在脚下」但 L3 逐时门槛没过（业务口径拒绝，附具体门槛；stage='hour'）
+ *   notEvaluated  —— L2 根本没给出 CLOUD_BELOW，因此 L3 从未运行（stage='hour'）：
  *                    可能是判过了不成立（IN_CLOUD/CLOUD_ABOVE/CLEAR = 否定式事实），
  *                    也可能是**判不出**（no-altitude / no-data / within-uncertainty /
  *                    both-sides / partial-at-point）。两者都不是"没有云海"。
@@ -241,6 +256,7 @@ function detectCloudSeaCandidates(conditions, fieldSample, userAlt, opts) {
     if (c.key !== CONDITION.CLOUD_BELOW) {
       notEvaluated.push({
         t: c.t,
+        stage: 'hour',
         condition: c.key || null,
         abstain: c.key ? null : (c.reason || null),
         detail: c.key
@@ -253,21 +269,21 @@ function detectCloudSeaCandidates(conditions, fieldSample, userAlt, opts) {
     const allLayers = cloudLayersAt(fieldSample, hour, Object.assign({}, o, { scanRanges: scanRanges }))
     const picked = CLF.topmostBelow(allLayers, userAlt)
     if (!picked) {
-      rejected.push({ t: c.t, reason: 'NO_LAYER_BELOW', detail: '用户下方无 ≥' + o.LAYER_COVER_MIN + '% 连续层' })
+      rejected.push({ t: c.t, stage: 'hour', reason: 'NO_LAYER_BELOW', detail: '用户下方无 ≥' + o.LAYER_COVER_MIN + '% 连续层' })
       return
     }
     const L = picked.layer // 点下方最高的那一层（薄层屏蔽风险见 cloud-layer-facts.topmostBelow 注释）
     const clearance = picked.clearance
     if (clearance < o.CLEARANCE_MIN) {
-      rejected.push({ t: c.t, reason: clearance < 0 ? 'USER_INSIDE_CLOUD' : 'USER_NOT_ABOVE_CLOUD', detail: '净空 ' + Math.round(clearance) + ' m < ' + o.CLEARANCE_MIN + ' m' })
+      rejected.push({ t: c.t, stage: 'hour', reason: clearance < 0 ? 'USER_INSIDE_CLOUD' : 'USER_NOT_ABOVE_CLOUD', detail: '净空 ' + Math.round(clearance) + ' m < ' + o.CLEARANCE_MIN + ' m' })
       return
     }
     if (L.meanCover < o.LAYER_COVER_MIN) {
-      rejected.push({ t: c.t, reason: 'LOW_COVERAGE', detail: '层均覆盖 ' + L.meanCover + '%' })
+      rejected.push({ t: c.t, stage: 'hour', reason: 'LOW_COVERAGE', detail: '层均覆盖 ' + L.meanCover + '%' })
       return
     }
     if (L.thickness < o.LAYER_THICKNESS_MIN) {
-      rejected.push({ t: c.t, reason: 'INSUFFICIENT_THICKNESS', detail: '层厚 ' + L.thickness + ' m < ' + o.LAYER_THICKNESS_MIN + ' m' + (L.baseBoundary || L.topBoundary ? '（该层有一端是扫描窗边界，厚度是窗内可见部分）' : '') })
+      rejected.push({ t: c.t, stage: 'hour', reason: 'INSUFFICIENT_THICKNESS', detail: '层厚 ' + L.thickness + ' m < ' + o.LAYER_THICKNESS_MIN + ' m' + (L.baseBoundary || L.topBoundary ? '（该层有一端是扫描窗边界，厚度是窗内可见部分）' : '') })
       return
     }
     candidates.push({
@@ -281,7 +297,8 @@ function detectCloudSeaCandidates(conditions, fieldSample, userAlt, opts) {
 
 /**
  * 候选 → 窗口：时间合并（缺口容忍）→ civil 可见性交集 → 强度 → 证据。
- * @returns { windows, candidates, rejected, notEvaluated, scanRanges }
+ * @returns { windows, candidates, rejected, noWindow, notEvaluated, scanRanges }
+ *   rejected = 逐时（stage='hour'）；noWindow = 逐时全过但窗口级未成立（stage='window'）。
  */
 function detectCloudSea(conditions, fieldSample, userAlt, opts) {
   opts = opts || {}
@@ -289,12 +306,17 @@ function detectCloudSea(conditions, fieldSample, userAlt, opts) {
   const det = detectCloudSeaCandidates(conditions, fieldSample, userAlt, o)
   const windows = []
   const rejected = det.rejected.slice()
+  /* 逐时候选全通过、但**窗口级**没成立（持续性不足 / 民用晨昏外不可见）。
+     以前这两种直接混进 `rejected`，于是"某一小时被门槛拒了"和"一天里过了门槛的小时没连成窗"
+     记在同一本账上——`candidates + rejected + notEvaluated === 小时数` 这条分区不变量
+     会被窗口级条目凭空加进去（有 NOT_VISIBLE 的那天，账就对不上）。切片二把它们分家。 */
+  const noWindow = []
   let run = null
   function flush() {
     if (!run) return
     if (run.len < o.MIN_RUN_H) {
       /* 时间连续性不足（§十.D）——负证据保留在模型内部 */
-      rejected.push({ from: run.from, to: run.to, reason: 'LOW_PERSISTENCE', detail: '持续 ' + run.len + 'h < ' + o.MIN_RUN_H + 'h' })
+      noWindow.push({ from: run.from, to: run.to, stage: 'window', reason: 'LOW_PERSISTENCE', detail: '持续 ' + run.len + 'h < ' + o.MIN_RUN_H + 'h' })
       run = null
       return
     }
@@ -316,7 +338,7 @@ function detectCloudSea(conditions, fieldSample, userAlt, opts) {
     const civil = agenda.civilWindow(opts.sun)
     const vis = civil.ok ? agenda.visibleSeaWindow(from, to, civil) : { from: from, to: to }
     if (!vis) {
-      rejected.push({ from: from, to: to, reason: 'NOT_VISIBLE', detail: '民用晨昏之外不可见' })
+      noWindow.push({ from: from, to: to, stage: 'window', reason: 'NOT_VISIBLE', detail: '民用晨昏之外不可见' })
       run = null
       return
     }
@@ -336,25 +358,28 @@ function detectCloudSea(conditions, fieldSample, userAlt, opts) {
        今天两者恒等（扫描范围缺省就是显示窗），所以这句与 `CFF.ALT0/ALT1` 逐字相同；
        但 R1 把扫描范围换成相对带之后，再读常量就会说出与实际相反的数 —— 那是个静默的谎。 */
     const winLo = fmtM(det.scanRanges.scan.lo), winHi = fmtM(det.scanRanges.scan.hi)
+    /* 四种边界形态说的是**同一件事**：云层带与此点的垂直位置关系。
+       以前只有第一种文案里带「云层位于」，摘要选择因此跟着中文走（切片二修的正是这条）；
+       现在四条都标 LAYER_POSITION，无论措辞怎么改，被挑去当摘要的都是这一条。 */
     if (!baseBoundary && !topBoundary) {
-      evidence.push({ fact: '云层位于 ' + fmtM(run.baseMin) + '–' + fmtM(run.topMax) + ' m', at: from })
+      evidence.push({ fact: '云层位于 ' + fmtM(run.baseMin) + '–' + fmtM(run.topMax) + ' m', at: from, kind: K.LAYER_POSITION })
     } else if (baseBoundary && topBoundary) {
-      evidence.push({ fact: '浓云贯穿剖面扫描窗 ' + winLo + '–' + winHi + ' m：云底低于窗下界、云顶高于窗上界，两端都未测得', at: from })
+      evidence.push({ fact: '浓云贯穿剖面扫描窗 ' + winLo + '–' + winHi + ' m：云底低于窗下界、云顶高于窗上界，两端都未测得', at: from, kind: K.LAYER_POSITION })
     } else if (baseBoundary) {
-      evidence.push({ fact: '云底低于剖面扫描窗下界 ' + winLo + ' m（未测得）；窗内云层顶约 ' + fmtM(run.topMax) + ' m', at: from })
+      evidence.push({ fact: '云底低于剖面扫描窗下界 ' + winLo + ' m（未测得）；窗内云层顶约 ' + fmtM(run.topMax) + ' m', at: from, kind: K.LAYER_POSITION })
     } else {
-      evidence.push({ fact: '云顶高于剖面扫描窗上界 ' + winHi + ' m（未测得）；窗内云层底约 ' + fmtM(run.baseMin) + ' m', at: from })
+      evidence.push({ fact: '云顶高于剖面扫描窗上界 ' + winHi + ' m（未测得）；窗内云层底约 ' + fmtM(run.baseMin) + ' m', at: from, kind: K.LAYER_POSITION })
     }
     evidence.push({ fact: FMT.ELEV_SUBJECT + '高于该云层顶约 ' + fmtM(clearMin) + ' m' +
-      (topBoundary ? '（云顶未测得，此为上限）' : ''), at: from })
+      (topBoundary ? '（云顶未测得，此为上限）' : ''), at: from, kind: K.CLEARANCE })
     if (baseBoundary || topBoundary) {
-      evidence.push({ fact: '层厚 ' + thickMax + ' m 按扫描窗内可见部分计算，是下限值而不是实测厚度', at: from })
+      evidence.push({ fact: '层厚 ' + thickMax + ' m 按扫描窗内可见部分计算，是下限值而不是实测厚度', at: from, kind: K.LAYER_EXTENT })
     } else {
-      evidence.push({ fact: '层均覆盖 ' + coverPeak + '% · 层厚最大 ' + thickMax + ' m', at: from })
+      evidence.push({ fact: '层均覆盖 ' + coverPeak + '% · 层厚最大 ' + thickMax + ' m', at: from, kind: K.LAYER_EXTENT })
     }
-    evidence.push({ fact: '预计持续约 ' + run.len + ' 小时', at: from })
-    if (windPeak > 0) evidence.push({ fact: '风速 ≤ ' + windPeak + ' km/h', at: from })
-    if (overlapsSunrise) evidence.push({ fact: '窗口与日出重叠（日出云海）', at: from })
+    evidence.push({ fact: '预计持续约 ' + run.len + ' 小时', at: from, kind: K.DURATION })
+    if (windPeak > 0) evidence.push({ fact: '风速 ≤ ' + windPeak + ' km/h', at: from, kind: K.WIND })
+    if (overlapsSunrise) evidence.push({ fact: '窗口与日出重叠（日出云海）', at: from, kind: K.SUNRISE_OVERLAP })
     windows.push({
       type: 'CLOUD_SEA',
       interpretation: OPPORTUNITY.CLOUD_SEA,
@@ -390,7 +415,7 @@ function detectCloudSea(conditions, fieldSample, userAlt, opts) {
     }
   })
   flush()
-  return { windows: windows, candidates: det.candidates, rejected: rejected, notEvaluated: det.notEvaluated, scanRanges: det.scanRanges }
+  return { windows: windows, candidates: det.candidates, rejected: rejected, noWindow: noWindow, notEvaluated: det.notEvaluated, scanRanges: det.scanRanges }
 }
 
 /**
@@ -426,7 +451,7 @@ function buildOpportunities(ctx, conditions) {
     const ev = (ctx.factsFor && ctx.factsFor(c.key)) || []
     if (NIGHT_TYPES[type]) {
       if (skyBlocked(conditions, from, to)) return   // 剖面说头顶有云 ⇒ 这张卡不成立，省略
-      ev.push({ fact: NIGHT_LIMIT, at: from })
+      ev.push({ fact: NIGHT_LIMIT, at: from, kind: K.NIGHT_LIMIT })
     }
     out.push(makeWindow(type, from, to, ev, extra, hours, ctx))
   })
@@ -438,8 +463,10 @@ function buildOpportunities(ctx, conditions) {
       const hours = detailHours(detail, run.from, run.to)
       const ev = run.evidence.slice()
       if (ctx.cloudField && ctx.cloudField.covered) {
-        ev.push({ fact: '云场覆盖 ' + fmtM(ctx.cloudField.covered.lo) + '–' + fmtM(ctx.cloudField.covered.hi) + ' m（23 层气压层）', at: run.from })
+        ev.push({ fact: '云场覆盖 ' + fmtM(ctx.cloudField.covered.lo) + '–' + fmtM(ctx.cloudField.covered.hi) + ' m（23 层气压层）', at: run.from, kind: K.DATA_COVERAGE })
       }
+      /* confidenceOf 的那个 80 是**云量峰值的置信分档**（≥80 算「高」），
+         与成带判据 `CLOUD_BAND_COVER_MIN` 同值但不同义 —— 不要顺手合并这两处。 */
       out.push(makeWindow('IN_CLOUD', run.from, run.to, ev, { confidence: confidenceOf(run.peak, 80) }, hours, ctx))
     }
     if (run.key === CONDITION.CLOUD_BELOW && run.len >= 2 && daytime(run, civil)) {
@@ -454,8 +481,8 @@ function buildOpportunities(ctx, conditions) {
       const high = meanOf(detailHours(detail, run.from, run.to), h2 => h2.cloud && h2.cloud.high)
       const conf = (high != null && high < 20 && (vis == null || vis >= 30)) ? '高' : '中'
       const ev = []
-      if (high != null) ev.push({ fact: '高层云 ' + high + '%（远眺被挡概率低）', at: run.from })
-      if (vis != null) ev.push({ fact: '能见度 ' + vis + ' km', at: run.from })
+      if (high != null) ev.push({ fact: '高层云 ' + high + '%（远眺被挡概率低）', at: run.from, kind: K.CLOUD_AMOUNT })
+      if (vis != null) ev.push({ fact: '能见度 ' + vis + ' km', at: run.from, kind: K.VISIBILITY })
       out.push(makeWindow('VIEW_WINDOW', run.from, run.to, ev, { confidence: conf }, detailHours(detail, run.from, run.to), ctx))
     }
   })
@@ -644,8 +671,12 @@ function buildOutdoorIntelligence(ctx) {
       .sort(function (a, b) { return sky.hourMin(a.from) - sky.hourMin(b.from) })
     cloudSeaDebug = {
       candidates: sea.candidates, rejected: sea.rejected,
-      /* 「没进判定」与「判定后拒绝」是两件事（Q5 三分归因）；
-         没有这一栏，用户侧无法区分"理塘那周没云海天气"和"云在脚下但厚度不够" */
+      /* 「没进判定」与「判定后拒绝」与「过了判定但没成窗」是三件事（Q5 三分归因）：
+         notEvaluated = L2 没给出云在脚下，L3 从未运行（含判不出，未知≠无云）；
+         rejected     = 逐时门槛没过，原因码具名；
+         noWindow     = 逐时都过了，但合并后没连成窗口（持续性 / 民用晨昏可见性）。
+         没有这三本账，"理塘那周没云海天气"和"云在脚下但厚度不够"看起来一模一样。 */
+      noWindow: sea.noWindow,
       notEvaluated: sea.notEvaluated,
       scanRanges: sea.scanRanges,
     }
