@@ -65,11 +65,18 @@ const chen = as(CHEN)
 
 const person = (name, phone, ename, ephone) => ({ name, phone, emergency: { name: ename, phone: ephone }, medical: '', avatar: '' })
 
+/* 夹具里的绝对日期＝时间引信：本套件在 2026-10-10 20:00 之后整条中断过
+   （`deadlineAt` 写死在钟点上，过点后 signup.submit → WRONG_PHASE，后续取 undefined.signupId 抛错）。
+   现在所有时刻一律由"本次运行的现在"偏移推导；E2E_SHIFT_MINUTES 把整套再往前推 N 分钟，
+   用于自证"绿不绿与钟点无关"——跑 0 与 +2880 两遍都绿，才算没有第二根引信。 */
+const SHIFT_MIN = Number(process.env.E2E_SHIFT_MINUTES || 0)
+const iso = min => new Date(Date.now() + (min + SHIFT_MIN) * 60000 + 8 * 3600000).toISOString().slice(0, 19) + '+08:00'
+
 function fullActivityInput() {
-  // 形状对齐 smoke-test 的合法 fixture；日期推远保证与真实时钟无关
+  // 形状对齐 smoke-test 的合法 fixture；日期全部相对本次运行的 now 推导
   return {
     title: '龙泉山', description: '轻徒步', organizerIntro: '林溪带队',
-    startAt: '2026-10-11T08:00:00+08:00', endAt: '2026-10-11T18:00:00+08:00', deadlineAt: '2026-10-10T20:00:00+08:00',
+    startAt: iso(1440), endAt: iso(2160), deadlineAt: iso(120),
     acceptingSignups: true, capacity: 24, approvalMode: 'manual', routeId: null,
     routeSnapshot: {
       title: '飞泉沟', distanceKm: 12.8, ascentM: 680,
@@ -77,7 +84,7 @@ function fullActivityInput() {
         { id: 'pt-2', name: '观景台', kind: 'finish', coordinates: null }],
       risks: [{ id: 'risk-1', title: '湿滑', advice: '防滑鞋' }],
     },
-    pickupPoints: [{ id: 'pk-1', name: '茶店子', meetingAt: '2026-10-11T07:00:00+08:00', address: '地铁口', coordinates: null }],
+    pickupPoints: [{ id: 'pk-1', name: '茶店子', meetingAt: iso(1380), address: '地铁口', coordinates: null }],
     equipment: ['防滑鞋'], feeNote: 'AA', cancellationNote: '行前联系',
   }
 }
@@ -89,6 +96,15 @@ async function main() {
   let wangCompanionId = ''
   let v1Id = ''
 
+  // 夹具只造一次并留着：下面的"有效性门"要拿它跟真实时钟对一下
+  const ACT = fullActivityInput()
+  /* 有效性门放在最前，且失败用**退出码 2**（本次运行不成立），不混进产品红：
+     没有它，"窗口没开"会表现成一长串产品断言失败 + 末尾 undefined 抛错——
+     2026-10-10 20:00 之后就是那个形态，第一次看到的人会去查产品。 */
+  const windowOpen = Date.parse(ACT.deadlineAt) > Date.now()
+  check('夹具有效性门：本次运行里报名窗口确实开着（否则整套不成立，不是产品缺陷）',
+    windowOpen, 'deadlineAt=' + ACT.deadlineAt + ' / now=' + iso(0))
+  if (!windowOpen) { console.error('!! 夹具有效性门未过 ⇒ 本次运行记 INVALID（exit 2），不计入产品红'); process.exit(2) }
   section('1. 建档 → 发布（发布即报名）：dispatch 落库 → read 回读')
   {
     let r = await lin.dispatch({ type: 'profile.save', person: person('林溪', '00000000001', '林母', '00000000051') }, 0)
@@ -96,7 +112,7 @@ async function main() {
     r = await lin.read({ kind: 'profile' })
     check('read profile：写入的姓名可回读（write → read 回环）',
       r.ok && r.data.view.kind === 'profile' && r.data.view.profile.person.name === '林溪', JSON.stringify(r.data && r.data.view.kind))
-    r = await lin.dispatch({ type: 'activity.create', input: fullActivityInput() }, r.data.revision)
+    r = await lin.dispatch({ type: 'activity.create', input: ACT }, r.data.revision)
     check('activity.create → 草稿', r.ok === true, JSON.stringify(r.error || ''))
     activityId = r.data.targetIds[0]
     const profile = (await lin.read({ kind: 'profile' })).data.view.profile
@@ -246,7 +262,7 @@ async function main() {
     // 就是这条命令链。这里钉住「保存 → 回读 → 再打开仍在」的字段保真，UI 层由 B 层/GP 证明。
     const v1 = (await lin.readTransport(activityId)).data.value.vehicles.find(v => v.label === '1号车')
     const rev = async () => (await lin.read({ kind: 'activity', activityId, perspective: 'organizer' })).data.revision
-    const expires = '2027-03-15T23:59:59+08:00'
+    const expires = iso(60 * 24 * 60) // 相对 now 推 60 天，不写日历（写死就是引信，只是燃得慢）
     let r = await lin.dispatch({ type: 'membership.save', activityId, membership: {
       id: 'e2e-veh-contact', role: 'vehicle_contact', activityId, userId: CHEN, vehicleId: v1.id, expiresAt: expires } }, await rev())
     check('membership.save 授予车辆联络（绑定 1号车）ok', r.ok === true, JSON.stringify(r.error || ''))

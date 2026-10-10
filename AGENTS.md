@@ -142,11 +142,13 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Gated suites — 63（62 个 tools/*-test.js + smoke-test.js）. 2026-10-10 「天文暗夜始」机会句（第十二轮）后共 4370 断言；
-# 常驻非确定性红 1 条 = tools/outdoor-intelligence-ui-test.js（打线上 Open-Meteo + 真实时钟，已归档归因）。
-# ⚠ 另有 1 条**确定性时间引信**：tools/e2e-test.js:72 把 deadlineAt 写成绝对时刻 '2026-10-10T20:00+08:00'，
-#   过点后 signup.submit → WRONG_PHASE 并在 :145 抛错中断（71 条不计入总数）。已在 origin/master(abf08f0)
-#   干净副本复现同样红 ⇒ 与近期天气线改动无关；修法＝夹具时间改按 Date.now() 偏移推导（动公共门禁，待裁决）。
+# Gated suites — 63（62 个 tools/*-test.js + smoke-test.js）. 2026-10-10 拆掉 e2e 时间引信后共 4371 断言；
+# 常驻非确定性红 1 条 = tools/outdoor-intelligence-ui-test.js（打线上 Open-Meteo + 真实时钟，已归档归因；
+#   2026-10-10 20:40 整链里红、单跑 47/0 ⇒ 偶发性质与归档一致，别重诊）。
+# 曾有的"确定性时间引信"已修：tools/e2e-test.js 夹具里的 deadlineAt/startAt/endAt/meetingAt/expiresAt
+#   一律改为按 Date.now() 偏移推导（写死日历＝埋引信；2026-10-10 20:00 过点后曾中断整条 && 链）。
+#   自证：E2E_SHIFT_MINUTES=+2880 复跑仍 72/0；=-2880（窗口被关掉）时**首条即有效性门**、
+#   退出码 2 = 本次运行 INVALID，不再伪装成一串产品红 + 末尾 undefined 抛错。
 # ⚠ 断言总数是**快照**，不是恒定值：
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
 #   那些改动会增删用例（例：smoke 104→106→167、workspace 104→111 均非本轮 P4 改动）。
@@ -186,7 +188,7 @@ node tools/lifecycle-projection-test.js      # 逐行标志↔域内结论差分
 node tools/lifecycle-concurrency-test.js     # 8 类命令同 requestId 重放、同版本并发败者零副作用、归档后迟到操作、递补整批原子（126）
 node tools/lifecycle-fuzz-test.js            # 60×45 随机场景零违背 + 13 条终态性质 + 20 类变异自证 + 固化种子（47）
 # 端到端两层（A 层计入门禁；B 层需开发者工具，不计入门禁）
-node tools/e2e-test.js                         # A 层服务链路 E2E（71 项，真信封打 exports.main）
+node tools/e2e-test.js                         # A 层服务链路 E2E（72 项，真信封打 exports.main；夹具时间按 now 偏移，E2E_SHIFT_MINUTES 可自证与钟点无关，窗口不成立时 exit 2 记 INVALID 不记产品红）
 node tools/e2e-fault-probe-test.js             # 结果模型变异自证（34 项）
 node tools/e2e-permission-test.js              # A 层权限矩阵：角色×命令×阶段×归属（96 断言，8 actor 全走真实信封）
 node tools/e2e-domain-negative-test.js         # A 层 Domain 负矩阵：17 种错误码的确定性拒绝 + 败者零副作用快照对比（86 断言）
