@@ -114,8 +114,20 @@ const single = OI.buildOutdoorIntelligence(makeCtx(
   h => h === 6 ? { base: 2000, top: 3100, cover: 95 } : null,
   h => h === 6 ? { low: 95, mid: 40, high: 10 } : { low: 5, mid: 5, high: 5 },
   { userAltitude: 3500 }))
-check('单小时候选（<2h）→ 不产出窗口（LOW_PERSISTENCE）',
-  !findSea(single) && single.meta.cloudSea.rejected.some(r => r.reason === 'LOW_PERSISTENCE'))
+/* 切片二把这本账拆了：LOW_PERSISTENCE 是**窗口级**（逐时候选都过了，只是没连成窗），
+   以前它和逐时门槛拒绝挤在 `rejected` 里，于是
+   `candidates + rejected + notEvaluated === 逐时数` 这条分区不变量凭空多出窗口级条目。
+   这条断言是**替换**而非削弱：具名拒绝仍然在，而且现在还能验证两本账不串味。 */
+check('单小时候选（<2h）→ 不产出窗口；具名拒绝在窗口账本 noWindow，不污染逐时账本 rejected',
+  !findSea(single) &&
+  single.meta.cloudSea.rejected.every(r => r.reason !== 'LOW_PERSISTENCE') &&
+  single.meta.cloudSea.noWindow.some(r => r.reason === 'LOW_PERSISTENCE' && r.stage === 'window'),
+  JSON.stringify((single.meta.cloudSea || {}).noWindow || []))
+check('三本账分区不变量：candidates+rejected+notEvaluated 恰等于逐时数（窗口级条目不计入）',
+  single.meta.cloudSea.candidates.length + single.meta.cloudSea.rejected.length +
+    single.meta.cloudSea.notEvaluated.length === single.conditions.length,
+  [single.meta.cloudSea.candidates.length, single.meta.cloudSea.rejected.length,
+    single.meta.cloudSea.notEvaluated.length, single.conditions.length].join('/'))
 
 const gap = OI.buildOutdoorIntelligence(makeCtx(
   h => ((h >= 5 && h < 7) || h === 8 || (h >= 9 && h < 11)) ? { base: 2000, top: 3100, cover: 95 } : null,
@@ -248,10 +260,10 @@ check('缺失数据（无 cloudField）不产出云海窗口，也不抛出任�
     const oi = OI.buildOutdoorIntelligence({ date: base.date, detail: base.detail, userAltitude: 3500, elevOK: true, cloudField: null, days: [] })
     return !findSea(oi) && oi.opportunities.every(o => !(o.evidence || []).some(e => /剖面扫描窗/.test(String(e.fact))))
   })())
-/* 呈现层耦合钉：`oi-presentation.summaryOf` 只在 evidence 里找「云区/云层位于」，
- * 找不到就退回 evidence[0]。R2 让被切的那三种说法都不再含「云层位于」，
- * 卡片摘要全靠"位置那句排第一"这条次序。次序一旦变动，卡片会静默换成别的事实——
- * 这条判据把该依赖显式钉住，而不是留给运气。 */
+/* 呈现层摘要钉（切片二起，选中的是哪一条由证据的 `kind` 决定，不再看中文的字面）：
+ * R2 那一轮它靠的是 `fact.indexOf('云区')/indexOf('云层位于')` + "位置那句排第一"，
+ * 于是改一句文案就等于改一次接口。下面这条断言**测的是输出**（四种边界形态各取到哪句），
+ * 与选择机制无关，所以换机制时它照样有效；机制本身由 outdoor-intelligence-ui-test §9 钉。 */
 const OIP = require('../miniprogram/utils/oi-presentation.js')
 const summaryOfSea = oi => {
   const card = OIP.buildOiCard(oi, { width: 375 })

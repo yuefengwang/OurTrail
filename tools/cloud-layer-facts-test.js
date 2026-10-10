@@ -39,6 +39,33 @@ function fieldOf (decks, covered, hours) {
 const ALL = { lo: 0, hi: 7000 }
 const L = (sample, ranges, t) => CLF.layersAt(sample, t == null ? 3 : t, ranges, { coverMin: 80, step: 50 })
 
+/* OI 用的整份 ctx（§5 与 §7 共用，不在两处各搭一套 fixture） */
+const TIMES = []
+for (let h = 0; h < 24; h++) TIMES.push('2026-10-07T' + (h < 10 ? '0' : '') + h + ':00')
+function ctxOf (decks, covered, alt) {
+  const sample = fieldOf(decks, covered)
+  const detail = TIMES.map((t, h) => ({
+    d: t.slice(0, 10), t: t.slice(11, 16), temp: 12, code: 0, pop: 0, precip: 0, showers: 0,
+    wind: 4, gust: 6, windDir: 90, rh: 40, visibility: 35,
+    cloud: (h >= 5 && h < 10) ? { low: 95, mid: 20, high: 20 } : { low: 5, mid: 5, high: 5 },
+    band: null,
+  }))
+  return {
+    date: '2026-10-07', lat: 29.52, lng: 103.34, detail: detail, userAltitude: alt, elevOK: true,
+    elevBasis: 'measured', days: [],
+    cloudField: {
+      times: TIMES.map((_, i) => i), altitudes: ALTS, covered: covered,
+      values: TIMES.map(() => ALTS.map(a => {
+        if (a < covered.lo || a > covered.hi) return 0
+        let v = 0
+        decks.forEach(d => { if (a >= d.lo && a <= d.hi) v = Math.max(v, d.cov) })
+        return v
+      })),
+      sample: sample, userAltitude: alt,
+    },
+  }
+}
+
 /* ---------- 1. 三个高度范围各是各的 ---------- */
 section('1 显示范围 / 实测覆盖 / 业务扫描范围：不许互相顶替')
 {
@@ -161,31 +188,6 @@ section('4 候选层选择：clearance 不取整，遮挡缺陷被显式钉住')
 /* ---------- 5. 端到端：范围契约换到 OI 里仍然等价 ---------- */
 section('5 OI 集成：扫描范围经 meta 可见，且与显示窗无关')
 {
-  const TIMES = []
-  for (let h = 0; h < 24; h++) TIMES.push('2026-10-07T' + (h < 10 ? '0' : '') + h + ':00')
-  function ctxOf (decks, covered, alt) {
-    const sample = fieldOf(decks, covered)
-    const detail = TIMES.map((t, h) => ({
-      d: t.slice(0, 10), t: t.slice(11, 16), temp: 12, code: 0, pop: 0, precip: 0, showers: 0,
-      wind: 4, gust: 6, windDir: 90, rh: 40, visibility: 35,
-      cloud: (h >= 5 && h < 10) ? { low: 95, mid: 20, high: 20 } : { low: 5, mid: 5, high: 5 },
-      band: null,
-    }))
-    return {
-      date: '2026-10-07', lat: 29.52, lng: 103.34, detail: detail, userAltitude: alt, elevOK: true,
-      elevBasis: 'measured', days: [],
-      cloudField: {
-        times: TIMES.map((_, i) => i), altitudes: ALTS, covered: covered,
-        values: TIMES.map(() => ALTS.map(a => {
-          if (a < covered.lo || a > covered.hi) return 0
-          let v = 0
-          decks.forEach(d => { if (a >= d.lo && a <= d.hi) v = Math.max(v, d.cov) })
-          return v
-        })),
-        sample: sample, userAltitude: alt,
-      },
-    }
-  }
   const sea = OI.buildOutdoorIntelligence(ctxOf([{ lo: 2200, hi: 3000, cov: 92 }], { lo: 0, hi: 7000 }, 4200))
   const cs = sea.meta.cloudSea
   check('meta.cloudSea 现在带着扫描范围契约（R1 换带时这里就是验收点）',
@@ -252,6 +254,69 @@ section('6 分层依赖：L1 不反依赖 L3，机会层不碰显示窗')
     !/CLEARANCE|THICKNESS_MIN|MIN_RUN_H|GAP_TOLERANCE/.test(l1))
   check('仓库零 npm 依赖这条没被破坏（新模块只用 CommonJS + 相对 require）',
     !/require\(['"][a-z@]/i.test(l1))
+}
+
+/* ---------- 7. 成层判据只有一个出处（切片二：影子常量） ---------- */
+section('7 云层定义单源：改一个数，所有消费点一起动；两个 80 互不串味')
+{
+  const sky = require('../miniprogram/utils/sky.js')
+  const cond = require('../miniprogram/utils/conditions.js')
+  /* 夹具云量故意取 82：过 80、不过 85 —— 阈值一动就必须看得见（不是"改完照样绿"的假门） */
+  const BAND = { base: 2000, top: 3100, cover: 82 }
+  function bandDetail () {
+    const out = []
+    for (let h = 0; h < 24; h++) {
+      out.push({
+        d: '2026-10-07', t: (h < 10 ? '0' : '') + h + ':00', temp: 8, code: 1, pop: 0, precip: 0, showers: 0,
+        wind: 3, rh: 60, visibility: 40,
+        cloud: h >= 5 && h < 10 ? { low: 90, mid: 10, high: 10 } : { low: 5, mid: 5, high: 5 },
+        band: h >= 5 && h < 10 ? BAND : null,
+      })
+    }
+    return out
+  }
+  const skyCtx = () => ({ date: '2026-10-07', lat: 29.52, lng: 103.34, elevation: 3500, elevOK: true, detail: bandDetail(), days: [] })
+  const seaMarks = () => {
+    const m = sky.hourMarks(skyCtx())
+    return Object.keys(m).filter(t => (m[t] || []).indexOf('cloudSea') !== -1).length
+  }
+  const seaText = () => sky.summarize(skyCtx()).items.filter(i => i.key === 'cloudSea')[0].text
+  const seaFacts = () => cond.factsFor('cloudSea', skyCtx()).map(f => f.fact).join('|')
+  const deckField = fieldOf([{ lo: 2200, hi: 3000, cov: 82 }], ALL)
+  const layersDefault = () => CLF.layersAt(deckField, 7, CLF.resolveRanges({}), {})  // 不传 coverMin ⇒ 只能走这一张表
+  const oiSeaWindows = () => (OI.buildOutdoorIntelligence(ctxOf([{ lo: 2200, hi: 3000, cov: 82 }], ALL, 4200))
+    .opportunities || []).filter(o => o.type === 'CLOUD_SEA').length
+
+  check('新谓词本身诚实：cover 恰等于阈值算成带（≥ 不是 >），缺 band / 缺 cover 一律判不出而不是判成有',
+    CLF.isCloudBand({ cover: 80 }) === true && CLF.isCloudBand({ cover: 79 }) === false &&
+      CLF.isCloudBand(null) === false && CLF.isCloudBand({}) === false)
+  const base = { marks: seaMarks(), text: seaText(), facts: seaFacts(), layers: layersDefault().length, windows: oiSeaWindows() }
+  check('夹具在 80 下确实成立（否则下面每一条都比的是空转）',
+    base.marks === 5 && base.layers === 1 && base.windows === 1 && base.facts.indexOf('低层云带 2000–3100 m') === 0,
+    JSON.stringify(base))
+
+  CLF.LAYER_LIMITS.CLOUD_BAND_COVER_MIN = 85
+  const bandSide = { marks: seaMarks(), text: seaText(), facts: seaFacts() }
+  const fieldSide = { layers: layersDefault().length, windows: oiSeaWindows() }
+  check('成带判据 80→85：sky 的 cloudSea 标记、云海结论文案里印出来的数字、factsFor 的「低层云带」三处一起动',
+    bandSide.marks === 0 && /无 85% 以上云量的层/.test(bandSide.text) && bandSide.facts.indexOf('低层云带') === -1,
+    JSON.stringify(bandSide))
+  check('改 ②（provider 成带）不动 ①（剖面成层）：layersAt 缺省与 OI 云海窗口一个都不变 ⇒ 两处没有被并成一个判据',
+    fieldSide.layers === base.layers && fieldSide.windows === base.windows, JSON.stringify(fieldSide))
+  CLF.LAYER_LIMITS.CLOUD_BAND_COVER_MIN = 80
+
+  CLF.LAYER_LIMITS.FIELD_LAYER_COVER_MIN = 85
+  const fieldAfter = { layers: layersDefault().length, windows: oiSeaWindows() }
+  check('剖面成层阈值 80→85：82% 的层不再成层（缺省不是第二个字面量，而是同一张表）',
+    fieldAfter.layers === 0, JSON.stringify(fieldAfter))
+  check('L3 的 LAYER_COVER_MIN 与 L1 同一张表：门槛一动，82% 那层的云海窗口跟着消失（读的是引用不是快照）',
+    fieldAfter.windows === 0, JSON.stringify(fieldAfter))
+  check('改 ① 不动 ②：band 侧三处读数与改前逐字相同',
+    seaMarks() === base.marks && seaText() === base.text && seaFacts() === base.facts)
+  CLF.LAYER_LIMITS.FIELD_LAYER_COVER_MIN = 80
+  const restored = { marks: seaMarks(), text: seaText(), facts: seaFacts(), layers: layersDefault().length, windows: oiSeaWindows() }
+  check('还原后与改前逐项相同（证明比的始终是同一份输入，不是两个零恰好对上）',
+    JSON.stringify(restored) === JSON.stringify(base), JSON.stringify(restored))
 }
 
 console.log('\npassed=' + passed + ' failed=' + failed)

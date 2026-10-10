@@ -9,6 +9,10 @@
 'use strict'
 
 const A = require('./astro')
+/* 「什么算一个实心云带」不由本文件定义：provider 的 cloudBandAt 已经按 ≥80% 成带，
+   这个判据的唯一出处在 L1 云层事实模块里。以前这里抄过两遍字面量 80，
+   现在改一处只会跟着一起动（tools/cloud-layer-facts-test.js §7 用影子常量证这条链真的接上了）。 */
+const CLF = require('./cloud-layer-facts.js')
 
 /* ---------- 基础工具 ---------- */
 
@@ -163,7 +167,7 @@ function hourMarks(ctx) {
     const band = c.band
 
     if (band && elevOK && band.base <= elevation && elevation <= band.top) add(h, 'inCloud')
-    if (band && elevOK && elevation > band.top && c.high < 30 && m < 10 * 60 && band.cover >= 80) add(h, 'cloudSea')
+    if (CLF.isCloudBand(band) && elevOK && elevation > band.top && c.high < 30 && m < 10 * 60) add(h, 'cloudSea')
 
     // 晨昏光染：落在晨昏窗口内，且低云少（光能到山体）、中高云有（被染色）、无降水
     const inLightWindow = hourTouches(m, riseMin, riseMin + LIGHT_WINDOW_MIN)
@@ -251,9 +255,9 @@ function cloudSeaConclusion(ctx) {
     item.text = '此点缺少可信海拔（GPX 未记录高程），无法判断是否高过云层带。'
     return Object.assign(item, grade(0))
   }
-  const solid = detail.filter(h => h.band && h.band.cover >= 80)
+  const solid = detail.filter(h => CLF.isCloudBand(h.band))
   if (!solid.length) {
-    item.text = '今天没有成层的低云带（无 80% 以上云量的层），云海无从形成。'
+    item.text = '今天没有成层的低云带（无 ' + CLF.LAYER_LIMITS.CLOUD_BAND_COVER_MIN + '% 以上云量的层），云海无从形成。'
     return Object.assign(item, grade(0))
   }
   let score = 20

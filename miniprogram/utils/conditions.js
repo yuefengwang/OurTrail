@@ -6,6 +6,12 @@
  * 本文件只做三件事：安全提示的字面规则、总评的均值汇总、星级展示语言。
  * 与 utils/agenda.js 同一立场：图（meteogram 标记）/ 日程 / 结论卡共用 sky.js 一个来源。
  *
+ * 「什么算一个实心云带」不在这里定义（切片二）：`factsFor('cloudSea')` 原先自己写了一遍
+ * `band.cover >= 80`，与 `sky.hourMarks` 的 cloudSea 标记、`sky.cloudSeaConclusion` 的成层筛选
+ * 是三处同值抄本——而那句话本来就是 provider `cloudBandAt` 的成带规则的重述。
+ * 现在三处都调用 `cloud-layer-facts.isCloudBand`，数字只有一个出处；
+ * 影子常量测试见 `tools/cloud-layer-facts-test.js` §7（改一处，三处一起动，否则门红）。
+ *
  * 修复记录（2026-10，V2 迁移时顺手修正的确认 bug，见 docs/weather-ux/production-gap-analysis.md）：
  *   WMO 雪码范围 71–86 → 71–77 ∪ 85–86。80–82 是**阵雨**，旧范围会让 14°C 的阵雨日
  *   触发「0℃ 层低于此点，降水可能为雪」（真机截图可见此误报）。
@@ -16,6 +22,8 @@
 'use strict'
 
 const sky = require('./sky')
+const CLF = require('./cloud-layer-facts.js')
+const K = require('./evidence-kind.js').KIND
 
 /* ---------- 安全提示的字面规则 ---------- */
 
@@ -99,12 +107,16 @@ function meanOf(list, get) {
  * 每一条都能在上方图表（Timeline/云带剖面/日照轴）或数字表里被用户亲眼核对。
  *
  * 指标**选取**与 sky.js 各现象的信号表对应（weather-ux-design.md §9.4），但本函数
- * 只读原始数值、不做任何判定：结论与分档仍由 sky.summarize 唯一给出，
- * 这里绝不复制「<30」「≥80」这类阈值（否则会出现第二套引擎）。
+ * 只读原始数值、不做任何判定：结论与分档仍由 sky.summarize 唯一给出。
+ * 唯一的例外曾经是真的：这里的云带筛选自己写过一遍 `cover >= 80`（注释却声称没有），
+ * 切片二起改为 `CLF.isCloudBand` —— 它不是判定，是对上游成带事实的重述，且只有一个出处。
+ * 「<30」这类天相阈值仍然一个都没有。
  *
  * @param key sky.js 结论 key（cloudSea/alpenglow/rainbow/galaxy/star）
  * @param ctx { date, detail(当日24h), days, elevation, sun(sunTimes), moon(moonInfo) }
- * @returns [{ fact:'清晨低云 86%', at:'07:00' }]  at = 「看图↗」锚定的小时列
+ * @returns [{ fact:'清晨低云 86%', at:'07:00', kind:'cloud-amount' }]
+ *   at = 「看图↗」锚定的小时列；kind = 证据类别（`utils/evidence-kind.js`），
+ *   呈现层据此挑摘要与分组，**不解析 fact**。
  */
 function factsFor(key, ctx) {
   const date = (ctx && ctx.date) || ''
@@ -117,16 +129,17 @@ function factsFor(key, ctx) {
   if (!d.length) return out
 
   if (key === 'cloudSea') {
-    const bandHours = d.filter(h => h.band && h.band.cover >= 80)
+    const bandHours = d.filter(h => CLF.isCloudBand(h.band))
     if (bandHours.length) {
       const base = Math.min.apply(null, bandHours.map(h => h.band.base))
       const top = Math.max.apply(null, bandHours.map(h => h.band.top))
       const at = bandHours[0].t
-      out.push({ fact: '低层云带 ' + Math.round(base) + '–' + Math.round(top) + ' m', at })
+      out.push({ fact: '低层云带 ' + Math.round(base) + '–' + Math.round(top) + ' m', at, kind: K.LAYER_POSITION })
       if (Number.isFinite(elev)) {
         out.push({
           fact: '此点 ' + Math.round(elev) + ' m，' + (elev > top ? '高于' : '不高于') + '云带顶 ' + Math.round(top) + ' m',
           at,
+          kind: K.LAYER_POSITION,
         })
       }
     }
@@ -135,13 +148,13 @@ function factsFor(key, ctx) {
       const at = (d.find(h => h.t === '07:00') || morning[0]).t
       const low = meanOf(morning, h => h.cloud && h.cloud.low)
       const high = meanOf(morning, h => h.cloud && h.cloud.high)
-      if (low != null) out.push({ fact: '清晨低云 ' + low + '% · 高层云 ' + (high == null ? '—' : high) + '%', at })
+      if (low != null) out.push({ fact: '清晨低云 ' + low + '% · 高层云 ' + (high == null ? '—' : high) + '%', at, kind: K.CLOUD_AMOUNT })
       const wind = meanOf(morning, h => h.wind)
-      if (wind != null) out.push({ fact: '清晨风 ' + wind + ' km/h', at })
+      if (wind != null) out.push({ fact: '清晨风 ' + wind + ' km/h', at, kind: K.WIND })
     }
     const prev = days.find(x => x.date === sky.addDays(date, -1))
     if (prev && Number(prev.precipSum) > 0) {
-      out.push({ fact: '前日降水 ' + prev.precipSum + ' mm', at: d[0].t })
+      out.push({ fact: '前日降水 ' + prev.precipSum + ' mm', at: d[0].t, kind: K.PRECIP })
     }
     return out
   }
@@ -150,21 +163,21 @@ function factsFor(key, ctx) {
     const at = (sun && sun.sunrise) || d[0].t
     const low = meanOf(d, h => h.cloud && h.cloud.low)
     const midHigh = meanOf(d, h => ((h.cloud && h.cloud.mid) || 0) + ((h.cloud && h.cloud.high) || 0))
-    if (low != null) out.push({ fact: '全日低云 ' + low + '%（少则光能到山体）', at })
-    if (midHigh != null) out.push({ fact: '中高云 ' + midHigh + '%（有则可被染色）', at })
+    if (low != null) out.push({ fact: '全日低云 ' + low + '%（少则光能到山体）', at, kind: K.CLOUD_AMOUNT })
+    if (midHigh != null) out.push({ fact: '中高云 ' + midHigh + '%（有则可被染色）', at, kind: K.CLOUD_AMOUNT })
     const precip = d.reduce((s, h) => s + (h.precip || 0) + (h.showers || 0), 0)
-    out.push({ fact: '全日降水 ' + (Math.round(precip * 10) / 10) + ' mm', at })
+    out.push({ fact: '全日降水 ' + (Math.round(precip * 10) / 10) + ' mm', at, kind: K.PRECIP })
     return out
   }
 
   if (key === 'rainbow') {
     const wet = d.filter(h => (h.precip || 0) + (h.showers || 0) > 0)
-    if (wet.length) out.push({ fact: '降水时段 ' + wet.length + ' 小时', at: wet[0].t })
+    if (wet.length) out.push({ fact: '降水时段 ' + wet.length + ' 小时', at: wet[0].t, kind: K.PRECIP })
     let best = null
     d.forEach(h => {
       if (sky.hourMin(h.t) >= 12 * 60 && (!best || (Number(h.rh) || 0) > (Number(best.rh) || 0))) best = h
     })
-    if (best && Number.isFinite(best.rh)) out.push({ fact: '午后湿度峰值 ' + Math.round(best.rh) + '%', at: best.t })
+    if (best && Number.isFinite(best.rh)) out.push({ fact: '午后湿度峰值 ' + Math.round(best.rh) + '%', at: best.t, kind: K.HUMIDITY })
     return out
   }
 
@@ -182,8 +195,8 @@ function factsFor(key, ctx) {
       : []
     const high = meanOf(night, h => h.cloud && h.cloud.high)
     const mid = meanOf(night, h => h.cloud && h.cloud.mid)
-    if (high != null) out.push({ fact: '夜段高层云 ' + high + '% · 中层云 ' + (mid == null ? '—' : mid) + '%', at: anchor })
-    if (moon) out.push({ fact: '月照 ' + moon.illumination + '%（' + moon.name + '）', at: anchor })
+    if (high != null) out.push({ fact: '夜段高层云 ' + high + '% · 中层云 ' + (mid == null ? '—' : mid) + '%', at: anchor, kind: K.CLOUD_AMOUNT })
+    if (moon) out.push({ fact: '月照 ' + moon.illumination + '%（' + moon.name + '）', at: anchor, kind: K.MOONLIGHT })
     return out
   }
 

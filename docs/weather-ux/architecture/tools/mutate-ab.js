@@ -18,14 +18,16 @@ if (!PRE_DIR || !fs.existsSync(path.join(PRE_DIR, 'outdoor-intelligence.js'))) {
 
 /* 每条都是"改一个业务数值/判定"，不是删代码 */
 const MUTANTS = [
-  ['V1 扫描步长 50→40（层边界采样点全变）', 'outdoor-intelligence.js',
-    'SCAN_STEP_M: 50,', 'SCAN_STEP_M: 40,'],
+  /* V1/V4 的锚点于切片二搬家到 cloud-layer-facts.js（LAYER_LIMITS 是那两个数的唯一出处）。
+     锚点写不到就报"这条自证本身失效"，所以搬家必须同步搬锚点，否则自证静默失去牙齿。 */
+  ['V1 扫描步长 50→40（层边界采样点全变）', 'cloud-layer-facts.js',
+    'FIELD_LAYER_STEP_M: 50,', 'FIELD_LAYER_STEP_M: 40,'],
   ['V2 净空门槛 200→300', 'outdoor-intelligence.js',
     'CLEARANCE_MIN: 200,', 'CLEARANCE_MIN: 300,'],
   ['V3 层厚门槛 300→200', 'outdoor-intelligence.js',
     'LAYER_THICKNESS_MIN: 300,', 'LAYER_THICKNESS_MIN: 200,'],
-  ['V4 成层覆盖 80→70', 'outdoor-intelligence.js',
-    'LAYER_COVER_MIN: 80,', 'LAYER_COVER_MIN: 70,'],
+  ['V4 成层覆盖 80→70', 'cloud-layer-facts.js',
+    'FIELD_LAYER_COVER_MIN: 80,', 'FIELD_LAYER_COVER_MIN: 70,'],
   ['V5 云顶不再插值（退出点直接取上一格点）', 'cloud-layer-facts.js',
     'run.top = prev.cover > coverMin', 'run.top = false && prev.cover > coverMin'],
   ['V6 截断标记被抹掉（被切层冒充完整层）', 'cloud-layer-facts.js',

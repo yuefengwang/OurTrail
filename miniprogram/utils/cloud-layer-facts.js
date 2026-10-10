@@ -19,8 +19,15 @@
  * L2（`cloud-field-svg.inferState`）：此点与云带的位置关系（in/ok/mid + 五类判不出）。
  * L3（`outdoor-intelligence`）：候选、持续性、强度、置信、证据文案、窗口。
  *
- * 本文件**不含**任何机会阈值；`coverMin`/`step` 是层定义本身（"什么算一层云"），
- * 由调用方传入，默认沿用 `outdoor-intelligence.CLOUD_SEA` 的值 —— 数值一个没改。
+ * 本文件**不含**任何机会阈值（净空 / 层厚 / 持续小时 / 风都不在这里，它们属 L3）。
+ * 但它**持有两个 80**，且这两个 80 语义不同、故意不合并（切片二 §3 的裁决）：
+ *   ① `FIELD_LAYER_COVER_MIN` —— 连续云场剖面「什么算一层云」（50 m 步长 + 进出点插值）；
+ *   ② `CLOUD_BAND_COVER_MIN`  —— provider `cloudBandAt` 的成带判据（离散气压层，
+ *      `detail[].band` 已经是它的产物，`band.cover` 就是那些层里最大的那个云量）。
+ * 两者今天数值相同纯属"客户端层定义跟随上游成带规则"，**来源不同、重建方式不同**：
+ * band 会把所有 ≥80 的离散层**合并成一条**（跨间隙、不插值、无厚度概念），
+ * 而 ① 产出多层、有 thickness、带边界标记 —— 拿 ① 替 ② 会印出不同的数（本轮禁止）。
+ * 所以这里给的是**两个各有唯一出处的命名判据**，而不是一个万能 80。
  * 扫描范围缺省仍取显示窗常量，并且**如实标注来源** `source: 'display-window'`，
  * 这样"谁在决定业务扫描"在数据里看得见，而不是要靠读代码行号考古。
  *
@@ -30,6 +37,29 @@
 'use strict'
 
 const CFF = require('./cloud-field-svg.js')
+
+/* ---------- 云层定义的两个唯一出处（同值不同义，见文件头） ----------
+ * 写成**对象属性**而不是三个 const，是有意的：影子测试要能改这一个数并观察到
+ * 所有消费点一起动（铁律 28⑤ 的教训——`module.exports` 里的快照值改了不生效，
+ * 比出来的差异是假的）。消费方一律 `CLF.LAYER_LIMITS.X` 走引用读。 */
+const LAYER_LIMITS = {
+  FIELD_LAYER_COVER_MIN: 80,   // ① 连续剖面的成层云量 %
+  FIELD_LAYER_STEP_M: 50,      // ① 的采样步长 m（层边界在相邻采样点间插值）
+  CLOUD_BAND_COVER_MIN: 80,    // ② provider 成带判据（`detail[].band` 的上游规则）
+}
+
+/**
+ * 「这条 provider band 是不是一个实心云带」——只对 `cloudBandAt` 的产物提问，
+ * 不用于云场剖面（那是 layersAt 的事）。
+ * 上游已经保证「band 存在 ⇒ cover ≥80」，所以下游三处（sky 的 cloudSea 标记、
+ * sky 的云海结论、conditions.factsFor 的证据行）写的其实都是这一句话。
+ * 以前它们各抄一遍字面量 80，谁改谁漂移；现在只有一个出处。
+ * 表达式与替换前逐字同形：不做 Number.isFinite 之类的"加固"，
+ * 因为那会把 `cover` 为 undefined 的旧行为（判 false）之外的情况改判。
+ */
+function isCloudBand (band) {
+  return !!band && band.cover >= LAYER_LIMITS.CLOUD_BAND_COVER_MIN
+}
 
 /* ---------- 三个高度范围：分开命名，不许互相顶替 ---------- */
 
@@ -95,8 +125,8 @@ function resolveRanges (opts) {
  */
 function layersAt (sample, t, ranges, opts) {
   const o = opts || {}
-  const coverMin = Number.isFinite(o.coverMin) ? o.coverMin : 80
-  const step = Number.isFinite(o.step) ? o.step : 50
+  const coverMin = Number.isFinite(o.coverMin) ? o.coverMin : LAYER_LIMITS.FIELD_LAYER_COVER_MIN
+  const step = Number.isFinite(o.step) ? o.step : LAYER_LIMITS.FIELD_LAYER_STEP_M
   const scan = (ranges && ranges.scan) || displayWindowScanRange()
   const pts = []
   for (let alt = scan.lo; alt <= scan.hi; alt += step) {
@@ -165,6 +195,10 @@ function topmostBelow (layers, pointAlt) {
 }
 
 module.exports = {
+  /* 云层定义（两个唯一出处，同值不同义）。导出的是**同一个对象引用**：
+     影子测试改这里的数，`isCloudBand` 与 `layersAt` 缺省值必须跟着动。 */
+  LAYER_LIMITS: LAYER_LIMITS,
+  isCloudBand,
   displayWindowScanRange,
   resolveRanges,
   layersAt,

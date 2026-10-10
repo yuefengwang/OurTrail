@@ -22,6 +22,7 @@
 
 const UMG = require('./meteogram-svg.js')
 const OI = require('./outdoor-intelligence.js')
+const EK = require('./evidence-kind.js').KIND
 
 /* 类型 → 展示标题：直接引用模型侧同一张表（2026-10-09 语义统一轮）。
    这里原来自己抄了一份，云层位置的两个状态与 r3/图例各说各话——
@@ -100,7 +101,8 @@ function timeLabel(from, to) {
 
 /* Evidence Anchor：OI 机会 →「看图 ↗」的时间锚点。
  * focusHour 优先级（§6）：① 模型已给 representative hour（当前模型未提供）
- *   ② 证据最强时刻（evidence[0].at，且落在窗口段内）③ 窗口中点（跨零点感知）。
+ *   ② **摘要那一条证据**的时刻（`primaryEvidence`，与卡片文字同源，不再各读各的）
+ *   ③ 窗口中点（跨零点感知）。
  * 单位：小时（0–23；endHour 可为 24 表示午夜结束）。focus 永远可安全喂给 selectHour。 */
 function evidenceAnchor(w2) {
   const segs = splitSegments(w2.from, w2.to)
@@ -109,7 +111,8 @@ function evidenceAnchor(w2) {
   const endSeg = segs[segs.length - 1]
   const endHour = (endSeg.toMin === 1440 ? 1440 : endSeg.toMin) / 60
   let focusMin = -1
-  const atMin = w2.evidence && w2.evidence.length ? hmMin(w2.evidence[0].at) : -1
+  const head = primaryEvidence(w2)
+  const atMin = head ? hmMin(head.at) : -1
   if (atMin >= 0 && segs.some(function (sg) {
     return atMin >= sg.fromMin && (atMin < sg.toMin || (sg.toMin === 1440 && atMin < 1440))
   })) {
@@ -133,11 +136,30 @@ function evidenceAnchor(w2) {
 
 function hm2(h) { return (h < 10 ? '0' : '') + h + ':00' }
 
-/* 依据摘要：取第一条最具体的事实（云区/云带优先于通用项） */
+/* 摘要首选序（切片二）：以前这里写的是
+ *     evidence.find(e => e.fact.indexOf('云区') >= 0 || e.fact.indexOf('云层位于') >= 0)
+ * —— 按**中文文案的字面**挑「这张卡的一句话依据」。R2 把「云层位于 2,000–3,300 m」
+ * 改成「云底低于剖面扫描窗下界…」时，被挑中的是哪一行纯粹是改文案的副作用。
+ * 现在由证据自己带的 `kind` 决定，类别词表在 `utils/evidence-kind.js`（产生处负责）；
+ * 「哪一类值得当摘要」是呈现选择，所以这张优先序表留在这里。
+ * 优先序之内保留产生顺序（同一小时可能有两条位置句，取先出现的那条）——
+ * 这是同一类别内的展示 tie-break，不是跨类别的业务判据。 */
+const SUMMARY_KIND_PRIORITY = [EK.LAYER_POSITION]
+
+/* 摘要与「看图」锚点必须指向**同一条**证据：以前锚点固定读 evidence[0]、
+ * 摘要按文案 find，两条规则一旦分叉，卡片文字和点下去高亮的那一小时就会各说各话。 */
+function primaryEvidence (w) {
+  const ev = (w && w.evidence) || []
+  for (let i = 0; i < SUMMARY_KIND_PRIORITY.length; i++) {
+    const hit = ev.find(function (e) { return e && e.kind === SUMMARY_KIND_PRIORITY[i] })
+    if (hit) return hit
+  }
+  return ev.length ? ev[0] : null
+}
+
 function summaryOf(w) {
-  if (!w.evidence || !w.evidence.length) return ''
-  const pick = w.evidence.find(e => e.fact.indexOf('云区') >= 0 || e.fact.indexOf('云层位于') >= 0)
-  return (pick || w.evidence[0]).fact
+  const pick = primaryEvidence(w)
+  return pick ? pick.fact : ''
 }
 
 /**
@@ -470,6 +492,11 @@ module.exports = {
   splitSegments: splitSegments,
   isCrossMidnight: isCrossMidnight,
   timeLabel: timeLabel,
+  /* 摘要选择是呈现契约的一部分，必须能被测试直接调用——
+     否则 tools 只能照着实现重写一遍（那就是给过期契约背书的镜像测试）。 */
+  summaryOf: summaryOf,
+  primaryEvidence: primaryEvidence,
+  SUMMARY_KIND_PRIORITY: SUMMARY_KIND_PRIORITY,
   TITLES: TITLES,
   TYPE_COLOR: TYPE_COLOR,
 }

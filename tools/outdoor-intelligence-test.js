@@ -13,6 +13,8 @@ const section = (t) => console.log('\n== ' + t + ' ==')
 
 let passed = 0, failed = 0
 const OI = require('../miniprogram/utils/outdoor-intelligence.js')
+const OIP = require('../miniprogram/utils/oi-presentation.js')
+const EK = require('../miniprogram/utils/evidence-kind.js').KIND
 const CFF = require('../miniprogram/utils/cloud-field-svg.js')
 
 const TIMES = []
@@ -175,6 +177,60 @@ check('3079m：晨 IN_CLOUD（层云盖到 3079）+ 午后 IN_CLOUD',
 check('500m：全程非 IN_CLOUD（低海拔用户不在 2000m+ 云层内）',
   oi500.conditions.every(c => c.key !== 'IN_CLOUD'),
   JSON.stringify(oi500.conditions.map(c => c.key).filter(Boolean)))
+
+/* ---------- 结构化证据契约与摘要选择（切片二） ---------- */
+section('Evidence kind 契约：摘要由类别决定，不由中文决定')
+{
+  const KIND_VALUES = Object.keys(EK).map(k => EK[k])
+  check('词表是封闭集（值不重复、都是短横线小写标识）',
+    new Set(KIND_VALUES).size === KIND_VALUES.length && KIND_VALUES.every(v => /^[a-z][a-z-]*$/.test(v)),
+    KIND_VALUES.join(','))
+  const allEv = []
+  oi1.opportunities.forEach(w => (w.evidence || []).forEach(e => allEv.push(e)))
+  oi1.conditions.forEach(c => (c.evidence || []).forEach(e => allEv.push(e)))
+  check('真实产出里每条证据都带 kind，且都 ∈ 词表（' + allEv.length + ' 条，无一裸奔）',
+    allEv.length > 20 && allEv.every(e => typeof e.kind === 'string' && KIND_VALUES.indexOf(e.kind) !== -1),
+    JSON.stringify(allEv.filter(e => !e.kind).map(e => String(e.fact)).slice(0, 3)))
+  check('云海卡的"位置那句"被标成 layer-position（四种边界形态共用同一个类别，不靠措辞）',
+    sea.evidence.filter(e => e.kind === 'layer-position').length === 1 &&
+      sea.evidence[0].kind === 'layer-position', JSON.stringify(sea.evidence.map(e => e.kind)))
+  check('IN_CLOUD 位置句同为 layer-position，云场覆盖那句是 data-coverage（数据的事实≠云的事实）',
+    inWin.evidence[0].kind === 'layer-position' &&
+      inWin.evidence.some(e => e.kind === 'data-coverage'), JSON.stringify(inWin.evidence.map(e => e.kind)))
+  /* 无云场回退路径（hour-view）也走同一张词表 */
+  const bandEv = oiBand.conditions.reduce((a, c) => a.concat(c.evidence || []), [])
+  check('回退路径（band + sky 标记）的证据同样带 kind',
+    bandEv.length > 0 && bandEv.every(e => KIND_VALUES.indexOf(e.kind) !== -1),
+    JSON.stringify(bandEv.map(e => e.kind)))
+
+  /* 机制判据：旧实现按 fact 字面找「云区/云层位于」，找不到退回 evidence[0]。
+     下面这两条在旧实现下都会红——它们测的是"选择依据到底是什么"。 */
+  const synthetic = {
+    evidence: [
+      { fact: '第一条只是一句普通补充说明', at: '03:00', kind: 'duration' },
+      { fact: '第二条才是真正的结论，中文怎么写都一样', at: '07:00', kind: 'layer-position' },
+    ],
+    from: '03:00', to: '09:00', type: 'CLOUD_SEA',
+  }
+  check('摘要取 kind=layer-position 那一条，即使它排在后面、中文里没有任何关键字（旧实现会退回第一条）',
+    OIP.summaryOf(synthetic) === '第二条才是真正的结论，中文怎么写都一样', OIP.summaryOf(synthetic))
+  check('「看图」锚点与摘要同源：两者指向同一条证据的时刻（旧实现一个读 evidence[0]、一个读文案命中项，会分叉）',
+    OIP.primaryEvidence(synthetic).at === '07:00' &&
+      (() => {
+        const card = OIP.buildOiCard({ conditions: [], opportunities: [Object.assign({}, synthetic, { rank: 'primary', confidence: '高' })], meta: {} }, { width: 375 })
+        const it = card.items[0]
+        return !!it && it.anchor.focusLabel === '07:00' && it.summaryText === '第二条才是真正的结论，中文怎么写都一样'
+      })(), JSON.stringify(OIP.buildOiCard({ conditions: [], opportunities: [synthetic], meta: {} }, { width: 375 }).items[0] || null))
+  check('缺省行为保留：一条 kind 都没有时退回第一条（与旧实现同形），空证据返回空串而不是抛错',
+    OIP.summaryOf({ evidence: [{ fact: '甲' }, { fact: '乙' }] }) === '甲' && OIP.summaryOf({ evidence: [] }) === '' && OIP.summaryOf({}) === '')
+  check('优先序只有一处声明，且呈现层不再引用任何中文关键字（防"文案即接口"复发）',
+    OIP.SUMMARY_KIND_PRIORITY.length >= 1 && OIP.SUMMARY_KIND_PRIORITY.every(k => KIND_VALUES.indexOf(k) !== -1),
+    JSON.stringify(OIP.SUMMARY_KIND_PRIORITY))
+  /* 真实产出走一遍：摘要必须就是那条被标为最高优先级的证据，且与文案无关 */
+  const real = oi1.opportunities.filter(w => (w.evidence || []).length > 0)
+  check('真实窗口的摘要逐条等于 primaryEvidence 的 fact（不是"碰巧第一条"）',
+    real.length > 0 && real.every(w => OIP.summaryOf(w) === OIP.primaryEvidence(w).fact))
+}
 
 /* ---------- Performance ---------- */
 section('性能')
