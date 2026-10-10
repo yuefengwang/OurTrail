@@ -238,6 +238,64 @@ section('2b. 黄金/蓝调窗口：满云时加事实后缀，但一条都不许
     !/[<>]=?\s*40\b/.test(require('fs').readFileSync(require('path').join(__dirname, '../miniprogram/utils/agenda.js'), 'utf8')))
 }
 
+/* ---------- 2c. 「天文暗夜始」的机会句：有银河才说 ---------- */
+
+section('2c. 天文暗夜始的 sub 只在真有银河小时时说，否则只剩时刻')
+{
+  const mk = (over, date) => {
+    const detail = []
+    for (let hh = 0; hh < 24; hh++) {
+      const o = (over && over(hh)) || {}
+      detail.push({
+        d: date, t: String(hh).padStart(2, '0') + ':00', temp: 8, pop: o.pop || 0,
+        precip: o.precip || 0, showers: 0, code: 2, wind: 6, rh: o.rh || 60,
+        cloud: { low: o.low == null ? 5 : o.low, mid: o.mid == null ? 5 : o.mid, high: o.high == null ? 5 : o.high },
+        band: null,
+      })
+    }
+    return detail
+  }
+  const pageMarks = (detail, date) => {
+    const m = sky.hourMarks({ date, lat: COORD.lat, lng: COORD.lng, elevation: ELEV, elevOK: true, detail, days: [] })
+    const out = {}
+    Object.keys(m).forEach(t => { out[date + 'T' + t] = m[t] })
+    return out
+  }
+  const duskSub = (detail, date) => {
+    const sun = A.sunTimes(date, COORD.lat, COORD.lng, ELEV)
+    const win = A.photoWindows(date, COORD.lat, COORD.lng, ELEV)
+    const ev = agenda.buildDayAgenda({ date, detail, marks: pageMarks(detail, date), sun, win })
+    const dark = ev.filter(e => e.title === '天文暗夜始')[0] || {}
+    const galaxyCard = sky.summarize({ date, lat: COORD.lat, lng: COORD.lng, elevation: ELEV, elevOK: true, detail, days: [], heading: null })
+      .items.filter(i => i.key === 'galaxy')[0]
+    return { sub: dark.sub || null, t: dark.t || null, verdict: galaxyCard.verdict }
+  }
+  const CLEAR = date => duskSub(mk(null, date), date)
+  const OVERCAST = date => duskSub(mk(() => ({ low: 100, mid: 100, high: 100, pop: 90, precip: 1, rh: 95 }), date), date)
+
+  // ① 时刻永远在（这是客观天文事实，不许因为天气消失）
+  const oc = OVERCAST('2026-10-09'), cl = CLEAR('2026-10-09')
+  check('满云与晴夜都有「天文暗夜始」且时刻相同（只改那一句话，不裁钟点）',
+    oc.t !== null && oc.t === cl.t, JSON.stringify({ oc: oc.t, clear: cl.t }))
+  // ② 满云夜：银河卡被沉默闸收掉，机会句也必须跟着消失（同一屏两处不许打架）
+  check('满云夜：sub 为空（不再替已被沉默的银河背书）', oc.sub === null && oc.verdict === 'excluded',
+    JSON.stringify(oc))
+  // ③ 晴夜 + 银心季 + 月黑：机会句照旧（不许一刀切把真机会也抹掉）
+  check('晴夜（10 月初、残月）：sub 仍是「银河与深空窗口」', cl.sub === '银河与深空窗口', JSON.stringify(cl))
+  // ④ 方向性：有机会句 ⇒ 银河卡必然不沉默（弱一致，不假装两边等价——标记还多要一个月照门槛）
+  const probes = ['2026-01-15', '2026-05-10', '2026-10-09', '2026-10-20'].map(d => ({ d, r: CLEAR(d) }))
+  check('凡给出机会句的日子，银河卡 verdict 必为 possible（单向一致）',
+    probes.every(p => !p.r.sub || p.r.verdict === 'possible'),
+    probes.map(p => p.d + ':' + (p.r.sub || '—') + '/' + p.r.verdict).join(' '))
+  check('非银心季（1 月晴夜）：机会句不说，银河卡也沉默（两处同一口径）', (() => {
+    const jan = probes.filter(p => p.d === '2026-01-15')[0].r
+    return jan.sub === null && jan.verdict === 'excluded'
+  })(), JSON.stringify(probes.filter(p => p.d === '2026-01-15')[0].r))
+  check('agenda.js 里「银河与深空窗口」只出现一次（不许再有一份无条件文案）',
+    (require('fs').readFileSync(require('path').join(__dirname, '../miniprogram/utils/agenda.js'), 'utf8')
+      .match(/银河与深空窗口/g) || []).length === 1)
+}
+
 /* ---------- 3. Evidence：每张卡都有事实与锚点 ---------- */
 
 section('3. Evidence 事实清单（factsFor）')

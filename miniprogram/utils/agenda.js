@@ -103,6 +103,12 @@ function visibleSeaWindow(fromT, toT, civil) {
   return { fromT: F.minutesLabel(s), toT: F.minutesLabel(e) }
 }
 
+/* 某个标记在这一天是否真的出现过。口径一律在 sky.hourMarks 里（银心季 + 月照 + 暗夜晴空
+   三件事都在那条闸上），本文件不另判一遍——否则就是第四次抄同一把尺。 */
+function hasMark (detail, marks, key) {
+  return (detail || []).some(h => ((marks || {})[h.d + 'T' + h.t] || []).indexOf(key) !== -1)
+}
+
 /* ---------- L1 摄影窗口的事实后缀（不裁时间，只说当时的云） ---------- */
 
 // 该时刻所在小时的低云量。没有读数返回 null（不编造，也不给否定结论）
@@ -158,7 +164,9 @@ function buildDayAgenda(input) {
     if (sun.sunset) add(sun.sunset, '日落', null, false)
     if (win && win.eveningGolden) add(win.eveningGolden.from, '黄金时刻（昏）', subWith(null, lightNote(detail, win.eveningGolden.from, 'golden')), false)
     if (win && win.duskBlue) add(win.duskBlue.from, '蓝调时刻（昏）', subWith(null, lightNote(detail, win.duskBlue.from, 'blue')), false)
-    if (sun.astroDusk) add(sun.astroDusk, '天文暗夜始', '银河与深空窗口', false)
+    /* 这句 sub 是机会主张，不是钟点：满天云或不在银心季的那晚，银河卡已被沉默闸收掉，
+       这一行却还替它背书 ⇒ 只有 marks 里真有 galaxy 小时才说；否则这一条只剩时刻（事实）。 */
+    if (sun.astroDusk) add(sun.astroDusk, '天文暗夜始', hasMark(detail, marks, 'galaxy') ? '银河与深空窗口' : null, false)
   }
 
   // 天气转折（L1）
@@ -191,4 +199,5 @@ module.exports = {
   visibleSeaWindow,
   lowCloudAt,
   lightNote,
+  hasMark,
 }

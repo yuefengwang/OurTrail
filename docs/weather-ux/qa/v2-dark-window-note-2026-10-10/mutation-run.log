@@ -1,0 +1,16 @@
+有效性门：未变异副本 1 套 + 对拍全绿
+
+✓ D1 永远说（回到无条件机会句 = 用户报的原状）
+    被抓于 weather-v2-test.js (exit 1)；ab-dark-window.js → !! 越界：本轮只允许改「天文暗夜始」那一句 sub
+✓ D2 永远不说（一刀切把真机会也抹掉）
+    被抓于 weather-v2-test.js (exit 1)；ab-dark-window.js → !! 越界：本轮只允许改「天文暗夜始」那一句 sub
+✓ D3 判据放宽成"能看星就说银河"（galaxy → star）
+    被抓于 weather-v2-test.js (exit 1)
+✓ D4 标记键少了日期前缀（marks 真查不到 ⇒ 静默恒 false）
+    被抓于 weather-v2-test.js (exit 1)；ab-dark-window.js → !! 越界：本轮只允许改「天文暗夜始」那一句 sub
+✓ D5 没银河时把时刻也裁掉（客观事实被天气吃掉）
+    被抓于 weather-v2-test.js (exit 1)；ab-dark-window.js → !! 越界：本轮只允许改「天文暗夜始」那一句 sub
+✓ D6 上一轮摄影后缀无条件加（跨轮回退）
+    被抓于 weather-v2-test.js (exit 1)；ab-dark-window.js → !! 越界：本轮只允许改「天文暗夜始」那一句 sub
+
+变异 6 条，漏网 0 条
