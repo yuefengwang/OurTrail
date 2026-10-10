@@ -180,10 +180,18 @@ function hourMarks(ctx) {
     if (win.dawnBlue && hourTouches(m, hourMin(win.dawnBlue.from), hourMin(win.dawnBlue.to))) add(h, 'blueHour')
     if (win.duskBlue && hourTouches(m, hourMin(win.duskBlue.from), hourMin(win.duskBlue.to))) add(h, 'blueHour')
 
-    // 彩虹：太阳高度 < 40 度（主虹在反日点 42 度半径）且空气有水分
+    // 彩虹：太阳高度 < 40 度（主虹在反日点 42 度半径）、**太阳照得出来**、且空气有水分。
+    // 「有水分」这一支以前还包含 `c.low >= 70`——那是把"满天低云"当成水分信号，
+    // 而低云恰恰是把太阳遮死的东西：实测全天 low/mid/high=100%、一滴雨没下，
+    // 彩虹照样拿 40+30=70 分 = 「条件较好 ★★★★」。同一天光染判 0 分并明说云量不足，
+    // 两个现象对同一份云量数据的态度互相矛盾（截图里那张 4 星彩虹卡就是这么来的）。
+    // 现在水分只看真降水与高湿；遮光闸复用本文件已有的两个口径，**不新造数字**：
+    //   c.low < 40            ← 光染那句「低云少（光能到山体）」
+    //   (mid + high) / 2 < 30 ← 星空/银河那句「暗夜晴空」口径
     const solar = A.solarPosition(A.cnToMs(date, h.t), lat, lng)
-    const wet = c.precip > 0.05 || c.showers > 0.05 || (c.rh != null && c.rh >= 88) || c.low >= 70
-    if (solar.altitude < 40 && solar.altitude > -2 && wet) add(h, 'rainbow')
+    const wet = c.precip > 0.05 || c.showers > 0.05 || (c.rh != null && c.rh >= 88)
+    const sunVisible = c.low < 40 && (c.mid + c.high) / 2 < 30
+    if (solar.altitude < 40 && solar.altitude > -2 && wet && sunVisible) add(h, 'rainbow')
 
     // 星空 / 银河：天文暗夜 + 高中层云少 + 无降水；银河另需银心季且月照低
     const dark = Number.isFinite(dawnMin) && Number.isFinite(duskMin) && (m < dawnMin || m > duskMin)
@@ -367,7 +375,8 @@ function rainbowConclusion(ctx) {
   const list = detail.filter(h => (marks[h.t] || []).indexOf('rainbow') !== -1)
   const item = { key: 'rainbow', title: '彩虹', window: '', look: '', text: '' }
   if (!list.length) {
-    item.text = '今天没有合适的太阳高度与空气水分组合，彩虹概率很低（彩虹要求太阳在身后且高度低于约 40 度）。'
+    item.text = '今天没有"太阳照得出来 + 空气有水分"同时成立的钟点，彩虹概率很低'
+      + '（彩虹要求太阳在身后且高度低于约 40 度，还得真能看到太阳——满天云时这个条件不成立）。'
     return Object.assign(item, grade(0))
   }
   const first = list[0]
@@ -383,7 +392,11 @@ function rainbowConclusion(ctx) {
   if (list.length >= 3) score += 10
   const g = grade(score)
   item.window = windowText(list)
-  item.look = '背对太阳，朝' + A.bearingLabel(anti) + '（约 ' + anti + ' 度）看，主虹顶部仰角约 ' + top + ' 度'
+  /* 方位角必须取整再印：`anti` 是 `norm360(solar.azimuth + 180)` 的原始浮点，
+     以前直接拼进中文，真机上出现过「朝正西（约 284.15999999999997 度）看」。
+     银河那句（galaxyConclusion）之所以没露馅，只是因为 galaxyBearing 内部已经取整——
+     同一写法不等于同一个数，所以这里不能省。*/
+  item.look = '背对太阳，朝' + A.bearingLabel(anti) + '（约 ' + Math.round(anti) + ' 度）看，主虹顶部仰角约 ' + top + ' 度'
   item.text = (solar.altitude < 12 ? '太阳压得低，' : '太阳偏高，') + '在 ' + windowText(list)
     + ' 有降水或高湿，彩虹出现的可能性存在；彩虹只在太阳对侧且太阳低于约 40 度时可见。'
   return Object.assign(item, g)

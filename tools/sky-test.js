@@ -99,7 +99,7 @@ section('2. 满月夜：星空尚可、银河被月光盖住')
   check('银心季外（1 月）银河直接判低', byKey(S.summarize(ctx(day(), { date: '2026-01-15' })), 'galaxy').score === 0)
 }
 
-section('3. 阴雨天：星空银河条件差，且不出现光染与彩虹')
+section('3. 阴雨天：星空银河条件差，光染与彩虹都不成立')
 {
   const detail = day({ '*': { low: 95, mid: 90, high: 90, precip: 2, pop: 90 } })
   const res = S.summarize(ctx(detail))
@@ -111,10 +111,42 @@ section('3. 阴雨天：星空银河条件差，且不出现光染与彩虹')
   check('银河条件差', gal.tone === 'neutral' || gal.tone === 'warning', gal.text)
   check('无 alpenglow 逐小时标记', marksOf(res, 'alpenglow').length === 0)
   check('日照金山结论为条件较差（' + alp.score + '）', alp.score === 0, alp.text)
-  // 太阳很低 + 有降水 → 彩虹反而成立
-  check('低太阳 + 降水 → 出现彩虹结论（' + rb.score + '）', rb.score > 0, rb.text)
-  check('彩虹方向与太阳相反（' + rb.look + '）', /背对太阳/.test(rb.look))
-  check('彩虹给主虹顶部仰角', /仰角约 \d+ 度/.test(rb.look), rb.look)
+  /* 彩虹这一条以前写的是 `rb.score > 0`，注释还写「低太阳 + 降水 → 彩虹反而成立」，
+     与本节标题「不出现…彩虹」互相矛盾——而 >0 这种弱断言挡不住满云日拿 70 分（★★★★）。
+     真机截图就是这么来的：全天 100% 云、一滴雨没下，彩虹给「条件较好」。
+     判据修正后这里**换成成对断言**（替换而非削弱）：满云有雨必须消失，云开有雨必须还在。 */
+  check('满天云 + 持续降水 ⇒ 彩虹不成立（太阳照不出来就没有虹，' + rb.score + '）',
+    rb.score === 0 && marksOf(res, 'rainbow').length === 0, rb.text)
+  check('否定文案说清了缺的是"看到太阳"，不只是"水分"', /看得到太阳|照得出来/.test(rb.text), rb.text)
+  const clearing = day({
+    7: { low: 30, mid: 20, high: 10, precip: 0.4, rh: 92 },
+    8: { low: 25, mid: 15, high: 10, precip: 0.3, rh: 90 },
+    '*': {},
+  })
+  const cRes = S.summarize(ctx(clearing))
+  const cRb = byKey(cRes, 'rainbow')
+  check('反向对照：雨 + 低云散开（太阳照得出来）⇒ 彩虹仍成立（' + cRb.score + '）',
+    cRb.score > 0 && marksOf(cRes, 'rainbow').length === 2, cRb.text)
+  check('彩虹方向与太阳相反（' + cRb.look + '）', /背对太阳/.test(cRb.look))
+  check('彩虹给主虹顶部仰角', /仰角约 \d+ 度/.test(cRb.look), cRb.look)
+  /* 遮光闸必须同时管低云与中高云：只查 low 的话，"低云 10% 但卷层云铺满"照样能给 4 星。
+     这条断言是变异脚本（qa/v2-rainbow-gate-2026-10-10/tools/mutate-rainbow.js）逼出来的——
+     第一版只写了 low 满云的用例，把闸改成"只看低云"时所有测试仍然全绿。 */
+  const highOvercast = day({
+    7: { low: 10, mid: 95, high: 95, precip: 0.4, rh: 92 },
+    8: { low: 10, mid: 95, high: 95, precip: 0.3, rh: 90 },
+    '*': {},
+  })
+  const hRes = S.summarize(ctx(highOvercast))
+  const hRb = byKey(hRes, 'rainbow')
+  check('低云少但中高云铺满 ⇒ 太阳仍被遮死，彩虹不成立（' + hRb.score + '）',
+    hRb.score === 0 && marksOf(hRes, 'rainbow').length === 0, hRb.text)
+  /* 印出来的方位角必须是整数度：真机出现过「约 284.15999999999997 度」 */
+  check('印出来的方位角是整数度（' + cRb.look + '）',
+    /约 \d+ 度/.test(cRb.look) && !/约 \d+\.\d+ 度/.test(cRb.look), cRb.look)
+  const allLooks = cRes.items.filter(i => i.look).map(i => i.look).join(' | ')
+  check('六张结论卡里任何"N 度"读数都不带小数（含银河方位）',
+    !/\d+\.\d+ ?度/.test(allLooks), allLooks.slice(0, 200))
 }
 
 section('4. 晴天但高空有云：晨昏光染成立（低云少 + 中高云可染色）')
