@@ -11,6 +11,7 @@ const { handleTransport } = require('./transport')
 const { handleField } = require('./field')
 const { handleProfile, ensureMembershipId } = require('./profile')
 const { handleNotices } = require('./notices')
+const { handleRoutes } = require('./routes')
 
 const summaries = {
   'activity.create': '活动草稿已保存', 'activity.edit': '活动说明与安排已更新', 'activity.copy': '已复制为新的活动草稿',
@@ -45,6 +46,8 @@ function handle(state, command, context) {
       return handleProfile(state, command, context)
     case 'notice.publish': case 'notice.read': case 'notice.delivery': case 'export.record':
       return handleNotices(state, command, context)
+    case 'route.create': case 'route.update': case 'route.delete':
+      return handleRoutes(state, command, context)
     default:
       return failure('INVALID_INPUT', '不支持此操作。')
   }

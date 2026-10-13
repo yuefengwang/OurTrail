@@ -253,6 +253,63 @@ function selectExport(state, actor, activityId, signupIds, mode, purpose, now) {
   return { ok: true, value: cells.map(row => row.map(csvCell).join(',')).join('\r\n') }
 }
 
+// ---------- V2 路线库投影 ----------
+
+// 路线可见性：创建者 ∪ 共享名单。与 membership 的协作授权同构，
+// 但作用域是「整条路线可读」而不是活动内的某项能力。
+function routeVisible(route, userId) {
+  return route.ownerId === userId || (route.sharedWith || []).indexOf(userId) !== -1
+}
+// 旧路线（activity 快照副产品）没有 source/updatedAt/visibility 键，读取时按缺省值补，
+// 不写回存储——投影层补缺省，存储层保持原样。
+function routeView(route, isOwner) {
+  const out = {
+    id: route.id, ownerId: route.ownerId, title: route.title,
+    distanceKm: route.distanceKm, ascentM: route.ascentM,
+    points: route.points.map(pointView),
+    risks: route.risks.map(r => {
+      const risk = { id: r.id, title: r.title, advice: r.advice }
+      if (r.severity) risk.severity = r.severity
+      if (r.coordinates) risk.coordinates = { lat: r.coordinates.lat, lng: r.coordinates.lng }
+      return risk
+    }),
+    track: route.track ? route.track.map(p => ({ lat: p.lat, lng: p.lng })) : undefined,
+    source: route.source || 'copy',
+    visibility: route.visibility || 'private',
+    updatedAt: route.updatedAt || null,
+  }
+  // 共享名单只给创建者看：协作者不需要知道还有谁。
+  if (isOwner) out.sharedWith = (route.sharedWith || []).slice()
+  return out
+}
+function selectRoutes(state, actor, routeId) {
+  if (actor.userId === null) return authRequired()
+  if (routeId) {
+    const route = state.routes.find(r => r.id === routeId)
+    if (!route) return { ok: false, error: { code: 'NOT_FOUND', message: '找不到此路线。' } }
+    if (!routeVisible(route, actor.userId)) return permissionDenied('没有此路线的访问权限。')
+    const owner = route.ownerId === actor.userId
+    return { ok: true, value: {
+      route: routeView(route, owner),
+      referencedActivityIds: state.activities.filter(a => a.routeId === routeId).map(a => a.id),
+    } }
+  }
+  // 列表：按最近保存倒序；时间并列按 id 定序（同一批数据反复读取必须同一顺序）。
+  const routes = state.routes
+    .filter(r => routeVisible(r, actor.userId))
+    .sort((a, b) => (b.updatedAt || '') < (a.updatedAt || '') ? -1 : (b.updatedAt || '') > (a.updatedAt || '') ? 1 : (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .map(r => ({
+      id: r.id, title: r.title, distanceKm: r.distanceKm, ascentM: r.ascentM,
+      pointCount: r.points.length, riskCount: r.risks.length,
+      updatedAt: r.updatedAt || null,
+      source: r.source || 'copy',
+      visibility: r.visibility || 'private',
+      isOwner: r.ownerId === actor.userId,
+      referencedCount: state.activities.filter(a => a.routeId === r.id).length,
+    }))
+  return { ok: true, value: { routes } }
+}
+
 function hasStaffMembership(state, actor, activityId, now) {
   return actor.userId !== null && state.memberships.some(m => m.role === 'staff' && m.activityId === activityId
     && m.userId === actor.userId && Date.parse(now) < Date.parse(m.expiresAt))
@@ -595,5 +652,5 @@ function getDetailState(view, now) {
 
 module.exports = {
   selectView, selectSensitive, selectContact, selectSignupForm, selectTransport,
-  selectAccess, selectNoticeManagement, selectExport, getDetailState, DETAIL_STATES,
+  selectAccess, selectNoticeManagement, selectExport, selectRoutes, getDetailState, DETAIL_STATES,
 }

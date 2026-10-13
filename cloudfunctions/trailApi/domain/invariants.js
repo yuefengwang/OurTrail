@@ -25,7 +25,12 @@ function assertInvariants(state) {
     if (!unique(profile.companions.map(p => p.id))) return invalid('常用同行人标识重复。')
   }
   for (const route of state.routes) {
-    if (!profiles.has(route.ownerId) || !unique(route.points.map(p => p.id))) return invalid('路线归属或节点标识无效。')
+    if (!profiles.has(route.ownerId) || !unique(route.points.map(p => p.id)) || !unique(route.risks.map(r => r.id))) return invalid('路线归属或节点标识无效。')
+    // V2 路线库：共享名单里的账号必须存在（与 membership.userId 同口径——
+    // 身份码授权只授予已建过档案的用户），且不能把创建者自己列进去。
+    if (route.sharedWith && (route.sharedWith.some(id => !profiles.has(id) || id === route.ownerId) || !unique(route.sharedWith))) {
+      return invalid('路线共享名单无效。')
+    }
   }
   for (const group of state.groups) {
     if (!activities.has(group.activityId) || !profiles.has(group.submittedByUserId)) return invalid('报名组的活动或提交者不存在。')

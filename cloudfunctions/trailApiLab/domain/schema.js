@@ -135,7 +135,13 @@ const RoutePoint = specObj({
   time: specOpt(specInstant),
   ele: specOpt(specNum(-500, 9000)),
 })
-const RouteRisk = specObj({ id: specId, title: specText, advice: specText })
+const RouteRisk = specObj({
+  id: specId, title: specText, advice: specText,
+  // V2 路线库（可选）：严重度分级与风险点坐标。旧记录没有这两个键——
+  // specOpt 保证 persistPrivateRoute 的旧快照克隆仍能通过 stateSpec。
+  severity: specOpt(specEnum(['low', 'mid', 'high'])),
+  coordinates: specOpt(specNull(Coordinates)),
+})
 // 轨迹折线采样点（GCJ-02）：画地图 polyline 用，导入 GPX 时按里程采样到 ≤200 点
 const TrackPoint = specObj({ lat: specNum(-90, 90), lng: specNum(-180, 180) })
 const RouteSnapshot = specObj({
@@ -147,6 +153,12 @@ const Route = specObj({
   id: specId, ownerId: specId, title: specText, distanceKm: specNum(0, Number.MAX_SAFE_INTEGER),
   ascentM: specCount, points: specArr(RoutePoint), risks: specArr(RouteRisk),
   track: specOpt(specArr(TrackPoint, 2, 200)),
+  // V2 路线库资产级字段（全部 specOpt）：存量路线是 activity.create 时
+  // persistPrivateRoute 从 RouteSnapshot 深克隆来的，没有这些键也必须是合法 Route。
+  updatedAt: specOpt(specInstant),                                    // 服务端时间戳，客户端不可提交
+  source: specOpt(specEnum(['gpx', 'manual', 'copy'])),               // 来源标记；快照副产品记 'copy'
+  visibility: specOpt(specEnum(['private', 'shared'])),               // 缺省按 'private' 读
+  sharedWith: specOpt(specArr(specId)),                               // 被授权协作者的 userId（身份码）
 })
 const PickupPoint = specObj({
   id: specId, name: specText, meetingAt: specNull(specInstant),
@@ -303,6 +315,16 @@ const VehicleInput = specObj((function () {
   delete keys.legs
   return keys
 })())
+// V2 路线库：路线资产的提交面。id/ownerId 由服务端给；updatedAt 是服务端时间戳
+// （不接受客户端值，否则「最近保存」会被客户端伪造）；source/visibility/sharedWith
+// 由客户端可选提交，缺省值在 routes.js 处理器里补。
+const RouteInput = specObj((function () {
+  const keys = Object.assign({}, Route.keys)
+  delete keys.id
+  delete keys.ownerId
+  delete keys.updatedAt
+  return keys
+})())
 const ParticipantInput = specObj({
   personRef: PersonRef, participant: Person, trip: Trip,
   consent: specObj({ dataUse: specBool, proxyAuthority: specBool, proxyHome: specBool }),
@@ -358,6 +380,12 @@ const Payload = specUnion('type', {
   'notice.read': specObj({ type: specEnum(['notice.read']), activityId: specId, noticeId: specId }),
   'notice.delivery': specObj({ type: specEnum(['notice.delivery']), activityId: specId, noticeId: specId, channel: DeliveryChannel, status: DeliveryStatus, detail: specText }),
   'export.record': specObj({ type: specEnum(['export.record']), activityId: specId, signupIds: specArr(specId, 1), mode: specEnum(['ordinary', 'sensitive']), purpose: specText }),
+  // V2 路线库：路线不再只是活动的副产品，而是可独立创建/编辑/删除的资产。
+  // 与活动命令的边界：route.* 不挂 activityId、不产事件（事件必须以活动为归属，
+  // invariants.js 的 event.activityId 引用完整性钉死了这一点）。
+  'route.create': specObj({ type: specEnum(['route.create']), input: RouteInput }),
+  'route.update': specObj({ type: specEnum(['route.update']), routeId: specId, input: RouteInput }),
+  'route.delete': specObj({ type: specEnum(['route.delete']), routeId: specId }),
   'profile.save': specObj({ type: specEnum(['profile.save']), person: Person }),
   'companion.save': specObj({ type: specEnum(['companion.save']), companionId: specNull(specId), person: Person }),
   'companion.remove': specObj({ type: specEnum(['companion.remove']), companionId: specId }),
@@ -375,6 +403,6 @@ module.exports = {
   Trip, Consent, SignupGroup, Signup, Driver, Evidence, Vehicle,
   Assignment, Membership, Departure, CheckIn, ReturnPlan, NodeVisit, Attendance,
   PositionReport, Incident, ActivityEvent, Audience, Notice, Receipt,
-  stateSpec, ActivityInput, VehicleInput, ParticipantInput, AssignmentPreview,
+  stateSpec, ActivityInput, VehicleInput, ParticipantInput, AssignmentPreview, RouteInput,
   Payload, Command,
 }

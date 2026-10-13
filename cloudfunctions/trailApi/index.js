@@ -12,7 +12,7 @@ const { reduceCommand } = require('./domain/commands')
 const { assertInvariants } = require('./domain/invariants')
 const {
   selectView, selectSensitive, selectContact, selectSignupForm, selectTransport,
-  selectAccess, selectNoticeManagement, selectExport,
+  selectAccess, selectNoticeManagement, selectExport, selectRoutes,
 } = require('./domain/selectors')
 const { planAssignments } = require('./domain/allocation')
 
@@ -101,6 +101,21 @@ async function actionReadContact(payload, openid) {
 async function actionReadExport(payload, openid) {
   const state = await store.loadState(db)
   return selectExport(state, { userId: openid }, payload.activityId, payload.signupIds || [], payload.mode, String(payload.purpose || ''), nowIso())
+}
+
+// V2 路线库：我的路线列表（无 routeId）与单条路线（带 routeId）。
+// 形状在入口就判：routeId 缺省/非字符串按「列表」处理，非字符串一律 INVALID_INPUT，
+// 不留给 selector 抛 TypeError（那会被归类成 INTERNAL，而这是客户端入参问题）。
+async function actionReadRoutes(payload, openid) {
+  let routeId = null
+  if (payload && payload.routeId !== undefined && payload.routeId !== null) {
+    if (typeof payload.routeId !== 'string' || !payload.routeId) fail('INVALID_INPUT', '路线标识无效。')
+    routeId = payload.routeId
+  }
+  const state = await store.loadState(db)
+  const result = selectRoutes(state, { userId: openid }, routeId)
+  if (!result.ok) fail(result.error.code, result.error.message)
+  return Object.assign({ revision: state.revision, now: nowIso() }, result.value)
 }
 
 async function actionPreviewAssignments(payload, openid) {
@@ -270,6 +285,7 @@ const ROUTES = {
   getWeather: actionGetWeather,
   getWeatherByPoint: actionGetWeatherByPoint,
   getPhoneNumber: actionGetPhoneNumber,
+  readRoutes: actionReadRoutes,
 }
 
 // 一次请求一行结构化日志（可观测性的唯一落点：本轮改造之前整个后端零 console 调用，

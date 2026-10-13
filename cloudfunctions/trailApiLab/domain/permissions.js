@@ -179,6 +179,15 @@ function canExecute(state, actor, payload, now) {
     ref.kind === 'user' ? ref.userId === actor.userId
       : ref.ownerId === actor.userId && !!profile && profile.companions.some(c => c.id === ref.companionId)
   if (payload.type === 'profile.save' || payload.type === 'activity.create') return allowed()
+  // V2 路线库：route.* 没有 activityId，必须在 requireActivity 之前分支——
+  // 否则 payload.activityId 为 undefined，会被误判成「找不到活动」。
+  // 归属校验与 routes.js 处理器各做一次（授权不依赖单点）。
+  if (payload.type === 'route.create') return allowed()
+  if (payload.type === 'route.update' || payload.type === 'route.delete') {
+    const route = state.routes.find(r => r.id === payload.routeId)
+    if (!route) return missing()
+    return route.ownerId === actor.userId ? allowed() : permissionDenied('只有路线创建者可以管理此路线。')
+  }
   if (payload.type === 'companion.save' || payload.type === 'companion.remove') {
     return payload.companionId === null || (profile && profile.companions.some(c => c.id === payload.companionId))
       ? allowed() : permissionDenied('只能管理当前账号已有的同行人。')
