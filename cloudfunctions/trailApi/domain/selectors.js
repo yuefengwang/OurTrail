@@ -265,6 +265,9 @@ function routeVisible(route, userId) {
 function routeView(route, isOwner) {
   const out = {
     id: route.id, ownerId: route.ownerId, title: route.title,
+    // isOwner 由服务端显式给出：客户端不得拿"sharedWith 在不在"反推——
+    // 那是把投影的细节当成契约，投影一改，owner 专属的 UI 就会泄漏给协作者。
+    isOwner: !!isOwner,
     distanceKm: route.distanceKm, ascentM: route.ascentM,
     points: route.points.map(pointView),
     risks: route.risks.map(r => {

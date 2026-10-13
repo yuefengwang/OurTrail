@@ -86,6 +86,12 @@ function previewAssignments(activityId) {
 function getWeather(activityId, pointId, date) {
   return call('getWeather', { activityId, pointId, date })
 }
+// V2 路线库：我的路线列表（不传 routeId）与单条路线（传 routeId）。
+// 云端直接返回 {revision, now, routes|route, referencedActivityIds?}；越权/不存在时
+// call() 抛带 code 的 Error（与 readOr 同口径，页面 catch 后自行呈现）。
+function readRoutes(routeId) {
+  return call('readRoutes', routeId ? { routeId } : {})
+}
 // P3 独立天气：按点自由查询（免活动语义）。返回体与 getWeather 的 ready 分支同形状。
 function getWeatherByPoint(lat, lng, date) {
   return call('getWeatherByPoint', { lat, lng, date })
@@ -158,5 +164,5 @@ function errorText(e) {
 module.exports = {
   call, read, readOr, dispatch, dispatchAndSync, toast, errorText,
   readForm, readTransport, readSensitive, readContact, readExport, previewAssignments, getWeather,
-  getWeatherByPoint,
+  getWeatherByPoint, readRoutes,
 }
