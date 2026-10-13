@@ -76,7 +76,10 @@ git merge --no-ff win/weather-v2-rainbow-gate -m "merge: 天气 V2 第九~十二
 - 合并提交 `6e646d1` 的树哈希 = `40e41c77ca63b6cb865e785686f60fb479961164`
   = 功能分支 `fa28986` 的树哈希 ⇒ **合并没有夹带第三个内容变化**（这是 §2 那批读数适用于候选的根据）。
 
-## 4. 远端集成：**阻塞，未推送、未动 master**
+## 4. 远端集成：**当时阻塞，未推送、未动 master**
+
+> 前向指针：本节记录 2026-10-10 的现场，结论（阻塞）当时成立、现已过期。
+> 通道恢复后的实际执行与三端核验见 **§5b**。原文按铁律 29③ 保留不删。
 
 ```
 $ git fetch origin
@@ -113,6 +116,45 @@ git branch -f master origin/master && git checkout master && \
 推送后复核：`git ls-remote origin refs/heads/master` 应返回 `6e646d1…`（或其后的 docs 提交），
 且 `git diff 6e646d1 origin/master` 为空。**另一台必须立刻 `git pull`**（PARALLEL_DEV 铁律 5），
 否则它会基于 `abf08f0` 继续写成分叉。
+
+## 5b. 通道恢复后的实际执行（2026-10-13）
+
+中继恢复后按 §5 的顺序执行，但有**一处与计划不同**，如实记下：本地 `master` 在通道恢复**之前**
+就已快进到了 `1108bb6`（= `6e646d1` + 本份集成记录），所以 §5 的 `git branch -f master origin/master`
+那一步没有跑——它是为"本地 master 仍停在 `abf08f0`"准备的，当时的实际前置状态已不成立。
+
+```bash
+git fetch origin                                  # FETCH_EXIT=0，无新对象
+git rev-parse origin/master                       # abf08f0…  ⇒ 远端未被别人前移（§5 ①成立）
+git merge-base --is-ancestor origin/master master # 成立 ⇒ 快进，无需 --force
+git log --oneline origin/master..master           # 9 条 = 8 个功能提交 + 1 个合并（§3 数的 7+1 再加 docs）
+node tools/check.js                               # exit 0，ALL CHECKS PASSED
+node tools/check-handlers.js                      # exit 0
+git diff --stat 6e646d1 1108bb6                   # 3 files changed, 191 insertions(+)，0 deletions
+                                                  # ⇒ 与已全量跑绿的候选相比只多文档，§2 那批读数继续适用
+git push origin master                            # exit 0  abf08f0..1108bb6  无 --force
+#   remote: 中转成功：已同步到 GitHub (yuefengwang/OurTrail)
+```
+
+推送后的三端复核（**断言的是"推 `1108bb6` 那一次"的结果**，本 docs 提交本身会把顶端再往前推，
+所以别把下面这行当"当前远端"读——当前远端一律 `git ls-remote origin refs/heads/master` 现查）：
+
+| 端 | `refs/heads/master` |
+|---|---|
+| 中继 `ssh://yfwang@192.168.3.15/…` | `1108bb60d104cd6275f5e1624807033d743d603e` |
+| GitHub 直连 `git@github.com:yuefengwang/OurTrail.git` | `1108bb60d104cd6275f5e1624807033d743d603e` |
+| 本地 `master` | `1108bb60d104cd6275f5e1624807033d743d603e` |
+
+`cloudfunctions/` 在这 9 个提交里零改动 ⇒ **不需要重新部署 trailApi**。另一台已具备 `git pull`
+快进到该顶端的条件（PARALLEL_DEV 铁律 5）。
+
+### 顺带查出的仓库设置问题（不在本轮范围，只登记）
+
+GitHub 的**默认分支是 `main`（`30a0eca`），而 `main` 与 `master` 无共同祖先**
+（`git merge-base refs/gh/main refs/gh/master` 不存在）：它是 2026-09-29 中转链路验证时的 3 个提交，
+相对 `master` 为 916 files / `+3` / `−137,994`。后果是网页首屏、PR 默认基线、Actions 默认触发
+都指向这份陈旧树。改默认分支属 GitHub 仓库设置，本机 `gh` 未登录（`gh auth status` ⇒
+`You are not logged into any GitHub hosts`），**未擅自改动**；删除 `main` 是另一回事，同样未动。
 
 ## 6. 未验证 / 风险登记
 
