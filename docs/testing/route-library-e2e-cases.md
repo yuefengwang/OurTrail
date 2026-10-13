@@ -112,7 +112,7 @@
 | RL-J1 | 编辑页异常退出（navigateBack 不保存）→重进恢复本机草稿 | U | — |
 | RL-J2 | CONFLICT 路径：两页面各持旧 revision 时后写者被拒并自动重读（可用 cloudCall 抢占 revision 制造） | U+B | G3 |
 
-> 合计 38 条。其中 B 维 12 条、纯 U 22 条、U+B 混合 4 条；依赖 lab 种子或第二身份的 2 条（RL-E4/E1 的协作者侧）允许首轮记 `uiUnverified` 并在 verdict 里写明原因。
+> 合计 46 条（A5 + B6 + C4 + D6 + E6 + F3 + G6 + H6 + I2 + J2）。其中 BUSINESS-only 5 条（B6/C4/G4/G5/I2）、纯 UI 27 条、UI+B 混合 14 条；依赖 lab 种子或第二身份的 2 条（RL-E4 的协作者侧、RL-E1/G6）允许首轮记 `uiUnverified` 并在 verdict 里写明原因。
 
 ---
 
