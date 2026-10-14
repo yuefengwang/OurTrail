@@ -101,6 +101,8 @@ Page({
         phase, now: res.now, startAt: a.startAt, deadlineAt: a.deadlineAt,
         meetingAt: (a.pickupPoints[0] || {}).meetingAt || null,
         vehicleTravel: v.counters.vehicleTravel, counters: v.counters,
+        // 路线完整性来自服务端投影（completeness），客户端不各自判空
+        completeness: a.completeness || null,
       })
       const blocker = J.transitionBlocker({
         next, counters: v.counters, unassignedBoarding: missingBoarding, coordinating, hasTravelFact,

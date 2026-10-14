@@ -9,6 +9,21 @@ const { isCurrentSignup, isVehicleTraveller, needsOutboundBoarding } = require('
 const success = ids => ({ ok: true, value: ids })
 const uniqueIds = ids => new Set(ids).size === ids.length
 
+// 只增不改：已落库的每条 entry 必须在入参里原样存在（id 一个不能少、内容一字不能改），
+// 新 id 允许追加。返回 false = 改了或删了旧条目。
+// 逐字节比对依赖「编辑器读回投影 → 表单 → 原样提交」的往返无损——selectors 少投影一个键、
+// 编辑器丢一个字段，都会在这里误伤（severity/coordinates 的往返由 riskView 与 toForm 共同保证）。
+function entriesUnchanged(stored, submitted) {
+  const storedIds = new Set(stored.map(e => e.id))
+  for (const entry of submitted) {
+    if (!storedIds.has(entry.id)) continue // 纯新增，放行
+    const kept = stored.find(e => e.id === entry.id)
+    if (JSON.stringify(kept) !== JSON.stringify(entry)) return false
+  }
+  if (submitted.length < stored.length) return false // 有旧条目没交回来 = 删除
+  return true
+}
+
 function validateInput(state, ownerId, input, full, activityId) {
   if (!S.validate(S.ActivityInput, input)) return failure('INVALID_INPUT', '活动字段不完整或格式不正确。')
   if (input.routeId && !state.routes.some(r => r.id === input.routeId && r.ownerId === ownerId)) return failure('FORBIDDEN', '请选择当前发起者自己的私有路线。')
@@ -16,12 +31,18 @@ function validateInput(state, ownerId, input, full, activityId) {
     return failure('INVALID_INPUT', '集合点、路线节点与风险标识不能重复。')
   }
   if (full) {
-    if (!input.title.trim() || !input.routeSnapshot.title.trim() || !input.startAt || !input.endAt || !input.deadlineAt
-      || !input.pickupPoints.length || !input.routeSnapshot.points.length || !input.routeSnapshot.risks.length
-      || input.pickupPoints.some(p => !p.name.trim() || !p.address.trim() || !p.meetingAt)
-      || input.routeSnapshot.points.some(p => !p.name.trim())
+    // 发布门只拦「这是一场什么活动」：标题、时间、集合点（2026-10-14 快速创建）。
+    // 轨迹可解析的路线字段（名称/节点/里程/爬升/轨迹线/风险/装备）全部可忽略——
+    // 整体可为空、发布后随时可补；但填了的条目必须完整：半成品条目比缺失更糟
+    // （详情页会印出无名节点与空问答，而报名者无从知道那是没填还是没写）。
+    if (!input.title.trim() || !input.startAt || !input.endAt || !input.deadlineAt
+      || !input.pickupPoints.length
+      || input.pickupPoints.some(p => !p.name.trim() || !p.address.trim() || !p.meetingAt)) {
+      return failure('INVALID_INPUT', '发布需要完整的标题、活动时间与集合信息。')
+    }
+    if (input.routeSnapshot.points.some(p => !p.name.trim())
       || input.routeSnapshot.risks.some(r => !r.title.trim() || !r.advice.trim())) {
-      return failure('INVALID_INPUT', '发布需要完整的标题、活动时间、集合信息、路线节点与风险说明。')
+      return failure('INVALID_INPUT', '已填写的路线节点需要名称，风险提示需要问题与应对方式。')
     }
     if (Date.parse(input.deadlineAt) > Date.parse(input.startAt) || Date.parse(input.startAt) >= Date.parse(input.endAt)) {
       return failure('INVALID_INPUT', '截止时间不能晚于开始时间，结束时间必须晚于开始时间。')
@@ -101,10 +122,22 @@ function handleActivity(state, command, context) {
       if (!S.validate(S.ActivityInput, p.input)) return failure('INVALID_INPUT', '活动字段不完整或格式不正确。')
       const input = p.input
       if (activity.phase === 'gathering' || activity.phase === 'active') {
-        const lockedKeys = ['title', 'startAt', 'deadlineAt', 'acceptingSignups', 'capacity', 'approvalMode', 'routeId', 'routeSnapshot', 'pickupPoints']
+        // 阶段锁三组（2026-10-14「只增不改」，替代此前的整体 JSON 锁）：
+        // ① 交易性键整体锁——标题/出发/截止/名额/审核方式/报名开关/路线归属是跟已报名者
+        //    谈定的交易，一个字节都不能动（acceptingSignups 被 transition 置 false 也算差异，
+        //    这是保护性的：陈旧表单不能把报名开关重新打开）；
+        // ② 信息性数组只增不改——路线节点/风险/上车点按 id 逐条比对，已发出的条目必须
+        //    逐字节相同，纯追加放行。发布门允许路线整体后补（快速创建），出发后仍要能补；
+        //    删改早已被下面的引用守卫拦住（报名/车辆引用的上车点、履约记录引用的节点）；
+        // ③ 信息性标量与文本（routeSnapshot 的标题/里程/爬升/轨迹线与说明类字段）可改。
+        // endAt 只可延长的既有规则不变。
+        const lockedKeys = ['title', 'startAt', 'deadlineAt', 'acceptingSignups', 'capacity', 'approvalMode', 'routeId']
         if (lockedKeys.some(key => JSON.stringify(input[key]) !== JSON.stringify(activity[key]))
+          || !entriesUnchanged(activity.routeSnapshot.points, input.routeSnapshot.points)
+          || !entriesUnchanged(activity.routeSnapshot.risks, input.routeSnapshot.risks)
+          || !entriesUnchanged(activity.pickupPoints, input.pickupPoints)
           || !input.endAt || !activity.endAt || Date.parse(input.endAt) < Date.parse(activity.endAt)) {
-          return failure('WRONG_PHASE', '集合或行程中仅可修改说明、装备、费用和取消说明，并延长结束时间。')
+          return failure('WRONG_PHASE', '集合或行程中仅可补充路线节点、风险与上车点，修改说明、装备、费用和取消说明，并延长结束时间。')
         }
       }
       const valid = validateInput(state, activity.ownerId, input, activity.phase !== 'draft', activity.id)

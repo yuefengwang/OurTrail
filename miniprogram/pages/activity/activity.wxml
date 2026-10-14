@@ -20,11 +20,13 @@
       <text class="muted hero-body">{{routeTitle}}</text>
       <view class="metrics hero-body">
         <view class="metric">
-          <text class="metric-value">{{distance}}<text class="metric-unit">km</text></text>
+          <text wx:if="{{distance}}" class="metric-value">{{distance}}<text class="metric-unit">km</text></text>
+          <text wx:else class="metric-value" style="color:var(--on-forest-muted);font-size:18px;font-weight:400;">待补</text>
           <text class="metric-label">路线里程</text>
         </view>
         <view class="metric">
-          <text class="metric-value">{{ascent}}<text class="metric-unit">m</text></text>
+          <text wx:if="{{ascent}}" class="metric-value">{{ascent}}<text class="metric-unit">m</text></text>
+          <text wx:else class="metric-value" style="color:var(--on-forest-muted);font-size:18px;font-weight:400;">待补</text>
           <text class="metric-label">累计爬升</text>
         </view>
         <view class="metric">
@@ -154,6 +156,8 @@
           </view>
         </view>
       </view>
+      <!-- 空路线（发布门允许路线整体后补）：说清「缺什么、补了有什么用」，不长成空白 -->
+      <text wx:if="{{!points.length}}" class="small muted" style="display:block;margin-top:12px;">组织者还没有填写路线节点。途中清点与进度确认会用到它们，发布后可随时补上。</text>
       <view wx:for="{{pickups}}" wx:key="id" class="list-row" style="margin-top:12px;">
         <view class="list-main">
           <text>{{item.name}}</text>

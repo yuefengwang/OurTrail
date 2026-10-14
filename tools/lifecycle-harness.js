@@ -209,7 +209,10 @@ function checkOracles(state) {
       if (state.incidents.some(i => i.activityId === a.id && !i.resolution)) fail('O-ARCHIVE-INCIDENT: 归档活动 ' + a.id + ' 仍有未处理异常')
     }
     if (a.phase !== 'draft' && a.phase !== 'cancelled') {
-      if (!a.pickupPoints.length || !a.routeSnapshot.points.length || !a.routeSnapshot.risks.length) fail('O-PUBLISH-SHAPE: 活动 ' + a.id + ' 非草稿却缺集合点/路线/风险')
+      // 2026-10-14 快速创建：路线节点与风险可整体为空（发布后补），发布门只拦集合点。
+      // 「填了的条目必须完整」由 invariants.js 与 tools/quick-create-test.js 覆盖，
+      // 本 oracle 只证发布门放开了什么，不重复第二套实现。
+      if (!a.pickupPoints.length) fail('O-PUBLISH-SHAPE: 活动 ' + a.id + ' 非草稿却没有集合点')
       if (!a.startAt || !a.endAt || !a.deadlineAt) fail('O-PUBLISH-TIME: 活动 ' + a.id + ' 非草稿却没有完整时间')
       else if (Date.parse(a.deadlineAt) > Date.parse(a.startAt) || Date.parse(a.startAt) >= Date.parse(a.endAt)) fail('O-TIME-ORDER: 活动 ' + a.id + ' 的截止/开始/结束顺序不正确')
     }

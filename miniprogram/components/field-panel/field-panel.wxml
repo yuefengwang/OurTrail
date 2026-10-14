@@ -78,14 +78,18 @@
     <form-field label="逐人核实依据" hint="填写现场、电话核实的实际结果">
       <textarea class="textarea" value="{{note}}" maxlength="2000" bindinput="onNote" />
     </form-field>
-    <form-field wx:if="{{pointEnabled}}" label="路线节点">
-      <picker range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPoint">
-        <view class="picker {{pointIndex < 0 ? 'placeholder' : ''}}">
-          <text class="picker-value">{{pointIndex < 0 ? '选择节点' : pointLabels[pointIndex]}}</text>
-          <text class="picker-arrow">▾</text>
-        </view>
-      </picker>
-    </form-field>
+    <block wx:if="{{pointEnabled && pointLabels.length}}">
+      <form-field label="路线节点">
+        <picker range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPoint">
+          <view class="picker {{pointIndex < 0 ? 'placeholder' : ''}}">
+            <text class="picker-value">{{pointIndex < 0 ? '选择节点' : pointLabels[pointIndex]}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+    </block>
+    <!-- 空路线（发布后可后补）：节点选择器没有选项，挂上去就是点不动的死控件 -->
+    <text wx:if="{{pointEnabled && !pointLabels.length}}" class="small muted">这场活动还没有路线节点，暂不能确认到达节点。路线可在编辑里补，补上后即可记录。</text>
     <view
       wx:for="{{actions}}"
       wx:key="label"

@@ -39,7 +39,7 @@ function toForm(input) {
       time: p.time || '',
       ele: Number.isFinite(p.ele) ? p.ele : null,
     })),
-    risks: input.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice })),
+    risks: input.routeSnapshot.risks.map(r => riskForm(r)),
     track: (input.routeSnapshot.track || []).slice(),
     pickups: input.pickupPoints.map(p => ({ id: p.id, name: p.name, address: p.address, lat: p.coordinates ? String(p.coordinates.lat) : '', lng: p.coordinates ? String(p.coordinates.lng) : '', meeting: split(p.meetingAt) })),
     equipmentText: input.equipment.join('\n'),
@@ -54,6 +54,15 @@ function toForm(input) {
 function composeDateTime(date, time) {
   if (!date || !time) return null
   return date + 'T' + time + ':00+08:00'
+}
+
+// 风险表单行：severity/coordinates 是路线库的可选字段，本表单不编辑它们，
+// 但必须原样往返——gathering/active 的阶段锁按 id 逐字节比对，丢一个键
+// 就把一次合法编辑误判成越阶段修改（与 points 的 time/ele 同口径）。
+function riskForm(r) {
+  return Object.assign({ id: r.id, title: r.title, advice: r.advice },
+    r.severity ? { severity: r.severity } : {},
+    r.coordinates ? { coordinates: { lat: r.coordinates.lat, lng: r.coordinates.lng } } : {})
 }
 
 function coordsOrNull(lat, lng) {
@@ -101,6 +110,9 @@ Page({
     fromRouteTitle: '',
     // 发布
     publishOpen: false,
+    // 可后补清单（2026-10-14 快速创建）：发布确认层逐项点名，不拦路
+    deferred: [],
+    deferredText: '',
     deleteDraftOpen: false,
     participate: false,
     dataUse: false,
@@ -265,7 +277,7 @@ Page({
             ele !== null ? { ele } : {}
           )
         }),
-        risks: f.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice })),
+        risks: f.risks.map(r => riskForm(r)),
       },
       pickupPoints: f.pickups.map(p => ({
         id: p.id, name: p.name, address: p.address,
@@ -480,6 +492,32 @@ Page({
     this.persistDraft()
   },
 
+  // 一键派生集合点（D1=C，2026-10-14）：GPX 导入/路线库预填后，把起点节点直接
+  // 当作集合上车点——名称与坐标自动带，集合时间默认出发前 30 分（与 addPickup 同口径）。
+  // 地址不凭空编造：发布门要求它，留给发起人补一句「从哪儿进、认什么标志物」。
+  useStartAsPickup() {
+    const f = this.data.form
+    const start = f.points[0]
+    if (!start || f.pickups.length) return
+    const form = JSON.parse(JSON.stringify(f))
+    const s = form.dt_start
+    const meeting = (s.date && s.time)
+      ? (shiftDateTime(s.date, s.time, 0, -0.5) || { date: '', time: '' })
+      : { date: '', time: '' }
+    const id = freshId('pickup')
+    form.pickups.push({
+      id,
+      name: (start.name || '起点') + '集合',
+      address: '',
+      lat: start.lat || '', lng: start.lng || '',
+      meeting,
+    })
+    const editingPickups = Object.assign({}, this.data.editingPickups)
+    editingPickups[id] = true // 直接展开编辑态：下一句就是要补的集合位置说明
+    this.setData({ form, editingPickups, message: '已用起点作为集合点，请补一句集合位置说明。' })
+    this.persistDraft()
+  },
+
   // ---- 上车点 ----
   onPickup(e) {
     const { index, key } = e.currentTarget.dataset
@@ -656,6 +694,8 @@ Page({
   },
   // 发布前逐项预检（与服务端 full 校验对齐）：返回缺失项 [{step, label}]，
   // 让用户在对应步骤就被明确告知缺什么，而不是发布时撞到一句笼统的服务端报错。
+  // 2026-10-14 快速创建：这里只剩**必填**（标题/时间/集合点）；轨迹可解析项
+  // （路线名称/节点/风险/装备）移到 deferredForPublish——不拦路，但显式可见。
   missingForPublish() {
     const f = this.data.form
     const missing = []
@@ -669,16 +709,24 @@ Page({
       const d = Date.parse(composeDateTime(f.dt_deadline.date, f.dt_deadline.time))
       if (!(d <= s && s < e)) missing.push({ step: 0, label: '时间顺序（截止 ≤ 出发，且早于结束）' })
     }
-    if (!f.routeTitle.trim()) missing.push({ step: 1, label: '路线名称' })
-    if (!f.points.length) missing.push({ step: 1, label: '至少 1 个路线节点' })
-    else if (f.points.some(p => !p.name.trim())) missing.push({ step: 1, label: '每个路线节点的名称' })
     if (!f.pickups.length) missing.push({ step: 1, label: '至少 1 个集合上车点' })
     else if (f.pickups.some(p => !p.name.trim() || !p.address.trim() || !p.meeting.date || !p.meeting.time)) missing.push({ step: 1, label: '集合上车点的名称、地址与集合时间' })
-    if (!f.risks.length) missing.push({ step: 2, label: '至少 1 条风险提示' })
-    else if (f.risks.some(r => !r.title.trim() || !r.advice.trim())) missing.push({ step: 2, label: '每条风险的问题与应对方式' })
     return missing
   },
-  // 步骤 3 常驻发布入口：先预检缺失项（跳到第一步并逐项点名），再静默保存，最后弹发布确认。
+  // 可后补清单：与服务端口径一致——整体可为空，填了的条目必须完整（半成品条目也点名）。
+  // 不在发布前拦路，但发布确认层要逐项摆出来，让用户「知情跳过」而不是静默跳过。
+  deferredForPublish() {
+    const f = this.data.form
+    const deferred = []
+    if (!f.routeTitle.trim()) deferred.push({ step: 1, label: '路线名称' })
+    if (!f.points.length) deferred.push({ step: 1, label: '至少 1 个路线节点' })
+    else if (f.points.some(p => !p.name.trim())) deferred.push({ step: 1, label: '每个路线节点的名称' })
+    if (!f.risks.length) deferred.push({ step: 2, label: '至少 1 条风险提示' })
+    else if (f.risks.some(r => !r.title.trim() || !r.advice.trim())) deferred.push({ step: 2, label: '每条风险的问题与应对方式' })
+    return deferred
+  },
+  // 步骤 3 常驻发布入口：先预检必填缺失项（跳到第一步并逐项点名），再静默保存，最后弹发布确认。
+  // 可后补项不拦截——确认弹层里逐项点名并给「去补上」出口（onDeferredFix）。
   onPublishIntent() {
     if (this.data.busy) return
     const missing = this.missingForPublish()
@@ -832,9 +880,21 @@ Page({
 
   // ---- 发布 ----
   onPublishOpen() {
-    this.setData({ publishOpen: true, participate: false, dataUse: false, tripSelf: true, tripPickupIndex: -1, failure: '' })
+    const deferred = this.deferredForPublish()
+    this.setData({
+      publishOpen: true, participate: false, dataUse: false, tripSelf: true, tripPickupIndex: -1, failure: '',
+      deferred,
+      // WXML 表达式不保证支持箭头函数：拼接在 JS 里做（与 text.wxs 的分工同理）
+      deferredText: deferred.map(d => d.label).join('、'),
+    })
   },
   onPublishClose() { this.setData({ publishOpen: false }) },
+  // 发布确认层的「去补上」：关弹层跳到第一个后补项所在步骤。已保存的内容不丢
+  // （persistCurrent 刚落库，草稿也已清——回编辑器是从活动读回的表单）。
+  onDeferredFix() {
+    const first = this.data.deferred[0]
+    this.setData({ publishOpen: false, step: first ? first.step : this.data.step })
+  },
   onParticipate(e) {
     this.setData({ participate: e.detail.value.length > 0, dataUse: false })
   },

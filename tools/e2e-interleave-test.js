@@ -491,7 +491,10 @@ async function main() {
     //（editor.js reload() 就是这么造的）。自己拿 input(tag) 拼会漏掉服务端的字段规范化，
     // 于是 gathering 的 lockedKeys 逐键比对会先撞在规范化差异上——红因就不是我想证的那条了。
     const stored = JSON.parse(JSON.stringify((await V()).activity))
-    delete stored.id; delete stored.ownerId; delete stored.phase
+    // completeness 是 2026-10-14 起 activityView 的派生键（服务端算「缺什么」），
+    // 不属于 ActivityInput——严格 schema 下整份回灌必须剥掉它，与真编辑器
+    // toForm() 自建 input（从不透传视图）同一口径。
+    delete stored.id; delete stored.ownerId; delete stored.phase; delete stored.completeness
     const staleForm = stored
 
     // B 先推进 published→gathering（gathering 下 title 属 lockedKeys）
@@ -515,7 +518,7 @@ async function main() {
       async () => lin.dispatch({ type: 'activity.edit', activityId: active.id, input: Object.assign({}, staleForm, { description: '陈旧表单想改的说明' }) }, await R()), 'WRONG_PHASE')
     // 重读之后装配的表单（修复后的真编辑器就是这个形状）只改说明 ⇒ 必须可写，证明阶段门不是整份锁死
     const freshForm = JSON.parse(JSON.stringify((await V()).activity))
-    delete freshForm.id; delete freshForm.ownerId; delete freshForm.phase
+    delete freshForm.id; delete freshForm.ownerId; delete freshForm.phase; delete freshForm.completeness
     const a4 = await lin.dispatch({ type: 'activity.edit', activityId: active.id, input: Object.assign({}, freshForm, { description: '集合阶段允许改的说明' }) }, await R())
     check('C6 重读后装配的表单只改说明 ⇒ ok（允许字段在 gathering 仍可写）', a4.ok === true, JSON.stringify(a4.error || ''))
     const act = (await V()).activity
