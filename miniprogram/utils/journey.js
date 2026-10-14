@@ -168,14 +168,17 @@ const METRIC_HOME = '待到家'
 const NEED_VEHICLE = '需要乘车'
 
 /**
- * ctx: { phase, now, counters:{...}, startAt, deadlineAt, meetingAt, vehicleTravel }
+ * ctx: { phase, now, counters:{...}, startAt, deadlineAt, meetingAt, vehicleTravel, completeness }
+ * completeness 是服务端投影的路线完整性（缺键按无从判断处理）。
  * 返回按「是否阻塞出发/归档」排好序的待办；每条都带跳向哪个分区。
  */
 function leaderQueue(ctx) {
   const c = ctx.counters || {}
   const items = []
   if (ctx.phase === 'draft') {
-    items.push({ id: 'publish', label: '补齐并发起活动', detail: '草稿需要完整的时间、集合点、路线与风险说明才能发布。', target: 'edit', blocking: true })
+    // 发布门只拦标题/时间/集合点（2026-10-14 快速创建）；路线与风险可后补，
+    // 这句 detail 就是那张门现在的形状——照旧说清楚，不夸大也不放水。
+    items.push({ id: 'publish', label: '补齐并发起活动', detail: '草稿需要标题、出发时间与集合上车点才能发布；路线、风险可以发布后补。', target: 'edit', blocking: true })
     return { items, primary: items[0] || null, milestone: '还没发布，别人看不到这场活动' }
   }
   if (c.pending) items.push({ id: 'review', label: '确认报名', detail: c.pending + ' 人待审核' + (c.waitlisted ? '，候补 ' + c.waitlisted + ' 人' : '') + '。', target: 'roster', blocking: true })
@@ -183,6 +186,17 @@ function leaderQueue(ctx) {
   if (c.unchecked) items.push({ id: 'checkin', label: '现场清点签到', detail: c.unchecked + ' 人还没签到。', target: 'field', blocking: ctx.phase === 'gathering' })
   if (c.openIncidents) items.push({ id: 'incident', label: '处理异常报备', detail: c.openIncidents + ' 项异常待闭环。', target: 'field', blocking: true })
   if (c.pendingHome) items.push({ id: 'home', label: '逐人确认到家', detail: c.pendingHome + ' 人已随队出行但还没报平安。', target: 'field', blocking: true })
+  // 可后补的路线信息（2026-10-14 快速创建）：非阻塞——它不拦出发也不拦归档，
+  // 但必须看得见：报名的人看不到风险说明，「待完善」就不能只活在编辑器里。
+  // completeness 由服务端投影给出；旧视图没有这个键时按「无从判断」处理，不摆待办。
+  const comp = ctx.completeness
+  if (comp && !(comp.route && comp.points && comp.risks)) {
+    const missing = []
+    if (!comp.route) missing.push('路线名称')
+    if (!comp.points) missing.push('路线节点')
+    if (!comp.risks) missing.push('风险提示')
+    items.push({ id: 'route', label: '完善路线与风险', detail: '还缺' + missing.join('、') + '。报名的人看不到这些信息，补上后立即生效。', target: 'edit', blocking: false })
+  }
   if (!items.length) items.push({ id: 'idle', label: '暂时没有拦路的事', detail: phaseScene(ctx.phase), target: 'roster', blocking: false })
   let milestone = ''
   if (ctx.deadlineAt && ctx.phase === 'published') {

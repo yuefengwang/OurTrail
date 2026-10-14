@@ -52,7 +52,8 @@ Page({
         id: a.id,
         title: a.title || '未命名活动',
         date: F.dateLabel(a.startAt),
-        meta: (a.routeSnapshot.title || '路线待完善') + ' · ' + a.routeSnapshot.distanceKm + ' km',
+        // 同 home：缺里程不印「· 0 km」（没填 ≠ 0 公里）
+        meta: (a.routeSnapshot.title || '路线待完善') + (a.routeSnapshot.distanceKm ? ' · ' + a.routeSnapshot.distanceKm + ' km' : ''),
         status: a.owner ? '我组织的' : (F.PHASE_LABELS[a.phase] || a.phase),
         featured: i === 0,
         info: [

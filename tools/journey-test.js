@@ -125,6 +125,34 @@ section('4. leaderQueue / transitionBlocker：先说拦路的，再说能做的'
 
   const draft = J.leaderQueue({ phase: 'draft', now: NOW, counters: {} })
   check('草稿唯一待办是发布', draft.items.length === 1 && draft.items[0].target === 'edit' && draft.items[0].blocking === true, JSON.stringify(draft))
+  // 2026-10-14 快速创建：发布门只剩标题/时间/集合点，草稿待办的 detail 要说实话
+  check('草稿待办 detail 与新发布门同口径（路线/风险可后补）',
+    /标题/.test(draft.items[0].detail) && /集合上车点/.test(draft.items[0].detail) && /发布后补/.test(draft.items[0].detail), draft.items[0].detail)
+
+  // 可后补路线：非阻塞待办，点名缺什么；完整时不摆；缺 completeness 键（旧视图）不摆
+  const partial = J.leaderQueue({ phase: 'published', now: NOW, startAt: START, meetingAt: MEET, vehicleTravel: 0,
+    counters: { pending: 0, waitlisted: 0, unassigned: 0, unchecked: 0, openIncidents: 0, pendingHome: 0 },
+    completeness: { route: true, points: false, risks: false, pickups: true } })
+  const routeItem = partial.items.find(i => i.id === 'route')
+  check('路线不完整时摆「完善路线与风险」且不拦路',
+    !!routeItem && routeItem.blocking === false && routeItem.target === 'edit', JSON.stringify(partial.items))
+  check('后补待办点名缺的具体项（节点/风险，不缺的不点）',
+    !!routeItem && /路线节点/.test(routeItem.detail) && /风险提示/.test(routeItem.detail) && !/路线名称/.test(routeItem.detail), routeItem && routeItem.detail)
+
+  const mixed = J.leaderQueue({ phase: 'published', now: NOW, startAt: START, meetingAt: MEET, vehicleTravel: 5,
+    counters: { pending: 2, waitlisted: 0, unassigned: 1, unchecked: 0, openIncidents: 0, pendingHome: 0 },
+    completeness: { route: false, points: false, risks: false, pickups: true } })
+  check('有拦路事时后补待办排在后面，primary 仍是拦路事',
+    mixed.items.map(i => i.id).join() === 'review,transport,route' && mixed.primary.id === 'review', JSON.stringify(mixed.items.map(i => i.id)))
+
+  const complete = J.leaderQueue({ phase: 'published', now: NOW, startAt: START, meetingAt: MEET, vehicleTravel: 0,
+    counters: { pending: 0, waitlisted: 0, unassigned: 0, unchecked: 0, openIncidents: 0, pendingHome: 0 },
+    completeness: { route: true, points: true, risks: true, pickups: true } })
+  check('路线完整时不摆后补待办', complete.items.length === 1 && complete.items[0].id === 'idle', JSON.stringify(complete.items))
+
+  const legacy = J.leaderQueue({ phase: 'published', now: NOW, startAt: START, meetingAt: MEET, vehicleTravel: 0,
+    counters: { pending: 0, waitlisted: 0, unassigned: 0, unchecked: 0, openIncidents: 0, pendingHome: 0 } })
+  check('旧视图没有 completeness 键：按无从判断处理，不摆待办', legacy.items.length === 1 && legacy.items[0].id === 'idle', JSON.stringify(legacy.items))
 
   check('集合前的门槛说清「谁挡着」', /待审核/.test(J.transitionBlocker({ next: 'gathering', counters: { pending: 2 } })), J.transitionBlocker({ next: 'gathering', counters: { pending: 2 } }))
   check('出发前的门槛提到车长任务页', /车长任务页/.test(J.transitionBlocker({ next: 'active', counters: {}, unassignedBoarding: 2 })), J.transitionBlocker({ next: 'active', counters: {}, unassignedBoarding: 2 }))

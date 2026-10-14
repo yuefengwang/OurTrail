@@ -32,7 +32,7 @@
     <!-- 路线库预填横幅（V2.0）：路线已带入，这里的修改不影响路线库 -->
     <view wx:if="{{fromRouteTitle}}" class="callout info">
       <view class="callout-title">已从路线库带入「{{fromRouteTitle}}」</view>
-      <text class="small muted">节点、风险与轨迹已经填好；补齐时间、人数和集合上车点就能发布。在这里的改动不会影响路线库里的路线。</text>
+      <text class="small muted">节点、风险与轨迹已经填好；补齐时间、人数和集合上车点就能发布（上车点可一键用起点派生）。在这里的改动不会影响路线库里的路线。</text>
     </view>
 
     <view class="segmented" aria-label="活动编辑步骤">
@@ -160,7 +160,7 @@
 
     <!-- 步骤 2：路线与集合 -->
     <view wx:if="{{step === 1}}" class="stack-gap3">
-      <form-field label="路线名称" hint="例如：青城后山 · 飞泉沟轻徒步">
+      <form-field label="路线名称" hint="例如：青城后山 · 飞泉沟轻徒步；可后补">
         <input class="input" value="{{form.routeTitle}}" data-key="routeTitle" bindinput="onField" />
       </form-field>
 
@@ -173,13 +173,14 @@
           <text>导入 GPX 轨迹</text>
         </view>
         <text class="small muted">先把 .gpx 文件发到任意微信聊天（推荐「文件传输助手」），再点上方按钮从聊天里选择。</text>
+        <text class="small muted">没有轨迹也能先发布：填好名称、时间和集合点即可，路线与风险发布后随时补。</text>
       </view>
 
       <view class="cluster" style="justify-content:space-between;">
-        <text class="section-title">路线节点</text>
+        <text class="section-title">路线节点（可后补）</text>
         <view wx:if="{{!form.points.length}}" class="button text" hover-class="button-hover" bindtap="useSampleRoute">用示例路线</view>
       </view>
-      <text class="small muted">节点是你计划经过的关键位置（起点、垭口、终点……），用于途中清点与进度确认。</text>
+      <text class="small muted">节点是你计划经过的关键位置（起点、垭口、终点……），用于途中清点与进度确认。不填也能发布，发布后在编辑里补。</text>
 
       <block wx:for="{{form.points}}" wx:key="id">
         <view
@@ -245,8 +246,11 @@
         <text>添加路线节点</text>
       </view>
 
-      <text class="section-title">集合与上车点</text>
-      <text class="small muted">发布必填：至少 1 个集合上车点——用于统一出发与现场清点，大家自行前往时也请留一个出发点。</text>
+      <view class="cluster" style="justify-content:space-between;">
+        <text class="section-title">集合与上车点</text>
+        <view wx:if="{{!form.pickups.length && form.points.length}}" class="button text" hover-class="button-hover" bindtap="useStartAsPickup">用起点作为集合点</view>
+      </view>
+      <text class="small muted">发布必填：至少 1 个集合上车点——用于统一出发与现场清点，大家自行前往时也请留一个出发点。导入轨迹后可直接用起点，补一句位置说明即可。</text>
       <block wx:for="{{form.pickups}}" wx:key="id">
         <!-- 阅读态：名称/地址/集合时间/定位一屏可读 -->
         <view wx:if="{{!editingPickups[item.id]}}" class="card" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickup">
@@ -363,9 +367,9 @@
       </checkbox-group>
 
       <view class="cluster" style="justify-content:space-between;">
-        <text class="section-title">风险提示</text>
+        <text class="section-title">风险提示（可后补）</text>
       </view>
-      <text class="small muted">发布必须至少一条。逐条确认问题与应对，点「编辑」可修改。</text>
+      <text class="small muted">逐条确认问题与应对，点「编辑」可修改。不填也能发布；报名的人在发布前看不到风险说明，建议尽早补上。</text>
 
       <block wx:for="{{form.risks}}" wx:key="id">
         <!-- 阅读态：风险是安全信息，标题与应对直接平铺，不藏进折叠 -->
@@ -472,6 +476,12 @@
 
   <overlay open="{{publishOpen}}" kind="dialog" title="准备好发布了吗？" bind:close="onPublishClose">
     <view class="stack">
+      <!-- 可后补项知情跳过：逐项点名 + 直达补充入口。不拦路，但不静默。 -->
+      <view wx:if="{{deferred.length}}" class="callout info">
+        <view class="callout-title">这些还没填，发布后随时可补</view>
+        <text class="small muted" style="display:block;margin-top:4px;">{{deferredText}}。报名的人在发布前看不到这些信息；补上后立即对所有人可见。</text>
+        <view class="button text" hover-class="button-hover" bindtap="onDeferredFix">去补上</view>
+      </view>
       <text>发布后参与者即可报名。报名、同行人和车辆数据不会自动创建。</text>
       <checkbox-group bindchange="onParticipate">
         <label class="check-label">

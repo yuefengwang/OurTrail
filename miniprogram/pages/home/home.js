@@ -98,7 +98,9 @@ Page({
       id: a.id,
       title: a.title || '未命名草稿',
       date: F.dateLabel(a.startAt),
-      meta: (a.routeSnapshot.title || '路线待完善') + ' · ' + a.routeSnapshot.distanceKm + ' km',
+      // 路线可整体后补（2026-10-14 快速创建）：缺里程就不印「· 0 km」——
+      // 那会把「没填」印成「一场 0 公里的活动」，是凭空造事实。
+      meta: (a.routeSnapshot.title || '路线待完善') + (a.routeSnapshot.distanceKm ? ' · ' + a.routeSnapshot.distanceKm + ' km' : ''),
       // 状态词只在 journey 一处定义；卡片再补一句「还有多久」，
       // 因为首页真正要回答的是「哪一场快到时间了」，不是「它在哪个 phase」。
       status: (a.meta.owner ? '我组织的 · ' : (a.meta.joined ? '' : '最近查看 · ')) + J.phaseLabel(a.phase),

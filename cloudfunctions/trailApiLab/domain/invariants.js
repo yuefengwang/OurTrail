@@ -53,8 +53,11 @@ function assertInvariants(state) {
     if (!unique(activity.pickupPoints.map(p => p.id)) || !unique(activity.routeSnapshot.points.map(p => p.id))) return invalid('集合点或路线节点标识重复。')
     if (activity.routeId && !state.routes.some(r => r.id === activity.routeId && r.ownerId === activity.ownerId)) return invalid('活动关联的私有路线不属于发起者。')
     if (activity.phase !== 'draft' && activity.phase !== 'cancelled') {
+      // 与 activity.js validateInput(full) 同源（2026-10-14 快速创建）：发布门只拦
+      // 标题/时间/集合点；路线节点与风险可整体为空（发布后补），但填了的条目必须完整。
       if (!activity.title.trim() || !activity.startAt || !activity.endAt || !activity.deadlineAt || !activity.pickupPoints.length
-        || !activity.routeSnapshot.points.length || !activity.routeSnapshot.risks.length) return invalid('发布活动需要完整的时间、集合点、路线与风险说明。')
+        || activity.routeSnapshot.points.some(p => !p.name.trim())
+        || activity.routeSnapshot.risks.some(r => !r.title.trim() || !r.advice.trim())) return invalid('发布活动需要完整的时间与集合信息，已填写的路线与风险条目必须完整。')
       if (Date.parse(activity.deadlineAt) > Date.parse(activity.startAt) || Date.parse(activity.startAt) >= Date.parse(activity.endAt)) return invalid('活动截止、开始和结束时间顺序不正确。')
     }
     const roster = state.signups.filter(s => s.activityId === activity.id)

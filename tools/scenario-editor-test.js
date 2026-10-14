@@ -351,6 +351,28 @@ async function scenario4() {
     check('里程爬升仍按轨迹填充（设计如此）', page.data.form.distanceKm !== '' && page.data.form.ascentM !== '')
   }
   {
+    // 一键派生集合点（D1=C）：GPX 应用后无上车点时，起点直接变集合点
+    const { page } = bootEditor({ wx: GPX_WX })
+    await settle(page)
+    page.setData({ form: Object.assign({}, page.data.form, { dt_start: { date: '2026-10-03', time: '08:00' } }) })
+    page.onImportGpx()
+    page.onGpxApply()
+    check('前置：GPX 后仍无上车点', page.data.form.pickups.length === 0, String(page.data.form.pickups.length))
+    page.useStartAsPickup()
+    check('一键派生：1 个上车点，名称与坐标取自起点', page.data.form.pickups.length === 1
+      && page.data.form.pickups[0].name === '溪谷起点集合'
+      && page.data.form.pickups[0].lat === page.data.form.points[0].lat
+      && page.data.form.pickups[0].lng === page.data.form.points[0].lng, JSON.stringify(page.data.form.pickups))
+    check('集合时间默认出发前 30 分（与 addPickup 同口径）',
+      page.data.form.pickups[0].meeting.date === '2026-10-03' && page.data.form.pickups[0].meeting.time === '07:30',
+      JSON.stringify(page.data.form.pickups[0].meeting))
+    check('地址不编造：留空并展开编辑态等发起人补',
+      page.data.form.pickups[0].address === '' && page.data.editingPickups[page.data.form.pickups[0].id] === true,
+      JSON.stringify(page.data.form.pickups[0]))
+    check('已有上车点时不重复派生', (() => { page.useStartAsPickup(); return page.data.form.pickups.length === 1 })())
+    check('派生结果落本机草稿（断电可恢复）', !!draft.getDraft('new', 'activity-editor'))
+  }
+  {
     const { page } = bootEditor({})
     await settle(page)
     page.onGpxApply()
@@ -467,22 +489,34 @@ async function scenario5() {
   }
 }
 
-// 6. 发布预检 missingForPublish：逐项点名 + 跳第一个缺失步骤
+// 6. 发布预检双清单（2026-10-14 快速创建）：missingForPublish 只剩必填（标题/时间/集合点），
+// 轨迹可解析项进 deferredForPublish——不拦路，但发布确认层逐项点名 + 「去补上」出口。
 async function scenario6() {
-  section('6. 发布预检 missingForPublish：逐项点名 + 跳第一个缺失步骤')
+  section('6. 发布预检双清单：必填拦路、可后补点名不拦路')
   {
     const { page, cmds } = bootEditor({})
     await settle(page)
+    // ① 空表单：必填清单 5 项，首项跳 step 0
     let m = page.missingForPublish()
-    check('空表单点名 8 项', m.length === 8, JSON.stringify(m.map(x => x.label)))
+    check('空表单必填点名 5 项', m.length === 5, JSON.stringify(m.map(x => x.label)))
     check('首项是活动名称（step 0）', m[0].label === '活动名称' && m[0].step === 0)
-    check('点名覆盖路线/上车点/风险', m.some(x => x.label === '至少 1 个路线节点')
-      && m.some(x => x.label === '至少 1 个集合上车点') && m.some(x => x.label === '至少 1 条风险提示'))
+    check('必填只剩标题/时间/上车点（路线与风险不再拦路）',
+      m.some(x => x.label === '至少 1 个集合上车点')
+      && !m.some(x => /路线|风险/.test(x.label)), JSON.stringify(m.map(x => x.label)))
     page.onPublishIntent()
     check('有缺失：跳到第一个缺失步骤', page.data.step === 0, String(page.data.step))
     check('有缺失：failure 逐项点名', /^还差：/.test(page.data.failure) && page.data.failure.indexOf('活动名称') !== -1, page.data.failure)
     check('有缺失：不发命令', cmds.length === 0, String(cmds.length))
 
+    // ② 空表单：可后补清单点名路线三项，各带步骤
+    const d0 = page.deferredForPublish()
+    check('空表单可后补点名 3 项', d0.length === 3, JSON.stringify(d0.map(x => x.label)))
+    check('后补项覆盖路线名称/节点/风险且各带步骤',
+      d0.some(x => x.label === '路线名称' && x.step === 1)
+      && d0.some(x => x.label === '至少 1 个路线节点' && x.step === 1)
+      && d0.some(x => x.label === '至少 1 条风险提示' && x.step === 2), JSON.stringify(d0))
+
+    // ③ 必填未齐（上车点半成品 + 时间顺序错）：必填清单仍拦路
     page.setData({ form: Object.assign({}, page.data.form, {
       title: '测试活动',
       dt_start: { date: '2026-10-03', time: '08:00' },
@@ -493,31 +527,45 @@ async function scenario6() {
       risks: [{ id: 'rk-1', title: '垭口风大', advice: '' }],
     }) })
     m = page.missingForPublish()
-    const labels = m.map(x => x.label)
-    check('时间顺序错误被点名', labels.indexOf('时间顺序（截止 ≤ 出发，且早于结束）') !== -1, JSON.stringify(labels))
-    check('无名节点/缺地址上车点/缺应对风险逐项点名',
-      labels.indexOf('路线名称') !== -1 && labels.indexOf('每个路线节点的名称') !== -1
-      && labels.indexOf('集合上车点的名称、地址与集合时间') !== -1 && labels.indexOf('每条风险的问题与应对方式') !== -1,
-      JSON.stringify(labels))
+    check('时间顺序错误仍进必填清单（step 0 最优先）',
+      m.some(x => x.label === '时间顺序（截止 ≤ 出发，且早于结束）' && x.step === 0), JSON.stringify(m.map(x => x.label)))
+    check('上车点半成品仍进必填清单（必填没有放水）',
+      m.some(x => x.label === '集合上车点的名称、地址与集合时间'), JSON.stringify(m.map(x => x.label)))
     page.onPublishIntent()
-    check('第一个缺失是时间顺序（step 0）', page.data.step === 0, String(page.data.step))
+    check('有必填缺失：跳 step 0 且不发命令', page.data.step === 0 && cmds.length === 0,
+      JSON.stringify({ step: page.data.step, cmds: cmds.length }))
 
-    page.setData({ form: Object.assign({}, page.data.form, { dt_deadline: { date: '2026-10-02', time: '08:00' } }) })
-    check('修好时间后第一个缺失转到路线（step 1）', page.missingForPublish()[0].step === 1)
-    page.onPublishIntent()
-    check('页面跳到步骤 2', page.data.step === 1, String(page.data.step))
-
+    // ④ 修好时间与上车点：必填清空，onPublishIntent 改为「保存 + 弹层点名后补项」
     page.setData({ form: Object.assign({}, page.data.form, {
-      routeTitle: '飞泉沟环线',
-      points: [{ id: 'pt-1', name: '起点', kind: 'start', lat: '30.9', lng: '103.5', time: '', ele: null }],
-      pickups: [{ id: 'pk-1', name: '犀浦站', address: '地铁 A 口', lat: '30.8', lng: '103.7', meeting: { date: '2026-10-03', time: '07:30' } }],
+      dt_deadline: { date: '2026-10-02', time: '08:00' },
+      pickups: [{ id: 'pk-1', name: '犀浦站', address: '地铁 A 口', lat: '', lng: '', meeting: { date: '2026-10-03', time: '07:30' } }],
     }) })
-    check('修好路线后第一个缺失转到风险（step 2）', page.missingForPublish()[0].step === 2)
+    check('必填清空', page.missingForPublish().length === 0, JSON.stringify(page.missingForPublish().map(x => x.label)))
+    const d1 = page.deferredForPublish()
+    check('半成品条目级点名（无名节点/缺应对风险/缺路线名）',
+      d1.some(x => x.label === '路线名称') && d1.some(x => x.label === '每个路线节点的名称')
+      && d1.some(x => x.label === '每条风险的问题与应对方式'), JSON.stringify(d1.map(x => x.label)))
     page.onPublishIntent()
-    check('页面跳到步骤 3', page.data.step === 2, String(page.data.step))
+    await waitFor(() => cmds.length > 0)
+    check('可后补不拦截：先静默保存', cmds[0].payload.type === 'activity.create', cmds[0].payload.type)
+    await waitFor(() => page.data.publishOpen === true)
+    check('发布确认弹层打开并带上后补清单', page.data.publishOpen === true && page.data.deferred.length === d1.length,
+      JSON.stringify({ open: page.data.publishOpen, deferred: page.data.deferred }))
+    check('此刻只有一条命令（未发布）', cmds.length === 1, String(cmds.length))
+    // ⑤ 「去补上」：关弹层跳第一个后补项所在步骤
+    page.onDeferredFix()
+    check('去补上：关弹层并跳到第一个后补步骤', page.data.publishOpen === false && page.data.step === 1,
+      JSON.stringify({ open: page.data.publishOpen, step: page.data.step }))
 
-    page.setData({ form: Object.assign({}, page.data.form, { risks: [{ id: 'rk-1', title: '垭口风大', advice: '备防风衣物' }] }) })
-    check('全部齐了：清单为空', page.missingForPublish().length === 0, JSON.stringify(page.missingForPublish().map(x => x.label)))
+    // ⑥ 全部齐：两张清单都空，弹层无后补提示
+    page.setData({ form: completeForm() })
+    check('全部齐：必填与后补清单均为空',
+      page.missingForPublish().length === 0 && page.deferredForPublish().length === 0,
+      JSON.stringify({ m: page.missingForPublish(), d: page.deferredForPublish() }))
+    page.onPublishOpen()
+    check('全部齐：发布弹层无后补点名', page.data.publishOpen === true && page.data.deferred.length === 0,
+      JSON.stringify(page.data.deferred))
+    page.onPublishClose()
   }
 }
 

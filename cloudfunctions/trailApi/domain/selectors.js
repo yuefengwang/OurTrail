@@ -32,6 +32,27 @@ function pointView(p) {
   if (Number.isFinite(p.ele)) out.ele = p.ele
   return out
 }
+// 风险投影：severity/coordinates 为 V2 路线库可选字段，缺省不带键。
+// 活动编辑器按投影回填表单、再原样提交（gathering/active 的阶段锁是逐字节比对）——
+// 哪个投影处少给一个键，编辑态就静默丢一个字段，阶段门立刻误伤。三处共用本函数。
+function riskView(r) {
+  const out = { id: r.id, title: r.title, advice: r.advice }
+  if (r.severity) out.severity = r.severity
+  if (r.coordinates) out.coordinates = { lat: r.coordinates.lat, lng: r.coordinates.lng }
+  return out
+}
+// 路线完整性派生（2026-10-14 快速创建）：发布门不再要求路线字段非空，「缺什么」
+// 由服务端一处派生，客户端不再各自判空——home/discover 各自 `|| '路线待完善'`
+// 就是漂移源。pickups 入镜是因为「可忽略」的边界要能被同一处说清。
+function routeCompleteness(activity) {
+  const rs = activity.routeSnapshot
+  return {
+    route: !!rs.title.trim(),
+    points: rs.points.length > 0,
+    risks: rs.risks.length > 0,
+    pickups: activity.pickupPoints.length > 0,
+  }
+}
 
 function activityView(activity) {
   return {
@@ -42,7 +63,7 @@ function activityView(activity) {
     routeSnapshot: {
       title: activity.routeSnapshot.title, distanceKm: activity.routeSnapshot.distanceKm, ascentM: activity.routeSnapshot.ascentM,
       points: activity.routeSnapshot.points.map(p => pointView(p)),
-      risks: activity.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice })),
+      risks: activity.routeSnapshot.risks.map(r => riskView(r)),
       track: activity.routeSnapshot.track ? activity.routeSnapshot.track.map(p => ({ lat: p.lat, lng: p.lng })) : undefined,
     },
     pickupPoints: activity.pickupPoints.map(p => ({
@@ -50,6 +71,7 @@ function activityView(activity) {
       coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null,
     })),
     equipment: activity.equipment.slice(), feeNote: activity.feeNote, cancellationNote: activity.cancellationNote,
+    completeness: routeCompleteness(activity),
   }
 }
 function discoverView(activity, owner, confirmed) {
@@ -61,10 +83,11 @@ function discoverView(activity, owner, confirmed) {
     routeSnapshot: {
       title: activity.routeSnapshot.title, distanceKm: activity.routeSnapshot.distanceKm, ascentM: activity.routeSnapshot.ascentM,
       points: activity.routeSnapshot.points.map(p => ({ id: p.id, name: p.name, kind: p.kind, coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null })),
-      risks: activity.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice })),
+      risks: activity.routeSnapshot.risks.map(r => riskView(r)),
     },
     equipment: activity.equipment.slice(), feeNote: activity.feeNote, cancellationNote: activity.cancellationNote,
     publishedAt: activity.publishedAt, owner, confirmed,
+    completeness: routeCompleteness(activity),
   }
 }
 function vehicleView(vehicle, contacts) {
@@ -270,12 +293,7 @@ function routeView(route, isOwner) {
     isOwner: !!isOwner,
     distanceKm: route.distanceKm, ascentM: route.ascentM,
     points: route.points.map(pointView),
-    risks: route.risks.map(r => {
-      const risk = { id: r.id, title: r.title, advice: r.advice }
-      if (r.severity) risk.severity = r.severity
-      if (r.coordinates) risk.coordinates = { lat: r.coordinates.lat, lng: r.coordinates.lng }
-      return risk
-    }),
+    risks: route.risks.map(riskView),
     track: route.track ? route.track.map(p => ({ lat: p.lat, lng: p.lng })) : undefined,
     source: route.source || 'copy',
     visibility: route.visibility || 'private',
@@ -603,8 +621,10 @@ function permittedActions(state, actor, view, visible, now) {
         add({ type: 'attendance.board', activityId, signupId: signup.id, leg: 'outbound', boarded: true, note: '' })
       }
     }
-    if (phase === 'active' && attendance.departure && attendance.departure.kind === 'joined') {
-      add({ type: 'attendance.node', activityId, signupId: signup.id, pointId: view.activity.routeSnapshot.points.length ? view.activity.routeSnapshot.points[0].id : '', note: '' })
+    if (phase === 'active' && attendance.departure && attendance.departure.kind === 'joined' && view.activity.routeSnapshot.points.length) {
+      // 空路线（发布门已允许路线整体后补）不广播「确认到达节点」：没有 pointId 可填，
+      // 挂上去就是一个点下去只换红字的按钮（本文件 :590 自述的原则）。节点补上后自然出现。
+      add({ type: 'attendance.node', activityId, signupId: signup.id, pointId: view.activity.routeSnapshot.points[0].id, note: '' })
       add({ type: 'position.report', activityId, signupId: signup.id, coordinates: { lat: 0, lng: 0 }, consent: true })
     }
     if (phase === 'gathering' || phase === 'active' || phase === 'closing') add({ type: 'incident.report', activityId, signupIds: [signup.id], kind: 'other', description: '' })
