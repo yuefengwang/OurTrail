@@ -15,6 +15,7 @@
 | `gpx.js` | 318 | yes | GPX parser + GCJ↔WGS transforms + track simplification |
 | `chart-store.js` | 14 | yes | Module-singleton bus, weather page → landscape chart page |
 | `watch-points.js` | ~180 | yes | 观察点/轨迹点组（P3 独立天气）。**注入式 storage**：`createWatchPoints(storage)` 工厂，页面注入 `draft.wxStorage`、测试注入内存 Map——它是 wx-free 的同时仍走 wx 存储 |
+| `weather-cache.js` | ~95 | yes | 天气本地缓存（2026-10-14 韧性轮新增）：查询失败时的**软降级**数据源——同一个点、同一天不久前取到过就照常展示，但必须带时效横幅（「X 小时前的数据」）。同款注入式 storage 工厂 + 假钟注入；CAP=6（单键 1MB 上限，wx storage 一条返回体约百 KB）、只收 `status==='ready'`、`MAX_AGE_MS=12h`（更旧的旧预报不冒充现在的天气）。**只在失败路径出场，不替代成功路径**；测试：`tools/weather-resilience-test.js` §1 |
 | `weather-model.js` | ~330 | yes | P4 轨迹层编排：`snap`/`nodeFacts`/`runsOf`/`annotateRuns`/`trackPoints`/`posAt`/`judge`。**不含任何天相阈值**——一律委托 `sky.js`；天相 key→颜色也在**不在**这里（`utils/` 不得反向依赖 `components/`，映射在 `components/space-time/layout.js`） |
 | `notices-page.js` | ~172 | yes | `makeNoticesPage(getActivityId, opts)` page factory（`opts.tabBarIndex` 供 Tab 页自报选中态） |
 
@@ -35,7 +36,7 @@ Consequences worth knowing before you touch these files:
 
 This trips people up, so check which family you are calling. `call()` resolves to `r.data` and **throws** on `{ok:false}` or any transport failure.
 
-- **Unwrapped payload:** `read`, `dispatch`, `getWeather`, `readOr`. The server returns `{ok:true,data}` or `{ok:false,error:{code,message}}`, so these hand you the plain object and reject with a normalized `Error` carrying `.code`（transport failures get `code = 'NETWORK'`，`-504003` / `FUNCTIONS_TIME_LIMIT` / timeout 会被正则映射成中文重新部署提示）。`readOr` 再多走一步：它自己拆掉 `r.value`，`!r.ok` 时抛错。
+- **Unwrapped payload:** `read`, `dispatch`, `getWeather`, `readOr`. The server returns `{ok:true,data}` or `{ok:false,error:{code,message}}`, so these hand you the plain object and reject with a normalized `Error` carrying `.code`（transport failures get `code = 'NETWORK'`，`-504003` / `FUNCTIONS_TIME_LIMIT` / timeout 会被正则映射成中文提示）。**用户可见话术面向户外人员**（2026-10-14 韧性轮）：`transportText` 按成因给「下一步」（重试/检查网络/重开小程序），部署指引与控制台超时配置这类开发者字眼一律不进界面——技术原文只进 `e.raw` 与 `console.warn`。回归：`tools/scenario-api-test.js` §1–2 的 `DEV_JARGON` 反向门。`readOr` 再多走一步：它自己拆掉 `r.value`，`!r.ok` 时抛错。
 - **Result-shaped `{ok, value|error}`:** `readForm`, `readTransport`, `readSensitive`, `readContact`, `readExport`。**不是因为客户端透传，而是服务端把这些动作的 payload 包进了 `okValue()`**（`domain/contracts.js:17`）——所以 `call()` 解包后拿到的仍是一个 Result，调用方必须自己判 `result.ok` 再读 `result.value`。`previewAssignments` 同形，但额外把 throw 转成 `{ok:false}`，**它是唯一永不 reject 的**。
 - **⚠️ 关键：上面每一族在传输失败时都会 reject。** `result.ok === false` 只覆盖服务端 Result 那条路；网络异常、云函数未部署、`wx.cloud` 本身报错，走的是 reject。**所以每个调用点都必须有 `.catch()`** —— 只写 `result => result.ok ? … : …` 会在「云函数没部署」时静默失败，这正是 F8 那类 bug 的成因。
 
