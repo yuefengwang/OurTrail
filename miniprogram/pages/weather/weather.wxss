@@ -25,6 +25,9 @@
 .day-phrase.danger { color: var(--danger); }
 .day-phrase.neutral { color: var(--muted); }
 
+/* 软降级横幅（连不上实时源时展示旧数据）：按钮读作链接，不抢横幅的警告色 */
+.stale-retry { display: inline-block; margin-top: 6px; padding-left: 0; padding-right: 0; text-align: left; color: var(--warning); font-weight: 600; }
+
 /* V2 时间轴卡：切换开关 + 浮条 + 图注 */
 .tl-viewseg { display: flex; gap: 6px; margin: 4px 0 8px; }
 .seg-btn {

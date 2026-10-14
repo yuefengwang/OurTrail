@@ -21,6 +21,10 @@ const agenda = require('../../utils/agenda')
 const cond = require('../../utils/conditions')
 const RS = require('../../utils/route-schedule')
 const WP = require('../../utils/watch-points')
+// 天气本地缓存：查询失败时的软降级数据源（注入 draft.wxStorage，测试可换内存适配器）
+const WC = require('../../utils/weather-cache')
+const wCache = WC.createWeatherCache(draft.wxStorage)
+const ageText = WC.ageText
 // Weather V2：Cloud Field（多高度云量剖面）——适配器 + 冻结 renderer（POC 已验证）
 const CFF = require('../../utils/cloud-field-svg.js')
 const WCFF = require('../../utils/weather-cloud-field.js')
@@ -54,6 +58,11 @@ const VIEW_HW = 11.5
 const CHART_DAYS = 7
 // 云函数只认 'YYYY-MM-DD'，任何进 getWeather 的日期都先过这道闸
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+// 天气查询的自动重试：读操作可安全重试（云端有 30 分钟缓存兜底，重试多数命中缓存），
+// 超时/断网/气象服务瞬时故障不该让用户对着一面错误墙自己点重试。间隔 1.2s/2.6s——
+// 够一次冷启动缓过来，又不让人久等；切点/切日会使令牌失效，旧链路结果作废。
+const WEATHER_ATTEMPTS = 3
+const WEATHER_RETRY_DELAYS = [1200, 2600]
 
 // （V2）当日安全提示与评级装配已迁至 utils/conditions.js：buildCallouts（含 WMO 雪码修复）
 // 与 overallGrade/starsFor。本页只消费其产出，不再持有安全规则的字面副本。
@@ -126,6 +135,9 @@ Page({
     providerLabel: '',
     emptyTitle: '',
     emptyDetail: '',
+    emptyKind: 'empty',
+    retryNote: '',
+    weatherStale: null,
     isOwner: false,
     // 节点抵达日程（需求：按轨迹标注点判断第几天抵达）
     schedule: [],
@@ -437,6 +449,7 @@ Page({
       chartPick: null, hourChip: null, agenda: [],
       unified: null, oiCard: null, oiHorizon: null,
       condOverall: null, condSilent: null, condCards: [], openEvidence: {},
+      emptyKind: 'empty', retryNote: '', weatherStale: null,
     }
     // 兜底：日期尚未落定时不外呼（云函数会回"日期无效"，那句话对用户没意义）。
     // resolveDate 兜底链必然产出合法日期，收敛一次即可，不会循环。
@@ -454,27 +467,109 @@ Page({
       this.applyWeather(Object.assign({}, cached), point, reset)
       return
     }
+    this._wxToken = (this._wxToken || 0) + 1
+    this.runWeatherFetch(point, reset, this._wxToken, 0)
+  },
+
+  // 一次尝试；瞬时故障（传输层 NETWORK / 云端 unavailable）按 WEATHER_ATTEMPTS 自动重试。
+  // token 用于作废旧链路：用户切点/切日后，迟到的响应与重试都不许再落页面。
+  runWeatherFetch(point, reset, token, attempt) {
     const fetching = this.mode === 'activity'
       ? api.getWeather(this.activityId, point.id, this.data.date)
       : api.getWeatherByPoint(point.coordinates.lat, point.coordinates.lng, this.data.date)
     fetching.then(result => {
+      if (token !== this._wxToken) return
       if (result.status !== 'ready') {
-        this.setData(Object.assign({}, reset, {
-          loadingWeather: false,
-          emptyTitle: result.status === 'out_of_range' ? '暂不展示天气数字' : '天气暂不可用',
-          emptyDetail: result.status === 'out_of_range'
-            ? '所选日期超出今天起14天的预报范围。请保留日期，临近出发再核实。'
-            : result.message || '请稍后重试。',
-        }))
+        // out_of_range 是确定性业务态（日期超出 14 天），重试没有意义；unavailable 是瞬时故障
+        if (result.status === 'out_of_range' || attempt >= WEATHER_ATTEMPTS - 1) {
+          this.showWeatherFailure(result.status === 'out_of_range' ? 'range' : 'service', result, point, reset, attempt)
+          return
+        }
+        this.scheduleWeatherRetry(point, reset, token, attempt)
         return
       }
-      this._lastResult = Object.assign({ pointId: point.id }, result)
-      const _co = point.coordinates || {}
-      this._oiCoords = { lat: Number.isFinite(_co.lat) ? _co.lat : null, lng: Number.isFinite(_co.lng) ? _co.lng : null }
-      this.applyWeather(result, point, reset)
-    }).catch(e => this.setData(Object.assign({}, reset, {
-      loadingWeather: false, emptyTitle: '天气暂不可用', emptyDetail: api.errorText(e),
-    })))
+      this.onWeatherReady(result, point, reset)
+    }).catch(e => {
+      if (token !== this._wxToken) return
+      if (e && e.code === 'NETWORK' && attempt < WEATHER_ATTEMPTS - 1) {
+        this.scheduleWeatherRetry(point, reset, token, attempt)
+        return
+      }
+      this.showWeatherFailure('error', { error: e }, point, reset, attempt)
+    })
+  },
+
+  scheduleWeatherRetry(point, reset, token, attempt) {
+    this.setData({ retryNote: '网络不太稳，正在重试（第 ' + (attempt + 1) + ' 次）…' })
+    setTimeout(() => {
+      if (token !== this._wxToken) return
+      this.runWeatherFetch(point, reset, token, attempt + 1)
+    }, WEATHER_RETRY_DELAYS[attempt])
+  },
+
+  onWeatherReady(result, point, reset) {
+    wCache.put(this.weatherScope(point), this.data.date, Object.assign({}, result, { pointId: point.id }))
+    this._lastResult = Object.assign({ pointId: point.id }, result)
+    const _co = point.coordinates || {}
+    this._oiCoords = { lat: Number.isFinite(_co.lat) ? _co.lat : null, lng: Number.isFinite(_co.lng) ? _co.lng : null }
+    this.applyWeather(result, point, reset)
+    // 云端陈旧兜底（外呼失败但给了 12 小时内的旧预报）：照常展示，但必须说清不是实时数据
+    if (result.stale) {
+      this.setData({
+        weatherStale: {
+          text: '实时数据没取到，显示的是 ' + ageText(Date.now() - Date.parse(result.staleAt)) +
+            ' 的预报。点「重新查询」再试一次。',
+        },
+      })
+    }
+  },
+
+  // 缓存的点身份：id + 2dp 坐标网格（与云端 weather_cache 同口径）。换点换日期都不误命中。
+  weatherScope(point) {
+    const c = point.coordinates || {}
+    const lat = Number.isFinite(c.lat) ? c.lat.toFixed(2) : 'na'
+    const lng = Number.isFinite(c.lng) ? c.lng.toFixed(2) : 'na'
+    return point.id + '@' + lat + ',' + lng
+  },
+
+  // 全部尝试失败后的呈现。优先级：同点同日的本地缓存（软降级，数据照常展示）>
+  // 分场景的错误文案。缓存路径**不写 _lastResult**——否则随后的重试会被 covers()
+  // 直接复用旧数据，用户点「重新查询」也拿不到新数据。
+  showWeatherFailure(kind, payload, point, reset, attempt) {
+    const hit = wCache.get(this.weatherScope(point), this.data.date)
+    if (hit && hit.ageMs <= wCache.MAX_AGE_MS) {
+      this.applyWeather(hit.result, point, reset)
+      this.setData({
+        loadingWeather: false, retryNote: '',
+        weatherStale: {
+          text: '没能连上气象服务（已重试 ' + attempt + ' 次）。先显示 ' + ageText(hit.ageMs) +
+            ' 取过的数据，连上后再点「重新查询」刷新。',
+        },
+      })
+      return
+    }
+    const copy = kind === 'range'
+      ? {
+        emptyTitle: '暂不展示天气数字',
+        emptyDetail: '所选日期超出今天起14天的预报范围。请保留日期，临近出发再核实。',
+      }
+      : kind === 'service'
+        ? {
+          emptyTitle: '气象服务暂时连不上',
+          emptyDetail: '不是路线或坐标的问题，是数据源临时故障。稍等再点「重新查询」，通常几分钟内恢复。',
+        }
+        : kind === 'error' && payload.error && payload.error.code === 'NETWORK'
+          ? {
+            emptyTitle: '天气没取回来',
+            emptyDetail: '网络不太稳，山里常见。已自动重试也没连上；点下面按钮再试，或换个信号好的地方。',
+          }
+          : { emptyTitle: '天气暂不可用', emptyDetail: api.errorText(payload.error) || '请稍后重试。' }
+    this.setData(Object.assign({}, reset, {
+      loadingWeather: false, retryNote: '',
+      emptyKind: kind === 'range' ? 'empty' : 'error',
+      emptyTitle: copy.emptyTitle,
+      emptyDetail: copy.emptyDetail,
+    }))
   },
 
   // 把返回体装配成页面数据。detail 在此从 series 里按所选日切出（云端也返回 detail，
@@ -578,7 +673,9 @@ Page({
       loadingWeather: false,
       emptyTitle: '',
       emptyDetail: '',
-      updatedAt: F.dtFull(result.updatedAt),
+      // 陈旧兜底时 updatedAt 取数据本身的取数时间，不取本次响应时间——
+      // 否则页脚会拿"刚刚生成的响应"冒充"刚刚取的预报"
+      updatedAt: F.dtFull(result.stale ? result.staleAt : result.updatedAt),
       providerLabel: (result.provider && result.provider.label) || 'Open-Meteo',
       dayCards: this.buildDayCards(result.days || [], point.coordinates),
       callouts: cond.buildCallouts(day, detail, elevation),

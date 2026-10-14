@@ -327,6 +327,10 @@ function pointResponse(forecast) {
     series: forecast.series || [],
     cloudLevels: forecast.cloudLevels || null,
     pointElevation: forecast.elevation,
+    // 陈旧兜底透传：index.js 的 getCachedForecast 在外呼失败时可能返回 12 小时内的
+    // 旧预报（带 stale/staleAt）。旧客户端不读这两个键；新客户端据此标注时效。
+    stale: !!forecast.stale,
+    staleAt: forecast.stale ? forecast.staleAt : undefined,
   }
 }
 
