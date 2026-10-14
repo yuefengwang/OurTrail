@@ -33,6 +33,13 @@ const ok = (data) => Promise.resolve({ result: { ok: true, data } })
 const srvErr = (code, message) => Promise.resolve({ result: { ok: false, error: { code, message } } })
 async function rejects(p) { try { await p; return null } catch (e) { return e } }
 
+// 用户可见话术的反向门：主要使用者是户外人员，界面上不许出现部署/控制台/错误码这类
+// 只有开发者能行动的字眼；技术原文只能待在 e.raw 里（排查时按 raw 取）。
+const DEV_JARGON = /部署|上传|控制台|cloudfunctions|trailApi|504003|FUNCTIONS_TIME_LIMIT|栈|require stack/i
+function noJargon(e) {
+  return !!e && !DEV_JARGON.test(e.message || '')
+}
+
 async function main() {
   // ---- 1. 协议解包 ----
   section('1. 协议解包：成功 / 服务端错误 / 旧协议兼容')
@@ -60,8 +67,8 @@ async function main() {
   {
     const env = freshApi(() => Promise.resolve({}))
     const e = await rejects(env.api.read({ kind: 'home' }))
-    check('未部署（无 result）→ 提示部署话术',
-      !!e && /没有返回结果/.test(e.message) && /部署/.test(e.message), e && e.message)
+    check('未部署（无 result）→ 话术面向用户（重试/重开小程序），不含部署指引',
+      !!e && /没有响应/.test(e.message) && /小程序/.test(e.message) && noJargon(e), e && e.message)
   }
   {
     const env = freshApi(() => Promise.resolve({ result: { errMsg: 'cloud exec failed' } }))
@@ -74,27 +81,31 @@ async function main() {
   {
     const env = freshApi(() => Promise.reject({ errMsg: 'errCode: -404011 cloud function not found' }))
     const e = await rejects(env.api.read({ kind: 'home' }))
-    check('not found → 部署话术', !!e && e.code === 'NETWORK' && /尚未部署/.test(e.message) && /上传并部署/.test(e.message), e && e.message)
+    check('not found → 「服务连不上 + 重开小程序」，不含部署指引',
+      !!e && e.code === 'NETWORK' && /连不上/.test(e.message) && /小程序/.test(e.message) && noJargon(e), e && e.message)
+    check('原文进 e.raw（排查按 raw 取，不占界面）', !!e && /not found/i.test(e.raw || ''), e && e.raw)
   }
   {
     const env = freshApi(() => Promise.reject({ errMsg: '-504003 FUNCTIONS_TIME_LIMIT_EXCEEDED' }))
     const e = await rejects(env.api.read({ kind: 'home' }))
-    check('-504003 → 超时处置话术（20 秒配置指引）', !!e && e.code === 'NETWORK' && /超时/.test(e.message) && /20 秒/.test(e.message), e && e.message)
+    check('-504003 → 「等太久没连上 + 再试一次」，不教用户改控制台超时',
+      !!e && e.code === 'NETWORK' && /没连上/.test(e.message) && /再试一次/.test(e.message) && noJargon(e), e && e.message)
   }
   {
     const env = freshApi(() => Promise.reject({ errMsg: 'request timed out' }))
     const e = await rejects(env.api.read({ kind: 'home' }))
-    check('timed out 同样归类超时', !!e && e.code === 'NETWORK' && /超时/.test(e.message), e && e.message)
+    check('timed out 同样归类超时（话术同族）', !!e && e.code === 'NETWORK' && /没连上/.test(e.message) && noJargon(e), e && e.message)
   }
   {
     const env = freshApi(() => Promise.reject({ errMsg: 'boom' }))
     const e = await rejects(env.api.read({ kind: 'home' }))
-    check('其他 errMsg → 云函数调用失败：boom', !!e && e.code === 'NETWORK' && e.message === '云函数调用失败：boom', e && e.message)
+    check('其他 errMsg → 通用网络话术，英文原文不进界面', !!e && e.code === 'NETWORK' && noJargon(e) && !/boom/.test(e.message), e && e.message)
+    check('英文原文仍可在 e.raw 取到', !!e && e.raw === 'boom', e && e.raw)
   }
   {
     const env = freshApi(() => Promise.reject({}))
     const e = await rejects(env.api.read({ kind: 'home' }))
-    check('空 errMsg → 网络异常话术', !!e && e.code === 'NETWORK' && e.message === '网络异常，请稍后再试', e && e.message)
+    check('空 errMsg → 网络不太稳话术', !!e && e.code === 'NETWORK' && e.message === '网络不太稳，请稍后再试。', e && e.message)
   }
   {
     const env = freshApi(() => Promise.reject(Object.assign(new Error('revision conflict'), { code: 'CONFLICT' })))

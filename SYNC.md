@@ -1,4 +1,4 @@
-# OurTrail 原型落地小程序 · 进度同步文档
+﻿# OurTrail 原型落地小程序 · 进度同步文档
 
 > 多 agent 协同的工作同步文件。每完成一个里程碑更新一次。
 > 原型：`docs/prototypes/ourtrail-app`（React+Vite 高仿真原型，含完整 domain 层）。
@@ -664,3 +664,41 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
 - 2026-10-10（**Weather V2 第九~十二轮 + 门禁修引信 → master 集成：候选已建立并全绿，远端推送阻塞**）：候选分支 `win/integrate-weather-v2-r12`，合并提交 **`6e646d1`**（`origin/master` = `abf08f0` 是 HEAD 祖先 ⇒ 零冲突面，一次 `--no-ff` 完成，7 个提交边界原样保留，无 squash / 无 rebase / 无 force）。**合并提交树哈希 `40e41c77…` 与功能分支 `fa28986` 逐字节相同** ⇒ 合并没夹带第三个内容变化。**门禁全部从候选跑**：`check` + `check-handlers` exit 0；63 个可无头套件逐套独立跑 **63 套 exit 0 / 4371 断言 / 失败 0**（本跑连偶发项 `outdoor-intelligence-ui` 都绿，仍按既有口径登记为偶发，不因一次绿宣布消失）。生产文件只有 6 个客户端文件（`utils/{sky,conditions,agenda}.js` + `pages/weather/weather.{js,wxml,wxss}`），**`cloudfunctions/` 改动文件数实测 0** ⇒ **不需要重新部署**；全 diff 里与阈值常量相关的增删行只有 `+const LIGHT_LIMITS = { LOW_CLOUD_MAX: 40 }` 一条（把光染一直在用的 `low<40` 命名出来，不是新数），`300/80/200/2200/±600/2000–6000` 全部未动。**推送阻塞**：`git fetch origin` 报 `connect to host 192.168.3.15 port 22: Connection timed out`（exit 128），且 TCP22 实测 `192.168.3.15` / `192.168.2.22` / `192.168.1.101` 全部 TIMEOUT、`yfwangmacbook-pro.local` ENOTFOUND ⇒ 不是"IP 换了改 remote 就行"，是中继主机整体不可达。按 PARALLEL_DEV 与本轮任务书边界**未绕过、未强推、未动 master**（本地与远端都仍是 `abf08f0`），恢复后要做的两条命令与复核口径写在报告里；**另一台在合并落地后必须立刻 `git pull`**，否则会基于 `abf08f0` 继续写成分叉。报告 `docs/weather-ux/qa/v2-integration-r9-r12-2026-10-10.md`，候选门禁日志 `…-10-10.gate-sweep.log`。
 
 - 2026-10-13（**上一条登记的推送阻塞已解除：第九~十二轮 + 门禁修引信 落到 master，三端核验一致**）：中继主机恢复后 `git fetch origin` exit 0 且**远端未被别人前移**（`origin/master` 仍 `abf08f0`）⇒ 按上一条"先确认前移再推"的口径直接快进：`git merge-base --is-ancestor origin/master master` 成立、`git push origin master`（**无 `--force`**）exit 0，`abf08f0..1108bb6`，post-receive 回显「中转成功：已同步到 GitHub」。推送前复跑 `check` + `check-handlers` 均 exit 0，并实测 `git diff --stat 6e646d1 1108bb6` = **3 files / +191 / −0** ⇒ 相对已全量跑绿的候选只多文档，§2 那批读数继续适用。三端复核（中继 / GitHub 直连 / 本地 `master`）逐字节相同 `1108bb60d104…`。**与 §5 计划的一处偏差如实记下**：计划里的 `git branch -f master origin/master` 未执行，因为本地 master 在通道恢复前就已快进到 `1108bb6`，那一步的前提状态不成立了。**另一台必须现在 `git pull`**（铁律 5）。`cloudfunctions/` 改动文件数实测 0 ⇒ **不需要重新部署**。**顺带查出一条仓库设置问题（未擅自改动）**：GitHub 的**默认分支是孤儿 `main`（`30a0eca`）**，与 `master` 无共同祖先（`git merge-base` 不存在），是 2026-09-29 中转链路验证的 3 个提交、相对 master 为 916 files / +3 / −137,994 ⇒ 网页首屏、PR 默认基线、Actions 默认触发都指向陈旧树；改默认分支属 GitHub 侧设置而本机 `gh` 未登录，删除 `main` 另属破坏性操作，两者都留用户裁决。报告新增 §5b（实际执行与三端核验）+ §4 前向指针（原文不删，铁律 29③）。
+
+- 2026-10-13（**V2.0 路线库：路线从"活动副产品"变成独立资产（四个切片全部落地）**，基线 5af3083，分支 win/route-library-v2，**未推送、未并入 master**）：**需重新部署 trailApi：是**——cloudfunctions/trailApi 改了 6 个 domain 文件 + index.js（新增第 14 个 action 
+eadRoutes 与 
+oute.create/update/delete 三条命令，39→42）。spec docs/superpowers/specs/2026-10-13-route-library-v2.md。
+  **为什么做**：勘察发现 ot_routes 集合一直在被写（ctivity.create 时 persistPrivateRoute 把快照深克隆成私有路线）但**从未被读出给客户端**——路线是活动的影子，用户看不见、管不了。V2 文档 §5 的路线库从此有地基。
+  **切片一（领域层）**：新增 domain/routes.js（CRUD：全量替换语义同 ctivity.edit；删除前查活动引用，被引用回 CONFLICT 不级联——活动里的 routeSnapshot 是冻结副本，删资产不动历史；owner 双层授权 canExecute + handler，与 ctivity.js:99 同构）。schema：Route 加资产级可选字段 updatedAt/source/visibility/sharedWith、RouteRisk 加 severity/coordinates——**存量路线（快照深克隆产物）缺键仍合法**，specOpt 保证零迁移。isibility 由 sharedWith 派生（有名单才 shared），不允许"private+有人"（协作者静默失权）或"shared+空名单"（以为已分享）的矛盾态。selectors.selectRoutes + 
+eadRoutes：列表按 updatedAt 倒序（并列按 id 定序），旧路线读缺省 copy/private/null。**trailApiLab domain 六文件同步**（它写同一批 ot_* 集合，schema 必须一致；lab 的 index.js 是独立预演工具，不走 selectors，无需动）。
+  **切片二（列表/详情）**：pages/routes + pages/route + 「我的」页入口。共享走 
+oute.update 全量替换（页面必须带回原名单——缺省即清空）；
+outeView 增 isOwner 显式投影，客户端不拿 sharedWith 存在性反推 owner。样式零新 token。
+  **切片三（创建/编辑 + 一键发起）**：pages/route-edit（标题/里程/爬升/节点/风险/GPX 导入，复用 utils/gpx.js 与编辑器既定节点交互；协作者入口即拒）。活动编辑器支持 ?routeId= 预填：路线只带名称/节点/风险/轨迹，时间名额集合仍由发起人补；**预填草稿用独立键 
+oute-<id>**——否则上一次空白新建的旧草稿会在 reload 里盖掉用户刚选的路线（draft 优先于种子）；banner 明示"这里的改动不影响路线库"。
+  **切片四（分段天气）**：路线详情逐节点天气，复用 getWeatherByPoint（**零云函数改动**），节点无坐标/超 14 天窗/查询失败各有明确文案；可选「按出发时刻推算」——
+oute-schedule 把 GPX 时间差映射到出发钟点，各节点按自己的抵达日查天气（V2 文档 §6 落地）。
+  **门禁与自证**：
+outes-test 68 断言（CRUD/越权/删除引用保护/共享名单/幂等回放/REQUEST_REUSED/revision CAS/投影缺省/旧路线兼容/isOwner）；变异自证 9 条 **8 抓 1 漏网**——M1/M6 单层授权未抓是**防御纵深的预期行为**（另一层仍拦），组合变异 M9（双层同时拆）被抓到 ⇒ 这对检查是承重的，漏网记入提交信息不强行制造红。全量 67 个 *-test.js：62 绿 + 3 个设备驱动套件无自动化会话（ETIMEDOUT，记 INCONCLUSIVE）+ 天气线常驻红 outdoor-intelligence-ui（**已在 master 干净 worktree 复现同行号 TypeError，确认先于本功能存在**）。
+  **未做/留待**：真机 E2E 未跑（需重开共享开发者工具会话，按规矩未擅自执行）；客户端预填映射与页面交互属设备验证范围；并行会话在 12:37 把一条 docs 提交落在了本分支（PARALLEL_DEV 警告过的并行陷阱，内容为集成收口、与代码无冲突，本功能的两个提交干净叠在其上）。
+
+- 2026-10-13（**V2.0 路线库真机 E2E case spec v1**，分支 win/route-library-v2，**未推送**）：docs/testing/route-library-e2e-cases.md——38 条用例（A 入口与列表 / B 创建 / C 编辑 / D 详情与地图 / E 共享协作 / F 删除 / G 一键发起活动 / H 分段天气 / I 旧路线兼容 / J 会话与恢复），驱动方式=**IDE 服务端口 HTTP（33278，cli 生命周期）+ 自动化端口（9420，miniprogram-automator）+ 小程序内 wx.cloud.callFunction 回读（BUSINESS 证据）**，harness 复用 	ools/e2e-ui-test.js（账本 	ools/e2e-result.js，不新造第二套驱动）。**环境门 G3 是部署门**：
+eadRoutes 返回「未知操作」⇒ 整轮 INCONCLUSIVE，不许把没部署记成产品红。fixture 走云端 dispatch 建档（[E2E] 前缀 + finally 清理，先删活动再删路线），地图/时刻推算因此有确定性数据、**不依赖 GPX 原生文件对话框**。明确不覆盖并记 uiUnverified 的四项：GPX 文件选择全链路、协作者第二身份视角、微信能力按钮、地图像素。驱动脚本 	ools/e2e-routes-test.js 尚未实现——本文件是其施工图（含实现索引：harness 复用→环境门→fixture→A~J 顺序（J 会推进 revision 放最后）→清理进 finally→选择器一律 $$ 且每轮重查→overlay 内容从宿主作用域查）。
+
+- 2026-10-13（**V2.0 路线库真机 E2E 首跑：41 PASS / 0 FAIL / 1 INCONCLUSIVE / 4 uiUnverified，OVERALL=INCONCLUSIVE**）：按 docs/testing/route-library-e2e-cases.md（46 条，spec 原文"38 条"为笔误、已修）执行，驱动脚本在仓库外（mp-auto/routes-driver/run.js ~1100 行，零仓库依赖），**仓库零修改**（git status 仅报告目录未跟踪——prompt 铁律自证通过）。报告 docs/testing/reports/route-library-e2e-2026-10-13.md。
+  **首版结论越级已修正**：agent 首版记 OVERALL: PASS，但按 e2e-result-semantics.md §四规则 2（存在 uiUnverified ⇒ 该维度 INCONCLUSIVE、OVERALL 不得为 PASS），项目 agent 当日机械修正为 **INCONCLUSIVE**（reason：4 项 uiUnverified + 1 项环境 INCONCLUSIVE，**无一条是产品失败**）。教训：结论措辞是"部分未验证"被洗成"全部通过"的通道，比假红更危险。
+  **产品信号**：0 FAIL。地图 wx:if 门槛（D3）、旧路线缺省（I1/I2）、删除引用保护 CONFLICT（F2）、共享全量替换保名单（C4）、编辑器预填（G1/G2）、快照冻结（G4/G5）、天气无坐标/超窗文案（H2/H6）、草稿恢复（J1）全部真机 PASS；清理两轮收敛到 [E2E] 路线 0 条、活动 0 条。
+  **未覆盖（如实）**：G3「编辑器补齐时间人数集合点→保存草稿」的真机 UI 链路未走完（picker 交互复杂，BUSINESS 由 G4 覆盖）⇒ 「一键发起活动」真机只验到预填，没验到存草稿；A3 空态、E1/G6 协作者视角（单账号通道）、H6 天气 provider 通断均记 uiUnverified/INCONCLUSIVE。GPX 文件对话框按 spec 预设不覆盖。
+  **驱动侧 4 个问题已修（均在仓库外脚本，未动生产）**：列表读 pointCount 而非 points；ctivity.create 的 
+outeSnapshot 必填需从路线构建；automator WebSocket 偶发超时重跑；节点展开改 callMethod('togglePoint') + 状态预检。
+
+- 2026-10-14（**天气韧性与用户话术：用户报“天气页常常超时、报错面向开发者”（第十三轮，用户选 A：先治超时与话术，不动任何天气判据）**，基线 8c1c57b，分支 win/route-library-v2，**未推送、未并入 master**）：**需重新部署 trailApi：是**——`cloudfunctions/trailApi/index.js` 与 `lib/weather.js` 已改（陈旧兜底 + 活动模式瘦身 + stale 透传）；客户端 `pages/weather`、`utils/api.js` 与新增 `utils/weather-cache.js` 属热更载范围。spec `docs/superpowers/specs/2026-10-14-weather-resilience-and-copy.md`。
+  **根因（四层，按用户等待的时序排）**：① 活动模式每次进天气页 = `api.read` + `getWeather` 两次云调用，后者还要 `loadState` 全量加载 15 个集合，只为找一个活动的坐标（SYNC.md 记载过“当年 3 秒超时的成分之一”就是这种每请求全量动作）；② 外呼 Open-Meteo 10 秒超时即整体失败，**没有陈旧兜底**——30 分钟新鲜窗之外一律错误墙；③ 客户端零重试，瞬时故障也要用户自己点；④ 失败话术是开发者话术（“云函数执行超时（-504003）：请重新上传部署 cloudfunctions/trailApi…把超时改为 20 秒”），户外人员在现场没有任何可行动作。
+  **修法（阈值改动数 0，天气判据零改动）**：
+  - 话术（`utils/api.js`）：`transportText` 按成因给“下一步”（重试 / 检查网络 / 重开小程序），部署指引与控制台超时配置一律退出界面；技术原文只进 `e.raw` 与 `console.warn`。错误码语义不变（NETWORK/INVALID_INPUT/…，`failure-semantics` 37 断言照旧全绿）。
+  - 自动重试（`pages/weather`）：读操作可安全重试（云端 30 分钟缓存兜底，重试多数命中缓存），瞬时故障（NETWORK / 云端 unavailable）自动重试 2 次（1.2s / 2.6s），期间显示“正在重试（第 N 次）”；`out_of_range` 是确定性业务态**不重试**；切点/切日以令牌作废旧链路，迟到响应不许覆盖新点数据。
+  - 软降级（新增 `utils/weather-cache.js`，注入式 storage 工厂 + 假钟，wx-free 可测）：全部失败后，同点（id@2dp 网格，与云端同口径）同日 12 小时内的旧预报照常展示，横幅写明“X 小时前的数据 + 重新查询”；CAP=6（wx 单键 1MB 上限）；**不写 `_lastResult`**——否则重试会被 `covers()` 直接复用旧数据，用户点“重新查询”也拿不到新数据。
+  - 云端陈旧兜底（`index.js` `getCachedForecast`）：外呼失败时返回 12 小时内的旧预报并标 `stale`/`staleAt`，两个天气 action 透传；页面据此把页脚“更新时间”改成数据的实际取数时间（不拿本次响应时间冒充新鲜）。
+  - 活动模式瘦身（`actionGetWeather`）：改按 docId 直读 `ot_activities`（`recordKey` 对 activities 就是 `record.id`，与 `loadCollection` 同一份文档），**15 集合全量加载归零**；读故障与“文档不存在”分开（后者 NOT_FOUND，前者原样抛出归 INTERNAL，不冒充找不到——`ensureMeta` 的同款纪律）。
+  **门禁与自证**：新增 `tools/weather-resilience-test.js` 45 断言（缓存容量/时效/只收 ready/深拷贝；重试次数与“正在重试”提示；软降级三守则：展示、时效横幅、不写 `_lastResult`；12h 边界；out_of_range 不重试；令牌作废；云端 stale 三态：新鲜零外呼 / 3h 旧缓存兜底 / 13h 不兜底；活动模式只碰 2 个集合；读故障≠NOT_FOUND）。`scenario-api-test` §1–2 增加 `DEV_JARGON` 反向门（+2）。全量复跑实测 **66 套件 / 4498 断言**：65 套 exit 0，**1 条红先于本轮存在**——`tools/e2e-golden-path-test.js` GP-01（NO_REVISION）在 `git stash` 干净基线上同款复现（12 passed / 2 failed、同行号）⇒ 归属清楚，未擅动公共门禁，留用户裁决；天气线常驻非确定性红 `outdoor-intelligence-ui` 本轮复跑 47/0。
+  **未做/留裁决**：真机未跑（需重开共享开发者工具会话，按规矩未擅自执行）；`e2e-golden-path` 的 GP-01 红未修（公共门禁夹具问题）；Open-Meteo 配额/节流（F-9）仍旧未做；客户端缓存目前只在失败路径出场，**未做** stale-while-revalidate 首屏（成功路径零变化是这轮的验收前提）。

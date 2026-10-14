@@ -95,6 +95,17 @@
       />
     </view>
 
+    <!-- C-2 路线库入口（V2.0）：走过的路线攒成资产，发起活动时复用 -->
+    <view class="card">
+      <view class="list-row" hover-class="button-hover" bindtap="onOpenRoutes">
+        <view class="list-main">
+          <text>路线库</text>
+          <text class="list-sub">走过的路线攒在这里，节点、风险、轨迹都在，下次发起活动直接复用</text>
+        </view>
+        <text class="muted">›</text>
+      </view>
+    </view>
+
     <!-- D 同行与安全：摘要行只读，编辑进 sheet（09 §3） -->
     <view class="card stack-gap3">
       <view class="card-header">

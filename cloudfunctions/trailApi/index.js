@@ -12,7 +12,7 @@ const { reduceCommand } = require('./domain/commands')
 const { assertInvariants } = require('./domain/invariants')
 const {
   selectView, selectSensitive, selectContact, selectSignupForm, selectTransport,
-  selectAccess, selectNoticeManagement, selectExport,
+  selectAccess, selectNoticeManagement, selectExport, selectRoutes,
 } = require('./domain/selectors')
 const { planAssignments } = require('./domain/allocation')
 
@@ -103,6 +103,21 @@ async function actionReadExport(payload, openid) {
   return selectExport(state, { userId: openid }, payload.activityId, payload.signupIds || [], payload.mode, String(payload.purpose || ''), nowIso())
 }
 
+// V2 路线库：我的路线列表（无 routeId）与单条路线（带 routeId）。
+// 形状在入口就判：routeId 缺省/非字符串按「列表」处理，非字符串一律 INVALID_INPUT，
+// 不留给 selector 抛 TypeError（那会被归类成 INTERNAL，而这是客户端入参问题）。
+async function actionReadRoutes(payload, openid) {
+  let routeId = null
+  if (payload && payload.routeId !== undefined && payload.routeId !== null) {
+    if (typeof payload.routeId !== 'string' || !payload.routeId) fail('INVALID_INPUT', '路线标识无效。')
+    routeId = payload.routeId
+  }
+  const state = await store.loadState(db)
+  const result = selectRoutes(state, { userId: openid }, routeId)
+  if (!result.ok) fail(result.error.code, result.error.message)
+  return Object.assign({ revision: state.revision, now: nowIso() }, result.value)
+}
+
 async function actionPreviewAssignments(payload, openid) {
   const state = await store.loadState(db)
   const result = planAssignments(state, { userId: openid }, payload.activityId, nowIso())
@@ -149,22 +164,58 @@ async function actionDispatch(payload, openid) {
 
 /* ---------- 天气（真实 Open-Meteo，带缓存） ---------- */
 
+// 陈旧兜底时长：外呼失败时，12 小时内的旧预报仍好过一面错误墙（云层时过境迁，
+// 更旧的不再冒充"现在的天气"）。命中的返回体带 stale/staleAt，客户端据此标注时效。
+const STALE_MAX_MS = 12 * 3600000
+
 async function getCachedForecast(lat, lng, date) {
   const key = weatherCacheKey(lat, lng, date)
   const cached = await db.collection('weather_cache').doc(key).get().catch(() => null)
   if (cached && cached.data && Date.now() - new Date(cached.data.fetchedAt).getTime() < 30 * 60000) {
     return cached.data.forecast
   }
-  const forecast = await fetchForecast(lat, lng, date)
-  await db.collection('weather_cache').doc(key).set({
-    data: { forecast, fetchedAt: new Date() },
-  }).catch(() => null)
-  return forecast
+  try {
+    const forecast = await fetchForecast(lat, lng, date)
+    await db.collection('weather_cache').doc(key).set({
+      data: { forecast, fetchedAt: new Date() },
+    }).catch(() => null)
+    return forecast
+  } catch (e) {
+    // Open-Meteo 超时/5xx：山里信号与服务抖动是常态，有旧数据就软降级——
+    // 页面显示"X 小时前的预报"加重新查询入口，而不是"天气暂不可用"的错误墙
+    const age = cached && cached.data
+      ? Date.now() - new Date(cached.data.fetchedAt).getTime() : Infinity
+    if (cached && cached.data && cached.data.forecast && age < STALE_MAX_MS) {
+      return Object.assign({}, cached.data.forecast, {
+        stale: true,
+        staleAt: new Date(cached.data.fetchedAt).toISOString(),
+      })
+    }
+    throw e
+  }
+}
+
+// 活动模式天气只需要一个活动的路线快照。此前这里走 store.loadState（15 个集合 + meta
+// 全量读）——天气页每次进入都要为一次坐标查找付全状态加载，冷启动时段这正是
+// 用户等待与 -504003 超时的成分之一。改为按 docId 直读（recordKey 对 activities
+// 就是 record.id，与 loadCollection 读到的是同一份文档）。
+// 读故障与"文档不存在"必须分开：后者是 NOT_FOUND，前者原样抛出交 main 归类，
+// 不把"这一刻读不出来"冒充成"活动不存在"（store.ensureMeta 的同款纪律）。
+async function loadActivityDoc(activityId) {
+  if (typeof activityId !== 'string' || !activityId) return null
+  let res = null
+  let readError = null
+  try {
+    res = await db.collection(store.COLLECTIONS.activities).doc(activityId).get()
+  } catch (e) { readError = e }
+  if (res && res.data) return res.data
+  if (readError && /not exists/i.test(String((readError && (readError.errMsg || readError.message)) || ''))) return null
+  if (readError) throw readError
+  return null
 }
 
 async function actionGetWeather(payload) {
-  const state = await store.loadState(db)
-  const activity = state.activities.find(a => a.id === payload.activityId)
+  const activity = await loadActivityDoc(payload.activityId)
   if (!activity) fail('NOT_FOUND', '找不到此活动。')
   const point = activity.routeSnapshot.points.find(p => p.id === payload.pointId)
   if (!point) return { status: 'unavailable', message: '找不到该路线节点，暂时无法展示天气。' }
@@ -203,6 +254,9 @@ async function actionGetWeather(payload) {
       // Weather V2 additive：多高度云量剖面（缺失 = null，旧客户端不读，新客户端降级）
       cloudLevels: forecast.cloudLevels || null,
       pointElevation: forecast.elevation,
+      // 陈旧兜底标记：为 true 时 staleAt 是数据的实际取数时间，页面必须标注"不是实时"
+      stale: !!forecast.stale,
+      staleAt: forecast.stale ? forecast.staleAt : undefined,
     }
   } catch (e) {
     return { status: 'unavailable', message: (e && e.message) || '天气服务暂时不可用。' }
@@ -270,6 +324,7 @@ const ROUTES = {
   getWeather: actionGetWeather,
   getWeatherByPoint: actionGetWeatherByPoint,
   getPhoneNumber: actionGetPhoneNumber,
+  readRoutes: actionReadRoutes,
 }
 
 // 一次请求一行结构化日志（可观测性的唯一落点：本轮改造之前整个后端零 console 调用，

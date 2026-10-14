@@ -2,12 +2,25 @@
 'use strict'
 const { FUNC_NAME } = require('../config')
 
-// 云函数内部异常（模块缺失/未定义标识符/空指针等）会把英文堆栈直接透传到界面——
-// 翻译成可行动的话术；细节在云端日志里，不拿 require stack 消耗用户信任
+// 用户可见的失败话术。本小程序的使用者是户外人员，不是开发者：
+// 「重新上传部署 trailApi」「控制台把超时改为 20 秒」这类字眼对现场没有任何可行动作，
+// 只会让人以为工具坏了。原则：一句话说清"发生了什么 + 现在能做什么"，
+// 技术原文（errMsg/堆栈）只进 e.raw 与 console，排查时按 raw 取，不占用户界面。
 function humanizeInternal(msg) {
   return /Cannot find module|Require stack|ReferenceError|SyntaxError|TypeError|is not a function|is not defined/.test(msg)
-    ? '云函数内部错误：请重新上传部署 trailApi 后重试；仍复现请截图反馈本提示。'
+    ? '服务临时出了点问题，请稍后再试。若反复出现，请反馈给我们。'
     : msg
+}
+// 传输层（断网 / 云函数超时 / 未部署）的统一话术：按成因给"下一步"，不给部署指引
+function transportText(errMsg) {
+  if (/not *found/i.test(errMsg)) {
+    // 云函数不在：多半是版本太旧或刚发布。对用户唯一可行动作是重试/重开小程序
+    return '服务暂时连不上。请检查网络；若刚更新过小程序，关掉再打开试试。'
+  }
+  if (/-504003|FUNCTIONS_TIME_LIMIT|timed *out/i.test(errMsg)) {
+    return '等了太久没连上服务器。山里信号不稳时容易这样，请再试一次。'
+  }
+  return '网络不太稳，请稍后再试。'
 }
 
 function call(action, data) {
@@ -16,30 +29,27 @@ function call(action, data) {
       const r = res && res.result
       if (r && r.ok) return r.data
       // 兼容 error 为字符串的旧版协议；未部署新版时能直接看出原因
-      let msg = '服务异常，请稍后再试'
+      let msg = '服务没有响应，请稍后再试。若刚更新过小程序，关掉再打开试试。'
       if (r && r.error) {
         msg = humanizeInternal(typeof r.error === 'string' ? r.error : (r.error.message || msg))
       } else if (r && r.errMsg) {
         msg = humanizeInternal(r.errMsg)
       } else if (r && r.errorMessage) {
         msg = humanizeInternal(r.errorMessage)
-      } else if (!r) {
-        msg = '云函数没有返回结果，请确认已部署最新版 trailApi'
       }
       const err = new Error(msg)
       err.code = (r && r.error && r.error.code) || 'INVALID_INPUT'
+      err.raw = r ? JSON.stringify(r).slice(0, 300) : ''
       throw err
     })
     .catch(e => {
       if (e instanceof Error && e.code) throw e
       const errMsg = (e && (e.errMsg || e.message)) || ''
-      const err = new Error(
-        /not *found/i.test(errMsg) ? '云函数 trailApi 尚未部署：请右键 cloudfunctions/trailApi →「上传并部署：云端安装依赖」'
-          : /-504003|FUNCTIONS_TIME_LIMIT|timed *out/i.test(errMsg) ? '云函数执行超时（-504003）：请重新上传部署 cloudfunctions/trailApi（config.json 已调至 20 秒），或在云开发控制台 → 云函数 → trailApi → 配置中把超时改为 20 秒'
-            : errMsg ? humanizeInternal('云函数调用失败：' + errMsg)
-              : '网络异常，请稍后再试'
-      )
+      const err = new Error(errMsg ? transportText(errMsg) : '网络不太稳，请稍后再试。')
       err.code = 'NETWORK'
+      // 技术原文不消失，只不进界面：排查时读 raw（也打一份到控制台）
+      err.raw = errMsg
+      if (errMsg) console.warn('[api] 云函数调用失败：', errMsg)
       throw err
     })
 }
@@ -85,6 +95,12 @@ function previewAssignments(activityId) {
 // getWeather 返回 {status:'ready'|'unavailable', ...}，非 Result
 function getWeather(activityId, pointId, date) {
   return call('getWeather', { activityId, pointId, date })
+}
+// V2 路线库：我的路线列表（不传 routeId）与单条路线（传 routeId）。
+// 云端直接返回 {revision, now, routes|route, referencedActivityIds?}；越权/不存在时
+// call() 抛带 code 的 Error（与 readOr 同口径，页面 catch 后自行呈现）。
+function readRoutes(routeId) {
+  return call('readRoutes', routeId ? { routeId } : {})
 }
 // P3 独立天气：按点自由查询（免活动语义）。返回体与 getWeather 的 ready 分支同形状。
 function getWeatherByPoint(lat, lng, date) {
@@ -158,5 +174,5 @@ function errorText(e) {
 module.exports = {
   call, read, readOr, dispatch, dispatchAndSync, toast, errorText,
   readForm, readTransport, readSensitive, readContact, readExport, previewAssignments, getWeather,
-  getWeatherByPoint,
+  getWeatherByPoint, readRoutes,
 }

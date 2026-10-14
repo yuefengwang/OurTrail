@@ -1,4 +1,4 @@
-// 活动编辑器（新建 / 编辑 / 从我组织的活动复制）。对应原型 screens/ActivityEditor.tsx。
+﻿// 活动编辑器（新建 / 编辑 / 从我组织的活动复制）。对应原型 screens/ActivityEditor.tsx。
 // datetime-local 用「日期 picker + 时间 picker」组合；草稿落本地存储。
 'use strict'
 const api = require('../../utils/api')
@@ -97,6 +97,8 @@ Page({
     myActivities: [],
     templateId: '',
     templateIndex: -1,
+    // 路线库预填（V2.0）：从路线库发起活动时带入的路线名（空 = 非路线预填入口）
+    fromRouteTitle: '',
     // 发布
     publishOpen: false,
     deleteDraftOpen: false,
@@ -132,16 +134,29 @@ Page({
   onLoad(options) {
     this.activityId = options.id || ''
     this.savedId = this.activityId
+    // 从路线库发起活动：路线只负责预填（名称/节点/风险/轨迹），
+    // 时间、名额、集合上车点仍由发起人在这里补（V2.0 §5.7 的分工）。
+    this.fromRouteId = options.routeId || ''
     this.reload()
   },
 
+  // 路线预填的草稿与空白新建的分开存：否则上一次空白新建的旧草稿
+  // 会在 reload 里盖掉用户刚选的路线（draft 优先于路线种子）。
+  draftKey() {
+    return this.fromRouteId ? 'route-' + this.fromRouteId : (this.activityId || 'new')
+  },
+
   reload() {
-    const draftKey = this.activityId || 'new'
+    const draftKey = this.draftKey()
     const saved = draft.getDraft(draftKey, 'activity-editor')
     const reads = this.activityId
       ? api.read({ kind: 'activity', activityId: this.activityId, perspective: 'organizer' })
       : Promise.resolve({ view: { kind: 'denied' } })
-    reads.then(res => {
+    // 路线预填读与活动读并行；路线读失败不阻塞编辑器（降级空白新建，由 banner 缺位体现）
+    const routeRead = (this.fromRouteId && !this.activityId)
+      ? api.readRoutes(this.fromRouteId).catch(() => null)
+      : Promise.resolve(null)
+    return Promise.all([reads, routeRead]).then(([res, routeRes]) => {
       let initial = null
       let phase = 'draft'
       let denied = ''
@@ -166,6 +181,25 @@ Page({
           }
         }
       }
+      // 路线种子：只在新活动态注入（编辑态活动自带快照，路线参数无意义）。
+      // revision 取这次路线读的值——新建态没有别的读可作 CAS 基线（与 loadMyActivities 同口径）。
+      let fromRouteTitle = ''
+      if (routeRes && routeRes.route && !this.activityId && !denied) {
+        const r = routeRes.route
+        fromRouteTitle = r.title || ''
+        this.routeId = r.id
+        if (Number.isInteger(routeRes.revision)) this.revision = routeRes.revision
+        initial = {
+          title: '', description: '', organizerIntro: '',
+          startAt: null, endAt: null, deadlineAt: null,
+          acceptingSignups: true, capacity: 24, approvalMode: 'manual', routeId: r.id,
+          routeSnapshot: {
+            title: r.title, distanceKm: r.distanceKm, ascentM: r.ascentM,
+            points: r.points || [], risks: r.risks || [], track: r.track,
+          },
+          pickupPoints: [], equipment: [], feeNote: '', cancellationNote: '',
+        }
+      }
       if (saved && !denied) initial = saved
       this.setData({
         loading: false,
@@ -176,6 +210,7 @@ Page({
         isDraft: phase === 'draft',
         saveLabel: phase === 'draft' ? '保存草稿' : '保存修改',
         form: toForm(initial || emptyInput()),
+        fromRouteTitle,
       })
       this.loadMyActivities()
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
@@ -194,7 +229,7 @@ Page({
   },
 
   persistDraft() {
-    draft.setDraft(this.activityId || 'new', 'activity-editor', this.buildInput())
+    draft.setDraft(this.draftKey(), 'activity-editor', this.buildInput())
     const now = Date.now()
     if (!this._lastMark || now - this._lastMark > 30000) {
       this._lastMark = now
@@ -597,7 +632,7 @@ Page({
         const id = this.savedId || res2.targetIds[0]
         this.savedId = id
         this.revision = res2.revision
-        draft.clearDraft(this.activityId || 'new', 'activity-editor')
+        draft.clearDraft(this.draftKey(), 'activity-editor')
         this.setData({
           busy: false,
           savedId: id,
@@ -780,7 +815,7 @@ Page({
     if (this.data.busy) return
     if (!this.savedId) {
       // 还没保存过服务器：删除只清本机草稿
-      draft.clearDraft(this.activityId || 'new', 'activity-editor')
+      draft.clearDraft(this.draftKey(), 'activity-editor')
       api.toast('草稿已删除')
       wx.switchTab({ url: '/pages/home/home' })
       return
@@ -788,7 +823,7 @@ Page({
     this.setData({ busy: true, deleteDraftOpen: false })
     api.dispatchAndSync({ type: 'activity.delete', activityId: this.savedId }, this.revision, this)
       .then(() => {
-        draft.clearDraft(this.activityId || 'new', 'activity-editor')
+        draft.clearDraft(this.draftKey(), 'activity-editor')
         api.toast('草稿已删除')
         wx.switchTab({ url: '/pages/home/home' })
       })
@@ -845,7 +880,7 @@ Page({
   doPublish(participation, revision) {
     api.dispatchAndSync({ type: 'activity.publish', activityId: this.savedId, participation }, revision, this)
       .then(() => {
-        draft.clearDraft(this.activityId || 'new', 'activity-editor')
+        draft.clearDraft(this.draftKey(), 'activity-editor')
         this.setData({ publishOpen: false })
         api.toast('活动已发布')
         wx.redirectTo({ url: '/pages/activity/activity?id=' + this.savedId })

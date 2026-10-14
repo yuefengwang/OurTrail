@@ -29,6 +29,12 @@
       <view class="button secondary block {{templateId && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{templateId && !busy ? 'onCopyTemplate' : ''}}">创建模板副本并编辑</view>
     </view>
 
+    <!-- 路线库预填横幅（V2.0）：路线已带入，这里的修改不影响路线库 -->
+    <view wx:if="{{fromRouteTitle}}" class="callout info">
+      <view class="callout-title">已从路线库带入「{{fromRouteTitle}}」</view>
+      <text class="small muted">节点、风险与轨迹已经填好；补齐时间、人数和集合上车点就能发布。在这里的改动不会影响路线库里的路线。</text>
+    </view>
+
     <view class="segmented" aria-label="活动编辑步骤">
       <view wx:for="{{stepLabels}}" wx:key="index" class="seg {{step === index ? 'on' : ''}}" data-step="{{index}}" bindtap="setStep">{{item}}</view>
     </view>

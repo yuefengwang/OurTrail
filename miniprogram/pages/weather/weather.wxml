@@ -32,9 +32,14 @@
     </form-field>
 
     <block wx:if="{{loadingWeather}}">
-      <status-panel kind="loading" title="正在查询天气" detail="正在向气象服务查询该点的逐小时预报。" />
+      <status-panel kind="loading" title="正在查询天气" detail="{{retryNote || '正在向气象服务查询该点的逐小时预报。'}}" />
     </block>
     <block wx:elif="{{dayCards.length}}">
+      <!-- 软降级横幅：数据是旧的（连不上实时源时兜底），必须有名有姓地说清时效与出路 -->
+      <view wx:if="{{weatherStale}}" class="callout warning">
+        <text class="callout-title">{{weatherStale.text}}</text>
+        <view class="button text stale-retry" hover-class="button-hover" bindtap="fetchWeather">重新查询</view>
+      </view>
       <!-- ============ 事实层：逐时天气（V2 核心时间轴） ============ -->
       <view class="section-head">
         <view class="section-id">
@@ -439,7 +444,7 @@
       <text class="small muted">更新时间：{{updatedAt}}</text>
       <text class="small muted">数据来源 {{providerLabel || 'Open-Meteo'}}（CC BY 4.0）· 日出日落与天相判断为本机按坐标与海拔推算</text>
     </block>
-    <status-panel wx:else kind="empty" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" action-label="重新查询" bind:action="fetchWeather" />
+    <status-panel wx:else kind="{{emptyKind}}" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" action-label="重新查询" bind:action="fetchWeather" />
 
     <form-field label="查看日期">
       <picker mode="date" value="{{date}}" bindchange="onDate">
