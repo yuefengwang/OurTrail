@@ -219,6 +219,28 @@ const KNOWN_BARE_CHECKBOX = new Set([])
   else if (!fresh.length) ok('裸 checkbox 绑 change 未增加（存量 ' + bare.length + ' 处已登记）')
 }
 
+// 8. WXML 非法事件属性名（M-09 的防复发门）：形如 xxx-yyy="标识符" 却少了 bind/catch 前缀的属性，
+//    在小程序里只是一个普通自定义属性，永不触发回调——overlay 的 animation-end="noop" 就是这么让
+//    onAnimationEnd 活成死方法、rendered 永不复位的。判据实现搬进 tools/fixround2-event-attr-rule.js
+//    （那文件自带「历史样本必须抓到 + 合法写法不得误报」的自证，可单独 node 执行），
+//    这样预提交门不需要被本地跑一遍也能确认规则本身是活的。
+//    落门前实测全仓命中 0 条（见 fix-round2/out/G1/verify.txt），所以是硬门禁、不带登记清单。
+console.log('== WXML 非法事件属性名 ==')
+{
+  const rule = require('./fixround2-event-attr-rule')
+  let scanned = 0
+  const hits = []
+  for (const f of files.filter(f => f.endsWith('.wxml'))) {
+    let srcTxt
+    try { srcTxt = fs.readFileSync(f, 'utf8') } catch (e) { fail(rel(f) + ' 读取失败：' + e.message); continue }
+    scanned++
+    rule.scan(srcTxt, rel(f)).forEach(h => hits.push(h))
+  }
+  if (scanned === 0) fail('一个 wxml 都没扫到：本步骤会静默空转（同 5b 的分隔符教训）')
+  hits.forEach(h => fail(h.file + ':' + h.line + ' ' + h.attr + '="' + h.value + '" 不是合法事件属性（' + h.why + '）——事件绑定必须写 bind…/catch… 或 bind:事件名，否则永不触发'))
+  if (!hits.length) ok('没有「少了 bind/catch 前缀的事件属性」（扫了 ' + scanned + ' 个 wxml）')
+}
+
 console.log('')
 if (failed) {
   console.error('FAILED: ' + failed + ' 项问题')

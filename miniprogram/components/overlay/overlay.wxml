@@ -1,6 +1,6 @@
 <view wx:if="{{rendered}}" class="overlay-root {{open ? 'open' : ''}}">
   <view class="overlay-mask" catchtap="onMaskTap" catchtouchmove="noop"></view>
-  <view class="overlay {{kind === 'sheet' ? 'overlay--sheet' : 'overlay--dialog'}}" catchtap="noop" catchtouchmove="noop" animation-end="noop">
+  <view class="overlay {{kind === 'sheet' ? 'overlay--sheet' : 'overlay--dialog'}}" catchtap="noop" catchtouchmove="noop">
     <view wx:if="{{kind === 'sheet'}}" class="overlay__handle"></view>
     <view class="overlay__header">
       <text class="overlay__title">{{title}}</text>
