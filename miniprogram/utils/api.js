@@ -162,8 +162,51 @@ function dispatchAndSync(payload, expectedRevision, page) {
   })
 }
 
+// toast 上屏文案的唯一出口。M-11 修的就是这一行原来长什么样的地方。
+// 旧实现 `(title || '').slice(0, 20)` 有两个毛病，都不是假设：
+//   ① 「20」藏在工具函数里，调用点看不见这条边界，写话术的人无从回避。基线上真发生了一处：
+//      pages/weather-hub.js:97「平台隐私指引未声明「位置信息」，暂无法地图选点」（23 码点）被印成
+//      「…暂无法地」，恰好丢掉「图选点」这个说明"什么功能不可用"的关键词；pages/signup.js:415/:558
+//      那两句「…资料同步失败可在「我的」补存」是踩着 20 字零余量写的，任何一次加字都会把
+//      "去哪儿补救"那一半切掉——与铁律 24「话术要给出路」正相反。
+//   ② slice 切的是 UTF-16 码元不是字：一个 emoji 占两个码元，旧写法能从它中间切开，
+//      屏幕上剩下一个孤立代理对（就是一个豆腐块）。
+// 现在的三条口径，逐条都能在 tools/t2-m11-test.js 找到对应判据：
+//   ① 预算之内**一字不动**地交给平台——这是缺陷本体的修法，也是"存量文案零回退"那一半；
+//   ② 只有超出预算才裁，且只在句读处收口并补「…」：屏幕上留下的必须是一句读得通的话
+//      加一个明说的省略号，而不是半截词（"读起来像渲染故障"本身就是缺陷）；收口收不住
+//      （剩下的不足一半）就直接按预算截，宁可多留字也要保住"说了什么"的主干；
+//   ③ 每一次裁切都在控制台点名原文：超长要在写的时候被发现，而不是等用户看见断句。
+// ⚠ TOAST_TEXT_BUDGET 是按「两行 × 约 15 字」推出来的**撰写预算，不是平台实测**：21–30 字的
+//   toast 真机上换几行、再长平台自己怎么裁，仓库里没有读数（fix-round2/out/T2/requests.md R-T2-1）。
+//   改这个数要带着真机读数来。同一条约束的静态侧（写侧拦超长）是 tools/g2-toast-copy-test.js，
+//   它不抄这个数，而是真调本函数把预算量出来——所以这里改了它自动跟着改判。
+const TOAST_TEXT_BUDGET = 30
+// 断在这些字符之后，屏幕上剩下的那一段自己就是一句完整的话（不是切在词中间）。
+const TOAST_BREAK_AFTER = ['。', '！', '？', '；', '，', '、', ' ', '）', '」', '】', '』']
+
+/** 按**码点**计数与收口：入参原样 → { title 交给 wx.showToast, truncated 是否动过文案 }。 */
+function fitToastText(input) {
+  const cps = Array.from(input === null || input === undefined ? '' : String(input))
+  if (!cps.length) return { title: '完成', truncated: false }
+  if (cps.length <= TOAST_TEXT_BUDGET) return { title: cps.join(''), truncated: false }
+  const keepMax = TOAST_TEXT_BUDGET - 1 // 给省略号留一格，收完的总长仍不超过预算
+  let keepAt = 0
+  for (let i = keepMax - 1; i >= 0; i--) {
+    if (TOAST_BREAK_AFTER.indexOf(cps[i]) === -1) continue
+    if (i + 1 < Math.ceil(keepMax / 2)) break // 再往前就只留得住开头几个字，不如按预算截
+    keepAt = i + 1
+    break
+  }
+  return { title: cps.slice(0, keepAt || keepMax).join('') + '…', truncated: true }
+}
+
 function toast(title, icon) {
-  wx.showToast({ title: (title || '').slice(0, 20) || '完成', icon: icon || 'none', duration: 2400 })
+  const shown = fitToastText(title)
+  if (shown.truncated) {
+    console.warn('[api] toast 文案超出上屏预算（' + TOAST_TEXT_BUDGET + ' 码点），已收口成一句可读的话，原文：', title)
+  }
+  wx.showToast({ title: shown.title, icon: icon || 'none', duration: 2400 })
 }
 
 // 错误统一转成可读文案
@@ -175,4 +218,7 @@ module.exports = {
   call, read, readOr, dispatch, dispatchAndSync, toast, errorText,
   readForm, readTransport, readSensitive, readContact, readExport, previewAssignments, getWeather,
   getWeatherByPoint, readRoutes,
+  // toast 文案的撰写预算（M-11）：导出它是为了让「上屏实际收到的长度」与「写在调用点旁边的数」
+  // 必须是同一个——由 tools/t2-m11-test.js 用真函数量，不许本文件里再出现第二个硬编码长度。
+  TOAST_TEXT_BUDGET,
 }

@@ -689,8 +689,12 @@ async function scenario5() {
       env.cmds[2].payload.type === 'signup.cancel' && JSON.stringify(env.cmds[2].payload.signupIds) === '["s1"]'
       && env.cmds[2].payload.reason === '临时有事，无法参加' && schemaOk(env.cmds[2].payload),
       JSON.stringify(env.cmds[2].payload))
-    check('取消反馈：toast「此人的报名已取消，其他同行人的状态未改变」（api.toast 截 20 字）+ 弹层完整成功 callout',
-      env.rec.toasts.indexOf('此人的报名已取消，其他同行人的状态未改变') !== -1
+    // 这条断言原来期望的是**被 api.toast 截到 20 字的断句**（用例名里那句「api.toast 截 20 字」就是它）：
+    // 页面把「此人的报名已取消，其他同行人的状态未改变。」（21 码点）同时写进 callout 与 toast，
+    // 而 toast 那条被切掉了句末。M-11 修好之后完整一句才真的上屏，于是期望随之改成整句——
+    // 这是**替换而非放宽**：新期望要求句末那个「。」必须在，旧期望反而看不见它（铁律 30/31 的口径）。
+    check('取消反馈：toast 与弹层 callout 是同一条完整话术（M-11 后不再被截断）',
+      env.rec.toasts.indexOf('此人的报名已取消，其他同行人的状态未改变。') !== -1
       && env.page.data.selMessage === '此人的报名已取消，其他同行人的状态未改变。',
       JSON.stringify({ toasts: env.rec.toasts, m: env.page.data.selMessage }))
   }
