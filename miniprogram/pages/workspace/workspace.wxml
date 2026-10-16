@@ -69,7 +69,8 @@
         </view>
         <view class="button primary block {{canTransition && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canTransition && !busy ? 'onTransition' : ''}}">{{nextPhaseLabel || '这一步现在还不能做'}}</view>
         <!-- 门槛不满足时先说清缺什么、去哪儿补，而不是给一个点不动的灰按钮 -->
-        <text wx:if="{{!canTransition && transitionHint}}" class="small muted" style="display:block;">为什么现在不能推进：{{transitionHint}}</text>
+        <!-- 这行只由 transitionHint 决定：权限位（canTransition）与门槛清没清是两件事，挂上去等于说明永不上屏（审计 F-01） -->
+        <text wx:if="{{transitionHint}}" class="small muted" style="display:block;">为什么现在不能推进：{{transitionHint}}</text>
         <text wx:elif="{{!canTransition}}" class="small muted" style="display:block;">这一阶段没有可推进的下一步；已归档或已取消的活动只读。</text>
         <view wx:if="{{canEdit}}" class="button text" hover-class="button-hover" bindtap="goEdit">编辑活动</view>
       </view>
