@@ -268,11 +268,11 @@ tabBar：**活动(home) / 天气(weather-hub) / 通知(notices) / 我的(me)**�
 |---|---|
 | 起始分支/版本 | `win/ui-fix-round2-wave1` @ `381efae`（主工作区，含他人在途未提交改动） |
 | 本轮分支 | `win/ui-redesign-editorial`（worktree `d:/OurTrail-ui`，基线 `381efae`） |
-| 改动文件 | `miniprogram/app.wxss`；`pages/activity/{js,wxml,wxss}`；`pages/home/{js,wxml}`；`pages/discover/{js,wxml}`；`pages/me/{js,wxml,wxss}`；`pages/workspace/{wxml,wxss}`；`components/activity-card/{js,wxml,wxss}`；**新增** `utils/covers.js`、`assets/photos/*`(9 图 + README)、`docs/ui-ux-redesign/*` |
-| 未触碰 | `cloudfunctions/`（零改动 ⇒ 不需重新部署）；他人在途的 `utils/api.js`、`workspace.wxml` F-01 行；所有 tools/ 门禁 |
-| 提交 | **未创建提交**（保留可审查的工作区改动；项目约定提交前跑 check 已跑过，是否提交留用户裁决） |
-| 推送 | **未推送**（PARALLEL_DEV 铁律：不推 master；本分支也未推远端） |
-| 潜在冲突 | 与他人在途任务（fix round 2）**无文件重叠**；`workspace.wxml` 的 F-01 两行本轮避开；`app.wxss`/`activity-card` 为其未涉文件。合并顺序建议：先合 fix round 2，再合本分支 |
+| 本轮提交 | **2 个本地提交**（未推送）：`851b68b` feat(ui) 主提交（80 文件，+1269/−53）、`8839b0a` chore(docs) 删草稿 |
+| 改动文件 | `miniprogram/app.wxss`；`pages/activity/{js,wxml,wxss}`；`pages/home/{js,wxml}`；`pages/discover/{js,wxml}`；`pages/me/{js,wxml,wxss}`；`pages/workspace/{wxml,wxss}`；`components/activity-card/{js,wxml,wxss}`；**新增** `utils/covers.js`、`assets/photos/*`(9 图 + README)、`docs/ui-ux-redesign/*`（规范/报告/截图/证据） |
+| 未触碰 | `cloudfunctions/`（零改动 ⇒ 不需重新部署）；他人在途的 `utils/api.js`、`workspace.wxml` F-01 行；所有 tools/ 门禁；主工作区零改动 |
+| 推送 | **未推送**（PARALLEL_DEV 铁律：不推 master；本分支也未推远端；本机中继主机不可达） |
+| 潜在冲突 | 与他人在途任务（fix round 2）**无文件重叠**；`workspace.wxml` 的 F-01 两行本轮避开；`app.wxss`/`activity-card` 为其未涉文件。合并顺序建议：先合 fix round 2，再 `git merge --no-ff win/ui-redesign-editorial` |
 
 ---
 
