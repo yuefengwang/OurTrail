@@ -45,6 +45,14 @@ function sub(rel, anchor, replacement) {
   try { src = rd(rel) } catch (e) { return '读不到 ' + rel }
   const hits = src.split(anchor).length - 1
   if (hits !== 1) return rel + ' 锚点命中 ' + hits + ' 次（要求恰为 1）'
+  // 锚点命中了但仍落在注释行上 = 这次变异没有改变任何行为，套件照绿是空证。
+  // 本仓先例：断言/锚点静默失效比没有锚点更危险，因为它看起来是「抓到了」。
+  const at = src.indexOf(anchor)
+  const lineStart = src.lastIndexOf('\n', at) + 1
+  const line = src.slice(lineStart, lineStart + 64).trimStart()
+  if (line.indexOf('//') === 0 || line.indexOf('*') === 0 || line.indexOf('/*') === 0) {
+    return rel + ' 锚点落在注释行上（变异无效，需重钉到真实代码）：' + line.slice(0, 60)
+  }
   wr(rel, src.split(anchor).join(replacement))
   return null
 }
@@ -126,7 +134,7 @@ const CASES = [
     files: ['miniprogram/utils/api.js'],
     expectCaught: false,
     expectNote: '请从 KNOWN_OVERBUDGET 删除',
-    apply: () => sub('miniprogram/utils/api.js', 'slice(0, 20)', 'slice(0, 26)'),
+    apply: () => sub('miniprogram/utils/api.js', 'const TOAST_TEXT_BUDGET = 30', 'const TOAST_TEXT_BUDGET = 26'),
     suites: ['g2-toast-copy-test.js'],
   },
   {
