@@ -120,7 +120,28 @@ image.icon { vertical-align: middle; }
 .button.text { border-color: transparent; background: transparent; padding-left: 8px; padding-right: 8px; }
 .button.leaf { background: var(--leaf); color: var(--forest); border-color: var(--leaf); }
 .button.block { display: flex; width: 100%; }
+/* 禁用态：先兜底，再按变体分别定义（B-11；强制修复顺序对 2 的前项，后项是 B-12）。
+   下一条通用规则当初是按「有底色的按钮」写的，它同特异度 (0,2,0) 又写在
+   .button.primary/.secondary/.danger/.text/.leaf 之后 ⇒ 把五个变体一起压成灰底灰边。
+   对实底族这是对的（变灰退后）；对 .text 就是权重倒挂：一条本来透明的文字链，
+   禁用后反而长出灰底 + 灰边，比它可点时更抢眼（activity L286 / editor L15 /
+   roster L69 / transport L133 四处，busy 与条件不满足时都会闪成灰块）。
+   所以现在把每个变体的禁用表达写出来，通用规则退为「没有变体时的兜底」：
+   · 实底族（primary/secondary/danger/leaf）→ 底色与描边一起退到 --line、文字退到 --muted，
+     终值与兜底逐字相同 ⇒ 本轮像素只允许 .text 一族变化，其余四族一格都不动（由判据证）；
+   · 文字族（text）→ 禁用后仍然没有底色、没有描边，只把文字从 --forest 降到 --muted。
+   两族共用 --muted 这一支禁用文字色：单源是 token 本身（按引用读 var()，不抄字面量），
+   影子改写 --line/--muted 必须整族一起动——见 tools/style-semantics-test.js §6。
+   边界：禁用族只许声明 background/border-color/color。按压反馈（hover 闪烁、
+   pointer-events）属 C-16，本轮不并入；opacity 也不能用在这里——它既会连带改掉
+   .button-hover 的按压反馈，又会把 --muted 文字压到 3:1 以下（design-system 已写明
+   「--muted 4.6:1 勿再调淡」，B-13 正是低对比文字的判例）。 */
 .button.disabled, .button[disabled] { background: var(--line); border-color: var(--line); color: var(--muted); }
+.button.primary.disabled, .button.primary[disabled] { background: var(--line); border-color: var(--line); color: var(--muted); }
+.button.secondary.disabled, .button.secondary[disabled] { background: var(--line); border-color: var(--line); color: var(--muted); }
+.button.danger.disabled, .button.danger[disabled] { background: var(--line); border-color: var(--line); color: var(--muted); }
+.button.leaf.disabled, .button.leaf[disabled] { background: var(--line); border-color: var(--line); color: var(--muted); }
+.button.text.disabled, .button.text[disabled] { background: transparent; border-color: transparent; color: var(--muted); }
 .button-hover { opacity: 0.82; }
 button.button { font-family: inherit; }
 .icon-button {

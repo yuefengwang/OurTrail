@@ -71,7 +71,7 @@
 
 | 组件/类 | 用法要点 |
 |---|---|
-| `.button` + `primary/secondary/danger/text/leaf` | view 或 button 均可；必须 `hover-class="button-hover"`；禁用态加 `.disabled` 并把 bindtap 置空串 |
+| `.button` + `primary/secondary/danger/text/leaf` | view 或 button 均可；必须 `hover-class="button-hover"`；禁用态加 `.disabled`（或原生 `disabled`）并把 bindtap 置空串 |
 | `.card` / `.card-header` | 内容卡；header 用于"标题 + 右侧动作" |
 | `.badge` + `success/warning/danger/info/neutral/on-forest` | 状态徽标，文字承载语义 |
 | `.callout` + 同上变体 | 提示块（左边线 3px 语义色），`callout-title` 加粗 |
@@ -92,6 +92,29 @@
 | `.map-card/.map-canvas` | 原生 `map` 组件外框（260px、14px 圆角、`overflow:hidden`）。低版本基础库非同层渲染时圆角会失效，接受降级、**不在 map 上叠普通 view**。marker 图标用 `assets/markers/*.png`（`tools/gen-map-markers.js` 生成；iconPath 不支持 base64），序号用 marker `label`，信息用原生 callout，白底 forest 字。地图元素配色：轨迹线 `#163E35AA` 宽 4 `arrowLine`、降级虚线 `#8C9791AA` 宽 2 `dottedLine`；marker=起点 forest/途中白底 forest 描边/终点 leaf+forest 描边/上车点 info 蓝，均为圆点造型（选中态放大到 30 即可，无需单独图）。 |
 | `.section-head/.section-title/.section-sub` | 页面内分区标题（把长页分成几段，如天气页的"客观指标 / 结论"）。标题 700 正文号，右侧 `.section-sub` 12px muted |
 | `.sky-card/.sky-title/.sky-text` | 结论卡（天相判断等）。`.sky-look` 为 forest-soft 底的方向/时段条，左侧 `.sky-look-label` 是白底 forest 药丸标签 |
+
+## 按钮禁用态：按变体分别定义（app.wxss `.button.X.disabled`）
+
+禁用态**不是一条通用规则**，而是「一条兜底 + 每个着色变体各一条」。`.button.disabled, .button[disabled]`
+只负责「没有变体的按钮被禁用」这种兜底场景；五个变体各有自己的禁用声明（类形态与 `[disabled]` 属性形态成对写）。
+原因：通用规则与 `.button.text` 同特异度 (0,2,0) 且写在后面，会把本来透明的文字链压成灰底灰边——
+**禁用态反而比可用态更抢眼（权重倒挂）**。
+
+| 族 | 禁用终值（层叠之后） | 表达 |
+|---|---|---|
+| 兜底 `.button.disabled` | `--line` 底 / `--line` 边 / `--muted` 字 | 灰底退后（无变体时的既有约定） |
+| `.button.primary` / `.secondary` / `.danger` / `.leaf` | 同上，逐字相同 | 实底族共用同一支禁用表达（`var()` 按引用读，不抄字面量） |
+| `.button.text` | `transparent` 底 / `transparent` 边 / `--muted` 字 | **文字链禁用后仍然没有填充**，只把文字从 `--forest` 降到 `--muted` |
+
+- **禁用族只许声明 `background` / `border-color` / `color`。** 按压反馈（`hover-class` 闪动、`pointer-events`）
+  是另一条问题（禁用态与按压态联动），不混进配色改动里；`pointer-events: none` 还会废掉「点禁用按钮问原因」这类未来交互。
+- **禁用族不要用 `opacity` 表达退后。** `opacity` 会与 `.button-hover { opacity: .82 }` 撞同一机制（连带改掉按压反馈），
+  并把 `--muted` 压到 3:1 以下——本表上方已写明「`--muted` 4.6:1 勿再调淡」。文字退后用 `--muted` 表达即可（`--paper` 上 4.9:1）。
+- **新增变体必须同时补两条禁用定义**（`.button.X.disabled` 与 `.button.X[disabled]`），否则
+  `node tools/style-semantics-test.js` §5 的变体词表闭合门会红；该词表是从 app.wxss 自身导出的，不是硬编码清单。
+- 判据：`node tools/style-semantics-test.js`（92 条：层叠终值解析 + 全站真实使用点普查 + 影子单源 + 等价重构不误伤）、
+  `node tools/style-mutate.js`（12 条回退变异 0 漏网 0 崩红 + 4 条等价重构控制全绿）。
+  真机像素维 NOT_RUN（无开发者工具授权）。
 
 ## canvas 自绘图表（meteogram）
 
