@@ -114,6 +114,11 @@ Page({
 
   onLoad(options) {
     this.routeId = options.id || ''
+  },
+
+  onShow() {
+    // onShow 而不是 onLoad（与 routes.js 同型）：route-edit 保存成功后 navigateBack 回本页，
+    // 详情要反映改动后的标题、节点与风险；只挂 onLoad 会让「写成功」和「界面反馈」断成两截。
     this.reload()
   },
 
