@@ -4,7 +4,10 @@
 page {
   --forest: #163E35;
   --leaf: #D6EA8A;
-  --paper: #F5F5F0;
+  /* 纸面暖调（2026-10-16 编辑式重构）：#F5F5F0 → #F6F3EC。
+     仍是近白的中性底，但偏暖——与石色、森林绿同族，像户外杂志的纸。
+     muted 在其上对比度 ≈4.6:1，勿再把 --paper 调深或把 --muted 调淡。 */
+  --paper: #F6F3EC;
   --white: #FFFFFF;
   --ink: #202A26;
   --muted: #5F6E66;
@@ -13,6 +16,15 @@ page {
   --warning: #8C5A12;
   --info: #346583;
   --success: #276145;
+
+  /* 编辑式表层（新增，登记于 docs/ui-ux-redesign/design-system.md §2.1）：
+     石色系承担中性表面，森林绿只做品牌动作与 hero 压底——克制才像成熟产品。 */
+  --forest-deep: #122E28;   /* hero 照片压底 / 页头沉浸区（比 forest 更深，照片上更稳） */
+  --stone: #EDE9DE;         /* 次表面：分区带、chip、灰底表面 */
+  --stone-line: #DCD5C4;    /* 暖表面上的分隔线（cold --line 的暖色对应） */
+  /* hero 照片遮罩：自下而上压深，保证反白标题可读；顶部轻压融合状态栏 */
+  --scrim-hero: linear-gradient(180deg, rgba(18, 46, 40, 0) 0%, rgba(18, 46, 40, 0.42) 55%, rgba(18, 46, 40, 0.9) 100%);
+  --scrim-top: linear-gradient(180deg, rgba(18, 46, 40, 0.3) 0%, rgba(18, 46, 40, 0) 40%);
 
   /* 天相窗口色 —— 从 components/meteogram/layout.js 的 MARK_STYLE 提升而来。
      此前这两个值只活在 meteogram 的 canvas 字面量色板里，canvas 拿不到 var()，
@@ -78,7 +90,30 @@ page {
 }
 .stack { display: flex; flex-direction: column; gap: 16px; }
 .stack-gap3 { display: flex; flex-direction: column; gap: 12px; }
+/* 编辑式呼吸：区块之间 28px（不是 16 的等距堆叠，长页因此有了"章节"） */
+.stack-sections { display: flex; flex-direction: column; gap: 28px; }
 .cluster { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* 眉题：区块上的小标签。中文没有大写，用字距与字重做层级（不靠颜色） */
+.kicker {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+}
+/* 编辑式大标题：hero 内活动名。letter-spacing 收紧，中文不拉伸 */
+.display {
+  font-size: 30px;
+  line-height: 1.28;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  word-break: break-all;
+}
+/* 导语：活动描述首段，比正文大一号 */
+.lede { font-size: 15px; line-height: 24px; }
+/* 发丝线：分组一律用 1px 线，不用阴影 */
+.hairline { border: 0; border-top: 1px solid var(--line); margin: 0; width: 100%; }
+.hairline.warm { border-color: var(--stone-line); }
 .card {
   padding: 16px;
   border-radius: var(--radius-card);
@@ -86,6 +121,26 @@ page {
 }
 .card-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
 .section-title { font-size: var(--text-input); line-height: 24px; font-weight: 600; color: inherit; }
+/* 分区头：眉题 + 标题 + 右侧辅助说明。长页分章节用；少于 3 个区块的页面不要
+   （工作台顶部已有总览，套上头反而多一层噪音——design-system.md §3 的边界）。 */
+.section-head { display: flex; flex-direction: column; gap: 2px; }
+.section-head .section-sub { color: var(--muted); font-size: var(--text-caption); line-height: 18px; }
+/* 事实行：标签—值。只读，不可点；要操作的行仍用 .list-row */
+.fact-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+.fact-row:last-child { border-bottom: 0; }
+.fact-row .fact-label { color: var(--muted); flex: 0 0 auto; }
+.fact-row .fact-value { flex: 1; min-width: 0; text-align: right; word-break: break-all; }
 .eyebrow { font-size: var(--text-caption); line-height: 18px; font-weight: 600; letter-spacing: 0.72px; color: var(--muted); }
 .muted { color: var(--muted); }
 .small { font-size: var(--text-caption); line-height: 18px; }
@@ -255,6 +310,73 @@ button.button { font-family: inherit; }
   pointer-events: none;
 }
 .hero > .hero-body { position: relative; }
+
+/* ---------- 编辑式封面 hero（2026-10-16） ----------
+   真实摄影 + 定高媒体盒 + 森林底信息区。只在活动详情首屏用：
+   列表/工作台/天气页有各自更合适的表达，不套用（见 design-system.md §3）。
+   定高媒体盒里放文档流 image 是微信里最稳的绘制路径（绝对定位 + 百分比高在
+   部分基础库上不绘制，2026-10-16 真机实测）；照片加载失败时 .img-failed
+   隐藏图片，媒体盒高度不变，退回森林绿纯色——不允许破图。 */
+.hero-cover {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--forest-deep);
+  color: var(--white);
+}
+.hero-cover-media {
+  position: relative;
+  height: 240px;
+  overflow: hidden;
+  background: var(--forest);
+}
+.hero-cover-img { display: block; width: 100%; height: 100%; }
+.hero-cover.img-failed .hero-cover-img { display: none; }
+.hero-cover-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--scrim-hero);
+  pointer-events: none;
+}
+.hero-cover-top {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+/* 照片上的日期：半透明深色药丸，保证任何照片上都读得清 */
+.hero-date {
+  background: rgba(18, 46, 40, 0.55);
+  color: var(--white);
+  padding: 2px 8px;
+  border-radius: var(--radius-tag);
+}
+.hero-cover-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.hero-cover .muted, .hero-cover .eyebrow, .hero-cover .kicker { color: var(--on-forest-muted); }
+.hero-cover .hero-sub { color: var(--on-forest-muted); }
+.hero-cover .metric .metric-value { color: var(--white); }
+.hero-cover .metric .metric-label { color: var(--on-forest-muted); }
+.hero-cover .divider { border-color: var(--on-forest-line); }
+/* hero 内指标行：发丝线分隔三格，比三块独立卡片更"编辑" */
+.hero-cover .metrics { border-top: 1px solid var(--on-forest-line); padding-top: 14px; }
+.hero-cover .metric + .metric { border-left: 1px solid var(--on-forest-line); padding-left: 12px; }
+/* 封面诚实性脚注：氛围图不是实拍，这句话必须看得到但不可抢戏 */
+.photo-note { color: var(--muted); font-size: var(--text-caption); line-height: 18px; }
 
 /* ---------- 分段与指标 ---------- */
 .segmented {

@@ -3,6 +3,7 @@
 'use strict'
 const api = require('../../utils/api')
 const F = require('../../utils/format')
+const covers = require('../../utils/covers')
 
 const SEARCH_DEBOUNCE = 300
 
@@ -50,6 +51,8 @@ Page({
       }
       const cards = res.view.activities.map((a, i) => ({
         id: a.id,
+        // 封面氛围图：按活动 id 稳定选取（utils/covers.js），同一活动恒同一张
+        cover: covers.coverFor(a.id),
         title: a.title || '未命名活动',
         date: F.dateLabel(a.startAt),
         // 同 home：缺里程不印「· 0 km」（没填 ≠ 0 公里）

@@ -5,6 +5,7 @@ const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
 const J = require('../../utils/journey')
+const covers = require('../../utils/covers')
 
 Page({
   data: {
@@ -96,6 +97,8 @@ Page({
     const featuredId = filtered.length ? filtered[0].id : ''
     const cards = filtered.map(a => ({
       id: a.id,
+      // 封面氛围图：按活动 id 稳定选取（utils/covers.js），同一活动恒同一张
+      cover: covers.coverFor(a.id),
       title: a.title || '未命名草稿',
       date: F.dateLabel(a.startAt),
       // 路线可整体后补（2026-10-14 快速创建）：缺里程就不印「· 0 km」——

@@ -13,14 +13,16 @@
       <text class="muted">{{subtitle}}</text>
     </view>
 
-    <!-- 指标即入口：点数字直接跳到对应工作区 -->
-    <view class="metrics">
-      <view class="metric" hover-class="button-hover" bindtap="goRoster"><text class="metric-value">{{pending}}</text><text class="metric-label">待审核 ›</text></view>
-      <view class="metric" hover-class="button-hover" bindtap="goTransport"><text class="metric-value">{{unassigned}}</text><text class="metric-label">待安排车辆 ›</text></view>
-      <view class="metric" hover-class="button-hover" bindtap="goField"><text class="metric-value">{{thirdValue}}</text><text class="metric-label">{{thirdLabel}} ›</text></view>
+    <!-- 指标即入口：点数字直接跳到对应工作区。石色带分组，不是三张卡片 -->
+    <view class="workspace-band">
+      <view class="metrics">
+        <view class="metric" hover-class="button-hover" bindtap="goRoster"><text class="metric-value">{{pending}}</text><text class="metric-label">待审核 ›</text></view>
+        <view class="metric" hover-class="button-hover" bindtap="goTransport"><text class="metric-value">{{unassigned}}</text><text class="metric-label">待安排车辆 ›</text></view>
+        <view class="metric" hover-class="button-hover" bindtap="goField"><text class="metric-value">{{thirdValue}}</text><text class="metric-label">{{thirdLabel}} ›</text></view>
+      </view>
+      <!-- 出行方式构成写在指标下面：待安排车辆只统计「需要乘车」的人，自行到达的人不是缺事项 -->
+      <text class="small muted" style="display:block;margin-top:10px;">{{tripSummaryLine}}</text>
     </view>
-    <!-- 出行方式构成写在指标下面：待安排车辆只统计「需要乘车」的人，自行到达的人不是缺事项 -->
-    <text class="small muted" style="display:block;margin-top:-4px;">{{tripSummaryLine}}</text>
 
     <view class="segmented" aria-label="工作台分区">
       <view wx:for="{{tabLabels}}" wx:key="index" class="seg {{tab === index ? 'on' : ''}}" data-tab="{{index}}" bindtap="onTab">{{item}}</view>
@@ -40,7 +42,10 @@
       </view>
 
       <view class="stack" style="gap:0;">
-        <text class="section-title">当前待办</text>
+        <view class="section-head">
+          <text class="kicker">先处理这些</text>
+          <text class="section-title">当前待办</text>
+        </view>
         <!-- 待办由 journey.leaderQueue 生成：只列真的拦路的事，每条带人数与去处；
              没有拦路事时给一句话，而不是摆四个 0 让人以为都欠着 -->
         <view wx:for="{{queue}}" wx:key="id" class="list-row" hover-class="button-hover" bindtap="goQueueItem" data-target="{{item.target}}">
@@ -60,7 +65,10 @@
       </view>
 
       <view class="stack" style="gap:12px;">
-        <text class="section-title">活动进程</text>
+        <view class="section-head">
+          <text class="kicker">阶段</text>
+          <text class="section-title">活动进程</text>
+        </view>
         <!-- ✓ 已完成 · ● 当前 · ○ 还没到：户外强光下不能只靠颜色承载状态（AGENTS 铁律 / 设计走查） -->
         <view class="timeline">
           <view wx:for="{{phaseTimeline}}" wx:key="phase" class="timeline-item">

@@ -76,11 +76,12 @@
       <view
         wx:for="{{recent}}"
         wx:key="id"
-        class="list-row"
+        class="list-row recent-row"
         hover-class="button-hover"
         data-id="{{item.id}}"
         bindtap="onOpenRecent"
       >
+        <image class="recent-cover {{item.coverFailed ? 'cover-failed' : ''}}" src="{{item.cover}}" mode="aspectFill" binderror="onCoverError" data-index="{{index}}" />
         <view class="list-main">
           <text>{{item.title}}</text>
           <text class="list-sub">{{item.dateText}} · {{item.phaseText}}</text>

@@ -8,6 +8,18 @@
   margin-bottom: 12px;
 }
 
+/* 最近活动行：封面缩略图（2026-10-16 编辑式对齐，与发现页同一选取逻辑）。
+   图片加载失败由 onCoverError 隐藏，退回纯文字行。 */
+.recent-row { align-items: center; }
+.recent-cover {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-button, 8px);
+  background: var(--stone, #EDE9DE);
+}
+.recent-cover.cover-failed { visibility: hidden; }
+
 /* 微信资料行：头像 + 昵称 */
 .wx-row {
   display: flex;

@@ -5,6 +5,7 @@ const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
 const J = require('../../utils/journey')
+const covers = require('../../utils/covers')
 
 // 报备类型文案只在 format.INCIDENT_LABELS 定义一次，这里只规定出现顺序（默认落在最稳的一项）。
 const KIND_OPTIONS = J.incidentOptions()
@@ -121,6 +122,10 @@ Page({
     startAtLabel: '',
     title: '',
     routeTitle: '',
+    // 编辑式封面：按活动 id 稳定取一张氛围图（utils/covers.js）。场景氛围图而非活动实拍，
+    // 页尾脚注已说明；加载失败置 coverFailed，hero 退回森林绿纯色（不出破图）。
+    cover: '',
+    coverFailed: false,
     distance: 0,
     ascent: 0,
     confirmed: 0,
@@ -190,6 +195,14 @@ Page({
       title: this.data.title ? this.data.title + ' · 一起同行' : 'OurTrail · 活动邀请',
       path: '/pages/activity/activity?id=' + this.activityId,
     }
+  },
+
+  // 封面图加载失败（文件缺失/损坏）：隐藏照片层，hero 退回森林绿纯色。
+  // 不做重试风暴——失败一次就够，静态资源不会自己好起来。
+  onCoverError() {
+    if (this.data.coverFailed) return
+    console.warn('[activity] 封面图加载失败，回退纯色 hero：', this.data.cover)
+    this.setData({ coverFailed: true })
   },
 
   reload() {
@@ -286,6 +299,8 @@ Page({
       startAtLabel: F.dtLabel(a.startAt),
       title: a.title || '未命名活动',
       routeTitle: a.routeSnapshot.title || '路线待完善',
+      cover: covers.coverFor(a.id),
+      coverFailed: false,
       distance: a.routeSnapshot.distanceKm,
       ascent: a.routeSnapshot.ascentM,
       confirmed: v.counters.confirmed,

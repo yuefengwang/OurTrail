@@ -1,0 +1,74 @@
+[
+  {
+    "id": "I-01a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "首页点「发现活动」→ discover（路由=pages/discover/discover）"
+  },
+  {
+    "id": "I-02a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "点发现页卡片 → 活动详情（title=[UI] 赵公山 · 东线穿越）"
+  },
+  {
+    "id": "I-02b",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "详情页编辑式结构在位：hero 图 {\"width\":350,\"height\":240} · fact-row 3 · kicker 6"
+  },
+  {
+    "id": "I-02c",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "封面图绘制路径通（size={\"width\":350,\"height\":240}）"
+  },
+  {
+    "id": "I-03a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "详情页点「进入工作台」→ workspace"
+  },
+  {
+    "id": "I-03b",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "点「名单」→ roster-panel 由隐藏转显示（hide → ）"
+  },
+  {
+    "id": "I-03c",
+    "verdict": "FAIL",
+    "dim": "UI",
+    "reason": "sectionHeads=0 band=true"
+  },
+  {
+    "id": "I-04",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "点「分车」→ transport-panel 显示（class=）"
+  },
+  {
+    "id": "I-05a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "点第二张日卡 → 选中态上到它（day-card → day-card on）"
+  },
+  {
+    "id": "I-05b",
+    "verdict": "FAIL",
+    "dim": "UI",
+    "reason": "找不到 48 小时切窗"
+  },
+  {
+    "id": "I-06a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "最近活动封面绘制（size={\"width\":44,\"height\":44}，共 3 行）"
+  },
+  {
+    "id": "I-06b",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "点最近活动行 → 活动详情"
+  }
+]

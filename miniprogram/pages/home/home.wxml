@@ -67,6 +67,7 @@
           wx:for="{{cards}}"
           wx:key="id"
           title="{{item.title}}"
+          cover="{{item.cover}}"
           date="{{item.date}}"
           meta="{{item.meta}}"
           status="{{item.status}}"

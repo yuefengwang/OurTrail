@@ -25,6 +25,16 @@
 | `--on-forest-muted` / `--on-forest-line` | #D0D8D7 / #4E6C65 | 森林底上的次要文字/线 |
 | `--leaf-on-forest` | #2D533F | 森林底上的嫩叶底；亦为「星空」天相色 |
 | `--focus` | #346583 | 聚焦态描边（= `--info`） |
+| `--forest-deep` | #122E28 | 编辑式 hero 照片压底 / 页头沉浸区（2026-10-16 重构新增） |
+| `--stone` | #EDE9DE | 石色次表面：分区带、chip 底（新增） |
+| `--stone-line` | #DCD5C4 | 暖表面分隔线（新增；冷调用 `--line`） |
+| `--scrim-hero` | linear-gradient(…forest-deep 0→0.9) | hero 照片自下而上压底（新增） |
+| `--scrim-top` | linear-gradient(…forest-deep 0.3→0) | 照片顶部轻压（新增） |
+
+**2026-10-16 编辑式重构**：`--paper` 由 `#F5F5F0` 暖调为 `#F6F3EC`；新增编辑式类
+`.display/.lede/.kicker/.hairline/.stack-sections/.section-head/.fact-row/.hero-cover*/.photo-note`，
+封面照片在 `assets/photos/`（Unsplash 授权，选择逻辑 `utils/covers.js`）。
+设计规范全文：`docs/ui-ux-redesign/design-system.md`。
 
 **天相色与 token 的对应（`MARK_STYLE` ↔ `app.wxss`）**
 
