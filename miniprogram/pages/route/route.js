@@ -9,6 +9,7 @@
 const api = require('../../utils/api')
 const F = require('../../utils/format')
 const RS = require('../../utils/route-schedule')
+const covers = require('../../utils/covers')
 
 const MARKER_ICONS = {
   start: '/assets/markers/start.png',
@@ -92,6 +93,11 @@ Page({
     isOwner: false,
     map: { visible: false },
     referenced: [],
+    // 编辑式封面（2026-10-17 二阶段）：与活动详情同机制——按路线 id 稳定取一张氛围图。
+    // 路线同样没有图片字段（schema 不可擅改），封面是场景氛围图而非路线实拍，页尾脚注说明；
+    // 加载失败置 coverFailed，hero 退回森林绿纯色，不出破图。
+    cover: '',
+    coverFailed: false,
     // 分段天气（V2.0 §6）
     wxDate: todayCn(),
     wxDateMax: plusDays(todayCn(), 14),
@@ -120,6 +126,12 @@ Page({
     // onShow 而不是 onLoad（与 routes.js 同型）：route-edit 保存成功后 navigateBack 回本页，
     // 详情要反映改动后的标题、节点与风险；只挂 onLoad 会让「写成功」和「界面反馈」断成两截。
     this.reload()
+  },
+
+  onCoverError() {
+    if (this.data.coverFailed) return
+    console.warn('[route] 封面图加载失败，回退纯色 hero：', this.data.cover)
+    this.setData({ coverFailed: true })
   },
 
   onPullDownRefresh() {
@@ -160,6 +172,8 @@ Page({
         isOwner: !!route.isOwner,
         map: buildRouteMap(route),
         referenced: (res.referencedActivityIds || []).map(id => ({ id, title: titles[id] || '' })),
+        cover: covers.coverFor(route.id),
+        coverFailed: false,
         shareCode: '',
         shareError: '',
       })

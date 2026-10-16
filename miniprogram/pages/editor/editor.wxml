@@ -1,16 +1,21 @@
 <wxs src="../../wxs/text.wxs" module="text" />
-<view class="page">
+<!-- has-sticky 与底栏 wx:if 同条件（同 route-edit.wxml 的既定写法）：底栏是 position:fixed
+     不计入文档流，页尾要靠 .page.has-sticky(120px) 留白才不被压住；denied/loading 没有底栏，
+     就不该多留这一截空白。 -->
+<view class="page {{!denied && !loading ? 'has-sticky' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="无法编辑此活动" detail="{{denied}}" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在准备编辑器。" />
   </block>
   <view wx:else class="stack">
 
-    <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
-      <view style="min-width:0;">
+    <!-- 编辑式头部（二阶段）：眉题 + 大标题 + 一句定位；删除草稿仍是 text 权重的次要动作。
+         注：这里的 button.text + disabled 组合是 tools/style-semantics-test.js §4 的证据点之一，别删。 -->
+    <view class="card-header" style="align-items:flex-start;">
+      <view class="section-head" style="min-width:0;flex:1;">
         <text class="eyebrow">{{savedId ? '编辑活动' : '发起一次同行'}}</text>
         <text class="page-title" style="display:block;margin-top:4px;">把出发，安排妥当。</text>
-        <text class="muted" style="display:block;margin-top:4px;">先保存想法，准备好后再发布。保存草稿不会自动报名。</text>
+        <text class="section-sub">先保存想法，准备好后再发布。保存草稿不会自动报名。</text>
       </view>
       <view wx:if="{{isDraft}}" class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onDeleteDraftOpen'}}" style="flex:0 0 auto;">删除草稿</view>
     </view>
@@ -35,12 +40,22 @@
       <text class="small muted">节点、风险与轨迹已经填好；补齐时间、人数和集合上车点就能发布（上车点可一键用起点派生）。在这里的改动不会影响路线库里的路线。</text>
     </view>
 
-    <view class="segmented" aria-label="活动编辑步骤">
-      <view wx:for="{{stepLabels}}" wx:key="index" class="seg {{step === index ? 'on' : ''}}" data-step="{{index}}" bindtap="setStep">{{item}}</view>
+    <!-- 分步进度（二阶段）：仍是 .seg + data-step + setStep（e2e-golden-path 按序号 tap），
+         只是把「第几步/总共几步」显式印出来——屏幕上有了位置感，才敢往回退。 -->
+    <view class="stack" style="gap:4px;">
+      <view class="segmented" aria-label="活动编辑步骤">
+        <view wx:for="{{stepLabels}}" wx:key="index" class="seg {{step === index ? 'on' : ''}}" data-step="{{index}}" bindtap="setStep">{{item}}</view>
+      </view>
+      <text class="small muted tabular">第 {{step + 1}} 步 / 共 {{stepLabels.length}} 步</text>
     </view>
 
     <!-- 步骤 1：内容与时间 -->
     <view wx:if="{{step === 0}}" class="stack-gap3">
+      <view class="section-head">
+        <text class="kicker">活动内容</text>
+        <text class="section-title">名称、时间与介绍</text>
+        <text class="section-sub">这三样定了，报名的人才知道自己要不要来。</text>
+      </view>
       <form-field label="活动名称">
         <input class="input" value="{{form.title}}" maxlength="100" placeholder="这次想去哪里？如：青城后山 · 周末轻徒步" data-key="title" bindinput="onField" />
       </form-field>
@@ -160,6 +175,11 @@
 
     <!-- 步骤 2：路线与集合 -->
     <view wx:if="{{step === 1}}" class="stack-gap3">
+      <view class="section-head">
+        <text class="kicker">路线与集合</text>
+        <text class="section-title">走哪条路，在哪集合</text>
+        <text class="section-sub">有 GPX 就一键生成；没有也能先发布，路线与风险发布后再补。</text>
+      </view>
       <form-field label="路线名称" hint="例如：青城后山 · 飞泉沟轻徒步；可后补">
         <input class="input" value="{{form.routeTitle}}" data-key="routeTitle" bindinput="onField" />
       </form-field>
@@ -346,6 +366,11 @@
 
     <!-- 步骤 3：招募与风险 -->
     <view wx:if="{{step === 2}}" class="stack-gap3">
+      <view class="section-head">
+        <text class="kicker">招募与风险</text>
+        <text class="section-title">名额怎么定，风险怎么讲</text>
+        <text class="section-sub">风险与安全说明写清楚，报名的人才能自己判断。</text>
+      </view>
       <view class="cluster" style="align-items:flex-start;">
         <form-field label="人数上限" hint="1–500 人，待审核与已确认都占名额" style="flex:1;">
           <input class="input" type="number" value="{{form.capacity}}" data-key="capacity" bindinput="onField" />
@@ -452,18 +477,23 @@
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
 
     <view class="form-actions">
-      <view wx:if="{{step > 0}}" class="button text" hover-class="button-hover" bindtap="prevStep">上一步</view>
-      <view wx:if="{{step < 2}}" class="button primary" hover-class="button-hover" bindtap="nextStep" style="flex:1;">
-        <text>下一步</text>
-        <icon name="arrow" size="18" color="#FFFFFF" />
-      </view>
-    </view>
-    <view wx:if="{{step === 2 && isDraft}}" class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPublishIntent'}}">发布活动</view>
-    <view class="form-actions">
       <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSave'}}">{{saveLabel}}</view>
       <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSavePreview'}}">保存并预览</view>
     </view>
     <text wx:if="{{draftSavedAt}}" class="small muted" style="text-align:center;">草稿已自动保存 · {{draftSavedAt}}</text>
+  </view>
+
+  <!-- 固定底栏（二阶段）：「下一步 / 发布活动」不再沉在长表单末尾——
+       三步表单里每一幕的主操作就该在同一位置。文案与 class 都不变（e2e-golden-path
+       按「保存草稿」「发布活动」文案与 .seg 序号真实 tap）；次级的保存/预览留在内容区
+       与「草稿已自动保存」同处，避免底栏堆四颗按钮。 -->
+  <view wx:if="{{!denied && !loading}}" class="sticky-action">
+    <view wx:if="{{step > 0}}" class="button text" hover-class="button-hover" bindtap="prevStep">上一步</view>
+    <view wx:if="{{step < 2}}" class="button primary" hover-class="button-hover" bindtap="nextStep" style="flex:1;">
+      <text>下一步</text>
+      <icon name="arrow" size="18" color="#FFFFFF" />
+    </view>
+    <view wx:if="{{step === 2 && isDraft}}" class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPublishIntent'}}">发布活动</view>
   </view>
 
   <overlay open="{{deleteDraftOpen}}" kind="dialog" title="删除这份草稿？" bind:close="onDeleteDraftClose">

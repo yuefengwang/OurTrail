@@ -70,136 +70,158 @@
       </view>
     </view>
 
-    <!-- C 最近活动 -->
-    <view class="card stack-gap3">
-      <text class="card-label">最近活动</text>
-      <view
-        wx:for="{{recent}}"
-        wx:key="id"
-        class="list-row recent-row"
-        hover-class="button-hover"
-        data-id="{{item.id}}"
-        bindtap="onOpenRecent"
-      >
-        <image class="recent-cover {{item.coverFailed ? 'cover-failed' : ''}}" src="{{item.cover}}" mode="aspectFill" binderror="onCoverError" data-index="{{index}}" />
-        <view class="list-main">
-          <text>{{item.title}}</text>
-          <text class="list-sub">{{item.dateText}} · {{item.phaseText}}</text>
-        </view>
-        <text class="muted">›</text>
+    <!-- C 最近活动 + 路线库入口（二阶段合并成一组）：
+         两者都是「和我有关的出行资产」，拆成两张卡只会让页面变成功能墙。 -->
+    <view class="stack" style="gap:12px;">
+      <view class="section-head">
+        <text class="kicker">我的出行</text>
+        <text class="section-title">最近活动</text>
       </view>
-      <status-panel
-        wx:if="{{!recent.length}}"
-        kind="empty"
-        title="还没有同行记录"
-        detail="从首页的「发现活动」开始，或自己发起一场。"
-      />
-    </view>
-
-    <!-- C-2 路线库入口（V2.0）：走过的路线攒成资产，发起活动时复用 -->
-    <view class="card">
-      <view class="list-row" hover-class="button-hover" bindtap="onOpenRoutes">
-        <view class="list-main">
-          <text>路线库</text>
-          <text class="list-sub">走过的路线攒在这里，节点、风险、轨迹都在，下次发起活动直接复用</text>
+      <view class="card" style="padding:4px 16px;">
+        <view
+          wx:for="{{recent}}"
+          wx:key="id"
+          class="list-row recent-row"
+          hover-class="button-hover"
+          data-id="{{item.id}}"
+          bindtap="onOpenRecent"
+        >
+          <image class="recent-cover {{item.coverFailed ? 'cover-failed' : ''}}" src="{{item.cover}}" mode="aspectFill" binderror="onCoverError" data-index="{{index}}" />
+          <view class="list-main">
+            <text>{{item.title}}</text>
+            <text class="list-sub">{{item.dateText}} · {{item.phaseText}}</text>
+          </view>
+          <icon name="arrow" size="20" color="#5F6E66" />
         </view>
-        <text class="muted">›</text>
+        <view wx:if="{{!recent.length}}" style="padding:12px 0;">
+          <status-panel
+            kind="empty"
+            title="还没有同行记录"
+            detail="从首页的「发现活动」开始，或自己发起一场。"
+          />
+        </view>
+        <!-- 路线库入口（V2.0）：走过的路线攒成资产，发起活动时复用 -->
+        <view class="list-row" hover-class="button-hover" bindtap="onOpenRoutes">
+          <view class="list-main">
+            <text>路线库</text>
+            <text class="list-sub">走过的路线攒在这里，节点、风险、轨迹都在，下次发起活动直接复用</text>
+          </view>
+          <icon name="arrow" size="20" color="#5F6E66" />
+        </view>
       </view>
     </view>
 
     <!-- D 同行与安全：摘要行只读，编辑进 sheet（09 §3） -->
-    <view class="card stack-gap3">
+    <view class="stack" style="gap:12px;">
       <view class="card-header">
-        <text class="card-label">同行与安全</text>
+        <view class="section-head">
+          <text class="kicker">安全档案</text>
+          <text class="section-title">同行与安全</text>
+        </view>
         <text wx:if="{{draftPending}}" class="badge warning">待保存</text>
       </view>
-      <view class="list-row" hover-class="button-hover" bindtap="onOpenPhone">
-        <view class="list-main">
-          <text>手机号{{person.phone ? '' : '（未绑定）'}}</text>
-          <text class="list-sub">{{person.phone ? tools.maskPhone(person.phone) : '用于活动联络与安全应急联系'}}</text>
-        </view>
-        <text class="muted">›</text>
-      </view>
-      <view class="list-row" hover-class="button-hover" bindtap="onOpenEmergency">
-        <view class="list-main">
-          <text>紧急联系人</text>
-          <text class="list-sub">{{person.emergency.name ? person.emergency.name + (person.emergency.phone ? ' · ' + tools.maskPhone(person.emergency.phone) : '') : '未填写（报名时会要求填写）'}}</text>
-        </view>
-        <text class="muted">›</text>
-      </view>
-      <view class="list-row" hover-class="button-hover" bindtap="onOpenMedical">
-        <view class="list-main">
-          <view class="cluster" style="gap:8px;">
-            <text>健康与用药备注</text>
-            <text wx:if="{{person.medical}}" class="badge success">已填写</text>
+      <view class="card" style="padding:4px 16px;">
+        <view class="list-row" hover-class="button-hover" bindtap="onOpenPhone">
+          <view class="list-main">
+            <text>手机号{{person.phone ? '' : '（未绑定）'}}</text>
+            <text class="list-sub">{{person.phone ? tools.maskPhone(person.phone) : '用于活动联络与安全应急联系'}}</text>
           </view>
-          <text class="list-sub">{{person.medical ? '作为报名默认值，随每次报名带出' : '选填；不填写不影响报名'}}</text>
+          <text class="muted">›</text>
         </view>
-        <text class="muted">›</text>
+        <view class="list-row" hover-class="button-hover" bindtap="onOpenEmergency">
+          <view class="list-main">
+            <text>紧急联系人</text>
+            <text class="list-sub">{{person.emergency.name ? person.emergency.name + (person.emergency.phone ? ' · ' + tools.maskPhone(person.emergency.phone) : '') : '未填写（报名时会要求填写）'}}</text>
+          </view>
+          <text class="muted">›</text>
+        </view>
+        <view class="list-row" hover-class="button-hover" bindtap="onOpenMedical">
+          <view class="list-main">
+            <view class="cluster" style="gap:8px;">
+              <text>健康与用药备注</text>
+              <text wx:if="{{person.medical}}" class="badge success">已填写</text>
+            </view>
+            <text class="list-sub">{{person.medical ? '作为报名默认值，随每次报名带出' : '选填；不填写不影响报名'}}</text>
+          </view>
+          <text class="muted">›</text>
+        </view>
       </view>
     </view>
 
     <!-- E 常用同行人 -->
-    <view class="card stack-gap3">
+    <view class="stack" style="gap:12px;">
       <view class="card-header">
-        <text class="card-label">常用同行人</text>
+        <view class="section-head">
+          <text class="kicker">同行人</text>
+          <text class="section-title">常用同行人</text>
+        </view>
         <view class="button text" hover-class="button-hover" bindtap="onAddCompanion">
           <icon name="plus" size="16" color="#163E35" />
           <text>添加</text>
         </view>
       </view>
-      <view wx:for="{{companions}}" wx:key="id" class="list-row">
-        <view class="list-main">
-          <view class="who">
-            <image wx:if="{{item.avatar}}" class="avatar-img sm" src="{{item.avatar}}" mode="aspectFill" />
-            <text wx:else class="avatar-fallback sm-text">{{item.name ? item.name[0] : '同'}}</text>
-            <text>{{item.name}}</text>
+      <view class="card" style="padding:4px 16px;">
+        <view wx:for="{{companions}}" wx:key="id" class="list-row">
+          <view class="list-main">
+            <view class="who">
+              <image wx:if="{{item.avatar}}" class="avatar-img sm" src="{{item.avatar}}" mode="aspectFill" />
+              <text wx:else class="avatar-fallback sm-text">{{item.name ? item.name[0] : '同'}}</text>
+              <text>{{item.name}}</text>
+            </view>
+          </view>
+          <view class="cluster">
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEditCompanion">编辑</view>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRemoveAsk">移除</view>
           </view>
         </view>
-        <view class="cluster">
-          <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEditCompanion">编辑</view>
-          <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRemoveAsk">移除</view>
-        </view>
+        <text wx:if="{{!companions.length}}" class="small muted" style="display:block;padding:8px 0;">报名时直接勾选，不用再填一遍。</text>
       </view>
-      <text wx:if="{{!companions.length}}" class="small muted">报名时直接勾选，不用再填一遍。</text>
       <text class="small muted">保存条目不等于代办授权；每次报名仍需逐人同意。</text>
     </view>
 
-    <!-- F 我的协作码（10 §4）：缩略展示，完整值只通过复制离场 -->
-    <view class="card stack-gap3">
-      <text class="card-label">我的协作码</text>
-      <view class="who">
-        <text class="code-text" user-select>{{displayIdentity}}</text>
-        <view class="button text" hover-class="button-hover" bindtap="onCopyIdentity">
-          <icon name="copy" size="16" color="#163E35" />
-          <text>复制</text>
-        </view>
+    <!-- F+G+H 协作与权限（二阶段合并）：协作码 / 位置授权 / 隐私指引本来就是同一类
+         「谁能看到我、我授权了什么」，拆三张卡让低频项占满首屏。 -->
+    <view class="stack" style="gap:12px;">
+      <view class="section-head">
+        <text class="kicker">协作与权限</text>
+        <text class="section-title">谁能看到我</text>
       </view>
-      <text class="small muted">组织者把它填进「协作授权」，你才能看到对应任务。{{activated ? '' : '完善资料后，组织者即可凭码授权你。'}}</text>
-    </view>
-
-    <!-- G 位置授权（条件渲染，说明句一字不改） -->
-    <view wx:if="{{positionRows.length}}" class="card stack-gap3">
-      <text class="card-label">位置授权</text>
-      <view wx:for="{{positionRows}}" wx:key="signupId" class="list-row">
-        <view class="list-main">
-          <text>{{item.label}}</text>
-          <text class="list-sub">本次活动的位置授权仍然有效</text>
+      <view class="card stack-gap3">
+        <view>
+          <text class="card-label">我的协作码</text>
+          <view class="who" style="margin-top:4px;">
+            <text class="code-text" user-select>{{displayIdentity}}</text>
+            <view class="button text" hover-class="button-hover" bindtap="onCopyIdentity">
+              <icon name="copy" size="16" color="#163E35" />
+              <text>复制</text>
+            </view>
+          </view>
+          <text class="small muted" style="display:block;margin-top:4px;">组织者把它填进「协作授权」，你才能看到对应任务。{{activated ? '' : '完善资料后，组织者即可凭码授权你。'}}</text>
         </view>
-        <view class="button text" hover-class="button-hover" data-activity-id="{{item.activityId}}" data-signup-id="{{item.signupId}}" bindtap="onRevoke">撤回</view>
-      </view>
-      <text class="small muted">只在活动中主动上报一次位置，不会后台追踪。</text>
-    </view>
 
-    <!-- H 隐私指引：此前只有已停用的 privacy-popup 能跳到它，这份文件对用户等于不存在 -->
-    <view class="card stack-gap3">
-      <text class="card-label">隐私与资料</text>
-      <view class="list-row" hover-class="button-hover" bindtap="onOpenPrivacy">
-        <view class="list-main">
-          <text>隐私保护指引</text>
-          <text class="list-sub">收集哪些资料、只用于哪件事、你能怎么撤回</text>
+        <block wx:if="{{positionRows.length}}">
+          <view class="hairline"></view>
+          <view>
+            <text class="card-label">位置授权</text>
+            <view wx:for="{{positionRows}}" wx:key="signupId" class="list-row">
+              <view class="list-main">
+                <text>{{item.label}}</text>
+                <text class="list-sub">本次活动的位置授权仍然有效</text>
+              </view>
+              <view class="button text" hover-class="button-hover" data-activity-id="{{item.activityId}}" data-signup-id="{{item.signupId}}" bindtap="onRevoke">撤回</view>
+            </view>
+            <text class="small muted">只在活动中主动上报一次位置，不会后台追踪。</text>
+          </view>
+        </block>
+
+        <view class="hairline"></view>
+        <view class="list-row" hover-class="button-hover" bindtap="onOpenPrivacy">
+          <view class="list-main">
+            <text>隐私保护指引</text>
+            <text class="list-sub">收集哪些资料、只用于哪件事、你能怎么撤回</text>
+          </view>
+          <icon name="arrow" size="20" color="#5F6E66" />
         </view>
-        <text class="muted">›</text>
       </view>
     </view>
   </view>
