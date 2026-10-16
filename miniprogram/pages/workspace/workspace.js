@@ -106,6 +106,13 @@ Page({
       })
       const blocker = J.transitionBlocker({
         next, counters: v.counters, unassignedBoarding: missingBoarding, coordinating, hasTravelFact,
+        // 「已确认但没有出发结论」的人数，由投影好的行标志算出（页面不重述域内规则，铁律 19）。
+        // 它是门槛说明要说出口的那个数字：服务端 activity.transition 的 UNRESOLVED_DEPARTURE 门
+        // 查的是「有没有 departure 记录」，与「有没有签到」是两条独立命令（field.js 的 checkin 只写
+        // record.checkIn），所以 counters.unchecked 归零之后仍可能被拒（审计 C-05/F-01）。
+        // 只作为**顶层 ctx 键**传入，绝不塞进 counters：counters 必须是 selectors 投影的原样，
+        // 否则「transitionBlocker 引用的每个 counters 键都要能在投影里找到出处」那条防漂门会被绕过。
+        notVerified,
       })
       this.setData({
         loading: false,
@@ -133,6 +140,10 @@ Page({
         notVerified,
         phaseTimeline: J.timeline(res.now, phase),
         syncKey: phase + '@' + res.revision,
+        // canTransition 只回答「这一步有没有权限、有没有下一个阶段」，不回答「门槛清没清」；
+        // 后者是 transitionHint 的唯一职责。两个语义被模板当成一件事用过（审计 F-01）：解释行挂在
+        // !canTransition 之下，而 activity.transition 对组织者是无条件广播的，于是算好的说明一行都不显示。
+        // 修法方向 = 按钮保持可点 + 说明预先可见，不是置灰（先例 2026-10-08 §4 L4「不要给一个点不动的灰按钮」）。
         canTransition: !!next && v.permittedActions.indexOf('activity.transition') !== -1,
         nextPhaseLabel: next ? J.TRANSITION_LABEL[next] || J.phaseLabel(next) : '',
         transitionHint: blocker,
