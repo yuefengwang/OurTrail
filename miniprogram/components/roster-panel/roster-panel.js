@@ -66,6 +66,8 @@ Component({
     caps: {},
     vehicleIndex: -1,
     editingId: '',
+    revokeId: '',
+    revokeText: '',
     error: '',
     message: '',
     busy: false,
@@ -352,15 +354,26 @@ Component({
         vehicleIndex: m.vehicleId ? this.transportVehicleIds.indexOf(m.vehicleId) : -1,
       })
     },
-    onRevokeMembership(e) {
+    // 撤销不可回退且影响的是第三方，按 me.js 的 onRemoveAsk/Cancel/Confirm 三步做（询问→确认→执行）。
+    onRevokeAsk(e) {
       const id = e.currentTarget.dataset.id
+      const m = (this.data.memberships || []).find(x => x.id === id)
+      if (!m) return
+      this.setData({ revokeId: id, revokeText: m.userId + '（' + m.roleLabel + ' · 截止 ' + m.expiresLabel + '）' })
+    },
+    onRevokeCancel() { this.setData({ revokeId: '', revokeText: '' }) },
+    onRevokeConfirm() {
+      const id = this.data.revokeId
+      if (!id || this.data.busy) return
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({ type: 'membership.revoke', activityId: this.data.activityId, membershipId: id }, this.revision, this)
         .then(res => {
           this.revision = res.revision
+          this.setData({ busy: false, revokeId: '', revokeText: '' })
           api.toast('授权已撤销')
           this.loadAccess()
         })
-        .catch(err => this.setData({ error: api.errorText(err) }))
+        .catch(err => this.setData({ busy: false, error: api.errorText(err), revokeId: '', revokeText: '' }))
     },
     onRole(e) { this.setData({ roleIndex: Number(e.detail.value) }) },
     onMUserId(e) { this.setData({ mUserId: e.detail.value }) },
@@ -385,6 +398,7 @@ Component({
       this.setData({ editingId: '', roleIndex: 0, mUserId: '', expires: { date: '', time: '' }, scopeIndex: 0, caps: {}, vehicleIndex: -1 })
     },
     onAccessSave() {
+      if (this.data.busy) return
       const userId = this.data.mUserId.trim()
       const expiresAt = this.data.expires.date && this.data.expires.time
         ? this.data.expires.date + 'T' + this.data.expires.time + ':00+08:00' : ''
@@ -411,14 +425,16 @@ Component({
         role, id: membershipId, activityId: this.data.activityId, userId, expiresAt,
         vehicleId: this.transportVehicleIds[this.data.vehicleIndex],
       }
+      // busy 只能在校验全过之后置：校验失败要先 return，否则一次填错就把按钮锁成「看着能点、点了没反应」。
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({ type: 'membership.save', activityId: this.data.activityId, membership }, this.revision, this)
         .then(res => {
           this.revision = res.revision
-          this.setData({ editingId: membershipId, message: '授权已保存。' })
+          this.setData({ busy: false, editingId: membershipId, message: '授权已保存。' })
           api.toast('授权已保存')
           this.loadAccess()
         })
-        .catch(err => this.setData({ error: api.errorText(err) }))
+        .catch(err => this.setData({ busy: false, error: api.errorText(err) }))
     },
   },
 })

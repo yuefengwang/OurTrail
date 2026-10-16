@@ -110,6 +110,7 @@
       <input class="input" value="{{purpose}}" bindinput="onPurpose" placeholder="例如：核实伤病后的紧急联络" />
     </form-field>
     <view class="button secondary block {{purpose ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{purpose ? 'onSensitive' : ''}}">查看紧急联络与健康备注</view>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
     <view wx:if="{{sensitive}}" class="callout">
       <text>紧急联系人：{{sensitive.emergency.name}}</text>
       <text style="display:block;">紧急电话：{{sensitive.emergency.phone}}</text>
@@ -136,7 +137,7 @@
     </form-field>
     <text class="small muted">先记录审计，再按当前权限生成名单（复制到剪贴板）。请妥善保存，不向无关人员转发。</text>
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
-    <view class="button primary block {{busy && exportPurpose ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{busy || !exportPurpose ? '' : 'onExportConfirm'}}">确认用途并复制名单</view>
+    <view class="button primary block {{busy || !exportPurpose ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !exportPurpose ? '' : 'onExportConfirm'}}">确认用途并复制名单</view>
   </view>
 </overlay>
 
@@ -152,7 +153,7 @@
       </view>
       <view class="cluster">
         <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEditMembership">调整</view>
-        <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRevokeMembership">撤销</view>
+        <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRevokeAsk">撤销</view>
       </view>
     </view>
 
@@ -213,5 +214,15 @@
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
     <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onAccessSave'}}">保存明确授权</view>
     <view class="button text" hover-class="button-hover" bindtap="onAccessReset">清空表单，新增另一份授权</view>
+  </view>
+</overlay>
+
+<!-- 撤销授权确认（M-13）：不可回退且影响第三方，套用 me.wxml 移除同行人的 dialog 范式。
+     必须排在协作授权 sheet 之后——两个 overlay 同为 z-index:200，靠文档顺序决定谁压在上面。 -->
+<overlay open="{{!!revokeId}}" kind="dialog" title="撤销协作授权" bind:close="onRevokeCancel">
+  <view class="stack">
+    <text>将立即终止 {{revokeText}} 的协作能力。</text>
+    <text>对方如果正在现场清点，下一次读取就会被挡在门外；撤销不可回退，要恢复只能让对方重新复制身份码再授权一次。</text>
+    <view class="button danger block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onRevokeConfirm'}}">确认撤销授权</view>
   </view>
 </overlay>
