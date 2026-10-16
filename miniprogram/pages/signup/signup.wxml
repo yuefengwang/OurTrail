@@ -203,10 +203,13 @@
     <view wx:if="{{capacityAsk}}" class="callout warning stack-gap3">
       <text class="callout-title">名额不足，是否整组候补？</text>
       <text>{{participants.length}} 人将一起进入候补，不会自动占用正式名额。</text>
-      <view class="button secondary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onWaitlist'}}">明确同意整组候补</view>
+      <!-- A-13：走到这个分支时，整组候补是此刻唯一走得通的通道，它就该拿到本屏最强的视觉权重；
+           「提交报名」降为次要但不置灰——名额后来空出时仍要能直接重试正式报名（不锁死用户）。 -->
+      <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onWaitlist'}}">明确同意整组候补</view>
     </view>
 
-    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSubmit'}}">{{busy ? '正在提交…' : '提交报名'}}</view>
+    <view class="button {{capacityAsk ? 'secondary' : 'primary'}} block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSubmit'}}">{{busy ? '正在提交…' : '提交报名'}}</view>
+    <text wx:if="{{capacityAsk}}" class="small muted" style="display:block;margin-top:4px;">现在能确认的是整组候补；正式名额若后来空出，仍可再提交正式报名。</text>
     <text class="small muted">{{approvalHint}}</text>
   </view>
 </view>

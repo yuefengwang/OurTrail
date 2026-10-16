@@ -282,14 +282,15 @@ async function scenario1() {
       && env.page.data.distance === 12.5 && env.page.data.ascent === 860
       && env.page.data.confirmed === 2 && env.page.data.capacity === 20,
       JSON.stringify({ t: env.page.data.title, b: env.page.data.badgeText, s: env.page.data.startAtLabel }))
-    check('状态区块：ready → 「行前安排已就绪」+ 计数行',
+    check('状态区块：ready → 「行前安排已就绪」；参与者该格不再重印时间锚点（A-02）',
       env.page.data.stateKey === 'ready' && env.page.data.stateTitle === '行前安排已就绪'
       && env.page.data.stateDetail === '检查集合时间、出行方式与装备，出发当天见。'
       && env.page.data.stateTone === 'success'
-      // 参与者视角的这一格给他自己的时间锚点；组织者的工作队列（待审核/候补/剩余）不再摆到参与者面前
-      && /^集合 /.test(env.page.data.countersLine) && /剩/.test(env.page.data.countersLine)
-      && env.page.data.countersLine.indexOf('待审核') === -1,
-      JSON.stringify({ k: env.page.data.stateKey, c: env.page.data.countersLine }))
+      // 工作队列只在组织者那一格出现；参与者的时间锚点由 milestone 行单独印一次
+      && env.page.data.countersLine === ''
+      && /^集合 /.test(env.page.data.milestone)
+      && env.page.data.howLine !== env.page.data.milestone,
+      JSON.stringify({ k: env.page.data.stateKey, c: env.page.data.countersLine, m: env.page.data.milestone }))
     check('我与同行人：两行装配（主报名 isPrimary、副标题以出行方式打头；无车行标「车辆待安排」）',
       env.page.data.rows.length === 2 && env.page.data.rows[0].isPrimary === true
       && env.page.data.rows[0].statusLabel === '已确认' && env.page.data.rows[0].subtitle === '搭乘车辆 · 东门集合点 · 1号车 · 01 座'

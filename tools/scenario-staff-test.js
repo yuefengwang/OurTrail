@@ -141,9 +141,13 @@ function staffView(over) {
 function scenario1() {
   section('1. 薄壳契约（承重版）：onShow 挂载点 / data 键集合恰为两个 / field-panel 带 sync-key 绑定')
   const cfg = pageConfig()
-  check('页面配置 = data + onLoad + onShow（onShow 是返回本页时失效信号的唯一挂载点，缺它下面 §1b 必红）',
-    Object.keys(cfg).sort().join(',') === 'data,onLoad,onShow' && typeof cfg.onShow === 'function',
-    Object.keys(cfg).sort().join(',') + ' / onShow=' + typeof cfg.onShow)
+  check('页面配置 = data + onLoad + onShow + onPullDownRefresh（返回与下拉都只靠生命周期失效信号，F-04）',
+    Object.keys(cfg).sort().join(',') === 'data,onLoad,onPullDownRefresh,onShow'
+    && typeof cfg.onShow === 'function' && typeof cfg.onPullDownRefresh === 'function',
+    Object.keys(cfg).sort().join(',') + ' / onShow=' + typeof cfg.onShow + ' / onPullDownRefresh=' + typeof cfg.onPullDownRefresh)
+  check('下拉手势与钩子成对：json 注册了 enablePullDownRefresh 才允许有 onPullDownRefresh（两种半截都不该绿）',
+    (STAFF_JSON.enablePullDownRefresh === true) === (typeof cfg.onPullDownRefresh === 'function'),
+    JSON.stringify({ json: STAFF_JSON.enablePullDownRefresh, hook: typeof cfg.onPullDownRefresh }))
   check('不 require 任何模块（api/格式化全都不碰，纯装配壳）', !/require\(/.test(STAFF_SRC))
   check('data 键集合恰为 {activityId, syncKey}（装配参数 + 一个显式失效信号键，不留第二个状态位）',
     Object.keys(cfg.data || {}).sort().join(',') === 'activityId,syncKey', JSON.stringify(cfg.data))
