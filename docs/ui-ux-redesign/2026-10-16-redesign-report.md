@@ -273,6 +273,7 @@ tabBar：**活动(home) / 天气(weather-hub) / 通知(notices) / 我的(me)**�
 | 未触碰 | `cloudfunctions/`（零改动 ⇒ 不需重新部署）；他人在途的 `utils/api.js`、`workspace.wxml` F-01 行；所有 tools/ 门禁；主工作区零改动 |
 | 推送 | **未推送**（PARALLEL_DEV 铁律：不推 master；本分支也未推远端；本机中继主机不可达） |
 | 潜在冲突 | 与他人在途任务（fix round 2）**无文件重叠**；`workspace.wxml` 的 F-01 两行本轮避开；`app.wxss`/`activity-card` 为其未涉文件。合并顺序建议：先合 fix round 2，再 `git merge --no-ff win/ui-redesign-editorial` |
+| 合并试跑 | **已实测无冲突**：收尾时对方已在主工作区提交 `13cb844`（含 F-01 的 workspace.wxml 改动，与本轮同文件不同区域）；在临时 worktree 试合并**自动合并成功**，合并树跑 `check.js` + `scenario-workspace 114/0` + `workspace-gate 43/0` + `t1-r01-test 29/0`（对方门禁）+ `style-semantics 92/0` + `g2-platform-gate 15/0` + `scenario-activity 136/0` 全绿后已中止，未落任何合并提交 |
 
 ---
 
