@@ -35,16 +35,27 @@ function commentRanges(src) {
   while ((m = re.exec(src))) out.push([m.index, m.index + m[0].length])
   return out
 }
-function hitsOf(src, anchor) {
-  let n = 0
-  let i = 0
-  for (;;) {
-    const at = src.indexOf(anchor, i)
-    if (at === -1) break
-    n++
-    i = at + anchor.length
+/* 2026-10-17 合并后修：上游一次无关的缩进重排（route.wxml 整体 +2 空格）就把 3 条锚点打成「命中 0 次」，
+ * 而全量复跑只跑 *-test.js、不跑 *-mutate.js ⇒ 这类仪器损坏不会被门禁发现（我已把「合并后必须复跑全部
+ * *-mutate.js」记进流程）。根因：锚点把行首缩进当成了判据。现在匹配忽略每行行首空白；
+ * 替换文本仍按脚本原样落盘——这些判据看的是结构与归属，格式变化本就不该影响它们。 */
+function anchorRe(anchor) {
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const lines = anchor.split(/\r?\n/).map(l => l.replace(/^[ \t]+/, ''))
+  return new RegExp(lines.map(esc).map(l => '[ \\t]*' + l).join('\\r?\\n'), 'g')
+}
+function matchAnchor(src, anchor) {
+  const re = anchorRe(anchor)
+  const hits = []
+  let m
+  while ((m = re.exec(src))) {
+    hits.push({ at: m.index, len: m[0].length })
+    if (m.index === re.lastIndex) re.lastIndex++
   }
-  return n
+  return hits
+}
+function hitsOf(src, anchor) {
+  return matchAnchor(src, anchor).length
 }
 function inComment(ranges, at) {
   for (const r of ranges) { if (at >= r[0] && at < r[1]) return true }
@@ -53,14 +64,15 @@ function inComment(ranges, at) {
 function inject(m) {
   const anchor = L(m.anchor)
   const src = original
-  const hits = hitsOf(src, anchor)
-  if (hits !== 1) return { error: '锚点命中 ' + hits + ' 次（要求恰好 1 次）' }
-  const at = src.indexOf(anchor)
+  const found = matchAnchor(src, anchor)
+  if (found.length !== 1) return { error: '锚点命中 ' + found.length + ' 次（要求恰好 1 次）' }
+  const at = found[0].at
+  const matchedLen = found[0].len
   // 变异（要求变红的那一类）落点必须在真实代码行；只剩注释 ⇒ 注入失败，不拿注释行充数。
   // 对照 K1 的**存在理由**就是「只改注释」，它的锚点必须在注释里 —— 由 inCommentOk 显式声明。
   if (inComment(commentRanges(src), at) && !m.inCommentOk) return { error: '锚点落在注释里（注入失败，不拿注释行充数）' }
   const file = path.join(SANDBOX, m.id + '.wxml')
-  fs.writeFileSync(file, src.slice(0, at) + L(m.to) + src.slice(at + anchor.length), 'utf8')
+  fs.writeFileSync(file, src.slice(0, at) + L(m.to) + src.slice(at + matchedLen), 'utf8')
   return { file: file }
 }
 
@@ -149,7 +161,7 @@ const MUTATIONS = [
 const CONTROLS = [
   {
     id: 'K1', title: '只改注释文字（判据不该听注释；锚点按设计落在注释行内）', inCommentOk: true,
-    anchor: ['             change 事件仍由 checkbox-group 承载，归属不许挪（见 platform-pitfalls §10 / signup.wxml 同形写法） -->'],
+    anchor: ['change 事件仍由 checkbox-group 承载，归属不许挪 —— 挪到 label 上取值语义会变（platform-pitfalls §10：group 的 detail.value 是全部选中值数组） -->'],
     to: ['             这行注释是被对照变异改过的，任何判据都不该因为它而变红 -->'],
   },
   {
