@@ -142,7 +142,7 @@ node tools/check.js            # static: node --check, WXML tag balance, WXSS br
 node tools/check-handlers.js   # every WXML bind* resolves to a JS handler (catches what --check cannot)
 node tools/check-handlers.js weather   # optional: single page/component target
 
-# Gated suites — 88（87 个 tools/*-test.js + smoke-test.js；另 3 套 e2e-ui / e2e-ui-state / e2e-golden-path 需开发者工具，不计入。实测 2026-10-17：`ls tools/*-test.js | wc -l` = 90）。
+# Gated suites — 90（89 个 tools/*-test.js + smoke-test.js；另 3 套 e2e-ui / e2e-ui-state / e2e-golden-path 需开发者工具，不计入。实测 2026-10-17 收口时：`ls tools/*-test.js | wc -l` = 92）。
 # 2026-10-14 全量复跑实测共 4498 断言（各脚本自己打印的 passed= 之和；快照会漂，以实测为准）。
 # 本轮红 1 条且**先于本轮存在**：tools/e2e-golden-path-test.js GP-01（NO_REVISION）在 git stash
 # 干净基线上同款复现（12 passed / 2 failed）⇒ 归属清楚，未擅动公共门禁。
@@ -278,7 +278,8 @@ node tools/page2-gates-test.js && node tools/a20-owner-hero-test.js && \
 node tools/b4-c11-busy-selfheal-test.js && node tools/b4-e05-checklabel-test.js && \
 node tools/rb-vehicle-dependency-test.js && node tools/rb-toggle-guard-test.js && \
 node tools/rc-transport-test.js && node tools/ra-field-panel-test.js && \
-node tools/oi-hour-hit-test.js
+node tools/oi-hour-hit-test.js && \
+node tools/e08-remaining-test.js && node tools/m02-class-scope-test.js
 ```
 
 **Test style is hand-rolled** — no jest/vitest/miniprogram-simulate. Each `tools/*-test.js` redefines `check(name, cond, extra)` + `section(title)` and calls `process.exit(failed ? 1 : 0)`. `scenario-editor-test.js` contains the reusable harness: it stubs `global.wx`, captures the real `Page()` config, `delete require.cache` to force a fresh source read, and monkey-patches `utils/api` to assert emitted commands.
