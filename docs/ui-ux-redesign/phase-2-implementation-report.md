@@ -187,7 +187,7 @@
 
 | 项 | 状态 |
 |---|---|
-| 本轮提交（分支 `win/ui-redesign-editorial`，未推送） | `8a4564d` merge(13cb844) → `0762ed4` feat 二阶段主提交 → `ac7a5c1` fix tabBar 底隙（**其中 tabBar 部分已在 round 3 回退**）→ `1cbc5da` docs 二阶段报告 → `d1d5fa9` feat 遗留项闭合 → `4db8f7f` docs 报告更新 → `<r3-fix>` 见 §11.6 |
+| 本轮提交（分支 `win/ui-redesign-editorial`，未推送） | `8a4564d` merge(13cb844) → `0762ed4` feat 二阶段主提交 → `ac7a5c1` fix tabBar 底隙（**其中 tabBar 部分已在 round 3 回退**）→ `1cbc5da` docs 二阶段报告 → `d1d5fa9` feat 遗留项闭合 → `4db8f7f` docs 报告更新 → `1be06d9` fix 回退 tabBar 公共类方案 → `b1d59a1` chore 删草稿 |
 | 改动文件（二阶段） | 14 个页面（signup/editor/routes/route/route-edit/me/notices/anotices/privacy/lab/weather-hub/staff/vehicle）+ `routes.js`/`route.js`（分组与封面派生，纯展示层）+ `lab.js`（中文阶段标签派生）+ **新增 `tools/ui-consistency-test.js`** + 文档与证据（`app.wxss`/`home.wxml` 的 tabBar 改动已在 round 3 回退） |
 | 业务逻辑 | 零变化：无命令、无 schema、无权限、无天气算法改动；`route.js`/`routes.js` 只新增展示派生字段（cover/mineRoutes/sharedRoutes）与 `onCoverError` |
 | cloudfunctions/ | 零改动 ⇒ 不需重新部署 |
@@ -278,6 +278,9 @@
 - 真机复验（撤掉后逐页滚到底复拍）证实四页尾部均不被遮挡 ⇒ 原结论错误（见 §3）。
 - 处置：回退 `ac7a5c1` 里的 `app.wxss` 规则与四个 wxml 挂类；删除失真的 `*-tabbar*.png` 证据，
   换成 `tabbar-final-*.png`；新门禁加 `T1.4` 反向断言「两种落法不得并存」。
+- 回退后复跑：`check.js` / `check-handlers.js` / `style-semantics` / `g2-platform-gate` /
+  `ui-consistency 17/0` / `scenario-me 143/0` / `scenario-notices` / `journey-graph 15/0` 全绿
+  （`tools/` 全仓已无任何测试引用 `with-tabbar`）。
 - 净效果：本分支不再有 tabBar 空白问题，也不再与对方的 B4-PAD 门禁冲突；`app.wxss` 重叠随之消失。
 
 ### 11.7 留给下一轮的一处设计分歧（需人裁决）
