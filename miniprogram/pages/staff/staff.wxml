@@ -1,9 +1,9 @@
 <view class="page">
-  <view class="stack">
-    <view>
-      <text class="eyebrow">现场协作</text>
+  <view class="stack-sections">
+    <view class="section-head">
+      <text class="kicker">现场协作</text>
       <text class="page-title" style="display:block;margin-top:4px;">照顾好这一小队。</text>
-      <text class="muted" style="display:block;margin-top:4px;">这里只展示当前仍授权给你的人员与任务；授权变更后立即生效。</text>
+      <text class="section-sub">这里只展示当前仍授权给你的人员与任务；授权变更后立即生效。</text>
     </view>
     <!-- sync-key 是宿主唯一的失效信号（与 workspace.wxml 同型）。不接面板的写完成事件：
          本页只有这一个面板，它写成功后自己会 reload（field-panel.js），宿主再下发一次就是重复读。 -->

@@ -22,7 +22,7 @@
       <block wx:if="{{activity}}">
         <view class="cluster" style="justify-content:space-between;">
           <text style="font-weight:600;min-width:0;word-break:break-all;">{{activity.title}}</text>
-          <text class="badge neutral">{{activity.phase}}</text>
+          <text class="badge neutral">{{activity.phaseText}}</text>
         </view>
         <text class="small muted">容量 {{activity.capacity}} · 报名 {{activity.signups}} 行 · 未结异常 {{activity.openIncidents}}</text>
       </block>

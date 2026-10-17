@@ -1,0 +1,7 @@
+✓ CF-00 真实路线 id=route-muky6o3kl53fhv（来源 readRoutes 真实投影，共 291 条）
+  shot cover-fallback.png 48627B
+✓ CF-01 注入坏路径触发 onCoverError → coverFailed=true（真实封面 cover-falls.jpg）；媒体盒 240→0px 未塌，无破图
+✓ CF-02 恢复真实封面后 coverFailed 复位=false，封面重新绘制 350×240
+  shot cover-restored.png 137379B
+
+SUMMARY 3 checks, FAIL=0

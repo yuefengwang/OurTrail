@@ -4,6 +4,7 @@
 // 用途：单人走完多人业务全流程——演员由 trailApiLab 注入，组织者动作由你在各业务页亲手做。
 'use strict'
 const { LAB_FUNC_NAME } = require('../../config')
+const F = require('../../utils/format')
 
 Page({
   data: {
@@ -62,7 +63,9 @@ Page({
         loading: false,
         denied: '',
         board: view.board || [],
-        activity: view.activity,
+        activity: view.activity
+          ? Object.assign({}, view.activity, { phaseText: F.PHASE_LABELS[view.activity.phase] || view.activity.phase })
+          : null,
         actors: view.actors || [],
         caller: view.caller || '',
         allowConfig: allowlist.configIds || [],

@@ -3,7 +3,12 @@
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取本车名单。" />
   </block>
+  <!-- 根容器保持 class="stack"（不是 stack-sections）：scenario-vehicle-test 场景 6 把这个
+       字面量钉住，用途是保证 denied/loading 的 wx:else 分支存在。现场任务页节奏偏紧也合适，
+       分组靠下面的 section-head，不靠容器间距。 -->
   <view wx:else class="stack">
+    <!-- 户外强光场景：深底反白的车头块（行内标签 .eyebrow 在 hero 上取反白色，
+         不能换成纸面用的 .kicker——那条是 --muted，压在森林绿上读不清） -->
     <view class="hero stack" style="gap:8px;">
       <view class="hero-body stack" style="gap:8px;">
         <text class="eyebrow">本车联络任务</text>
@@ -18,9 +23,12 @@
       <view class="seg {{leg === 'return' ? 'on' : ''}}" data-leg="return" bindtap="onLeg">返程</view>
     </view>
 
-    <view class="stack" style="gap:4px;">
+    <!-- 清点：分区头把「应到/已上车」这两个数和下面的名单绑成一组（原先只是两行文字，
+         名单像另一件事）。 -->
+    <view class="section-head">
+      <text class="kicker">清点</text>
       <text class="section-title">应到 {{expectedCount}} 人 · 已上车 {{boardedCount}} 人</text>
-      <text class="muted">{{legState}}</text>
+      <text class="section-sub">{{legState}}</text>
     </view>
 
     <view class="person-list">

@@ -104,6 +104,8 @@
 
 - **74 套 exit 0 / 0 失败**（`evidence/gate-phase2-sweep.txt`；3 套设备套件按基线惯例单独处理）。
   较第一轮的 72 套增加 2 套 = 合并 `13cb844` 带入的他人新门禁，同样全绿。
+  > round 3 收尾时复扫为 **74 绿 / 1 红**，该红（`outdoor-intelligence-ui` 45/2）已在基线提交对拍确认为
+  > 先于本轮存在，详见 §11.5。
 - `check.js`（WXML 配平/node --check/209 处 require）与 `check-handlers.js`（34 模板宿主
   dataset 契约 + 门 B 死 handler 未增加）均 exit 0。
 - 直接相关套件：`scenario-signup 104/0`、`scenario-editor 153/0`、`scenario-me 143/0`、
@@ -148,24 +150,36 @@
 「✅ 完成」= 代码改造完成 + 真实渲染通过（或静态审查豁免有据）；`staff`/`vehicle`/`cloud-field-poc`
 按第一轮即登记的边界保持不动，不是本轮遗漏。
 
-## 8. 剩余工作与下一轮优先级
+## 8. 剩余工作与下一轮优先级（round 3 已更新）
 
-1. **staff/vehicle 深度对齐**（中收益、中风险）：需先补测试钉点再动结构（两页被 trip2/golden-path
-   钉死）；建议单独一轮，照本轮 signup 的「先核钉点→改→跑门禁→真机」流程。
-2. **lab 页阶段徽标显示英文枚举**（低收益、低风险）：`{{activity.phase}}` 直接印 `published`，
-   应走 `format.PHASE_LABELS`；dev-only 页面，随手可修。
-3. **小屏（≤375px）复验**：需人工在开发者工具切 iPhone SE 复看 hero/卡片/工作台/新 sticky 栏。
-4. **真活动封面图**：需服务端给活动/路线模型加图片字段（schema 变更，须走 ADR）；
-   当前「氛围图 + 诚实性脚注」是诚实下限。
-5. **封面失败回退注入验证**：补一条往 `covers.coverFor` 塞坏路径的用例即可闭合（低成本）。
-6. **候补双按钮的 e2e 固化**：signup sticky 栏在 `capacityAsk` 下的双按钮次序目前只有真机证据，
-   建议补一条 e2e-ui 断言钉住（防未来回归）。
+**已在本轮收尾闭合**（详见 §11 遗留项闭合记录）：
+
+1. ~~staff/vehicle 深度对齐~~ → **已做（受钉点约束的安全部分）**：`staff` 头部升级为编辑式头部；
+   `vehicle` 的「应到/已上车」两行文字升级为分区头（人数与状态绑成一组）。**未动** `vehicle` 根容器类
+   ——`scenario-vehicle-test` 把字面量 `<view wx:else class="stack">` 钉住（用途是保证 wx:else 分支存在），
+   已保留并写明原因，不擅改公共门禁。
+2. ~~lab 页阶段徽标显示英文枚举~~ → **已修**：`lab.js` 用 `format.PHASE_LABELS` 派生 `phaseText`，
+   模板改印中文阶段名（不再给用户看 `published`）。
+3. ~~封面失败回退注入验证~~ → **已闭合**（真机注入坏路径，见 §11）。
+4. ~~候补双按钮/全局一致性的回归防线~~ → **已落地**为新门禁 `tools/ui-consistency-test.js`（17 项断言）。
+
+**仍然开放**（按对用户体验的影响排序）：
+
+1. **真活动封面图**（高收益、需服务端配合）：需给活动/路线模型加图片字段（schema 变更，须走 ADR）；
+   当前「氛围图 + 诚实性脚注」是诚实下限，不是终态。
+2. **小屏（≤375px）真机复验**（中收益、环境受限）：自动化通道无法改小程序视口（已实测 CDP
+   `Emulation.setDeviceMetricsOverride` 对 `windowWidth` 无效，仍为 390），需人工在开发者工具切
+   iPhone SE/375 机型复看 hero/卡片/工作台/sticky 栏；静态口径已由新门禁 §5 兜住（无超宽固定宽度、
+   指标格 `min-width:0`、大标题断词保护）。
+3. **`weather`/`weather-chart` 的表达升级**（中收益、需单独立项）：任务约束冻结天气逻辑，本轮仅确认其
+   样式已全部 token 化；若要进一步提升专业信息表达，需先明确「只改布局不改算法」的边界并单独排期。
+4. **POC 页 `cloud-field-poc` 清理**（低收益）：非业务页面，建议下轮直接从路由里摘除或标注为开发工具。
 
 ## 9. Git 与交付状态
 
 | 项 | 状态 |
 |---|---|
-| 本轮提交（分支 `win/ui-redesign-editorial`，未推送） | `8a4564d` merge(13cb844) → `0762ed4` feat 二阶段主提交 → `ac7a5c1` fix tabBar 底隙 |
+| 本轮提交（分支 `win/ui-redesign-editorial`，未推送） | `8a4564d` merge(13cb844) → `0762ed4` feat 二阶段主提交 → `ac7a5c1` fix tabBar 底隙 → `1cbc5da` docs 二阶段报告 → `<round3>` 见 §11 |
 | 改动文件（二阶段） | 11 个页面 wxml（signup/editor/routes/route/route-edit/me/notices/anotices/privacy/lab/weather-hub）+ `routes.js`/`route.js`（分组与封面派生，纯展示层）+ `home.wxml`（tab 类）+ `app.wxss`（`.with-tabbar` 规则）+ 文档与证据 |
 | 业务逻辑 | 零变化：无命令、无 schema、无权限、无天气算法改动；`route.js`/`routes.js` 只新增展示派生字段（cover/mineRoutes/sharedRoutes）与 `onCoverError` |
 | cloudfunctions/ | 零改动 ⇒ 不需重新部署 |
@@ -180,3 +194,66 @@
 2. **造可报名夹具的正确姿势**：`activity.publish` 的 `participation` 是 specNull（字段必须在、值可
    null）——传 `null` 才能得到「本人可报名」状态；revision 是全局 CAS，每次 dispatch 都要带刚读到的值。
 3. **发布态活动无法删除**是域规则：验收夹具清理由 transition→cancelled 收口，不要试图绕过。
+
+## 11. 遗留项闭合记录（round 3，2026-10-17 续做）
+
+用户要求「继续完成遗留任务」后，本轮把二阶段报告 §8 里能安全落地的遗留项逐条做完，
+并把其中「靠人眼发现」的部分固化成新门禁。
+
+### 11.1 代码改造（3 个页面）
+
+| 页面 | 改动 | 钉点处理 |
+|---|---|---|
+| `staff` | 头部由 `eyebrow + page-title + muted` 升级为 `section-head`（kicker + page-title + section-sub），容器 `stack` → `stack-sections` | `scenario-staff-test 25/0` |
+| `vehicle` | 「应到 N 人 · 已上车 M 人 + legState」由两行裸文字升级为分区头（kicker 清点 + section-title + section-sub），与下面的名单归为一组 | **根容器类保持 `.stack`**：`scenario-vehicle-test` 场景 6 把字面量 `<view wx:else class="stack">` 钉住（保证 denied/loading 的 wx:else 分支存在）。第一版改成 `stack-sections` 立刻把该门打红（56/1），已回退并把原因写进模板注释；`.seg` 与「确认本程发车 / 完成本程行驶」按钮文案原样保留 |
+| `lab` | 阶段徽标不再直印服务端枚举：`lab.js` 用 `format.PHASE_LABELS` 派生 `phaseText`，模板改印中文阶段名 | `scenario-lab-test` 绿；未引入新枚举比较（journey 门 C/D 仍绿） |
+
+### 11.2 新增门禁 `tools/ui-consistency-test.js`（17 项断言，全绿）
+
+把两轮里「人眼才发现」的问题变成会红的门：
+
+- **§1 tabBar 底隙**：`app.json` 仍是自定义 tabBar ⇒ 规则 `.page.with-tabbar{84px+安全区}` 必须存在；
+  **app.json 里每个 tab 页都必须挂 `with-tabbar`**；反之非 tab 页不得挂（否则白留空白）。
+- **§2 固定底栏**：用 `sticky-action` 的页面必须配 `has-sticky`；`has-sticky` 的条件表达式与底栏
+  `wx:if` 必须同源（页面层再钉一次 g2-platform-gate 的口径）。
+- **§3 封面绘制路径**：`hero-cover` ≥2 个使用方；媒体盒必须**定高 px**（不是百分比高）；
+  封面 `<image>` 不得绝对定位；每个 hero 必须绑 `binderror`（破图零容忍）。
+- **§4 死类普查**：WXML 里出现、但**任何 WXSS 都没定义**的类必须为 0。
+  （这正是 `privacy` 的 `.h1/.h2` 与四个 tab 页的 `.with-tabbar` 当年被发现的机制；
+  判据内置了修饰符前缀 `status-panel--{{kind}}` 的容错，并有「普查器自身有效」自查项防假绿。）
+- **§5 小屏静态口径**：375 内容区（335px）不得有超宽固定宽度声明，**横滚容器内的宽表按设计豁免**
+  （天气页 `.num-table min-width:760px` 是「全字段横滚表」，并用 `T5.1b` 反向断言该豁免不是空跑）；
+  顶层 `.metrics` 是多格 flex 且 `.metric` 有 `min-width:0`；大标题与事实值有断词保护。
+
+### 11.3 封面加载失败回退：真机注入验证（闭合）
+
+- 注入方式：`page.setData` 只把展示层 `cover` 指向不存在的路径（`/assets/photos/__not_exist__.jpg`），
+  不碰业务数据与云端契约。
+- 读数：`coverFailed` 由 `false → true`；**媒体盒高度 240 → 240px 不变**（页面不塌）；
+  被隐藏的 `<image>` 为 0px；恢复真实封面后 `coverFailed` 复位、封面重绘 350×240。
+- 截图：`screens/phase2/cover-fallback.png`（纯森林绿 hero，标题/指标/徽标保留，无破图）、
+  `cover-restored.png`。证据：`evidence/phase2-cover-fallback.json`。
+- **口径修正（自我纠错）**：第一条驱动把「被隐藏的 `<image>` 240→0」写成了「媒体盒未塌」，
+  属措辞不实；补测了媒体盒本体尺寸后才给出通过判定。
+
+### 11.4 小屏真机验证：确认当前环境做不到（UNVERIFIED，不假绿）
+
+- 尝试 CDP `Emulation.setDeviceMetricsOverride(width=375,height=667,deviceScaleFactor=2,mobile=true)`：
+  调用成功且会**断掉 automator 连接**（需重连），但重连后 `wx.getSystemInfoSync().windowWidth` **仍为 390**
+  ⇒ 该通道对小程序视口无效（模拟器视口与页面 CSS 视口分离）。
+- 因此不把「行宽 318px」当成小屏证据（该值在 390 下同样是 318，属无效对照，已作废）。
+- 结论：**小屏（≤375px）真机渲染仍为 UNVERIFIED**，需人工切机型复看；
+  已用 §5 静态门禁兜住可静态判定的部分，并在 §8 保留为公开遗留项。
+
+### 11.5 round 3 回归
+
+- 新增 `tools/ui-consistency-test.js` 已纳入 `tools/*-test.js` 扫尾。
+- **round 3 全量扫尾：74 套 exit 0 / 1 套非绿**（`evidence/gate-phase2-round3-sweep.txt`）。
+  唯一非绿是 `outdoor-intelligence-ui`（`passed=45 failed=2`）——**该套读生产实时气象**，
+  已在基线提交 `8a4564d`（本轮全部 UI 改动之前）单独复跑对拍，读数**逐项一致**（同 45/2，
+  含 `tier ∈ {确定, 很值得关注, …}` 与「确定性」段两处）⇒ 与本轮无关，属先于本轮存在的问题，
+  未擅动该套件（改动天气线需单独立项）。
+- 改动页面对应套件：`scenario-vehicle 57/0`、`scenario-staff 25/0`、`scenario-lab` 全绿、
+  `journey-graph 15/0`、`style-semantics`、`g2-platform-gate`、`check.js`、`check-handlers.js` 全绿。
+- 相较二阶段报告 §6.2（当时 74 套 exit 0 / 0 失败）：本轮多出一套新门禁（17 项断言），
+  并把天气线那条常驻红**从「恰好绿」纠正为「基线即红」并留证**——比上一版更准确。
