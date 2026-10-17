@@ -2,11 +2,12 @@
 //
 // 测什么（缺一条就不算这条门存在过，口径沿用 tools/t4-e08-test.js 的六段形态）：
 //  §0 五条门都可运行、都没有 fatal（判据抛错＝红，不＝通过）
-//  §1 落门安全闸：进了 check.js 的四条必须真实仓库命中 0；没进的 G11 必须**确实还有活体**
-//     （活体归零的那一天本套件会红，提醒落门——BLOCKED 不是一个可以悄悄躺着的状态）
+//  §1 落门安全闸：进了 check.js 的五条必须真实仓库命中 0；且「落门是靠收窄判据、不是靠改合法样式」
+//     ——app.wxss 的 `.input, .textarea` 基线与 `.textarea` 单控件覆盖必须都还在，G11 对它们判 0
+//     未进门的规则（BLOCKED 台账）必须与实测读数一致，不许悄悄躺着
 //  §2 门确有样本可判（空转的门比没有门更危险，check.js:131 的路径分隔符教训）
 //  §3 解析底座：注释/字符串/at-rule/简写四边展开/properties 读取都不许把输入读成空气
-//  §4 夹具自证（34 组）：正例必红 + 反例必绿 + 阈值单源跟着改
+//  §4 夹具自证（组数以 SELF_CASES.length 现场读数，不在此写死）：正例必红 + 反例必绿 + 阈值单源跟着改
 //  §5 接线检查：判据装在没人跑的门里等于没有门 ⇒ 必须真挂在 tools/check.js 的预提交闸上，
 //     且本批对 check.js 是**只增不改**
 //  §6 B0 复验：overlay.wxss 那条等价收敛的终值读数与承重墙原文（工作项 B 的门禁化那一半）
@@ -37,8 +38,8 @@ const ctx = E08.makeCtx(MP)
 const results = {}
 // 顶部结构闸：判据模块被摘空/替换（导出空 RULES 或 GATED 条数不对）时，本套件必须**报红**而不是 TypeError 崩——
 // 崩了就没法把「门坏了」与「跑挂了」分开（verify.txt §4.2 就是拿摘空副本打这一条的）。
-if (!Array.isArray(E08.RULES) || E08.RULES.length !== 5 || !Array.isArray(E08.GATED) || E08.GATED.length !== 4) {
-  console.error('  ✗ 判据模块导出的不是「5 条 RULES + 4 条 GATED」（实际 RULES=' +
+if (!Array.isArray(E08.RULES) || E08.RULES.length !== 5 || !Array.isArray(E08.GATED) || E08.GATED.length !== 5) {
+  console.error('  ✗ 判据模块导出的不是「5 条 RULES + 5 条 GATED」（实际 RULES=' +
     ((E08.RULES || []).length) + ' GATED=' + ((E08.GATED || []).length) + '）⇒ 本批的门已被摘空或改名')
   console.log('\n==== passed=0 failed=1 ====')
   process.exit(1)
@@ -52,7 +53,7 @@ const hitOf = id => (results[id].hits || []).length
 section('§0 五条门都可运行（G11 不进门也必须能跑，否则阻塞状态无从复量）')
 check('RULES 导出 5 条：G3/G6/G7/G8/G11', E08.RULES.length === 5 && E08.RULES.map(r => r.id).join(',') === 'G3,G6,G7,G8,G11',
   E08.RULES.map(r => r.id).join(','))
-check('GATED（接进 check.js 的）恰为 G3/G6/G7/G8 四条', E08.GATED.map(r => r.id).join(',') === 'G3,G6,G7,G8',
+check('GATED（接进 check.js 的）恰为 G3/G6/G7/G8/G11 五条', E08.GATED.map(r => r.id).join(',') === 'G3,G6,G7,G8,G11',
   E08.GATED.map(r => r.id).join(','))
 for (const r of E08.RULES) {
   check(r.id + ' 有输入且未抛错：' + (results[r.id].stat || results[r.id].fatal || ''), !results[r.id].fatal, results[r.id].fatal)
@@ -66,15 +67,20 @@ for (const r of E08.GATED) {
 }
 {
   const n = hitOf('G11')
-  check('G11 没有接进 check.js（派单纪律：命中 >0 的门不落，不加豁免、不加跳过清单）', !E08.GATED.includes(E08.G11))
-  check('真实仓库 G11 命中 ' + n + ' 处 >0 ⇒ 本轮 BLOCKED 站得住', n > 0, n + ' 处')
-  note('G11 活体清单：' + results.G11.hits.map(h => h.file + ':' + h.line + '（' + h.snippet + '）').join(' | '))
+  check('G11 已接进 check.js（收窄判据后实测命中 0 ⇒ 落门；不带豁免、不带跳过清单）', E08.GATED.includes(E08.G11))
+  check('真实仓库 G11 命中 0 ｜ ' + (results.G11.stat || ''), n === 0, n + ' 处')
   check('BLOCKED 台账与实测读数一致（台账会随实测漂移 ⇒ 不一致即红，不许悄悄躺着）',
-    E08.BLOCKED.length === 1 && E08.BLOCKED[0].id === 'G11' && E08.BLOCKED[0].hits === n,
-    JSON.stringify(E08.BLOCKED) + ' vs 实测 ' + n)
-  const g11 = results.G11.hits[0]
-  check('阻塞那处就是 app.wxss 里 `.input, .textarea` 与 `.textarea` 的 padding 双写（不是别处的新活体）',
-    !!g11 && g11.file === 'app.wxss' && /padding/.test(g11.why) && /\.textarea/.test(g11.why), JSON.stringify(g11 && g11.why))
+    E08.BLOCKED.length === 0, JSON.stringify(E08.BLOCKED))
+  // 这一条是「动的是判据、不是样式」的留痕：上一批为了让 G11 进门，本可以删掉 app.wxss 那两条里的
+  // 任意一条（门就绿了），但那是拿合法样式换一次变绿。这里把合法形状本身钉住——谁顺手把它"收敛"了，
+  // 本套件就红，逼读者回到判据这一侧讨论。
+  const tw = E08.parseRules(ctx.read(ctx.abs('app.wxss')))
+  const grp = tw.find(r => r.selector === '.input, .textarea')
+  const one = tw.find(r => r.selector === '.textarea')
+  check('app.wxss 的 `.input, .textarea { padding: … }` 基线仍在（落门没有靠改合法样式换绿）',
+    !!grp && grp.decls.some(d => d.prop === 'padding'), JSON.stringify(grp && grp.decls.map(d => d.prop + ':' + d.value)))
+  check('`.textarea` 的单控件覆盖仍在，且 G11 对它判 0（共用基线 + 覆盖不是 E-01 那一形）',
+    !!one && one.decls.some(d => d.prop === 'padding'), JSON.stringify(one && one.decls.map(d => d.prop + ':' + d.value)))
 }
 check('判据里没有登记豁免机制（KNOWN_*/SKIP_*/EXEMPT_*/allowlist 一律不许出现）',
   !/KNOWN_[A-Z_]+\s*=/.test(RULE_SRC) && !/SKIP[A-Z_]*\s*=/.test(RULE_SRC) &&
@@ -221,11 +227,14 @@ section('§5 接线检查（判据装在没人跑的门里等于没有门）')
   check('命中与 fatal 都记进 failed（抛错/无输入按红算，不静默放行）',
     /res\.hits\.forEach\(h => fail\(/.test(block) && /if \(res\.fatal\) fail\(/.test(block))
   check('GATED 条数一写死：摘掉一条门当场红，不会因为「循环少跑一轮」而全绿',
-    /E08\.GATED\.length !== 4/.test(block) && /E08\.RULES\.length !== 5/.test(block))
-  check('G11 的活体每次都被复量一遍并打读数（BLOCKED 不许悄悄躺着；归零那句提示落在代码里）',
-    /E08\.G11\.run\(ctx\)/.test(block) && /命中已归零/.test(block))
-  check('G11 的读数不写进 fail（不落一条有命中的门，也不拿它当噪音红）',
-    !/fail\('\[G11\]/.test(block) && !/g11\.hits\.forEach\(h => fail/.test(block))
+    /E08\.GATED\.length !== 5/.test(block) && /E08\.RULES\.length !== 5/.test(block))
+  // G11 已于尾批收窄并进门（见 §1），这里保的是**通用**机制：只要还有规则在 RULES 而不在 GATED，
+  // check.js 每次都要复量它并核对 BLOCKED 台账——上一批那条「命中已归零就该落门」的提示不能随 G11 进门而消失。
+  check('未进门的规则仍被逐条复量、且 BLOCKED 台账与实测双向核对（不进门要留痕，台账过期也留痕）',
+    /const ungated = E08\.RULES\.filter\(r => !E08\.GATED\.includes\(r\)\)/.test(block) &&
+    /unregistered/.test(block) && /alreadyGated/.test(block) && /r\.run\(ctx\)/.test(block))
+  check('复量本身抛错按红算（「不进门」不等于「可以不量」，量的过程坏了也要说）',
+    /复量抛错（不进门不等于可以不量）/.test(block))
   check('本批的段在 T4 段之后、汇总输出之前（追加位置正确，没插进既有步骤里）',
     CHECK_SRC.indexOf('T4/E-08 新门结束') < CHECK_SRC.indexOf('T5b/E-08 新门开始') &&
     CHECK_SRC.indexOf('T5b/E-08 新门结束') < CHECK_SRC.lastIndexOf("console.log('')"))

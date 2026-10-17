@@ -68,7 +68,7 @@ WXSS 对 `100dvh` 支持不稳，用 `100vh` 或 `min-height:100vh`（现状：`
 ### 11. checkbox-group / picker 的取值 `[现行]`
 - `checkbox-group bindchange` 的 `e.detail.value` 是**全部选中值数组**（不是单个变更项）。
 - `picker` 的 `e.detail.value` 是**索引**；带对象数组用 `range-key`。
-- 这一类有门：`tools/check.js` 步骤 8（`:197-220` 裸 checkbox 绑 bindchange）与 `tools/check-handlers.js:93-111`（checkbox/radio-group 的 dataset 契约）。
+- 这一类有门：`tools/check.js` 的「勾选框事件载体」步骤与 `tools/check-handlers.js` 的 dataset 契约检查（两边各查一半，口径互补）。**别抄这两处的行号**，跑一次 `node tools/check.js` 会打印步骤标题。
 
 ### 12. dataset 类型 `[现行]`
 `data-gostaff="{{item.goStaff}}"` 传布尔值到 dataset 会保持类型，但 `data-x="true"` 这种字符串要自行转换。判断一律用真值语义，不要比较字符串 `'true'`。
@@ -92,8 +92,9 @@ WXSS 对 `100dvh` 支持不稳，用 `100vh` 或 `min-height:100vh`（现状：`
 
 ## 工具与能力边界
 
-- `node tools/check.js`（228 行，8 步）：JS 语法 `:26-36` / WXML 配平 `:39-70` / WXSS 花括号 + 禁 `//` 行注释 `:73-95` / app.json 页面四件套 `:98-110` / `usingComponents` 指向存在 `:113-123` / 反向：用了未注册 `:129-159` / 旧目录 `:161-166` / 相对 require 可解析 `:168-191` / 裸 checkbox `:197-220`。改完 UI 必跑。
-- `node tools/check-handlers.js`：WXML 的 `bind*` 是否解析到 JS handler（`:83-86`）+ checkbox/radio dataset 契约（`:93-111`）。**它补的是 `node --check` 看不见的那一类**——`node --check` 过了仍可运行时 `xxx is not defined`（铁律 4）。
-- **这些门的天花板**：apply-shared 缺失、硬编码色值、四态未覆盖、触控尺寸、新 token 未登记 —— **全部没有自动闸门**（逐项核实过 `tools/`）。所以本 skill 与 `review-checklist.md` 是那 13 条规则的唯一防线；别把"过了 check.js"当成"过了 UI 规范"。
+- `node tools/check.js`：既有静态步骤（JS 语法 / WXML 标签配平 / WXSS 花括号与 `//` 行注释 / app.json 页面四件套 / `usingComponents` 正反两向 / 旧目录已删 / 相对 require 可解析 / 裸 checkbox 事件载体），**加**一段平台门——判据分别在 `tools/t4-e08-platform-rules.js`、`tools/e08-remaining-rules.js`、`tools/m02-class-scope-rules.js`，每段进门规则都自带合成夹具自证（正例必红、反例必绿）。要清单就直接跑 `node tools/check.js`：它自己逐条打印 `Gn + 标题 + 命中读数`。**不要把它的行号或步数抄进任何文档/断言**——这段是追加式的，一次改动行号就漂（本仓已多次因此把门自己搞哑）。改完 UI 必跑。
+- `node tools/check-handlers.js`：WXML 的 `bind*` 是否解析到 JS handler，外加 checkbox/radio-group 的 dataset 契约；`check-handlers.js <页/组件名>` 可单测一个宿主。**它补的是 `node --check` 看不见的那一类**——`node --check` 过了仍可运行时 `xxx is not defined`（铁律 4）。
+- **这些门的天花板（2026-10-17 复量）**：平台与作用域这一整类**已经有闸**——`options` 同名键 / apply-shared 缺失 / 具名 slot 缺 `multipleSlots` / 裸事件属性名 / 页尾留白↔`app.json tabBar.list` 身份 / WXSS 不支持特性 / sticky 无偏移 / 同一条选择器文本的关键布局属性双写 / 类定义作用域（含 custom-tab-bar），逐条读数看 `node tools/check.js` 自己的输出。
+  **仍然只有人工清单和本 skill 兜着的**是语义层那几条：硬编码色值与新 token 未登记、四态（空/加载/错误/边界）是否覆盖、触控目标尺寸与信息密度、文案语气（概率语气只在个别套件按写入集查）。已存在的色值/尺寸类套件（`tools/swx1-style-gates-test.js`、`tools/swx2-style-gates-test.js`、`tools/style-semantics-test.js` 等）都是**批次写入集内**的门——新建一个页面不在它们的覆盖里。所以别把"过了 check.js"当成"过了 UI 规范"，也别把"某个页面过了 swx2"当成"全仓合规"。
 - `node cloudfunctions/trailApi/smoke-test.js`、`tools/*-test.js`：领域与逻辑回归（改过 domain 后还要 `node tools/sync-lab.js`，见根 `AGENTS.md`）。
 - 真机驱动与恢复：`docs/e2e-mp/README.md` + `docs/e2e-mp/automation-playbook.md`（会话僵死、`quit` vs `close`、旧句柄"点击成功但没作用"、`busy` 期间空按钮、云函数部署与超时继承、退出码语义）。

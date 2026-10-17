@@ -20,9 +20,13 @@
 //     通配选择器。**必须先剥注释**——app.wxss:2 的注释里合规地讨论着这些词，不剥就是假红。
 //  G8=(8) position: sticky 必须**同一选择器**带 top/bottom/left/right 之一，且值不是 auto
 //     （E-06 本体：死声明看着像吸住、实际从不吸）。
-//  G11=(11) 同一 .wxss 内同一选择器把关键布局属性（display/align-items/justify-content/
+//  G11=(11) 同一 .wxss 内**同一条选择器文本**把关键布局属性（display/align-items/justify-content/
 //     position/margin/padding 六族）写两遍 ⇒ 后写覆盖前写（E-01 本体，overlay.wxss 的活体已由
 //     前棒收敛成一条，本批复验终值逐字节不变）。
+//     判据按整条选择器文本归组，**不按逗号拆开的成员**：`.input, .textarea {…}` 之后再写
+//     `.textarea {…}` 是「共用基线 + 单控件覆盖」，是合法的层叠；把它判成红就会逼人改合法样式
+//     来让门变绿（本轮一路禁止的做法）。这一条是 2026-10-17 尾批收窄后落进 GATED 的，
+//     收窄理由由夹具 S8e/S8h 钉成反例，防止以后被当成「漏判」再放宽回去。
 //
 // 三条纪律：
 //   ① 判据本体不登记豁免清单、不留白名单（命中 >0 的门不落，见 out/T5b/handoff.md 的复跑读数）；
@@ -76,8 +80,9 @@ function braceClose(src, mk, openIdx) {
 /**
  * 把一份 .wxss 解析成规则块清单：
  *   { selector, sels:[…], selLine, decls:[{prop,value,index,line}], at:boolean, atLine }
- * 选择器组（`a, b {…}`）按逗号拆进 sels，G11 要按**单个选择器**归组，
- * 否则 `.a, .b {}` 与 `.a {}` 会被当成两个不同的键而漏掉一次真覆盖。
+ * 选择器组（`a, b {…}`）按逗号拆进 sels：G6/G8 要认「这一条命中了 .tabbar」这类**成员级**事实，
+ * 所以按成员匹配；G11 反过来**故意用整条 `selector` 文本归组**（共用基线 + 单控件覆盖是合法层叠，
+ * 见本文件顶部 G11 一段与夹具 S8e/S8h）。一把尺不能同时服务两种问题，别把它统一掉。
  * 剥注释用等长替换 ⇒ 下标可直接换算行号。
  */
 function parseRules(text) {
@@ -497,7 +502,7 @@ const G8 = {
   },
 }
 
-/* ============================ G11 · 同文件同选择器的关键布局属性双写 ============================ */
+/* ============================ G11 · 同文件内同一条选择器文本的关键布局属性双写 ============================ */
 const LAYOUT_FAMILIES = ['display', 'align-items', 'justify-content', 'position', 'margin', 'padding']
 function familyOf(prop) {
   if (prop === 'margin' || /^margin-(top|right|bottom|left)$/.test(prop)) return 'margin'
@@ -507,7 +512,7 @@ function familyOf(prop) {
 
 const G11 = {
   id: 'G11',
-  title: '同一 wxss 内同一选择器不得把关键布局属性写两遍（后写覆盖前写；E-01 本体）',
+  title: '同一 wxss 内同一条选择器文本不得把关键布局属性写两遍（后写覆盖前写；E-01 本体）',
   run(ctx) {
     const hits = []
     const wxss = ctx.files.filter(f => f.endsWith('.wxss'))
@@ -521,11 +526,12 @@ const G11 = {
       const rules = parseRules(raw)
       const bySel = new Map()
       rules.forEach((r, i) => {
-        if (r.at) return
-        for (const s of new Set(r.sels)) {
-          if (!bySel.has(s)) bySel.set(s, [])
-          bySel.get(s).push({ rule: r, order: i })
-        }
+        if (r.at || !r.selector) return
+        // 归组键是**整条选择器文本**，不是逗号拆开的成员。收窄的理由见本文件顶部 G11 一段：
+        // `.input, .textarea {…}` 之后再写 `.textarea {…}` 是「共用基线 + 单控件覆盖」，
+        // 是合法层叠写法而不是 E-01 那一形（同一个选择器整块被写两遍）。
+        if (!bySel.has(r.selector)) bySel.set(r.selector, [])
+        bySel.get(r.selector).push({ rule: r, order: i })
       })
       selectors += bySel.size
       for (const [sel, blocks] of bySel) {
@@ -560,13 +566,15 @@ const G11 = {
 const RULES = [G3, G6, G7, G8, G11]
 
 // 已接进 tools/check.js 的门：**只有实测命中 0 的才进**（派单纪律：不落一条有命中的门、不加白名单、
-// 不加跳过清单）。G11 复跑命中 1 处活体 ⇒ 判据已实现并由自证夹具证明确实会咬，但本轮不进门：
-//   miniprogram/app.wxss:320 `.input, .textarea { padding: 12px 0 }` 被 :334 `.textarea { padding: 12px }`
-//   同特异度后写压死（.textarea 那一支的 `12px 0` 从来不是生效值）。
-// 那一处属台账 M-02/样式收敛的活，改法与复验读数见 tools/e08-remaining-test.js §G11 与 out/T5b/handoff.md；
-// 收敛完成后把 G11 加进 GATED 即可（夹具 S8/S8b/S8d/S8e 已经备好它的牙齿）。
-const GATED = [G3, G6, G7, G8]
-const BLOCKED = [{ id: 'G11', hits: 1, blocker: 'miniprogram/app.wxss 的 .textarea padding 双写未收敛' }]
+// 不加跳过清单）。
+// G11 于 2026-10-17 尾批落进 GATED。它上一批阻塞的那一处活体（app.wxss 里 `.input, .textarea`
+// 与 `.textarea` 的 padding）**不是缺陷**：那是共用基线 + 单控件覆盖的正常层叠。上一批没有为了变绿
+// 去改合法样式，而是把判据收窄到「整条选择器文本相同的双写」（E-01 的本体形），收窄后实测命中 0。
+// 反例夹具 S8e/S8h 钉住这个形状 ⇒ 谁把它再放宽回去，自证当场就红，门不会以「噪音」的形式烂掉。
+const GATED = [G3, G6, G7, G8, G11]
+// 收窄并复量后无阻塞项。保持导出（check.js 的门数护栏与 e08-remaining-mutate.js 的 V16 都读它）：
+// 非空即表示「有判据已实现但没落门」，那是临时状态，每一次复跑都要跟着实测走。
+const BLOCKED = []
 
 /* ============================ 自证夹具（正例必红 / 反例必绿） ============================ */
 const TABBAR_CSS = '.tabbar {\n  position: fixed;\n  left: 0; right: 0; bottom: 0;\n  padding: 8px 12px;\n' +
@@ -742,10 +750,17 @@ const SELF_CASES = [
     world: fixtureWorld({ 'pages/plain/plain.wxss': '.dup { margin: auto }\n.dup { display: flex }\n' }), expect: {} },
   { id: 'S8d 简写与长边同族也算双写（.d{padding:16px} + .d{padding-bottom:8px}）⇒ G11 红并说明怎么并',
     world: fixtureWorld({ 'pages/plain/plain.wxss': '.dup { padding: 16px }\n.dup { padding-bottom: 8px }\n' }), expect: { G11: 1 } },
-  { id: 'S8e 选择器组里的一员重复也算（.a, .b {} 后再写 .b {}）⇒ G11 红：按单个选择器归组，不按整条字符串',
-    world: fixtureWorld({ 'pages/plain/plain.wxss': '.a, .dup { display: flex }\n.dup { display: block }\n' }), expect: { G11: 1 } },
+  { id: 'S8e 反例：选择器组与其一员各写一块（.a, .b {} 后再写 .b {}）⇒ G11 绿。' +
+      '这是「共用基线 + 单控件覆盖」的合法层叠，不是 E-01 那一形；真实活体是 app.wxss 的 `.input, .textarea` + `.textarea`。' +
+      '把这条判成红会逼人改合法样式来让门变绿 —— 本轮一路禁止的做法，所以这条反例是给「以后再放宽」上的锁',
+    world: fixtureWorld({ 'pages/plain/plain.wxss': '.a, .dup { display: flex }\n.dup { display: block }\n' }), expect: {} },
   { id: 'S8f 不同文件里的同名选择器不算（app.wxss 与页样式表是两层，不是一处双写）',
     world: fixtureWorld({ 'pages/plain/plain.wxss': '.card { display: flex }\n' }), expect: {} },
+  { id: 'S8g 收窄没把本体放掉：**整条选择器文本相同**的两块（含选择器组原样重写）⇒ G11 红',
+    world: fixtureWorld({ 'pages/plain/plain.wxss': '.a, .dup { display: flex }\n.a, .dup { display: block }\n' }), expect: { G11: 1 } },
+  { id: 'S8h 反例形状取自活体：`.input, .textarea { padding: 12px 0 }` + `.textarea { padding: 12px }` ⇒ G11 绿' +
+      '（同一条里顺带钉住：简写与长边只在**同一条选择器文本**内才算双写）',
+    world: fixtureWorld({ 'pages/plain/plain.wxss': '.input, .dup { padding: 12px 0 }\n.dup { padding: 12px }\n' }), expect: {} },
 
   { id: 'S9 嵌套 at-rule 出现 ⇒ G7/G8/G11 报「无法工作」而不是静默漏判（解析器不吃嵌套）',
     world: fixtureWorld({ 'pages/plain/plain.wxss': '@media (min-width: 375px) {\n  .plain { color: red }\n}\n' }),
@@ -806,9 +821,9 @@ module.exports = {
 }
 
 // ================= 独立执行：全仓五条门的命中读数 + 夹具自证 =================
-// 为什么允许单独跑：check.js 里只遍历 GATED（四条），G11 进门前的读数得有一个人能一把看全的地方；
-// 判据本体不复制第二份（铁律 11），跑的就是预提交闸要用的那一份。
-// 退出码：0 = 进了闸的四条全绿且自证通过；1 = 有命中/fatal/自证红（G11 的活体只打印，不计红——它没进门禁）。
+// 为什么允许单独跑：check.js 里只遍历 GATED，而五条门（含将来可能出现的 BLOCKED 条）的读数要有一个
+// 一把看全的地方；判据本体不复制第二份（铁律 11），跑的就是预提交闸要用的那一份。
+// 退出码：0 = GATED 里的门全绿且自证通过；1 = 有命中/fatal/自证红（未进门的规则只打印，不计红）。
 // 运行：node tools/e08-remaining-rules.js
 if (require.main === module) {
   const path2 = require('path')
@@ -829,6 +844,7 @@ if (require.main === module) {
     res.hits.forEach(h => console.log('      ' + h.file + ':' + h.line + ' ｜ ' + (h.snippet || '') + ' ｜ ' + h.why.slice(0, 90) + '…'))
     if (gated && (res.hits.length || res.fatal)) red = 1
   }
-  console.log(red ? '\n读数：有红（' + (bad.length ? '自证失败 ' + bad.length + ' 条' : '进闸的门报了命中/无法工作') + '）' : '\n读数：进闸的四条命中 0，自证通过；G11 的活体见上面那行')
+  console.log(red ? '\n读数：有红（' + (bad.length ? '自证失败 ' + bad.length + ' 条' : '进闸的门报了命中/无法工作）') :
+    '\n读数：进闸的 ' + GATED.length + ' 条命中 0，自证通过；未进门的规则（BLOCKED ' + BLOCKED.length + ' 条）见上面标签')
   process.exit(red)
 }

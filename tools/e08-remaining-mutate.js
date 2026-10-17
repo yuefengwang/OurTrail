@@ -1,4 +1,4 @@
-// T5b/E-08 续批四条门 · 变异自证：node tools/e08-remaining-mutate.js
+// T5b/E-08 续批五条门（G3/G6/G7/G8/G11）· 变异自证：node tools/e08-remaining-mutate.js
 //
 // 四条双向自证（口径沿用 tools/t4-e08-mutate.js，那个文件是别人的写入集，本批不改它，只抄形态）：
 //  · 抓到 caught = check.js 退出码非 0 **且** ✗ 行里出现该条门的编号（[G3]/[G6]/[G7]/[G8]）；
@@ -10,9 +10,10 @@
 //  · 每条违例还额外跑一次「把本批这段门整段剥掉」的 check.js 副本 ⇒ 必须**绿**：
 //    这一路证的是 finding E-08 的本体（旧闸门对这些平台坑一无所知），不是我的门在咬什么现成缺陷；
 //  · 未变异的沙盒必须先过全绿有效性门，否则本轮所有读数作废（不拿它冒充「抓到」）。
-// G11 的形态不同：**它没进门禁**（真实仓库命中 1 处活体 ⇒ 按派单纪律 BLOCKED，不加豁免）。
-// 所以它的变异判据是「check.js 保持绿（门确实没落）而本批断言套件报红（台账跟着实测走）」，
-// 记在 ledger 一栏；这条一旦反过来（check.js 因 G11 红）就是「把没收敛的门硬塞进闸」的形态，判漏网。
+// G11 的形态（2026-10-17 尾批起）：**已进闸**，所以它的变异与其余四条同构——新增双写 ⇒ check.js 点名
+// [G11] 报红、断言套件同步报红、剥掉本批这段门的副本保持绿（这才叫 E-08 说的「旧闸门一无所知」）。
+// 另配一条等价变异体 V20：`.chip, .chip2 { padding: … }` 这种「共用基线 + 单控件覆盖」必须**不判红**——
+// 收窄掉的那一半也要有牙齿，否则谁把判据再放宽回去，这里不会有人说。
 'use strict'
 const fs = require('fs')
 const os = require('os')
@@ -27,7 +28,7 @@ const END = '// ==== T5b/E-08 新门结束'
 
 const stats = {
   caught: 0, leaked: 0, crashed: 0, falseAlarm: 0, keptGreen: 0, crashedAsDesigned: 0,
-  injectionFailed: 0, notBlindSpot: 0, ledgerOk: 0, ledgerBad: 0, injected: 0,
+  injectionFailed: 0, notBlindSpot: 0, injected: 0,
 }
 
 function copy(from, to) {
@@ -200,17 +201,25 @@ const CASES = [
       '.chip { padding: 13px 14px; position: sticky; }\n.other-probe { top: 0; }'),
   },
   {
-    id: 'V16 G11（未进门的 BLOCKED 条）：新增一处关键布局属性双写 ⇒ check.js 必须仍绿（门没落），' +
-      '而本批断言套件必须红（BLOCKED 台账跟着实测走，不许悄悄躺着）',
-    rule: 'G11', expect: 'ledger',
+    id: 'V16 G11 本体（已进闸）：新增一处同一条选择器文本的关键布局属性双写 ⇒ check.js 点名 [G11] 报红，' +
+      '断言套件同步报红，剥掉本批这段门的副本保持绿（旧闸门对双写一无所知）',
+    rule: 'G11',
     files: ['miniprogram/pages/editor/editor.wxss'],
     apply: () => append('miniprogram/pages/editor/editor.wxss', '\n.chip { padding: 4px; }\n'),
   },
   {
-    id: 'V17【等价变异体】同选择器但关键属性不相交（padding 与 display）⇒ 台账不漂移、两边都保持绿',
+    id: 'V17【等价变异体】同选择器但关键属性不相交（padding 与 display）⇒ 两边都保持绿（门不是「禁止同选择器出现两次」）',
     rule: 'G11', expectCaught: false,
     files: ['miniprogram/pages/editor/editor.wxss'],
     apply: () => append('miniprogram/pages/editor/editor.wxss', '\n.chip { display: flex; }\n'),
+  },
+  {
+    id: 'V20【等价变异体＝收窄掉的那一半】选择器组覆盖单控件（`.chip, .chip-x { padding: 4px }`，' +
+      '与本页既有的 `.chip { padding: 13px 14px }` 成员相交但整条文本不同）⇒ 必须保持绿。' +
+      '这一条钉的是 app.wxss 的 `.input, .textarea` + `.textarea` 那一形：谁把归组再拆回逗号成员，这里就误伤',
+    rule: 'G11', expectCaught: false,
+    files: ['miniprogram/pages/editor/editor.wxss'],
+    apply: () => append('miniprogram/pages/editor/editor.wxss', '\n.chip, .chip-x { padding: 4px; }\n'),
   },
   {
     id: 'V18 判据被摘空（GATED 导出空数组）⇒ 预提交闸必须红，不得因为「循环一次都没跑」而全绿',
@@ -244,7 +253,7 @@ function main() {
   console.log('\n== 0. 有效性门：未变异的沙盒里，带门的 check.js、剥掉门的对照组、断言套件都必须绿 ==')
   let bad = 0
   const base = [
-    ['check.js', '四条门对真实代码为绿（A 组）'],
+    ['check.js', '五条门对真实代码为绿（A 组）'],
     [BLIND, '剥掉本批这段门的旧闸门也能跑通（对照组本身可用）'],
     ['e08-remaining-test.js', '断言套件基线绿'],
     ['t4-e08-test.js', '前棒 T4 的四条门未被本批碰坏'],
@@ -280,14 +289,6 @@ function main() {
       if (full.code !== 0 && /静默空转|应为 4 条|SELF_CASES|本步会静默空转|本步未工作/.test(full.out)) { stats.caught++; verdict = '抓到（判据被摘空当场报红）' }
       else if (full.code !== 0) { stats.crashed++; verdict = '崩红（非 0 但不是那条判据）' }
       else { stats.leaked++; verdict = '漏网' }
-    } else if (c.expect === 'ledger') {
-      // G11 没进门禁：正确形态是「check.js 不因此红」+「套件红且红因就是那条台账」
-      const suiteNamedG11 = /G11/.test(suite.out)
-      if (!full.red && suite.red && suiteNamedG11) {
-        stats.ledgerOk++; verdict = '台账正确（check.js 保持绿＝门确实没落；套件报红且点名 G11＝BLOCKED 读数没有悄悄躺着）'
-      } else if (full.red && tagged) { stats.leaked++; verdict = '漏网形态异常：没进门的 G11 却让 check.js 红了（＝把没收敛的门硬塞进闸）' }
-      else if (!suite.red || !suiteNamedG11) { stats.leaked++; verdict = '漏网（新增双写而台账没动/没点名）' }
-      else { stats.crashed++; verdict = 'CRASH≠CAUGHT' }
     } else if (c.expectCaught !== false) {
       if (full.crashed) { stats.crashed++; verdict = 'CRASH≠CAUGHT' }
       else if (full.red && tagged && suite.red) { stats.caught++; verdict = '抓到（check.js 点名 [' + c.rule + ']，断言套件同步报红）' }
@@ -298,7 +299,7 @@ function main() {
       if (full.red || suite.red) { stats.falseAlarm++; verdict = '误伤（合法写法／真修法被判红）' }
       else { stats.keptGreen++; verdict = '按预期保持绿（门不是无条件判死）' }
     }
-    const good = /^(按预期|抓到|台账正确)/.test(verdict)
+    const good = /^(按预期|抓到)/.test(verdict)
     console.log((good ? '✓ ' : '✗ ') + c.id)
     console.log('    带门 check.js → exit=' + full.code + ' ✗行=' + full.reds + (tagged === null ? '' : ' 含[' + c.rule + ']=' + tagged) +
       ' ｜ 套件 → exit=' + suite.code + ' ｜ 剥门对照组 → ' + (blind ? 'exit=' + blind.code + ' ✗行=' + blind.reds : 'n/a') + ' ⇒ ' + verdict)
@@ -311,15 +312,15 @@ function main() {
   // ——正是本轮反复抓到的「仪器把失败分支丢掉仍自称完整」。现在失败也进账。
   const planned = stats.injected + stats.injectionFailed
   const total = stats.caught + stats.leaked + stats.crashed + stats.falseAlarm + stats.keptGreen +
-    stats.crashedAsDesigned + stats.ledgerOk + stats.ledgerBad + stats.injectionFailed
+    stats.crashedAsDesigned + stats.injectionFailed
   console.log('\n==== 变异自证 ====')
   console.log('注入成功 ' + stats.injected + ' 条（注入失败 ' + stats.injectionFailed + ' 条）')
   console.log('抓到=' + stats.caught + ' 漏网=' + stats.leaked + ' 崩红=' + stats.crashed + ' 误伤=' + stats.falseAlarm)
   console.log('（另有：按预期保持绿=' + stats.keptGreen + '，按预期崩红=' + stats.crashedAsDesigned +
-    '，台账正确=' + stats.ledgerOk + '，台账异常=' + stats.ledgerBad + '，旧门本也能抓=' + stats.notBlindSpot + '）')
+    '，旧门本也能抓=' + stats.notBlindSpot + '）')
   console.log('闭合检查：' + total + ' vs 计划 ' + planned + '（注入成功 ' + stats.injected + ' + 注入失败 ' + stats.injectionFailed + '）⇒ ' + (total === planned ? '闭合' : '不闭合（有分支没记账）'))
   const leaky = stats.leaked || stats.crashed || stats.injectionFailed || stats.falseAlarm ||
-    stats.ledgerBad || total !== planned
+    total !== planned
   process.exit(leaky ? 1 : 0)
 }
 

@@ -60,8 +60,8 @@ description: OurTrail 小程序（原生 WXML/WXSS/CommonJS）的 UI 设计系�
 
 ## 4. 最低验证要求
 
-**静态门（必跑，但天花板很低）**：`node tools/check.js`（JS 语法 / WXML 配平 / WXSS 花括号与禁 `//` / app.json 四件套 / 组件正反向注册 / 相对 require / 裸 checkbox）与 `node tools/check-handlers.js`（handler 解析 + dataset 契约）。
-⚠ 上表 14 条里**只有 #12 有常驻门**，其余全部没有自动闸门 ⇒ 本 skill 是唯一防线，靠 agent 逐条核实，不是"过了 check.js 就合规"。
+**静态门（必跑）**：`node tools/check.js`（既有静态步骤 + 一段平台门，逐条打印 `Gn` 标题与命中读数）与 `node tools/check-handlers.js`（handler 解析 + dataset 契约）。判据本体在 `tools/t4-e08-platform-rules.js` / `tools/e08-remaining-rules.js` / `tools/m02-class-scope-rules.js`，每段落门前都实测命中 0 且自带合成夹具自证。
+⚠ 天花板仍然在，但**不再是"只有一条有门"**（2026-10-17 复量）：§1/§2/§3/§5/§8/§13 已有常驻门，§6/§10/§11 部分有门（picker 的 `range-key` 只配 warning），仍只有人工清单与本 skill 兜着的是 §4/§7/§9/§14/§15/§16/§17——这几条要么需要像素/运行时证据（真机），要么是产品判断。**"过了 check.js" ≠ "过了 UI 规范"**，反过来也别把"某页过了批次套件"当"全仓合规"：色值/尺寸类套件是按批次写入集查的。
 
 **改过 WXML/WXSS/组件结构后**：静态门通过 **≠** 页面正常。`docs/e2e-mp/README.md` 记录过 5 个真机 bug 里 4 个是"数据对、渲染不对"，逻辑测试天然测不到。真机门槛三道，缺一条就不是页面级证据（铁律 32⑥/33⑦⑧）：
 
@@ -101,7 +101,7 @@ description: OurTrail 小程序（原生 WXML/WXSS/CommonJS）的 UI 设计系�
 
 ## 7. Red flags（出现即停手回到对应模式）
 
-- "过了 `check.js` 所以页面没问题" → 上表 14 条里 13 条没有自动门
+- "过了 `check.js` 所以页面没问题" → §4 的天花板：平台/作用域那几条现在有常驻门，但 §4/§7/§9/§14/§15/§16/§17 与语义层（色值、四态、尺寸、token 登记）仍在门外
 - `page.data()` 读数正常 ⇒ "渲染出来了" → data 不是像素（铁律 32⑥a）
 - 截图文件不存在但结论含"视觉验证通过" → 改 M3 或标 UNVERIFIED
 - 截图有、但来源与 bundle 未证 ⇒ "修复后正常" → 上限 E2 + `UNVERIFIED`（§4 被动收图条）

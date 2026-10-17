@@ -7,9 +7,11 @@
 //   privacy 页更彻底：container / h1 / h2 三个类**全仓零定义**（E-16）。
 //   改前实测命中 16 处 / 5 个文件（editor 4、privacy 6、route-edit 2、weather 2、weather-hub 2）。
 //
-// ── 本门的三条硬要求（派单点名的，不是自创） ──
+// ── 本门的三条硬要求（派单点名的，不是自创）──
 // ① **逐作用域比对，不许把全仓选择器汇成一个池**。作用域 =
-//   页面：app.wxss + 同页 wxss；组件：同组件 wxss，且**仅当**它声明 styleIsolation:'apply-shared' 时才算上 app.wxss。
+//   页面：app.wxss + 同页 wxss；组件：同组件 wxss，且**仅当**它声明 styleIsolation:'apply-shared' 时才算上 app.wxss；
+//   custom-tab-bar：与 components/ 同级，同样按它自己 index.js 的隔离声明算（2026-10-17 落进 check.js 时补进扫描面，
+//   此前这一层不在本门视野里——铁律 14 恰好点名它「必须完全自包含」）。
 //   汇池就是前任探针漏掉 E-15 的原因：me.wxss 那份定义会掩盖另外四页的缺失。
 // ② **三种形态不是「无定义」**，一律排除并各写自测用例（§0）：
 //   a) `hover-class="…"`（它是 class 的子串，混在一起会污染结果）；
@@ -21,8 +23,14 @@
 // ③ **钉解析后的终值与赢家出处，不钉源码文本**（铁律 30）：把 `padding` 写成简写或长写、把规则挪位置、
 //   调换 class 里两个类的次序 ⇒ 终值不变 ⇒ 必须照样全绿（tools/m02-class-scope-mutate.js 的 E 组当场验）。
 //
-// 组件侧「用了全局类却没声明 apply-shared」不由本门判（那是 t4-e08 的第 4 条规则）；
-// 本门只问「按生效作用域解出来，这个类有没有定义」。
+// 与 t4-e08 第 4 条的分工（两条都在闸里，问的是两件事）：那条按**声明缺失**判
+//   （用了全局类却没写 apply-shared ⇒ 让你补声明）；本门按**生效作用域里解不出定义**判
+//   （非共享组件写 `.g-card` 在本门同样命中——夹具 F4/F5 钉的就是这条作用域边界）。
+//   本门只问「按生效作用域解出来，这个类有没有定义」，不认文件名、不读注释。
+//
+// 判据本体（解析层 + 作用域装载 + 判定核 + 夹具自证）在 tools/m02-class-scope-rules.js，本文件只写断言；
+// tools/check.js 落门时 require 的是同一份（铁律 11：判定核不复制第二份，否则「套件绿 + 闸红」没人说得清
+// 哪一把尺是对的）。想只看读数：node tools/m02-class-scope-rules.js
 //
 // 沙盒：M02_MP_ROOT 指向一份 miniprogram 副本（变异自证用）；缺省 = 真实仓库。
 // 违例以 `#V|code|subject|detail` 行输出，供 tools/m02-class-scope-mutate.js 按「相对基线新增了什么」判。
@@ -47,217 +55,17 @@ function check (name, cond, extra) {
 function section (t) { console.log('== ' + t + ' ==') }
 function note (t) { console.log('  · ' + t) }
 
-const ROOT = path.resolve(__dirname, '..')
-const MP = process.env.M02_MP_ROOT || path.join(ROOT, 'miniprogram')
-const DOC = process.env.M02_DOC || path.join(ROOT, '.agents', 'skills', 'ourtrail-ui', 'references', 'design-system.md')
+/* ===================== 判据本体在 tools/m02-class-scope-rules.js ===================== */
+// 解析层、作用域装载、判定核、夹具自证都在那一份模块里；本文件只写断言。
+// 为什么必须这样分：预提交闸 tools/check.js 与本套件要跑的是**同一份判据**（铁律 11——不在测试里
+// 镜像判据，也不让闸用另一把尺）。判据改了不改这里，本套件的读数会跟着动；改这儿而不动那儿＝两份真值源。
+const {
+  ROOT, MP, DOC, UNITS, appParsed, tabPaths,
+  rd, exists, parse, cascade, resolveVars, finalOf, describe, definerRules, classTokensOf, nodesOf,
+  unit, nodeOf, nodesWith, fin, finSheet,
+  scan, selfProof, SELF_CASES,
+} = require('./m02-class-scope-rules')
 
-/* ===================== 解析层（自研，不引用别人套件的私有夹具） ===================== */
-function rd (p) { return fs.readFileSync(p, 'utf8') }
-function exists (p) { return fs.existsSync(p) }
-// 注释替换成等长空白（保留换行 ⇒ 行号不漂；把注释整段压成空格会把后面的行号全部算错）
-function blankOut (m) { return m.replace(/[^\n]/g, ' ') }
-function stripComments (css) { return String(css).replace(/\/\*[\s\S]*?\*\//g, blankOut) }
-function splitTop (val) {
-  const out = []
-  let cur = '', depth = 0
-  for (const ch of String(val)) {
-    if (ch === '(') depth++
-    else if (ch === ')') depth--
-    if (/\s/.test(ch) && depth === 0) { if (cur) { out.push(cur); cur = '' } continue }
-    cur += ch
-  }
-  if (cur) out.push(cur)
-  return out
-}
-// 只展开本门要用的简写：padding / margin 的四边。其余原样透传。
-function expand (prop, val) {
-  const p = prop.toLowerCase(), v = splitTop(val)
-  if (p === 'padding' || p === 'margin') {
-    const k = p + '-top', r = p + '-right', b = p + '-bottom', l = p + '-left'
-    if (v.length === 1) return [[k, v[0]], [r, v[0]], [b, v[0]], [l, v[0]]]
-    if (v.length === 2) return [[k, v[0]], [r, v[1]], [b, v[0]], [l, v[1]]]
-    if (v.length === 3) return [[k, v[0]], [r, v[1]], [b, v[2]], [l, v[1]]]
-    if (v.length >= 4) return [[k, v[0]], [r, v[1]], [b, v[2]], [l, v[3]]]
-    return []
-  }
-  return [[p, val]]
-}
-function parseDecls (body) {
-  const out = []
-  String(body).split(';').forEach(chunk => {
-    const s = chunk.trim()
-    if (!s) return
-    const i = s.indexOf(':')
-    if (i < 0) return
-    expand(s.slice(0, i).trim(), s.slice(i + 1).trim()).forEach(pair => out.push({ prop: pair[0], val: pair[1] }))
-  })
-  return out
-}
-function specificity (sel) {
-  const ids = (sel.match(/#[\w-]+/g) || []).length
-  const b = (sel.match(/\[[^\]]+\]/g) || []).length + (sel.match(/\.[\w-]+/g) || []).length + (sel.match(/:[\w-]+/g) || []).length
-  const c = (sel.replace(/::[\w-]+/g, '').match(/(^|[\s>+~])([a-zA-Z][\w-]*)/g) || []).length
-  return { ids, b, c }
-}
-function cmpSpec (a, b) { return (a.ids - b.ids) || (a.b - b.b) || (a.c - b.c) }
-function compoundOf (part) {
-  return {
-    classes: (part.match(/\.[\w-]+/g) || []).map(s => s.slice(1)),
-    tag: /^[a-zA-Z][\w-]*/.test(part) ? part.match(/^[a-zA-Z][\w-]*/)[0] : null
-  }
-}
-function parse (css, source) {
-  const text = stripComments(css)
-  const rules = []
-  const re = /([^{}]+)\{([^{}]*)\}/g
-  let order = 0, m
-  while ((m = re.exec(text)) !== null) {
-    const selText = m[1].trim().replace(/\s+/g, ' ')
-    if (!selText || selText[0] === '@') continue
-    const decls = parseDecls(m[2])
-    selText.split(',').forEach(raw => {
-      const sel = raw.trim()
-      if (!sel) return
-      const compounds = sel.split(/\s+/).filter(Boolean).map(compoundOf)
-      decls.forEach(d => rules.push({ sel, compounds, spec: specificity(sel), prop: d.prop, val: d.val, order: order++, source }))
-    })
-  }
-  const tokens = {}
-  rules.filter(r => r.sel === 'page' && /^--/.test(r.prop)).forEach(r => { tokens[r.prop] = r.val })
-  const classNames = new Set()
-  rules.forEach(r => r.compounds.forEach(c => c.classes.forEach(x => classNames.add(x))))
-  return { rules, tokens, classNames, source }
-}
-// 单 compound 匹配（后代选择器要祖先链；§4 PV0 先证本门断言的节点没有这种形态，简化才成立）
-function matchesNode (compounds, node) {
-  if (compounds.length !== 1) return false
-  const c = compounds[0]
-  if (c.tag && c.tag !== node.tag) return false
-  return c.classes.length > 0 && c.classes.every(x => node.classes.indexOf(x) !== -1)
-}
-function cascade (parsedList, node, inline) {
-  const best = {}
-  parsedList.forEach((parsed, fileRank) => parsed.rules.forEach(r => {
-    if (r.prop.indexOf('--') === 0) return
-    if (!matchesNode(r.compounds, node)) return
-    const cur = best[r.prop]
-    const win = !cur || cmpSpec(r.spec, cur.spec) > 0 ||
-      (cmpSpec(r.spec, cur.spec) === 0 && (fileRank > cur.fileRank || (fileRank === cur.fileRank && r.order > cur.order)))
-    if (win) best[r.prop] = { val: r.val, sel: r.sel, source: r.source, spec: r.spec, order: r.order, fileRank }
-  }))
-  // 内联 style 权重最高（不是本门发明的，是层叠事实；page2-gates §3 同口径）
-  if (inline) inline.forEach((d, i) => { best[d.prop] = { val: d.val, sel: '(inline style)', source: 'inline', spec: { ids: 1e9, b: 0, c: 0 }, order: i, fileRank: -1 } })
-  return best
-}
-function resolveVars (val, tokens, depth) {
-  depth = depth || 0
-  if (depth > 8) return { raw: String(val), unresolved: true }
-  const one = /^var\(\s*(--[\w-]+)\s*(?:,\s*([\s\S]+))?\)$/.exec(String(val).trim())
-  if (one) {
-    const hit = tokens[one[1]]
-    if (hit === undefined) return one[2] === undefined ? { raw: String(val), unresolved: true } : resolveVars(one[2], tokens, depth + 1)
-    return resolveVars(hit, tokens, depth + 1)
-  }
-  let unresolved = false
-  const out = String(val).replace(/var\(\s*(--[\w-]+)\s*(?:,\s*[^()]*)?\)/g, (all, name, fb) => {
-    if (tokens[name] !== undefined) { const r = resolveVars(tokens[name], tokens, depth + 1); if (r.unresolved) unresolved = true; return r.raw }
-    if (fb !== undefined) return fb.replace(/^\s*,\s*/, '')
-    unresolved = true
-    return all
-  })
-  return { raw: out, unresolved }
-}
-// 某属性在这个节点上的终值（解析 var、记录赢家 sel/source；拿不到就明说 missing，绝不猜）
-function finalOf (map, prop, tokens) {
-  const d = map && map[prop]
-  if (!d) return { missing: true }
-  const r = resolveVars(d.val, tokens)
-  return { value: String(r.raw).trim(), raw: String(d.val).trim(), sel: d.sel, source: d.source, unresolved: !!r.unresolved }
-}
-function describe (f) { return f.missing ? '无声明' : (f.unresolved ? '悬空 var(' + f.value + ')' : f.value + '←' + f.source) }
-// 这个类 token 在给定作用域里由哪些规则定义（空数组 = 没有定义）
-function definerRules (parsedList, cls) {
-  const out = []
-  parsedList.forEach(pl => pl.rules.forEach(r => {
-    if (r.compounds.some(c => c.classes.indexOf(cls) !== -1)) out.push(r)
-  }))
-  return out
-}
-
-/* ===================== WXML 层：class token 提取与三种排除形态 ===================== */
-function classTokensOf (raw) {
-  const rec = { tokens: [], whole: 0, partial: 0 }
-  const marked = String(raw).replace(/\{\{[\s\S]*?\}\}/g, () => '\u0000')
-  marked.split(/\s+/).filter(Boolean).forEach(t => {
-    if (t.indexOf('\u0000') !== -1) {
-      if (t === '\u0000') rec.whole++
-      else rec.partial++
-      return
-    }
-    // 残留的半个 token（哨兵被空格切开时不会出现，这里是给 `foo-` / `-foo` 这类断尾兜底）
-    if (/[-_]$/.test(t) || /^[-_]/.test(t)) { rec.partial++; return }
-    rec.tokens.push(t)
-  })
-  return rec
-}
-// 扫一份 WXML 的全部标签节点。attr 只认双引号形态（§0 P9 现场复核全仓单引号/裸值为 0 处）
-function nodesOf (wxmlText) {
-  const clean = String(wxmlText).replace(/<!--[\s\S]*?-->/g, blankOut)
-  const out = []
-  const re = /<([a-zA-Z][\w-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g
-  let m
-  while ((m = re.exec(clean)) !== null) {
-    const attrs = {}
-    const ar = /([a-zA-Z-][\w:-]*)\s*=\s*"([^"]*)"/g
-    let a
-    while ((a = ar.exec(m[2]))) attrs[a[1]] = a[2]
-    out.push({
-      tag: m[1],
-      attrs,
-      line: clean.slice(0, m.index).split('\n').length,
-      classRaw: attrs.class === undefined ? null : attrs['class'],
-      hoverRaw: attrs['hover-class'] === undefined ? null : attrs['hover-class'],
-      inline: attrs.style === undefined ? [] : parseDecls(attrs.style)
-    })
-  }
-  out.forEach(n => { n.classes = n.classRaw === null ? [] : classTokensOf(n.classRaw).tokens })
-  return out
-}
-
-/* ===================== 输入装载：逐作用域单元 ===================== */
-const appParsed = parse(rd(path.join(MP, 'app.wxss')), 'app.wxss')
-const appJson = JSON.parse(rd(path.join(MP, 'app.json')))
-const tabPaths = new Set(((appJson.tabBar && appJson.tabBar.list) || []).map(x => x.pagePath))
-const UNITS = []
-fs.readdirSync(path.join(MP, 'pages')).forEach(d => {
-  const w = path.join(MP, 'pages', d, d + '.wxml')
-  if (!exists(w)) return
-  const ownRel = 'pages/' + d + '/' + d + '.wxss'
-  UNITS.push({
-    kind: 'page', id: d, file: 'pages/' + d + '/' + d + '.wxml', ownRel,
-    nodes: nodesOf(rd(w)),
-    scope: [appParsed, parse(exists(path.join(MP, ownRel)) ? rd(path.join(MP, ownRel)) : '', ownRel)],
-    isTab: tabPaths.has('pages/' + d + '/' + d)
-  })
-})
-fs.readdirSync(path.join(MP, 'components')).forEach(c => {
-  const w = path.join(MP, 'components', c, c + '.wxml')
-  if (!exists(w)) return
-  const ownRel = 'components/' + c + '/' + c + '.wxss'
-  const js = exists(path.join(MP, 'components', c, c + '.js')) ? rd(path.join(MP, 'components', c, c + '.js')) : ''
-  const shared = /styleIsolation[^'"]*['"]apply-shared['"]/.test(js)
-  UNITS.push({
-    kind: 'comp', id: 'components/' + c, file: 'components/' + c + '/' + c + '.wxml', ownRel, applyShared: shared,
-    nodes: nodesOf(rd(w)),
-    scope: shared ? [appParsed, parse(rd(path.join(MP, ownRel)), ownRel)] : [parse(rd(path.join(MP, ownRel)), ownRel)]
-  })
-})
-function unit (id) { const u = UNITS.filter(x => x.id === id)[0]; if (!u) throw new Error('没有这个作用域单元：' + id); return u }
-function nodeOf (u, cls, idx) { const n = u.nodes.filter(x => x.classes.indexOf(cls) !== -1); return n[idx || 0] }
-function nodesWith (u, cls) { return u.nodes.filter(x => x.classes.indexOf(cls) !== -1) }
-function fin (u, node, prop) { return finalOf(cascade(u.scope, { tag: node.tag, classes: node.classes }, node.inline), prop, appParsed.tokens) }
-// 只看**样式表**解出的终值（不吃内联）：§2 问的是「这个类本身给出什么」，内联覆盖另立读数（U3）
-function finSheet (u, node, prop) { return finalOf(cascade(u.scope, { tag: node.tag, classes: node.classes }), prop, appParsed.tokens) }
 
 /* ===================== §0 探针自证 ===================== */
 section('§0 探针自证（三种排除形态 + 阳性对照 + 解析器不空转）')
@@ -305,21 +113,28 @@ section('§0 探针自证（三种排除形态 + 阳性对照 + 解析器不空�
     return n.length === 1 && n[0].line === 4
   })()
   check('P10 行号不被注释吞掉（跨行注释后第一个标签仍报正确行号 ⇒ 命中可复点到文件）', lineOk, '')
+  // 模块里那 10 组合成作用域（含「组件不声明 apply-shared 就看不见 app.wxss」这条边界）在本套件也跑一遍：
+  // check.js 每次提交会跑它，但那是闸；闸的判据如果不咬东西，套件这一侧必须同样看得见（一条判据两处都有读数）。
+  const sp = selfProof()
+  check('P11 夹具自证 ' + SELF_CASES.length + ' 组全部符合预期（正例必红、反例必绿、排除形态不反噬）',
+    sp.length === 0, sp.join(' ｜ '))
+  check('P12 夹具不是空跑：至少一组期望命中非空、至少一组期望为空',
+    SELF_CASES.some(c => (c.expect || []).length > 0) && SELF_CASES.some(c => (c.expect || []).length === 0), '')
 }
 
 /* ===================== §1 全仓逐作用域命中 ===================== */
 section('§1 逐作用域未定义类命中：每个页面/组件各用自己的作用域判（改前 16 处 / 5 文件）')
-const HITS = []
-UNITS.forEach(u => {
-  const own = []
-  u.nodes.forEach(n => {
-    n.classes.forEach(c => { if (!definerRules(u.scope, c).length) own.push({ file: u.file, cls: c, line: n.line }) })
-  })
-  if (own.length) {
-    HITS.push(...own)
-    note(u.id + '：' + own.map(h => h.cls + '@L' + h.line).join(' '))
-  }
-})
+// 判定走模块里的 scan()：这与 tools/check.js 落门时调用的是同一次判定（判定核只有 scanUnits 一份，
+// 铁律 11——套件不复述一遍判据，否则「套件绿 + 闸红」会出现而没人知道哪一份是对的）。
+// S1.0 是输入自检：装载读不出东西（app.wxss 空、单元枚举失效、WXML 解析出 0 节点、token 总数 0）
+// 必须报红，绝不能报「命中 0 ⇒ 全绿」——check.js:131 的路径分隔符事故就是这一层缺位。
+const SCAN = scan()
+check('S1.0 扫描真的有输入（无输入即 fatal，不冒充「命中 0」）｜ ' + (SCAN.stat || '（没有 stat，因为报的是 fatal）'),
+  !SCAN.fatal, SCAN.fatal || '')
+const HITS = SCAN.hits || []
+const byUnit = {}
+HITS.forEach(h => { (byUnit[h.unit] = byUnit[h.unit] || []).push(h.cls + '@L' + h.line) })
+Object.keys(byUnit).forEach(id => note(id + '：' + byUnit[id].join(' ')))
 HITS.forEach(h => viol('E10', h.file, h.cls + '@L' + h.line))
 check('S1.1 未定义类命中 = 0（本次读数 ' + HITS.length + '）', HITS.length === 0,
   HITS.map(h => h.file + ':' + h.cls + '@L' + h.line).join(' | '))
@@ -329,8 +144,12 @@ check('S1.2 命中数与命中文件数闭合（16 处对应 5 个文件；若�
   'hits=' + HITS.length + ' files=' + FILEHITS.length)
 const LIVING = ['editor', 'privacy', 'route-edit', 'weather', 'weather-hub']
 check('S1.3 五个活体作用域都在扫描面里（扫不到就是判据没有输入）', LIVING.every(d => !!unit(d)), '')
-check('S1.4 扫描单元 = 页面 ' + UNITS.filter(u => u.kind === 'page').length + ' + 组件 ' + UNITS.filter(u => u.kind === 'comp').length +
-  ' = ' + UNITS.length + '，且每个单元都真的解析出节点', UNITS.length >= 21 && UNITS.every(u => u.nodes.length > 0),
+const nPage = UNITS.filter(u => u.kind === 'page').length
+const nComp = UNITS.filter(u => u.kind === 'comp').length
+const nTab = UNITS.filter(u => u.kind === 'tabbar').length
+check('S1.4 扫描单元 = 页面 ' + nPage + ' + 组件 ' + nComp + ' + custom-tab-bar ' + nTab + ' = ' + UNITS.length +
+  '（分区闭合）；页面 ≥20、组件 ≥13、tabBar 恰好 1，且每个单元都真的解析出节点',
+  nPage + nComp + nTab === UNITS.length && nPage >= 20 && nComp >= 13 && nTab === 1 && UNITS.every(u => u.nodes.length > 0),
   '空节点单元 ' + UNITS.filter(u => !u.nodes.length).map(u => u.id).join(','))
 const exWhole = UNITS.reduce((n, u) => n + u.nodes.reduce((k, x) => k + (x.classRaw ? classTokensOf(x.classRaw).whole : 0), 0), 0)
 const exPartial = UNITS.reduce((n, u) => n + u.nodes.reduce((k, x) => k + (x.classRaw ? classTokensOf(x.classRaw).partial : 0), 0), 0)
@@ -541,6 +360,32 @@ section('§7 提升为全局的 .card-label 已登记，且文档数值与代码
   const stale = doc.split(/\r?\n/).filter(l => /card-label/.test(l) && /me\.wxss/.test(l) && !/原|曾|此前|不是/.test(l))
   check('D4 文档里没有「card-label 属于 me.wxss」这类旧描述残留（旧描述会让四页继续不生效）', stale.length === 0, stale.join(' | '))
   if (stale.length) viol('REG', 'design-system.md', '仍有 ' + stale.length + ' 行把 card-label 说成 me 页私有')
+}
+
+/* ===================== §8 接线检查：门真的挂在预提交闸上 ===================== */
+// E-08 的指控本体是「判据装在没人跑的门里等于没有门」。日常提交只跑 check.js 与 check-handlers.js，
+// 所以这条门光有本套件不够——必须在 check.js 里真的被调用、命中真的记红。
+// 这里检查的是**接线**（判据不复制第二份，判定仍由 §0/§1 用同一份 scan() 验）。
+section('§8 接线检查（G10 必须真挂在 tools/check.js 上）')
+{
+  const CHECK_SRC = rd(path.join(ROOT, 'tools', 'check.js'))
+  const MSRC = rd(path.join(ROOT, 'tools', 'm02-class-scope-rules.js'))
+  const START = '// ==== G10/M-02 新门开始'
+  const END = '// ==== G10/M-02 新门结束'
+  check('check.js require 的是判据模块本身（不是把判定抄第二遍）',
+    /require\('\.\/m02-class-scope-rules'\)/.test(CHECK_SRC) && !/function scanUnits/.test(CHECK_SRC))
+  check('整段被哨兵包住（m02 的变异自证靠哨兵切掉它，不靠改判据）',
+    CHECK_SRC.indexOf(START) !== -1 && CHECK_SRC.indexOf(END) > CHECK_SRC.indexOf(START))
+  const block = CHECK_SRC.slice(CHECK_SRC.indexOf(START), CHECK_SRC.indexOf(END))
+  check('夹具自证进了闸（每次提交都确认这条门不是空门）', /M02\.selfProof\(\)/.test(block))
+  check('命中逐条 fail、fatal 也 fail、抛错同样 fail（三条一条不缺）',
+    /res\.hits\.forEach\(h => fail\(/.test(block) && /if \(res\.fatal\) fail\(/.test(block) && /判据抛错/.test(block))
+  check('夹具为空即红（SELF_CASES 被摘空时不能靠「一条都不用验」混成绿）', /SELF_CASES\.length\) fail\(/.test(block) || /!M02\.SELF_CASES\.length\) fail\(/.test(block))
+  check('落门带的是命中判定，没有豁免清单/跳过文件名单',
+    !/KNOWN_[A-Z]+\s*=/.test(MSRC) && !/SKIP[A-Z_]*\s*=/.test(MSRC) && !/allowlist\s*=/.test(MSRC) &&
+    !/EXEMPT[A-Z_]*\s*=/.test(MSRC))
+  check('判据不认页面名/组件名（作用域一律由目录枚举与自己的 styleIsolation 声明现读）',
+    !/'(editor|privacy|route-edit|weather|weather-hub|discover)'/.test(MSRC), '')
 }
 
 /* ===================== 汇总 ===================== */

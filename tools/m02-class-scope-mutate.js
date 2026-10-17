@@ -16,6 +16,14 @@
 //
 // 运行：node tools/m02-class-scope-mutate.js
 // 退出码：0 = 0 漏网 0 崩红 0 误伤 0 注入失败；1 = 其余任何情况。
+//
+// 本沙盒打的是**判据**（M02_MP_ROOT 指向副本，真实仓库只读）。2026-10-17 起判据搬进
+// tools/m02-class-scope-rules.js 并落进 tools/check.js，那一侧的接线由两条别的路证：
+//   ① 套件 §8 接线检查（check.js 里 require 的是模块本身、命中/fatal/抛错三条都记红、哨兵在位）；
+//   ② 真实树上的一次现场注入：往一个未改动的 wxml 追加 class="g10-bite-probe" ⇒ check.js exit=1 且
+//      ✗ 行点名 [G10] 与该文件行号，随后 git checkout 还原（复验读数见 SYNC.md 2026-10-17 尾批条）。
+// 这里不把 tools/ 整份复制进沙盒去跑副本 check.js——check.js 的 ROOT 按 __dirname 定位，
+// 复制出来的那份测的是「另一棵仓库」，与真实预提交闸的接线不是一回事（测了也不算证据）。
 
 const fs = require('fs')
 const os = require('os')
@@ -43,7 +51,9 @@ cpdir(SRC_REFS, SB_REFS)
 // 真实仓库零写入自证：开工前先哈希我方这批碰过的文件，收工后再哈希一次比对
 const REAL_WATCH = ['miniprogram/app.wxss', 'miniprogram/pages/me/me.wxss', 'miniprogram/pages/privacy/privacy.wxml',
   'miniprogram/pages/privacy/privacy.wxss', '.agents/skills/ourtrail-ui/references/design-system.md',
-  'tools/m02-class-scope-test.js']
+  // 2026-10-17 落门时判据搬进了 tools/m02-class-scope-rules.js（套件与 check.js 共用那一份），
+  // 零写入自证的哈希清单必须跟着搬，否则「闸门文件被改坏」这条路不在观察范围内。
+  'tools/m02-class-scope-test.js', 'tools/m02-class-scope-rules.js']
 function hashOf (rel) { return crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, rel))).digest('hex').slice(0, 12) }
 const REAL_BEFORE = REAL_WATCH.map(p => p + '@' + hashOf(p))
 
