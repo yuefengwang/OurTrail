@@ -176,9 +176,19 @@ function bootNotices(path, opts) {
     applyDispatch: null,
   }
   const failMsg = v => (v === true || v === undefined ? '网络异常' : String(v))
-  // holdTargets：让定向候选那两次读**先不返回**，用来观测"在途"那一态（loading 与 empty 必须分开）
+  // holdTargets：让定向候选那两次读**先不返回**，用来观测"在途"那一态（loading 与 empty 必须分开）。
+  // held 按到达顺序存 {ok, bad}；state.settleHeld(i, 'bad') 可以单独放某一发**迟到地失败**回来——
+  // 用来演「重开/重试之后，慢的那一发后到」这种交错（不加这个开关就只能测同一发自己的成败，测不到覆盖顺序）。
   const held = []
-  state.releaseTargets = () => held.splice(0, held.length).forEach(rel => rel())
+  state.held = held
+  state.releaseTargets = () => held.splice(0, held.length).forEach(h => h && h.ok())
+  state.settleHeld = (i, mode) => {
+    const h = held[i]
+    if (!h) return false
+    held[i] = null
+    ;(mode === 'bad' ? h.bad : h.ok)()
+    return true
+  }
   const reads = []   // read 的 request
   const readOrs = [] // readOr 的 {name, data}
   const cmds = []    // dispatchAndSync 的 {payload, revision}
@@ -192,7 +202,9 @@ function bootNotices(path, opts) {
     if (req.kind === 'activity') {
       // 定向候选走 organizer 视角；发布上下文走 participant 视角——只让前者失败才分得开成因
       if (req.perspective === 'organizer' && state.targetsFail.signup) return Promise.reject(new Error(failMsg(opts.signupTargetsError)))
-      if (req.perspective === 'organizer' && opts.holdTargets) return new Promise(res => held.push(() => res(activityView(state.activityPhase))))
+      if (req.perspective === 'organizer' && opts.holdTargets) {
+        return new Promise((res, rej) => held.push({ ok: () => res(activityView(state.activityPhase)), bad: () => rej(new Error('迟到的失败')) }))
+      }
       return Promise.resolve(activityView(state.activityPhase))
     }
     return Promise.resolve({ view: { kind: 'denied', message: '无权访问' }, revision: 1, now: NOW })
@@ -202,7 +214,9 @@ function bootNotices(path, opts) {
     if (name === 'readTransport') {
       // P0-3：定向车辆的候选来源。桩返回的是 api.readOr 拆包后的 value（与其余 readOr 桩同约定）
       if (state.targetsFail.transport) return Promise.reject(new Error(failMsg(opts.transportTargetsError)))
-      if (opts.holdTargets) return new Promise(res => held.push(() => res({ vehicles: state.transportVehicles || [] })))
+      if (opts.holdTargets) {
+        return new Promise((res, rej) => held.push({ ok: () => res({ vehicles: state.transportVehicles || [] }), bad: () => rej(new Error('迟到的失败')) }))
+      }
       return Promise.resolve({ vehicles: state.transportVehicles || [] })
     }
     if (opts.mgmt === null) return Promise.reject(new Error('无权访问'))
@@ -667,6 +681,32 @@ async function scenario7() {
     check('C21 两页 wxml 都引用 targetsLoading（loading/empty/error 三态各有渲染路径，不是只在 JS 里记账）',
       /targetsLoading/.test(wxmlNotices) && /targetsLoading/.test(wxmlAnotices),
       'notices=' + /targetsLoading/.test(wxmlNotices) + ' anotices=' + /targetsLoading/.test(wxmlAnotices))
+  }
+  {
+    // 7H 交错：重开/重试会让两次候选读并存。慢的那一发**后**回来时不许用上一次的结论盖这一次——
+    //     那等于把"已经读到了"重新说成"没有读到"，正是本条缺陷换了个触发路径（尝试令牌收口的就是它）。
+    const { page, reads, state } = bootNotices(ANOTICES_PATH, {
+      options: { id: 'a1' }, holdTargets: true,
+      transportVehicles: [{ id: 'v9', label: '9号车', plate: '川A·9' }],
+    })
+    await settleActivity(page, reads)
+    page.onOpenPublish()
+    await sleep(10)
+    page.onRetryTargets()
+    await sleep(10)
+    check('C22 两次尝试各发两条读、四条都还悬着（交错确实能发生，不是被桩串成了先后）',
+      state.held.filter(Boolean).length === 4, '悬着的读=' + state.held.filter(Boolean).length)
+    state.settleHeld(2)
+    state.settleHeld(3)
+    await waitFor(() => page.data.signupRows.length === 3 && page.data.targetsLoading === false)
+    state.settleHeld(0, 'bad')
+    state.settleHeld(1, 'bad')
+    await sleep(20)
+    check('C23 迟到的失败不许把已经读到的名单说成「没有读到」（名单仍在、失败态仍空）',
+      page.data.targetsError === '' && page.data.signupRows.length === 3,
+      JSON.stringify({ t: page.data.targetsError, n: page.data.signupRows.length }))
+    check('C24 迟到的那一发也不许把在途重新点亮（旧尝试不能翻回 loading）',
+      page.data.targetsLoading === false, String(page.data.targetsLoading))
   }
 }
 

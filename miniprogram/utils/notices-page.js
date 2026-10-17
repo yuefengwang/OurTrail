@@ -130,33 +130,41 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       // 不能留着空数组让页面印成业务事实（铁律 24 的话术分岔 + 铁律 26② 的「判不出≠否定」；B4-C19）。
       // 在途也算一件要说的事：miniprogram/AGENTS.md 的第 5 条要求 loading 与 empty 分开，
       // 否则点开弹层的那一秒会先印「此活动还没有报名记录。」再翻成名单。
+      //
+      // 尝试令牌：关弹层再重开 / 点重试都可能让两次读并存。慢的那一发后回来时若照写，
+      // 就会用**上一次的结论**盖掉这一次的读数（名单其实已经读到了，页面却说「没有读到」）——
+      // 那正是本条要修的"成因指错"，只是换了个触发路径，所以同一处收口。
+      const token = (this._targetsToken || 0) + 1
+      this._targetsToken = token
+      const fresh = () => this._targetsToken === token
       const errs = []
       let pending = 2
       const settle = () => {
+        if (!fresh()) return
         if (--pending === 0) this.setData({ targetsLoading: false, targetsError: errs.join('；') })
       }
       this.setData({ targetsLoading: true, targetsError: '' })
       api.read({ kind: 'activity', activityId, perspective: 'organizer' }).then(res => {
         if (res.view.kind === 'activity') {
           const rows = res.view.rows || []
-          this.setData({
+          if (fresh()) this.setData({
             signupRows: rows.map(r => ({
               id: r.signupId,
               label: (r.name || '未命名') + ' · ' + (F.STATUS_LABELS[r.status] || r.status),
               checked: false,
             })),
           })
-        } else {
+        } else if (fresh()) {
           errs.push('报名名单没有读到：这一视角没有返回名单')
         }
         settle()
       }).catch(e => {
-        errs.push('报名名单没有读到：' + api.errorText(e))
+        if (fresh()) errs.push('报名名单没有读到：' + api.errorText(e))
         settle()
       })
       api.readOr('readTransport', { activityId }).then(t => {
         const vehicles = t.vehicles || []
-        this.setData({
+        if (fresh()) this.setData({
           vehicleRows: vehicles.map(v => ({
             id: v.id,
             label: (v.label || '车辆') + (v.plate ? ' · ' + v.plate : ''),
@@ -165,7 +173,7 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
         })
         settle()
       }).catch(e => {
-        errs.push('车辆名单没有读到：' + api.errorText(e))
+        if (fresh()) errs.push('车辆名单没有读到：' + api.errorText(e))
         settle()
       })
     },
