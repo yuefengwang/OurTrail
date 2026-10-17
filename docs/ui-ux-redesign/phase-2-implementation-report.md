@@ -142,13 +142,13 @@
 | 14 | weather | ✅ 完成（一：token 对齐；天气逻辑冻结） | 真机截图+日卡/切窗交互 |
 | 15 | weather-chart | ✅ 无需改动（审查确认已 token 原生） | 静态审查 |
 | 16 | privacy | ✅ 完成（二：死类修复，真实层级） | 真机截图 |
-| 17 | lab | ✅ 完成（二：分区头；阶段徽标仍显英文枚举→遗留） | 真机截图 |
-| 18 | staff | ⛔ 不适用本轮（薄壳页被门禁钉死，建议单独一轮） | — |
-| 19 | vehicle | ⛔ 不适用本轮（同上） | — |
-| 20 | cloud-field-poc | ⛔ 不适用（POC 页） | — |
+| 17 | lab | ✅ 完成（二：分区头；三：阶段徽标改中文标签） | 真机截图 |
+| 18 | staff | ✅ 完成（三：编辑式头部，`stack`→`stack-sections`） | scenario-staff 25/0 |
+| 19 | vehicle | ✅ 完成（三：清点分区头；根容器类受门禁钉住保持 `.stack`） | scenario-vehicle 57/0 |
+| 20 | cloud-field-poc | ⛔ 不适用（POC 页，非业务页面） | — |
 
-「✅ 完成」= 代码改造完成 + 真实渲染通过（或静态审查豁免有据）；`staff`/`vehicle`/`cloud-field-poc`
-按第一轮即登记的边界保持不动，不是本轮遗漏。
+「✅ 完成」= 代码改造完成 + 真实渲染通过（或静态审查豁免有据）；`cloud-field-poc` 按登记边界保持不动。
+**19/20 个业务页面已完成**（第 20 个为 POC 页，不计入业务页面）。
 
 ## 8. 剩余工作与下一轮优先级（round 3 已更新）
 
@@ -179,8 +179,8 @@
 
 | 项 | 状态 |
 |---|---|
-| 本轮提交（分支 `win/ui-redesign-editorial`，未推送） | `8a4564d` merge(13cb844) → `0762ed4` feat 二阶段主提交 → `ac7a5c1` fix tabBar 底隙 → `1cbc5da` docs 二阶段报告 → `<round3>` 见 §11 |
-| 改动文件（二阶段） | 11 个页面 wxml（signup/editor/routes/route/route-edit/me/notices/anotices/privacy/lab/weather-hub）+ `routes.js`/`route.js`（分组与封面派生，纯展示层）+ `home.wxml`（tab 类）+ `app.wxss`（`.with-tabbar` 规则）+ 文档与证据 |
+| 本轮提交（分支 `win/ui-redesign-editorial`，未推送） | `8a4564d` merge(13cb844) → `0762ed4` feat 二阶段主提交 → `ac7a5c1` fix tabBar 底隙 → `1cbc5da` docs 二阶段报告 → `d1d5fa9` feat 遗留项闭合（staff/vehicle/lab + UI 一致性门禁 + 封面回退取证） |
+| 改动文件（二阶段） | 14 个页面（signup/editor/routes/route/route-edit/me/notices/anotices/privacy/lab/weather-hub/staff/vehicle）+ `routes.js`/`route.js`（分组与封面派生，纯展示层）+ `lab.js`（中文阶段标签派生）+ `home.wxml`（tab 类）+ `app.wxss`（`.with-tabbar` 规则）+ **新增 `tools/ui-consistency-test.js`** + 文档与证据 |
 | 业务逻辑 | 零变化：无命令、无 schema、无权限、无天气算法改动；`route.js`/`routes.js` 只新增展示派生字段（cover/mineRoutes/sharedRoutes）与 `onCoverError` |
 | cloudfunctions/ | 零改动 ⇒ 不需重新部署 |
 | 他人在途 | `d:/OurTrail`（`13cb844` 已合入）与 `d:/OurTrail-skill-uplift` 零触碰 |
