@@ -274,6 +274,56 @@ console.log('== 新门自证（合成夹具：正例必红、反例必绿）==')
 }
 // ==== T4/E-08 新门结束 ====
 
+// ==== T5b/E-08 新门开始（以下整段为本批追加；既有检查与上面那段 T4 的门一字未改。
+//      剥离这段做「盲区复现」的是 tools/e08-remaining-mutate.js，判据本体在 tools/e08-remaining-rules.js）====
+// E-08 的 11 条门里，T4 落了 (1)(2)(5)，第 8 步（fixround2-event-attr-rule）落了 (3) 的**带连字符**那一半。
+// 本批续落四条：(3) 的裸事件名那一半（G3）、(6) 页尾留白↔tabBar 身份（G6）、
+// (7) WXSS 不支持特性黑名单（G7）、(8) sticky 必须带偏移（G8）。
+// 四条门落门前各自实测**全仓命中 0**（清单与读数见 fix-round2/out/T5b/handoff.md），所以是硬门禁、
+// 不带任何登记豁免——命中 >0 的那条 (11)（G11，同文件同选择器关键布局属性双写）**没有接进来**，
+// 判据已实现并自证会咬，阻塞在 app.wxss 的 .textarea 双写上（收敛后即落）。
+// (9) picker range-key 与 (10) 类定义作用域按派单留在 requests 里，不在本门范围内。
+console.log('== T5b 新门自证（合成夹具：正例必红、反例必绿）==')
+{
+  const E08 = require('./e08-remaining-rules')
+  // 与 T4 同一条护栏：判据模块被摘空时这段循环一次都不跑 ⇒ 静默全绿。门数一写死，摘掉一条就红。
+  if (!E08.RULES || E08.RULES.length !== 5) fail('E-08 续批判据只导出 ' + ((E08.RULES || []).length) + ' 条规则（应为 5 条：G3/G6/G7/G8/G11）⇒ 本步会静默空转')
+  if (!E08.GATED || E08.GATED.length !== 4) fail('已接进本闸的门应为 4 条（G11 命中 >0 未落），实际 ' + ((E08.GATED || []).length) + ' 条')
+  if (!E08.SELF_CASES || !E08.SELF_CASES.length) fail('E-08 续批自证夹具为空 ⇒ 「正例必红」从未被检验')
+  const bad = E08.selfProof()
+  bad.forEach(b => fail('规则自证失败：' + b))
+  if (!bad.length) ok(E08.SELF_CASES.length + ' 组夹具全部符合预期 ⇒ 下面四条门不是读不出东西的空门')
+  const ctx = E08.makeCtx(ROOT)
+  for (const r of E08.GATED) {
+    console.log('== ' + r.id + ' ' + r.title + ' ==')
+    let res
+    try {
+      res = r.run(ctx)
+    } catch (e) {
+      fail(r.id + ' 判据抛错（抛错≠通过，本步按红算）：' + e.message)
+      continue
+    }
+    if (res.fatal) fail(r.id + ' 没有输入或输入超出判据能力，本步未工作：' + res.fatal)
+    res.hits.forEach(h => fail('[' + r.id + '] ' + h.file + ':' + h.line + ' ' + h.why + (h.snippet ? ' ｜ ' + h.snippet : '')))
+    if (!res.hits.length && !res.fatal) ok(r.id + ' 命中 0 ｜ ' + (res.stat || '（无统计）'))
+  }
+  // G11 的活体只报读数不报红（报了红就是「为了让门变绿而放宽」的反面：拿红当噪音）。
+  // 它必须在**每次**提交时被复量一遍：命中归零的那一天就该把它加进 GATED，别让它悄悄躺着。
+  try {
+    const g11 = E08.G11.run(ctx)
+    console.log('== G11（未进门，读数常驻）' + E08.G11.title + ' ==')
+    if (g11.fatal) console.log('  · G11 复量失败：' + g11.fatal)
+    else if (g11.hits.length === 0) console.log('  · G11 命中已归零 ⇒ 该把它加进 tools/e08-remaining-rules.js 的 GATED 了（夹具已备，见该文件顶部注释）')
+    else {
+      console.log('  · G11 命中 ' + g11.hits.length + ' 处活体（BLOCKED，不判红）：' +
+        g11.hits.map(h => h.file + ':' + h.line).join(', ') + ' ⇒ 收敛后落地，不许加豁免')
+    }
+  } catch (e) {
+    fail('G11 复量抛错（不进门不等于可以不量）：' + e.message)
+  }
+}
+// ==== T5b/E-08 新门结束 ====
+
 console.log('')
 if (failed) {
   console.error('FAILED: ' + failed + ' 项问题')

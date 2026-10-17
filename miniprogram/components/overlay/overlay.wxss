@@ -59,15 +59,23 @@
   padding-bottom: calc(16px + env(safe-area-inset-bottom));
   transform: translateY(100%);
 }
-.overlay--dialog {
-  margin: auto;
-  align-self: center;
-}
 /* E-01/M-10：此处原有第二条 `.overlay-root { align-items: stretch; }`（同特异度后写，
    压死 L9 的 flex-end，使 18 处 sheet 顶端对齐、恒 80vh）。已删——本文件 .overlay-root
    的 align-items 现在只有一个出处。下方 margin: auto 16px 是 13 个 dialog 水平内缩的
    来源（总协调裁定必须保留），改本文件时勿顺手删它、也勿顺手改 .overlay__body 的 62vh。 */
-.overlay--dialog { margin: auto 16px; }
+/* E-08/T5 等价收敛（纯收敛，零终值变化）：这里原本有**两条** `.overlay--dialog`——
+   前一条写 `margin: auto; align-self: center`，后一条写 `margin: auto 16px`。同特异度后写
+   整条覆盖前写 ⇒ 前一条的 margin 是死声明（S1.2 钉的就是这一族，E-01/M-10 同根）。
+   并成一条后终值逐字节不变：纵轴 auto、横轴 16px、align-self: center。
+   判据是 tools/e08-remaining-rules.js 的 G11（同文件同选择器关键布局属性双写）。这条门本轮**没有**
+   接进 tools/check.js：实测全仓还剩 1 处活体（app.wxss 的 `.input, .textarea` 与 `.textarea` 把 padding
+   写了两遍），不落一条有命中的门、也不加豁免——判据与夹具（S8/S8b/S8d/S8e）已在，收敛那处后即可进门。
+   逐属性终值对照与本轮复验读数见 tools/e08-remaining-test.js §6（B0 段），它当场比对改前的两条与
+   改后的一条并断言逐边相同，所以不需要再指向仓库外的协同产物。 */
+.overlay--dialog {
+  margin: auto 16px;
+  align-self: center;
+}
 .overlay__handle {
   width: 32px;
   height: 4px;
