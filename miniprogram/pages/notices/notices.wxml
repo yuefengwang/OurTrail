@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page with-tabbar">
   <status-panel wx:if="{{denied}}" kind="denied" title="暂不能查看通知" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在获取与你有关的通知。" />

@@ -82,6 +82,11 @@ page {
   min-height: 100vh;
 }
 .page.has-sticky { padding-bottom: 120px; }
+/* 自定义 tabBar 是 position:fixed 覆盖层：四个 tab 页必须预留底部空隙，否则最后一条
+   内容会被压在 tabBar 下面（2026-10-17 真机实测 weather-hub 尾部提示被遮住）。
+   高度口径与 .tabbar-safe 一致（84px + 安全区）。此前 home 上的 .with-tabbar
+   是个无定义死类——这条规则补上后它才真正生效。 */
+.page.with-tabbar { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 .page-title {
   font-size: 28px;
   line-height: 1.3;

@@ -1,0 +1,8 @@
+✓ FIX-a 取到真实路线 id=route-muky6o3kl53fhv
+✓ FIX-b 夹具活动已发布（不带本人报名）id=activity-mvbnj0vjz504xa
+✓ P2-04a 报名页（可报名态）：分区头 2 · 固定提交栏 1 · 候选勾选组 78 · 参与人 1
+✓ P2-04b 真实 tap 候选勾选框：参与人 1 → 0
+✓ P2-03a 路线编辑器：分区头 5 · 输入 3 · 固定保存栏 1 · 节点 12
+✗ FIX-c 夹具活动清理：{"code":"FORBIDDEN","message":"只有未发布的草稿可以删除；已发布活动请使用取消。"}
+
+SUMMARY 6 checks, FAIL=1
