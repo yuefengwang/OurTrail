@@ -1,0 +1,14 @@
+[
+  {
+    "id": "I-03c",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "工作台总览编辑式对齐：section-head 2 · 指标带在位 · 待办行 2"
+  },
+  {
+    "id": "I-05b",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "点「48 小时」→ viewSpan 24 → 48"
+  }
+]

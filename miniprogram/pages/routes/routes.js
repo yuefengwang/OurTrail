@@ -1,6 +1,9 @@
 // 路线库列表（V2.0）：我的路线 + 共享给我的路线。
 // 数据来自云端 readRoutes（selectors 投影：只给列表需要的字段，不含轨迹折线）。
 // 路线的主要来源是创建活动时自动沉淀的私有路线；共享路线带「已共享」徽标。
+//
+// 2026-10-17 UI 重构二阶段：列表按「我的 / 共享给我」分组（投影本就给出 isOwner，
+// 之前只在行内徽标里透出，扫一眼分不清哪些是自己的）。分组是纯展示派生，不动读取契约。
 'use strict'
 const api = require('../../utils/api')
 const F = require('../../utils/format')
@@ -12,6 +15,8 @@ Page({
     loading: true,
     denied: '',
     routes: [],
+    mineRoutes: [],
+    sharedRoutes: [],
   },
 
   onShow() {
@@ -35,7 +40,13 @@ Page({
         refText: r.referencedCount > 0 ? '被 ' + r.referencedCount + ' 个活动使用' : '还没有活动使用',
         updatedText: r.updatedAt ? '保存于 ' + F.dateLabel(r.updatedAt) : '早期路线',
       }))
-      this.setData({ loading: false, denied: '', routes })
+      this.setData({
+        loading: false,
+        denied: '',
+        routes,
+        mineRoutes: routes.filter(r => r.mine),
+        sharedRoutes: routes.filter(r => !r.mine),
+      })
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
   },
 

@@ -73,6 +73,7 @@
           when="{{item.when}}"
           featured="{{item.featured}}"
           info="{{item.info}}"
+          activity-id="{{item.id}}"
           data-id="{{item.id}}"
           bind:open="onOpenCard"
         />

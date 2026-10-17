@@ -3,27 +3,61 @@
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取你的路线。" />
   </block>
-  <view wx:else class="stack">
-    <view class="card">
-      <text class="eyebrow">OURTRAIL · 路线库</text>
-      <text class="page-title" style="display:block;margin-top:4px;">走过的路，下次直接复用。</text>
-      <view class="button primary block" style="margin-top:12px;" hover-class="button-hover" bindtap="onNewRoute">
+  <view wx:else class="stack-sections">
+    <!-- 编辑式头部：眉题 + 大标题 + 一句定位 + 主操作（design-system.md §2.3/§6-A） -->
+    <view class="stack" style="gap:12px;">
+      <view class="section-head">
+        <text class="kicker">OURTRAIL · 路线库</text>
+        <text class="page-title" style="display:block;margin-top:4px;">走过的路，下次直接复用。</text>
+        <text class="section-sub">节点、风险、轨迹都在这里；下次发起活动直接带着走。</text>
+      </view>
+      <view class="button primary block" hover-class="button-hover" bindtap="onNewRoute">
         <icon name="plus" size="18" color="#FFFFFF" />
         <text>新建路线</text>
       </view>
     </view>
 
-    <view wx:for="{{routes}}" wx:key="id" class="card list-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
-      <view class="list-main">
-        <view class="cluster" style="gap:8px;">
-          <text style="font-weight:600;">{{item.title}}</text>
-          <text wx:if="{{item.shared}}" class="badge info">已共享</text>
-          <text wx:if="{{!item.mine}}" class="badge neutral">协作</text>
-        </view>
-        <text class="list-sub">{{item.statsText}}</text>
-        <text class="list-sub">{{item.refText}} · {{item.sourceText}} · {{item.updatedText}}</text>
+    <!-- 我的路线：行组用一张卡 + 发丝线分隔，不做成一卡一路（路线库不是卡片墙） -->
+    <view wx:if="{{mineRoutes.length}}" class="stack" style="gap:0;">
+      <view class="section-head">
+        <text class="kicker">我的</text>
+        <text class="section-title">我的路线</text>
+        <text class="section-sub">{{mineRoutes.length}} 条 · 可编辑、可共享、可删除</text>
       </view>
-      <text class="muted">›</text>
+      <view class="card" style="padding:4px 16px;">
+        <view wx:for="{{mineRoutes}}" wx:key="id" class="list-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
+          <view class="list-main">
+            <view class="cluster" style="gap:8px;">
+              <text style="font-weight:600;">{{item.title}}</text>
+              <text wx:if="{{item.shared}}" class="badge info">已共享</text>
+            </view>
+            <text class="list-sub">{{item.statsText}}</text>
+            <text class="list-sub">{{item.sourceText}} · {{item.updatedText}} · {{item.refText}}</text>
+          </view>
+          <icon name="arrow" size="20" color="#5F6E66" />
+        </view>
+      </view>
+    </view>
+
+    <!-- 共享给我：协作者视角，只读；与「我的」分区呈现，不再靠行内徽标猜归属 -->
+    <view wx:if="{{sharedRoutes.length}}" class="stack" style="gap:0;">
+      <view class="section-head">
+        <text class="kicker">协作</text>
+        <text class="section-title">共享给我</text>
+        <text class="section-sub">同行领队共享的路线，可查看与使用，不能修改</text>
+      </view>
+      <view class="card" style="padding:4px 16px;">
+        <view wx:for="{{sharedRoutes}}" wx:key="id" class="list-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
+          <view class="list-main">
+            <view class="cluster" style="gap:8px;">
+              <text style="font-weight:600;">{{item.title}}</text>
+            </view>
+            <text class="list-sub">{{item.statsText}}</text>
+            <text class="list-sub">{{item.sourceText}} · {{item.updatedText}} · {{item.refText}}</text>
+          </view>
+          <icon name="arrow" size="20" color="#5F6E66" />
+        </view>
+      </view>
     </view>
 
     <status-panel

@@ -18,6 +18,7 @@ const api = require('../../utils/api')
 const draftUtil = require('../../utils/draft')
 const J = require('../../utils/journey')
 const { PHASE_LABELS, dateLabel } = require('../../utils/format')
+const covers = require('../../utils/covers')
 
 const AUTO_SAVE_MS = 800
 const DRAFT_KEY_V1 = 'ourtrail.draft.me.person.v1'
@@ -196,6 +197,8 @@ Page({
         stats: res.view.stats || null,
         recent: (res.view.recent || []).map(a => ({
           id: a.id, title: a.title, startAt: a.startAt, phase: a.phase,
+          // 与发现/首页同一套封面选取（utils/covers.js）：「我的」里也能一眼认出那场山
+          cover: covers.coverFor(a.id),
           dateText: dateLabel(a.startAt), phaseText: PHASE_LABELS[a.phase] || a.phase,
         })),
         draftPending: pending,
@@ -204,6 +207,13 @@ Page({
       // 草稿与服务端一致就没必要留着，下次编辑从干净状态开始
       if (draft && !pending) clearDrafts()
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
+  },
+
+  // 最近活动封面加载失败：只隐藏那一行的缩略图，退回纯文字行（不出破图）
+  onCoverError(e) {
+    const i = e.currentTarget.dataset.index
+    if (i === undefined || i === null || i === '') return
+    this.setData({ ['recent[' + i + '].coverFailed']: true })
   },
 
   // ---- 打开/关闭编辑面：进入任一编辑面时清空其余作用域的残留反馈（12 §5） ----

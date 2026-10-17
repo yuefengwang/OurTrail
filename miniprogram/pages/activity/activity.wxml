@@ -10,31 +10,40 @@
       <text style="display:block;margin-top:4px;">此预览不会发布活动，也不会替你报名。</text>
     </view>
 
-    <view class="hero stack" style="gap:12px;">
-      <image class="trail-art" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNENkVBOEEiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTEzNS0yMEM0MCAzMSAyMjAgNTEgMTI2IDEwN1MzNSAxNzkgMTMyIDI2MCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE4My0yMEM4OCAzMSAxNjQgNzggODQgMTIzUzkyIDIwMSAxNzkgMjYwIiBzdHJva2Utd2lkdGg9IjEuMjUiLz48L3N2Zz4=" mode="aspectFit" />
-      <view class="cluster hero-body">
-        <text class="badge on-forest">{{badgeText}}</text>
-        <text class="small muted tabular">{{startAtLabel}}</text>
+    <!-- 编辑式封面 hero：定高媒体盒（文档流图片，微信里最稳的绘制路径）+ 状态浮层 +
+         森林底信息区（design-system.md §3）。照片是场景氛围图而非活动实拍
+         （活动模型无图片字段），页尾有脚注说明；加载失败 img-failed 隐藏照片，
+         媒体盒高度仍在，退回纯色，不出破图。 -->
+    <view class="hero-cover {{coverFailed ? 'img-failed' : ''}}">
+      <view class="hero-cover-media">
+        <image class="hero-cover-img" src="{{cover}}" mode="aspectFill" binderror="onCoverError" />
+        <view class="hero-cover-scrim" />
+        <view class="hero-cover-top">
+          <text class="badge on-forest">{{badgeText}}</text>
+          <text class="small tabular hero-date">{{startAtLabel}}</text>
+        </view>
       </view>
-      <text class="page-title hero-body">{{title}}</text>
-      <text class="muted hero-body">{{routeTitle}}</text>
-      <view class="metrics hero-body">
-        <view class="metric">
+      <view class="hero-cover-body">
+        <text class="display hero-body">{{title}}</text>
+        <text class="hero-body hero-sub">{{routeTitle}}</text>
+        <view class="metrics hero-body">
+          <view class="metric">
           <text wx:if="{{distance}}" class="metric-value">{{distance}}<text class="metric-unit">km</text></text>
           <text wx:else class="metric-value" style="color:var(--on-forest-muted);font-size:18px;font-weight:400;">待补</text>
           <text class="metric-label">路线里程</text>
-        </view>
-        <view class="metric">
+          </view>
+          <view class="metric">
           <text wx:if="{{ascent}}" class="metric-value">{{ascent}}<text class="metric-unit">m</text></text>
           <text wx:else class="metric-value" style="color:var(--on-forest-muted);font-size:18px;font-weight:400;">待补</text>
           <text class="metric-label">累计爬升</text>
-        </view>
-        <view class="metric">
+          </view>
+          <view class="metric">
           <text class="metric-value">{{confirmed}}<text class="metric-unit">/ {{capacity}}</text></text>
           <text class="metric-label">已确认人数</text>
-        </view>
+          </view>
       </view>
     </view>
+  </view>
 
     <view wx:if="{{!isDraft}}" class="callout {{stateTone}}">
       <text class="callout-title">{{stateTitle}}</text>
@@ -67,9 +76,10 @@
     </view>
 
     <view wx:if="{{rows.length}}" class="stack" style="gap:0;">
-      <view class="card-header">
+      <view class="section-head">
+        <text class="kicker">同行人</text>
         <text class="section-title">我与同行人</text>
-        <text class="small muted">每个人，独立确认</text>
+        <text class="section-sub">每个人，独立确认</text>
       </view>
       <person-row
         wx:for="{{rows}}"
@@ -91,17 +101,23 @@
     </view>
 
     <view class="stack" style="gap:0;">
-      <text class="section-title">这一次的安排</text>
-      <text>{{description}}</text>
-      <view class="list-row"><view class="list-main"><text>{{times[0].label}}</text></view><text class="tabular">{{times[0].value}}</text></view>
-      <view class="list-row"><view class="list-main"><text>{{times[1].label}}</text></view><text class="tabular">{{times[1].value}}</text></view>
-      <view class="list-row"><view class="list-main"><text>{{times[2].label}}</text></view><text class="tabular">{{times[2].value}}</text></view>
-      <text wx:if="{{organizerIntro}}" class="small muted">{{organizerIntro}}</text>
+      <view class="section-head">
+        <text class="kicker">行程</text>
+        <text class="section-title">这一次的安排</text>
+      </view>
+      <text class="lede">{{description}}</text>
+      <view class="fact-row"><text class="fact-label">{{times[0].label}}</text><text class="fact-value tabular">{{times[0].value}}</text></view>
+      <view class="fact-row"><text class="fact-label">{{times[1].label}}</text><text class="fact-value tabular">{{times[1].value}}</text></view>
+      <view class="fact-row"><text class="fact-label">{{times[2].label}}</text><text class="fact-value tabular">{{times[2].value}}</text></view>
+      <text wx:if="{{organizerIntro}}" class="small muted" style="display:block;margin-top:12px;">{{organizerIntro}}</text>
     </view>
 
     <view id="meeting-block" class="stack" style="gap:0;">
       <view class="card-header">
-        <text class="section-title">路线与集合</text>
+        <view class="section-head">
+          <text class="kicker">路线与集合</text>
+          <text class="section-title">怎么去 · 在哪集合</text>
+        </view>
         <view class="button text" hover-class="button-hover" bindtap="onWeather">
           <icon name="cloud" size="18" color="#163E35" />
           <text>天气参考</text>
@@ -180,7 +196,10 @@
     </view>
 
     <view class="stack" style="gap:12px;">
-      <text class="section-title">风险提示</text>
+      <view class="section-head">
+        <text class="kicker">安全</text>
+        <text class="section-title">风险提示</text>
+      </view>
       <block wx:if="{{risks.length}}">
         <view wx:for="{{risks}}" wx:key="id" class="callout warning">
           <text class="callout-title">{{item.title}}</text>
@@ -191,7 +210,10 @@
     </view>
 
     <view class="stack" style="gap:12px;">
-      <text class="section-title">出发前，检查装备</text>
+      <view class="section-head">
+        <text class="kicker">装备</text>
+        <text class="section-title">出发前，检查装备</text>
+      </view>
       <view class="cluster">
         <text wx:for="{{equipment}}" wx:key="index" class="badge neutral">{{item}}</text>
         <text wx:if="{{!equipment.length}}" class="muted">组织者未填写装备清单。</text>
@@ -199,10 +221,15 @@
     </view>
 
     <view class="stack" style="gap:12px;">
-      <text class="section-title">费用与退出约定</text>
+      <view class="section-head">
+        <text class="kicker">费用与约定</text>
+        <text class="section-title">费用与退出约定</text>
+      </view>
       <text>{{feeNote}}</text>
       <text wx:if="{{cancellationNote}}" class="muted">{{cancellationNote}}</text>
       <text class="small muted">OurTrail 不收款，不处理支付或退款。</text>
+      <!-- 封面诚实性：氛围图不是活动实拍（活动模型没有图片字段）。这句话必须看得见、但不可抢戏 -->
+      <text class="photo-note" style="display:block;margin-top:4px;">封面为场景氛围图，非本次活动实拍；路线与天气信息以组织者填写与实测数据为准。</text>
     </view>
 
     <view wx:if="{{!isDraft}}" class="list-row" hover-class="button-hover" bindtap="onNotices">

@@ -24,6 +24,16 @@
 | `--chart-ramp` | linear-gradient(#eeeeea→#d4d6d0→#b0b2ab→#84867f→#5a5c56) | **Weather V2 图例**：云量五档灰阶带。= `cloud-field-svg.js` `BANDS`（3 测试 pin），改色须同步 |
 | `--on-forest-muted` / `--on-forest-line` | #D0D8D7 / #4E6C65 | 森林底上的次要文字/线 |
 | `--leaf-on-forest` | #2D533F | 森林底上的嫩叶底；亦为「星空」天相色 |
+| `--forest-deep` | #122E28 | 编辑式 hero 照片压底 / 页头沉浸区（2026-10-16 重构新增） |
+| `--stone` | #EDE9DE | 石色次表面：分区带、chip 底（新增） |
+| `--stone-line` | #DCD5C4 | 暖表面分隔线（新增；冷调用 `--line`） |
+| `--scrim-hero` | linear-gradient(…forest-deep 0→0.9) | hero 照片自下而上压底（新增） |
+| `--scrim-top` | linear-gradient(…forest-deep 0.3→0) | 照片顶部轻压（新增） |
+
+**2026-10-16 编辑式重构**：`--paper` 由 `#F5F5F0` 暖调为 `#F6F3EC`；新增编辑式类
+`.display/.lede/.kicker/.hairline/.stack-sections/.section-head/.fact-row/.hero-cover*/.photo-note`，
+封面照片在 `assets/photos/`（Unsplash 授权，选择逻辑 `utils/covers.js`）。
+设计规范全文：`docs/ui-ux-redesign/design-system.md`。
 
 > **`--focus` 已删除**（B-14，2026-10-14）：全仓 `var(--focus)` 引用实测 0 次，小程序里没有 `:focus-visible` 宿主吃它；
 > 它与 `--info` 同值（#346583），留着只会让读者以为聚焦环另有其色。要恢复聚焦环：先在 `app.wxss` 重新登记 + 本表同步，

@@ -1,3 +1,15 @@
 /* 工作台 */
 /* 面板分区显隐：hidden 属性在自定义组件宿主上不生效，必须用类名（page 作用域命中组件宿主） */
 .hide { display: none; }
+
+/* 指标带（2026-10-16 编辑式对齐）：把三个"即入口"的数字收进一条石色带里，
+   分组但不做成三张卡片——工作台不是仪表盘（design-system.md §3 C 域）。
+   分隔用发丝线，不用阴影。 */
+.workspace-band {
+  background: var(--stone);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+}
+.workspace-band .metrics { border-top: 1px solid var(--stone-line); padding-top: 12px; }
+.workspace-band .metric + .metric { border-left: 1px solid var(--stone-line); padding-left: 12px; }
+.workspace-band .metric .metric-value { font-size: 24px; }

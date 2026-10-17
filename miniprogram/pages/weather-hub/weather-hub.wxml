@@ -1,8 +1,10 @@
 <view class="page">
-  <view class="stack">
-    <view>
-      <text class="eyebrow">天气</text>
+  <view class="stack-sections">
+    <!-- 编辑式头部（二阶段）：眉题 + 大标题 + 一句定位（与 activity/route/routes 同源） -->
+    <view class="section-head">
+      <text class="kicker">天气</text>
       <text class="page-title" style="display:block;margin-top:4px;">先看天，再上山。</text>
+      <text class="section-sub">查过的点与轨迹会存住，下次不用重传。</text>
     </view>
 
     <!-- 输入区：主行动唯一化——地图选点是唯一实心按钮 -->
@@ -21,14 +23,18 @@
       <text class="small muted" style="display:block;margin-top:8px;">把 GPX 文件发到任意聊天，再点上面按钮选择。导入后展开轨迹，点任一节点名即可进入该点的天气与天相。</text>
     </view>
 
-    <!-- 我的观察点：有数据才显示，空态不渲染空卡片。
-         A-23：原先这张卡带一个把内边距归零的内联 style，而 .card-header 与 .list-row
-         自身都没有左右 padding ⇒ 横向留白被一起吃掉，标题与行内容贴到卡片圆角边。
-         现在横向留白回到 app.wxss 的 .card 单源，与同页另两张卡（GPX 卡、轨迹点组卡）一致。
-         ⚠ 复验请剥掉注释、按「节点 attrs + 层叠终值」判，别按整文件 grep。 -->
+<!-- 我的观察点：有数据才显示，空态不渲染空卡片。
+     A-23（合并自 master）：原先这张卡带一个把内边距归零的内联 style，.card-header 与 .list-row
+     自身都没有左右 padding ⇒ 横向留白被一起吃掉，标题与行内容贴到卡片圆角边。
+     现在横向留白回到 app.wxss 的 .card 单源，与同页另两张卡（GPX 卡、轨迹点组卡）一致；
+     观察点行组不再套第二张卡（卡中卡会把留白再收一层）。
+     ⚠ 复验请剥掉注释、按「节点 attrs + 层叠终值」判，别按整文件 grep。 -->
     <view wx:if="{{points.length}}" class="card">
       <view class="card-header">
-        <text class="card-label">我的观察点</text>
+        <view class="section-head">
+          <text class="kicker">已存</text>
+          <text class="section-title">我的观察点</text>
+        </view>
         <text class="small muted tabular">{{points.length}}</text>
       </view>
       <view

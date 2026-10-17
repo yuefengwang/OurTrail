@@ -5,11 +5,21 @@
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取路线。" />
   </block>
-  <view wx:else class="stack">
-    <!-- 头部：名称 + 里程爬升 -->
-    <view class="card stack-gap3">
-      <text class="eyebrow">OURTRAIL · {{isNew ? '新建路线' : '编辑路线'}}</text>
-      <form-field label="路线名称" hint="认得出的名字，比如「青城后山环线」">
+  <view wx:else class="stack-sections">
+    <!-- 编辑式头部：眉题 + 大标题。表单字段本身不藏进卡里——一屏一个输入，层级更清楚 -->
+    <view class="section-head">
+      <text class="kicker">OURTRAIL · {{isNew ? '新建路线' : '编辑路线'}}</text>
+      <text class="page-title" style="display:block;margin-top:4px;">{{isNew ? '把一条路记下来。' : '改这条路。'}}</text>
+      <text class="section-sub">节点、风险与轨迹会存进路线库；之后发起活动可以直接复用。</text>
+    </view>
+
+    <!-- 基本信息 -->
+    <view class="stack" style="gap:0;">
+      <view class="section-head">
+        <text class="kicker">基本信息</text>
+        <text class="section-title">认得出的名字与量级</text>
+      </view>
+      <form-field label="路线名称" hint="比如「青城后山环线」">
         <input class="input" value="{{form.title}}" placeholder="路线名称" data-key="title" bindinput="onField" />
       </form-field>
       <view class="cluster" style="align-items:flex-start;">
@@ -26,9 +36,12 @@
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
 
     <!-- GPX 导入：自动解析航点为节点，并按轨迹算好里程与爬升 -->
-    <view class="card stack-gap3">
-      <text class="section-title">有 GPX 轨迹？一键生成</text>
-      <text class="small muted">自动解析航点为路线节点，并按轨迹算好里程与爬升。</text>
+    <view class="stack" style="gap:12px;">
+      <view class="section-head">
+        <text class="kicker">快捷开始</text>
+        <text class="section-title">有 GPX 轨迹？一键生成</text>
+        <text class="section-sub">自动解析航点为路线节点，并按轨迹算好里程与爬升</text>
+      </view>
       <view class="button primary block" hover-class="button-hover" bindtap="onImportGpx">
         <icon name="route" size="18" color="#FFFFFF" />
         <text>导入 GPX 轨迹</text>
@@ -37,105 +50,115 @@
     </view>
 
     <!-- 节点（渐进披露：默认收合，坐标默认隐藏；交互与活动编辑器一致） -->
-    <view class="cluster" style="justify-content:space-between;">
-      <text class="section-title">路线节点</text>
-      <view wx:if="{{!form.points.length}}" class="button text" hover-class="button-hover" bindtap="useSampleRoute">用示例路线</view>
-    </view>
-    <text class="small muted">节点是你计划经过的关键位置（起点、垭口、终点……）。至少 1 个，发布活动前每个都要有名字。</text>
+    <view class="stack" style="gap:12px;">
+      <view class="card-header">
+        <view class="section-head">
+          <text class="kicker">路线</text>
+          <text class="section-title">路线节点</text>
+        </view>
+        <view wx:if="{{!form.points.length}}" class="button text" hover-class="button-hover" bindtap="useSampleRoute">用示例路线</view>
+      </view>
+      <text class="small muted">节点是你计划经过的关键位置（起点、垭口、终点……）。至少 1 个，发布活动前每个都要有名字。</text>
 
-    <block wx:for="{{form.points}}" wx:key="id">
-      <view
-        wx:if="{{!expandedPoints[item.id]}}"
-        class="card"
-        style="padding:12px 16px;"
-        hover-class="button-hover"
-        data-id="{{item.id}}"
-        bindtap="togglePoint"
-      >
-        <view class="cluster" style="justify-content:space-between;">
-          <view class="cluster" style="gap:8px;min-width:0;">
-            <text class="badge neutral tabular">{{index + 1}}</text>
-            <text style="font-weight:600;">{{item.name || (item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '节点 ' + index)}}</text>
-          </view>
-          <view class="cluster" style="gap:8px;flex:0 0 auto;">
-            <text class="badge {{item.kind === 'start' ? 'success' : item.kind === 'finish' ? 'info' : 'neutral'}}">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中'}}</text>
-            <text class="muted">›</text>
-          </view>
-        </view>
-      </view>
-      <view wx:else class="card stack-gap3">
-        <view class="cluster" style="justify-content:space-between;">
-          <text class="card-label">节点 {{index + 1}}</text>
-          <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePoint">收起</view>
-        </view>
-        <form-field label="节点名称">
-          <input class="input" value="{{item.name}}" placeholder="节点名称" data-index="{{index}}" data-key="name" bindinput="onRoutePoint" />
-        </form-field>
-        <form-field label="节点类型">
-          <picker range="{{['起点', '途中节点', '终点']}}" value="{{item.kind === 'start' ? 0 : item.kind === 'finish' ? 2 : 1}}" data-index="{{index}}" bindchange="onPointKind">
-            <view class="picker">
-              <text class="picker-value">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中节点'}}</text>
-              <text class="picker-arrow">▾</text>
-            </view>
-          </picker>
-        </form-field>
-        <view class="stack-gap3">
+      <block wx:for="{{form.points}}" wx:key="id">
+        <view
+          wx:if="{{!expandedPoints[item.id]}}"
+          class="card"
+          style="padding:12px 16px;"
+          hover-class="button-hover"
+          data-id="{{item.id}}"
+          bindtap="togglePoint"
+        >
           <view class="cluster" style="justify-content:space-between;">
-            <text class="field-label">位置（可选）</text>
-            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePointCoords">{{showPointCoords[item.id] ? '收起手动输入' : '手动输入'}}</view>
-          </view>
-          <view class="button secondary block" hover-class="button-hover" data-index="{{index}}" bindtap="choosePointLocation">
-            <icon name="pin" size="16" color="#163E35" />
-            <text>在地图上选点{{item.lat ? '（已设置）' : ''}}</text>
-          </view>
-          <block wx:if="{{showPointCoords[item.id]}}">
-            <view class="cluster" style="align-items:flex-start;">
-              <form-field label="纬度" style="flex:1;">
-                <input class="input" type="digit" value="{{item.lat}}" data-index="{{index}}" data-key="lat" bindinput="onRoutePoint" />
-              </form-field>
-              <form-field label="经度" style="flex:1;">
-                <input class="input" type="digit" value="{{item.lng}}" data-index="{{index}}" data-key="lng" bindinput="onRoutePoint" />
-              </form-field>
+            <view class="cluster" style="gap:8px;min-width:0;">
+              <text class="badge neutral tabular">{{index + 1}}</text>
+              <text style="font-weight:600;">{{item.name || (item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '节点 ' + index)}}</text>
             </view>
-          </block>
-          <text wx:if="{{item.time}}" class="small muted">轨迹记录于 {{item.time}}，不可修改</text>
-          <text wx:if="{{item.ele !== null && item.ele !== undefined && item.ele !== ''}}" class="small muted">海拔 {{item.ele}} m，不可修改</text>
+            <view class="cluster" style="gap:8px;flex:0 0 auto;">
+              <text class="badge {{item.kind === 'start' ? 'success' : item.kind === 'finish' ? 'info' : 'neutral'}}">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中'}}</text>
+              <text class="muted">›</text>
+            </view>
+          </view>
         </view>
-        <view class="button text" hover-class="button-hover" data-index="{{index}}" catchtap="removePoint">移除此节点</view>
+        <view wx:else class="card stack-gap3">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="card-label">节点 {{index + 1}}</text>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePoint">收起</view>
+          </view>
+          <form-field label="节点名称">
+            <input class="input" value="{{item.name}}" placeholder="节点名称" data-index="{{index}}" data-key="name" bindinput="onRoutePoint" />
+          </form-field>
+          <form-field label="节点类型">
+            <picker range="{{['起点', '途中节点', '终点']}}" value="{{item.kind === 'start' ? 0 : item.kind === 'finish' ? 2 : 1}}" data-index="{{index}}" bindchange="onPointKind">
+              <view class="picker">
+                <text class="picker-value">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中节点'}}</text>
+                <text class="picker-arrow">▾</text>
+              </view>
+            </picker>
+          </form-field>
+          <view class="stack-gap3">
+            <view class="cluster" style="justify-content:space-between;">
+              <text class="field-label">位置（可选）</text>
+              <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePointCoords">{{showPointCoords[item.id] ? '收起手动输入' : '手动输入'}}</view>
+            </view>
+            <view class="button secondary block" hover-class="button-hover" data-index="{{index}}" bindtap="choosePointLocation">
+              <icon name="pin" size="16" color="#163E35" />
+              <text>在地图上选点{{item.lat ? '（已设置）' : ''}}</text>
+            </view>
+            <block wx:if="{{showPointCoords[item.id]}}">
+              <view class="cluster" style="align-items:flex-start;">
+                <form-field label="纬度" style="flex:1;">
+                  <input class="input" type="digit" value="{{item.lat}}" data-index="{{index}}" data-key="lat" bindinput="onRoutePoint" />
+                </form-field>
+                <form-field label="经度" style="flex:1;">
+                  <input class="input" type="digit" value="{{item.lng}}" data-index="{{index}}" data-key="lng" bindinput="onRoutePoint" />
+                </form-field>
+              </view>
+            </block>
+            <text wx:if="{{item.time}}" class="small muted">轨迹记录于 {{item.time}}，不可修改</text>
+            <text wx:if="{{item.ele !== null && item.ele !== undefined && item.ele !== ''}}" class="small muted">海拔 {{item.ele}} m，不可修改</text>
+          </view>
+          <view class="button text" hover-class="button-hover" data-index="{{index}}" catchtap="removePoint">移除此节点</view>
+        </view>
+      </block>
+      <view class="button secondary block" hover-class="button-hover" bindtap="addPoint">
+        <icon name="plus" size="18" color="#163E35" />
+        <text>添加路线节点</text>
       </view>
-    </block>
-    <view class="button secondary block" hover-class="button-hover" bindtap="addPoint">
-      <icon name="plus" size="18" color="#163E35" />
-      <text>添加路线节点</text>
     </view>
 
     <!-- 风险 -->
-    <text class="section-title">风险提示</text>
-    <text class="small muted">选填。写清楚问题与应对方式，从这条路线发起活动时会带给大家。</text>
-    <block wx:for="{{form.risks}}" wx:key="id">
-      <view wx:if="{{!editingRisks[item.id]}}" class="card" style="padding:12px 16px;" hover-class="button-hover" data-id="{{item.id}}" bindtap="toggleRisk">
-        <view class="cluster" style="justify-content:space-between;">
-          <text style="font-weight:600;">{{item.title || '未命名风险'}}</text>
-          <text class="muted">›</text>
-        </view>
+    <view class="stack" style="gap:12px;">
+      <view class="section-head">
+        <text class="kicker">安全</text>
+        <text class="section-title">风险提示</text>
+        <text class="section-sub">选填。写清楚问题与应对方式，从这条路线发起活动时会带给大家。</text>
       </view>
-      <view wx:else class="card stack-gap3">
-        <view class="cluster" style="justify-content:space-between;">
-          <text class="card-label">风险 {{index + 1}}</text>
-          <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="toggleRisk">收起</view>
+      <block wx:for="{{form.risks}}" wx:key="id">
+        <view wx:if="{{!editingRisks[item.id]}}" class="card" style="padding:12px 16px;" hover-class="button-hover" data-id="{{item.id}}" bindtap="toggleRisk">
+          <view class="cluster" style="justify-content:space-between;">
+            <text style="font-weight:600;">{{item.title || '未命名风险'}}</text>
+            <text class="muted">›</text>
+          </view>
         </view>
-        <form-field label="风险">
-          <input class="input" value="{{item.title}}" placeholder="比如：雨后湿滑" data-index="{{index}}" data-key="title" bindinput="onRisk" />
-        </form-field>
-        <form-field label="应对方式">
-          <input class="input" value="{{item.advice}}" placeholder="比如：防滑鞋 + 登山杖" data-index="{{index}}" data-key="advice" bindinput="onRisk" />
-        </form-field>
-        <view class="button text" hover-class="button-hover" data-index="{{index}}" catchtap="removeRisk">移除此风险</view>
+        <view wx:else class="card stack-gap3">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="card-label">风险 {{index + 1}}</text>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="toggleRisk">收起</view>
+          </view>
+          <form-field label="风险">
+            <input class="input" value="{{item.title}}" placeholder="比如：雨后湿滑" data-index="{{index}}" data-key="title" bindinput="onRisk" />
+          </form-field>
+          <form-field label="应对方式">
+            <input class="input" value="{{item.advice}}" placeholder="比如：防滑鞋 + 登山杖" data-index="{{index}}" data-key="advice" bindinput="onRisk" />
+          </form-field>
+          <view class="button text" hover-class="button-hover" data-index="{{index}}" catchtap="removeRisk">移除此风险</view>
+        </view>
+      </block>
+      <view class="button secondary block" hover-class="button-hover" bindtap="addRisk">
+        <icon name="plus" size="18" color="#163E35" />
+        <text>添加风险提示</text>
       </view>
-    </block>
-    <view class="button secondary block" hover-class="button-hover" bindtap="addRisk">
-      <icon name="plus" size="18" color="#163E35" />
-      <text>添加风险提示</text>
     </view>
   </view>
 

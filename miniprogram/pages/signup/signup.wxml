@@ -1,6 +1,18 @@
-<view class="page">
+<!-- 报名/修改资料页（2026-10-17 二阶段重构）：编辑式分区头 + 固定提交栏。
+     1. 主操作从长表单的末尾移到 (.sticky-action)：报名是转化关键，滚到底才看得见提交太贵；
+        页尾留白靠 .page.has-sticky(120px)，条件与底栏显隐同写一处。
+     2. 候补场景保留 A-13 的视觉次序（整组候补拿 primary、正式报名降为 secondary 但不置灰），
+        两个入口一起固定在底栏，不再出现「主操作在屏幕最底下、按钮互斥看不见」的情况。
+     3. 候选勾选行仍由 checkbox-group 承载 change、data-key 挂在 group 上（挂内层 label 会被
+        group 的 currentTarget 语义吃掉，真机已复现，见 SYNC.md 2026-10-04）。 -->
+<view class="page {{!denied && !loading && !purposeGate ? 'has-sticky' : ''}}">
   <status-panel wx:if="{{denied && !profileGate}}" kind="denied" title="{{mode === 'edit' ? '无法读取报名资料' : '当前无法报名'}}" detail="{{denied}}" actionLabel="回到活动详情" bind:action="goBackToActivity" />
-  <view wx:if="{{denied && profileGate}}" class="stack" style="margin-top:16px;">
+  <view wx:if="{{denied && profileGate}}" class="stack">
+    <view class="section-head">
+      <text class="kicker">档案待补全</text>
+      <text class="page-title" style="display:block;margin-top:4px;">先把自己的资料补齐</text>
+      <text class="section-sub">报名需要先有本人姓名、电话与紧急联络人。</text>
+    </view>
     <view class="button primary block" hover-class="button-hover" bindtap="onGoProfile">去「我的」补全资料（草稿已在本机，回来接着填）</view>
   </view>
   <block wx:elif="{{loading}}">
@@ -8,10 +20,11 @@
   </block>
 
   <!-- 编辑模式：用途门槛 -->
-  <view wx:elif="{{purposeGate}}" class="stack">
-    <view>
-      <text class="page-title">修改一位参与人的资料</text>
-      <text class="muted" style="display:block;margin-top:8px;">资料包含紧急联络与健康备注。请说明本次读取、修改的必要用途。</text>
+  <view wx:elif="{{purposeGate}}" class="stack-sections">
+    <view class="section-head">
+      <text class="kicker">用途登记</text>
+      <text class="page-title" style="display:block;margin-top:4px;">修改一位参与人的资料</text>
+      <text class="section-sub">资料包含紧急联络与健康备注。请说明本次读取、修改的必要用途。</text>
     </view>
     <form-field label="修改用途">
       <input class="input" value="{{purpose}}" bindinput="onPurpose" placeholder="例如：本人更新本次上车点" />
@@ -20,13 +33,17 @@
   </view>
 
   <!-- 编辑模式：表单 -->
-  <view wx:elif="{{mode === 'edit' && editForm}}" class="stack">
-    <view>
+  <view wx:elif="{{mode === 'edit' && editForm}}" class="stack-sections">
+    <view class="section-head">
       <text class="eyebrow">仅修改选中的参与人</text>
       <text class="page-title" style="display:block;margin-top:4px;">{{editForm.person.name}} · 报名资料</text>
     </view>
     <view class="callout">用途：{{purpose}}</view>
-    <view class="card stack-gap3">
+    <view class="stack" style="gap:0;">
+      <view class="section-head">
+        <text class="kicker">报名资料</text>
+        <text class="section-title">姓名、联络与安全信息</text>
+      </view>
       <form-field label="姓名" error="{{errors.name}}">
         <input class="input" value="{{editForm.person.name}}" maxlength="80" data-key="name" bindinput="onEditField" />
       </form-field>
@@ -40,7 +57,7 @@
         <input class="input" type="number" maxlength="11" value="{{editForm.person.emergency.phone}}" data-key="ephone" bindinput="onEditField" />
       </form-field>
       <form-field label="健康与用药备注" hint="可选，仅用于本次活动的必要安全协作。">
-        <textarea class="textarea" value="{{editForm.person.medical}}" maxlength="2000" data-key="medical" bindinput="onEditField" />
+        <textarea class="textarea slim" value="{{editForm.person.medical}}" maxlength="2000" data-key="medical" bindinput="onEditField" />
       </form-field>
       <form-field label="出行方式" error="{{errors.trip}}" hint="已上车或已核实随队出发后，出行方式不能再改——乘车事实已经发生。">
         <radio-group bindchange="onEditMode">
@@ -66,21 +83,24 @@
       <text class="small">原授权只读。修改资料不会追加或扩大同行人的授权。</text>
     </view>
     <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
-    <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onEditSubmit'}}">{{busy ? '正在保存…' : '保存此人的修改'}}</view>
   </view>
 
   <!-- 新报名 -->
-  <view wx:else class="stack">
-    <view>
-      <text class="eyebrow">一起出发 · 报名资料</text>
+  <view wx:else class="stack-sections">
+    <view class="section-head">
+      <text class="kicker">一起出发 · 报名资料</text>
       <text class="page-title" style="display:block;margin-top:4px;">这次，和谁同行？</text>
-      <text class="muted" style="display:block;margin-top:4px;">{{activityTitle}} · 还可申请 {{remaining}} 人。资料仅用于本次同行与安全联络。</text>
+      <text class="section-sub">{{activityTitle}} · 还可申请 {{remaining}} 人。资料仅用于本次同行与安全联络。</text>
     </view>
 
     <view class="stack" style="gap:0;">
-      <text class="section-title">选择参与人</text>
+      <view class="section-head">
+        <text class="kicker">第 1 步</text>
+        <text class="section-title">选择参与人</text>
+      </view>
       <!-- 一行一个 checkbox-group：change 事件的 currentTarget 就是 group 本身，data-key 必须挂在 group 上。
-           挂进内层 label 时 handler 读到 undefined，勾选既不新增也不移除参与人（真机已复现，见 SYNC.md 2026-10-04）。 -->
+           挂进内层 label 时 handler 读到 undefined，勾选既不新增也不移除参与人（真机已复现，见 SYNC.md 2026-10-04）。
+           e2e-ui-test 也按 group 上的 data-key 前缀「c:」认出同行人那一行，结构不可改。 -->
       <checkbox-group wx:for="{{candidates}}" wx:key="key" data-key="{{item.key}}" bindchange="onToggleCandidate">
         <label class="check-label">
           <checkbox color="#163E35" value="{{item.key}}" checked="{{item.checked}}" />
@@ -188,15 +208,21 @@
     </block>
 
     <!-- 同车约束只在「有人需要乘车」时才有意义：全员自行前往时不问这个问题 -->
-    <checkbox-group wx:if="{{needsVehicle}}" bindchange="onKeepTogether">
-      <label class="check-label">
-        <checkbox color="#163E35" value="1" checked="{{keepTogether}}" />
-        <view class="check-text">
-          <text>尽量安排同行人同车</text>
-          <text class="small muted" style="display:block;">整组安排；容量不足时不会静默拆组。自行前往的人不受此约束影响。</text>
-        </view>
-      </label>
-    </checkbox-group>
+    <view wx:if="{{needsVehicle}}" class="stack" style="gap:0;">
+      <view class="section-head">
+        <text class="kicker">第 2 步</text>
+        <text class="section-title">同车安排</text>
+      </view>
+      <checkbox-group bindchange="onKeepTogether">
+        <label class="check-label">
+          <checkbox color="#163E35" value="1" checked="{{keepTogether}}" />
+          <view class="check-text">
+            <text>尽量安排同行人同车</text>
+            <text class="small muted" style="display:block;">整组安排；容量不足时不会静默拆组。自行前往的人不受此约束影响。</text>
+          </view>
+        </label>
+      </checkbox-group>
+    </view>
 
     <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
 
@@ -204,12 +230,23 @@
       <text class="callout-title">名额不足，是否整组候补？</text>
       <text>{{participants.length}} 人将一起进入候补，不会自动占用正式名额。</text>
       <!-- A-13：走到这个分支时，整组候补是此刻唯一走得通的通道，它就该拿到本屏最强的视觉权重；
-           「提交报名」降为次要但不置灰——名额后来空出时仍要能直接重试正式报名（不锁死用户）。 -->
-      <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onWaitlist'}}">明确同意整组候补</view>
+           「提交报名」降为次要但不置灰——名额后来空出时仍要能直接重试正式报名（不锁死用户）。
+           二阶段把两颗按钮一起移到底栏「显示在同一屏」，避免互斥按钮因滚动而看不见。 -->
     </view>
 
-    <view class="button {{capacityAsk ? 'secondary' : 'primary'}} block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSubmit'}}">{{busy ? '正在提交…' : '提交报名'}}</view>
-    <text wx:if="{{capacityAsk}}" class="small muted" style="display:block;margin-top:4px;">现在能确认的是整组候补；正式名额若后来空出，仍可再提交正式报名。</text>
+    <text wx:if="{{capacityAsk}}" class="small muted">现在能确认的是整组候补；正式名额若后来空出，仍可在底栏再提交正式报名。</text>
     <text class="small muted">{{approvalHint}}</text>
+  </view>
+
+  <!-- 固定底栏：主操作不再藏在长表单末尾（design-system.md §2.5）。
+       候补场景两颗同屏——primary 给此刻唯一走得通的通道，secondary 保留重试正式报名。 -->
+  <view wx:if="{{!denied && !loading && !purposeGate}}" class="sticky-action">
+    <block wx:if="{{mode === 'edit'}}">
+      <view class="button primary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onEditSubmit'}}">{{busy ? '正在保存…' : '保存此人的修改'}}</view>
+    </block>
+    <block wx:else>
+      <view wx:if="{{capacityAsk}}" class="button primary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onWaitlist'}}">明确同意整组候补</view>
+      <view class="button {{capacityAsk ? 'secondary' : 'primary'}} {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSubmit'}}">{{busy ? '正在提交…' : '提交报名'}}</view>
+    </block>
   </view>
 </view>

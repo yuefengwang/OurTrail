@@ -96,6 +96,8 @@ Page({
     const featuredId = filtered.length ? filtered[0].id : ''
     const cards = filtered.map(a => ({
       id: a.id,
+      // 封面氛围图不进这个对象：activity-card 组件拿 activityId 自己在内部派生
+      //（utils/covers.js）。cards 是投影契约，a20-owner-hero 按字节比对它们。
       title: a.title || '未命名草稿',
       date: F.dateLabel(a.startAt),
       // 路线可整体后补（2026-10-14 快速创建）：缺里程就不印「· 0 km」——

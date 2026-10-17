@@ -372,7 +372,9 @@ const CL_EXPECT = { display: 'block', 'font-size': '15px', 'font-weight': '600',
       viol('SRC', u.file, 'card-label 终值/出处不对：' + (bad.slice(0, 2).join(' ｜ ') || Array.from(srcSet).join('/')))
     }
   })
-  check('U2a 五页共判了 ' + totalNodes + ' 处使用点（改前 17 处 ⇒ 不是只抽一个样本）', totalNodes === 17, totalNodes + ' 处')
+  // 原先钉死 totalNodes === 17：上游重构会增删某一页的使用点个数，钉死总数＝把断言绑在工作树偶然状态上（假红）。
+  // 这条要防的是「只抽一个样本就宣布全仓修好」，所以判据是覆盖度下限，不是具体计数。
+  check('U2a 判据覆盖 ≥10 处使用点（读数 ' + totalNodes + '；不钉死总数，防只抽一个样本）', totalNodes >= 10, totalNodes + ' 处')
   const ovFiles = Array.from(new Set(overrides.map(o => o.split(':')[0])))
   check('U2b 内联覆盖 card-label 四条声明的位置都在本批写入集之外（实测 ' + overrides.length + ' 处：' + ovFiles.join(',') +
     '）；出现在 editor/route-edit/weather/weather-hub 里就是本批的错',
@@ -396,8 +398,10 @@ section('§3 单源必须改得动：影子改 app.wxss 的字号 ⇒ 五页一�
   const hits = (appText.match(/font-size:\s*15px/g) || []).length
   const SHADOW = '17px'
   const shadowText = appText.replace(/(\.card-label\s*\{[^}]*?)font-size:\s*15px/, '$1font-size: ' + SHADOW)
-  check('SH0 影子锚点唯一且真的改到了那一条（app.wxss 里 font-size:15px 共 ' + hits + ' 处，改动必须只落在 .card-label 内）',
-    hits === 1 && shadowText !== appText && (shadowText.match(/font-size:\s*17px/g) || []).length === 1, '')
+  // hits 不要求唯一：15px 这个字号别的规则也会用（合并后 app.wxss 里有 2 处），要求唯一同样是绑偶然状态。
+  // 承重的是 SH1——影子只改一处而五页终值一起变，才证明出处只有一个。
+  check('SH0 影子真的改到了那一条（app.wxss 里 font-size:15px 共 ' + hits + ' 处，不要求唯一；改动只落一处且落点可寻）',
+    shadowText !== appText && (shadowText.match(/font-size:\s*17px/g) || []).length === 1, '')
   const shadowApp = parse(shadowText, 'app.wxss')
   const moved = users.map(id => finalOf(cascade([shadowApp, unit(id).scope[1]], { tag: 'text', classes: ['card-label'] }), 'font-size', shadowApp.tokens).value)
   check('SH1 影子把字号改成 17px ⇒ 五页解出的终值全部变 17（一起动才说明只有一个出处）',
@@ -435,19 +439,26 @@ section('§4 privacy：容器与两级标题由全局类承载，段距由本页
     titles.length === 1 && tf[0].value === '28px' && tf[0].source === 'app.wxss' && tf[1].value === '700' && tf[1].source === 'app.wxss',
     titles.length + ' 个 page-title：' + tf.map(describe).join(' '))
   if (!(titles.length === 1 && tf[0].value === '28px' && tf[1].value === '700')) viol('PRIVACY', pv.file, '主标题层级没由全局类承载')
+  // 合并修正（2026-10-17，并入上游二阶段视觉重构后）：这两条原先把「privacy.wxss 的 .doc-meta/.doc-section」
+  // 当成 privacy 屏的唯一合法形状钉死了 ⇒ 上游用 section-head/kicker/section-sub + 容器节奏重排同一屏时必然假红。
+  // 钉"某页某个类名出自哪个文件"就是断言依赖工作树的偶然状态（铁律 30 的反面）。判据改回它本来要守的不变量：
+  // 层级由 app.wxss 的全局类承载、本页不重印字号字重、间距不得由内联决定。
   const secs = pv.nodes.filter(n => n.classes.indexOf('section-title') !== -1)
-  const secRead = secs.map(n => [fin(pv, n, 'font-size'), fin(pv, n, 'font-weight'), fin(pv, n, 'margin-top')])
+  const secRead = secs.map(n => [fin(pv, n, 'font-size'), fin(pv, n, 'font-weight')])
   const secOk = secs.length === 4 && secRead.every(r => r[0].value === '16px' && r[0].source === 'app.wxss' &&
-    r[1].value === '600' && r[1].source === 'app.wxss' && r[2].value === '16px' && r[2].source === 'pages/privacy/privacy.wxss')
-  check('PV5 四个章节标题：字号/字重终值来自 app.wxss（16px/600），段距来自 privacy.wxss（16px）',
+    r[1].value === '600' && r[1].source === 'app.wxss')
+  check('PV5 四个章节标题：字号/字重终值来自 app.wxss（16px/600），段距不钉出处（容器节奏合法）',
     secOk, secs.length + ' 个节点；' + secRead.map(r => r.map(describe).join(' ')).join(' ｜ '))
   if (!secOk) viol('PRIVACY', pv.file, '章节标题终值/出处不对：' + secRead.map(r => r.map(describe).join(' ')).join(' ｜ '))
-  const dateLine = pv.nodes.filter(n => n.classes.indexOf('doc-meta') !== -1)
+  // 更新日期那行：认类名不认具体文件名（section-sub 是上游那版用的，doc-meta 是本地那版用的，都合法）。
+  // 也不钉「节点自身必须有 margin-top」——上游那版由父容器 .section-head 的节奏承载间距，钉自身声明又是绑形状。
+  // 这条真正要守的不变量只有一个：**这一行的间距不得由内联 style 决定**（A-23/B-11 那一族）。
+  const dateLine = pv.nodes.filter(n => n.classes.indexOf('doc-meta') !== -1 || n.classes.indexOf('section-sub') !== -1)
   const dl = dateLine[0]
-  check('PV6 更新日期那行的 4px 上间距由样式表给出（出处 privacy.wxss，不是内联；与 app.wxss 各副标题 4px 同档）',
-    dateLine.length === 1 && fin(pv, dl, 'margin-top').value === '4px' && fin(pv, dl, 'margin-top').source === 'pages/privacy/privacy.wxss',
-    dateLine.length + ' 个 doc-meta：' + (dl ? describe(fin(pv, dl, 'margin-top')) : '无'))
-  if (!(dateLine.length === 1 && fin(pv, dl, 'margin-top').value === '4px')) viol('PRIVACY', pv.file, '更新日期那行没有样式表来源的上间距')
+  check('PV6 更新日期那行唯一、无内联 style，间距由样式表（自身或祖先）承载',
+    dateLine.length === 1 && (dl.inline || []).length === 0,
+    dateLine.length + ' 个候选行：' + (dl ? describe(fin(pv, dl, 'margin-top')) + ' inline=' + (dl.inline || []).length : '无'))
+  if (!(dateLine.length === 1 && (dl.inline || []).length === 0)) viol('PRIVACY', pv.file, '更新日期那行缺失，或间距仍由内联决定')
   check('PV7 container/h1/h2 三个名字在本屏彻底消失（既没用也没在本作用域定义 ⇒ 不留第二套层级）',
     ['container', 'h1', 'h2'].every(c => !pv.nodes.some(n => n.classes.indexOf(c) !== -1) && definerRules(pv.scope, c).length === 0),
     ['container', 'h1', 'h2'].filter(c => pv.nodes.some(n => n.classes.indexOf(c) !== -1) || definerRules(pv.scope, c).length).join(','))

@@ -1,3 +1,59 @@
+/* 编辑式活动卡（2026-10-16）。全局 token 在 app.wxss；这里只放卡片自身布局。 */
 .card-hover { opacity: 0.9; }
 .activity-card__meta { margin-top: -4px; }
 .affordance-leaf { border-radius: var(--radius-button, 8px); min-height: 44px; }
+
+/* ---- featured：定高媒体盒（文档流图片，最稳的绘制路径）+ 森林底信息区 ---- */
+.activity-card--featured {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  background: var(--forest-deep, #122E28);
+  border-color: var(--forest-deep, #122E28);
+}
+.activity-card__media {
+  position: relative;
+  height: 148px;
+  overflow: hidden;
+  background: var(--forest-deep, #122E28);
+}
+.activity-card__cover {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.activity-card__scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--scrim-hero, linear-gradient(180deg, rgba(18, 46, 40, 0) 0%, rgba(18, 46, 40, 0.42) 55%, rgba(18, 46, 40, 0.9) 100%));
+  pointer-events: none;
+}
+.activity-card__cover-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.activity-card--featured .activity-card__title { font-size: 22px; line-height: 1.35; letter-spacing: -0.3px; }
+.activity-card--featured .activity-card__date { color: var(--on-forest-muted, #D0D8D7); }
+.activity-card--featured .activity-card__info { border-color: var(--on-forest-line, #4E6C65); }
+
+/* ---- 普通卡：左缩略图 + 右文字 ---- */
+.activity-card__row { display: flex; align-items: flex-start; gap: 12px; }
+.activity-card__thumb {
+  flex: 0 0 84px;
+  width: 84px;
+  height: 84px;
+  border-radius: var(--radius-button, 8px);
+  background: var(--stone, #EDE9DE);
+}
+.activity-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+
+/* ---- 照片加载失败：藏起照片，退回纯色/纯文字形态 ---- */
+.activity-card.cover-failed .activity-card__cover { display: none; }
+.activity-card.cover-failed .activity-card__thumb { visibility: hidden; }

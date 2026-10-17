@@ -59,13 +59,16 @@ const MUTS = [
   { id: 'R2 在 me.wxss 留一份**同值**基础定义（两个真值源；终值恰好相同，只有出处判据抓得住）',
     expect: 'red', need: x => x.code === 'SRC' && x.subject === pf('me'),
     ops: [{ file: pf('me'), kind: 'append', text: '.card-label { display: block; font-size: 15px; font-weight: 600; margin-bottom: 12px; }' }] },
+  /* 2026-10-17 合并修正：上游二阶段把 privacy.wxml 重排成 section-head/kicker/section-sub，
+     下面 5 条变异/控制的锚点因此命中 0 次——注入失败按漏网计（本脚本正确地拒绝"结论成立"并 rc=1 退出）。
+     逐条重钉到新形状，**每条的意图不变**（退回无定义类名 / 退回内联间距 / 部分插值不该被误报 / 类序无关）。 */
   { id: 'R3 privacy 主标题退回 h1（全仓零定义的类名 ⇒ 层级再次消失）',
     expect: 'red', need: x => x.code === 'E10' && /privacy/.test(x.subject) && /h1@/.test(x.detail),
-    ops: [{ file: wf('privacy'), from: '<view class="page-title">隐私保护指引</view>', to: '<view class="h1">隐私保护指引</view>' }] },
+    ops: [{ file: wf('privacy'), from: '<text class="page-title doc-title-block">隐私保护指引</text>', to: '<text class="h1">隐私保护指引</text>' }] },
   { id: 'R4 privacy 一个章节标题退回 h2 + 内联 margin-top（E-16 原形态）',
     expect: 'red', need: x => x.code === 'INLINE' || (x.code === 'PRIVACY' && /章节标题/.test(x.detail)),
-    ops: [{ file: wf('privacy'), from: '<view class="section-title doc-section">一、我们收集的信息</view>',
-      to: '<view class="h2" style="margin-top:36rpx">一、我们收集的信息</view>' }] },
+    ops: [{ file: wf('privacy'), from: '<text class="section-title">一、我们收集的信息</text>',
+      to: '<text class="h2" style="margin-top:36rpx">一、我们收集的信息</text>' }] },
   { id: 'R5 privacy 根节点退回 container（白卡再次贴屏幕四边；非 tab 页那条留白判据也要咬）',
     expect: 'red', need: x => (x.code === 'PRIVACY' && /内缩|留白/.test(x.detail)) || (x.code === 'E10' && /container@/.test(x.detail)),
     ops: [{ file: wf('privacy'), from: '<view class="page">', to: '<view class="container">' }] },
@@ -74,18 +77,18 @@ const MUTS = [
     ops: [{ file: pf('privacy'), kind: 'append', text: '.page-title { font-size: 20px; }' }] },
   { id: 'R7 把内联 style 加回更新日期那行（样式改由内联决定 = A-23/B-11 同族复发）',
     expect: 'red', need: x => x.code === 'INLINE' && /margin-top:8rpx/.test(x.detail),
-    ops: [{ file: wf('privacy'), from: '<view class="muted doc-meta">更新日期：2026-09-24</view>',
-      to: '<view class="muted doc-meta" style="margin-top:8rpx">更新日期：2026-09-24</view>' }] },
+    ops: [{ file: wf('privacy'), from: '<text class="section-sub">更新日期：2026-09-24</text>',
+      to: '<text class="section-sub" style="margin-top:8rpx">更新日期：2026-09-24</text>' }] },
   { id: 'R8 代码把 15px 改成 17px 而文档不动（登记与终值分叉 = 文档开始说谎）',
     expect: 'red', need: x => x.code === 'REG' && /分叉/.test(x.detail),
     ops: [{ file: 'app.wxss', from: CL_RULE, to: '.card-label { display: block; font-size: 17px; font-weight: 600; margin-bottom: 12px; }' }] },
   { id: 'R9 探针不许被动态名骗：往 privacy 塞一个 class="m02-dyn-{{k}}"（部分插值不是「无定义」）',
-    expect: 'green', ops: [{ file: wf('privacy'), from: '<view class="muted doc-meta">', to: '<view class="m02-dyn-{{k}}"></view><view class="muted doc-meta">' }] },
+    expect: 'green', ops: [{ file: wf('privacy'), from: '<text class="section-sub">', to: '<text class="m02-dyn-{{k}}"></text><text class="section-sub">' }] },
 
   /* ---- 等价控制：行为不变的重构必须照样全绿，红了就是误伤（说明判据记的是文本） ---- */
   { id: 'E1 改写 app.wxss 里 .card-label 那段注释的措辞（判据不读注释 ⇒ 必须绿）',
-    expect: 'green', ops: [{ file: 'app.wxss', from: '/* 卡内小标题（E-15 / B-02 / M-02）：卡片内部「这一段是什么」的那一行，5 页共 17 处在用',
-      to: '/* 卡内小标题（本轮记账号略调）：卡片里说明「这一段是什么」的那一行，5 页共 17 处在用', commentOnly: true }] },
+    expect: 'green', ops: [{ file: 'app.wxss', from: '/* 卡内小标题（E-15 / B-02 / M-02）：卡片内部「这一段是什么」的那一行，多页共用',
+      to: '/* 卡内小标题（本轮记账号略调）：卡片里说明「这一段是什么」的那一行，多页共用', commentOnly: true }] },
   { id: 'E2 把 .card-label 拆成两条规则（display 一条、其余一条，同文件同值）⇒ 终值不变 ⇒ 必须绿',
     expect: 'green', ops: [{ file: 'app.wxss', from: CL_RULE, to: '.card-label { display: block; } .card-label { font-size: 15px; font-weight: 600; margin-bottom: 12px; }' }] },
   { id: 'E3 margin-bottom 的长写法换成 margin 简写（同四条终值；写法不该被钉）',
@@ -93,11 +96,11 @@ const MUTS = [
   { id: 'E4 把 .card-label 那条整行搬到 .muted 之后（同特异度同值，次序在该属性上无竞争者）⇒ 必须绿',
     expect: 'green', ops: [{ file: 'app.wxss', from: CL_RULE, to: '' },
       { file: 'app.wxss', kind: 'append', text: CL_RULE }] },
-  { id: 'E5 privacy 章节标题的两个类调换次序（class 是无序集合 ⇒ 终值不变，必须绿）',
-    expect: 'green', ops: [{ file: wf('privacy'), from: '<view class="section-title doc-section">四、您的权利</view>',
-      to: '<view class="doc-section section-title">四、您的权利</view>' }] },
-  { id: 'E6 privacy.wxss 的段距注释改写（判据不读注释 ⇒ 必须绿）',
-    expect: 'green', ops: [{ file: pf('privacy'), from: '.doc-meta { margin-top: 4px; }', to: '.doc-meta {\n  margin-top: 4px;\n}', eolJoin: true, commentOnly: true }] }
+  { id: 'E5 privacy 主标题的两个类调换次序（class 是无序集合 ⇒ 终值不变，必须绿）',
+    expect: 'green', ops: [{ file: wf('privacy'), from: '<text class="page-title doc-title-block">隐私保护指引</text>',
+      to: '<text class="doc-title-block page-title">隐私保护指引</text>' }] },
+  { id: 'E6 privacy.wxss 的段距规则改成多行写法（同一条声明、写法不该被钉 ⇒ 必须绿）',
+    expect: 'green', ops: [{ file: pf('privacy'), from: '.doc-title-block { display: block; margin-top: 4px; }', to: '.doc-title-block {\n  display: block;\n  margin-top: 4px;\n}', eolJoin: true, commentOnly: true }] }
 ]
 
 /* ---------- 落盘工具 ---------- */
