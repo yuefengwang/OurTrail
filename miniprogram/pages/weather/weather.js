@@ -548,6 +548,9 @@ Page({
       })
       return
     }
+    // A-07：这一条路上没有任何图可滚，改日期时挂起的「把图带回视口」承诺作废。
+    // 不清就会漏到下一次无关的成功刷新（如点「重新查询」）上，凭空滚一屏。
+    this._revealChartAfterApply = false
     const copy = kind === 'range'
       ? {
         emptyTitle: '暂不展示天气数字',
@@ -709,7 +712,17 @@ Page({
          可见判据须同时覆盖 oiHorizon：24h 与 48/72h 按 viewSpan 互斥构建，
          只认 oiCard 会让 48/72h（horizon 卡渲染修复后）L2 窗口与卡内条目重复。 */
       agenda: (unified && (oiCard || oiHorizon)) ? agendaView.filter(e => !e.l2) : agendaView,
-    }), () => this.probeStageWidth())
+    }), () => {
+      this.probeStageWidth()
+      /* A-07：改过日期之后，把主图带回视口——原来这条链路上一次滚动都没有，
+         用户在页尾换完日期看到的是空白，图在几屏之上。
+         一次性闩：只有 onDate / onDayTap 会置位（首屏、切节点、点「重新查询」都不滚），
+         消费即清零；滚动仍走既有的 ensureMeteogramVisible，失败静默，不新建第二套滚动状态。 */
+      if (this._revealChartAfterApply) {
+        this._revealChartAfterApply = false
+        this.ensureMeteogramVisible()
+      }
+    })
   },
 
   /* ---------- Weather V2 Phase 2：统一 Meteogram ---------- */
@@ -1083,17 +1096,22 @@ Page({
     } catch (e) { /* 静默：校准是增强 */ }
   },
 
-  /* 滚动是增强不是功能依赖：任何失败静默 */
+  /* 滚动是增强不是功能依赖：任何失败静默。
+     A-07：主图有两个互斥形态——统一云场卡（weather.wxml 的 wx:if="{{unified}}"）与
+     经典 canvas 时间轴（wx:if="{{!unified}}"）。原先这句只在 unified 时生效，于是
+     回退经典视图的点位切完日仍停在页尾。现在锚点按「此刻在屏的那一个」由同一份 data 选，
+     不在这里重述判据；没有图（loadingWeather / 空态）就不滚。 */
   ensureMeteogramVisible() {
-    if (!this.data.unified) return
     if (typeof wx === 'undefined' || !wx.createSelectorQuery) return
+    if (!this.data.dayCards || !this.data.dayCards.length) return
+    const sel = this.data.unified ? '.cloud-field-card' : '.timeline-card'
     try {
-      wx.createSelectorQuery().in(this).select('.cloud-field-card').boundingClientRect(function (rect) {
+      wx.createSelectorQuery().in(this).select(sel).boundingClientRect(function (rect) {
         if (!rect) return
         let winH = 667
         try { winH = wx.getSystemInfoSync().windowHeight } catch (e2) {}
         if (rect.top < 0 || rect.top > winH - 80) {
-          wx.pageScrollTo({ selector: '.cloud-field-card', duration: 300, fail: function () {} })
+          wx.pageScrollTo({ selector: sel, duration: 300, fail: function () {} })
         }
       }).exec()
     } catch (e) { /* 静默 */ }
@@ -1341,6 +1359,8 @@ Page({
 
   onDate(e) {
     this.userPickedDate = true
+    // A-07：数据落地后把主图带回视口（一次性闩，消费点在 applyWeather 的 setData 回调）
+    this._revealChartAfterApply = true
     this.setData({ date: e.detail.value }, () => this.fetchWeather())
   },
 
@@ -1349,6 +1369,8 @@ Page({
     const date = e.currentTarget.dataset.date
     if (!date || date === this.data.date) return
     this.userPickedDate = true
+    // A-07：与 picker 同一条承诺——换了哪一天，就让那一天的图回到眼前
+    this._revealChartAfterApply = true
     this.setData({
       date,
       dayCards: this.data.dayCards.map(c => Object.assign({}, c, { selected: c.date === date })),
