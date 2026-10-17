@@ -19,6 +19,9 @@ Component({
     vehicles: [],
     groups: [],
     confirmed: [],
+    // 待安排名单（A-04）：判据只有投影给的布尔，计数与名单同一个出处
+    pendingList: [],
+    pendingOptions: [],
     driverCandidates: [],
     pickupNames: {},
     // 车辆编辑
@@ -35,6 +38,12 @@ Component({
     assignVehicleId: '',
     assignSeat: '',
     assignIndex: -1,
+    // 待安排人员与「全部需乘车人员」是两个候选集，各自一个下标（互斥：选了一个另一个归 -1），
+    // 否则两个滚轮共用一个下标会指向不同数组的同位数 ⇒ 安排错人。
+    pendingIndex: -1,
+    // 这个座位当前的乘客（移除/交换的对象）。旧实现从候选列表的下标反推现任，
+    // 候选一旦分区就不再能当下标用，所以在这里把事实本身存下来。
+    assignCurrentId: '',
     confirmedOptions: [],
     swapIndex: -1,
     swapOptions: [],
@@ -57,14 +66,21 @@ Component({
   },
 
   methods: {
-    reload() {
-      // busy 只是「这次写还没落地」的界面姿态，不是业务状态。某条命令的 promise 没能回来时，
-      // 它绝不能把整块面板永久锁成「看着能点、点了没反应」——真机实测过一个残留 busy
-      // 锁死组织者工作台整条分车链，而屏幕上没有任何一处说明为什么。
+    // busy 只是「这次往返还没落地」的界面姿态，不是业务状态。某条命令的 promise 没能回来时，
+    // 它绝不能把整块面板永久锁成「看着能点、点了没反应」——真机实测过一个残留 busy
+    // 锁死组织者工作台整条分车链，而屏幕上没有任何一处说明为什么。
+    // 宽限期判据只有 journey.js 一个出处（J.busyStale / J.BUSY_LIMIT_MS），本组件不再自己算时间差。
+    // 求值点：任何会读 this.data.busy 做互斥的入口（reload 与每次点预览/编辑），
+    // 挂在 reload 上是不够的——写悬死时 revision 不会前进，reload 根本不会被触发。
+    healBusy() {
       if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
         this.setData({ busy: false, busyAt: 0 })
         console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
       }
+    },
+
+    reload() {
+      this.healBusy()
       const activityId = this.data.activityId
       if (!activityId || this._loading) return
       this._loading = true
@@ -133,6 +149,22 @@ Component({
           label: r.name + ' · ' + (r.pickup || F.PICKUP_MISSING) + ' · '
             + (r.vehicle ? r.vehicle + (r.seat ? ' ' + r.seat : '') : '待安排车辆'),
         }))
+        // 「待安排」只有一个判据：投影给的 needsSeatAssignment（域里 needsVehicleService 且没有乘客座位安排）。
+        // 自行前往的人与兼任司机的参与者都是「不适用」，不是缺事项，因此天然不在这一列；
+        // 顶部的 metrics.unassigned 用的正是同一个谓词（selectors.counters），名单与数字必须一起变。
+        const togetherIds = new Set()
+        for (const g of transport.groups) if (g.keepTogether && g.signupIds.length > 1) g.signupIds.forEach(id => togetherIds.add(id))
+        const pending = v.rows.filter(r => r.status === 'confirmed' && r.needsSeatAssignment)
+        const pendingList = pending.map(r => ({
+          signupId: r.signupId,
+          name: r.name,
+          pickup: r.pickup || F.PICKUP_MISSING,
+          groupNote: togetherIds.has(r.signupId) ? ' · 整组同车' : '',
+        }))
+        const pendingOptions = pending.map(r => ({
+          signupId: r.signupId,
+          label: r.name + ' · ' + (r.pickup || F.PICKUP_MISSING) + ' · 待安排',
+        }))
         // 参与者司机候选：域规则是「已确认且没有占用乘客座位」（transport.js validateDrivers）。
         // 自行前往的人正是司机的主要来源——他们自己开车到场，不是「未分车」的缺事项。
         const driverCandidates = v.rows
@@ -159,6 +191,8 @@ Component({
             names: g.signupIds.map(nameOf).join('、'),
           })),
           confirmed,
+          pendingList,
+          pendingOptions,
           driverCandidates,
           assignments: transport.assignments,
         })
@@ -167,10 +201,16 @@ Component({
 
     // ---- 预览自动分车 ----
     onPreview() {
+      this.healBusy()
       if (this.data.busy || !this.data.vehicles.length) return
+      // C-15：这里此前只*检查* busy、从不置 busy，于是 WXML 里那句「正在按最新名单计算…」
+      // 在该按钮自己的路径上永远显示不出来（只有别的写命令占着 busy 时才闪一下，而那时按钮是灰的）。
+      // 预览是读操作：置的是界面姿态，失败也不自动重发（读可以重试，但重试由组织者再点一次；
+      // 铁律 24 的「绝不自动重发」针对写，这里连读都不补发，免得往返期间堆出第二个方案）。
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.previewAssignments(this.data.activityId).then(result => {
         if (!result.ok) {
-          this.setData({ error: result.error.message })
+          this.setData({ busy: false, error: result.error.message })
           return
         }
         const plan = result.value
@@ -206,6 +246,7 @@ Component({
           reason: F.UNASSIGNED_LABELS[u.reason] || u.reason,
         }))
         this.setData({
+          busy: false,
           planOpen: true,
           plan,
           planChanged,
@@ -214,7 +255,7 @@ Component({
           planCounts: { changed: planChanged.length, removed: planRemoved.length, unassigned: planUnassigned.length },
           error: '',
         })
-      }).catch(e => this.setData({ error: api.errorText(e) }))
+      }).catch(e => this.setData({ busy: false, error: api.errorText(e) }))
     },
     onPlanClose() { this.setData({ planOpen: false }) },
     onPlanRecompute() { this.onPreview() },
@@ -249,7 +290,11 @@ Component({
         assignVehicleId: vehicle,
         assignSeat: seat || '',
         assignIndex: idx,
+        // 两个候选集各自的下标：待安排人员排在前，已分车者只在「明确会将其移出原车」的入口里出现。
+        pendingIndex: -1,
+        assignCurrentId: current,
         confirmedOptions: this.data.confirmed,
+        pendingOptions: this.data.pendingOptions,
         swapOptions,
         swapIndex: -1,
         hasCurrent: !!current,
@@ -258,10 +303,20 @@ Component({
       })
     },
     onAssignClose() { this.setData({ assignOpen: false }) },
-    onAssignPick(e) { this.setData({ assignIndex: Number(e.detail.value) }) },
+    // 两个滚轮互斥：在一个里选了，另一个归 -1。共用「最后一次选择」的话，
+    // 组织者在待安排滚轮里点了人、又碰了一下全部人员滚轮，安排的就不是屏幕上显示的那个人。
+    onAssignPick(e) { this.setData({ assignIndex: Number(e.detail.value), pendingIndex: -1 }) },
+    onPendingPick(e) { this.setData({ pendingIndex: Number(e.detail.value), assignIndex: -1 }) },
     onSwapPick(e) { this.setData({ swapIndex: Number(e.detail.value) }) },
+    // 这一座位/车辆要安排给谁：只认两个候选集各自的下标，不再从别处反推。
+    assignPick() {
+      const d = this.data
+      if (d.pendingIndex >= 0) return (d.pendingOptions || [])[d.pendingIndex] || null
+      if (d.assignIndex >= 0) return (d.confirmedOptions || [])[d.assignIndex] || null
+      return null
+    },
     onAssignSet() {
-      const pick = this.data.confirmedOptions[this.data.assignIndex]
+      const pick = this.assignPick()
       if (!pick || this.data.busy) return
       this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({
@@ -276,10 +331,11 @@ Component({
       }).catch(err => this.setData({ busy: false, error: api.errorText(err) }))
     },
     onAssignRemove() {
-      const pick = this.data.confirmedOptions[this.data.assignIndex]
-      if (!pick || this.data.busy) return
+      // 移除的对象永远是「这个座位上当前的那个人」，不是候选滚轮里恰好停着的那一行。
+      const id = this.data.assignCurrentId
+      if (!id || this.data.busy) return
       this.setData({ busy: true, busyAt: Date.now(), error: '' })
-      api.dispatchAndSync({ type: 'assignment.remove', activityId: this.data.activityId, signupId: pick.signupId }, this.revision, this)
+      api.dispatchAndSync({ type: 'assignment.remove', activityId: this.data.activityId, signupId: id }, this.revision, this)
         .then(res => {
           this.revision = res.revision
           this.setData({ busy: false, assignOpen: false, message: '已移除此人的车辆安排。' })
@@ -288,14 +344,15 @@ Component({
         }).catch(err => this.setData({ busy: false, error: api.errorText(err) }))
     },
     onSwap() {
-      const pick = this.data.confirmedOptions[this.data.assignIndex]
+      // 交换的双方都必须真的占着座位：现任取自本座位的事实，另一方取自 swapOptions（只列有安排的人）。
+      const first = this.data.assignCurrentId
       const swap = this.data.swapOptions[this.data.swapIndex]
-      if (!pick || !swap || this.data.busy) return
+      if (!first || !swap || this.data.busy) return
       this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({
         type: 'assignment.swap',
         activityId: this.data.activityId,
-        firstSignupId: pick.signupId,
+        firstSignupId: first,
         secondSignupId: swap.signupId,
       }, this.revision, this).then(res => {
         this.revision = res.revision
@@ -326,10 +383,15 @@ Component({
 
     // ---- 车辆编辑 ----
     onEditorOpen(e) {
+      this.healBusy()
+      // 打开编辑器前要整趟 readTransport 往返（表单要回显真实车辆资料）。
+      // 旧实现这段是纯静默：点下去到弹层出现之间界面完全不变，弱网里就像按钮坏了（C-15 第二处）。
+      if (this.data.busy) return
       const id = e.currentTarget.dataset.id || ''
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.readTransport(this.data.activityId).then(result => {
         if (!result.ok) {
-          this.setData({ error: result.error.message })
+          this.setData({ busy: false, error: result.error.message })
           return
         }
         const vehicle = result.value.vehicles.find(v => v.id === id)
@@ -349,6 +411,7 @@ Component({
           drivers: [], pickupIds: [],
         }
         this.setData({
+          busy: false,
           editorOpen: true,
           editingVehicleId: id,
           vform: form,
