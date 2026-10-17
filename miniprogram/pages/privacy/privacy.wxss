@@ -1,3 +1,13 @@
+/* 隐私指引（M-02 / E-16）：本文件只管两件事——正文两档的行参数，以及这份文档自己的段距。
+   容器与两级标题一律吃 app.wxss 的全局类：根节点 .page（四边内缩 24/20/32）、主标题 .page-title、
+   四个章节标题 .section-title。**不在这里重印字号或字重**——那会造出第二个层级真值源（B-10/B-16 同族），
+   而原来的 container/h1/h2 三个类名全仓零定义，等于整屏没有容器内缩、两级标题全部退化成正文。
+   段距的两个数值都不是新造的标尺：4px 是 app.wxss 里副标题行的既有档（.list-row .list-sub /
+   .metric .metric-label / .callout p 都用它），16px 是纵向节奏（.stack 的 gap、.divider 的 margin）。
+   ⚠ 下面 .p/.li 的 27rpx 与全站 px 口径不一致，那是 E-09 的账，本批未动。 */
+.doc-meta { margin-top: 4px; }
+.doc-section { margin-top: 16px; }
+
 .p { color: var(--ink); font-size: 27rpx; line-height: 1.75; margin-top: 12rpx; }
 .li { display: flex; gap: 10rpx; font-size: 27rpx; line-height: 1.75; margin-top: 14rpx; color: var(--ink); }
 /* B-16：项目符号由颜色与字形承载，不需要第三档字重（系统只有 400/500 正文、600 强调两档） */

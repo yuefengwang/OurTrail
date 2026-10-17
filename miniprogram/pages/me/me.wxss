@@ -3,12 +3,9 @@
    本页在 app.json 的 tabBar.list 内 ⇒ 必须留（判据 tools/b4-pad-final-value-test.js §2 逐页解终值）。 */
 .page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }
 
-.card-label {
-  display: block;
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
+/* .card-label 已提升为 app.wxss 的全局单源（M-02 / E-15：本页那份私有定义是它**唯一**的出处，
+   结果另外四页同一个类名命不中任何选择器）。这里不再留第二份基础定义——
+   本页那 7 处使用的终值仍由 app.wxss 给出，判据 tools/m02-class-scope-test.js §2 逐页解一次并验出处唯一。 */
 
 /* 微信资料行：头像 + 昵称 */
 .wx-row {

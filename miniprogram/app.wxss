@@ -100,6 +100,15 @@ page {
 .card-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
 .section-title { font-size: var(--text-input); line-height: 24px; font-weight: 600; color: inherit; }
 .eyebrow { font-size: var(--text-caption); line-height: 18px; font-weight: 600; letter-spacing: 0.72px; color: var(--muted); }
+/* 卡内小标题（E-15 / B-02 / M-02）：卡片内部「这一段是什么」的那一行，5 页共 17 处在用
+   （editor 4 / me 7 / route-edit 2 / weather 2 / weather-hub 2）。
+   此前唯一一份定义藏在 pages/me/me.wxss —— 而**页面 wxss 只作用于本页，本仓也从不跨文件导入样式表**，
+   于是另外四页写着同一个类名其实命不中任何选择器，卡内小标题掉回 page 默认的 14px/400，
+   与正文同字号同字重（编辑器一屏 5-10 张同型卡片时最难扫读定位）。跨页共用的语义类必须在 app.wxss 定义。
+   取值逐字承自 me.wxss（不是新造的设计决定）；me 页那份私有副本同批删除，避免两个真值源。
+   ⚠ 15px 不在字号表（12/14/16/18/28）上：收敛到 scale（例如改用 .section-title 16px）会一次改动 5 页 17 处的观感，
+     属需要真机证据的视觉决定，本批只做「搬到单源」这一件事，数值一字未动。 */
+.card-label { display: block; font-size: 15px; font-weight: 600; margin-bottom: 12px; }
 .muted { color: var(--muted); }
 .small { font-size: var(--text-caption); line-height: 18px; }
 .divider { border: 0; border-top: 1px solid var(--line); margin: 16px 0; width: 100%; }

@@ -59,10 +59,21 @@
 | `.page-title` | 28px/1.3 字重700 字距-0.6px | 页面大标题（仅 root 页与重要节点） |
 | `.section-title` | 16px/24 700 | 区块标题 |
 | `.eyebrow` | 12px/18 600 字距0.72px muted | 眉题（OURTRAIL · 一起走过） |
+| `.card-label` | 15px 600，`display: block`，`margin-bottom: 12px`（行高继承正文 22px） | **卡内小标题**：卡片里说「这一段是什么」的那一行（「活动时间」「节点 1」「上车点 1」「风险 1」「我的观察点」「导入 GPX 轨迹」…）。5 页 17 处在用（me 7 / editor 4 / route-edit 2 / weather 2 / weather-hub 2），唯一出处 `app.wxss` |
 | 正文 | 14px/22（page 默认） | |
 | `.small` | 12px/18 | 说明/副文本 |
 | 输入框 | 16px（防 iOS 聚焦缩放） | |
 | `.field-label` | 13px/18 400 muted | 表单标签是辅助信息，值才是主角 |
+
+- **`.card-label` 为什么现在才在 `app.wxss`（E-15 / M-02）**：它此前只在 `pages/me/me.wxss` 定义过一份。
+  小程序**页面 wxss 只作用于本页、全仓零 `@import`** ⇒ 另外四页写同一个类名其实命不中任何选择器，
+  卡内小标题全部掉回正文 14px/400，与卡内正文失去层级（编辑器一屏 5-10 张同型卡片时最难扫读定位）。
+  **规则**：跨页共用的语义类必须定义在 `app.wxss`；定义在单页 wxss 里就等于只给那一页用。
+  判据 `node tools/m02-class-scope-test.js`（逐作用域解「这个类在自己那一页/组件里到底有没有定义」+ 五页终值同出一源 + 影子改写）。
+- **`.card-label` 的 15px 不在字号 scale（12/14/16/18/28）上**：本批只做「搬到单源」，数值逐字承自旧定义、一字未动。
+  要不要收敛到 `.section-title`（16px/24 600）或 `.eyebrow`（12px/18 600 muted）是**视觉裁决**，
+  一次改动 5 页 17 处的观感且需要真机证据，不在本批范围内。它与 `.section-title` 的语义分工：
+  `.section-title` 把长页分成几段（页面级分区标题，右侧可带 `.section-sub`），`.card-label` 是**卡片内部**的小标题。
 
 ## 间距与圆角
 
