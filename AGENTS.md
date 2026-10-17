@@ -278,7 +278,6 @@ node tools/page2-gates-test.js && node tools/a20-owner-hero-test.js && \
 node tools/b4-c11-busy-selfheal-test.js && node tools/b4-e05-checklabel-test.js && \
 node tools/rb-vehicle-dependency-test.js && node tools/rb-toggle-guard-test.js && \
 node tools/rc-transport-test.js && node tools/ra-field-panel-test.js && \
-node tools/oi-hour-hit-test.js && \
 node tools/oi-hour-hit-test.js
 ```
 
