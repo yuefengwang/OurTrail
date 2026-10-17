@@ -17,6 +17,14 @@ const UMG = require('../miniprogram/utils/meteogram-svg.js')
 const WCFF = require('../miniprogram/utils/weather-cloud-field.js')
 const W = require('../cloudfunctions/trailApi/lib/weather.js')
 
+/* tier 词表在本套件里只允许有一份。
+ * 真值出处 = miniprogram/utils/oi-presentation.js 的 tierOf()：确定 / 重点关注 / 值得关注 / 条件一般。
+ * 这条曾经真的漂过：本文件一处写「很值得关注」（产品里任何地方都不发这个词），另一处写「重点关注」，
+ * 于是只要线上数据出一个 strong 项（CLOUD_SEA STRONG，或 confidence 高 + rank primary），
+ * 那条旧断言必然红——而它被当成"偶发网络红"挂了很久。产品改名时这条门**应该**报红（词汇漂移是缺陷），
+ * 但报红之后要改的是"两处一起对齐到 tierOf"，不是删断言，也不是只改其中一处。 */
+const TIER_WORDS = ['确定', '重点关注', '值得关注', '条件一般']
+
 const TIMES = []
 for (let h = 0; h < 24; h++) TIMES.push('2026-10-07T' + (h < 10 ? '0' : '') + h + ':00')
 
@@ -91,8 +99,8 @@ async function main() {
   const emeCard = OIP.buildOiCard(emeOi, { width: 375 })
   check('items 非空且字段齐全', emeCard.items.length > 0 && emeCard.items.every(it =>
     it.timeText && it.title && it.tierText && it.tierClass && it.summaryText !== undefined && Number.isFinite(it.hour)))
-  check('tier ∈ {确定, 很值得关注, 值得关注, 条件一般}', emeCard.items.every(it =>
-    ['确定', '很值得关注', '值得关注', '条件一般'].indexOf(it.tierText) >= 0))
+  check('tier ∈ tierOf 的四个词', emeCard.items.every(it =>
+    TIER_WORDS.indexOf(it.tierText) >= 0), '实际读到：' + [...new Set(emeCard.items.map(it => it.tierText))].join('|'))
   check('列表排序：primary 在前', (() => {
     for (let i = 1; i < emeCard.items.length; i++) {
       if (emeCard.items[i - 1].rank === 'primary' && emeCard.items[i].rank !== 'primary') continue
@@ -122,7 +130,10 @@ async function main() {
   }
   const anyItem = emeCard.items[0]
   OIP.applySelection(emeCard, anyItem.hour)
-  check('任意条目可选（selIndex 指向含该小时的窗口）', emeCard.selIndex >= 0)
+  // 这条以前失败时不带任何读数，只能靠人回来挖 ⇒ 把触发它的那条数据一起印出来
+  check('任意条目可选（selIndex 指向含该小时的窗口）', emeCard.selIndex >= 0,
+    'anchor hour=' + anyItem.hour + ' ｜ timeText=' + JSON.stringify(anyItem.timeText)
+    + ' ｜ type=' + anyItem.type + ' ｜ items=' + emeCard.items.length)
 
   /* ---------- 三海拔差异 ---------- */
   section('三海拔：同一管线不同解读')
@@ -180,11 +191,11 @@ async function main() {
 
   /* ---------- Phase 3：tier / 跨零点 / now / 折叠提升 ---------- */
   section('Phase 3：tier 连续化 / 跨零点 / 进行中 / 折叠提升')
-  check('tier 全集 ∈ {确定, 重点关注, 值得关注, 条件一般}', (() => {
+  check('tier 全集 ∈ tierOf 的四个词（含折叠区）', (() => {
     const tiers = new Set()
     ;[emeCard].forEach(c2 => c2.items.concat(c2.moreItems || []).forEach(it => tiers.add(it.tierText)))
-    return ['确定', '重点关注', '值得关注', '条件一般'].some(t2 => tiers.has(t2)) &&
-      [...tiers].every(t2 => ['确定', '重点关注', '值得关注', '条件一般'].indexOf(t2) >= 0)
+    return TIER_WORDS.some(t2 => tiers.has(t2)) &&
+      [...tiers].every(t2 => TIER_WORDS.indexOf(t2) >= 0)
   })(), [...new Set(emeCard.items.concat(emeCard.moreItems || []).map(it => it.tierText))].join('/'))
   check('跨零点：timeLabel 产生「今晚 HH:mm → 次日 HH:mm」', (() => {
     const label = OIP.timeLabel('22:30', '02:40')
