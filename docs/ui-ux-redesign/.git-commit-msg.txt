@@ -1,7 +1,0 @@
-fix(ui): 回退 tabBar 底隙的公共类方案
-
-AGENTS.md:96 早已规定 tab 页按各自 wxss 写 padding-bottom: calc(32px + 84px + env(...))，
-四个 tab 页本来就都有；我加的 .page.with-tabbar 公共类是在此之上再叠 84px 死空白。
-真机复验（撤掉后逐页滚到底复拍）证实四页尾部均不被 tabBar 遮挡，原结论系误读截图所致。
-处置：回退 app.wxss 规则与四个 tab 页挂类，删除失真的 tabbar 证据截图并换成 tabbar-final-*；
-ui-consistency 门禁 T1.4 改为反向断言「两种落法不得并存」，把教训固化成门禁。
