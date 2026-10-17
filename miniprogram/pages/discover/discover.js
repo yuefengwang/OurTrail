@@ -55,7 +55,12 @@ Page({
         // 同 home：缺里程不印「· 0 km」（没填 ≠ 0 公里）
         meta: (a.routeSnapshot.title || '路线待完善') + (a.routeSnapshot.distanceKm ? ' · ' + a.routeSnapshot.distanceKm + ' km' : ''),
         status: a.owner ? '我组织的' : (F.PHASE_LABELS[a.phase] || a.phase),
-        featured: i === 0,
+        // hero 只替页面已经说出口的那句话做视觉强调：不带搜索词时，这一列就是本页声明的
+        // 「按发布时间排序，只显示尚未出发的活动」，第一条确实是「最新发布的一场」。
+        // 带搜索词时第一条只是「关键词恰好命中的第一条」，把它升成 26px 森林绿大卡
+        // 等于替用户做一次没有依据的编辑性推荐（A-20），所以搜索结果一律不升 hero。
+        // 判据只用本页已有的事实（搜索词是否为空），没有新造阈值、也没有从数组下标之外推归属。
+        featured: !search && i === 0,
         info: [
           a.organizerIntro,
           '已确认 ' + a.confirmed + ' 人',
