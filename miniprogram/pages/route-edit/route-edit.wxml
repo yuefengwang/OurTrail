@@ -1,4 +1,6 @@
-<view class="page">
+<!-- has-sticky 与底栏 wx:if 同条件：.sticky-action 是 position:fixed 不计入文档流，
+     页尾要靠 app.wxss 的 .page.has-sticky(120px) 留白才不被压住；denied/loading 态没有底栏，就不该多留 88px 空白。 -->
+<view class="page {{!denied && !loading ? 'has-sticky' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="路线编辑器暂不可用" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取路线。" />

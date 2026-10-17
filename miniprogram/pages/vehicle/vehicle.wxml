@@ -38,13 +38,33 @@
       </person-row>
     </view>
 
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+
+    <!-- 清点没点完时先把代价说在旁边，再让人按按钮（照 transport-panel lockHint 的立场：
+         不留一颗点了才撞红字的主按钮）。名单取本页同屏那两个数背后的同一对集合，不另推一遍规则。 -->
+    <view wx:if="{{showPendingNotice}}" class="callout warning stack-gap3">
+      <text class="callout-title">还差 {{pendingCount}} 人没有上车记录</text>
+      <text>{{pendingNames}}。请先逐人点「确认上车」，或请现场负责人核实其去向。</text>
+    </view>
+
     <view wx:if="{{canOperate}}" class="form-actions">
-      <view class="button primary {{busy || departed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || departed ? '' : 'onDepart'}}">确认本程发车</view>
+      <view class="button primary {{busy || departed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || departed ? '' : 'onDepartAsk'}}">确认本程发车</view>
       <view class="button secondary {{busy || !departed || completed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !departed || completed ? '' : 'onComplete'}}">完成本程行驶</view>
     </view>
 
     <text class="small muted">行驶完成不等于参与者安全到家；如有人未上车，请由现场负责人核实去向。</text>
     <text wx:if="{{message}}" class="small muted">{{message}}</text>
-    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
   </view>
+
+  <!-- 发车是不可回退的现场事实（field.js：已发车后不能抹去或改写上车事实），
+       且一个人的缺口会连带卡住整场 gathering→active。确认层把这两件事写在点下去之前；
+       「仍然发车」不在客户端被禁掉，最终判定归服务端。 -->
+  <overlay open="{{departAsk}}" kind="dialog" title="确认本程发车" bind:close="onDepartCancel">
+    <view class="stack">
+      <text>发车后本车人员的上车记录不可改写，请确认已逐人清点。</text>
+      <text wx:if="{{pendingCount}}" class="small">还有 {{pendingCount}} 人没有上车记录：{{pendingNames}}。可以让现场负责人先核实其去向，再回来发车。</text>
+      <view class="button danger block {{busy || departed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || departed ? '' : 'onDepart'}}">仍然确认发车</view>
+      <view class="button text" hover-class="button-hover" bindtap="onDepartCancel">先回去清点</view>
+    </view>
+  </overlay>
 </view>

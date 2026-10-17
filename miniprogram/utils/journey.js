@@ -244,11 +244,27 @@ function transportLock(phase) {
 const TRANSITION_LABEL = {
   gathering: '开始集合', active: '确认出发', closing: '结束行程，进入返程', archived: '安全收尾并归档', cancelled: '取消这场活动',
 }
-/** 阶段推进的服务端门槛 → 人话的「为什么现在不能按」。 */
+/**
+ * 阶段推进的服务端门槛 → 人话的「为什么现在不能按」。
+ *
+ * 入参里只有两类数字可以出口：
+ * · `counters.*` —— **必须**是 selectors 投影原样给出的键（客户端不得给 counters 编影子键）；
+ * · 顶层 ctx 键（notVerified / unassignedBoarding / coordinating / hasTravelFact）——
+ *   由宿主页面从**投影好的行标志**算出来递进来（见 pages/workspace/workspace.js），
+ *   这一层不重述域内规则，只负责「这句话里说的是哪几个数」。
+ * C-05 的教训：这里曾经读 `counters.unresolved`，而那个键在投影里从来不存在（它是服务端
+ * field.js 的局部变量名）。于是「没有给出出发结论」这半句是**永不发生的承诺**，
+ * 而页面上真的欠着结论的人一个都不提。现在它走 notVerified，并且必须把人数说出来。
+ */
 function transitionBlocker(ctx) {
   const c = ctx.counters || {}
   if (ctx.next === 'gathering' && c.pending) return c.pending + ' 人还在待审核，先给个结果再开始集合。'
-  if (ctx.next === 'active' && (c.unresolved || c.unchecked)) return '还有人没有签到或没有给出出发结论，逐人核实后才能出发。'
+  if (ctx.next === 'active') {
+    const parts = []
+    if (c.unchecked) parts.push(c.unchecked + ' 人没签到')
+    if (ctx.notVerified) parts.push(ctx.notVerified + ' 人没给出出发结论')
+    if (parts.length) return '还有 ' + parts.join('、') + '，逐人核实后才能出发。'
+  }
   if (ctx.next === 'active' && ctx.unassignedBoarding) return ctx.unassignedBoarding + ' 位' + NEED_VEHICLE + '的人还没有「上车」事实，请先到车长任务页清点。'
   if (ctx.next === 'archived' && c.openIncidents) return c.openIncidents + ' 项异常还没有闭环。'
   if (ctx.next === 'archived' && c.pendingHome) return c.pendingHome + ' 人还没确认到家。'
@@ -302,7 +318,7 @@ const CODE_TITLES = {
   FORBIDDEN: '这件事只有该做的人能操作',
   NOT_FOUND: '要找的记录不在了',
   STORAGE_UNAVAILABLE: '这次修改没有保存',
-  NETWORK: '网络没接上',
+  NETWORK: '这一步还没确认',
   NO_REVISION: '页面还没读到最新安排',
   INVALID_INPUT: '还差一点信息',
   REQUEST_REUSED: '这条请求已经用于别的内容',
@@ -333,7 +349,11 @@ function explain(err, ctx) {
   else if (code === 'VEHICLE_FULL' || code === 'SEAT_TAKEN' || code === 'PICKUP_MISMATCH' || code === 'DRIVER_CONFLICT') {
     action = { label: '回分车区调整', target: 'transport' }
   } else if (code === 'CAPACITY' || code === 'DUPLICATE_PERSON') action = { label: '看名单', target: 'roster' }
-  else if (code === 'NETWORK' || code === 'OFFLINE') cause = '这一条没有发到云端，原安排没被改动。到信号好的地方再试一次。'
+  // 传输层失败（超时/断网/云函数没回话）＝**结果未知**，与 api.js 的 `outcomeUnknown` 分类同一口径（铁律 24）：
+  // 事务可能已经提交，只是回应没回到这台手机。所以这句话既不能承诺「原安排没被改动」，
+  // 也不能叫用户「再试一次」——requestId 每次都是新生成的，再点一次就是第二次业务写。
+  // 唯一的恢复动作是重读页面（api.js 的 dispatchAndSync 已经在做），这里只负责把这层不确定性说清。
+  else if (code === 'NETWORK' || code === 'OFFLINE') cause = '这一条没拿到云端的回话：可能没发出去，也可能已经生效、只是回应丢了。先按页面重读后的最新安排判断，确认这一步没做成才重做一次。'
   else if (code === 'STORAGE_UNAVAILABLE') cause = message || '这次修改没有保存，原安排未改变。'
   else if (code === 'NO_REVISION') cause = '页面还没读到这份安排，重新打开活动后再试。'
   return { title: CODE_TITLES[code] || '这一步没有完成', cause, action }

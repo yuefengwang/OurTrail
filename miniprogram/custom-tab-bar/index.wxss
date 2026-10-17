@@ -1,4 +1,8 @@
-/* 自定义 TabBar（组件样式必须自包含，app.wxss 不注入组件内部） */
+/* 自定义 TabBar（组件样式必须自包含，app.wxss 不注入组件内部）
+   E-12（2026-10-14）：app.wxss 里那份同名的 tabbar / tab / tab.on 已删除，这里现在是**唯一真值源**，
+   所以颜色与尺寸一律写字面量、不要改成 var() —— index.js 仍声明 apply-shared，一旦这边用 var()，
+   就等于把「导航控件的实际规格由谁决定」交回给全局表（本轮实测两边取值逐项相等才敢删）。
+   改动任何一条都要同步 design-system.md 的 tabbar 行。 */
 .tabbar {
   position: fixed;
   left: 0;

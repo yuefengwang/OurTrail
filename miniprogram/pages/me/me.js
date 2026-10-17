@@ -16,6 +16,7 @@
 'use strict'
 const api = require('../../utils/api')
 const draftUtil = require('../../utils/draft')
+const J = require('../../utils/journey')
 const { PHASE_LABELS, dateLabel } = require('../../utils/format')
 
 const AUTO_SAVE_MS = 800
@@ -121,6 +122,10 @@ Page({
     companionError: '',
     hint: '',
     saving: false,
+    // 三个「按下就发命令」的写点（同行人保存/移除、位置授权撤回）的在途标记。
+    // profile.save 走自己的 _saving/saving（自动保存的输入作用域），两者互不干扰。
+    busy: false,
+    busyAt: 0,
     companionOpen: false,
     companionId: null,
     companionPerson: emptyPerson(),
@@ -294,8 +299,16 @@ Page({
       })
       return Promise.resolve()
     }
+    // _saving 与 busy 是同一条铁律的两个面：它是界面姿态、不是业务状态。某次自动保存的 promise
+    // 没能回来时，屏幕一直挂着「正在保存…」而后续输入再也不发命令（改动静默不落地）。
+    // 超过宽限期即认定残留并放行本次保存；宽限期与 elapsed 判据只有一个出处 J.busyStale（铁律 31）。
+    if (this._saving && J.busyStale(this._savingAt, Date.now())) {
+      this._saving = false
+      console.warn('[busy] 清掉一个超过 8 秒没落地的自动保存状态')
+    }
     if (this._saving) return Promise.resolve()
     this._saving = true
+    this._savingAt = Date.now()
     this.setData({ saving: true, hint: '', error: '', sheetError: '' })
     return api.dispatchAndSync({ type: 'profile.save', person }, this.revision, this)
       .then(res => {
@@ -410,6 +423,20 @@ Page({
   },
 
   // ---- 常用同行人 ----
+  // 写命令入口的在途闸门：返回 true 表示「上一条写还在飞」，本次操作必须拦。
+  // 本面此前连在途标记都没有（三个写点直接发命令 ⇒ 连点两次就发两条），补齐 busy/busyAt 之后
+  // 还得让它能自愈：busy 只是界面姿态、不是业务状态，某条命令的 promise 没能回来时，
+  // 绝不能把「保存同行人 / 移除 / 撤回授权」永久锁成「点了没反应」。超过宽限期即认定残留，
+  // 就地复位并放行本次操作。宽限期与 elapsed 判据只有一个出处 J.busyStale（铁律 31：
+  // 页面不写第二个 8000、不自己算时间差）。求值点放在写入口而不是 reload()：写悬死时
+  // revision 不会前进，挂在 reload 上的自愈正好等不到求值。
+  busyBlocks() {
+    if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+      this.setData({ busy: false, busyAt: 0 })
+      console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+    }
+    return !!this.data.busy
+  },
   onAddCompanion() {
     // 服务端 companion.save 要求先有本人档案；新账号不预检的话，保存失败只会在
     // 弹层遮罩后面报错，用户看到的是"点保存没反应"（P0-4 教训）。
@@ -444,32 +471,36 @@ Page({
   },
   onCompanionClose() { this.setData({ companionOpen: false }) },
   onCompanionSave() {
+    if (this.busyBlocks()) return
     const p = this.data.companionPerson
     if (!p.name.trim() || !p.phone.trim()) {
       this.setData({ companionError: '请填写同行人姓名与联系电话。' })
       return
     }
+    this.setData({ busy: true, busyAt: Date.now(), companionError: '' })
     api.dispatchAndSync({ type: 'companion.save', companionId: this.data.companionId, person: p }, this.revision, this)
       .then(res => {
         this.revision = res.revision
-        this.setData({ companionOpen: false, companionError: '' })
+        this.setData({ busy: false, companionOpen: false, companionError: '' })
         api.toast('常用同行人已保存')
         this.reload()
       })
-      .catch(e => this.setData({ companionError: api.errorText(e) }))
+      .catch(e => this.setData({ busy: false, companionError: api.errorText(e) }))
   },
   onRemoveAsk(e) { this.setData({ removeId: e.currentTarget.dataset.id }) },
   onRemoveCancel() { this.setData({ removeId: '' }) },
   onRemoveConfirm() {
+    if (this.busyBlocks()) return
     if (!this.data.removeId) return
+    this.setData({ busy: true, busyAt: Date.now() })
     api.dispatchAndSync({ type: 'companion.remove', companionId: this.data.removeId }, this.revision, this)
       .then(res => {
         this.revision = res.revision
-        this.setData({ removeId: '' })
+        this.setData({ busy: false, removeId: '' })
         api.toast('已移除常用条目')
         this.reload()
       })
-      .catch(e => this.setData({ companionError: api.errorText(e), removeId: '' }))
+      .catch(e => this.setData({ busy: false, companionError: api.errorText(e), removeId: '' }))
   },
 
   // ---- 我的协作码 ----
@@ -499,13 +530,16 @@ Page({
 
   // ---- 位置授权撤回 ----
   onRevoke(e) {
+    if (this.busyBlocks()) return
     const { activityId, signupId } = e.currentTarget.dataset
+    this.setData({ busy: true, busyAt: Date.now() })
     api.dispatchAndSync({ type: 'position.revoke', activityId, signupId }, this.revision, this)
       .then(res => {
         this.revision = res.revision
+        this.setData({ busy: false })
         api.toast('位置授权已撤回')
         this.reload()
       })
-      .catch(err => this.setData({ error: api.errorText(err) }))
+      .catch(err => this.setData({ busy: false, error: api.errorText(err) }))
   },
 })

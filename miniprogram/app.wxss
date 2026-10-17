@@ -39,7 +39,8 @@ page {
   --on-forest-muted: #D0D8D7;  /* white 80% + forest 20% */
   --on-forest-line: #4E6C65;   /* white 24% + forest 76% */
   --control-line: #8C9791;     /* muted 72% + white 28% */
-  --focus: #346583;
+  /* 「--focus」已删（B-14）：全仓引用实测 0 次，小程序里没有 :focus-visible 宿主可吃这个描边色。
+     将来真要聚焦环，先在 page 上重新登记并在 design-system.md 同步，不要拿同值的 --info 冒充它。 */
   --leaf-on-forest: #2D533F;   /* leaf 12% + forest */
 
   --text-caption: 12px;
@@ -70,6 +71,18 @@ page {
   min-height: 100vh;
 }
 .page.has-sticky { padding-bottom: 120px; }
+/* Tab 页底部留白为什么**不在这里**（B4-PAD，2026-10-16；规则全文见 design-system.md「Tab 页底部留白（唯一规则）」）：
+   上面这条 .page 的 32px 是**所有页面**的基线，而 tab 页要多让出一截固定 tabBar 的高度。
+   ① 不能把那份多让的宽度写进本表的 .page——app.wxss 对 20 个页面全局生效，会把 16 个子页一起吃进去
+      （凭空多出约 84px 空白 = M-18 / E-03 那个缺陷的放大版）；
+   ② 收成一条类规则（如 .page.with-tabbar）需要 4 个 tab 页根节点都挂上它 ⇒ 要改 4 份 wxml，
+      而 home 现有的那个条件类是「有卡片才挂」，home 是 tab 页、tabBar 与卡片数量无关 ⇒ 空状态那一支会失去留白
+      （判据 tools/b4-pad-final-value-test.js §7 方向 B-2 实测就是红的）；home.wxml:1 因此是个不产生任何样式的假开关，
+      删除动作归页面 owner（本表不替它补定义）；
+   ③ 收成 token 违反「不新增 token」（AGENTS.md 铁律 17），把样式文件按路径整体引进来（wxss 的文件级 import）
+      被 swx2 的解析器围栏判据挡着（它见到那种语法就要求先升级解析器，不许静默误判）。
+   ⇒ 四条 tab 页各自在自己的 wxss 里带这一行（载体），「单一真值源」由那条登记规则 + 判据保证：
+      四份必须互相同构、必须等于注册表那一行、非 tab 页必须一份都不带。本表的 .page 基线保持 32px 不动。 */
 .page-title {
   font-size: 28px;
   line-height: 1.3;
@@ -120,7 +133,28 @@ image.icon { vertical-align: middle; }
 .button.text { border-color: transparent; background: transparent; padding-left: 8px; padding-right: 8px; }
 .button.leaf { background: var(--leaf); color: var(--forest); border-color: var(--leaf); }
 .button.block { display: flex; width: 100%; }
+/* 禁用态：先兜底，再按变体分别定义（B-11；强制修复顺序对 2 的前项，后项是 B-12）。
+   下一条通用规则当初是按「有底色的按钮」写的，它同特异度 (0,2,0) 又写在
+   .button.primary/.secondary/.danger/.text/.leaf 之后 ⇒ 把五个变体一起压成灰底灰边。
+   对实底族这是对的（变灰退后）；对 .text 就是权重倒挂：一条本来透明的文字链，
+   禁用后反而长出灰底 + 灰边，比它可点时更抢眼（activity L286 / editor L15 /
+   roster L69 / transport L133 四处，busy 与条件不满足时都会闪成灰块）。
+   所以现在把每个变体的禁用表达写出来，通用规则退为「没有变体时的兜底」：
+   · 实底族（primary/secondary/danger/leaf）→ 底色与描边一起退到 --line、文字退到 --muted，
+     终值与兜底逐字相同 ⇒ 本轮像素只允许 .text 一族变化，其余四族一格都不动（由判据证）；
+   · 文字族（text）→ 禁用后仍然没有底色、没有描边，只把文字从 --forest 降到 --muted。
+   两族共用 --muted 这一支禁用文字色：单源是 token 本身（按引用读 var()，不抄字面量），
+   影子改写 --line/--muted 必须整族一起动——见 tools/style-semantics-test.js §6。
+   边界：禁用族只许声明 background/border-color/color。按压反馈（hover 闪烁、
+   pointer-events）属 C-16，本轮不并入；opacity 也不能用在这里——它既会连带改掉
+   .button-hover 的按压反馈，又会把 --muted 文字压到 3:1 以下（design-system 已写明
+   「--muted 4.6:1 勿再调淡」，B-13 正是低对比文字的判例）。 */
 .button.disabled, .button[disabled] { background: var(--line); border-color: var(--line); color: var(--muted); }
+.button.primary.disabled, .button.primary[disabled] { background: var(--line); border-color: var(--line); color: var(--muted); }
+.button.secondary.disabled, .button.secondary[disabled] { background: var(--line); border-color: var(--line); color: var(--muted); }
+.button.danger.disabled, .button.danger[disabled] { background: var(--line); border-color: var(--line); color: var(--muted); }
+.button.leaf.disabled, .button.leaf[disabled] { background: var(--line); border-color: var(--line); color: var(--muted); }
+.button.text.disabled, .button.text[disabled] { background: transparent; border-color: transparent; color: var(--muted); }
 .button-hover { opacity: 0.82; }
 button.button { font-family: inherit; }
 .icon-button {
@@ -207,7 +241,10 @@ button.button { font-family: inherit; }
 .activity-card { position: relative; display: flex; flex-direction: column; gap: 12px; }
 .activity-card__header { align-items: flex-start; }
 .activity-card__date { color: var(--muted); padding-top: 2px; padding-bottom: 2px; }
-.activity-card__title { font-size: var(--text-title); line-height: 1.5; font-weight: 600; }
+/* M-16：活动标题由组织者自由输入（editor.wxml maxlength=100）。标题是必须读完的语义信息，
+   所以策略是「断行」而不是 ellipsis 截断（与 .picker .picker-value 那种有展开兜底的场景不同）。
+   featured 变体只覆盖 font-size/line-height/letter-spacing，按属性层叠不会把这句擦掉 —— §3 有专门一条验证。 */
+.activity-card__title { font-size: var(--text-title); line-height: 1.5; font-weight: 600; overflow-wrap: anywhere; }
 .activity-card__info { padding-top: 16px; border-top: 1px solid var(--line); }
 .activity-card__affordance {
   display: flex;
@@ -246,13 +283,19 @@ button.button { font-family: inherit; }
 }
 .segmented .seg {
   flex: 1;
-  min-height: 36px;
+  /* M-06：这里曾是全站唯一把触控高度写死字面量（36px）的尺寸规则，与 page 上的 --touch-target 脱节，
+     于是「规范 44px / 实现 36px」长期分叉，补救只落在 weather-chart 一页。取 token 而不写数，
+     影子调 --touch-target 时这里必须跟着动（判据 tools/swx1-style-gates-test.js §1）。 */
+  min-height: var(--touch-target);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 8px 6px;
   border-radius: var(--radius-tag);
-  color: var(--muted);
+  /* M-06：未选中态原来是 --muted 压在 --line 轨道上（#5F6E66 / #DEE3DB = 4.12:1），
+     12px 属正文、不适用大字放宽，未过仓库自家 4.5:1 门槛。改用正文主色 --ink（11.3:1），
+     「选中」的区分线索由 .seg.on 的白底药丸 + --forest + 600 字重承担（不靠把未选中印淡）。 */
+  color: var(--ink);
   font-size: var(--text-caption);
   line-height: 18px;
   text-align: center;
@@ -260,7 +303,12 @@ button.button { font-family: inherit; }
 .segmented .seg.on { background: var(--surface); color: var(--forest); font-weight: 600; }
 .metrics { display: flex; gap: 12px; }
 .metric { flex: 1; min-width: 0; }
-.metric .metric-value { display: block; color: var(--forest); font-size: 26px; line-height: 1.3; letter-spacing: -0.6px; font-weight: 600; }
+/* M-16：26px 大数字 + letter-spacing -0.6px，在 route 详情的四列布局下每列只有约 67px，
+   四位以上的爬升米数会压到相邻列（`.metric` 的 min-width:0 允许列被压到内容宽以下 ⇒ 溢出不撑宽而是糊到邻格）。
+   这里用 overflow-wrap: anywhere 而不是 ellipsis：指标数字是被读的事实，截成「125…」等于把数据藏起来；
+   anywhere 只在真的放不下时才断，且会算进 min-content（break-word 不会，flex 子里等于不断）。
+   列数/字号的取舍属视觉判读，见 out/SWX1/requests.md。 */
+.metric .metric-value { display: block; color: var(--forest); font-size: 26px; line-height: 1.3; letter-spacing: -0.6px; font-weight: 600; overflow-wrap: anywhere; }
 .metric .metric-unit { font-size: var(--text-caption); letter-spacing: 0; font-weight: 400; margin-left: 4px; }
 .metric .metric-label { display: block; color: var(--muted); font-size: var(--text-caption); line-height: 18px; margin-top: 4px; }
 .hero .metric .metric-value { color: var(--white); }
@@ -350,7 +398,11 @@ button.button { font-family: inherit; }
 }
 .person-row__body { flex: 1; min-width: 0; }
 .person-row__heading { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-.person-row__heading .person-name { font-weight: 600; margin-right: auto; }
+/* M-16：姓名由用户自由输入（me.wxml 的同行人/紧急联系人姓名 maxlength=80），一个无空格的拉丁长串
+   在默认 word-break: normal 下不会在词内断，而 flex 项的 min-width:auto 取 min-content ——
+   overflow-wrap: break-word 不改变 min-content，所以只有 anywhere 能真的把这一行收住（判据 §3）。
+   中文姓名本来就逐字可断，加这一句不改变中文表现（对拍见 handoff，中文对照组零变化）。 */
+.person-row__heading .person-name { font-weight: 600; margin-right: auto; overflow-wrap: anywhere; }
 .person-row__body .person-subtitle { margin-top: 4px; }
 .person-row__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .list-row {
@@ -452,34 +504,17 @@ button.button { font-family: inherit; }
 .status-skeleton .sk:nth-child(2) { width: 65%; }
 .status-skeleton .sk:nth-child(3) { width: 82%; }
 
-/* ---------- 自定义底部导航 ---------- */
-.tabbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 100;
-  display: flex;
-  padding: 8px 12px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom));
-  background: var(--surface);
-  border-top: 1px solid var(--line);
-}
-.tabbar .tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  min-height: var(--touch-target);
-  color: var(--muted);
-  font-size: var(--text-caption);
-  line-height: 18px;
-  border-radius: var(--radius-button);
-}
-.tabbar .tab.on { color: var(--forest); font-weight: 600; background: var(--forest-soft); }
-.tabbar-safe { height: calc(84px + env(safe-area-inset-bottom)); }
+/* ---------- 自定义底部导航：这里不再定义 ----------
+   E-12：这一段曾与 custom-tab-bar/index.wxss 各写一份同名的 tabbar / tab / tab.on（一份 var() 版、
+   一份字面量版），而 index.js 声明了 styleIsolation: 'apply-shared' ⇒ app.wxss 会注入组件内部，
+   于是「按规范写成自包含字面量」的那份被更高特异度的全局版压住 —— 与 platform-pitfalls §1 的例外条款
+   （tabbar 必须完全自包含、颜色写字面量）正好相反。全仓 class 里带 tabbar 字样的只有 custom-tab-bar
+   自己的根节点与 home 页的 with-tabbar（那是另一个类，不是这一族），所以全局这份只服务那一个组件
+   ⇒ 真值源收敛回 index.wxss 一处。两边取值原本逐项相等（44px/#5F6E66/12px/8px/#FFFFFF/#DEE3DB/
+   #163E35/#ECF0EF），删除不改变终值；判据 tools/swx1-style-gates-test.js §2 逐属性比「收敛后的终值
+   集合 == 组件自包含那份」且「每个赢家声明的来源都是 index.wxss」，来源不对即红（值巧合相同也不算通过）。
+   「tabbar-safe」（页面底部占位类，全仓 wxml/js 引用实测 0 次）随 B-14 一并删除：
+   tab 页的底部留白一直写在各页 .page 的 padding-bottom 公式里，从来不靠这个类。 */
 
 /* ---------- 其它 ---------- */
 .progress { display: block; width: 100%; height: 4px; border-radius: var(--radius-tag); background: var(--line); overflow: hidden; }

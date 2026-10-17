@@ -20,6 +20,12 @@ Page({
     canOperate: false,
     departed: false,
     completed: false,
+    // 发车预检（M-13 D-07/C-14）：差谁＝同屏「应到/已上车」那两个数背后的同一对集合，
+    // 页面不再第二次推导「谁该上车」（铁律 19）；departAsk 是确认层的开关，不是业务状态。
+    pendingCount: 0,
+    pendingNames: '',
+    showPendingNotice: false,
+    departAsk: false,
     message: '',
     error: '',
     busy: false,
@@ -71,6 +77,9 @@ Page({
       ? ['not_departed', 'coordinating'].indexOf(p.departure) === -1
       : p.departure === 'joined' && p.returnBoardingApplies)
     const boarded = expected.filter(p => leg === 'outbound' ? p.outboundBoarded : p.returnBoarded)
+    // 「还差谁」＝ expected \ boarded，两个集合都是上面那对同屏计数已经算出来的，这里只做相减：
+    // 不在页面里重述「谁该上车」这条域内规则（铁律 19），也不引入第三种判据。
+    const pending = expected.filter(p => boarded.indexOf(p) === -1)
     const legInfo = vehicle.legs[leg]
     const canOperate = leg === 'outbound'
       ? ['gathering', 'active'].indexOf(phase) !== -1
@@ -106,6 +115,11 @@ Page({
         + ' = ' + (vehicle.legalCapacity - vehicle.drivers.length - vehicle.blockedSeats) + ' 个乘客位',
       expectedCount: expected.length,
       boardedCount: boarded.length,
+      pendingCount: pending.length,
+      pendingNames: pending.map(p => p.name).join('、'),
+      // 提示只在「这颗按钮此刻真的负责发车」时出现：已发车/阶段不可操作时再说「还差几人」
+      // 就是把一件已经来不及的事冒充成待办（与铁律 27③「裁切必须自己说出来」同源，但不许裁错主语）。
+      showPendingNotice: pending.length > 0 && canOperate && !legInfo.departed,
       legState: legInfo.completed ? '本程已完成' : legInfo.departed ? '本程已发车' : '逐人清点后再发车',
       passengers,
       canOperate,
@@ -152,9 +166,22 @@ Page({
     })
   },
 
+  // 发车的入口守卫留在 onDepartAsk 上（与 onDepart 同一对条件），确认层只负责「问」：
+  // 清点没做完时不再留一颗点了才撞红字的主按钮，而是先同屏说明差谁、再走一步确认
+  // （照 components/transport-panel 的 lockHint 立场 + pages/me 的 Ask/Cancel/Confirm 三步）。
+  // 这里**不禁止**发车——现场可能确实弃等，最终判定仍在服务端（field.js 的 UNRESOLVED_DEPARTURE）。
+  // 全员清点齐备时不额外加一层（本页是现场高频页）。
+  onDepartAsk() {
+    if (this.data.busy || this.data.departed) return
+    if (!this.data.pendingCount) { this.onDepart(); return }
+    this.setData({ departAsk: true, error: '', message: '' })
+  },
+
+  onDepartCancel() { this.setData({ departAsk: false }) },
+
   onDepart() {
     if (this.data.busy || this.data.departed) return
-    this.setData({ busy: true, busyAt: Date.now(), error: '' })
+    this.setData({ busy: true, busyAt: Date.now(), error: '', departAsk: false })
     api.dispatchAndSync({ type: 'vehicle.depart', activityId: this.activityId, vehicleId: this.vehicleId, leg: this.data.leg, note: '本车清点后发车' }, this.revision, this)
       .then(res => {
         this.revision = res.revision

@@ -282,14 +282,15 @@ async function scenario1() {
       && env.page.data.distance === 12.5 && env.page.data.ascent === 860
       && env.page.data.confirmed === 2 && env.page.data.capacity === 20,
       JSON.stringify({ t: env.page.data.title, b: env.page.data.badgeText, s: env.page.data.startAtLabel }))
-    check('状态区块：ready → 「行前安排已就绪」+ 计数行',
+    check('状态区块：ready → 「行前安排已就绪」；参与者该格不再重印时间锚点（A-02）',
       env.page.data.stateKey === 'ready' && env.page.data.stateTitle === '行前安排已就绪'
       && env.page.data.stateDetail === '检查集合时间、出行方式与装备，出发当天见。'
       && env.page.data.stateTone === 'success'
-      // 参与者视角的这一格给他自己的时间锚点；组织者的工作队列（待审核/候补/剩余）不再摆到参与者面前
-      && /^集合 /.test(env.page.data.countersLine) && /剩/.test(env.page.data.countersLine)
-      && env.page.data.countersLine.indexOf('待审核') === -1,
-      JSON.stringify({ k: env.page.data.stateKey, c: env.page.data.countersLine }))
+      // 工作队列只在组织者那一格出现；参与者的时间锚点由 milestone 行单独印一次
+      && env.page.data.countersLine === ''
+      && /^集合 /.test(env.page.data.milestone)
+      && env.page.data.howLine !== env.page.data.milestone,
+      JSON.stringify({ k: env.page.data.stateKey, c: env.page.data.countersLine, m: env.page.data.milestone }))
     check('我与同行人：两行装配（主报名 isPrimary、副标题以出行方式打头；无车行标「车辆待安排」）',
       env.page.data.rows.length === 2 && env.page.data.rows[0].isPrimary === true
       && env.page.data.rows[0].statusLabel === '已确认' && env.page.data.rows[0].subtitle === '搭乘车辆 · 东门集合点 · 1号车 · 01 座'
@@ -688,8 +689,12 @@ async function scenario5() {
       env.cmds[2].payload.type === 'signup.cancel' && JSON.stringify(env.cmds[2].payload.signupIds) === '["s1"]'
       && env.cmds[2].payload.reason === '临时有事，无法参加' && schemaOk(env.cmds[2].payload),
       JSON.stringify(env.cmds[2].payload))
-    check('取消反馈：toast「此人的报名已取消，其他同行人的状态未改变」（api.toast 截 20 字）+ 弹层完整成功 callout',
-      env.rec.toasts.indexOf('此人的报名已取消，其他同行人的状态未改变') !== -1
+    // 这条断言原来期望的是**被 api.toast 截到 20 字的断句**（用例名里那句「api.toast 截 20 字」就是它）：
+    // 页面把「此人的报名已取消，其他同行人的状态未改变。」（21 码点）同时写进 callout 与 toast，
+    // 而 toast 那条被切掉了句末。M-11 修好之后完整一句才真的上屏，于是期望随之改成整句——
+    // 这是**替换而非放宽**：新期望要求句末那个「。」必须在，旧期望反而看不见它（铁律 30/31 的口径）。
+    check('取消反馈：toast 与弹层 callout 是同一条完整话术（M-11 后不再被截断）',
+      env.rec.toasts.indexOf('此人的报名已取消，其他同行人的状态未改变。') !== -1
       && env.page.data.selMessage === '此人的报名已取消，其他同行人的状态未改变。',
       JSON.stringify({ toasts: env.rec.toasts, m: env.page.data.selMessage }))
   }

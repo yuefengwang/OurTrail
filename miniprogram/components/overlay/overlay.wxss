@@ -8,7 +8,11 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  /* 关闭态必须完全不拦截页面交互（淡出动画结束后隐藏） */
+  /* 关闭态不卸载（E-07/C-17 定稿＝裁定选项 B：overlay.js 的 rendered 只有置 true 的路径，
+     弹层关闭后节点常驻）。关闭态不卸载，安全性由 pointer-events + visibility 承担——
+     下面这两条声明是全仓 31 处弹层（18 sheet + 13 dialog）的承重墙：改视觉时不要摘掉其中
+     任何一条，也不要退化成只留 opacity:0（platform-pitfalls §4：opacity:0 仍然吃点击，
+     届时每个常驻节点都会变成透明的全屏点击吞噬层）。 */
   pointer-events: none;
   visibility: hidden;
   transition: visibility 0s linear var(--motion, 180ms);
@@ -59,7 +63,10 @@
   margin: auto;
   align-self: center;
 }
-.overlay-root { align-items: stretch; }
+/* E-01/M-10：此处原有第二条 `.overlay-root { align-items: stretch; }`（同特异度后写，
+   压死 L9 的 flex-end，使 18 处 sheet 顶端对齐、恒 80vh）。已删——本文件 .overlay-root
+   的 align-items 现在只有一个出处。下方 margin: auto 16px 是 13 个 dialog 水平内缩的
+   来源（总协调裁定必须保留），改本文件时勿顺手删它、也勿顺手改 .overlay__body 的 62vh。 */
 .overlay--dialog { margin: auto 16px; }
 .overlay__handle {
   width: 32px;

@@ -4,6 +4,7 @@
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 const gpx = require('../../utils/gpx')
 
 const emptyInput = () => ({
@@ -124,6 +125,7 @@ Page({
     profileGate: false,
     message: '',
     busy: false,
+    busyAt: 0,
     // GPX 导入
     gpxOpen: false,
     gpxError: '',
@@ -637,6 +639,19 @@ Page({
     const cap = Number(this.data.form.capacity)
     return !Number.isInteger(cap) || cap < 1 || cap > 500
   },
+  // 写命令入口的在途闸门：返回 true 表示「上一条写还在飞」，本次操作必须拦。
+  // busy 只是界面姿态、不是业务状态：一次保存/发布的 promise 没能回来时，它绝不能把「发布活动」
+  // 永久锁在禁用态（WXML 是 bindtap="{{busy ? '' : 'onPublishIntent'}}"，点了就是没反应）。
+  // 超过宽限期即认定残留：就地复位并放行本次操作，而不是让用户只能退出页面重进。
+  // 宽限期与 elapsed 判据只有一个出处 J.busyStale（铁律 31：页面不写第二个 8000、不自己算时间差）。
+  // 求值点放在写入口而不是 reload()：本面连 onShow 都没有，而写悬死时 revision 不会前进。
+  busyBlocks() {
+    if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+      this.setData({ busy: false, busyAt: 0 })
+      console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+    }
+    return !!this.data.busy
+  },
   // 校验并把当前表单落为服务器草稿（新建则创建，已保存则编辑）。「发布」入口与保存共用，
   // 保证发布确认弹出的内容就是刚保存的当前内容。resolve(id) / reject(已透出 failure)。
   persistCurrent(successMessage) {
@@ -644,7 +659,7 @@ Page({
       this.setData({ step: 2, failure: '人数上限请填写 1–500 的整数。' })
       return Promise.reject(new Error('capacity'))
     }
-    this.setData({ busy: true, failure: '', message: '' })
+    this.setData({ busy: true, busyAt: Date.now(), failure: '', message: '' })
     // 域层不变量要求发起者已有落库档案（profile.save 硬性要求姓名+手机号），否则任何保存/发布都会被拒。
     // read({kind:'profile'}) 无档案时也返回 kind:'profile' 的空壳（selectors 对首访返回空档案），
     // 因此以姓名/手机号是否实际填写为准。提前拦截并给出可操作指引，而不是透出"路线归属或节点标识无效"。
@@ -684,6 +699,7 @@ Page({
     })
   },
   save(preview) {
+    if (this.busyBlocks()) return
     this.persistCurrent(this.data.phase === 'draft' ? '草稿已保存，尚未发布，也没有自动报名。' : '活动修改已保存。')
       .then(id => { if (preview && id) wx.navigateTo({ url: '/pages/activity/activity?id=' + id }) })
       .catch(() => {})
@@ -728,7 +744,7 @@ Page({
   // 步骤 3 常驻发布入口：先预检必填缺失项（跳到第一步并逐项点名），再静默保存，最后弹发布确认。
   // 可后补项不拦截——确认弹层里逐项点名并给「去补上」出口（onDeferredFix）。
   onPublishIntent() {
-    if (this.data.busy) return
+    if (this.busyBlocks()) return
     const missing = this.missingForPublish()
     if (missing.length) {
       this.setData({ step: missing[0].step, failure: '还差：' + missing.map(m => m.label).join('、') + '。补齐后再发布。' })
@@ -748,8 +764,8 @@ Page({
     this.setData({ templateId: item ? item.id : '' })
   },
   onCopyTemplate() {
-    if (!this.data.templateId || this.data.busy) return
-    this.setData({ busy: true, failure: '' })
+    if (!this.data.templateId || this.busyBlocks()) return
+    this.setData({ busy: true, busyAt: Date.now(), failure: '' })
     api.dispatchAndSync({ type: 'activity.copy', sourceActivityId: this.data.templateId }, this.revision, this)
       .then(res => {
         this.setData({ busy: false })
@@ -860,7 +876,7 @@ Page({
     this.setData({ deleteDraftOpen: false })
   },
   onDeleteDraftConfirm() {
-    if (this.data.busy) return
+    if (this.busyBlocks()) return
     if (!this.savedId) {
       // 还没保存过服务器：删除只清本机草稿
       draft.clearDraft(this.draftKey(), 'activity-editor')
@@ -868,10 +884,13 @@ Page({
       wx.switchTab({ url: '/pages/home/home' })
       return
     }
-    this.setData({ busy: true, deleteDraftOpen: false })
+    this.setData({ busy: true, busyAt: Date.now(), deleteDraftOpen: false })
     api.dispatchAndSync({ type: 'activity.delete', activityId: this.savedId }, this.revision, this)
       .then(() => {
         draft.clearDraft(this.draftKey(), 'activity-editor')
+        // 成功路径也要复位 busy：跳首页是异步的，任何一次没跳成（Tab 页复用、导航被拦）
+        // 都会把一个已经删干净编辑器的页面留在「正在…」态——复位与跳转不互相替代。
+        this.setData({ busy: false, deleteDraftOpen: false })
         api.toast('草稿已删除')
         wx.switchTab({ url: '/pages/home/home' })
       })
@@ -903,6 +922,7 @@ Page({
   onTripPickup(e) { this.setData({ tripPickupIndex: Number(e.detail.value) }) },
 
   publish() {
+    if (this.busyBlocks()) return
     if (!this.savedId) return
     let participation = null
     if (this.data.participate) {
@@ -938,13 +958,17 @@ Page({
   },
 
   doPublish(participation, revision) {
+    // 这一支此前连在途标记都没有：「确认发布」的按钮 disabled 只看 busy，而 busy 在 persistCurrent
+    // 结束时已复位 ⇒ 连点两次就会发出两条 activity.publish。busy 与 busyAt 必须成对写入，
+    // 否则残留时既拦不住重复提交、也永远解不开锁（判据单源 J.busyStale）。
+    this.setData({ busy: true, busyAt: Date.now(), failure: '' })
     api.dispatchAndSync({ type: 'activity.publish', activityId: this.savedId, participation }, revision, this)
       .then(() => {
         draft.clearDraft(this.draftKey(), 'activity-editor')
-        this.setData({ publishOpen: false })
+        this.setData({ busy: false, publishOpen: false })
         api.toast('活动已发布')
         wx.redirectTo({ url: '/pages/activity/activity?id=' + this.savedId })
       })
-      .catch(e => this.setData({ failure: api.errorText(e) }))
+      .catch(e => this.setData({ busy: false, failure: api.errorText(e) }))
   },
 })

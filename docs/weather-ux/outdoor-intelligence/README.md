@@ -24,7 +24,9 @@
 ## Production Integration（OI Phase 2，2026-10-07）
 
 - `miniprogram/utils/oi-presentation.js`（presentation adapter：MODEL ≠ PRESENTATION，
-  OI 模型产出 → 页面卡数据；tier 分级词「确定/很值得关注/值得关注/条件一般」；
+  OI 模型产出 → 页面卡数据；tier 分级词的唯一出处是 `miniprogram/utils/oi-presentation.js` 的 `tierOf()`
+  （确定 / 重点关注 / 值得关注 / 条件一般）——本行此前写着「很值得关注」，而产品从不发这个词，
+  门禁套件照抄本行后只在数据出 strong 项时报红，被误当偶发网络红挂了数轮 ⇒ **不要把词表抄进文档**；
   机会时间轴 SVG 与 Meteogram 共用同一 timeScale——复用 meteogram-svg.timeScale）
 - `miniprogram/pages/weather/`：新增「今天值得关注」卡（additive，
   独立 try/catch 降级；列表 + 可点时间轴 → selectHour 联动闭环）

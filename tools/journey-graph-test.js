@@ -1,7 +1,10 @@
 // 页面图与词汇单源的静态门（重构 §10/§25）。
-// 它不执行页面代码，只读 app.json、路由字符串与模板：所以能进无头门禁，也能在
+// 它不执行**页面**代码，只读 app.json、路由字符串与模板：所以能进无头门禁，也能在
 // 没有微信开发者工具的那台机器上跑。目的是让「死页面 / 困页 / 各页自造一套状态词」
 // 这三类问题在提交时就被拦下，而不是等真机走查。
+// 唯一执行代码的地方是 §E：它要的是**真实投影**（tools/lifecycle-harness.js 用真命令建世界，
+// 再由 domain/selectors.js 投影），因为「翻译层读的键到底存不存在」这件事没法从文本判出来。
+// 纯 Node 可跑，不碰 wx，也不碰开发者工具——Mac 那台机器照样能跑这一道门。
 'use strict'
 const fs = require('fs')
 const path = require('path')
@@ -12,6 +15,7 @@ function check(name, cond, extra) {
   else { failed++; console.log('  ✗ ' + name + (extra ? '  →  ' + extra : '')) }
 }
 function section(t) { console.log('\n== ' + t + ' ==') }
+function note(t) { console.log('  · ' + t) }
 
 const MP = path.join(__dirname, '..', 'miniprogram')
 const APP = JSON.parse(fs.readFileSync(path.join(MP, 'app.json'), 'utf8'))
@@ -157,6 +161,64 @@ check('指标位与构成行的措辞由 journey 给出，页面只做插值',
   typeof J.tripMixLine === 'function' && typeof J.fieldMetric === 'function'
   && J.tripMixLine({ confirmed: 6, selfTravel: 2, vehicleTravel: 4, assigned: 3 }) === '全部已确认 6 · 自行前往 2 · 需要乘车 4（已安排 3）'
   && J.fieldMetric('gathering').key === 'unchecked' && J.fieldMetric('closing').label === '待到家')
+
+/* ================= E. 翻译层读的每个 counters 键都得在真实投影里存在 =================
+ * C-05 的机器形式：journey.transitionBlocker 曾经读 `counters.unresolved`，而那个键在
+ * `domain/selectors.js` 的 counters 投影里**从来没有**（unresolved 只是 domain/field.js 的局部变量名）。
+ * 后果不是崩，是**静默**：那句话的条件恒为假 ⇒ 「还有人没给出出发结论」这条门槛说明永不出口，
+ * 而 138 条 journey 断言全绿——因为测试夹具是自己手搓的 counters，它想有什么键就有什么键。
+ *
+ * 判据口径（铁律 30：钉行为，不钉源码文本）：
+ *  · 真实投影来自**真实命令**建起来的世界（tools/lifecycle-harness.js 的铁约①），不手拼 State、不手拼 view；
+ *  · 用 Proxy 把 journey 在这一轮里**实际读到过**的 counters 键记下来，再问「每一个键在投影里存在吗」；
+ *  · 不在本测试里重述 selectors 的字段清单（那等于抄一份会过期的账）。
+ */
+section('E. counters 漂移门：翻译层读的键必须能在真实投影里找到出处')
+{
+  const H = require('./lifecycle-harness')
+  const LIN = 'o-drift-lin'
+  const P1 = 'o-drift-p1'
+  const w = H.createWorld()
+  w.profile(LIN, '林溪')
+  const a = w.createActivity(LIN, { capacity: 6, approvalMode: 'manual' })
+  w.publish(LIN, a)
+  w.profile(P1, '陈屿')
+  w.signup(P1, a, '陈屿', { mode: 'self' }, { ownerId: LIN })
+  const view = w.readActivity(LIN, a, 'organizer')
+  const REAL = Object.keys((view && view.counters) || {})
+  check('真实投影读得出 counters（读不出来这条门就没有输入，与 check.js:140 同一课）',
+    REAL.length >= 6, JSON.stringify(REAL))
+
+  const reads = new Set()
+  const spy = new Proxy({}, {
+    get(t, k) { if (typeof k === 'string') reads.add(k); return view.counters[k] },
+    has(t, k) { if (typeof k === 'string') reads.add(k); return Object.prototype.hasOwnProperty.call(view.counters, k) },
+  })
+  // 把所有会读 counters 的分支都走一遍：每个阶段、每个「下一步」、每个会带人数的错误码。
+  const PH = ['draft', 'published', 'gathering', 'active', 'closing', 'archived', 'cancelled']
+  J.tripMixLine(spy)
+  for (const phase of PH) {
+    J.leaderQueue({ phase, now: '2026-10-11T07:00:00+08:00', startAt: '2026-10-11T08:00:00+08:00',
+      meetingAt: '2026-10-11T07:30:00+08:00', vehicleTravel: 1, counters: spy })
+    J.fieldMetric(phase)
+  }
+  for (const next of PH) J.transitionBlocker({ next, counters: spy })
+  for (const code of ['UNRESOLVED_DEPARTURE', 'UNRESOLVED_SAFETY', 'CAPACITY', 'NETWORK']) {
+    J.explain({ code, message: 'm' }, { next: 'active', counters: spy })
+  }
+  // fieldMetric 交出去的是一个**键名**，页面拿它去查 counters —— 那也等于翻译层在读它，一起纳入判据。
+  const metricKeys = PH.map(p => J.fieldMetric(p).key)
+  for (const k of metricKeys) reads.add(k)
+
+  const phantom = [...reads].filter(k => REAL.indexOf(k) === -1)
+  phantom.forEach(k => console.log('  ✗ 翻译层读了投影里不存在的键：counters.' + k + '（该分支恒为假 = 那句话永不出口）'))
+  check('翻译层读到的每一个 counters 键都在真实投影里（影子键＝静默死分支，C-05 的防复发门）',
+    reads.size > 0 && phantom.length === 0, JSON.stringify({ reads: [...reads], phantom }))
+  check('本门确有输入：读到的键数必须落在「比投影少、比 3 多」的区间（全空或全等说明没在判事）',
+    reads.size >= 4 && reads.size <= REAL.length + 1,
+    JSON.stringify({ reads: reads.size, real: REAL.length }))
+  note('真实投影键 ' + REAL.length + ' 个 · 本轮实际被读 ' + reads.size + ' 个 · 影子键 ' + phantom.length + ' 个')
+}
 
 console.log('\n==== passed=' + passed + ' failed=' + failed + ' skipped=' + skipped + ' ====')
 process.exit(failed ? 1 : 0)

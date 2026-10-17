@@ -106,7 +106,16 @@ Page({
       status: (a.meta.owner ? '我组织的 · ' : (a.meta.joined ? '' : '最近查看 · ')) + J.phaseLabel(a.phase),
       when: a.startAt && ['archived', 'cancelled'].indexOf(a.phase) === -1 ? J.remaining(this.now, a.startAt).text : '',
       featured: a.id === featuredId && a.phase !== 'draft',
-      info: '已确认 ' + a.meta.confirmed + ' 人 · 待审核 ' + a.meta.pending + ' 人 · 名额 ' + a.meta.capacity + ' 人',
+      // 「待审核 N 人」是组织者的工作队列，不是访问者此刻能行动的事——这条决定 activity.js 早已写下
+      // （非组织者的同一格给他的下一步）。首页此前对所有人无条件印它，等于把参与者打不开的那个数字
+      // 塞进他每次刷列表都要看见的一行。归属位只有一个出处：服务端 home 投影显式给的 meta.owner，
+      // 客户端不比自己 ownerId、不从标签反推（铁律 19：domain → projection → label 单向）。
+      // meta.owner 缺位按「非组织者」处理：越权数字失败关闭，而不是失败开放。
+      info: [
+        '已确认 ' + a.meta.confirmed + ' 人',
+        a.meta.owner ? '待审核 ' + a.meta.pending + ' 人' : '',
+        '名额 ' + a.meta.capacity + ' 人',
+      ].filter(Boolean).join(' · '),
     }))
     let emptyTitle = '留一点时间，走进山野'
     let emptyDetail = '这里仅显示与你有关或你打开过的活动。收到活动链接后，可以查看安排并报名。'

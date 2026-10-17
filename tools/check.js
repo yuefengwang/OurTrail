@@ -219,6 +219,61 @@ const KNOWN_BARE_CHECKBOX = new Set([])
   else if (!fresh.length) ok('裸 checkbox 绑 change 未增加（存量 ' + bare.length + ' 处已登记）')
 }
 
+// 8. WXML 非法事件属性名（M-09 的防复发门）：形如 xxx-yyy="标识符" 却少了 bind/catch 前缀的属性，
+//    在小程序里只是一个普通自定义属性，永不触发回调——overlay 的 animation-end="noop" 就是这么让
+//    onAnimationEnd 活成死方法、rendered 永不复位的。判据实现搬进 tools/fixround2-event-attr-rule.js
+//    （那文件自带「历史样本必须抓到 + 合法写法不得误报」的自证，可单独 node 执行），
+//    这样预提交门不需要被本地跑一遍也能确认规则本身是活的。
+//    落门前实测全仓命中 0 条（见 fix-round2/out/G1/verify.txt），所以是硬门禁、不带登记清单。
+console.log('== WXML 非法事件属性名 ==')
+{
+  const rule = require('./fixround2-event-attr-rule')
+  let scanned = 0
+  const hits = []
+  for (const f of files.filter(f => f.endsWith('.wxml'))) {
+    let srcTxt
+    try { srcTxt = fs.readFileSync(f, 'utf8') } catch (e) { fail(rel(f) + ' 读取失败：' + e.message); continue }
+    scanned++
+    rule.scan(srcTxt, rel(f)).forEach(h => hits.push(h))
+  }
+  if (scanned === 0) fail('一个 wxml 都没扫到：本步骤会静默空转（同 5b 的分隔符教训）')
+  hits.forEach(h => fail(h.file + ':' + h.line + ' ' + h.attr + '="' + h.value + '" 不是合法事件属性（' + h.why + '）——事件绑定必须写 bind…/catch… 或 bind:事件名，否则永不触发'))
+  if (!hits.length) ok('没有「少了 bind/catch 前缀的事件属性」（扫了 ' + scanned + ' 个 wxml）')
+}
+
+// ==== T4/E-08 新门开始（以下整段为本批追加；既有 5+3 步一字未改。剥离这段做「盲区复现」的是 tools/t4-e08-mutate.js）====
+// E-08 的指控不是「缺一个 lint」，而是：改完 UI 大家跑的是 check.js 与 check-handlers.js，
+// 而 platform-pitfalls.md 的 14 条平台硬规则**一条都不在这两把闸里**（AGENTS.md:L110 自己承认
+// multipleSlots 要靠「check-handlers.js 之外的手段」人工复核）。判据装在没人跑的门里等于没有门。
+// 四条规则落门之前各自实测**全仓命中 0**（清单与读数见 fix-round2/out/T4/handoff.md），
+// 所以这里是硬门禁、不带 KNOWN_* 登记清单；判据本体在 tools/t4-e08-platform-rules.js（唯一出处，
+// 断言套件与变异自证共用同一份，不在测试里镜像判据 —— 铁律 11）。
+console.log('== 新门自证（合成夹具：正例必红、反例必绿）==')
+{
+  const T4 = require('./t4-e08-platform-rules')
+  // 判据模块被摘空（导出空数组）时，下面的循环会一次都不跑 ⇒ 整段静默绿。这条门防的是「闸还在、闸门后面没人了」。
+  if (!T4.RULES || T4.RULES.length !== 4) fail('平台门判据模块只导出 ' + ((T4.RULES || []).length) + ' 条规则（应为 4 条）⇒ 本步会静默空转')
+  if (!T4.SELF_CASES || !T4.SELF_CASES.length) fail('平台门自证夹具为空 ⇒ 「正例必红」从未被检验')
+  const bad = T4.selfProof()
+  bad.forEach(b => fail('规则自证失败：' + b))
+  if (!bad.length) ok(T4.SELF_CASES.length + ' 组夹具全部符合预期 ⇒ 下面四条门不是读不出东西的空门')
+  const ctx = T4.makeCtx(ROOT)
+  for (const r of T4.RULES) {
+    console.log('== ' + r.id + ' ' + r.title + ' ==')
+    let res
+    try {
+      res = r.run(ctx)
+    } catch (e) {
+      fail(r.id + ' 判据抛错（抛错≠通过，本步按红算）：' + e.message)
+      continue
+    }
+    if (res.fatal) fail(r.id + ' 没有输入，判据无法工作：' + res.fatal)
+    res.hits.forEach(h => fail('[' + r.id + '] ' + h.file + ':' + h.line + ' ' + h.why + (h.snippet ? ' ｜ ' + h.snippet : '')))
+    if (!res.hits.length && !res.fatal) ok(r.id + ' 命中 0 ｜ ' + (res.stat || '（无统计）'))
+  }
+}
+// ==== T4/E-08 新门结束 ====
+
 console.log('')
 if (failed) {
   console.error('FAILED: ' + failed + ' 项问题')

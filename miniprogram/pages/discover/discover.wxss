@@ -1,3 +1,5 @@
-/* 发现页：子页无需 tabBar 底部留白；活动卡信息行沿用首页的弱化样式 */
-.activity-card .activity-card__info { font-size: 12px; color: #5F6E66; }
-.activity-card--featured .activity-card__info { color: #D0D8D7; }
+/* 发现页：子页无需 tabBar 底部留白；活动卡信息行沿用首页的弱化样式
+   B-10：色值改引用既有 token（值不变 ⇒ 无视觉变化）。这条与 home.wxss 是逐字节相同的两份拷贝，
+   上收单源需要动 app.wxss，已写进 out/SWX2/requests.md（见铁律：不要在第四页再抄一份）。 */
+.activity-card .activity-card__info { font-size: 12px; color: var(--muted); }
+.activity-card--featured .activity-card__info { color: var(--on-forest-muted); }

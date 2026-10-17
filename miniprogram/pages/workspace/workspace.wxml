@@ -31,7 +31,9 @@
          bind:written：任一面板写库成功后宿主重读并下发新 sync-key，兄弟面板才不会拿旧 revision 发命令 -->
     <roster-panel class="{{tab === 1 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
     <transport-panel class="{{tab === 2 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
-    <field-panel class="{{tab === 3 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" perspective="organizer" sync-key="{{syncKey}}" bind:written="onPanelSync" />
+    <!-- page-metrics：本页头顶已经有「指标即入口」那一格（active/closing 阶段印的就是同一个待到家人数），
+         面板据此不再把自己那份同名计数印在常驻头部（A-17）。入口一个都没减：三格与 goField 照旧。 -->
+    <field-panel class="{{tab === 3 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" perspective="organizer" page-metrics="{{true}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
 
     <block wx:if="{{tab === 0}}">
       <!-- 时间锚点：领队最该先看到的不是字段，是「还剩多久到我必须做的那一步」 -->
@@ -69,7 +71,8 @@
         </view>
         <view class="button primary block {{canTransition && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canTransition && !busy ? 'onTransition' : ''}}">{{nextPhaseLabel || '这一步现在还不能做'}}</view>
         <!-- 门槛不满足时先说清缺什么、去哪儿补，而不是给一个点不动的灰按钮 -->
-        <text wx:if="{{!canTransition && transitionHint}}" class="small muted" style="display:block;">为什么现在不能推进：{{transitionHint}}</text>
+        <!-- 这行只由 transitionHint 决定：权限位（canTransition）与门槛清没清是两件事，挂上去等于说明永不上屏（审计 F-01） -->
+        <text wx:if="{{transitionHint}}" class="small muted" style="display:block;">为什么现在不能推进：{{transitionHint}}</text>
         <text wx:elif="{{!canTransition}}" class="small muted" style="display:block;">这一阶段没有可推进的下一步；已归档或已取消的活动只读。</text>
         <view wx:if="{{canEdit}}" class="button text" hover-class="button-hover" bindtap="goEdit">编辑活动</view>
       </view>

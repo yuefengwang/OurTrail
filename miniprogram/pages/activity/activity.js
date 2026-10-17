@@ -294,11 +294,13 @@ Page({
       stateTitle: journey.nextTitle,
       stateDetail: journey.nextDetail,
       stateTone: journey.statusTone === 'info' ? 'success' : (journey.statusTone === 'neutral' ? 'success' : journey.statusTone),
-      // 「待审核 N · 候补 N · 剩余 N」是组织者的工作队列，不是参与者此刻该关心的事；
-      // 参与者这一格给他自己的下一步（集合倒计时 / 怎么去）。
+      // 「待审核 N · 候补 N · 剩余 N」是组织者的工作队列，只有组织者这一格才装它。
+      // 参与者/协作者的同一块已经由上面两行说完了：● milestone（时间锚点）与 howLine（怎么去）；
+      // 这里再放一份同源文案，就是把同一句话在同一只 callout 里连印两遍（A-02）——
+      // 非组织者分支返回空串，模板的 wx:if 会自动收起这一行，不占高度也不重复。
       countersLine: isOwnerReal
         ? '待审核 ' + v.counters.pending + ' 人 · 候补 ' + v.counters.waitlisted + ' 人 · 剩余 ' + v.counters.remaining + ' 个名额'
-        : (journey.milestone || journey.how || ''),
+        : '',
       isOwner: isOwnerReal,
       canSubmit: !a.phase || (v.permittedActions.indexOf('signup.submit') !== -1 && stateKey === 'new'),
       canSelfSheet: !!(primary && primary.status === 'confirmed' && ['gathering', 'checked', 'active', 'closing'].indexOf(stateKey) !== -1),

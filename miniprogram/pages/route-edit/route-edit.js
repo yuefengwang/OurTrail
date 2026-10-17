@@ -6,6 +6,7 @@
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const gpx = require('../../utils/gpx')
+const J = require('../../utils/journey')
 
 const freshId = kind => kind + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6)
 
@@ -87,6 +88,7 @@ Page({
     editingRisks: {},
     // 反馈
     busy: false,
+    busyAt: 0,
     failure: '',
     message: '',
     draftSavedAt: '',
@@ -357,8 +359,21 @@ Page({
   },
 
   // ---- 保存 ----
+  // 写命令入口的在途闸门：返回 true 表示「上一条写还在飞」，本次操作必须拦。
+  // 残留的 busy 不得把「存入路线库/保存修改」永久锁成「正在保存…、点了没反应」：
+  // 超过宽限期即认定残留并就地复位、放行本次操作。宽限期与 elapsed 判据只有一个出处
+  // J.busyStale（铁律 31：页面不写第二个 8000、不自己算时间差）。
+  // 求值点放在写入口而不是 reload()：本面没有 onShow/onReady，而写悬死时 revision 不会前进。
+  busyBlocks() {
+    if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+      this.setData({ busy: false, busyAt: 0 })
+      console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+    }
+    return !!this.data.busy
+  },
+
   onSave() {
-    if (this.data.busy) return
+    if (this.busyBlocks()) return
     const f = this.data.form
     if (!f.title.trim()) {
       this.setData({ failure: '先给这条路线起个名字。' })
@@ -372,7 +387,7 @@ Page({
       this.setData({ failure: '还有路线节点没有名字，展开节点逐个补齐。' })
       return
     }
-    this.setData({ busy: true, failure: '', message: '' })
+    this.setData({ busy: true, busyAt: Date.now(), failure: '', message: '' })
     const extra = Object.assign({ source: 'manual' }, this.extra || {})
     const input = buildInput(f, extra)
     const payload = this.routeId

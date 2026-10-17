@@ -1,11 +1,15 @@
 // 现场协作任务页（pages/staff）页面级场景测试：node tools/scenario-staff-test.js
-// 目的：staff 页是 10 行薄壳（头部文案 + 组装 field-panel 为 Field 视角），本套件锁定页面壳本身：
+// 目的：staff 页是薄壳（头部文案 + 组装 field-panel 为 Field 视角），本套件锁定页面壳本身：
+// - 返回本页必须真的重读：onShow 挂载点 + data 里的显式失效信号键 + wxml 的 sync-key 接线，
+//   三条静态判据与 §1b 的行为判据同批（静态钉挂载点、行为钉送达；只换静态门是无效落地）；
 // - onLoad 参数装配（activityId 来源 options.id，缺参守卫为空串）；
 // - 传给 field-panel 的 properties（activity-id 绑定页面状态、perspective 固定 'staff'）与 json 注册；
 // - 薄壳契约：页面自身零 handler、零模块依赖（WXML 无 bind 绑定，故不存在孤儿 handler）。
 // 与 tools/scenario-workspace-test.js 的 field-panel 部分互补：那里深测组件内部（阶段动作矩阵/
 // evidence 形状/防重复加载），这里只做一次轻集成——用 staff 页装配出的 activityId + perspective='staff'
 // 驱动真面板，验证读取请求形状与「协作授权被撤销」这一 staff 特有场景的用户可见结果，不重复深测组件内部。
+// 与 tools/fixround2-assertions-test.js 的分工：那边判「宿主 bump 逐次不同 + 属性值没变就不通知观察者」的
+// 送达语义与去重依据，这边判「返回本页看到新阶段」这一页面级后果——两套各自独立观察同一个缺陷，不互抄。
 'use strict'
 const fs = require('fs')
 const path = require('path')
@@ -128,19 +132,98 @@ function staffView(over) {
   }, over || {})
 }
 
-// 1. 薄壳契约：10 行页面——零模块依赖、配置仅 data+onLoad、WXML 零事件绑定
+// 1. 薄壳契约（承重版）。壳本身允许很薄，但「返回本页会刷新」这件事必须钉得住。
+//    旧版这里的三条是「形状合同」（配置只有 data+onLoad / data 只有一个键 / 模板只消费 activityId），
+//    实测不承重：把修复做成一个空 onShow 也照样全绿，而真的把 onShow 接上反而三条全红。
+//    现在三条各自钉一件「缺了就一定不成立」的事，并且与 §1b 的行为判据同批——静态三条只是挂载点，
+//    真正承重的是「返回本页时真面板因新 key 恰好重读一次」（铁律 30/33⑥：钉行为、带阳性对照）。
+//    · 仍保留的两条与形状无关的事实：零模块依赖、零事件绑定（薄壳的定义性特征）。
 function scenario1() {
-  section('1. 薄壳契约：零模块依赖 / 配置仅 data+onLoad / WXML 零事件绑定')
+  section('1. 薄壳契约（承重版）：onShow 挂载点 / data 键集合恰为两个 / field-panel 带 sync-key 绑定')
   const cfg = pageConfig()
-  check('页面配置只有 data 与 onLoad（无 own handler，页面逻辑全部委托 field-panel）',
-    Object.keys(cfg).sort().join(',') === 'data,onLoad', Object.keys(cfg).sort().join(','))
+  check('页面配置 = data + onLoad + onShow + onPullDownRefresh（返回与下拉都只靠生命周期失效信号，F-04）',
+    Object.keys(cfg).sort().join(',') === 'data,onLoad,onPullDownRefresh,onShow'
+    && typeof cfg.onShow === 'function' && typeof cfg.onPullDownRefresh === 'function',
+    Object.keys(cfg).sort().join(',') + ' / onShow=' + typeof cfg.onShow + ' / onPullDownRefresh=' + typeof cfg.onPullDownRefresh)
+  check('下拉手势与钩子成对：json 注册了 enablePullDownRefresh 才允许有 onPullDownRefresh（两种半截都不该绿）',
+    (STAFF_JSON.enablePullDownRefresh === true) === (typeof cfg.onPullDownRefresh === 'function'),
+    JSON.stringify({ json: STAFF_JSON.enablePullDownRefresh, hook: typeof cfg.onPullDownRefresh }))
   check('不 require 任何模块（api/格式化全都不碰，纯装配壳）', !/require\(/.test(STAFF_SRC))
-  check('初始 data 只有 activityId 且为空串', JSON.stringify(cfg.data) === '{"activityId":""}', JSON.stringify(cfg.data))
+  check('data 键集合恰为 {activityId, syncKey}（装配参数 + 一个显式失效信号键，不留第二个状态位）',
+    Object.keys(cfg.data || {}).sort().join(',') === 'activityId,syncKey', JSON.stringify(cfg.data))
   check('WXML 无任何 bind/catch 事件绑定（不存在孤儿 handler 的可能）',
     STAFF_WXML.indexOf('bind') === -1 && STAFF_WXML.indexOf('catch') === -1)
-  check('WXML 不直接消费 activityId 以外的任何页面状态',
-    (STAFF_WXML.match(/\{\{[^}]*\}\}/g) || []).every(m => m.indexOf('activityId') !== -1),
-    JSON.stringify(STAFF_WXML.match(/\{\{[^}]*\}\}/g)))
+  const panelTag = (STAFF_WXML.match(/<field-panel[^>]*>/) || [])[0] || ''
+  check('staff.wxml 的 field-panel 带 sync-key 绑定（宿主有键却没接线 ⇒ 信号发进没人看的 data）',
+    /(?:^|\s)sync-key="{{[^{}]+}}/.test(panelTag), panelTag)
+}
+
+// 宿主 setData 之后，属性只有「值真的变了」才通知子组件观察者——这是微信 observers 的语义，
+// 不是对页面逻辑的复刻（页面逻辑是「bump 一个 key」，这里判的是它有没有真的送达）。
+function hostSyncToPanel(page, panel) {
+  const next = page.data.syncKey
+  if (panel.data.syncKey === next) return false
+  panel.data.syncKey = next
+  if (panel.observers && panel.observers.syncKey) panel.observers.syncKey.call(panel, next)
+  return true
+}
+
+// 1b. 行为判据（与静态三条同批落地，缺这条整套静态门就是无效的）：
+//     返回本页时真 field-panel 因新 key 恰好重读一次，且看到的是推进后的阶段而不是离开时的快照。
+async function scenarioRefresh() {
+  section('1b. 返回本页真的重读：onShow → syncKey 变化 → 真 field-panel 恰好重读一次，名单随新 phase 重装配')
+  makeWx()
+  let phase = 'gathering'
+  const view = () => staffView({
+    activity: {
+      id: 'a1', title: '青城后山 · 周末轻徒步', phase: phase,
+      pickupPoints: [{ id: 'pk-1', name: '东门集合点' }],
+      routeSnapshot: { points: [{ id: 'pt-1', name: '起点' }] },
+    },
+  })
+  const env = installApi({ view: view, revision: 7 })
+  const page = makePage(pageConfig())
+  page.onLoad({ id: 'a1' })
+  const panel = makeComponent(compConfig(FIELD_PATH), { activityId: page.data.activityId, perspective: 'staff', syncKey: page.data.syncKey })
+  attach(panel)
+  await waitFor(() => panel.data.loading === false)
+  check('首屏那一次读由面板 attached 发出（宿主 onLoad 不重复发读 ⇒ 首屏不多打一次全量读）',
+    env.reads.length === 1 && panel.data.phase === 'gathering',
+    'reads=' + env.reads.length + ' phase=' + panel.data.phase)
+
+  if (typeof page.onShow !== 'function') {
+    check('页面声明了 onShow（没有挂载点，返回本页不可能刷新）', false, 'typeof page.onShow=' + typeof page.onShow)
+    return
+  }
+  // 真机次序：onLoad → onShow（首次进入）→ 离开 → onShow（返回本页）。只有第二次才该下发信号。
+  page.onShow()
+  const notifiedFirst = hostSyncToPanel(page, panel)
+  await sleep(20)
+  check('首次进入那次 onShow 不下发信号（那一次读已由面板 attached 发出，重复下发＝白多打一次全量读）',
+    notifiedFirst === false && env.reads.length === 1, 'notified=' + notifiedFirst + ' reads=' + env.reads.length)
+
+  await sleep(6) // 让信号本身带上不同的时间戳（恒定 key 会被面板去重吃掉，那是 F-04 的原状）
+  phase = 'active'
+  page.onShow()
+  const before = env.reads.length
+  const notified = hostSyncToPanel(page, panel)
+  await waitFor(() => env.reads.length > before)
+  check('领队推进阶段后返回本页 ⇒ 信号与面板已读的那份不同 ⇒ 真面板恰好重读一次（不是 0 次也不是 2 次）',
+    notified === true && env.reads.length === before + 1,
+    'notified=' + notified + ' reads=' + before + '→' + env.reads.length)
+  check('重读是同一份请求形状（activity / a1 / staff 视角），没有另开第二条链路',
+    !!env.reads[before] && env.reads[before].kind === 'activity' && env.reads[before].activityId === 'a1' && env.reads[before].perspective === 'staff',
+    JSON.stringify(env.reads[before]))
+  await waitFor(() => panel.data.loading === false)
+  check('返回后看到的是新阶段（动作表按 phase 重装配），不是离开时那份旧快照 = F-04 的本体',
+    panel.data.phase === 'active' && panel.data.showPositions === true,
+    'phase=' + panel.data.phase + ' showPositions=' + String(panel.data.showPositions))
+  const again = env.reads.length
+  const notified2 = hostSyncToPanel(page, panel)
+  await sleep(20)
+  check('反向对照：信号没再变化就不重读（判据不是「每次返回都必读」的一刀切，承重的是 key 真的换了）',
+    notified2 === false && env.reads.length === again,
+    'notified=' + notified2 + ' reads=' + again + '→' + env.reads.length)
 }
 
 // 2. onLoad 参数装配：activityId 来源 options.id；缺失参数守卫为空串（不外呼、不崩）
@@ -223,7 +306,7 @@ async function scenario4() {
 }
 
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4]
+  const scenarios = [scenario1, scenarioRefresh, scenario2, scenario3, scenario4]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++
