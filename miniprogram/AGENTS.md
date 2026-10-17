@@ -6,32 +6,35 @@ Native WeChat mini program. **Zero npm dependencies** — no `package.json`, no 
 
 ```
 app.js       12 lines. wx.cloud.init(CLOUD_ENV) only.
-app.json     16 pages + custom:true tabBar (活动/通知/我的). NO usingComponents key.
+app.json     20 pages + custom:true tabBar (活动/天气/通知/我的 → home, weather-hub, notices, me). NO usingComponents key.
 app.wxml     comment only — the global <privacy-popup /> was de-registered in 2026-09-27
              and its leftover tag removed 2026-09-29. Nothing is mounted globally.
-app.wxss     484 lines. THE design system: 33 CSS custom properties on `page`
-             (not :root) + every globalized component class.
+app.wxss     502 lines. THE design system: 40 CSS custom properties on `page`
+             (29 色 + 11 数值, not :root) + every globalized component class.
 config.js    16 lines. CLOUD_ENV='cloud1-d9ghcm034574b9d55', FUNC_NAME='trailApi',
              NOTICE_TMPL_IDS={activity:''} (empty ⇒ clipboard fallback). Only env file.
-pages/       16 dirs, 1:1 with app.json.
+pages/       20 dirs, 1:1 with app.json.
 components/  13 dirs（12 在用 + privacy-popup 死代码）. custom-tab-bar/ sits outside components/（在 miniprogram/ 根下）.
-utils/       20 files → see utils/AGENTS.md（`journey.js` 是状态与下一步的唯一翻译层）
+utils/       23 files → see utils/AGENTS.md（`journey.js` 是状态与下一步的唯一翻译层）
 wxs/text.wxs 16 lines. WXS regex must use getRegExp().
 assets/markers/  generated PNGs — map marker.iconPath rejects base64
 ```
 
 **Hard layout convention:** every page/component is a same-named dir holding `<name>.{js,json,wxml,wxss}`. No barrels, no index re-exports, no nesting. The only nested files are the **pure-geometry sidecars** `components/meteogram/layout.js` and `components/space-time/layout.js` — they exist so `tools/*-test.js` can assert geometry/colors without re-implementing the component (复刻页面计算会让测试为过期契约背书). All component paths in JSON are **root-absolute** (`"/components/icon/icon"`).
 
-## PAGES (14)
+## PAGES (20)
 
-`home`(157, tab) · `notices`(7, tab) · `me`(221, tab) · `activity`(548) · `discover`(95) · `signup`(352) · `editor`(798) · `workspace`(159) · `staff`(10) · `vehicle`(156) · `weather`(465) · `weather-chart`(120) · `anotices`(7) · `privacy`(1)
+`home`(157, tab) · `weather-hub`(279, tab) · `notices`(7, tab) · `me`(221, tab) · `activity`(548) · `discover`(95) · `signup`(352) · `editor`(798) · `workspace`(159) · `staff`(10) · `vehicle`(156) · `weather`(465) · `weather-chart`(120) · `route`(349) · `routes`(61) · `route-edit`(393) · `anotices`(7) · `privacy`(1) · `lab`(142, DEV_ONLY) · `cloud-field-poc`(192, DEV_ONLY)
+
+- **tabBar 四页**：`home` / `weather-hub` / `notices` / `me`（`app.json` `tabBar.list` 实测）。`weather-hub` 是 V2.0 起的天气模块入口，`weather` 是它的下钻页。
+- **`lab` 与 `cloud-field-poc` 没有用户可见入口**，是开发者直达内部页，已登记进 `tools/journey-graph-test.js` 的 `DEV_ONLY`；改它们不算改产品，但**不许把二者当页面模板抄**。
 
 - **`notices` / `anotices` are 7 lines each** — both wrap the factory `utils/notices-page.js`: `Page(makeNoticesPage(() => null))` and `Page(makeNoticesPage(function () { return this._options ? this._options.id : null }))`. **Copy this pattern for new shared page logic.**
 - **`staff` is a 10-line shim** — header + `<field-panel perspective="staff"/>`. A thin link-target page is an accepted pattern.
 - **`weather-chart` is landscape** and reads its data from the `chart-store.js` singleton, never the URL (168 hours would blow the `navigateTo` query limit).
 - **`home` fires 4 parallel `api.read` calls** (`home.js:43-46`) and merges the perspectives client-side.
 
-## COMPONENTS (11)
+## COMPONENTS (13 目录 = 12 在用 + `privacy-popup` 死代码)
 
 Three of them are **self-fetching business panels** — they load in `attached` plus on a prop observer, guarded by a `this._loading` re-entrancy flag:
 
@@ -40,7 +43,9 @@ Three of them are **self-fetching business panels** — they load in `attached` 
 | `roster-panel` | 385 | 名单: bulk approve/waitlist/cancel, TSV/CSV export + audit, sensitive data, companion groups, collaboration grants |
 | `transport-panel` | 461 | 分车: vehicles, auto-assign preview/commit, manual assign/swap, seat map |
 | `field-panel` | 245 | 现场: check-in / departure verify / nodes / home-safe / incidents / position. The `perspective` prop serves both `workspace` (organizer) and `staff`. Action buttons are gated by **per-row facts** from `rowView` (`checkedIn`, `needsOutboundBoarding`, `outboundBoarded`) so a row whose server-side precondition is unmet never shows a doomed button; when 「核实已随队出发」 is hidden the sheet prints where to go instead (车长任务页) |
-| `meteogram` | 507+92 | canvas 2d 天相 time-coordinate chart |
+| `meteogram` | 719+132 | canvas 2d 天相 time-coordinate chart（`layout.js` 132 行是几何与配色 sidecar） |
+| `space-time` | 492+466 | P4 时空天相图（云带/风/日照轴，几何在 `space-time/layout.js`，**复用** `meteogram/layout.js` 的 `MARK_STYLE`）；宿主只有 `pages/weather`（实测 `weather.json` 注册，`weather-chart` 未注册） |
+| `roam-scrubber` | 129 | 漫游时间轴控件；宿主是 `space-time` 组件（非页面）；`readout` 具名 slot ⇒ `options` 必须同时带 `multipleSlots: true` |
 | `icon` | 121 | SVG data-URI map; the only leaf component |
 | `overlay` / `status-panel` / `form-field` / `person-row` / `activity-card` | 27/19/12/19/16 | presentational |
 | `privacy-popup` | 49 | **dead code** — unregistered |

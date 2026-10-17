@@ -77,7 +77,7 @@
           </picker>
           <!-- 触点：整行可点由 app.wxss 的 .check-label 体系承载（label 包住 checkbox + text），
                现成同形写法见 signup.wxml:85 与 roster-panel.wxml:49，flex 规则见 app.wxss:357-360；
-               change 事件仍由 checkbox-group 承载，归属不许挪 —— 挪到 label 上取值语义会变（platform-pitfalls §10：group 的 detail.value 是全部选中值数组） -->
+               change 事件仍由 checkbox-group 承载，归属不许挪 —— 挪到 label 上取值语义会变（platform-pitfalls 的「checkbox-group / picker 的取值」条：group 的 detail.value 是全部选中值数组；此处刻意不写 §编号，该文档 2026-10-14 从 14 条扩到 17 条时编号整体后移，写编号的引用第二天就指错东西） -->
           <checkbox-group bindchange="onScheduleMode">
             <label class="check-label">
               <checkbox value="schedule" checked="{{scheduleMode}}" />

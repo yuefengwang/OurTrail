@@ -161,7 +161,7 @@ const MUTATIONS = [
 const CONTROLS = [
   {
     id: 'K1', title: '只改注释文字（判据不该听注释；锚点按设计落在注释行内）', inCommentOk: true,
-    anchor: ['change 事件仍由 checkbox-group 承载，归属不许挪 —— 挪到 label 上取值语义会变（platform-pitfalls §10：group 的 detail.value 是全部选中值数组） -->'],
+    anchor: ['change 事件仍由 checkbox-group 承载，归属不许挪 —— 挪到 label 上取值语义会变（platform-pitfalls 的「checkbox-group / picker 的取值」条：group 的 detail.value 是全部选中值数组；此处刻意不写 §编号，该文档 2026-10-14 从 14 条扩到 17 条时编号整体后移，写编号的引用第二天就指错东西） -->'],
     to: ['             这行注释是被对照变异改过的，任何判据都不该因为它而变红 -->'],
   },
   {

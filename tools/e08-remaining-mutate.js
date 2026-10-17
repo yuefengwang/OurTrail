@@ -108,7 +108,9 @@ const CASES = [
     id: 'V1 G3 本体：裸事件名 `tap="onTap"`（第 8 步的属性名正则要求连字符 ⇒ 此前无人管）⇒ 必红',
     rule: 'G3',
     files: ['miniprogram/pages/privacy/privacy.wxml'],
-    apply: () => sub('miniprogram/pages/privacy/privacy.wxml', '<view class="card">', '<view class="card" tap="onTap">'),
+    // 锚点原钉 `<view class="card">`：合并上游二阶段后 privacy.wxml 重排成 section-head/stack-sections，
+    // 该锚点命中 0 次 ⇒ 本条变异从未执行而闭合一度仍显示「闭合」（因为它只比注入成功数）。
+    apply: () => sub('miniprogram/pages/privacy/privacy.wxml', '<view class="section-head">', '<view class="section-head" tap="onTap">'),
   },
   {
     id: 'V2 自定义组件事件名：<status-panel … tap="onTap">（该组件没声明过 tap 属性，且它本来就在本页注册着）⇒ 必红',
@@ -305,16 +307,19 @@ function main() {
   }
 
   cleanup()
+  // 闭合式原先只比「注入成功数」，于是一条注入失败的用例可以既没算进账、又不破坏「闭合」二字
+  // ——正是本轮反复抓到的「仪器把失败分支丢掉仍自称完整」。现在失败也进账。
+  const planned = stats.injected + stats.injectionFailed
   const total = stats.caught + stats.leaked + stats.crashed + stats.falseAlarm + stats.keptGreen +
-    stats.crashedAsDesigned + stats.ledgerOk + stats.ledgerBad
+    stats.crashedAsDesigned + stats.ledgerOk + stats.ledgerBad + stats.injectionFailed
   console.log('\n==== 变异自证 ====')
   console.log('注入成功 ' + stats.injected + ' 条（注入失败 ' + stats.injectionFailed + ' 条）')
   console.log('抓到=' + stats.caught + ' 漏网=' + stats.leaked + ' 崩红=' + stats.crashed + ' 误伤=' + stats.falseAlarm)
   console.log('（另有：按预期保持绿=' + stats.keptGreen + '，按预期崩红=' + stats.crashedAsDesigned +
     '，台账正确=' + stats.ledgerOk + '，台账异常=' + stats.ledgerBad + '，旧门本也能抓=' + stats.notBlindSpot + '）')
-  console.log('闭合检查：' + total + ' vs 注入 ' + stats.injected + ' ⇒ ' + (total === stats.injected ? '闭合' : '不闭合（有分支没记账）'))
+  console.log('闭合检查：' + total + ' vs 计划 ' + planned + '（注入成功 ' + stats.injected + ' + 注入失败 ' + stats.injectionFailed + '）⇒ ' + (total === planned ? '闭合' : '不闭合（有分支没记账）'))
   const leaky = stats.leaked || stats.crashed || stats.injectionFailed || stats.falseAlarm ||
-    stats.ledgerBad || total !== stats.injected
+    stats.ledgerBad || total !== planned
   process.exit(leaky ? 1 : 0)
 }
 

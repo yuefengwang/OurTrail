@@ -17,7 +17,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 | Store | Document-per-record across **16** `ot_*` collections (14 in the `COLLECTIONS` map, plus `ot_meta` and `weather_cache`). `ot_meta/main` = `{revision, savedAt}`. Writes diff records inside one transaction with a **revision CAS** |
 | Domain | 14 pure JS modules in `cloudfunctions/trailApi/domain/` — all authorization, business rules, and response shapes live here and **the client cannot bypass any of it**（2026-10-13 新增 `routes.js`：路线资产生命周期） |
 | Weather | Keyless `https.get` to `api.open-meteo.com` via a cloud-function proxy, 30-min `weather_cache`. **All astronomy/天相 computation is client-side** |
-| Design source of truth | `miniprogram/app.wxss` (33 tokens + all globalized component classes) + `.agents/skills/ourtrail-ui/` |
+| Design source of truth | `miniprogram/app.wxss` (44 CSS custom properties on `page` = 29 色 + 15 数值, 2026-10-17 复测；计数会漂，取真值跑 `grep -c -- '--[a-z0-9-]*:' app.wxss` + all globalized component classes) + `.agents/skills/ourtrail-ui/` |
 
 **No root `package.json`. No `node_modules/` anywhere. No ESLint/Prettier/EditorConfig/tsconfig/biome. No lint, format, typecheck, or build step for the mini program.** The only automated gates are `node tools/check.js` and `node tools/check-handlers.js`.
 
@@ -25,7 +25,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 
 ## READ THESE FIRST (non-negotiable)
 
-1. **`.agents/skills/ourtrail-ui/SKILL.md` + its 3 references** — the UI constitution. Load it for *any* change under `miniprogram/`, even if the user never says "设计系统". Its 14 `platform-pitfalls.md` entries each have a real incident behind them.
+1. **`.agents/skills/ourtrail-ui/SKILL.md` + its 5 references** — the UI/UX constitution. Load it for *any* change under `miniprogram/`, even if the user never says "设计系统". SKILL.md is the entry: 七级冲突优先 + 四种工作模式（M1 Design/Build · M2 Improve/Refactor · M3 Audit 只读 · M4 Visual/Runtime Verification）+ 14 条核心规则（每条标 类别/现状/有无自动门）. Details live in `references/`: `design-system.md`（token 与组件清单，2026-10-14 逐条复核）· `ui-methodology.md`（主任务/层级/密度/操作/六态/跨页/可读性 + 十维质量标准表）· `audit-verification.md`（E1–E4 证据档、严重度、STALE vs DEBT、十条误判防线、报告与验证记录模板）· `platform-pitfalls.md`（17 条平台坑，每条含 现象/适用条件/根因/处理/最小验证，逐条有事故背景）· `review-checklist.md`（T1–T8 八档交付清单）。
 2. **`PARALLEL_DEV.md`** — the two-machine git protocol this repo is built around. You are on a relay-backed remote; violating it desynchronizes a second machine.
 3. **`SYNC.md`** — 40+ entry changelog and the project's institutional memory. Search it before touching weather, editor, discover, or map code.
 4. **`docs/e2e-mp/README.md`** — 改完 WXML/WXSS/组件结构后，**静态门禁通过不代表页面正常**。
@@ -95,7 +95,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 | What shape does a page get back? | `domain/selectors.js` (whitelisted projections) |
 | How does auto-assign (分车) work? | `domain/allocation.js` → `planAssignments` |
 | How does the page talk to the cloud? | `miniprogram/utils/api.js` — the **only** `wx.cloud` caller |
-| What are the design tokens? | `miniprogram/app.wxss` lines 5–40 (33 CSS custom properties on `page`) |
+| What are the design tokens? | `miniprogram/app.wxss` 的 `page` 块（2026-10-17 复测占 4–77 行；**行号会漂**，定位用 `grep -n "^page {" app.wxss`。44 个自定义属性 = 29 色 + 15 数值；表在 `.agents/skills/ourtrail-ui/references/design-system.md`） |
 | Beijing-time formatting + label maps | `miniprogram/utils/format.js` |
 | 这一页该说什么状态 / 下一步是什么 | `miniprogram/utils/journey.js`（唯一出口；页面只插值，不再自造状态词） |
 | 页面图与死页面归谁管 | `tools/journey-graph-test.js`（可达性、返回路径、denied 出口、模板比枚举、词汇漂移） |
@@ -125,7 +125,7 @@ Reference centrality measured by **grep require-count** (no TS/JS LSP and no ast
 | `domain/selectors.js` | 2 (but 493 LOC) | Every response shape |
 | `utils/{sky,route-schedule,gpx,chart-store}` | 3 each | 天相 / schedule mapping / GPX / cross-page bus |
 
-**Complexity hotspots** (>400 LOC, `wc -l`, 2026-10-04 实测): `miniprogram/pages/editor/editor.js` (828) · `editor.wxml` (528) · `pages/activity/activity.js` (551) · `domain/selectors.js` (493) · `app.wxss` (493) · `components/meteogram/meteogram.js` (520) · `components/transport-panel/transport-panel.js` (457) · `utils/sky.js` (433) · `pages/signup/signup.js` (482).
+**Complexity hotspots** (>400 LOC, `wc -l`, 2026-10-04 实测): `miniprogram/pages/editor/editor.js` (828) · `editor.wxml` (528) · `pages/activity/activity.js` (551) · `domain/selectors.js` (493) · `app.wxss` (502) · `components/meteogram/meteogram.js` (520) · `components/transport-panel/transport-panel.js` (457) · `utils/sky.js` (433) · `pages/signup/signup.js` (482).
 
 ---
 

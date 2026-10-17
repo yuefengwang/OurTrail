@@ -7,7 +7,8 @@
 //   ① 勾选框的可点容器是 <label> 且带 .check-label（整行触点由 app.wxss 现成体系承载）；
 //   ② 文案节点带 .check-text 且与勾选框同属那个 label（不是 group 的裸文本兄弟）；
 //   ③ bindchange 的载体**仍是 checkbox-group**，且解析到该页真实存在的 handler（挪到 label 上会
-//      改变 change 的发出位置，platform-pitfalls §10：group 的 e.detail.value 是全部选中值数组）；
+//      改变 change 的发出位置，platform-pitfalls 的「checkbox-group / picker 的取值」条：group 的
+//      e.detail.value 是全部选中值数组 —— 引用一律指名不指号（该文档 10-14 从 14 条扩到 17 条，编号整体后移））；
 //   ④ 没有新增内联 style（roster-panel 那种 style="padding:0" 是同族缺陷 A-23 的形态，不是范本）。
 //
 // nesting 两种成对形态都接受（label 包 group / group 包 label）：app.wxss:358 的注释写明
@@ -413,7 +414,7 @@ function main() {
     new RegExp('(^|\\n)\\s*' + HANDLER + '\\s*[(:]').test(pageJsSrc))
   const hIdx = pageJsSrc.indexOf(HANDLER)
   const body = hIdx === -1 ? '' : pageJsSrc.slice(hIdx, hIdx + 400)
-  check('C5 handler 取的是 group 的数组语义 e.detail.value（platform-pitfalls §10，不靠 checked 回读）',
+  check('C5 handler 取的是 group 的数组语义 e.detail.value（platform-pitfalls「checkbox-group / picker 的取值」条，不靠 checked 回读）',
     body.indexOf('detail.value') !== -1)
   const orphans = orphanHandlers(rawRoot, pageJsSrc)
   check('C6 本文件全部静态 bind*/catch* handler 都能在 route.js 解析到（改名/悬空即红）',
