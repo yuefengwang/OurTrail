@@ -1,7 +1,14 @@
 /* 天气模块首页：布局与组件类全部复用 app.wxss（token/卡片/按钮/列表行）。
    这里只放本页特有的小间距调整。 */
 
-/* Tab 页底部留白（ourtrail-ui 硬性规则，模板见 home.wxss）：缺失时观察点列表
-   最后几行被固定 tabBar 拦腰截断、删除按钮点不到（2026-09-30 实测复现）。 */
+/* Tab 页底部留白（唯一规则登记在 design-system.md「Tab 页底部留白（唯一规则）」，不再「以某页为模板」）：
+   缺失时观察点列表最后几行被固定 tabBar 拦腰截断、删除按钮点不到（2026-09-30 实测复现）。
+   本页在 app.json 的 tabBar.list 内 ⇒ 必须留；判据 tools/b4-pad-final-value-test.js §2 逐页解终值。 */
 .page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }
+
+/* A-23（2026-10-14 修复轮批次 3）：「我的观察点」卡的横向留白由 app.wxss 的 .card
+   （padding:16px）单源承载，本页那张卡已去掉把内边距归零的内联 style。
+   刻意**不在这里重印一份 16px**：那会把同一条内缩变成两个出处（B-10 型跨文件复制），
+   而 .card-header / .list-row 本来就不带左右 padding，靠 .card 一处给留白即是设计意图。
+   要改这张卡的内缩请改 app.wxss，不要在本页加内联 style。 */
 

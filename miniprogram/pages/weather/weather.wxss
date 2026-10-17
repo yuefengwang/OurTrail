@@ -29,9 +29,14 @@
 .stale-retry { display: inline-block; margin-top: 6px; padding-left: 0; padding-right: 0; text-align: left; color: var(--warning); font-weight: 600; }
 
 /* V2 时间轴卡：切换开关 + 浮条 + 图注 */
+/* M-07：24/48/72h 切窗是天气页的高频操作，而这页是户外强光/戴手套场景（见 activity.wxml 的同类说明）。
+   原来把高度硬写成 26px（全局同类控件在 SWX1 的 M-06 之后已经是 var(--touch-target)），
+   这里同样取 token 而不写数：影子调 --touch-target 时这里必须跟着动。
+   选中态仍是实心深底白字（本页图表区信息密度高，实心更醒目），这是刻意保留的视觉，不是遗漏。 */
 .tl-viewseg { display: flex; gap: 6px; margin: 4px 0 8px; }
 .seg-btn {
-  flex: 1; text-align: center; font-size: var(--text-caption); line-height: 26px; height: 26px;
+  flex: 1; text-align: center; font-size: var(--text-caption);
+  line-height: var(--touch-target); height: var(--touch-target);
   border-radius: 8px; background: var(--forest-soft); color: var(--muted); font-weight: 600;
 }
 .seg-btn.on { background: var(--forest); color: var(--surface); }
@@ -65,7 +70,8 @@
   margin-top: 8px; border-radius: 10px; background: var(--forest-soft); padding: 8px 12px;
 }
 .chip-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.chip-time { font-size: var(--text-body); font-weight: 700; color: var(--forest); }
+/* B-16：字重两档（正文 400/500、强调 600），700 只留给 .page-title；数字强调由 --forest 与 tabular 承载 */
+.chip-time { font-size: var(--text-body); font-weight: 600; color: var(--forest); }
 .chip-main { font-size: var(--text-caption); font-weight: 600; flex: 1; }
 .chip-close { font-size: 11px; color: var(--muted); }
 .chip-sub { margin-top: 2px; font-size: 11px; line-height: 17px; color: var(--ink); }
@@ -81,12 +87,18 @@
 .num-table { min-width: 760px; }
 .num-row { display: flex; border-bottom: 1px solid var(--line); }
 .num-row:last-child { border-bottom: none; }
-.num-head { background: var(--forest-soft); position: sticky; }
+/* E-06：这里原来写 `position: sticky` 却不带任何 top/bottom 偏移 —— 四个偏移全为 auto 时
+   粘滞约束矩形没有边界，行为等同 position: relative，是一条永不生效的死声明（还会误导后来者以为表头已常驻）。
+   本条选「删掉死声明」而不是「补 top: 0」：纵向滚动发生在页面级，而表头在一个只做横向滚动的 scroll-view 里，
+   外层 .num-sheet 又带 overflow: hidden，单纯补 top 不足以让表头常驻 —— 真做常驻要改滚动容器（属结构改动，
+   见 out/SWX2/requests.md 的 DEFERRED-DEPENDENCY）。底色保留：表头行仍要与数据行区分。 */
+.num-head { background: var(--forest-soft); }
 .nc {
   flex: 0 0 54px; padding: 6px 6px; font-size: 11px; line-height: 16px;
   text-align: right; color: var(--ink); white-space: nowrap;
 }
-.nc-time { flex: 0 0 48px; text-align: left; font-weight: 700; }
+/* B-16：数字列的强调同样降到 600（与表头 .num-head .nc 同档，靠 tabular 与右对齐区分） */
+.nc-time { flex: 0 0 48px; text-align: left; font-weight: 600; }
 .num-head .nc { color: var(--muted); font-weight: 600; }
 .nc.success { color: var(--success); }
 .nc.warning { color: var(--warning); }
@@ -116,7 +128,12 @@
 .ag-title-l1 { font-weight: 600; }
 .ag-sub { font-size: var(--text-caption); color: var(--muted); line-height: 18px; }
 .ag-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.ag-stars { color: var(--golden); font-size: 12px; letter-spacing: 1px; white-space: nowrap; }
+/* B-13：评级星原来是 --golden(#D6A33C) —— 白卡 2.29:1、forest-soft 1.99:1，强光下几乎糊掉。
+   本仓已两次把同型坑改成「色块承担颜色、文字保持 --ink」（meteogram 图例、本组件的 .st-lg），
+   这里沿用同一修法：星形是文字节点，就用正文墨色；评级语义本来就由紧邻的 .ag-grade/.cond-grade
+   文字色（success/warning/muted，全部 ≥4.5:1）承载，色相不额外承担信息。
+   若产品坚持要回金色星，许可的路径是 meteogram 那种「金色做色块 + 墨色字」，需要真机核验，见 handoff。 */
+.ag-stars { color: var(--ink); font-size: 12px; letter-spacing: 1px; white-space: nowrap; }
 .ag-item-card {
   margin-top: 5px; border-radius: 10px; padding: 8px 11px;
   background: var(--forest-soft);
@@ -132,10 +149,13 @@
 .ag-grade.neutral { color: var(--muted); }
 .ag-empty { padding: 4px 0 8px; }
 
-/* 区块标题：把页面分成"客观指标"与"结论"两段（用户需求 2 的信息架构） */
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
 .section-id { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; min-width: 0; }
-.section-title { font-size: var(--text-body); font-weight: 700; color: var(--ink); }
+/* 区块标题：把页面分成"客观指标"与"结论"两段（用户需求 2 的信息架构）
+   B-16：字重从 700 降到 600（与 app.wxss 的 .section-title 同档）。
+   ⚠ 这条页级覆盖没有删掉——它仍把字号从全局 --text-input(16px) 收到 --text-body(14px)，
+   是承重的覆盖；「天气页要不要自己的区块标题」属 M-20 的裁决，本批未派，仍未闭合。 */
+.section-title { font-size: var(--text-body); font-weight: 600; color: var(--ink); }
 .section-sub { font-size: var(--text-caption); color: var(--muted); }
 
 /* V2 户外条件卡：总评 + 评级卡（与事实层用同款卡片语言，靠文案与星级承载差异） */
@@ -145,9 +165,11 @@
 .cond-pheno { display: flex; flex-direction: column; gap: 6px; }
 .cond-pheno.featured { border-left: 3px solid var(--info); }
 .cond-main { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.cond-label { font-size: 15px; font-weight: 700; color: var(--ink); }
+/* B-16：卡片主标题一律 600（与 .ag-title 同档；缺陷本体就是这两处同级标题字重不同） */
+.cond-label { font-size: 15px; font-weight: 600; color: var(--ink); }
 .cond-grade { display: inline-flex; align-items: baseline; gap: 6px; }
-.cond-stars { color: var(--golden); font-size: 13px; letter-spacing: 1px; }
+/* B-13：与 .ag-stars 同修——星形是文字节点，用 --ink；评级语义由 .cond-grade/.ag-grade 的文字色承载 */
+.cond-stars { color: var(--ink); font-size: 13px; letter-spacing: 1px; }
 .pheno-window { font-size: var(--text-body); font-weight: 600; color: var(--ink); }
 .pheno-text { font-size: var(--text-caption); line-height: 19px; color: var(--muted); }
 .pheno-disclaimer { line-height: 17px; }
@@ -157,24 +179,30 @@
 }
 
 /* Evidence（V2）：结论 → 事实清单 → 看图回跳 */
+/* M-07：这是「为什么？▾」证据展开开关，原来只有 padding 2px 0（实算 26px）。
+   纵向 padding 撑到命中下限（继承行高 22 + 11×2 = --touch-target）；字号 12px 不动，扩的是命中盒。 */
 .cond-why {
   font-size: var(--text-caption); font-weight: 600; color: var(--forest);
-  padding: 2px 0;
+  padding: 11px 0;
 }
 .reason-panel {
   margin: 2px -14px 0; padding: 10px 14px 12px; background: var(--forest-soft);
   border-radius: 0 0 14px 14px; display: flex; flex-direction: column; gap: 4px;
 }
+/* B-16：眉题级说明用 600 + 字距，不用第三档字重 */
 .reason-title {
-  font-weight: 700; color: var(--muted); font-size: 11px;
+  font-weight: 600; color: var(--muted); font-size: 11px;
   letter-spacing: 0.5px; margin-bottom: 2px;
 }
 .reason-item { display: flex; gap: 6px; align-items: baseline; }
-.reason-mark { font-weight: 700; color: var(--success); flex: 0 0 auto; }
+/* B-16：✓ 记号由颜色（--success）与字形本身承载，不需要 700 */
+.reason-mark { font-weight: 600; color: var(--success); flex: 0 0 auto; }
 .reason-fact { color: var(--ink); flex: 1 1 auto; min-width: 0; font-size: var(--text-caption); line-height: 20px; }
+/* M-07：「看图 ↗」原来没有任何纵向 padding（实算 22px），是戴手套最难点中的一项。
+   用透明纵向 padding 撑到命中下限；横向不加，免得越过 6px 的 gap 抢到相邻事实文字的热区。 */
 .reason-link {
   color: var(--info); font-size: 11px; cursor: pointer; white-space: nowrap; flex: 0 0 auto;
-  font-weight: 600;
+  font-weight: 600; padding: 11px 0;
 }
 .reason-note { margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 17px; }
 .sky-look {
@@ -185,10 +213,11 @@
   border-radius: 8px;
   background: var(--forest-soft);
 }
+/* B-16：白底药丸标签用 600（与 .badge/.eyebrow 同档），不引入第三档字重 */
 .sky-look-label {
   flex: 0 0 auto;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--forest);
   padding: 1px 6px;
   border-radius: 999px;
@@ -219,7 +248,9 @@
 .cf-readout .ro-l1 { font-size: 14px; font-weight: 600; color: var(--ink); }
 .cf-readout .ro-l2 { margin-top: 2px; font-size: 11px; color: var(--muted); }
 .cf-readout .ro-l3 { margin-top: 2px; font-size: 11px; font-weight: 600; }
-.cf-readout .ro-l3.in { color: #8C5A12; }
+/* B-10：原来这里是硬写的 #8C5A12 —— 与 app.wxss 的 --warning 逐字节同值却是两份真值，
+   token 调整时这一行不会跟着动。同排的 .ok/.mid 一直走 var()，只有「入云」这一支抄了字面量。 */
+.cf-readout .ro-l3.in { color: var(--warning); }
 .cf-readout .ro-l3.ok { color: var(--success); }
 .cf-readout .ro-l3.mid { color: var(--info); }
 .cf-readout .ro-l4 { margin-top: 2px; font-size: 10.5px; color: var(--muted); }
@@ -243,7 +274,9 @@
 .oi-tier.primary { color: var(--success); font-weight: 600; }
 .oi-tier.good { color: var(--ink); }
 .oi-tier.fair { color: var(--muted); }
-.oi-ev { margin-top: 4px; padding-left: 104px; }
+/* B-14：这里原来有第二条 `.oi-ev { margin-top: 4px; padding-left: 104px; }`。
+   两条同特异度、后写的赢 ⇒ 4px 那条从来没生效过，是死句；它的存在让人以为账本边距是 4px。
+   收敛到下面那一条（生效值 margin-top: 3px 保持不变 ⇒ 本次合并不是视觉变化）。 */
 .oi-silence { padding: 4px 8px 2px; }
 .oi-minor { opacity: 0.82; }
 .oi-more { padding: 5px 8px 2px; }
@@ -255,9 +288,12 @@
 .oi-day-sub { font-size: 10px; color: var(--muted); }
 .oi-day-count { font-size: 10px; color: var(--muted); }
 .oi-day-hint { display: block; margin-top: 4px; font-size: 9.5px; }
-/* Evidence「看图 ↗」：证据入口，不是 CTA（§9：小字号、层级低于正文、无按钮墙） */
+/* Evidence「看图 ↗」：证据入口，不是 CTA（§9：小字号、层级低于正文、无按钮墙）。
+   B-14：这一条是 `.oi-ev` 的唯一出处（原第一条是死句，见上面 OI 列表那段的说明）。 */
 .oi-ev { margin-top: 3px; padding-left: 104px; display: flex; align-items: baseline; gap: 8px; }
-.oi-link { font-size: 10px; color: var(--forest); opacity: 0.85; flex-shrink: 0; }
+/* M-07：10px 的「看图」原来是纯文字高度（实算 22px）。纵向透明 padding 撑到命中下限，
+   横向不加（左右相邻是摘要文字与 .oi-item 的行热区，越界反而会抢走「选中这一小时」的点击）。 */
+.oi-link { font-size: 10px; color: var(--forest); opacity: 0.85; flex-shrink: 0; padding: 11px 0; }
 
 .oi-daygroup { margin-top: 8px; }
 .oi-dayhdr { padding: 2px 8px 4px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }

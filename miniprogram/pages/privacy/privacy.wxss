@@ -1,4 +1,5 @@
 .p { color: var(--ink); font-size: 27rpx; line-height: 1.75; margin-top: 12rpx; }
 .li { display: flex; gap: 10rpx; font-size: 27rpx; line-height: 1.75; margin-top: 14rpx; color: var(--ink); }
-.li .dot { color: var(--forest); font-weight: 700; }
+/* B-16：项目符号由颜色与字形承载，不需要第三档字重（系统只有 400/500 正文、600 强调两档） */
+.li .dot { color: var(--forest); font-weight: 600; }
 .li b { color: var(--forest); }

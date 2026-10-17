@@ -1,2 +1,4 @@
 /* 活动详情页 */
-.hero .metric-unit { color: #D0D8D7; }
+/* B-10：#D0D8D7 与 app.wxss 的 --on-forest-muted 逐字节同值却是两份真值（hero 是森林底，
+   这里的弱化文字本该用「森林底上的次要文字」那一支 token）。改引用后值不变 ⇒ 无视觉变化。 */
+.hero .metric-unit { color: var(--on-forest-muted); }
