@@ -46,13 +46,21 @@
 
 ## 3. 巡检发现并修复的全局缺陷
 
-**自定义 tabBar 底隙缺失（真机实测发现）**：`custom-tab-bar/index` 是 `position:fixed` 覆盖层，
-但四个 tab 页都没有预留底部空隙——`home` 上的 `.with-tabbar` 是**全站无定义的死类**，
-`me`/`notices`/`weather-hub` 连这个类都没有。真机截图实测 `weather-hub` 尾部提示
-「还没有观察点…」被 tabBar 压住。修复：`app.wxss` 补上
-`.page.with-tabbar { padding-bottom: calc(84px + env(safe-area-inset-bottom)) }`（与 `.tabbar-safe` 同口径），
-四个 tab 页统一挂类（`home` 的条件挂载改为恒挂——tab 页恒有 tabBar）。
-修复后复拍四页 + 滚动位截图确认（`screens/phase2/*-tabbar*.png`）。
+**自定义 tabBar 底隙**：曾判为「四个 tab 页完全没有底部留白」，并据此新增了公共类
+`.page.with-tabbar { padding-bottom: calc(84px + env(safe-area-inset-bottom)) }` 与四个 tab 页的挂类。
+**round 3 复查判定该结论错误并已回退**，证据如下：
+
+- 仓库既有约定（`miniprogram/AGENTS.md:96`）已写明：tab 页用
+  `padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom))`，且**四个 tab 页各自的 wxss 里早已存在**
+  （`home.wxss:2`、`me.wxss:2`、`notices.wxss:2`、`weather-hub.wxss:6`）——我的公共类是在此之上**再叠 84px**。
+- 真机复验（撤掉公共类与四个挂类后逐页滚到底复拍）：四页尾部内容**完整可见、未被 tabBar 遮挡**，
+  见 `screens/phase2/tabbar-final-{weather-hub,me,notices,home}.png`。
+- 起因是我把一张中途滚动位置的截图读成了「被 tabBar 压住」，属**归因错误**，不是产品缺陷。
+- 处置：回退公共类与四个挂类（`ac7a5c1` 的这部分），并把新门禁 `T1.4` 改成
+  **反向断言两种落法不得并存**（否则就是 84px 死空白），把这次的教训固化成门禁。
+
+**同批修好的真实缺陷**（仍然成立）：`privacy` 页的 `.container/.h1/.h2` 全站无定义（标题按正文默认字号渲染），
+已改为 `section-head` 体系；见 §2 与 §11。
 
 ## 4. 设计系统与公共组件复用情况
 
@@ -179,12 +187,14 @@
 
 | 项 | 状态 |
 |---|---|
-| 本轮提交（分支 `win/ui-redesign-editorial`，未推送） | `8a4564d` merge(13cb844) → `0762ed4` feat 二阶段主提交 → `ac7a5c1` fix tabBar 底隙 → `1cbc5da` docs 二阶段报告 → `d1d5fa9` feat 遗留项闭合（staff/vehicle/lab + UI 一致性门禁 + 封面回退取证） |
-| 改动文件（二阶段） | 14 个页面（signup/editor/routes/route/route-edit/me/notices/anotices/privacy/lab/weather-hub/staff/vehicle）+ `routes.js`/`route.js`（分组与封面派生，纯展示层）+ `lab.js`（中文阶段标签派生）+ `home.wxml`（tab 类）+ `app.wxss`（`.with-tabbar` 规则）+ **新增 `tools/ui-consistency-test.js`** + 文档与证据 |
+| 本轮提交（分支 `win/ui-redesign-editorial`，未推送） | `8a4564d` merge(13cb844) → `0762ed4` feat 二阶段主提交 → `ac7a5c1` fix tabBar 底隙（**其中 tabBar 部分已在 round 3 回退**）→ `1cbc5da` docs 二阶段报告 → `d1d5fa9` feat 遗留项闭合 → `4db8f7f` docs 报告更新 → `<r3-fix>` 见 §11.6 |
+| 改动文件（二阶段） | 14 个页面（signup/editor/routes/route/route-edit/me/notices/anotices/privacy/lab/weather-hub/staff/vehicle）+ `routes.js`/`route.js`（分组与封面派生，纯展示层）+ `lab.js`（中文阶段标签派生）+ **新增 `tools/ui-consistency-test.js`** + 文档与证据（`app.wxss`/`home.wxml` 的 tabBar 改动已在 round 3 回退） |
 | 业务逻辑 | 零变化：无命令、无 schema、无权限、无天气算法改动；`route.js`/`routes.js` 只新增展示派生字段（cover/mineRoutes/sharedRoutes）与 `onCoverError` |
 | cloudfunctions/ | 零改动 ⇒ 不需重新部署 |
-| 他人在途 | `d:/OurTrail`（`13cb844` 已合入）与 `d:/OurTrail-skill-uplift` 零触碰 |
-| 合并建议 | `git merge --no-ff win/ui-redesign-editorial`（本分支已含 `13cb844`，合并即快进到共同后代之后；上轮试合并已证与 fix-round-2 无冲突） |
+| 他人在途 | `d:/OurTrail` 有另一 Agent 的**未提交**在途改动（57 个脏文件 + 20 个新门禁文件），`d:/OurTrail-skill-uplift` 零触碰 |
+| 与在途任务的文件级重叠 | 仅 **3 个文件**：`miniprogram/app.wxss`、`pages/route/route.wxml`、`pages/weather-hub/weather-hub.wxml`（其余 57 个改动文件与对方无交集）。round 3 回退 tabBar 改动后，`app.wxss` 的重叠**已自动消失**，剩 2 个 WXML |
+| 剩余 2 个 WXML 的重叠性质 | `route.wxml`：对方给「按出发时刻推算」加了 `.check-label` 触点包裹（可叠加在我的重写之上）；`weather-hub.wxml`：对方改文案、保留 `.card-label`，而我改成了 `section-head`——**这是设计方向分歧，需人裁决**（见 §11.7） |
+| 合并建议 | 先让对方的在途任务落地，再 `git merge --no-ff win/ui-redesign-editorial`；冲突面只剩 2 个 WXML，其中 weather-hub 需人工决定「分区头 vs 卡片头+说明句」 |
 | 云端残留 | 一条已取消的验收夹具活动「[UI二阶段] 赵公山 · 东线穿越（报名验收夹具）」（域规则不允许删已发布活动，取消即业务终态） |
 
 ## 10. 方法论备忘（给下一轮）
@@ -257,3 +267,27 @@
   `journey-graph 15/0`、`style-semantics`、`g2-platform-gate`、`check.js`、`check-handlers.js` 全绿。
 - 相较二阶段报告 §6.2（当时 74 套 exit 0 / 0 失败）：本轮多出一套新门禁（17 项断言），
   并把天气线那条常驻红**从「恰好绿」纠正为「基线即红」并留证**——比上一版更准确。
+
+### 11.6 round 3 自我纠错：tabBar「缺陷」是误判，已回退
+
+- 复查触发点：交接地实时清点了对方在途改动，发现他们的 `app.wxss` 注释里**明确否决**了
+  「收成 `.page.with-tabbar` 类」这条路径，并引用 `tools/b4-pad-final-value-test.js §7 方向 B-2`
+  专门把这种写法判红。
+- 回查约定：`miniprogram/AGENTS.md:96` 早已写明 tab 页的 padding 口径，且四个 tab 页各自 wxss 里
+  本来就有 `calc(32px + 84px + env(safe-area-inset-bottom))` ⇒ 我的公共类是**叠加**而非补缺。
+- 真机复验（撤掉后逐页滚到底复拍）证实四页尾部均不被遮挡 ⇒ 原结论错误（见 §3）。
+- 处置：回退 `ac7a5c1` 里的 `app.wxss` 规则与四个 wxml 挂类；删除失真的 `*-tabbar*.png` 证据，
+  换成 `tabbar-final-*.png`；新门禁加 `T1.4` 反向断言「两种落法不得并存」。
+- 净效果：本分支不再有 tabBar 空白问题，也不再与对方的 B4-PAD 门禁冲突；`app.wxss` 重叠随之消失。
+
+### 11.7 留给下一轮的一处设计分歧（需人裁决）
+
+`pages/weather-hub/weather-hub.wxml` 我与在途任务方向不同：
+
+| 方案 | 分区头（我，二阶段） | 卡片头 + 说明句分工（对方在途） |
+|---|---|---|
+| 结构 | `.section-head`（kicker「轨迹」+ section-title「导入 GPX 轨迹」） | `.card` + `.card-header` + `.card-label`「有 GPX 轨迹？逐点看天气」 |
+| 分工 | 分区头承担标题，说明句另起一行 | 标题承担「为什么」，按钮承担「做什么」 |
+
+两边都自洽；合并时二选一即可（建议二选一重组：保留对方文案 + 我的 `section-head` 结构，
+并保留我这边已验证的行组 `padding:4px 16px`）。本轮不擅自改动对方文件。

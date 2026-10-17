@@ -2,11 +2,13 @@
 // 目的：把两轮 UI 重构里「靠人眼才发现」的布局/规范问题变成会红的门禁。
 //
 // 背景（每条都是真机上抓到或审计里查出的真问题，不是假想）：
-//  ① 自定义 tabBar 是 fixed 覆盖层，四个 tab 页曾完全没有底部留白——`.with-tabbar`
-//     在 home 上挂着却全站无定义，weather-hub 尾部提示真机实测被 tabBar 压住。
+//  ① 自定义 tabBar 是 fixed 覆盖层：tab 页必须自己留出 84px + 安全区，否则页尾内容被压住。
+//     仓库约定的落法是**每个 tab 页自己的 wxss** 写 .page 的 padding-bottom
+//     （miniprogram/AGENTS.md:96 明确写了这条口径），而不是抽一条公共类——
+//     本门按这个约定断言，并且反向要求非 tab 页不得留这截空白（anotices 就是反例）。
 //  ② privacy 页曾用 .container/.h1/.h2，而这三个类全站无定义 ⇒ 标题按正文默认字号渲染。
 //  ③ 封面用「绝对定位 + 百分比高」的 <image> 在部分基础库上不绘制（第一轮真机实测）。
-//  ④ 门禁会钉住选择器与布局类（scenario-vehicle 钉了 `<view wx:else class="stack">`），
+//  ④ 门禁会钉住选择器与布局类（scenario-vehicle钉了 `<view wx:else class="stack">`），
 //     所以这里的断言都写成「读 app.json / 读 WXSS 的规则本身」，不写死某个页面的具体写法。
 //
 // 判定口径：只断言「跨页面的系统事实」，不冻结任何单页的视觉细节——单页细节归设计评审。
@@ -41,27 +43,35 @@ const wxssFiles = walk(MP, ['.wxss'])
 const wxmlFiles = walk(MP, ['.wxml'])
 const allWxss = wxssFiles.map(f => ({ f, src: fs.readFileSync(f, 'utf8') }))
 
-/* ---------- §1 tabBar 底隙：四个 tab 页都要有，且规则真存在 ---------- */
+/* ---------- §1 tabBar 底隙：tab 页按仓库约定在自己 wxss 里留位，非 tab 页不留 ---------- */
 section('§1 自定义 tabBar 底隙（fixed 覆盖层 ⇒ 页面必须自己让位）')
 const tabPages = appJSON.tabBar.list.map(x => x.pagePath)
 check('T1.1 app.json 仍用自定义 tabBar（custom=true，覆盖层语义）', appJSON.tabBar.custom === true)
 {
-  const ruleRe = /\.page\.with-tabbar\s*\{[^}]*padding-bottom:\s*calc\(\s*84px\s*\+\s*env\(safe-area-inset-bottom\)/
-  check('T1.2 app.wxss 存在 .page.with-tabbar 且底部留白 = 84px + 安全区（与 .tabbar-safe 同口径）',
-    ruleRe.test(appWxss), ruleRe.exec(appWxss) ? 'ok' : '未找到该规则（tab 页内容会被 tabBar 压住）')
+  // 约定口径见 miniprogram/AGENTS.md:96 —— 每个 tab 页自己的 wxss 写
+  // .page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)) }
+  const wantRe = /padding-bottom:\s*calc\(\s*32px\s*\+\s*84px\s*\+\s*env\(safe-area-inset-bottom\)\s*\)/
   const missing = tabPages.filter(p => {
-    const f = path.join(MP, p + '.wxml')
+    const f = path.join(MP, p + '.wxss')
     if (!fs.existsSync(f)) return true
-    return !/class="[^"]*\bwith-tabbar\b/.test(fs.readFileSync(f, 'utf8'))
+    return !wantRe.test(fs.readFileSync(f, 'utf8'))
   })
-  check('T1.3 app.json 里每个 tab 页都挂了 with-tabbar', missing.length === 0,
-    missing.join(', ') || tabPages.join(', '))
-  // 反向：非 tab 页不该挂（否则白留一段空白）。anotices 是从活动页跳进来的子页，正是反例。
+  check('T1.2 每个 tab 页在自己的 wxss 里留出 84px + 安全区（AGENTS.md:96 约定）',
+    missing.length === 0, missing.join(', ') || tabPages.join(', '))
+  // 反向：非 tab 页留这截空白 = 给不存在的 tabBar 让位（anotices 是活动内子页，反例）
   const over = wxmlFiles.map(f => rel(f)).filter(f => {
-    if (tabPages.some(p => f === 'miniprogram/' + p + '.wxml')) return false
-    return /class="[^"]*\bwith-tabbar\b/.test(fs.readFileSync(path.join(ROOT, f), 'utf8'))
+    const base = 'miniprogram/' + f
+    if (tabPages.some(p => base === 'miniprogram/' + p + '.wxml')) return false
+    const wxss = path.join(ROOT, base.replace(/\.wxml$/, '.wxss'))
+    if (!fs.existsSync(wxss)) return false
+    return wantRe.test(fs.readFileSync(wxss, 'utf8'))
   })
-  check('T1.4 非 tab 页不挂 with-tabbar（不给不存在的 tabBar 让位）', over.length === 0, over.join(', '))
+  check('T1.3 非 tab 页不留 tabBar 的 84px（列表短时页尾会空一大截）', over.length === 0, over.join(', ') || 'ok')
+  // 两种落法别叠加：既有每页公式又抽公共类 = 白留两截 84px
+  const shared = /\.page\.with-tabbar\s*\{/.test(appWxss) ||
+    wxmlFiles.some(f => /class="[^"]*\bwith-tabbar\b/.test(fs.readFileSync(f, 'utf8')))
+  check('T1.4 不与公共类方案叠加（.with-tabbar 与每页公式并存会多留 84px 死空白）',
+    !shared, shared ? '发现 .with-tabbar 公共类与每页公式并存' : 'ok')
 }
 
 /* ---------- §2 固定底栏与 has-sticky 必须成对 ---------- */

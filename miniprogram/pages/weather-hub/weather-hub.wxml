@@ -1,4 +1,4 @@
-<view class="page with-tabbar">
+<view class="page">
   <view class="stack-sections">
     <!-- 编辑式头部（二阶段）：眉题 + 大标题 + 一句定位（与 activity/route/routes 同源） -->
     <view class="section-head">
