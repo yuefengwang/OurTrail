@@ -1,2 +1,6 @@
-/* 通知列表：复用全局 notice-card / overlay 体系 */
+/* 通知列表：复用全局 notice-card / overlay 体系
+   Tab 页底部留白：本页（通知 Tab）在 app.json 的 tabBar.list 内 ⇒ 必须让出固定 tabBar 的竖直空间。
+   规则与理由唯一登记在 design-system.md「Tab 页底部留白（唯一规则）」；判据 tools/b4-pad-final-value-test.js §2。
+   ⚠ 活动内通知页 pages/anotices 与本文件正文同构，但**它不是 tab 页**，那份 84px 留白归它就是把页尾
+   撑出一截空白（M-18 / E-03）⇒ 两份 wxss 从本轮起刻意不同，改动这一行前先读那条登记。 */
 .page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }

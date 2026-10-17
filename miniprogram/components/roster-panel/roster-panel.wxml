@@ -80,7 +80,8 @@
           <text>{{item.names}}</text>
           <text class="list-sub">{{item.keepTogether ? '整组同车，不允许自动拆分' : '允许分开安排'}}</text>
         </view>
-        <view class="button text" hover-class="button-hover" data-id="{{item.id}}" data-keep="{{item.keepTogether}}" bindtap="onToggleGroup">
+        <!-- 同行组约束是写命令：与批量/导出/撤销/授权四个写点同一套在途姿态（busy 由 JS 侧守卫兜底）。 -->
+        <view class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" data-id="{{item.id}}" data-keep="{{item.keepTogether}}" bindtap="{{busy ? '' : 'onToggleGroup'}}">
           {{item.keepTogether ? '允许分车' : '保持同车'}}
         </view>
       </view>
@@ -201,7 +202,21 @@
     </block>
     <block wx:else>
       <form-field label="负责车辆">
-        <picker range="{{vehicles}}" value="{{vehicleIndex}}" bindchange="onVehiclePick">
+        <!-- 候选来自那条唯一的 readTransport：装配点在它落地的那一刻，未落地时不给结论（C-20）。
+             一条 if/elif/else 链说三种情况：还在读 / 这次没读到 / 确实没有车辆——读取失败绝不写成空态。 -->
+        <view wx:if="{{vehicleLoading}}" class="stack">
+          <view class="picker placeholder"><text class="picker-value">正在读取车辆列表…</text></view>
+        </view>
+        <view wx:elif="{{vehicleFailed}}" class="stack">
+          <view class="picker placeholder"><text class="picker-value">车辆列表这次没有读到</text></view>
+          <text class="small muted">这不等于「这场活动没有车辆」——那次读取失败了，车辆可能已经在分车区里。</text>
+          <view class="button text" hover-class="button-hover" bindtap="onRetryVehicles">重新读取车辆列表</view>
+        </view>
+        <view wx:elif="{{vehicleEmpty}}" class="stack">
+          <view class="picker placeholder"><text class="picker-value">这场活动还没有车辆</text></view>
+          <text class="small muted">「车辆联络」要绑定到具体那辆车：请先在分车区添加车辆，再回来授权。</text>
+        </view>
+        <picker wx:else range="{{vehicles}}" value="{{vehicleIndex}}" bindchange="onVehiclePick">
           <view class="picker {{vehicleIndex < 0 ? 'placeholder' : ''}}">
             <text class="picker-value">{{vehicleIndex < 0 ? '请选择车辆' : vehicles[vehicleIndex]}}</text>
             <text class="picker-arrow">▾</text>

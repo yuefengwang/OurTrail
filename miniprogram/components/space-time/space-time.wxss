@@ -19,19 +19,32 @@
   gap: 4px;
 }
 
-/* 留宿开关。触控目标 ≥44px 由 padding 补足 */
+/* 留宿开关（M-07：可点元素必须 ≥44px）。
+   这条注释以前写「≥44px 由 padding 补足」，而实算是 28px（行高 16 + padding 5×2 + border 1×2），
+   注释与实现不符本身就是缺陷，现在改成用 min-height 承接：
+   box-sizing:border-box ⇒ 44px 已经把上下 border 与 padding 算在盒子里，不再靠 padding 假装补足。
+   文字用 flex 居中，11px 字号不变（扩的是命中盒，不是字号）。 */
 .space-time-stay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: var(--touch-target);
   font-size: 11px;
   line-height: 16px;
   color: var(--info);
   background: var(--info-soft);
   border: 1px solid var(--info);
   border-radius: 5px;
-  padding: 5px 8px;
+  padding: 0 12px;
 }
+/* B-09：原来是 var(--surface-alt) —— 这个 token 从未在 app.wxss 登记过，var() 无定义且无 fallback
+   时整条声明在计算值阶段失效，background 退回 transparent：开关的「选中态」其实是透明的，
+   今天没爆雷只是因为宿主卡片恰好是白的。改成本仓「选中态表面」的既有约定 --forest-soft
+   （.day-card.on / .seg-btn / .hour-chip 都用它），不保留 fallback，免得留下第二真值源。 */
 .space-time-stay.on {
   color: var(--muted);
-  background: var(--surface-alt);
+  background: var(--forest-soft);
   border-color: var(--line);
 }
 .space-time-stay-hover { opacity: 0.8; }
@@ -104,12 +117,14 @@
   font-weight: 600;
 }
 
+/* B-09：原来写 var(--text-2, var(--ink))。--text-2 是死 token（app.wxss 从未登记，疑似原型 tokens.css 残留），
+   靠 fallback 才生效 = 同一件事有两个出处。意图本来就是正文墨色，直接引用 --ink。 */
 .space-time-astro-text {
   display: block;
   margin-top: 2px;
   font-size: 12px;
   line-height: 18px;
-  color: var(--text-2, var(--ink));
+  color: var(--ink);
 }
 
 .space-time-astro-look {

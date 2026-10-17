@@ -4,6 +4,7 @@
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 
 const noConsent = () => ({ dataUse: false, proxyAuthority: false, proxyHome: false })
 const personKey = ref => ref.kind === 'user' ? 'u:' + ref.userId : 'c:' + ref.companionId
@@ -33,6 +34,7 @@ Page({
     failure: '',
     capacityAsk: false,
     busy: false,
+    busyAt: 0,
     expandedParts: {},
     // 编辑模式
     editForm: null,
@@ -383,7 +385,22 @@ Page({
     return tasks.length ? run(0) : Promise.resolve(true)
   },
 
+  // 写命令入口的在途闸门：返回 true 表示「上一条写还在飞」，本次操作必须拦。
+  // busy 只是界面姿态、不是业务状态：一次提交的 promise 没能回来（云函数无响应、小程序挂起后恢复）
+  // 时，它绝不能把「提交报名」永久锁成「正在提交…、点了没反应」——超过宽限期就认定它是残留，
+  // 就地复位并放行本次操作。宽限期与 elapsed 判据只有一个出处 J.busyStale（铁律 31：页面不写
+  // 第二个 8000、不自己算时间差）。求值点放在写入口而不是 reload()：写悬死时 revision 不会前进，
+  // 挂在 reload 上的自愈正好等不到求值。
+  busyBlocks() {
+    if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+      this.setData({ busy: false, busyAt: 0 })
+      console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+    }
+    return !!this.data.busy
+  },
+
   submit(mode) {
+    if (this.busyBlocks()) return
     const errors = this.validate()
     const expandedParts = Object.assign({}, this.data.expandedParts)
     this.data.participants.forEach((p, i) => {
@@ -403,7 +420,7 @@ Page({
       keepTogether: this.data.keepTogether,
       mode,
     }
-    this.setData({ busy: true })
+    this.setData({ busy: true, busyAt: Date.now() })
     api.dispatchAndSync(payload, this.revision, this)
       .then(res => {
         if (res && res.revision) this.revision = res.revision
@@ -531,6 +548,7 @@ Page({
   },
 
   onEditSubmit() {
+    if (this.busyBlocks()) return
     const form = this.data.editForm
     const errors = {}
     if (!form.person.name.trim()) errors.name = '请填写姓名'
@@ -541,7 +559,7 @@ Page({
     if (form.trip.mode === 'shared' && !form.trip.pickupPointId) errors.trip = '请选择上车点'
     this.setData({ errors })
     if (Object.keys(errors).length) return
-    this.setData({ busy: true })
+    this.setData({ busy: true, busyAt: Date.now() })
     api.dispatchAndSync({
       type: 'signup.edit',
       activityId: this.activityId,

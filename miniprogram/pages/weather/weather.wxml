@@ -31,6 +31,22 @@
       </picker>
     </form-field>
 
+    <!-- A-07（2026-10-14 修复轮批次 3）：这块日期选择原先在全仓最长页面的最末端
+         （数据来源脚注之后），改一次日期的成本是「滚下去 N 屏 + 选日期 + 滚回来 N 屏」。
+         现在与「路线关键点」并列为页面主变量输入区，紧贴它控制的图表。
+         位置移动而块内文案/判据一字未改；仍在 wx:else 分支的同一层，
+         渲染可达状态与移动前完全一致（denied/loading 之外恒可见，含 loadingWeather 与空态）。 -->
+    <form-field label="查看日期">
+      <picker mode="date" value="{{date}}" bindchange="onDate">
+        <view class="picker">
+          <text class="picker-value">{{date}}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </form-field>
+
+    <view wx:if="{{isOwner}}" class="button secondary block" hover-class="button-hover" bindtap="onDraftNotice">生成天气提醒草稿</view>
+
     <block wx:if="{{loadingWeather}}">
       <status-panel kind="loading" title="正在查询天气" detail="{{retryNote || '正在向气象服务查询该点的逐小时预报。'}}" />
     </block>
@@ -363,6 +379,12 @@
       </view>
 
       <!-- ============ V2 户外条件（OurTrail 分析层，与事实层明确分界） ============ -->
+      <!-- A-26（2026-10-14 修复轮批次 3）：免责原先有 N+1 个出处——下面每张 cond-pheno
+           结论卡末尾都各挂一行同义免责，而这个区块头已经说过一次。逐卡那行已删，
+           本区块只由下面的 section-sub 说一次（页首「不是出发许可」callout 与页脚出处
+           脚注承担的是另外两件事，都保留）。
+           ⚠ 复验请用「渲染后可见文本」口径（剥掉注释），别用整文件 grep：
+           本条注释本身就是这条纪律的活教材——写进注释会让计数假性变多。 -->
       <view class="section-head">
         <text class="section-title">户外条件</text>
         <text class="section-sub">由上方天气事实推算的条件判断，不是气象预报</text>
@@ -401,7 +423,6 @@
           <text class="reason-note">评级来自 sky.js 同源判定；点「看图」定位到对应小时自行核对。</text>
         </view>
         <view wx:if="{{item.advice}}" class="pheno-advice">建议：{{item.advice}}</view>
-        <text class="pheno-disclaimer small muted">基于天气数据估算，非气象预报。</text>
       </view>
 
       <!-- 不出卡 ≠ 不说明：这里点名"哪几项被判过不成立"，与"缺数据判不出"（那些卡仍在）分开 -->
@@ -445,16 +466,5 @@
       <text class="small muted">数据来源 {{providerLabel || 'Open-Meteo'}}（CC BY 4.0）· 日出日落与天相判断为本机按坐标与海拔推算</text>
     </block>
     <status-panel wx:else kind="{{emptyKind}}" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" action-label="重新查询" bind:action="fetchWeather" />
-
-    <form-field label="查看日期">
-      <picker mode="date" value="{{date}}" bindchange="onDate">
-        <view class="picker">
-          <text class="picker-value">{{date}}</text>
-          <text class="picker-arrow">▾</text>
-        </view>
-      </picker>
-    </form-field>
-
-    <view wx:if="{{isOwner}}" class="button secondary block" hover-class="button-hover" bindtap="onDraftNotice">生成天气提醒草稿</view>
   </view>
 </view>

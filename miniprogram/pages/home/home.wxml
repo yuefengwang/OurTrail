@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page {{cards.length || tasks.length ? 'with-tabbar' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="暂时无法读取活动" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在核对与你有关的活动。" />
@@ -67,13 +67,13 @@
           wx:for="{{cards}}"
           wx:key="id"
           title="{{item.title}}"
-          cover="{{item.cover}}"
           date="{{item.date}}"
           meta="{{item.meta}}"
           status="{{item.status}}"
           when="{{item.when}}"
           featured="{{item.featured}}"
           info="{{item.info}}"
+          activity-id="{{item.id}}"
           data-id="{{item.id}}"
           bind:open="onOpenCard"
         />

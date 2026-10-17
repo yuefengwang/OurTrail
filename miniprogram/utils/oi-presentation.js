@@ -458,27 +458,44 @@ function buildMultiDay(days, getOi) {
 function applySelection(card, hour) {
   if (!card) return false
   const all = (card.items || []).concat(card.moreItems || [])
-  function hits(it) {
-    const segs = splitSegments(it.timeText.indexOf('→') >= 0
-      ? it.timeText.replace(/^今晚 /, '').split(' → ')[0]
-      : it.timeText.split('–')[0],
+  function segsOf(it) {
+    const t = it.timeText
+    return splitSegments(it.timeText.indexOf('→') >= 0
+      ? t.replace(/^今晚 /, '').split(' → ')[0]
+      : t.split('–')[0],
       it.timeText.indexOf('→') >= 0
-        ? it.timeText.split(' → ')[1]
-        : it.timeText.split('–')[1] || it.timeText.split('–')[0])
-    const m = hour * 60
-    return segs.some(function (sg) { return m >= sg.fromMin && m < sg.toMin })
+        ? t.split(' → ')[1]
+        : t.split('–')[1] || t.split('–')[0])
+  }
+  const m = hour * 60
+  function hits(it) {
+    return segsOf(it).some(function (sg) { return m >= sg.fromMin && m < sg.toMin })
   }
   let hit = -1
   all.forEach(function (it, i) { if (hit < 0 && hits(it)) hit = i })
-  if (hit >= (card.items || []).length) {
-    /* 命中折叠区 → 提升到可见列表末尾 */
-    const promoted = all[hit]
-    card.moreItems = (card.moreItems || []).filter(function (it) { return it !== promoted })
-    card.items = (card.items || []).concat([promoted])
-    hit = card.items.length - 1
+  /* 兜底：窗口起点不在整点时，条目自己的 anchor hour = floor(fromMin/60) 落在该窗口之外
+   * （实测峨眉山 CLOUD_SEA「06:45–07:00」anchor hour=6 ⇒ 点这一条永远 selIndex=-1）。
+   * 只在上面那条**一个都没命中**时才启用 ⇒ 任何原本选得中的点击给出的结果逐字节不变（包含关系是重叠关系的子集）。
+   * 多个重叠候选取「本小时内最早开始」的那段，保证确定性；终点仍是开区间，所以窗口结束的那一格不算命中。 */
+  if (hit < 0) {
+    let best = -1, bestFrom = Infinity
+    all.forEach(function (it, i) {
+      segsOf(it).forEach(function (sg) {
+        if (m < sg.toMin && m + 60 > sg.fromMin && sg.fromMin < bestFrom) { bestFrom = sg.fromMin; best = i }
+      })
+    })
+    hit = best
   }
-  card.selIndex = hit
-  card.selSummary = hit >= 0 ? all[hit].summaryText : ''
+  const picked = hit >= 0 ? all[hit] : null
+  if (picked && hit >= (card.items || []).length) {
+    /* 命中折叠区 → 提升到可见列表末尾 */
+    card.moreItems = (card.moreItems || []).filter(function (it) { return it !== picked })
+    card.items = (card.items || []).concat([picked])
+  }
+  /* selIndex 必须与 selSummary 指向同一个对象：旧写法把提升后的下标拿去索引提升前的 all，
+   * 提升 moreItems 里非首条时会让「高亮的那行」和「展开的摘要」分属两条机会。 */
+  card.selIndex = picked ? (card.items || []).indexOf(picked) : -1
+  card.selSummary = picked ? picked.summaryText : ''
   return true
 }
 

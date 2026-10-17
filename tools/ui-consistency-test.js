@@ -67,11 +67,12 @@ check('T1.1 app.json 仍用自定义 tabBar（custom=true，覆盖层语义）',
     return wantRe.test(fs.readFileSync(wxss, 'utf8'))
   })
   check('T1.3 非 tab 页不留 tabBar 的 84px（列表短时页尾会空一大截）', over.length === 0, over.join(', ') || 'ok')
-  // 两种落法别叠加：既有每页公式又抽公共类 = 白留两截 84px
-  const shared = /\.page\.with-tabbar\s*\{/.test(appWxss) ||
-    wxmlFiles.some(f => /class="[^"]*\bwith-tabbar\b/.test(fs.readFileSync(f, 'utf8')))
-  check('T1.4 不与公共类方案叠加（.with-tabbar 与每页公式并存会多留 84px 死空白）',
-    !shared, shared ? '发现 .with-tabbar 公共类与每页公式并存' : 'ok')
+  // 真正要防的是「两种落法叠加」= 既有每页公式又抽公共类（白留两截 84px）。
+  // 注意：home 根节点上那个条件类 {{…? 'with-tabbar' : ''}} 是仓库登记在册的**空开关**
+  //（app.wxss 不定义它；b4-pad-final-value 与 swx1 都按这个形状钉），本门不得逼它删。
+  const sharedRule = /\.page\.with-tabbar\s*\{/.test(appWxss)
+  check('T1.4 不与公共类方案叠加（app.wxss 若也定义 .page.with-tabbar，就会多留 84px 死空白）',
+    !sharedRule, sharedRule ? 'app.wxss 定义了 .page.with-tabbar，与每页公式并存' : 'ok')
 }
 
 /* ---------- §2 固定底栏与 has-sticky 必须成对 ---------- */

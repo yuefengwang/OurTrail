@@ -33,7 +33,9 @@
          bind:written：任一面板写库成功后宿主重读并下发新 sync-key，兄弟面板才不会拿旧 revision 发命令 -->
     <roster-panel class="{{tab === 1 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
     <transport-panel class="{{tab === 2 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
-    <field-panel class="{{tab === 3 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" perspective="organizer" sync-key="{{syncKey}}" bind:written="onPanelSync" />
+    <!-- page-metrics：本页头顶已经有「指标即入口」那一格（active/closing 阶段印的就是同一个待到家人数），
+         面板据此不再把自己那份同名计数印在常驻头部（A-17）。入口一个都没减：三格与 goField 照旧。 -->
+    <field-panel class="{{tab === 3 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" perspective="organizer" page-metrics="{{true}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
 
     <block wx:if="{{tab === 0}}">
       <!-- 时间锚点：领队最该先看到的不是字段，是「还剩多久到我必须做的那一步」 -->

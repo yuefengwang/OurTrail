@@ -60,12 +60,12 @@
 
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
 
-    <!-- 分段天气（V2.0 §6）：逐节点看天气；可切到按出发时刻推算各节点抵达日 -->
-    <view class="stack" style="gap:12px;">
+    <!-- 分段天气（V2.0 §6）：逐节点看天气；可按所选出发时刻推算各节点抵达日 -->
+    <view class="stack-gap3">
       <view class="section-head">
         <text class="kicker">天气</text>
         <text class="section-title">分段天气</text>
-        <text class="section-sub">逐节点看天气；可切到按出发时刻推算各节点抵达日</text>
+        <text class="section-sub">逐节点看天气；可按所选出发时刻推算各节点抵达日</text>
       </view>
       <view class="card stack-gap3">
         <view class="cluster" style="justify-content:space-between;">
@@ -75,8 +75,14 @@
               <text class="picker-arrow">▾</text>
             </view>
           </picker>
+          <!-- 触点：整行可点由 app.wxss 的 .check-label 体系承载（label 包住 checkbox + text），
+               现成同形写法见 signup.wxml:85 与 roster-panel.wxml:49，flex 规则见 app.wxss:357-360；
+               change 事件仍由 checkbox-group 承载，归属不许挪 —— 挪到 label 上取值语义会变（platform-pitfalls §10：group 的 detail.value 是全部选中值数组） -->
           <checkbox-group bindchange="onScheduleMode">
-            <checkbox value="schedule" checked="{{scheduleMode}}" />按出发时刻推算
+            <label class="check-label">
+              <checkbox value="schedule" checked="{{scheduleMode}}" />
+              <text class="check-text">按出发时刻推算</text>
+            </label>
           </checkbox-group>
         </view>
         <block wx:if="{{scheduleMode}}">
@@ -115,7 +121,7 @@
     </view>
 
     <!-- 节点时间轴 -->
-    <view class="stack" style="gap:12px;">
+    <view class="stack-gap3">
       <view class="section-head">
         <text class="kicker">路线</text>
         <text class="section-title">路线节点</text>
@@ -139,13 +145,13 @@
     </view>
 
     <!-- 风险 -->
-    <view class="stack" style="gap:12px;">
+    <view class="stack-gap3">
       <view class="section-head">
         <text class="kicker">安全</text>
         <text class="section-title">风险提示</text>
         <text class="section-sub">{{route.risks.length ? route.risks.length + ' 条 · 从这条路线发起活动时会带给大家' : '还没有风险提示'}}</text>
       </view>
-      <view wx:if="{{route.risks.length}}" class="card" style="padding:4px 16px;">
+      <view wx:if="{{route.risks.length}}" class="card">
         <view wx:for="{{route.risks}}" wx:key="id" class="list-row">
           <view class="list-main">
             <view class="cluster" style="gap:8px;">
@@ -160,7 +166,7 @@
     </view>
 
     <!-- 共享协作（仅 owner）：身份码授权，同 membership 模式 -->
-    <view wx:if="{{isOwner}}" class="stack" style="gap:12px;">
+    <view wx:if="{{isOwner}}" class="stack-gap3">
       <view class="card-header">
         <view class="section-head">
           <text class="kicker">协作</text>
@@ -171,7 +177,7 @@
           <text>添加</text>
         </view>
       </view>
-      <view wx:if="{{route.sharedWith.length}}" class="card" style="padding:4px 16px;">
+      <view wx:if="{{route.sharedWith.length}}" class="card">
         <view wx:for="{{route.sharedWith}}" wx:key="*this" class="list-row">
           <view class="list-main">
             <text class="code-text" user-select>{{item}}</text>
@@ -184,12 +190,12 @@
     </view>
 
     <!-- 被哪些活动使用 -->
-    <view class="stack" style="gap:12px;">
+    <view class="stack-gap3">
       <view class="section-head">
         <text class="kicker">使用</text>
         <text class="section-title">被这些活动使用</text>
       </view>
-      <view wx:if="{{referenced.length}}" class="card" style="padding:4px 16px;">
+      <view wx:if="{{referenced.length}}" class="card">
         <view wx:for="{{referenced}}" wx:key="id" class="list-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpenActivity">
           <view class="list-main">
             <text>{{item.title || '活动'}}</text>
@@ -202,7 +208,7 @@
     </view>
 
     <!-- 管理区（仅 owner）：发起活动 + 编辑 + 删除 -->
-    <view wx:if="{{isOwner}}" class="stack" style="gap:12px;">
+    <view wx:if="{{isOwner}}" class="stack-gap3">
       <view class="section-head">
         <text class="kicker">管理</text>
         <text class="section-title">管理这条路线</text>

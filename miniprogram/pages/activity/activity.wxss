@@ -1,6 +1,9 @@
 /* 活动详情页 · 编辑式视觉层（2026-10-16）
    结构与业务逻辑不动，只做视觉层：hero-cover 全局类已定义在 app.wxss，
    这里只放页面特有的微调。 */
-.hero-cover .metric-unit { color: #D0D8D7; }
+/* B-10（合并自 master）：本页 hero 容器是 .hero-cover（原写法写死 #D0D8D7，与app.wxss 的
+   --on-forest-muted 逐字节同值却是两份真值）⇒ 改引用 token，值不变、无视觉变化。 */
+.hero-cover .metric-unit,
+.hero .metric-unit { color: var(--on-forest-muted); }
 /* 主状态 callout：编辑式"当前该做什么"——比其他提示重半格，但不换语义色体系 */
 .callout .callout-title { font-size: 15px; line-height: 22px; }

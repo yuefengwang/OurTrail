@@ -5,7 +5,7 @@
        普通卡隐藏缩略图退回纯文字，都不出破图。 -->
   <block wx:if="{{featured}}">
     <view class="activity-card__media">
-      <image class="activity-card__cover" src="{{cover}}" mode="aspectFill" binderror="onCoverError" />
+      <image class="activity-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
       <view class="activity-card__scrim" />
     </view>
     <view class="activity-card__cover-body hero-body">
@@ -24,7 +24,7 @@
   </block>
   <block wx:else>
     <view class="activity-card__row">
-      <image class="activity-card__thumb" src="{{cover}}" mode="aspectFill" binderror="onCoverError" />
+      <image class="activity-card__thumb" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
       <view class="activity-card__body">
         <view class="card-header activity-card__header">
           <text class="activity-card__date small tabular" id="date">{{date}}{{when ? ' · 出发 ' + when : ''}}</text>
