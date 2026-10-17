@@ -17,7 +17,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 | Store | Document-per-record across **16** `ot_*` collections (14 in the `COLLECTIONS` map, plus `ot_meta` and `weather_cache`). `ot_meta/main` = `{revision, savedAt}`. Writes diff records inside one transaction with a **revision CAS** |
 | Domain | 14 pure JS modules in `cloudfunctions/trailApi/domain/` — all authorization, business rules, and response shapes live here and **the client cannot bypass any of it**（2026-10-13 新增 `routes.js`：路线资产生命周期） |
 | Weather | Keyless `https.get` to `api.open-meteo.com` via a cloud-function proxy, 30-min `weather_cache`. **All astronomy/天相 computation is client-side** |
-| Design source of truth | `miniprogram/app.wxss` (44 CSS custom properties on `page` = 29 色 + 15 数值, 2026-10-17 复测；计数会漂，取真值跑 `grep -c -- '--[a-z0-9-]*:' app.wxss` + all globalized component classes) + `.agents/skills/ourtrail-ui/` |
+| Design source of truth | `miniprogram/app.wxss`（**670 行**，`page` 块 4–77 行；**44 个自定义属性＝29 单值色 + 3 渐变 + 1 rgba + 11 数值/时长**，2026-10-17 复测并分区闭合。计数会漂——数属性用 `grep -c -- '--[a-z0-9-]*:' app.wxss`，数行数用 `wc -l app.wxss`（本文件不再抄行号，抄一次漂一次）+ 全站共用类）+ `.agents/skills/ourtrail-ui/` |
 
 **No root `package.json`. No `node_modules/` anywhere. No ESLint/Prettier/EditorConfig/tsconfig/biome. No lint, format, typecheck, or build step for the mini program.** The only automated gates are `node tools/check.js` and `node tools/check-handlers.js`.
 

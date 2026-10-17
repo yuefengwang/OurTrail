@@ -17,7 +17,7 @@
 | `watch-points.js` | ~180 | yes | 观察点/轨迹点组（P3 独立天气）。**注入式 storage**：`createWatchPoints(storage)` 工厂，页面注入 `draft.wxStorage`、测试注入内存 Map——它是 wx-free 的同时仍走 wx 存储 |
 | `weather-cache.js` | ~95 | yes | 天气本地缓存（2026-10-14 韧性轮新增）：查询失败时的**软降级**数据源——同一个点、同一天不久前取到过就照常展示，但必须带时效横幅（「X 小时前的数据」）。同款注入式 storage 工厂 + 假钟注入；CAP=6（单键 1MB 上限，wx storage 一条返回体约百 KB）、只收 `status==='ready'`、`MAX_AGE_MS=12h`（更旧的旧预报不冒充现在的天气）。**只在失败路径出场，不替代成功路径**；测试：`tools/weather-resilience-test.js` §1 |
 | `weather-model.js` | ~330 | yes | P4 轨迹层编排：`snap`/`nodeFacts`/`runsOf`/`annotateRuns`/`trackPoints`/`posAt`/`judge`。**不含任何天相阈值**——一律委托 `sky.js`；天相 key→颜色也在**不在**这里（`utils/` 不得反向依赖 `components/`，映射在 `components/space-time/layout.js`） |
-| `notices-page.js` | ~172 | yes | `makeNoticesPage(getActivityId, opts)` page factory（`opts.tabBarIndex` 供 Tab 页自报选中态） |
+| `notices-page.js` | ~262 | yes | `makeNoticesPage(getActivityId, opts)` page factory（`opts.tabBarIndex` 供 Tab 页自报选中态；定向候选名单有 `targetsLoading`/`targetsError` 两个独立态，见下） |
 
 Measured reference centrality (files requiring each, 2026-10-08 复点): `format.js` 15 · `api.js` 13 · `journey.js` 7 · `draft.js` 7 · `astro.js` 5 · `sky.js` 4 · `route-schedule.js` 3 · `gpx.js` 3 · `chart-store.js` 3 · `weather-model.js` 1 · `notices-page.js` 2 · **`util.js` 0（死模块，见下）**.
 
@@ -53,6 +53,18 @@ This trips people up, so check which family you are calling. `call()` resolves t
 `module.exports = function makeNoticesPage(getActivityId) { return { data, onLoad, onShow, … } }`
 
 Consumed as `Page(makeNoticesPage(() => null))` by `pages/notices/notices.js` and `Page(makeNoticesPage(function () { return this._options ? this._options.id : null }))` by `pages/anotices/anotices.js`. **Copy this for any new shared page logic** — there is no mixin, no `Behavior()`, no base page, and `app.js` `globalData` is never used.
+
+**`loadTargets` 的三态是这一族的规矩（B4-C19，2026-10-17）**：定向候选（organizer 名单读 + `readTransport`）
+在途/失败/真的为空是三件事，各有 `targetsLoading` / `targetsError` / `rows.length===0`，页面据此分印
+「名单读取中…」／「报名名单没有读到：<原因>」＋「重新读取名单」按钮／「此活动还没有报名记录。」。
+改前那两个 `.catch(() => {})` 把失败吞成空数组，页面于是对组织者说「此活动还没有报名记录」——
+**把没读到印成业务事实**（铁律 24 话术分岔 / 铁律 26② 判不出≠否定 / 本文件上面第 5 条"错误永不静默"）。
+两条衍生约束：① 失败话术必须点名**是哪一个**读失败（两读各自 settle，`pending` 归零才落 `targetsError`）；
+② 失败只锁它自己那一档——`audience=activity`「本活动相关人员」不依赖名单，照发；不许顺手禁掉整页。
+`onRetryTargets` 是这条失败态的去路（读操作才允许重试，见铁律 24），因此**必须在两页 wxml 里绑定**，
+否则 `check-handlers.js` 门 B 会把它记成"定义了谁也调不到"的死 handler。
+回归：`node tools/scenario-notices-test.js` §7（C1–C21：具名成因 / 不冒充空名单 / 就地重试真的再发一次读 /
+失败范围不扩大化 / 在途与空分离 / 两页接线 + 两读都成功时的阳性对照）。
 
 ## `chart-store.js` — WHY IT EXISTS
 

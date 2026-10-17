@@ -9,8 +9,8 @@ app.js       12 lines. wx.cloud.init(CLOUD_ENV) only.
 app.json     20 pages + custom:true tabBar (活动/天气/通知/我的 → home, weather-hub, notices, me). NO usingComponents key.
 app.wxml     comment only — the global <privacy-popup /> was de-registered in 2026-09-27
              and its leftover tag removed 2026-09-29. Nothing is mounted globally.
-app.wxss     502 lines. THE design system: 40 CSS custom properties on `page`
-             (29 色 + 11 数值, not :root) + every globalized component class.
+app.wxss     670 lines. THE design system: 44 CSS custom properties on `page`
+             (29 单值色 + 3 渐变 + 1 rgba + 11 数值/时长，2026-10-17 复测；不是 :root) + every globalized component class.
 config.js    16 lines. CLOUD_ENV='cloud1-d9ghcm034574b9d55', FUNC_NAME='trailApi',
              NOTICE_TMPL_IDS={activity:''} (empty ⇒ clipboard fallback). Only env file.
 pages/       20 dirs, 1:1 with app.json.

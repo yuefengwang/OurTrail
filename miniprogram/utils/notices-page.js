@@ -24,6 +24,8 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       signupRows: [],
       vehicleRows: [],
       vehicleIndex: -1,
+      targetsError: '',
+      targetsLoading: false,
       message: '',
       error: '',
       vehicles: [],
@@ -114,6 +116,7 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
         signupRows: [],
         vehicleRows: [],
         vehicleIndex: -1,
+        targetsError: '',
         error: '',
       })
       this.loadTargets(activityId)
@@ -123,17 +126,34 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
     // 定向通知的候选来源（P0-3：原先要求手填 signup ID/车辆 ID，全站无处可查，是功能性死路）。
     // 名单走 organizer 视角 read（rows 即全部报名），车辆走 readTransport（组织者专属）。
     loadTargets(activityId) {
+      // 「名单空着」与「没有人报名/没有车」是两件事：读失败必须点名是**哪一个**没读到并给出去路，
+      // 不能留着空数组让页面印成业务事实（铁律 24 的话术分岔 + 铁律 26② 的「判不出≠否定」；B4-C19）。
+      // 在途也算一件要说的事：miniprogram/AGENTS.md 的第 5 条要求 loading 与 empty 分开，
+      // 否则点开弹层的那一秒会先印「此活动还没有报名记录。」再翻成名单。
+      const errs = []
+      let pending = 2
+      const settle = () => {
+        if (--pending === 0) this.setData({ targetsLoading: false, targetsError: errs.join('；') })
+      }
+      this.setData({ targetsLoading: true, targetsError: '' })
       api.read({ kind: 'activity', activityId, perspective: 'organizer' }).then(res => {
-        if (res.view.kind !== 'activity') return
-        const rows = res.view.rows || []
-        this.setData({
-          signupRows: rows.map(r => ({
-            id: r.signupId,
-            label: (r.name || '未命名') + ' · ' + (F.STATUS_LABELS[r.status] || r.status),
-            checked: false,
-          })),
-        })
-      }).catch(() => {})
+        if (res.view.kind === 'activity') {
+          const rows = res.view.rows || []
+          this.setData({
+            signupRows: rows.map(r => ({
+              id: r.signupId,
+              label: (r.name || '未命名') + ' · ' + (F.STATUS_LABELS[r.status] || r.status),
+              checked: false,
+            })),
+          })
+        } else {
+          errs.push('报名名单没有读到：这一视角没有返回名单')
+        }
+        settle()
+      }).catch(e => {
+        errs.push('报名名单没有读到：' + api.errorText(e))
+        settle()
+      })
       api.readOr('readTransport', { activityId }).then(t => {
         const vehicles = t.vehicles || []
         this.setData({
@@ -143,7 +163,19 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
           })),
           vehicleIndex: vehicles.length ? 0 : -1,
         })
-      }).catch(() => {})
+        settle()
+      }).catch(e => {
+        errs.push('车辆名单没有读到：' + api.errorText(e))
+        settle()
+      })
+    },
+
+    // 失败态的可行动性：给一条就在眼前的重试路径，而不是只把红字印出来（读操作才允许重试，见铁律 24）
+    onRetryTargets() {
+      const activityId = this.activityId()
+      if (!activityId) return
+      this.setData({ signupRows: [], vehicleRows: [], vehicleIndex: -1, targetsError: '', error: '' })
+      this.loadTargets(activityId)
     },
     onToggleSignupTarget(e) {
       const id = e.currentTarget.dataset.id
@@ -171,14 +203,19 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       if (this.data.audienceKind === 'vehicle') {
         const v = this.data.vehicleRows[this.data.vehicleIndex]
         if (!v) {
-          this.setData({ error: '此活动还没有车辆档案——先到工作台「分车」添加车辆，或改选其他通知范围。' })
+          // 读失败时不许说「此活动还没有车辆档案」——那是把没读到印成业务事实（B4-C19）
+          this.setData({ error: this.data.targetsError
+            ? '暂时不能按车辆定向发布：' + this.data.targetsError + '。可点「重新读取名单」，或改选「本活动相关人员」。'
+            : '此活动还没有车辆档案——先到工作台「分车」添加车辆，或改选其他通知范围。' })
           return
         }
         audience = { kind: 'vehicle', vehicleId: v.id }
       } else if (this.data.audienceKind === 'signups') {
         const ids = this.data.signupRows.filter(r => r.checked).map(r => r.id)
         if (!ids.length) {
-          this.setData({ error: '至少勾选一名要通知的报名人员。' })
+          this.setData({ error: this.data.targetsError
+            ? '暂时不能按人定向发布：' + this.data.targetsError + '。可点「重新读取名单」，或改选「本活动相关人员」。'
+            : '至少勾选一名要通知的报名人员。' })
           return
         }
         audience = { kind: 'signups', signupIds: ids }

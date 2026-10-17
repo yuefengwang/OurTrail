@@ -64,10 +64,16 @@
         </picker>
       </form-field>
       <!-- P0-3：定向候选来自真实名单/车辆档案，不再手填内部 ID（全站无处可查的死路） -->
-      <form-field wx:if="{{audienceKind === 'vehicle'}}" label="指定车辆" hint="{{vehicleRows.length ? '' : '此活动还没有车辆档案——先到工作台「分车」添加。'}}">
+      <!-- B4-C19：名单**没读到**时不许印成「此活动还没有报名记录/车辆档案」——那是把读失败说成业务事实。
+           失败态单独一层（点名是哪一个没读到）并就地给一条重试路径。 -->
+      <view wx:if="{{targetsError}}" class="stack">
+        <view class="callout danger">{{targetsError}}</view>
+        <view class="button secondary block" hover-class="button-hover" bindtap="onRetryTargets">重新读取名单</view>
+      </view>
+      <form-field wx:if="{{audienceKind === 'vehicle'}}" label="指定车辆" hint="{{!vehicleRows.length && !targetsError && !targetsLoading ? '此活动还没有车辆档案——先到工作台「分车」添加。' : ''}}">
         <picker range="{{vehicleRows}}" range-key="label" value="{{vehicleIndex}}" bindchange="onVehicleTarget">
           <view class="picker">
-            <text class="picker-value">{{vehicleRows[vehicleIndex].label || '暂无可选车辆'}}</text>
+            <text class="picker-value">{{vehicleRows[vehicleIndex].label || (targetsLoading ? '名单读取中…' : (targetsError ? '名单没有读到' : '暂无可选车辆'))}}</text>
             <text class="picker-arrow">▾</text>
           </view>
         </picker>
@@ -85,7 +91,8 @@
           <view class="list-main"><text>{{item.label}}</text></view>
           <checkbox checked="{{item.checked}}" color="#163E35" style="pointer-events:none;" />
         </view>
-        <text wx:if="{{!signupRows.length}}" class="small muted">此活动还没有报名记录。</text>
+        <text wx:if="{{targetsLoading && !signupRows.length}}" class="small muted">名单读取中…</text>
+        <text wx:elif="{{!signupRows.length && !targetsError}}" class="small muted">此活动还没有报名记录。</text>
       </view>
       <view wx:if="{{error}}" class="callout danger">{{error}}</view>
       <view class="button primary block {{content ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{content ? 'onPublish' : ''}}">发布站内通知</view>

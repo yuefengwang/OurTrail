@@ -7,6 +7,10 @@
 // 网络桩（覆写 utils/api 的 read/readOr/dispatchAndSync），驱动真 handler，
 // 断言「read 的 request 形状差异 + 发出了什么命令 + payload 是否通过服务端 schema +
 // 页面状态变化 + 用户可见反馈」。
+// §7 专项：定向候选（报名名单 / readTransport）读失败时**不得**被印成「此活动还没有报名记录/车辆档案」
+// ——桩按 perspective 分开失败（organizer 名单读 vs participant 发布上下文读），并可在用例里把失败翻回去
+// 演"点重试就补读"的真实路径。牙齿实测：把 notices-page.js 与两页 wxml 退回改前版（git checkout HEAD 那份），
+// C2/C5/C6 直接红、C15/C16 的 wxml 引用 0 命中 ⇒ 这一组不是写来好看的。
 //
 // 手法与 tools/scenario-editor-test.js / scenario-signup-test.js 一致：
 // setData 记录进 _patches 并同步 this.data，setData 回调经 setImmediate 异步触发；
@@ -26,6 +30,10 @@ const api = require('../miniprogram/utils/api')
 const draft = require('../miniprogram/utils/draft')
 const F = require('../miniprogram/utils/format')
 const schema = require('../cloudfunctions/trailApi/domain/schema.js')
+// scenario7 要核「失败态在页面上有没有渲染路径」——两页 wxml 的引用形态是接线证据（不是文案证据）
+const fs = require('fs')
+const path = require('path')
+const MP_DIR = path.resolve(__dirname, '../miniprogram')
 
 let passed = 0
 let failed = 0
@@ -151,7 +159,11 @@ function activityView(phase) {
 }
 
 // 装一台通知页：path = NOTICES_PATH（全局 Tab）或 ANOTICES_PATH（活动内）。
-// opts: {options, notices, revision, activityPhase, mgmt(null=非所有者), denied, readError, wx}
+// opts: {options, notices, revision, activityPhase, mgmt(null=非所有者), denied, readError, wx,
+//        signupTargetsError, transportTargetsError}
+// 后两个是 B4-C19 的现场：**只**让定向候选的那两次读失败（organizer 名单读 / readTransport），
+// 列表读与发布上下文读照常成功——不然测的就是「整页都读不到」那条已有出口，而不是这一条。
+// state.targetsFail.{signup,transport} 可在用例里翻回 false，用来演「瞬时失败后点重试」的真实路径。
 // state.applyDispatch 可注入「服务端执行命令」的副作用（dispatch 后的下一次 read 反映已应用状态）。
 function bootNotices(path, opts) {
   opts = opts || {}
@@ -160,8 +172,13 @@ function bootNotices(path, opts) {
     revision: opts.revision || 4,
     activityPhase: opts.activityPhase || 'active',
     transportVehicles: opts.transportVehicles || null,
+    targetsFail: { signup: !!opts.signupTargetsError, transport: !!opts.transportTargetsError },
     applyDispatch: null,
   }
+  const failMsg = v => (v === true || v === undefined ? '网络异常' : String(v))
+  // holdTargets：让定向候选那两次读**先不返回**，用来观测"在途"那一态（loading 与 empty 必须分开）
+  const held = []
+  state.releaseTargets = () => held.splice(0, held.length).forEach(rel => rel())
   const reads = []   // read 的 request
   const readOrs = [] // readOr 的 {name, data}
   const cmds = []    // dispatchAndSync 的 {payload, revision}
@@ -172,13 +189,20 @@ function bootNotices(path, opts) {
       if (opts.denied) return Promise.resolve({ view: { kind: 'denied', message: opts.denied }, revision: state.revision, now: NOW })
       return Promise.resolve({ view: { kind: 'notices', notices: state.notices }, revision: state.revision, now: NOW })
     }
-    if (req.kind === 'activity') return Promise.resolve(activityView(state.activityPhase))
+    if (req.kind === 'activity') {
+      // 定向候选走 organizer 视角；发布上下文走 participant 视角——只让前者失败才分得开成因
+      if (req.perspective === 'organizer' && state.targetsFail.signup) return Promise.reject(new Error(failMsg(opts.signupTargetsError)))
+      if (req.perspective === 'organizer' && opts.holdTargets) return new Promise(res => held.push(() => res(activityView(state.activityPhase))))
+      return Promise.resolve(activityView(state.activityPhase))
+    }
     return Promise.resolve({ view: { kind: 'denied', message: '无权访问' }, revision: 1, now: NOW })
   }
   api.readOr = (name, data) => {
     readOrs.push({ name, data })
     if (name === 'readTransport') {
       // P0-3：定向车辆的候选来源。桩返回的是 api.readOr 拆包后的 value（与其余 readOr 桩同约定）
+      if (state.targetsFail.transport) return Promise.reject(new Error(failMsg(opts.transportTargetsError)))
+      if (opts.holdTargets) return new Promise(res => held.push(() => res({ vehicles: state.transportVehicles || [] })))
       return Promise.resolve({ vehicles: state.transportVehicles || [] })
     }
     if (opts.mgmt === null) return Promise.reject(new Error('无权访问'))
@@ -507,8 +531,147 @@ async function scenario6() {
   }
 }
 
+// 7. B4-C19：定向候选**读失败**不得冒充「这个活动没人/没车」
+//    缺陷本体（改前）：loadTargets 的两个 .catch(() => {}) 把失败吞成空数组，页面于是印出
+//    「此活动还没有报名记录。」/「此活动还没有车辆档案——先到工作台「分车」添加。」，
+//    发布兜底又说「至少勾选一名要通知的报名人员。」——三条都在**凭空断言业务状态**（铁律 24 话术分岔 /
+//    铁律 26② 判不出≠否定）。组织者照做就会以为没人报名，或去添加根本不缺的车辆。
+async function scenario7() {
+  section('7. 定向候选读失败：具名成因 + 就地重试 + 不冒充空名单')
+  const wxmlNotices = fs.readFileSync(path.join(MP_DIR, 'pages/notices/notices.wxml'), 'utf8')
+  const wxmlAnotices = fs.readFileSync(path.join(MP_DIR, 'pages/anotices/anotices.wxml'), 'utf8')
+  {
+    // 7A 只有报名名单那一读失败（列表读与发布上下文读照常成功 ⇒ 受影响的就这一条路径）
+    const { page, reads, cmds, state } = bootNotices(ANOTICES_PATH, { options: { id: 'a1' }, signupTargetsError: true })
+    await settleActivity(page, reads)
+    page.onOpenPublish()
+    await waitFor(() => page.data.targetsError !== '')
+    check('C1 organizer 名单读确实发出去了（"空"不是"没读"）',
+      reads.some(r => r.kind === 'activity' && r.perspective === 'organizer'),
+      JSON.stringify(reads.map(r => r.kind + '/' + r.perspective)))
+    check('C2 失败被点名是**哪一个**没读到（报名名单），不是留个空数组',
+      page.data.signupRows.length === 0 && /报名名单没有读到/.test(page.data.targetsError),
+      JSON.stringify({ rows: page.data.signupRows.length, t: page.data.targetsError }))
+    check('C3 未被牵连的那一侧不说错话（车辆读没失败 ⇒ 不许顺带报"车辆名单"）',
+      !/车辆名单/.test(page.data.targetsError) && page.data.vehicleRows.length === 0,
+      page.data.targetsError + ' ｜ vehicleRows=' + page.data.vehicleRows.length)
+    page.onContent(inputEv('名单读失败时的发布尝试'))
+    page.onAudience(inputEv('1'))
+    await waitFor(() => page.data.audienceKind === 'signups')
+    page.onPublish()
+    await sleep(30)
+    check('C4 按人定向被拦下且**一条命令都不发**', cmds.length === 0, JSON.stringify(cmds.map(c => c.payload)))
+    check('C5 拦截话术说的是"没有读到"，不再指错成"至少勾选一名要通知的报名人员"',
+      /没有读到/.test(page.data.error) && !/至少勾选一名/.test(page.data.error), page.data.error)
+    check('C6 话术保留两条去路：就地重试 + 换受众（可行动性不回退，铁律 24）',
+      /重新读取名单/.test(page.data.error) && /本活动相关人员/.test(page.data.error), page.data.error)
+    // 7B 把失败翻回去（真实形态就是瞬时网络抖动），点一次就地补读——不需要关弹层重开
+    const before = reads.filter(r => r.kind === 'activity' && r.perspective === 'organizer').length
+    state.targetsFail.signup = false
+    page.onRetryTargets()
+    await waitFor(() => page.data.signupRows.length > 0)
+    const after = reads.filter(r => r.kind === 'activity' && r.perspective === 'organizer').length
+    check('C7 重试真的再发一次 organizer 名单读（不是把旧数组刷一遍）', after === before + 1, before + ' → ' + after)
+    check('C8 重试成功后失败态清空、候选回来了',
+      page.data.targetsError === '' && page.data.signupRows.length === 3,
+      JSON.stringify({ t: page.data.targetsError, n: page.data.signupRows.length }))
+  }
+  {
+    // 7C 名单读失败不该锁死「本活动相关人员」这一档（它不依赖候选名单）
+    const { page, cmds, reads } = bootNotices(ANOTICES_PATH, { options: { id: 'a1' }, signupTargetsError: true })
+    await settleActivity(page, reads)
+    page.onOpenPublish()
+    await waitFor(() => page.data.targetsError !== '')
+    page.onContent(inputEv('全员通知'))
+    page.onAudience(inputEv('0'))
+    await waitFor(() => page.data.audienceKind === 'activity')
+    page.onPublish()
+    await waitFor(() => cmds.length === 1)
+    check('C9 失败范围不扩大化：只锁定向档，「本活动相关人员」照发（也不顺手禁掉整页）',
+      cmds[0].payload.audience.kind === 'activity' && page.data.targetsError !== '',
+      JSON.stringify(cmds[0].payload.audience))
+  }
+  {
+    // 7D 只有车辆读失败：话术不得说成「此活动还没有车辆档案」
+    const { page, cmds, reads } = bootNotices(ANOTICES_PATH, {
+      options: { id: 'a1' }, transportTargetsError: true,
+      transportVehicles: [{ id: 'v9', label: '9号车', plate: '川A·9' }],
+    })
+    await settleActivity(page, reads)
+    page.onOpenPublish()
+    await waitFor(() => page.data.targetsError !== '')
+    check('C10 车辆失败单独点名「车辆名单没有读到」（与报名档分开，不是一句笼统的话）',
+      /车辆名单没有读到/.test(page.data.targetsError) && !/报名名单/.test(page.data.targetsError), page.data.targetsError)
+    check('C11 报名名单这一侧不受牵连（它读成功了）', page.data.signupRows.length === 3, String(page.data.signupRows.length))
+    page.onContent(inputEv('车上注意点'))
+    page.onAudience(inputEv('2'))
+    await waitFor(() => page.data.audienceKind === 'vehicle')
+    page.onPublish()
+    await sleep(30)
+    check('C12 按车定向被拦下，且不谎称「还没有车辆档案——先到工作台分车添加」',
+      cmds.length === 0 && /没有读到/.test(page.data.error) && !/还没有车辆档案/.test(page.data.error), page.data.error)
+  }
+  {
+    // 7E 阳性对照：两读都正常 ⇒ 不许出现失败态（否则分不清"闸在判"还是"无条件亮红字"）
+    const { page, reads } = bootNotices(ANOTICES_PATH, {
+      options: { id: 'a1' }, transportVehicles: [{ id: 'v9', label: '9号车', plate: '川A·9' }],
+    })
+    await settleActivity(page, reads)
+    page.onOpenPublish()
+    await waitFor(() => page.data.signupRows.length > 0 && page.data.vehicleRows.length > 0)
+    check('C13 两读都成功时 targetsError 与 error 恒空（失败态不是无条件亮红字）',
+      page.data.targetsError === '' && page.data.error === '',
+      JSON.stringify({ t: page.data.targetsError, e: page.data.error }))
+    page.onAudience(inputEv('2'))
+    await waitFor(() => page.data.audienceKind === 'vehicle')
+    check('C14 正常路径未被改动：车辆候选仍是一条并可选（本轮没有顺手改发布）',
+      page.data.vehicleRows.length === 1 && page.data.vehicleIndex === 0,
+      JSON.stringify({ rows: page.data.vehicleRows.length, i: page.data.vehicleIndex }))
+  }
+  {
+    // 7F 接线：失败态必须有渲染路径，且两个消费页同形（两页 wxml 目前逐字节相同）
+    check('C15 两个消费页都渲染 targetsError（判据不只在 JS 里说话）',
+      /targetsError/.test(wxmlNotices) && /targetsError/.test(wxmlAnotices),
+      'notices=' + /targetsError/.test(wxmlNotices) + ' anotices=' + /targetsError/.test(wxmlAnotices))
+    check('C16 重试按钮在两页都绑定了 handler（否则 onRetryTargets 是"定义了谁也调不到"的死 handler，门 B 会红）',
+      /bindtap="onRetryTargets"/.test(wxmlNotices) && /bindtap="onRetryTargets"/.test(wxmlAnotices), '')
+    const tab = bootNotices(NOTICES_PATH, {})
+    tab.page.onOpenPublish()
+    await sleep(20)
+    check('C17 全局 Tab 页（无 activityId）完全不碰这条路径：targetsError 恒空、不发 organizer 名单读',
+      tab.page.data.targetsError === '' && !tab.reads.some(r => r.perspective === 'organizer'),
+      JSON.stringify({ t: tab.page.data.targetsError, kinds: tab.reads.map(r => r.kind) }))
+  }
+  {
+    // 7G 在途态与空态必须分开（miniprogram/AGENTS.md 第 5 条：loading / empty 各有各的话）。
+    //     改前这里是同一个缺陷的另一半：点开弹层的那一秒名单还没回来，页面先印「此活动还没有报名记录。」
+    const { page, reads, readOrs, state } = bootNotices(ANOTICES_PATH, {
+      options: { id: 'a1' }, holdTargets: true,
+      transportVehicles: [{ id: 'v9', label: '9号车', plate: '川A·9' }],
+    })
+    await settleActivity(page, reads)
+    page.onOpenPublish()
+    await sleep(20)
+    check('C18 在途：targetsLoading=true 而 targetsError 仍空（没读回来 ≠ 读失败）',
+      page.data.targetsLoading === true && page.data.targetsError === '' && page.data.signupRows.length === 0,
+      JSON.stringify({ l: page.data.targetsLoading, t: page.data.targetsError, n: page.data.signupRows.length }))
+    check('C19 两次候选读都发出去了（"在途"是真的在途，不是没人发起）',
+      reads.filter(r => r.kind === 'activity' && r.perspective === 'organizer').length === 1
+      && readOrs.filter(o => o.name === 'readTransport').length === 1,
+      JSON.stringify({ reads: reads.map(r => r.kind), readOrs: readOrs.map(o => o.name) }))
+    state.releaseTargets()
+    await waitFor(() => page.data.targetsLoading === false)
+    check('C20 返回后三态收敛：loading 关掉、失败态空、候选回来了（不会把"读取中"挂死）',
+      page.data.targetsLoading === false && page.data.targetsError === '' && page.data.signupRows.length === 3,
+      JSON.stringify({ l: page.data.targetsLoading, t: page.data.targetsError, n: page.data.signupRows.length }))
+    check('C21 两页 wxml 都引用 targetsLoading（loading/empty/error 三态各有渲染路径，不是只在 JS 里记账）',
+      /targetsLoading/.test(wxmlNotices) && /targetsLoading/.test(wxmlAnotices),
+      'notices=' + /targetsLoading/.test(wxmlNotices) + ' anotices=' + /targetsLoading/.test(wxmlAnotices))
+  }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++
