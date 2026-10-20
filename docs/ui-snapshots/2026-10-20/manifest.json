@@ -1,0 +1,203 @@
+[
+  {
+    "key": "home",
+    "label": "活动首页",
+    "route": "/pages/home/home",
+    "note": "真实数据 · 151 张活动卡",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/01-home.png",
+    "w": 306,
+    "h": 660,
+    "kb": 40
+  },
+  {
+    "key": "notices",
+    "label": "通知",
+    "route": "/pages/notices/notices",
+    "note": "668 条通知",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/02-notices.png",
+    "w": 306,
+    "h": 660,
+    "kb": 45
+  },
+  {
+    "key": "me",
+    "label": "我的",
+    "route": "/pages/me/me",
+    "note": "资料 · 林溪",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/03-me.png",
+    "w": 306,
+    "h": 660,
+    "kb": 46
+  },
+  {
+    "key": "activity",
+    "label": "活动详情",
+    "route": "/pages/activity/activity?id=activity-mvb1pkbov4td54",
+    "note": "[UI] 赵公山 · 东线穿越 · 组织者视角",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/04-activity.png",
+    "w": 306,
+    "h": 660,
+    "kb": 104
+  },
+  {
+    "key": "discover",
+    "label": "发现活动",
+    "route": "/pages/discover/discover",
+    "note": "50 个公开活动",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/05-discover.png",
+    "w": 306,
+    "h": 660,
+    "kb": 97
+  },
+  {
+    "key": "signup",
+    "label": "报名",
+    "route": "/pages/signup/signup?id=activity-muzgu3qdnx7wkq",
+    "note": "真机验证 出行方式 · 新报名",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/06-signup.png",
+    "w": 306,
+    "h": 660,
+    "kb": 27
+  },
+  {
+    "key": "editor",
+    "label": "编辑活动",
+    "route": "/pages/editor/editor?id=activity-mvb1pkbov4td54",
+    "note": "[UI] 赵公山 · 东线穿越",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/07-editor.png",
+    "w": 306,
+    "h": 660,
+    "kb": 38
+  },
+  {
+    "key": "routes",
+    "label": "路线库",
+    "route": "/pages/routes/routes",
+    "note": "293 条路线",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/08-routes.png",
+    "w": 306,
+    "h": 660,
+    "kb": 52
+  },
+  {
+    "key": "route",
+    "label": "路线详情",
+    "route": "/pages/route/route?id=route-muky9hnjzbhg1t",
+    "note": "月亮湖穿越伍须海-1790560849819.gpx.bin_tmp",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/09-route.png",
+    "w": 306,
+    "h": 660,
+    "kb": 135
+  },
+  {
+    "key": "routeEdit",
+    "label": "路线编辑器",
+    "route": "/pages/route-edit/route-edit?id=route-muky9hnjzbhg1t",
+    "note": "月亮湖穿越伍须海-1790560849819.gpx.bin_tmp",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/10-route-edit.png",
+    "w": 306,
+    "h": 660,
+    "kb": 43
+  },
+  {
+    "key": "workspace",
+    "label": "组织者工作台",
+    "route": "/pages/workspace/workspace?id=activity-mvb1pkbov4td54",
+    "note": "[UI] 赵公山 · 东线穿越 · 正在集合",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/11-workspace.png",
+    "w": 306,
+    "h": 660,
+    "kb": 37
+  },
+  {
+    "key": "staff",
+    "label": "领队现场",
+    "route": "/pages/staff/staff?id=activity-mvb1pkbov4td54",
+    "note": "当前账号无领队协作授权",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/12-staff.png",
+    "w": 306,
+    "h": 660,
+    "kb": 24
+  },
+  {
+    "key": "vehicle",
+    "label": "车辆联络",
+    "route": "/pages/vehicle/vehicle?id=activity-mutw5e6lnsllvt",
+    "note": "1号车 川A·GP001",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/13-vehicle.png",
+    "w": 306,
+    "h": 660,
+    "kb": 23
+  },
+  {
+    "key": "weather",
+    "label": "天气详情",
+    "route": "/pages/weather/weather?lat=30.9124&lng=103.4562&name=赵公山&ele=1600&eleSrc=manual",
+    "note": "单点模式 · 7 天 / 168 小时 · ",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/14-weather.png",
+    "w": 306,
+    "h": 660,
+    "kb": 41
+  },
+  {
+    "key": "weatherChart",
+    "label": "全图展示（横屏）",
+    "route": "/pages/weather-chart/weather-chart",
+    "note": "7 天 · 168 小时",
+    "wide": true,
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/15-weather-chart.png",
+    "w": 558,
+    "h": 258,
+    "kb": 26
+  },
+  {
+    "key": "weatherHub",
+    "label": "天气入口",
+    "route": "/pages/weather-hub/weather-hub",
+    "note": "1 个观察点 · 1 条轨迹",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/16-weather-hub.png",
+    "w": 306,
+    "h": 660,
+    "kb": 34
+  },
+  {
+    "key": "anotices",
+    "label": "活动通知",
+    "route": "/pages/anotices/anotices?id=activity-mvb1pkbov4td54",
+    "note": "5 条通知",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/17-anotices.png",
+    "w": 306,
+    "h": 660,
+    "kb": 40
+  },
+  {
+    "key": "lab",
+    "label": "预演实验室（开发者）",
+    "route": "/pages/lab/lab",
+    "note": "预演面板",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/18-lab.png",
+    "w": 306,
+    "h": 660,
+    "kb": 43
+  },
+  {
+    "key": "privacy",
+    "label": "隐私保护指引",
+    "route": "/pages/privacy/privacy",
+    "note": "静态文档",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/19-privacy.png",
+    "w": 306,
+    "h": 660,
+    "kb": 58
+  },
+  {
+    "key": "cloudField",
+    "label": "云场渲染验证页（开发者）",
+    "route": "/pages/cloud-field-poc/cloud-field-poc",
+    "note": "格聂（mock） · 16:00  云量 83% · 云区 3,150–3,775",
+    "file": "C:/Users/thinkbook/AppData/Local/Temp/opencode/mp-auto/shots-all/20-cloud-field-poc.png",
+    "w": 306,
+    "h": 660,
+    "kb": 60
+  }
+]
