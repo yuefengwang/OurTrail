@@ -4,6 +4,7 @@
   "worktree": "D:/OurTrail-night-ui-v1",
   "branch": "agent/ourtrail-night-ui-v1",
   "startedAt": "2026-10-22",
+  "finishedAt": "2026-10-22",
   "inputsRead": [
     "OurTrail_UI_交付包/01_全局视觉参考.png",
     "OurTrail_UI_交付包/02_设计与业务边界.md",
@@ -12,21 +13,22 @@
     "OurTrail_UI_交付包/c15ae9865302c18255394d11458f73d1.jpg",
     "docs/ui-snapshots/ourtrail-all-pages-2026-10-20.png"
   ],
-  "planFiles": [
-    "README.md", "input-manifest.md", "repository-audit.md", "page-coverage-matrix.md",
-    "design-gap-analysis.md", "design-system.md", "business-invariants.md",
-    "implementation-roadmap.md", "acceptance-plan.md", "night-execution-plan.md",
-    "tasks/T001.md", "tasks/T002.md", "tasks/T003.md", "tasks/T004-T005.md"
-  ],
-  "frozenPathsNote": "主工作区 91 处未提交在途改动＝冻结集，见 repository-audit.md §2",
-  "executionModel": "platform-assigned（无法指定 DeepSeek Flash，见 night-execution-plan.md）",
-  "visualVerification": "NOT_RUN（共享开发者工具需授权）",
+  "executionModel": "platform-assigned subagents（Agent 工具不暴露模型字段，无法指定 DeepSeek Flash；主控独立审 diff，未伪称 Flash）",
+  "visualVerification": "NOT_RUN（共享开发者工具需用户授权；授权后按 docs/e2e-mp/automation-playbook.md 补拍）",
+  "preExistingRed": "swx2-style-gates T5.1 = pages/activity/activity.wxss:90 .highlight-dot（AGENTS.md Gate recount 27 已登记；三轮复跑同一条）",
   "tasks": {
-    "T001": { "status": "ready", "scope": "app.wxss 追加共用类", "commit": null },
-    "T002": { "status": "pending", "scope": "pages/home + activity-card", "commit": null, "dependsOn": "T001" },
-    "T003": { "status": "pending", "scope": "pages/discover", "commit": null, "dependsOn": "T001" },
-    "T004": { "status": "pending", "scope": "pages/activity 长图文展示层", "commit": null, "note": "下一夜候选" },
-    "T005": { "status": "blocked", "scope": "pages/weather-hub", "reason": "冻结集（用户在途改动）" }
+    "T001": { "status": "passed", "commit": "d8400a7", "tests": "check0/handlers0/swx1 45-0/swx2 117-1存量/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0/b4-pad 32-0", "note": "首版 .metrics__* 被 G11 拦下（撞存量 .metrics）⇒ 删除改复用存量" },
+    "T002": { "status": "passed", "commit": "bd24085", "tests": "check0/handlers0/a20 32-0/home-collab 25-0/b4-pad 32-0/swx1 45-0/swx2 117-1存量/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0/workspace 114-0/journey-graph 15-0" },
+    "T003": { "status": "passed", "commit": "454ee7b", "tests": "check0/handlers0/scenario-discover 36-0/b4-pad 32-0/swx1 45-0/swx2 117-1存量/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0/journey-graph 15-0" },
+    "T004": { "status": "pending", "note": "活动详情长图文展示层，下一夜第一顺位" },
+    "T005": { "status": "blocked", "reason": "weather-hub 在主工作区 91 处未提交在途改动内（冻结集）" }
   },
-  "nextExecutable": "T001"
+  "commits": ["373da6b", "d8400a7", "bd24085", "454ee7b"],
+  "nextExecutable": "T004",
+  "openDebts": [
+    "home.js 与 discover.js 各一份 cardMetrics 同口径拷贝（utils 冻结所致，已注释登记）",
+    "home/discover 页头同形类各一份（待 app.wxss 解冻上收）",
+    "discover .filter-chip 命中高 34px < 44（M-07 清单未含 discover，未擅改）",
+    "home/discover 旧第二行导语删除，scope 语义改由 callout/空态承担（抄录于 night-report §3）"
+  ]
 }
