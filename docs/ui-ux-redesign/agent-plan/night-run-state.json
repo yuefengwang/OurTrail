@@ -1,0 +1,32 @@
+{
+  "run": "night-ui-v1-20261022",
+  "baselineCommit": "e818e63",
+  "worktree": "D:/OurTrail-night-ui-v1",
+  "branch": "agent/ourtrail-night-ui-v1",
+  "startedAt": "2026-10-22",
+  "inputsRead": [
+    "OurTrail_UI_交付包/01_全局视觉参考.png",
+    "OurTrail_UI_交付包/02_设计与业务边界.md",
+    "OurTrail_UI_交付包/03_分批执行Prompt.md",
+    "OurTrail_UI_交付包/0d02131464051ab374dc7e7cfa06f496.jpg",
+    "OurTrail_UI_交付包/c15ae9865302c18255394d11458f73d1.jpg",
+    "docs/ui-snapshots/ourtrail-all-pages-2026-10-20.png"
+  ],
+  "planFiles": [
+    "README.md", "input-manifest.md", "repository-audit.md", "page-coverage-matrix.md",
+    "design-gap-analysis.md", "design-system.md", "business-invariants.md",
+    "implementation-roadmap.md", "acceptance-plan.md", "night-execution-plan.md",
+    "tasks/T001.md", "tasks/T002.md", "tasks/T003.md", "tasks/T004-T005.md"
+  ],
+  "frozenPathsNote": "主工作区 91 处未提交在途改动＝冻结集，见 repository-audit.md §2",
+  "executionModel": "platform-assigned（无法指定 DeepSeek Flash，见 night-execution-plan.md）",
+  "visualVerification": "NOT_RUN（共享开发者工具需授权）",
+  "tasks": {
+    "T001": { "status": "ready", "scope": "app.wxss 追加共用类", "commit": null },
+    "T002": { "status": "pending", "scope": "pages/home + activity-card", "commit": null, "dependsOn": "T001" },
+    "T003": { "status": "pending", "scope": "pages/discover", "commit": null, "dependsOn": "T001" },
+    "T004": { "status": "pending", "scope": "pages/activity 长图文展示层", "commit": null, "note": "下一夜候选" },
+    "T005": { "status": "blocked", "scope": "pages/weather-hub", "reason": "冻结集（用户在途改动）" }
+  },
+  "nextExecutable": "T001"
+}
