@@ -20,6 +20,18 @@ function filterCount(filters) {
   return (filters.dateFrom ? 1 : 0) + (filters.dateTo ? 1 : 0) + (filters.difficulty ? 1 : 0)
 }
 
+// 与 home.js cardMetrics 同口径的第二份拷贝（距离/爬升/人数；缺字段整项不出现、绝不印 0），
+// utils/* 冻结 ⇒ 派生函数暂住页内，待 utils 解冻后上收共享模块（债务登记：out/SWX2/requests.md 同族）。
+// 与 home 拷贝的唯一差异：discoverView 投影把 confirmed/capacity 放在活动顶层
+// （home 投影嵌套在 a.meta 下），其余逐行同形。
+function cardMetrics(a) {
+  const metrics = []
+  if (a.routeSnapshot.distanceKm) metrics.push({ key: 'distance', label: '距离', value: String(a.routeSnapshot.distanceKm), unit: 'km' })
+  if (a.routeSnapshot.ascentM) metrics.push({ key: 'ascent', label: '爬升', value: String(a.routeSnapshot.ascentM), unit: 'm' })
+  if (a.capacity) metrics.push({ key: 'people', label: '人数', value: a.confirmed + '/' + a.capacity, unit: '' })
+  return metrics
+}
+
 // 活动地图只取「第一个有坐标的路线节点」作为标记；没有坐标的活动不画点。
 function buildDiscoverMap(activities) {
   const markerMap = []
@@ -147,6 +159,10 @@ Page({
           meta: (a.routeSnapshot.title || '路线待完善')
             + (a.routeSnapshot.distanceKm ? ' · ' + a.routeSnapshot.distanceKm + ' km' : '')
             + (difficulty ? ' · ' + difficulty : ''),
+          // N3：sub 行主语与指标行交给 activity-card 的新形态（与 home 同口径）；
+          // meta 保留作未传 routeName 时的回落与投影契约，不删。
+          routeName: a.routeSnapshot.title || '路线待完善',
+          metrics: cardMetrics(a),
           status: a.owner ? '我组织的' : (F.PHASE_LABELS[a.phase] || a.phase),
           // hero 只替页面已经说出口的那句话做视觉强调：不带搜索词/筛选时，第一条确实是「最新发布的一场」。
           featured: !search && filterCount(filters) === 0 && i === 0,
