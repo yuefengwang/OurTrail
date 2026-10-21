@@ -40,6 +40,11 @@
 | T005 天气入口 | weather-hub ∈ 主工作区 91 处在途改动 | 你在途天气工作提交/合并后重评 | 否 |
 | T004 活动详情 | 中风险热点页，需逐段核对 ContentBlock | 下一夜第一顺位 | 否 |
 | 视觉验收 | 开发者工具为共享会话；且 worktree 不含你在途改动 | 授权后按 automation-playbook 补拍 before/after | **是** |
+
+视觉验收补拍尝试（2026-10-22，已授权）：**ENV-ABORT**。9 步排除链（含授权内 quit 重启）证明
+ws 桥在听而页内 agent 永不响应，与「IDE 自动化开关需人工开启」同族；未产出截图、不作数运行 6 次。
+取证与可复用驱动：`evidence/visual-2026-10-22/README.md` + `%LOCALAPPDATA%\Temp\opencode\mp-auto\shot.js`。
+结束时会话已恢复为你的主项目窗口。
 | 天气五屏 W2–W5 | 冻结集 + G-02..G-05 | 只规划 | 否 |
 | swx2 存量红 | activity.wxss:90 font-weight 700（先于本夜） | 单独裁决修或登记豁免 | 是 |
 

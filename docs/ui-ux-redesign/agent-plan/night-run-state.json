@@ -14,7 +14,7 @@
     "docs/ui-snapshots/ourtrail-all-pages-2026-10-20.png"
   ],
   "executionModel": "platform-assigned subagents（Agent 工具不暴露模型字段，无法指定 DeepSeek Flash；主控独立审 diff，未伪称 Flash）",
-  "visualVerification": "NOT_RUN（共享开发者工具需用户授权；授权后按 docs/e2e-mp/automation-playbook.md 补拍）",
+  "visualVerification": "ENV-ABORT 2026-10-22：9 步排除链见 evidence/visual-2026-10-22/README.md；ws 桥在听但页内 agent 不响应，疑 IDE 自动化开关需人工开启（quit 后复位）；驱动 shot.js 已备好，通道一通即跑；结束时会话已恢复用户主项目窗口",
   "preExistingRed": "swx2-style-gates T5.1 = pages/activity/activity.wxss:90 .highlight-dot（AGENTS.md Gate recount 27 已登记；三轮复跑同一条）",
   "tasks": {
     "T001": { "status": "passed", "commit": "d8400a7", "tests": "check0/handlers0/swx1 45-0/swx2 117-1存量/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0/b4-pad 32-0", "note": "首版 .metrics__* 被 G11 拦下（撞存量 .metrics）⇒ 删除改复用存量" },
