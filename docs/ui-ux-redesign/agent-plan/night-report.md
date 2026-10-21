@@ -27,9 +27,9 @@
 ## 3. 已实施改动
 | ID | 文件 | 提交 | 主要变化 | 测试 | 视觉 |
 |---|---|---|---|---|---|
-| T001 | app.wxss +23 行、design-system.md §9 | d8400a7 | 新增 `.searchbar/.searchbar__input`；零新色值；指标行改复用存量 `.metric*` | 8 套门全绿（swx2 存量 1 红） | NOT_RUN |
-| T002 | home.{wxml,wxss,json,js}、activity-card.{wxml,wxss,js} | bd24085 | 浅色导航；搜索条；页头一行化；普通卡照片在上+状态 pill 压图+指标行（缺字段不印 0）；featured/六态/底部留白公式不动 | 11 套门全绿 | NOT_RUN |
-| T003 | discover.{wxml,wxss,json,js} | 454ee7b | 浅色导航；搜索条；页头一行化（视图分段右置）；诚实 callout 文案一字不改压 caption 级；列表卡与地图选中卡接指标行 | 10 套门全绿 | NOT_RUN |
+| T001 | app.wxss +23 行、design-system.md §9 | d8400a7 | 新增 `.searchbar/.searchbar__input`；零新色值；指标行改复用存量 `.metric*` | 8 套门全绿（swx2 存量 1 红） | 通过（375） |
+| T002 | home.{wxml,wxss,json,js}、activity-card.{wxml,wxss,js} | bd24085 | 浅色导航；搜索条；页头一行化；普通卡照片在上+状态 pill 压图+指标行（缺字段不印 0）；featured/六态/底部留白公式不动 | 11 套门全绿 | 通过（375） |
+| T003 | discover.{wxml,wxss,json,js} | 454ee7b | 浅色导航；搜索条；页头一行化（视图分段右置）；诚实 callout 文案一字不改压 caption 级；列表卡与地图选中卡接指标行 | 10 套门全绿 | 通过（375） |
 
 接受的取舍（抄录备查）：home/discover 旧第二行导语删除——「只显示尚未出发的公开活动」的 scope 语义现由诚实 callout 与空态文案承担；
 若你认为这句必须留在首屏，回滚成本＝两行 wxml。
@@ -41,17 +41,18 @@
 | T004 活动详情 | 中风险热点页，需逐段核对 ContentBlock | 下一夜第一顺位 | 否 |
 | 视觉验收 | 开发者工具为共享会话；且 worktree 不含你在途改动 | 授权后按 automation-playbook 补拍 before/after | **是** |
 
-视觉验收补拍尝试（2026-10-22，已授权）：**ENV-ABORT**。9 步排除链（含授权内 quit 重启）证明
-ws 桥在听而页内 agent 永不响应，与「IDE 自动化开关需人工开启」同族；未产出截图、不作数运行 6 次。
-取证与可复用驱动：`evidence/visual-2026-10-22/README.md` + `%LOCALAPPDATA%\Temp\opencode\mp-auto\shot.js`。
-结束时会话已恢复为你的主项目窗口。
+视觉验收补拍（2026-10-22，已授权）：**通过**。before=`truth@e818e63`、after=`night@b385ae7` 各 2 张（home/discover），
+注入自证与 bundle 新鲜度门全过，主控目视与拼板 1.1/1.2 语言一致；375 宽已验，390/414 与长列表滚动留后续轮。
+中途一段 ENV-ABORT 已翻案：真因是我自建 `cli.js` 传项目路径未加单引号（bash 吃反斜杠 → IDE 注册坏路径 →
+模拟器编译错误 → agent 死），非 IDE 开关/孤儿会话；翻案链与坏注册项登记见 `evidence/visual-2026-10-22/README.md`。
+结束时会话已恢复为用户主项目窗口。
 | 天气五屏 W2–W5 | 冻结集 + G-02..G-05 | 只规划 | 否 |
 | swx2 存量红 | activity.wxss:90 font-weight 700（先于本夜） | 单独裁决修或登记豁免 | 是 |
 
 ## 5. 风险
 - 已验证安全：三任务 diff 均限允许文件；冻结集零混入（每任务 `git status` 核对）；门禁复跑一致；activity-card 仅 home/discover 注册（grep 证实），无第三方回归面。
 - 已知问题：openDebts 四条（cardMetrics 双拷贝、页头类双拷贝、filter-chip 34px、导语删除）。
-- 尚未验证：全部像素级表现（375/390/414、安全区、照片卡裁切、caption 可读性）、地图瓦片（IDE 已知空白）。
+- 尚未验证：390/414 宽、长列表滚动、地图瓦片（IDE 已知空白）、深色模式不适用项；375 宽与六态注入已真机验。
 
 ## 6. 下一步三个任务
 1. **T004 活动详情展示层**：12 段中 7 段数据已齐（ContentBlock/cover/difficulty/route-profile/fee 文本/装备/注意事项），收益最大。
