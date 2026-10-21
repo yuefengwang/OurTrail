@@ -93,7 +93,7 @@
 | 项 | 值 |
 |---|---|
 | 审计分支 | `audit/ui-redesign-baseline-20261021`（远程无同名分支，无冲突） |
-| commit SHA | `da0f3411fd6d7cbc7abf47682a2e99e92e0bbae7`（提交信息 `docs: add OurTrail UI redesign audit baseline`） |
+| commit SHA | 主提交 `da0f3411fd6d7cbc7abf47682a2e99e92e0bbae7`（`docs: add OurTrail UI redesign audit baseline`）；另有 2 个文档修订提交，完整列表见分支 `git log --oneline` |
 | 分支地址 | https://github.com/yuefengwang/OurTrail/tree/audit/ui-redesign-baseline-20261021 |
 | 截图目录 | https://github.com/yuefengwang/OurTrail/tree/audit/ui-redesign-baseline-20261021/docs/ui-redesign/audit-2026-10-21/screenshots |
 
