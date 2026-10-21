@@ -1,0 +1,131 @@
+{
+  "capturedAt": "2026-10-21T09:35:26.780Z",
+  "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+  "items": [
+    {
+      "pageId": "HOME",
+      "route": "/pages/home/home",
+      "group": "navigation",
+      "files": [
+        {
+          "file": "navigation/HOME_01_initial.png",
+          "scrollY": 0,
+          "state": "ok"
+        },
+        {
+          "file": "navigation/HOME_02_scroll.png",
+          "scrollY": 700,
+          "state": "ok"
+        },
+        {
+          "file": "navigation/HOME_03_scroll.png",
+          "scrollY": 1400,
+          "state": "ok"
+        },
+        {
+          "file": "navigation/HOME_04_scroll.png",
+          "scrollY": 2100,
+          "state": "ok"
+        }
+      ],
+      "notes": [],
+      "status": "ok",
+      "dataBrief": {
+        "loading": false,
+        "denied": "",
+        "emptyTitle": "留一点时间，走进山野",
+        "cards": 152
+      }
+    },
+    {
+      "pageId": "ME",
+      "route": "/pages/me/me",
+      "group": "navigation",
+      "files": [
+        {
+          "file": "navigation/ME_01_initial.png",
+          "scrollY": 0,
+          "state": "ok"
+        },
+        {
+          "file": "navigation/ME_02_scroll.png",
+          "scrollY": 700,
+          "state": "ok"
+        },
+        {
+          "file": "navigation/ME_03_scroll.png",
+          "scrollY": 1400,
+          "state": "ok"
+        },
+        {
+          "file": "navigation/ME_04_scroll.png",
+          "scrollY": 2100,
+          "state": "ok"
+        }
+      ],
+      "notes": [],
+      "status": "ok",
+      "dataBrief": {}
+    },
+    {
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather",
+      "group": "weather",
+      "files": [
+        {
+          "file": "weather/WEATHER_01_initial.png",
+          "scrollY": 0,
+          "state": "ok"
+        },
+        {
+          "file": "weather/WEATHER_02_scroll.png",
+          "scrollY": 700,
+          "state": "ok"
+        },
+        {
+          "file": "weather/WEATHER_03_scroll.png",
+          "scrollY": 1400,
+          "state": "ok"
+        },
+        {
+          "file": "weather/WEATHER_04_scroll.png",
+          "scrollY": 2100,
+          "state": "ok"
+        }
+      ],
+      "notes": [],
+      "status": "ok",
+      "dataBrief": {}
+    },
+    {
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather?lat=30.6737&lng=104.0715&name=%E6%88%90%E9%83%BD&ele=500",
+      "group": "weather",
+      "files": [
+        {
+          "file": "weather/WEATHER_01_initial_real-query.png",
+          "scrollY": 0,
+          "state": "ok"
+        },
+        {
+          "file": "weather/WEATHER_02_scroll_real-query.png",
+          "scrollY": 700,
+          "state": "ok"
+        },
+        {
+          "file": "weather/WEATHER_03_scroll_real-query.png",
+          "scrollY": 1400,
+          "state": "ok"
+        },
+        {
+          "file": "weather/WEATHER_04_scroll_real-query.png",
+          "scrollY": 2100,
+          "state": "ok"
+        }
+      ],
+      "notes": [],
+      "status": "ok",
+      "dataBrief": {}
+    }
+  ]
+}

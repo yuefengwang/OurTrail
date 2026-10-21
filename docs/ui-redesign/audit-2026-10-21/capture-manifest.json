@@ -1,0 +1,898 @@
+{
+  "audit": "OurTrail UI redesign baseline 2026-10-21",
+  "baselineCommit": "e818e630dd38d9d22a899a5ecddcd9fad9682259",
+  "capturedAt": "2026-10-21T11:12:17.872Z",
+  "environment": "WeChat DevTools CLI (x86) + simulator iPhone (375px), libVersion 3.8.12, auto-port 9425, project D:/OurTrailAudit (clean clone of master)",
+  "method": "真实运行微信开发者工具 + miniprogram-automator 驱动截图；文本用 el.input()、按钮/链接用 el.tap() 真实触发；picker/系统相册/文件选择等原生弹窗无法捕获（见 blockers.md）",
+  "total": 111,
+  "items": [
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_01_initial.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_02_title-filled.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_02b_next-no-required.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "空表单直接点「下一步」：步骤切换不被拦"
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_03_start-suggested.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_04_step2-route.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_05_route-library-sheet.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_06_step1-route-applied.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_07_pickup-manual.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_08_pickup-filled.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_21_step3-content.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_22_content-text.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_23_step4-publish.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_24_publish-confirm.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_25_publish-done.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-create/ACT-CREATE_26_publish-validation-failed.png",
+      "pageId": "ACT-CREATE",
+      "route": "/pages/editor/editor",
+      "state": "创建流程（见 interaction-flows.md）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "必填未齐点「发布活动」：红色 failure callout + 跳回 step0"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_01_initial.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "组织者活动 [UI] 赵公山·东线穿越（正在集合）首屏"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_02_scroll.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_02_scroll700.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "同上 scroll 700"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_03_scroll.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_03_scroll1400.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "同上 scroll 1400"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_04_scroll.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_04_scroll2100.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "同上 scroll 2100（底部 tab）"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_05_created-activity.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "草稿活动未发布预览（create4 savedId）"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_06_created-activity-mid.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "草稿预览 scroll 900"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_07_created-activity-bottom.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "草稿预览 scroll 1800"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_08_published-activity.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "savedId=activity-mvhymvwsnup0ys 详情"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_09_published-mid.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "同上 scroll 900"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_13_after-signup.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "正式发布活动报名后详情（还没报名徽标仍在，见 issues ISS-012）"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_14_tab-safety.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "详情页 tap 底部「安全」tab"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_15_tab-route.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "详情页 tap 底部「路线」tab"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_16_tab-schedule.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "详情页 tap 底部「行程」tab"
+    },
+    {
+      "file": "screenshots/activity-detail/ACT-DETAIL_17_after-signup2.png",
+      "pageId": "ACT-DETAIL",
+      "route": "/pages/activity/activity?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "第二次报名尝试后详情"
+    },
+    {
+      "file": "screenshots/discovery/DISCOVER_01_initial.png",
+      "pageId": "DISCOVER",
+      "route": "/pages/discover/discover",
+      "state": "ok（cards=50）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/discovery/DISCOVER_02_scroll.png",
+      "pageId": "DISCOVER",
+      "route": "/pages/discover/discover",
+      "state": "ok（cards=50）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/discovery/DISCOVER_03_scroll.png",
+      "pageId": "DISCOVER",
+      "route": "/pages/discover/discover",
+      "state": "ok（cards=50）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/discovery/DISCOVER_04_scroll.png",
+      "pageId": "DISCOVER",
+      "route": "/pages/discover/discover",
+      "state": "ok（cards=50）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/HOME_01_initial.png",
+      "pageId": "HOME",
+      "route": "/pages/home/home",
+      "state": "ok（空态文案「留一点时间，走进山野」；账号云环境有 152 条活动卡片数据）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/HOME_02_scroll.png",
+      "pageId": "HOME",
+      "route": "/pages/home/home",
+      "state": "ok（空态文案「留一点时间，走进山野」；账号云环境有 152 条活动卡片数据）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/HOME_03_scroll.png",
+      "pageId": "HOME",
+      "route": "/pages/home/home",
+      "state": "ok（空态文案「留一点时间，走进山野」；账号云环境有 152 条活动卡片数据）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/HOME_04_scroll.png",
+      "pageId": "HOME",
+      "route": "/pages/home/home",
+      "state": "ok（空态文案「留一点时间，走进山野」；账号云环境有 152 条活动卡片数据）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/ME_01_initial.png",
+      "pageId": "ME",
+      "route": "/pages/me/me",
+      "state": "ok（身份卡 + 统计 + 最近活动）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/ME_02_scroll.png",
+      "pageId": "ME",
+      "route": "/pages/me/me",
+      "state": "ok（身份卡 + 统计 + 最近活动）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/ME_03_scroll.png",
+      "pageId": "ME",
+      "route": "/pages/me/me",
+      "state": "ok（身份卡 + 统计 + 最近活动）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/ME_04_scroll.png",
+      "pageId": "ME",
+      "route": "/pages/me/me",
+      "state": "ok（身份卡 + 统计 + 最近活动）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/NOTICES_01_initial.png",
+      "pageId": "NOTICES",
+      "route": "/pages/notices/notices",
+      "state": "ok",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/NOTICES_02_scroll.png",
+      "pageId": "NOTICES",
+      "route": "/pages/notices/notices",
+      "state": "ok",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/NOTICES_03_scroll.png",
+      "pageId": "NOTICES",
+      "route": "/pages/notices/notices",
+      "state": "ok",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/NOTICES_04_scroll.png",
+      "pageId": "NOTICES",
+      "route": "/pages/notices/notices",
+      "state": "ok",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/WEATHER-HUB_01_initial.png",
+      "pageId": "WEATHER-HUB",
+      "route": "/pages/weather-hub/weather-hub",
+      "state": "ok（空观察点/空轨迹组）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/WEATHER-HUB_02_scroll.png",
+      "pageId": "WEATHER-HUB",
+      "route": "/pages/weather-hub/weather-hub",
+      "state": "ok（空观察点/空轨迹组）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/WEATHER-HUB_03_scroll.png",
+      "pageId": "WEATHER-HUB",
+      "route": "/pages/weather-hub/weather-hub",
+      "state": "ok（空观察点/空轨迹组）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/navigation/WEATHER-HUB_04_scroll.png",
+      "pageId": "WEATHER-HUB",
+      "route": "/pages/weather-hub/weather-hub",
+      "state": "ok（空观察点/空轨迹组）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/organizer/STAFF_01_initial.png",
+      "pageId": "STAFF",
+      "route": "/pages/staff/staff?id=activity-mvb1pkbov4td54",
+      "state": "ok（现场协作面板）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/organizer/STAFF_02_scroll700.png",
+      "pageId": "STAFF",
+      "route": "/pages/staff/staff?id=activity-mvb1pkbov4td54",
+      "state": "ok（现场协作面板）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/organizer/TASKS_01_initial.png",
+      "pageId": "TASKS",
+      "route": "/pages/tasks/tasks?id=activity-mvb1pkbov4td54",
+      "state": "ok（任务清单）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/organizer/TASKS_02_scroll700.png",
+      "pageId": "TASKS",
+      "route": "/pages/tasks/tasks?id=activity-mvb1pkbov4td54",
+      "state": "ok（任务清单）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/organizer/VEHICLE_01_initial.png",
+      "pageId": "VEHICLE",
+      "route": "/pages/vehicle/vehicle?id=activity-mvb1pkbov4td54",
+      "state": "denied「没有此车辆的联络权限。」（真实权限态）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/organizer/VEHICLE_02_scroll700.png",
+      "pageId": "VEHICLE",
+      "route": "/pages/vehicle/vehicle?id=activity-mvb1pkbov4td54",
+      "state": "denied「没有此车辆的联络权限。」（真实权限态）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/organizer/VEHICLE_03_scroll1400.png",
+      "pageId": "VEHICLE",
+      "route": "/pages/vehicle/vehicle?id=activity-mvb1pkbov4td54",
+      "state": "denied「没有此车辆的联络权限。」（真实权限态）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/organizer/WORKSPACE_01_initial.png",
+      "pageId": "WORKSPACE",
+      "route": "/pages/workspace/workspace?id=activity-mvb1pkbov4td54",
+      "state": "ok（组织者工作台）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/organizer/WORKSPACE_02_scroll700.png",
+      "pageId": "WORKSPACE",
+      "route": "/pages/workspace/workspace?id=activity-mvb1pkbov4td54",
+      "state": "ok（组织者工作台）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/organizer/WORKSPACE_03_scroll1400.png",
+      "pageId": "WORKSPACE",
+      "route": "/pages/workspace/workspace?id=activity-mvb1pkbov4td54",
+      "state": "ok（组织者工作台）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ANOTICES_01_initial.png",
+      "pageId": "ANOTICES",
+      "route": "/pages/anotices/anotices",
+      "state": "ok",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ANOTICES_02_scroll.png",
+      "pageId": "ANOTICES",
+      "route": "/pages/anotices/anotices",
+      "state": "ok",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ANOTICES_03_scroll.png",
+      "pageId": "ANOTICES",
+      "route": "/pages/anotices/anotices",
+      "state": "ok",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ANOTICES_04_scroll.png",
+      "pageId": "ANOTICES",
+      "route": "/pages/anotices/anotices",
+      "state": "ok",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/CLOUD-POC_01_initial.png",
+      "pageId": "CLOUD-POC",
+      "route": "/pages/cloud-field-poc/cloud-field-poc",
+      "state": "ok（mock 数据集）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/CLOUD-POC_02_scroll.png",
+      "pageId": "CLOUD-POC",
+      "route": "/pages/cloud-field-poc/cloud-field-poc",
+      "state": "ok（mock 数据集）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/CLOUD-POC_03_scroll.png",
+      "pageId": "CLOUD-POC",
+      "route": "/pages/cloud-field-poc/cloud-field-poc",
+      "state": "ok（mock 数据集）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/CLOUD-POC_04_scroll.png",
+      "pageId": "CLOUD-POC",
+      "route": "/pages/cloud-field-poc/cloud-field-poc",
+      "state": "ok（mock 数据集）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/LAB_01_initial.png",
+      "pageId": "LAB",
+      "route": "/pages/lab/lab",
+      "state": "ok（OWNER 白名单账号可见的预演面板）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/LAB_02_scroll.png",
+      "pageId": "LAB",
+      "route": "/pages/lab/lab",
+      "state": "ok（OWNER 白名单账号可见的预演面板）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/LAB_03_scroll.png",
+      "pageId": "LAB",
+      "route": "/pages/lab/lab",
+      "state": "ok（OWNER 白名单账号可见的预演面板）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/LAB_04_scroll.png",
+      "pageId": "LAB",
+      "route": "/pages/lab/lab",
+      "state": "ok（OWNER 白名单账号可见的预演面板）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTE-EDIT_01_initial.png",
+      "pageId": "ROUTE-EDIT",
+      "route": "/pages/route-edit/route-edit",
+      "state": "ok（新建空表单）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTE-EDIT_02_scroll.png",
+      "pageId": "ROUTE-EDIT",
+      "route": "/pages/route-edit/route-edit",
+      "state": "ok（新建空表单）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTE-EDIT_03_scroll.png",
+      "pageId": "ROUTE-EDIT",
+      "route": "/pages/route-edit/route-edit",
+      "state": "ok（新建空表单）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTE-EDIT_04_scroll.png",
+      "pageId": "ROUTE-EDIT",
+      "route": "/pages/route-edit/route-edit",
+      "state": "ok（新建空表单）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTES_01_initial.png",
+      "pageId": "ROUTES",
+      "route": "/pages/routes/routes",
+      "state": "ok（296 条路线，列表渲染）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTES_02_scroll.png",
+      "pageId": "ROUTES",
+      "route": "/pages/routes/routes",
+      "state": "ok（296 条路线，列表渲染）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTES_03_scroll.png",
+      "pageId": "ROUTES",
+      "route": "/pages/routes/routes",
+      "state": "ok（296 条路线，列表渲染）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTES_04_scroll.png",
+      "pageId": "ROUTES",
+      "route": "/pages/routes/routes",
+      "state": "ok（296 条路线，列表渲染）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTE_01_initial.png",
+      "pageId": "ROUTE",
+      "route": "/pages/route/route?id=route-muky6o3kl53fhv",
+      "state": "ok（真实路线详情：地图+剖面+天气）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTE_02_scroll800.png",
+      "pageId": "ROUTE",
+      "route": "/pages/route/route?id=route-muky6o3kl53fhv",
+      "state": "ok（真实路线详情：地图+剖面+天气）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/other/ROUTE_03_scroll1600.png",
+      "pageId": "ROUTE",
+      "route": "/pages/route/route?id=route-muky6o3kl53fhv",
+      "state": "ok（真实路线详情：地图+剖面+天气）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/profile/PRIVACY_01_initial.png",
+      "pageId": "PRIVACY",
+      "route": "/pages/privacy/privacy",
+      "state": "ok（静态文档）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/profile/PRIVACY_02_scroll.png",
+      "pageId": "PRIVACY",
+      "route": "/pages/privacy/privacy",
+      "state": "ok（静态文档）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/profile/PRIVACY_03_scroll.png",
+      "pageId": "PRIVACY",
+      "route": "/pages/privacy/privacy",
+      "state": "ok（静态文档）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/profile/PRIVACY_04_scroll.png",
+      "pageId": "PRIVACY",
+      "route": "/pages/privacy/privacy",
+      "state": "ok（静态文档）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/registration/SIGNUP_01_initial.png",
+      "pageId": "SIGNUP",
+      "route": "/pages/signup/signup?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "无参打开：denied「找不到此活动。」"
+    },
+    {
+      "file": "screenshots/registration/SIGNUP_02_scroll500.png",
+      "pageId": "SIGNUP",
+      "route": "/pages/signup/signup?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "草稿活动 id 打开：denied「活动尚未开放、已截止或没有报名权限。」"
+    },
+    {
+      "file": "screenshots/registration/SIGNUP_05_form-filled.png",
+      "pageId": "SIGNUP",
+      "route": "/pages/signup/signup?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "报名表单「这次，和谁同行？」第 1 步（81 checkbox 全勾状态）"
+    },
+    {
+      "file": "screenshots/registration/SIGNUP_06_submit-result.png",
+      "pageId": "SIGNUP",
+      "route": "/pages/signup/signup?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "勾选后点提交报名（界面无错误提示，见 ISS-011）"
+    },
+    {
+      "file": "screenshots/registration/SIGNUP_07_self-checked.png",
+      "pageId": "SIGNUP",
+      "route": "/pages/signup/signup?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "仅勾本人状态"
+    },
+    {
+      "file": "screenshots/registration/SIGNUP_08_submit-result2.png",
+      "pageId": "SIGNUP",
+      "route": "/pages/signup/signup?id=<id>",
+      "state": "见逐条 notes",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": "提交后 data.errors 有 158 条但界面零提示（见 ISS-011）"
+    },
+    {
+      "file": "screenshots/weather/WEATHER-CHART_01_initial.png",
+      "pageId": "WEATHER-CHART",
+      "route": "/pages/weather-chart/weather-chart",
+      "state": "ok（chart-store 有数据）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER-CHART_02_scroll.png",
+      "pageId": "WEATHER-CHART",
+      "route": "/pages/weather-chart/weather-chart",
+      "state": "ok（chart-store 有数据）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER-CHART_03_scroll.png",
+      "pageId": "WEATHER-CHART",
+      "route": "/pages/weather-chart/weather-chart",
+      "state": "ok（chart-store 有数据）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER-CHART_04_scroll.png",
+      "pageId": "WEATHER-CHART",
+      "route": "/pages/weather-chart/weather-chart",
+      "state": "ok（chart-store 有数据）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER-HUB_03_manual-dialog.png",
+      "pageId": "WEATHER-HUB",
+      "route": "/pages/weather-hub/weather-hub",
+      "state": "ok（空观察点/空轨迹组）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER-HUB_04_manual-filled.png",
+      "pageId": "WEATHER-HUB",
+      "route": "/pages/weather-hub/weather-hub",
+      "state": "ok（空观察点/空轨迹组）",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER_01_initial.png",
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather（无参 | ?lat=30.6737&lng=104.0715 成都 | hub 跳转）",
+      "state": "denied / ok 真实云数据",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER_01_initial_real-query.png",
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather（无参 | ?lat=30.6737&lng=104.0715 成都 | hub 跳转）",
+      "state": "denied / ok 真实云数据",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER_02_scroll.png",
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather（无参 | ?lat=30.6737&lng=104.0715 成都 | hub 跳转）",
+      "state": "denied / ok 真实云数据",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER_02_scroll_real-query.png",
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather（无参 | ?lat=30.6737&lng=104.0715 成都 | hub 跳转）",
+      "state": "denied / ok 真实云数据",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER_03_from-hub.png",
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather（无参 | ?lat=30.6737&lng=104.0715 成都 | hub 跳转）",
+      "state": "denied / ok 真实云数据",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER_03_scroll.png",
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather（无参 | ?lat=30.6737&lng=104.0715 成都 | hub 跳转）",
+      "state": "denied / ok 真实云数据",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER_03_scroll_real-query.png",
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather（无参 | ?lat=30.6737&lng=104.0715 成都 | hub 跳转）",
+      "state": "denied / ok 真实云数据",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER_04_from-hub-mid.png",
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather（无参 | ?lat=30.6737&lng=104.0715 成都 | hub 跳转）",
+      "state": "denied / ok 真实云数据",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER_04_scroll.png",
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather（无参 | ?lat=30.6737&lng=104.0715 成都 | hub 跳转）",
+      "state": "denied / ok 真实云数据",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    },
+    {
+      "file": "screenshots/weather/WEATHER_05_from-hub-bottom.png",
+      "pageId": "WEATHER",
+      "route": "/pages/weather/weather（无参 | ?lat=30.6737&lng=104.0715 成都 | hub 跳转）",
+      "state": "denied / ok 真实云数据",
+      "method": "wechat-devtools + miniprogram-automator@0.12.1 (mp.screenshot)",
+      "notes": ""
+    }
+  ]
+}
