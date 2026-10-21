@@ -16,9 +16,23 @@
       <view class="activity-card__title hero-body">{{title}}</view>
       <text class="activity-card__meta muted hero-body" id="meta">{{meta}}</text>
       <view wx:if="{{info}}" class="activity-card__info hero-body">{{info}}</view>
-      <view class="activity-card__affordance button leaf affordance-leaf hero-body" aria-hidden="true">
-        <text>查看活动安排</text>
-        <icon name="arrow" size="18" color="#163E35" />
+      <view class="activity-card__affordance">
+        <view class="button leaf affordance-leaf affordance-open hero-body" aria-hidden="true">
+          <text>查看活动安排</text>
+          <icon name="arrow" size="18" color="#163E35" />
+        </view>
+        <!-- 协作入口：这个人在这场活动上欠下的事，一个角色一枚。用 catchtap 而不是 bindtap——
+             卡片根节点自己 bindtap 打开活动，冒泡上去会变成「点车辆联络却进了详情页」。
+             与主入口同一套 leaf 浅底样式：真机首轮实测 .button.text 的 --forest 深绿字
+             压在 featured 的 --forest-deep 深绿底上几乎不可读（箭头字面量同样是深色），
+             浅底 chip + 深字在两种卡上都成立。 -->
+        <view wx:if="{{collab.length}}" class="collab-row">
+          <view wx:for="{{collab}}" wx:key="key" class="button leaf collab-leaf" hover-class="button-hover"
+            data-key="{{item.key}}" catchtap="onCollab">
+            <text>{{item.label}}</text>
+            <icon name="arrow" size="16" color="#163E35" />
+          </view>
+        </view>
       </view>
     </view>
   </block>
@@ -35,9 +49,18 @@
       </view>
     </view>
     <view wx:if="{{info}}" class="activity-card__info">{{info}}</view>
-    <view class="activity-card__affordance hero-body" aria-hidden="true">
-      <text>查看活动安排</text>
-      <icon name="arrow" size="18" color="#163E35" />
+    <view class="activity-card__affordance">
+      <view class="button leaf affordance-leaf affordance-open hero-body" aria-hidden="true">
+        <text>查看活动安排</text>
+        <icon name="arrow" size="18" color="#163E35" />
+      </view>
+      <view wx:if="{{collab.length}}" class="collab-row">
+        <view wx:for="{{collab}}" wx:key="key" class="button leaf collab-leaf" hover-class="button-hover"
+          data-key="{{item.key}}" catchtap="onCollab">
+          <text>{{item.label}}</text>
+          <icon name="arrow" size="16" color="#163E35" />
+        </view>
+      </view>
     </view>
   </block>
 </article>

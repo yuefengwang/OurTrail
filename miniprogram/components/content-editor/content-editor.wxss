@@ -1,0 +1,28 @@
+.content-block {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: 12px;
+  background: var(--paper);
+}
+
+.ce-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ce-cell { width: 100%; }
+
+.ce-grid.single .ce-thumb { height: 180px; }
+
+.ce-grid.double .ce-cell { width: calc((100% - 8px) / 2); }
+.ce-grid.double .ce-thumb { height: 120px; }
+
+.ce-grid.triple .ce-cell { width: calc((100% - 16px) / 3); }
+.ce-grid.triple .ce-thumb { height: 96px; }
+
+.ce-thumb {
+  width: 100%;
+  border-radius: 8px;
+  background: var(--stone);
+}

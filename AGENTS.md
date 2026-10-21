@@ -8,6 +8,10 @@
 
 **Gate recount 24:** 2026-10-20 全局原型 Wave 3（协作任务清单）。新增 `domain/tasks.js`、`pages/tasks/*`、`utils` 无新增（标签进 `format.js`）、`tools/tasks-test.js` **27**、`tools/scenario-tasks-test.js` **24** 与 `tools/e2e-task-test.js` **28**（A 层信封：403/CONFLICT/幂等/REQUEST_REUSED/草稿级联）；`ls tools/*-test.js | wc -l` = **100**。`build` 范围：`Task`/`TaskInput`/`TaskStatus`/`TaskCategory`、`ot_tasks` 集合、`task.create/update/status/remove`、`read {kind:'tasks'}`、owner-only 写入、参与者/协作者只读、归档/取消只读、草稿删除级联；页面入口在工作台与活动详情。`smoke 176/0`、`lab-dryrun 165/0`（sync-lab 16 files）、`lifecycle-transitions 214/0`、`lifecycle-concurrency 126/0`、`lifecycle-fuzz 47/0`、`quick-create 65/0`、`e2e-task 28/0`；`check.js`/`check-handlers`/`journey-graph` 全绿。**已部署 trailApi + trailApiLab**（均 Active/timeout 20；线上包 `tasks.js/schema.js/store.js` 与工作树逐字节一致），并用真实账号「测试活动」跑通真实云端 创建→进行中→删除（`real-task-crud.txt`）；页面截图另有 owner/参与者/新建 sheet。Wave 1 欠的 trailApi 重部署同时清零。
 
+**Gate recount 25:** 2026-10-21 按需微信资料门（未登录可浏览，点报名/发布才补资料）。新增可复用 `components/profile-gate/`：档案缺姓名/手机号时在报名页、编辑器内自动弹出 sheet，提供微信头像（`chooseAvatar`）、昵称（`input type=nickname`）、手机号（`getPhoneNumber`）与手填兜底；保存走 `profile.save` + CAS，保留紧急联系人/医疗备注/已有头像。报名页保存后重读报名表，编辑器保存后自动继续原保存/发布。**没有使用已不保证返回真实头像昵称的 `getUserProfile`**，也没有在浏览链路加门。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。新增 `tools/scenario-profile-gate-test.js` **19**；`scenario-signup 105→106`、`scenario-editor 158→160`；`check.js`/`check-handlers`/`journey-graph` 全绿；工具数 100→**101**。真机截图 `docs/ui-ux-redesign/evidence/profile-gate-2026-10-21/`（补资料 sheet + 关闭后的重开卡；未截真实姓名/手机号；未在真机提交 profile.save，避免覆盖真实账号资料）。
+
+**Gate recount 26:** 2026-10-21 活动发布页对齐公众号图文（P0–P3）。新增 `components/content-editor`、`utils/content-view.js`、`domain/files.js`（fileID 白名单/引用计数）；`trailApi` 新增 action `checkImage`（14→15）+ `security.imgSecCheck`，新增 11 个可选活动字段与 `ContentBlock`（正文块）；编辑器 3→4 步，详情页加活动介绍/活动说明/费用明细/报名后须知/封面三态，发现/首页/卡片优先实拍封面。**已部署 trailApi**（线上包与工作树逐文件 diff 空，Active/timeout 20/Node16.13）；`trailApiLab` 同步部署（Active/timeout 20，线上包 diff 空）。新增工具 `content-view-test` 14、`content-editor-test` 16，工具数 101→**103**；`smoke 176→210`（实测）、`scenario-editor 160→169`、`scenario-activity 144→151`、`scenario-discover 36/0`、`scenario-signup 106/0`、`scenario-workspace 114/0`、`lab-dryrun 165/0`、`quick-create 65/0`、`e2e-test 72/0`、`e2e-client-cas 54/0 (bugs=1 既有 BUG-C2)`、`lifecycle-projection 132/0`、`a20-owner-hero 32/0`、`journey-graph 15/0`、`ui-consistency 17/0`；`check.js`/`check-handlers` 全过。**未跑全量 sweep**，不编总数。真机证据 `docs/ui-ux-redesign/evidence/activity-article-p2p3-2026-10-21/`；UNVERIFIED：跨用户读图、真实键盘焦点、原生相册选择器、分享卡 `imageUrl`；`activity-facts.png` 是注入 `isDraft:false` 的渲染证据，不是已发布活动。`e2e-golden-path` 已改 4 步序号但未跑（GP-01 既有红）。设计稿 `docs/superpowers/specs/2026-10-21-activity-article-publishing-design.md`。
+
 ---
 
 ## OVERVIEW
@@ -18,7 +22,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 
 | Layer | Reality |
 |---|---|
-| Client | WeChat mini program, **native WXML/WXSS/CommonJS JS**. **21 pages**（`app.json` 实测，2026-10-20 新增 `pages/tasks`——协作任务清单）, **14 个组件目录**（13 在用 + `privacy-popup` 死代码；2026-10-20 新增 `route-profile`）+ 位于 `miniprogram/custom-tab-bar/`（不在 components/ 下）, **zero npm dependencies** (no `miniprogram/package.json`, no `miniprogram_npm/`). `libVersion 3.8.12`, appid `wx1227a277a3f2f7ea` |
+| Client | WeChat mini program, **native WXML/WXSS/CommonJS JS**. **21 pages**（`app.json` 实测，2026-10-20 新增 `pages/tasks`——协作任务清单）, **15 个组件目录**（14 在用 + `privacy-popup` 死代码；2026-10-21 新增 `profile-gate`）+ 位于 `miniprogram/custom-tab-bar/`（不在 components/ 下）, **zero npm dependencies** (no `miniprogram/package.json`, no `miniprogram_npm/`). `libVersion 3.8.12`, appid `wx1227a277a3f2f7ea` |
 | Backend | **ONE production** cloud function `trailApi` — 14 `action` values multiplexed through one `ROUTES` map (`index.js:259`), fanning out to **46 command types**（2026-10-20 新增 `task.*` 4 条）. Sole dependency `wx-server-sdk ~3.0.1`. 另有 **`trailApiLab`**：私有预演工具云函数（只给 `pages/lab` 造 `[预演]` 沙盒），与生产**共用同一套 `ot_*` 集合**，不是第二条服务链路 |
 | Store | Document-per-record across **17** `ot_*` collections (15 in the `COLLECTIONS` map, plus `ot_meta` and `weather_cache`). `ot_meta/main` = `{revision, savedAt}`. Writes diff records inside one transaction with a **revision CAS** |
 | Domain | 15 pure JS modules in `cloudfunctions/trailApi/domain/` — all authorization, business rules, and response shapes live here and **the client cannot bypass any of it**（`routes.js` 路线资产；`tasks.js` 协作任务） |
@@ -59,8 +63,8 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 ├── miniprogram/       # CLIENT — see miniprogram/AGENTS.md
 │   ├── app.js/json/wxml/wxss   # entry; app.wxss IS the design system
 │   ├── config.js      # CLOUD_ENV / FUNC_NAME / NOTICE_TMPL_IDS — the only env file
-│   ├── pages/         # 20 dirs, 1:1 with app.json `pages`
-│   ├── components/    # 14 dirs（13 在用 + privacy-popup 死代码）
+│   ├── pages/         # 21 dirs, 1:1 with app.json `pages`
+│   ├── components/    # 15 dirs（14 在用 + privacy-popup 死代码）
 │   ├── custom-tab-bar/  # 与 components/ 同级，样式必须自包含
 │   ├── utils/         # 26 files — see miniprogram/utils/AGENTS.md
 │   ├── wxs/           # text.wxs
@@ -231,17 +235,21 @@ node tools/e2e-ui-state-test.js                # B 层 Phase 5 UI 状态矩阵�
 node tools/cloud-layer-facts-test.js           # L1→L2 接缝：三个高度范围分开命名（显示窗/实测覆盖/业务扫描）+ 超出覆盖必须说明读到的是填充值 0 + 云层事实不带判定 + topmostBelow 净空不取整（199.6≠200）+ 薄层遮蔽缺陷的特征化用例（钉住现状不修，改候选集合要产品裁决）+ OI 集成与活接缝注入 + 分层静态门 + §7 阈值单源的影子常量（改 80⇒sky 标记/结论文案数字/factsFor/OI 窗口一起动，且剖面↔成带两侧互不串味）（45 断言）
 
 # Page-level scenarios
-node tools/scenario-editor-test.js           # 142
-node tools/scenario-activity-test.js         # 136
-node tools/scenario-workspace-test.js        # 111
-node tools/scenario-signup-test.js           # 103
+node tools/scenario-editor-test.js           # 169
+node tools/scenario-activity-test.js         # 151
+node tools/scenario-workspace-test.js        # 114
+node tools/scenario-signup-test.js           # 106
 node tools/scenario-me-test.js               # 143
 node tools/scenario-notices-test.js          # 67
 node tools/scenario-vehicle-test.js          # 56
 node tools/scenario-api-test.js              # 27
-node tools/scenario-discover-test.js         # 21
+node tools/scenario-discover-test.js         # 36
 node tools/scenario-lab-test.js              # 20
 node tools/scenario-staff-test.js            # 18
+
+# 活动图文发布（2026-10-21）
+node tools/content-view-test.js               # 14
+node tools/content-editor-test.js             # 16
 
 # Lab cloud-function integration
 node tools/trailapilab-test.js               # 25

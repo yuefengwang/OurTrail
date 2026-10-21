@@ -10,10 +10,9 @@
       <text style="display:block;margin-top:4px;">此预览不会发布活动，也不会替你报名。</text>
     </view>
 
-    <!-- 编辑式封面 hero：定高媒体盒（文档流图片，微信里最稳的绘制路径）+ 状态浮层 +
-         森林底信息区（design-system.md §3）。照片是场景氛围图而非活动实拍
-         （活动模型无图片字段），页尾有脚注说明；加载失败 img-failed 隐藏照片，
-         媒体盒高度仍在，退回纯色，不出破图。 -->
+    <!-- 编辑式封面 hero：定高媒体盒 + 状态浮层 + 森林底信息区。
+         有实拍封面时用它，否则用场景氛围图；实拍加载失败先回退氛围图并把脚注改口，
+         氛围图也失败才 img-failed 隐藏照片，媒体盒高度仍在，退回纯色，不出破图。 -->
     <view class="hero-cover {{coverFailed ? 'img-failed' : ''}}">
       <view class="hero-cover-media">
         <image class="hero-cover-img" src="{{cover}}" mode="aspectFill" binderror="onCoverError" />
@@ -83,13 +82,61 @@
       <view
         wx:for="{{sectionNav}}"
         wx:key="id"
-        wx:if="{{item.id !== 'sec-weather' || !isDraft}}"
+        wx:if="{{(item.id !== 'sec-weather' && item.id !== 'sec-facts') || !isDraft}}"
         class="section-nav__chip"
         hover-class="button-hover"
         data-id="{{item.id}}"
         bindtap="onSectionNav"
       >{{item.label}}</view>
     </scroll-view>
+
+    <view wx:if="{{description || contentView.length || highlights.length}}" id="sec-intro" class="stack" style="gap:0;">
+      <view class="section-head">
+        <text class="kicker">介绍</text>
+        <text class="section-title">这一次，去哪里</text>
+      </view>
+      <text wx:if="{{description}}" class="lede">{{description}}</text>
+      <block wx:for="{{contentView}}" wx:key="index" wx:for-index="blockIndex">
+        <block wx:if="{{item.type === 'text'}}">
+          <text wx:for="{{item.paragraphs}}" wx:for-item="p" wx:key="index" class="article-p">{{p}}</text>
+        </block>
+        <view wx:else class="article-images {{item.layout}}">
+          <view wx:for="{{item.images}}" wx:for-item="img" wx:for-index="imageIndex" wx:key="fileid" class="article-cell">
+            <image wx:if="{{!img.error}}" class="article-img" src="{{img.fileid}}" mode="{{item.layout === 'single' ? 'widthFix' : 'aspectFill'}}" lazy-load data-fileid="{{img.fileid}}" data-block-index="{{blockIndex}}" data-image-index="{{imageIndex}}" bindtap="onPreviewImage" binderror="onContentImageError" />
+            <view wx:else class="article-img-failed"><text>图片加载失败</text></view>
+          </view>
+        </view>
+      </block>
+      <view wx:if="{{highlights.length}}" class="stack" style="gap:8px;margin-top:16px;">
+        <text class="kicker">推荐理由</text>
+        <view wx:for="{{highlights}}" wx:key="index" class="highlight-row">
+          <text class="highlight-dot">•</text>
+          <text class="highlight-text">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{!isDraft}}" id="sec-facts" class="stack" style="gap:0;">
+      <view class="section-head">
+        <text class="kicker">活动说明</text>
+        <text class="section-title">时间、集合与费用</text>
+      </view>
+      <view class="fact-row"><text class="fact-label">活动时间</text><text class="fact-value tabular">{{factTime}}</text></view>
+      <view wx:if="{{factPickup}}" class="fact-row"><text class="fact-label">集合</text><text class="fact-value">{{factPickup}}</text></view>
+      <view class="fact-row"><text class="fact-label">人数</text><text class="fact-value">{{factPeople}}</text></view>
+      <view wx:if="{{leader}}" class="fact-row"><text class="fact-label">领队</text><text class="fact-value">{{leader}}</text></view>
+      <view wx:if="{{difficultyLabel}}" class="fact-row"><text class="fact-label">强度</text><text class="fact-value">{{difficultyLabel}}</text></view>
+      <view wx:if="{{sceneryRating}}" class="fact-row">
+        <text class="fact-label">风景</text>
+        <view class="fact-value star-row"><text wx:for="{{ratingOptions}}" wx:key="*this" class="star {{item <= sceneryRating ? 'on' : ''}}">★</text></view>
+      </view>
+      <view wx:if="{{funRating}}" class="fact-row">
+        <text class="fact-label">腐败</text>
+        <view class="fact-value star-row"><text wx:for="{{ratingOptions}}" wx:key="*this" class="star {{item <= funRating ? 'on' : ''}}">★</text></view>
+      </view>
+      <view wx:if="{{feeSummary}}" class="fact-row"><text class="fact-label">费用</text><text class="fact-value">{{feeSummary}}</text></view>
+      <view wx:if="{{signupBrief}}" class="fact-row"><text class="fact-label">报名后</text><text class="fact-value">{{signupBrief}}</text></view>
+    </view>
 
     <view wx:if="{{rows.length}}" id="sec-peers" class="stack" style="gap:0;">
       <view class="section-head">
@@ -121,7 +168,6 @@
         <text class="kicker">行程</text>
         <text class="section-title">这一次的安排</text>
       </view>
-      <text class="lede">{{description}}</text>
       <view class="fact-row"><text class="fact-label">{{times[0].label}}</text><text class="fact-value tabular">{{times[0].value}}</text></view>
       <view class="fact-row"><text class="fact-label">{{times[1].label}}</text><text class="fact-value tabular">{{times[1].value}}</text></view>
       <view class="fact-row"><text class="fact-label">{{times[2].label}}</text><text class="fact-value tabular">{{times[2].value}}</text></view>
@@ -291,11 +337,30 @@
         <text class="kicker">费用与约定</text>
         <text class="section-title">费用与退出约定</text>
       </view>
-      <text>{{feeNote}}</text>
+      <text wx:if="{{feeSummary}}" class="lede">{{feeSummary}}</text>
+      <view wx:if="{{feeIncludes.length}}" class="stack" style="gap:6px;">
+        <text class="field-label">费用包含</text>
+        <view wx:for="{{feeIncludes}}" wx:key="index" class="fee-line">· {{item}}</view>
+      </view>
+      <view wx:if="{{feeExcludes.length}}" class="stack" style="gap:6px;">
+        <text class="field-label">费用不含</text>
+        <view wx:for="{{feeExcludes}}" wx:key="index" class="fee-line">· {{item}}</view>
+      </view>
+      <text wx:if="{{feeNote}}" style="display:block;">{{feeNote}}</text>
+      <text wx:if="{{!feeSummary && !feeIncludes.length && !feeExcludes.length && !feeNote}}" class="muted">费用待组织者说明。</text>
       <text wx:if="{{cancellationNote}}" class="muted">{{cancellationNote}}</text>
       <text class="small muted">OurTrail 不收款，不处理支付或退款。</text>
-      <!-- 封面诚实性：氛围图不是活动实拍（活动模型没有图片字段）。这句话必须看得见、但不可抢戏 -->
-      <text class="photo-note" style="display:block;margin-top:4px;">封面为场景氛围图，非本次活动实拍；路线与天气信息以组织者填写与实测数据为准。</text>
+      <text wx:if="{{coverIsReal}}" class="photo-note" style="display:block;margin-top:4px;">封面与正文图片由组织者提供。</text>
+      <text wx:elif="{{hasContentImages}}" class="photo-note" style="display:block;margin-top:4px;">封面为场景氛围图，非本次活动实拍；正文图片由组织者提供。</text>
+      <text wx:else class="photo-note" style="display:block;margin-top:4px;">封面为场景氛围图，非本次活动实拍；路线与天气信息以组织者填写与实测数据为准。</text>
+    </view>
+
+    <view wx:if="{{signupNote}}" id="sec-signup" class="stack" style="gap:8px;">
+      <view class="section-head">
+        <text class="kicker">报名后</text>
+        <text class="section-title">进群与行前准备</text>
+      </view>
+      <text class="lede">{{signupNote}}</text>
     </view>
 
     <view wx:if="{{!isDraft}}" class="list-row" hover-class="button-hover" bindtap="onNotices">

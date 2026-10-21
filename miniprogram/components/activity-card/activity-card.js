@@ -15,6 +15,10 @@ Component({
     when: { type: String, value: '' },
     info: { type: String, value: '' },
     featured: { type: Boolean, value: false },
+    // 这个人在这场活动上欠下的协作事项：[{ key: 'staff'|'vehicle', label: '现场协作' }]。
+    // 判据与文案都由页面从服务端投影的 meta 派生（utils/journey.collabRoles），
+    // 组件只负责画与回抛 key——授权判断不进组件。
+    collab: { type: Array, value: [] },
     cover: { type: String, value: '' },
     activityId: { type: String, value: '' },
   },
@@ -23,17 +27,27 @@ Component({
     coverFailed: false,
     // 实际要用的封面地址（外部传入优先，否则按 activityId 派生）
     coverSrc: '',
+    // 实拍封面失败时的氛围图兜底；已经是氛围图还失败才走纯色
+    coverFallback: '',
   },
   observers: {
     'cover, activityId'(cover, activityId) {
-      const next = cover || (activityId ? covers.coverFor(activityId) : '')
+      const fallback = activityId ? covers.coverFor(activityId) : ''
+      const next = cover || fallback
       if (next === this.data.coverSrc) return
-      this.setData({ coverSrc: next, coverFailed: false })
+      this.setData({ coverSrc: next, coverFallback: fallback, coverFailed: false })
     },
   },
   methods: {
     onTap() { this.triggerEvent('open') },
+    onCollab(e) { this.triggerEvent('collab', { key: e.currentTarget.dataset.key }) },
     onCoverError() {
+      const fallback = this.data.coverFallback
+      if (fallback && this.data.coverSrc !== fallback) {
+        console.warn('[activity-card] 实拍封面加载失败，回退氛围图：', this.data.coverSrc)
+        this.setData({ coverSrc: fallback, coverFailed: false })
+        return
+      }
       if (this.data.coverFailed) return
       console.warn('[activity-card] 封面图加载失败：', this.data.coverSrc)
       this.setData({ coverFailed: true })

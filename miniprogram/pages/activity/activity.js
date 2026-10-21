@@ -7,6 +7,7 @@ const F = require('../../utils/format')
 const J = require('../../utils/journey')
 const WB = require('../../utils/weather-brief')
 const covers = require('../../utils/covers')
+const CV = require('../../utils/content-view')
 
 // 报备类型文案只在 format.INCIDENT_LABELS 定义一次，这里只规定出现顺序（默认落在最稳的一项）。
 const KIND_OPTIONS = J.incidentOptions()
@@ -127,6 +128,7 @@ Page({
     // 页尾脚注已说明；加载失败置 coverFailed，hero 退回森林绿纯色（不出破图）。
     cover: '',
     coverFailed: false,
+    coverIsReal: false,
     distance: 0,
     ascent: 0,
     confirmed: 0,
@@ -146,6 +148,22 @@ Page({
     primaryId: '',
     description: '',
     organizerIntro: '',
+    contentView: [],
+    contentImages: [],
+    hasContentImages: false,
+    highlights: [],
+    leader: '',
+    factTime: '',
+    factPickup: '',
+    factPeople: '',
+    sceneryRating: 0,
+    funRating: 0,
+    ratingOptions: [1, 2, 3, 4, 5],
+    feeSummary: '',
+    feeIncludes: [],
+    feeExcludes: [],
+    signupNote: '',
+    signupBrief: '',
     times: [],
     points: [],
     pickups: [],
@@ -158,12 +176,15 @@ Page({
     weatherBrief: { ready: false, status: 'idle', text: '', retry: false },
     weatherLoading: false,
     sectionNav: [
+      { id: 'sec-intro', label: '介绍' },
+      { id: 'sec-facts', label: '说明' },
       { id: 'sec-itinerary', label: '行程' },
       { id: 'sec-weather', label: '天气' },
       { id: 'meeting-block', label: '路线' },
       { id: 'sec-safety', label: '安全' },
       { id: 'sec-equipment', label: '装备' },
       { id: 'sec-fee', label: '费用' },
+      { id: 'sec-signup', label: '报名后' },
       { id: 'sec-peers', label: '同行人' },
     ],
     feeNote: '',
@@ -206,18 +227,70 @@ Page({
   },
 
   onShareAppMessage() {
-    return {
+    const share = {
       title: this.data.title ? this.data.title + ' · 一起同行' : 'OurTrail · 活动邀请',
       path: '/pages/activity/activity?id=' + this.activityId,
     }
+    if (this._shareImageUrl) share.imageUrl = this._shareImageUrl
+    return share
   },
 
-  // 封面图加载失败（文件缺失/损坏）：隐藏照片层，hero 退回森林绿纯色。
-  // 不做重试风暴——失败一次就够，静态资源不会自己好起来。
+  // 实拍封面加载失败：先退回氛围图并把脚注改口；只有氛围图也失败才隐藏照片层。
   onCoverError() {
+    if (this.data.coverIsReal) {
+      console.warn('[activity] 实拍封面加载失败，回退氛围图：', this.data.cover)
+      this._shareImageUrl = ''
+      this.setData({ cover: covers.coverFor(this.activityId), coverIsReal: false, coverFailed: false })
+      return
+    }
     if (this.data.coverFailed) return
     console.warn('[activity] 封面图加载失败，回退纯色 hero：', this.data.cover)
     this.setData({ coverFailed: true })
+  },
+
+  // 分享卡封面：cloud:// 不能直接当 imageUrl，取一次 https 临时地址；失败就不带图。
+  prepareShareImage(cover) {
+    if (!cover || !wx.cloud || typeof wx.cloud.getTempFileURL !== 'function') return
+    wx.cloud.getTempFileURL({
+      fileList: [cover],
+      success: res => {
+        const item = res.fileList && res.fileList[0]
+        if (item && item.tempFileURL) this._shareImageUrl = item.tempFileURL
+      },
+      fail: () => {},
+    })
+  },
+
+  onPreviewImage(e) {
+    const fileid = e.currentTarget.dataset.fileid
+    const urls = this.data.contentImages || []
+    if (!fileid || !urls.length || typeof wx.previewImage !== 'function') return
+    wx.previewImage({
+      current: fileid,
+      urls: urls,
+      fail: () => {
+        // 部分基础库的 previewImage 不认 cloud://：换 https 临时地址再试一次。
+        if (!wx.cloud || typeof wx.cloud.getTempFileURL !== 'function') return
+        wx.cloud.getTempFileURL({
+          fileList: urls,
+          success: res => {
+            const https = (res.fileList || []).map(x => x.tempFileURL).filter(Boolean)
+            if (!https.length) return
+            wx.previewImage({ current: https[urls.indexOf(fileid)] || https[0], urls: https })
+          },
+        })
+      },
+    })
+  },
+
+  onContentImageError(e) {
+    const block = Number(e.currentTarget.dataset.blockIndex)
+    const image = Number(e.currentTarget.dataset.imageIndex)
+    if (!Number.isInteger(block) || !Number.isInteger(image)) return
+    const contentView = this.data.contentView.slice()
+    if (!contentView[block] || !contentView[block].images || !contentView[block].images[image]) return
+    contentView[block].images[image].error = true
+    this.setData({ contentView: contentView })
   },
 
   reload() {
@@ -289,6 +362,19 @@ Page({
     }))
     const pickups = a.pickupPoints.map(p => ({ id: p.id, name: p.name, address: p.address, time: F.dtLabel(p.meetingAt), coordinates: p.coordinates || null }))
     const risks = a.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice }))
+    const contentView = CV.buildView(a.content || [])
+    const contentImages = CV.allImages(contentView)
+    const hasContentImages = contentImages.length > 0
+    const coverIsReal = !!a.coverFileId
+    const cover = a.coverFileId || covers.coverFor(a.id)
+    const factTime = times[0].value + ' – ' + times[1].value
+    const firstPickup = pickups[0]
+    const factPickup = firstPickup
+      ? firstPickup.name + (firstPickup.time ? ' · ' + firstPickup.time : '') + (pickups.length > 1 ? ' 等 ' + pickups.length + ' 个上车点' : '')
+      : ''
+    const factPeople = a.minParticipants ? (a.minParticipants + '–' + a.capacity + ' 人') : ('上限 ' + a.capacity + ' 人')
+    const signupBrief = String(a.signupNote || '').split('\n')[0].slice(0, 60)
+    this._shareImageUrl = ''
     // 状态可解释性层：把投影翻译成「我在哪 / 什么状态 / 我能做什么 / 下一步」。
     // 集合时刻要取这个人自己那个上车点的集合时间——共享活动里不同人可能在不同点集合。
     const myPickup = primary && primary.pickupPointId
@@ -316,8 +402,9 @@ Page({
       startAtLabel: F.dtLabel(a.startAt),
       title: a.title || '未命名活动',
       routeTitle: a.routeSnapshot.title || '路线待完善',
-      cover: covers.coverFor(a.id),
+      cover,
       coverFailed: false,
+      coverIsReal,
       distance: a.routeSnapshot.distanceKm,
       ascent: a.routeSnapshot.ascentM,
       difficultyLabel: F.difficultyLabel(a.routeSnapshot.difficulty),
@@ -340,20 +427,36 @@ Page({
       selfButton: journey.cta && journey.cta.target === 'sheet' ? journey.cta.label : selfButton,
       rows,
       primaryId: v.primarySignupId || '',
-      description: a.description || '活动说明待补充。',
+      description: a.description || (contentView.length ? '' : '活动说明待补充。'),
       organizerIntro: a.organizerIntro,
+      contentView,
+      contentImages,
+      hasContentImages,
+      highlights: a.highlights || [],
+      leader: a.leader || '',
+      factTime,
+      factPickup,
+      factPeople,
+      sceneryRating: a.sceneryRating || 0,
+      funRating: a.funRating || 0,
+      feeSummary: a.feeSummary || '',
+      feeIncludes: a.feeIncludes || [],
+      feeExcludes: a.feeExcludes || [],
+      signupNote: a.signupNote || '',
+      signupBrief,
       startDate: a.startAt ? F.cnParts(a.startAt).date : '',
       times, points, pickups, risks,
       map: buildRouteMap(a),
       track: a.routeSnapshot.track || [],
       equipment: a.equipment,
       equipmentSuggested: a.equipmentSuggested || [],
-      feeNote: a.feeNote || '费用待组织者说明。',
+      feeNote: a.feeNote || '',
       cancellationNote: a.cancellationNote,
       canCancelRow: v.permittedActions.indexOf('signup.cancel') !== -1,
       canEditRow: v.permittedActions.indexOf('signup.edit') !== -1,
     })
     wx.setNavigationBarTitle({ title: this.data.title || '活动详情' })
+    if (coverIsReal) this.prepareShareImage(cover)
     this.loadWeatherBrief(a)
   },
 

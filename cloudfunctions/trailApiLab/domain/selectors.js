@@ -70,8 +70,29 @@ function routeCompleteness(activity) {
   }
 }
 
-function activityView(activity) {
-  return {
+// 封面解析顺序：显式封面 → 正文第一张 → 空串（客户端再退回氛围图）。
+function firstContentImage(activity) {
+  for (const block of Array.isArray(activity.content) ? activity.content : []) {
+    if (block && block.type === 'images' && Array.isArray(block.fileIds) && block.fileIds.length) return block.fileIds[0]
+  }
+  return ''
+}
+function resolvedCover(activity) {
+  return activity.coverFileId || firstContentImage(activity) || ''
+}
+function contentSearchText(activity) {
+  const blocks = Array.isArray(activity.content) ? activity.content : []
+  const text = blocks.filter(b => b && b.type === 'text').map(b => b.text).join(' ')
+  return text + ' ' + (activity.highlights || []).join(' ')
+}
+function contentViewBlocks(activity) {
+  return (activity.content || []).map(block => block.type === 'images'
+    ? { type: 'images', fileIds: block.fileIds.slice() }
+    : { type: 'text', text: block.text })
+}
+
+function activityView(activity, opts) {
+  const view = {
     id: activity.id, title: activity.title, description: activity.description,
     organizerIntro: activity.organizerIntro, startAt: activity.startAt, endAt: activity.endAt,
     deadlineAt: activity.deadlineAt, phase: activity.phase, acceptingSignups: activity.acceptingSignups,
@@ -88,8 +109,21 @@ function activityView(activity) {
     })),
     equipment: activity.equipment.slice(), feeNote: activity.feeNote, cancellationNote: activity.cancellationNote,
     equipmentSuggested: (activity.equipmentSuggested || []).slice(),
+    // 公众号式图文（2026-10-21）：小字段始终给，正文块只在 detail 视图给。
+    coverFileId: resolvedCover(activity),
+    highlights: (activity.highlights || []).slice(),
+    leader: activity.leader || '',
+    ...(activity.minParticipants ? { minParticipants: activity.minParticipants } : {}),
+    ...(activity.sceneryRating ? { sceneryRating: activity.sceneryRating } : {}),
+    ...(activity.funRating ? { funRating: activity.funRating } : {}),
+    feeSummary: activity.feeSummary || '',
+    feeIncludes: (activity.feeIncludes || []).slice(),
+    feeExcludes: (activity.feeExcludes || []).slice(),
+    signupNote: activity.signupNote || '',
     completeness: routeCompleteness(activity),
   }
+  if (opts && opts.includeContent) view.content = contentViewBlocks(activity)
+  return view
 }
 function discoverView(activity, owner, confirmed) {
   return {
@@ -104,6 +138,7 @@ function discoverView(activity, owner, confirmed) {
     }, activity.routeSnapshot.difficulty ? { difficulty: activity.routeSnapshot.difficulty } : {}),
     equipment: activity.equipment.slice(), feeNote: activity.feeNote, cancellationNote: activity.cancellationNote,
     equipmentSuggested: (activity.equipmentSuggested || []).slice(),
+    coverFileId: resolvedCover(activity),
     publishedAt: activity.publishedAt, owner, confirmed,
     completeness: routeCompleteness(activity),
   }
@@ -516,7 +551,7 @@ function selectView(state, actor, request, now) {
         if (dateTo && (!startDate || startDate > dateTo)) return false
         if (difficulty && a.routeSnapshot.difficulty !== difficulty) return false
         if (!search) return true
-        const hay = (a.title + ' ' + a.routeSnapshot.title + ' ' + a.description).toLowerCase()
+        const hay = (a.title + ' ' + a.routeSnapshot.title + ' ' + a.description + ' ' + contentSearchText(a)).toLowerCase()
         return hay.indexOf(search) !== -1
       })
       .sort(sort === 'start'
@@ -595,7 +630,7 @@ function selectView(state, actor, request, now) {
   const confirmed = all.filter(s => s.status === 'confirmed').length
   const pending = all.filter(s => s.status === 'pending').length
   const view = {
-    kind: 'activity', activity: activityView(activity), perspective: request.perspective,
+    kind: 'activity', activity: activityView(activity, { includeContent: true }), perspective: request.perspective,
     primarySignupId: primary ? primary.id : null, rows,
     counters: {
       confirmed, pending, occupied: confirmed + pending,

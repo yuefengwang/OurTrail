@@ -23,7 +23,7 @@ const HOME_REL = path.join('miniprogram', 'pages', 'home', 'home.js')
 const DISC_REL = path.join('miniprogram', 'pages', 'discover', 'discover.js')
 
 const HOME_ANCHOR = "a.meta.owner ? '待审核 ' + a.meta.pending + ' 人' : '',"
-const DISC_ANCHOR = 'featured: !search && i === 0,'
+const DISC_ANCHOR = 'featured: !search && filterCount(filters) === 0 && i === 0,'
 const CONFIRMED_ANCHOR = "'已确认 ' + a.meta.confirmed + ' 人',"
 
 const MUTATIONS = [

@@ -2,7 +2,8 @@
   "timeout": 20,
   "permissions": {
     "openapi": [
-      "security.msgSecCheck"
+      "security.msgSecCheck",
+      "security.imgSecCheck"
     ]
   }
 }

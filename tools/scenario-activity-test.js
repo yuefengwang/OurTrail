@@ -1201,9 +1201,53 @@ async function scenario12() {
   }
 }
 
+async function scenario13() {
+  section('13. 图文正文/活动说明/费用/封面三态')
+  const env = bootActivity({
+    view: viewFixture(v => {
+      v.activity.content = [
+        { type: 'text', text: '第一段\n\n第二段' },
+        { type: 'images', fileIds: ['cloud://env.abc/activity-media/a.jpg', 'cloud://env.abc/activity-media/b.jpg'] },
+      ]
+      v.activity.coverFileId = 'cloud://env.abc/activity-media/b.jpg'
+      v.activity.highlights = ['理由一', '理由二']
+      v.activity.leader = '陈屿'
+      v.activity.minParticipants = 3
+      v.activity.sceneryRating = 5
+      v.activity.funRating = 3
+      v.activity.feeSummary = '498 元/人'
+      v.activity.feeIncludes = ['大巴', '住宿']
+      v.activity.feeExcludes = ['餐食']
+      v.activity.signupNote = '报名后拉群\n行前检查装备'
+    }),
+  })
+  await settle(env.page)
+  check('contentView 两段 + 双图布局', env.page.data.contentView.length === 2
+    && env.page.data.contentView[0].paragraphs.length === 2
+    && env.page.data.contentView[1].layout === 'double', JSON.stringify(env.page.data.contentView))
+  check('highlights 两项', env.page.data.highlights.length === 2, env.page.data.highlights)
+  check('factTime/factPickup/factPeople', env.page.data.factTime === '10/3 08:00 – 10/3 18:00'
+    && env.page.data.factPickup === '东门集合点 · 10/3 07:30' && env.page.data.factPeople === '3–20 人',
+    JSON.stringify([env.page.data.factTime, env.page.data.factPickup, env.page.data.factPeople]))
+  check('领队/评分/费用/报名后', env.page.data.leader === '陈屿' && env.page.data.sceneryRating === 5
+    && env.page.data.funRating === 3 && env.page.data.feeSummary === '498 元/人'
+    && env.page.data.feeIncludes.length === 2 && env.page.data.feeExcludes.length === 1
+    && env.page.data.signupNote === '报名后拉群\n行前检查装备' && env.page.data.signupBrief === '报名后拉群', '')
+  check('封面用实拍 + 正文图集合', env.page.data.coverIsReal === true
+    && env.page.data.cover === 'cloud://env.abc/activity-media/b.jpg'
+    && env.page.data.hasContentImages === true && env.page.data.contentImages.length === 2, '')
+  env.page.onCoverError()
+  check('实拍封面失败回退氛围图并改口', env.page.data.coverIsReal === false
+    && env.page.data.cover.indexOf('/assets/photos/') === 0 && env.page.data.coverFailed === false,
+    JSON.stringify([env.page.data.coverIsReal, env.page.data.cover]))
+  env.page.onContentImageError({ currentTarget: { dataset: { blockIndex: 1, imageIndex: 1 } } })
+  check('正文单图失败置 error（走占位不塌布局）', env.page.data.contentView[1].images[1].error === true,
+    JSON.stringify(env.page.data.contentView[1].images))
+}
+
 async function main() {
   const scenarios = [scenario1, scenario1b, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7,
-    scenario8, scenario9, scenario10, scenario11, scenario12]
+    scenario8, scenario9, scenario10, scenario11, scenario12, scenario13]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

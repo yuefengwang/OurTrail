@@ -5,6 +5,51 @@ const S = require('./schema')
 const { failure, deepClone } = require('./contracts')
 const { registerParticipants } = require('./signup')
 const { isCurrentSignup, isVehicleTraveller, needsOutboundBoarding } = require('./permissions')
+const { isActivityMediaFileId } = require('./files')
+
+const CONTENT_TEXT_MAX = 20000
+const CONTENT_IMAGE_MAX = 20
+
+function contentImageIds(input) {
+  const out = []
+  for (const block of input.content || []) {
+    if (block && block.type === 'images' && Array.isArray(block.fileIds)) out.push.apply(out, block.fileIds)
+  }
+  return out
+}
+
+function activityTextLength(input) {
+  let n = 0
+  const add = s => { if (typeof s === 'string') n += s.length }
+  add(input.description); add(input.organizerIntro); add(input.feeNote); add(input.cancellationNote)
+  add(input.signupNote); add(input.leader); add(input.feeSummary)
+  ;(input.highlights || []).forEach(add)
+  ;(input.feeIncludes || []).forEach(add)
+  ;(input.feeExcludes || []).forEach(add)
+  for (const block of input.content || []) if (block && block.type === 'text') add(block.text)
+  return n
+}
+
+// 图文内容的跨字段规则：schema 管形状，这里管「条目非空、封面在正文里、总图/总文本上限」。
+function contentProblem(input) {
+  for (const block of input.content || []) {
+    if (!block) return '正文块不完整。'
+    if (block.type === 'text' && !block.text.trim()) return '正文段落不能为空。'
+    if (block.type === 'images' && !block.fileIds.length) return '图片组不能为空。'
+  }
+  const images = contentImageIds(input)
+  if (images.length > CONTENT_IMAGE_MAX) return '活动图片最多 20 张。'
+  if (new Set(images).size !== images.length) return '同一张图片不能重复使用。'
+  if (images.some(f => !isActivityMediaFileId(f))) return '图片标识无效。'
+  if (input.coverFileId && images.indexOf(input.coverFileId) === -1) return '封面必须从正文图片中选择。'
+  if (input.coverFileId && !isActivityMediaFileId(input.coverFileId)) return '封面标识无效。'
+  if (input.minParticipants && input.minParticipants > input.capacity) return '成行人数不能高于人数上限。'
+  for (const list of [input.highlights, input.feeIncludes, input.feeExcludes]) {
+    if (Array.isArray(list) && list.some(s => !String(s).trim())) return '推荐理由与费用条目不能为空。'
+  }
+  if (activityTextLength(input) > CONTENT_TEXT_MAX) return '活动图文内容过长，请精简后再保存。'
+  return ''
+}
 
 const success = ids => ({ ok: true, value: ids })
 const uniqueIds = ids => new Set(ids).size === ids.length
@@ -26,6 +71,8 @@ function entriesUnchanged(stored, submitted) {
 
 function validateInput(state, ownerId, input, full, activityId) {
   if (!S.validate(S.ActivityInput, input)) return failure('INVALID_INPUT', '活动字段不完整或格式不正确。')
+  const contentIssue = contentProblem(input)
+  if (contentIssue) return failure('INVALID_INPUT', contentIssue)
   if (input.routeId && !state.routes.some(r => r.id === input.routeId && r.ownerId === ownerId)) return failure('FORBIDDEN', '请选择当前发起者自己的私有路线。')
   if (!uniqueIds(input.pickupPoints.map(p => p.id)) || !uniqueIds(input.routeSnapshot.points.map(p => p.id)) || !uniqueIds(input.routeSnapshot.risks.map(r => r.id))) {
     return failure('INVALID_INPUT', '集合点、路线节点与风险标识不能重复。')
@@ -137,7 +184,7 @@ function handleActivity(state, command, context) {
           || !entriesUnchanged(activity.routeSnapshot.risks, input.routeSnapshot.risks)
           || !entriesUnchanged(activity.pickupPoints, input.pickupPoints)
           || !input.endAt || !activity.endAt || Date.parse(input.endAt) < Date.parse(activity.endAt)) {
-          return failure('WRONG_PHASE', '集合或行程中仅可补充路线节点、风险与上车点，修改说明、装备、费用和取消说明，并延长结束时间。')
+          return failure('WRONG_PHASE', '集合或行程中仅可补充路线节点、风险与上车点，修改说明、图文内容、推荐理由、装备、费用明细、报名后须知和取消说明，并延长结束时间。')
         }
       }
       const valid = validateInput(state, activity.ownerId, input, activity.phase !== 'draft', activity.id)

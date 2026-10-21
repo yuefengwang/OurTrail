@@ -138,6 +138,8 @@ function sampleInput() {
 function completeForm() {
   return {
     title: '青城后山 · 周末轻徒步', description: '', organizerIntro: '',
+    content: [{ type: 'text', text: '周末一起走一段山路。' }],
+    coverFileId: '',
     capacity: '20', approvalMode: 'manual', acceptingSignups: true,
     routeTitle: '飞泉沟环线', distanceKm: '12.5', ascentM: '900',
     points: [
@@ -486,8 +488,8 @@ async function scenario5() {
     page.setData({ form: Object.assign({}, page.data.form, { capacity: '600' }) })
     let rejected = false
     await page.persistCurrent('x').catch(() => { rejected = true })
-    check('人数上限非法：不发命令并给出可读报错、跳步骤 3',
-      rejected && cmds.length === 0 && page.data.failure === '人数上限请填写 1–500 的整数。' && page.data.step === 2,
+    check('人数上限非法：不发命令并给出可读报错、跳步骤 4',
+      rejected && cmds.length === 0 && page.data.failure === '人数上限请填写 1–500 的整数。' && page.data.step === 3,
       JSON.stringify({ rejected: rejected, cmds: cmds.length, step: page.data.step }))
   }
   {
@@ -497,8 +499,17 @@ async function scenario5() {
     await settle(page)
     let rejected = false
     await page.persistCurrent('x').catch(() => { rejected = true })
-    check('档案未齐：拦截并指引「我的」页，不发命令',
-      rejected && cmds.length === 0 && page.data.failure.indexOf('补全姓名与手机号') !== -1, page.data.failure)
+    check('档案未齐：拦截、不发命令、自动弹微信资料门',
+      rejected && cmds.length === 0 && page.data.profileGate === true && page.data.profileGateOpen === true && page.data.failure === '',
+      JSON.stringify({ rejected, cmds: cmds.length, gate: page.data.profileGate, open: page.data.profileGateOpen, failure: page.data.failure }))
+    check('关闭资料门：只收 sheet，不解除补全状态',
+      (() => { page.onProfileGateClose(); return page.data.profileGateOpen === false && page.data.profileGate === true })())
+    let resumed = 0
+    page._afterProfile = () => { resumed++ }
+    page.onProfileSaved()
+    check('资料保存后自动继续原动作',
+      page.data.profileGate === false && page.data.profileGateOpen === false && resumed === 1,
+      JSON.stringify({ gate: page.data.profileGate, open: page.data.profileGateOpen, resumed }))
   }
 }
 
@@ -523,11 +534,12 @@ async function scenario6() {
 
     // ② 空表单：可后补清单点名路线三项，各带步骤
     const d0 = page.deferredForPublish()
-    check('空表单可后补点名 3 项', d0.length === 3, JSON.stringify(d0.map(x => x.label)))
-    check('后补项覆盖路线名称/节点/风险且各带步骤',
-      d0.some(x => x.label === '路线名称' && x.step === 1)
-      && d0.some(x => x.label === '至少 1 个路线节点' && x.step === 1)
-      && d0.some(x => x.label === '至少 1 条风险提示' && x.step === 2), JSON.stringify(d0))
+    check('空表单可后补点名 4 项', d0.length === 4, JSON.stringify(d0.map(x => x.label)))
+    check('后补项覆盖图文/路线名称/节点/风险且各带步骤',
+      d0.some(x => x.label === '图文详情（封面、正文或图片）' && x.step === 1)
+      && d0.some(x => x.label === '路线名称' && x.step === 2)
+      && d0.some(x => x.label === '至少 1 个路线节点' && x.step === 2)
+      && d0.some(x => x.label === '至少 1 条风险提示' && x.step === 3), JSON.stringify(d0))
 
     // ③ 必填未齐（上车点半成品 + 时间顺序错）：必填清单仍拦路
     page.setData({ form: Object.assign({}, page.data.form, {
@@ -820,8 +832,54 @@ async function scenario11() {
   }
 }
 
+async function scenario12() {
+  section('12. 图文详情/活动说明：buildInput、内容变更与上传闸门')
+  {
+    const { page } = bootEditor({})
+    await settle(page)
+    const cover = 'cloud://env.abc/activity-media/a.jpg'
+    page.setData({
+      form: Object.assign({}, page.data.form, {
+        content: [{ type: 'text', text: '第一段\n\n第二段' }, { type: 'images', fileIds: [cover] }],
+        coverFileId: cover,
+        highlightsText: '理由一\n理由二',
+        leader: '陈屿',
+        minParticipants: '3',
+        sceneryRating: 5,
+        funRating: 3,
+        feeSummary: '498 元/人',
+        feeIncludesText: '大巴\n住宿',
+        feeExcludesText: '餐食',
+        signupNote: '报名后拉群',
+      }),
+    })
+    const input = page.buildInput()
+    check('buildInput 带正文块与封面', input.content.length === 2 && input.coverFileId === cover, JSON.stringify(input.content))
+    check('buildInput 带推荐理由/费用/评分/报名后须知',
+      JSON.stringify(input.highlights) === JSON.stringify(['理由一', '理由二'])
+      && JSON.stringify(input.feeIncludes) === JSON.stringify(['大巴', '住宿'])
+      && JSON.stringify(input.feeExcludes) === JSON.stringify(['餐食'])
+      && input.leader === '陈屿' && input.minParticipants === 3
+      && input.sceneryRating === 5 && input.funRating === 3
+      && input.feeSummary === '498 元/人' && input.signupNote === '报名后拉群', JSON.stringify(input))
+    check('buildInput 通过云端 ActivityInput 严检', S.validate(S.ActivityInput, input) === true, JSON.stringify(input))
+    page.onContentChange({ detail: { content: [{ type: 'text', text: '改过的正文' }], coverFileId: '' } })
+    check('内容变更写回 form 并标记已填', page.data.form.content.length === 1 && page.data.contentFilled === true, JSON.stringify(page.data.form.content))
+    check('内容变更清空封面', page.data.form.coverFileId === '')
+    page.onRating({ currentTarget: { dataset: { key: 'sceneryRating', value: 4 } } })
+    check('评分 chip 写回 form', page.data.form.sceneryRating === 4, page.data.form.sceneryRating)
+    page.onContentBusy({ detail: { busy: true } })
+    check('上传中置 contentBusy', page.data.contentBusy === true)
+    let rejected = false
+    await page.persistCurrent('x').catch(() => { rejected = true })
+    check('上传中阻止保存并给出原因', rejected && page.data.failure === '图片正在上传/检查，完成后才能保存或发布。', page.data.failure)
+    page.onContentBusy({ detail: { busy: false } })
+    check('上传结束解除 contentBusy', page.data.contentBusy === false)
+  }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11, scenario12]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

@@ -20,8 +20,8 @@
 | `pages/signup/signup` | — | activity「填写报名资料」/「修改此人资料」/ roster「按用途修改此人的报名资料」 | 参与者/组织者 | `read`(activity+profile)、`readForm` |
 | `pages/editor/editor` | — | home「发起活动」/ activity「返回编辑与发布」（草稿）/ workspace「编辑活动」 | 组织者 | `read`(activity, organizer) + `read`(home, organizer) |
 | `pages/workspace/workspace` | — | activity「进入工作台」（非草稿所有者） | 组织者 | `read`(activity, organizer) |
-| `pages/staff/staff` | — | home「需要我协作」行（goStaff=true） | 现场协作（staff） | `read`(activity, staff)（经 field-panel） |
-| `pages/vehicle/vehicle` | — | home「需要我协作」行（goStaff=false）⚠ 双角色用户到不了，见 §8.6 | 车辆联络 | `read`(activity, vehicle) |
+| `pages/staff/staff` | — | home 活动卡上的「现场协作」入口（`activity-card` → `onCardCollab` key=staff） | 现场协作（staff） | `read`(activity, staff)（经 field-panel） |
+| `pages/vehicle/vehicle` | — | home 活动卡上的「车辆联络」入口（key=vehicle）✅ 双角色已可达（2026-10-20，§8.6 关闭） | 车辆联络 | `read`(activity, vehicle) |
 | `pages/anotices/anotices` | — | activity「活动通知」行 / workspace「活动通知」/ weather「生成天气提醒草稿」跳转 | 参与者+所有者 | `read`(notices, activityId) [+ `readNoticeManagement`] |
 | `pages/weather/weather` | — | weather-hub（3 入口）/ activity「天气参考」「节点·天气」/ 分享（local 模式） | 全部 | `read`(activity) + `getWeather` / `getWeatherByPoint` |
 | `pages/weather-chart/weather-chart` | — | weather「全图展示」 | 全部 | 无（读内存 chart-store） |
@@ -50,7 +50,7 @@ TabBar 为自定义组件 `custom-tab-bar/`（4 项：活动/天气/通知/我�
 
 ### 3.1 首页三视角合并
 - `onShow` → `reload()`：并发 `read(home/participant + openedIds)`、`read(home/staff)`、`read(home/vehicle)`、`read(profile)`。
-- 能看到什么：头部问候（profileName）、「需要我协作」任务行（仅当某活动 `meta.staff || meta.vehicle`）、筛选段（我的活动/最近查看/已结束）、搜索框、活动卡列表（`activity-card`）。
+- 能看到什么：头部问候（profileName）、筛选段（我的活动/最近查看/已结束，另有协作授权时多一档「需要协作 N」）、搜索框、**一个**活动卡列表（`activity-card`，卡上按角色出「现场协作／车辆联络」入口）。原来浮在列表上方的裸 `.list-row` 任务区已在 2026-10-20 删除——它与卡片区能同时容纳同一场活动，且一屏两种列表形态（判据 `tools/home-collab-list-test.js`）。
 - 新用户：`cards` 空 → `status-panel` 空态「留一点时间，走进山野」，action「发起一场同行」→ `onEmptyAction` → `onNew` → `navigateTo /pages/editor/editor`。
 - 失败：任一 read 失败 → `denied` 面板 + 「重试」（`bind:action="reload"`）。
 - 重进：Tab 页 `onShow` 必重读；下拉刷新可用（`enablePullDownRefresh: true`）。
@@ -183,7 +183,7 @@ TabBar 为自定义组件 `custom-tab-bar/`（4 项：活动/天气/通知/我�
 
 ### 6.2 车辆联络人（vehicle_contact membership）——真正的「本车任务」旅程
 - **授权来源**：组织者在协作授权里创建 vehicle_contact membership。⚠ §8.1：该角色 UI 上当前创建不出来（roleOptions picker 空）。现存车辆任务数据只能来自预演注入（trailApiLab）或历史数据。
-- **唯一入口**：home「需要我协作」任务行（`meta.vehicle` 且非 staff）→ `/pages/vehicle/vehicle?id=`（**不带 vehicleId**，服务端自动挑本人可联络的第一辆车——P0-2 修复，vehicle.js:36 注释）。
+- **唯一入口**：home 活动卡上的「车辆联络」入口（`meta.vehicle` 且非终态，与「现场协作」各自独立一枚）→ `/pages/vehicle/vehicle?id=`（**不带 vehicleId**，服务端自动挑本人可联络的第一辆车——P0-2 修复，vehicle.js:36 注释）。
 - 页面（vehicle 视角 read，`vehicleTask` 投影：车辆 + 乘客含手机号）：
   - 头部：车辆名/车牌/核载算式行。
   - 「去程/返程」segmented（`onLeg`，纯前端切 `leg` 后重渲染）。
@@ -199,7 +199,7 @@ TabBar 为自定义组件 `custom-tab-bar/`（4 项：活动/天气/通知/我�
 ## 7. 旅程五：领队 / 现场工作人员（staff membership）
 
 - **授权来源**：组织者 → 工作台名单 → 协作授权 sheet：粘贴对方「我的」页身份码 + 截止时间 + 可见范围（默认按名单勾选）+ 能力 checkbox → command `membership.save(role:'staff')`。
-- **入口**：home「需要我协作」（`meta.staff`）→ `/pages/staff/staff?id=`。页面 = 静态头 + **field-panel（perspective="staff"）**，与工作台现场 Tab 同一组件。
+- **入口**：home 活动卡上的「现场协作」入口（`meta.staff` 且非终态）→ `/pages/staff/staff?id=`。页面 = 静态头 + **field-panel（perspective="staff"）**，与工作台现场 Tab 同一组件。
 - **可见范围由服务端裁定**（selectors.js:344-346）：staff 视角 rows = 全部报名中 `staffCan(...,'roster',…)` 命中者。⚠ 因此**只授了签到等能力、没授「查看名单」的工作人员会看到空列表**，无法执行被授权的签到（§8.3）。
 - field-panel 能做什么（每项都在 `openSheet` 里按 phase × 行状态 × permittedActions 动态生成 action 按钮，统一「逐人核实依据」note，needNote 的必须填）：
   | action | phase/条件 | command |
@@ -256,7 +256,7 @@ TabBar 为自定义组件 `custom-tab-bar/`（4 项：活动/天气/通知/我�
 - `activity`/`workspace`/`vehicle`/`anotices`/`weather` 均 `onShow → reload`。
 - signup 编辑模式的「用途」是一次性会话态（每次进入重填）——隐私设计，非状态丢失。
 - editor 返回（从预览）不重读，表单保留内存态且草稿在本机——「保存并预览」后改「我的」资料再回来，编辑器显示的还是旧表单值，重新进入才会读草稿/服务端。轻微。
-- ⚠ **双角色用户进不去车辆页**：home 任务行 `goStaff = !!a.meta.staff`（home.js:79-80），同一活动既是 staff 又是车辆联络的用户，任务行只进 staff 页，而 vehicle 页**没有第二个入口** → 其车辆任务（上车清点/发车）在该活动上不可达。
+- ✅ **双角色用户进不去车辆页（已关闭，2026-10-20）**：原缺陷是 home 任务行用一个布尔 `goStaff` 决定整行跳哪儿，同一活动既是 staff 又是车辆联络时 vehicle 页再没有第二个入口。现在协作入口下沉到活动卡、**一个角色一枚**（`activity-card` 的 `.collab-leaf` → 页面 `onCardCollab`），两页各自可达。判据 `tools/home-collab-list-test.js` §1/§5；变异 C3（staff 吞 vehicle）与 C4（两枚都跳 staff 页）钉住它不许复发。
 
 ### 9.7 权限与 UI 不一致
 - §9.1（想授车联络授不了）与 §7（授了 checkin 没 roster 的 staff 看到空现场面板，无法执行被授权任务——服务端 rows 过滤统一用 `roster` 能力，selectors.js:345）。

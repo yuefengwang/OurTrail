@@ -43,7 +43,7 @@ description: OurTrail 小程序（原生 WXML/WXSS/CommonJS）的 UI 设计系�
 
 | # | 规则 | 类别 | 现状 | 自动门 | 判据与适用条件 |
 |---|---|---|---|---|---|
-| 1 | 组件的 WXML/WXSS 引用了 `app.wxss` 的**类**时，必须声明 `options: { styleIsolation: 'apply-shared' }`；`options` 键每 `Component()` 只许出现一次 | P | VERIFIED | 无 | 15 个组件里 13 个靠它承重；`meteogram` 全类本地 ⇒ 不需要；`privacy-popup` 死代码无声明。CSS 变量靠继承不受隔离影响，**只有选择器匹配受影响**——"var() 有值但 `.card` 没样式"就是它。详 [references/platform-pitfalls.md](references/platform-pitfalls.md) §1–§2 |
+| 1 | 组件的 WXML/WXSS 引用了 `app.wxss` 的**类**时，必须声明 `options: { styleIsolation: 'apply-shared' }`；`options` 键每 `Component()` 只许出现一次 | P | VERIFIED | 无 | 16 个组件里 14 个靠它承重；`meteogram` 全类本地 ⇒ 不需要；`privacy-popup` 死代码无声明。CSS 变量靠继承不受隔离影响，**只有选择器匹配受影响**——"var() 有值但 `.card` 没样式"就是它。详 [references/platform-pitfalls.md](references/platform-pitfalls.md) §1–§2 |
 | 2 | `custom-tab-bar/index.wxss` 必须完全自包含、颜色写字面量 | A | VERIFIED | 无 | 实测 5 处字面量、零 `var()`，属规则允许的例外位 |
 | 3 | 新语义色只能进 `app.wxss` 并在 `design-system.md` 登记；页面/组件内不得另发明色值 | S | **DEBT** | 无 | 实测 12 文件 61 处原始命中；真实违反＝`home/discover/weather/activity/overlay` 5 个活文件（明细 [references/design-system.md](references/design-system.md) §现状色值债登记）。**报违规前先看那行是不是 `var(--x, #fallback)` 兜底或注释** |
 | 4 | Tab 页底部留白 `calc(32px + 84px + env(safe-area-inset-bottom))`；含 `.sticky-action` 的页用 `.page.has-sticky`（120px） | P | VERIFIED | 无 | `app.wxss` 的 `.page` 只给 32px（`:68`），**这条 calc 属于各 tab 页自己的 wxss**（home/notices/anotices/me/weather-hub）；`app.wxss:482` 另有 `.tabbar-safe` 占位块。漏了会表现为"列表最后几行被 tabBar 拦腰截断、按钮点不到" |

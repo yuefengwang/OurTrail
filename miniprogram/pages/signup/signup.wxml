@@ -5,16 +5,23 @@
         两个入口一起固定在底栏，不再出现「主操作在屏幕最底下、按钮互斥看不见」的情况。
      3. 候选勾选行仍由 checkbox-group 承载 change、data-key 挂在 group 上（挂内层 label 会被
         group 的 currentTarget 语义吃掉，真机已复现，见 SYNC.md 2026-10-04）。 -->
-<view class="page {{!denied && !loading && !purposeGate ? 'has-sticky' : ''}}">
-  <status-panel wx:if="{{denied && !profileGate}}" kind="denied" title="{{mode === 'edit' ? '无法读取报名资料' : '当前无法报名'}}" detail="{{denied}}" actionLabel="回到活动详情" bind:action="goBackToActivity" />
-  <view wx:if="{{denied && profileGate}}" class="stack">
-    <view class="section-head">
-      <text class="kicker">档案待补全</text>
-      <text class="page-title" style="display:block;margin-top:4px;">先把自己的资料补齐</text>
-      <text class="section-sub">报名需要先有本人姓名、电话与紧急联络人。</text>
+<view class="page {{!denied && !loading && !purposeGate && !profileGate ? 'has-sticky' : ''}}">
+  <block wx:if="{{profileGate}}">
+    <view class="stack">
+      <view class="section-head">
+        <text class="kicker">报名前一步</text>
+        <text class="page-title" style="display:block;margin-top:4px;">用自己的微信资料，少填几栏</text>
+        <text class="section-sub">姓名、头像、昵称与手机号只用于本次同行联络与安全协作；你也可以手动填写。</text>
+      </view>
+      <view class="callout">
+        <text class="callout-title">微信授权只在你点击时发生</text>
+        <text style="display:block;margin-top:4px;">点「用微信资料继续」后会打开补资料面板；头像、昵称、手机号都可以逐项授权，不想授权也能手动填。</text>
+      </view>
+      <view class="button primary block" hover-class="button-hover" bindtap="onOpenProfileGate">用微信资料继续</view>
+      <view class="button text block" hover-class="button-hover" bindtap="goBackToActivity">先不报名，回到活动</view>
     </view>
-    <view class="button primary block" hover-class="button-hover" bindtap="onGoProfile">去「我的」补全资料（草稿已在本机，回来接着填）</view>
-  </view>
+  </block>
+  <status-panel wx:elif="{{denied}}" kind="denied" title="{{mode === 'edit' ? '无法读取报名资料' : '当前无法报名'}}" detail="{{denied}}" actionLabel="回到活动详情" bind:action="goBackToActivity" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在准备报名表。" />
   </block>
@@ -240,7 +247,7 @@
 
   <!-- 固定底栏：主操作不再藏在长表单末尾（design-system.md §2.5）。
        候补场景两颗同屏——primary 给此刻唯一走得通的通道，secondary 保留重试正式报名。 -->
-  <view wx:if="{{!denied && !loading && !purposeGate}}" class="sticky-action">
+  <view wx:if="{{!denied && !loading && !purposeGate && !profileGate}}" class="sticky-action">
     <block wx:if="{{mode === 'edit'}}">
       <view class="button primary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onEditSubmit'}}">{{busy ? '正在保存…' : '保存此人的修改'}}</view>
     </block>
@@ -249,4 +256,6 @@
       <view class="button {{capacityAsk ? 'secondary' : 'primary'}} {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSubmit'}}">{{busy ? '正在提交…' : '提交报名'}}</view>
     </block>
   </view>
+
+  <profile-gate open="{{profileGateOpen}}" bind:saved="onProfileSaved" bind:close="onProfileGateClose" />
 </view>

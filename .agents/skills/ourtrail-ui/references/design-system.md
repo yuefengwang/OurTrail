@@ -148,6 +148,7 @@
 | `<overlay kind="sheet|dialog">` | 底部弹层/居中确认；内容放 `.stack`；危险操作用 dialog + danger 按钮。实测声明为 `multipleSlots: false`（不用具名 slot），改造成具名 slot 时必须同时改这个值 |
 | `<activity-card>` | 活动卡；`featured` 森林底 + 等高线装饰；`info` 属性传指标行 |
 | `<route-profile>` | 活动/路线海拔剖面；输入 `track`（带可选 `ele`）与 `points`，输出连续/节点/无数据三态；SVG 由 `utils/route-profile.js` 生成并编码为 data-URI。**无连续高程时明确标「节点高程，非连续剖面」，不插值伪造地形**；组件用 `apply-shared` 读取 `.small/.muted/.tabular` |
+| `<profile-gate>` | 按需补资料 sheet：报名/发布前自动弹出；微信头像 `chooseAvatar`、昵称 `input type=nickname`、手机号 `getPhoneNumber` + 手填兜底；保存 `profile.save` 后由宿主重读或续跑原动作。**不要在浏览链路加门**；`getUserProfile` 已不保证返回真实头像昵称，不要用它冒充静默授权 |
 | `.segmented > .seg(.on)` | 分段切换（工作台四分区、首页筛选、编辑器步骤条、车辆页去/返程）。**可点高度取 `--touch-target`（44px），不许写死字面量**（M-06：这里曾是全站唯一硬编码 36px 的尺寸规则，补救只落在 weather-chart 一页）；未选中态文字是 `--ink` 压在 `--line` 轨道上（11.3:1，原 `--muted` 只有 4.12:1 未过自家 4.5:1 门），**选中与否由 `.seg.on` 的白底药丸 + `--forest` + 600 字重承担，不靠把未选中印淡** |
 | `.list-row` + `.list-main/.list-sub` | 行列表（图标或箭头收尾） |
 | `.timeline/.timeline-item` | 路线节点时间轴（::before 圆点） |

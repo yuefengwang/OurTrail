@@ -13,6 +13,8 @@ const emptyInput = () => ({
   acceptingSignups: true, capacity: 24, approvalMode: 'manual', routeId: null,
   routeSnapshot: { title: '', distanceKm: 0, ascentM: 0, difficulty: '', points: [], risks: [] },
   pickupPoints: [], equipment: [], equipmentSuggested: [], feeNote: '', cancellationNote: '',
+  content: [], coverFileId: '', highlights: [], leader: '', minParticipants: null,
+  sceneryRating: null, funRating: null, feeSummary: '', feeIncludes: [], feeExcludes: [], signupNote: '',
 })
 
 // 把 ActivityInput 摊平成便于 WXML 绑定的形状（dt_*: {date,time} / equipmentText）
@@ -48,6 +50,17 @@ function toForm(input) {
     equipmentSuggestedText: (input.equipmentSuggested || []).join('\n'),
     feeNote: input.feeNote,
     cancellationNote: input.cancellationNote,
+    content: JSON.parse(JSON.stringify(input.content || [])),
+    coverFileId: input.coverFileId || '',
+    highlightsText: (input.highlights || []).join('\n'),
+    leader: input.leader || '',
+    minParticipants: input.minParticipants == null ? '' : String(input.minParticipants),
+    sceneryRating: input.sceneryRating || 0,
+    funRating: input.funRating || 0,
+    feeSummary: input.feeSummary || '',
+    feeIncludesText: (input.feeIncludes || []).join('\n'),
+    feeExcludesText: (input.feeExcludes || []).join('\n'),
+    signupNote: input.signupNote || '',
     dt_start: split(input.startAt),
     dt_end: split(input.endAt),
     dt_deadline: split(input.deadlineAt),
@@ -103,9 +116,13 @@ Page({
     isDraft: true,
     saveLabel: '保存草稿',
     step: 0,
-    stepLabels: ['01 内容与时间', '02 路线与集合', '03 招募与风险'],
+    stepLabels: ['01 内容', '02 图文', '03 路线', '04 招募'],
+    ratingOptions: [1, 2, 3, 4, 5],
     difficultyOptions: F.DIFFICULTY_OPTIONS,
     form: toForm(emptyInput()),
+    contentBusy: false,
+    contentFilled: false,
+    contentResetKey: 0,
     // 复制
     myActivities: [],
     templateId: '',
@@ -126,6 +143,7 @@ Page({
     // 反馈
     failure: '',
     profileGate: false,
+    profileGateOpen: false,
     message: '',
     busy: false,
     busyAt: 0,
@@ -218,6 +236,8 @@ Page({
         }
       }
       if (saved && !denied) initial = saved
+      const form = toForm(initial || emptyInput())
+      this._content = null
       this.setData({
         loading: false,
         denied,
@@ -226,8 +246,10 @@ Page({
         phase,
         isDraft: phase === 'draft',
         saveLabel: phase === 'draft' ? '保存草稿' : '保存修改',
-        form: toForm(initial || emptyInput()),
+        form,
         fromRouteTitle,
+        contentFilled: (form.content || []).length > 0,
+        contentResetKey: this.data.contentResetKey + 1,
       })
       this.loadMyActivities()
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
@@ -295,6 +317,17 @@ Page({
       equipmentSuggested: (f.equipmentSuggestedText || '').split('\n').map(s => s.trim()).filter(Boolean),
       feeNote: f.feeNote,
       cancellationNote: f.cancellationNote,
+      content: (this._content && this._content.content) || f.content || [],
+      coverFileId: this._content ? (this._content.coverFileId || '') : (f.coverFileId || ''),
+      highlights: (f.highlightsText || '').split('\n').map(s => s.trim()).filter(Boolean),
+      leader: f.leader || '',
+      minParticipants: Number(f.minParticipants) || undefined,
+      sceneryRating: Number(f.sceneryRating) || undefined,
+      funRating: Number(f.funRating) || undefined,
+      feeSummary: f.feeSummary || '',
+      feeIncludes: (f.feeIncludesText || '').split('\n').map(s => s.trim()).filter(Boolean),
+      feeExcludes: (f.feeExcludesText || '').split('\n').map(s => s.trim()).filter(Boolean),
+      signupNote: f.signupNote || '',
     }
     // 轨迹折线（GPX 导入产生，用户不可编辑）：不足 2 点时不带该键，schema 按 specOpt 兼容缺省
     if (Array.isArray(f.track) && f.track.length >= 2) {
@@ -326,6 +359,24 @@ Page({
     const form = Object.assign({}, this.data.form, patch)
     this.setData({ form, message: '' })
     this.persistDraft()
+  },
+  onContentChange(e) {
+    const detail = e.detail || {}
+    const content = Array.isArray(detail.content) ? detail.content : []
+    this._content = { content, coverFileId: detail.coverFileId || '' }
+    const form = Object.assign({}, this.data.form, {
+      content: content,
+      coverFileId: detail.coverFileId || '',
+    })
+    this.setData({ form, contentFilled: content.length > 0, failure: '' })
+    this.persistDraft()
+  },
+  onContentBusy(e) {
+    this.setData({ contentBusy: !!(e.detail && e.detail.busy) })
+  },
+  onRating(e) {
+    const key = e.currentTarget.dataset.key
+    this.setForm({ [key]: Number(e.currentTarget.dataset.value) || 0 })
   },
 
   // ---- 日期/时间 ----
@@ -639,10 +690,20 @@ Page({
 
   // ---- 步骤 ----
   setStep(e) {
+    if (this.data.contentBusy) {
+      this.setData({ failure: '图片正在上传/检查，请稍候再切换步骤。' })
+      return
+    }
     this.setData({ step: Number(e.currentTarget.dataset.step) })
   },
-  prevStep() { this.setData({ step: Math.max(0, this.data.step - 1) }) },
-  nextStep() { this.setData({ step: Math.min(2, this.data.step + 1) }) },
+  prevStep() {
+    if (this.data.contentBusy) return
+    this.setData({ step: Math.max(0, this.data.step - 1) })
+  },
+  nextStep() {
+    if (this.data.contentBusy) return
+    this.setData({ step: Math.min(3, this.data.step + 1) })
+  },
 
   // ---- 保存 ----
   capacityInvalid() {
@@ -665,8 +726,12 @@ Page({
   // 校验并把当前表单落为服务器草稿（新建则创建，已保存则编辑）。「发布」入口与保存共用，
   // 保证发布确认弹出的内容就是刚保存的当前内容。resolve(id) / reject(已透出 failure)。
   persistCurrent(successMessage) {
+    if (this.data.contentBusy) {
+      this.setData({ step: 1, failure: '图片正在上传/检查，完成后才能保存或发布。' })
+      return Promise.reject(new Error('content-busy'))
+    }
     if (this.capacityInvalid()) {
-      this.setData({ step: 2, failure: '人数上限请填写 1–500 的整数。' })
+      this.setData({ step: 3, failure: '人数上限请填写 1–500 的整数。' })
       return Promise.reject(new Error('capacity'))
     }
     this.setData({ busy: true, busyAt: Date.now(), failure: '', message: '' })
@@ -676,10 +741,10 @@ Page({
     return api.read({ kind: 'profile' }).then(res => {
       const person = res.view && res.view.profile && res.view.profile.person
       if (!person || !person.name || !person.phone) {
-        const err = new Error('请先到「我的」补全姓名与手机号（填齐会自动保存），再回来保存或发布——活动归属与安全联络必需。')
-        // profileGate：给 failure 配一个"去补全"直达按钮。冷启动实测：新用户填完整个
-        // 编辑器才被拦，文案指路另一个 Tab 却无跳转，实际要走 2 次进编辑器 + 2 次 Tab 往返。
-        this.setData({ busy: false, failure: err.message, profileGate: true })
+        // 不跳「我的」：本页自动弹出微信资料 sheet；保存后由 _afterProfile 继续原动作。
+        const err = new Error('需要先补全姓名与手机号。')
+        err.profileGate = true
+        this.setData({ busy: false, failure: '', profileGate: true, profileGateOpen: true })
         throw err
       }
       this.setData({ profileGate: false })
@@ -696,27 +761,44 @@ Page({
         this.savedId = id
         this.revision = res2.revision
         draft.clearDraft(this.draftKey(), 'activity-editor')
+        this._afterProfile = null
         this.setData({
           busy: false,
+          profileGate: false,
+          profileGateOpen: false,
           savedId: id,
           message: successMessage,
         })
         return id
       })
     }).catch(e => {
-      this.setData({ busy: false, failure: api.errorText(e) })
+      if (!(e && e.profileGate)) {
+        this._afterProfile = null
+        this.setData({ busy: false, failure: api.errorText(e) })
+      }
       throw e
     })
   },
   save(preview) {
     if (this.busyBlocks()) return
+    const resume = () => this.save(preview)
+    this._afterProfile = resume
     this.persistCurrent(this.data.phase === 'draft' ? '草稿已保存，尚未发布，也没有自动报名。' : '活动修改已保存。')
       .then(id => { if (preview && id) wx.navigateTo({ url: '/pages/activity/activity?id=' + id }) })
       .catch(() => {})
   },
-  // 档案闸门的直达修复：switchTab 会关掉编辑器，但草稿在本机且进页自动恢复（draft 优先）
-  onGoProfile() {
-    wx.switchTab({ url: '/pages/me/me' })
+  // 微信资料门：保存后自动继续刚才的保存/发布；关闭只收起 sheet，仍保留补全入口。
+  onProfileSaved() {
+    this.setData({ profileGate: false, profileGateOpen: false, failure: '' })
+    const resume = this._afterProfile
+    this._afterProfile = null
+    if (typeof resume === 'function') resume()
+  },
+  onOpenProfileGate() {
+    this.setData({ profileGateOpen: true })
+  },
+  onProfileGateClose() {
+    this.setData({ profileGateOpen: false })
   },
   // 发布前逐项预检（与服务端 full 校验对齐）：返回缺失项 [{step, label}]，
   // 让用户在对应步骤就被明确告知缺什么，而不是发布时撞到一句笼统的服务端报错。
@@ -735,8 +817,8 @@ Page({
       const d = Date.parse(composeDateTime(f.dt_deadline.date, f.dt_deadline.time))
       if (!(d <= s && s < e)) missing.push({ step: 0, label: '时间顺序（截止 ≤ 出发，且早于结束）' })
     }
-    if (!f.pickups.length) missing.push({ step: 1, label: '至少 1 个集合上车点' })
-    else if (f.pickups.some(p => !p.name.trim() || !p.address.trim() || !p.meeting.date || !p.meeting.time)) missing.push({ step: 1, label: '集合上车点的名称、地址与集合时间' })
+    if (!f.pickups.length) missing.push({ step: 2, label: '至少 1 个集合上车点' })
+    else if (f.pickups.some(p => !p.name.trim() || !p.address.trim() || !p.meeting.date || !p.meeting.time)) missing.push({ step: 2, label: '集合上车点的名称、地址与集合时间' })
     return missing
   },
   // 可后补清单：与服务端口径一致——整体可为空，填了的条目必须完整（半成品条目也点名）。
@@ -744,11 +826,13 @@ Page({
   deferredForPublish() {
     const f = this.data.form
     const deferred = []
-    if (!f.routeTitle.trim()) deferred.push({ step: 1, label: '路线名称' })
-    if (!f.points.length) deferred.push({ step: 1, label: '至少 1 个路线节点' })
-    else if (f.points.some(p => !p.name.trim())) deferred.push({ step: 1, label: '每个路线节点的名称' })
-    if (!f.risks.length) deferred.push({ step: 2, label: '至少 1 条风险提示' })
-    else if (f.risks.some(r => !r.title.trim() || !r.advice.trim())) deferred.push({ step: 2, label: '每条风险的问题与应对方式' })
+    const hasContent = this.data.contentFilled || (Array.isArray(f.content) && f.content.length > 0)
+    if (!hasContent) deferred.push({ step: 1, label: '图文详情（封面、正文或图片）' })
+    if (!f.routeTitle.trim()) deferred.push({ step: 2, label: '路线名称' })
+    if (!f.points.length) deferred.push({ step: 2, label: '至少 1 个路线节点' })
+    else if (f.points.some(p => !p.name.trim())) deferred.push({ step: 2, label: '每个路线节点的名称' })
+    if (!f.risks.length) deferred.push({ step: 3, label: '至少 1 条风险提示' })
+    else if (f.risks.some(r => !r.title.trim() || !r.advice.trim())) deferred.push({ step: 3, label: '每条风险的问题与应对方式' })
     return deferred
   },
   // 步骤 3 常驻发布入口：先预检必填缺失项（跳到第一步并逐项点名），再静默保存，最后弹发布确认。
@@ -760,6 +844,7 @@ Page({
       this.setData({ step: missing[0].step, failure: '还差：' + missing.map(m => m.label).join('、') + '。补齐后再发布。' })
       return
     }
+    this._afterProfile = () => this.onPublishIntent()
     this.persistCurrent('内容已保存，确认后正式发布。')
       .then(() => this.onPublishOpen())
       .catch(() => {})

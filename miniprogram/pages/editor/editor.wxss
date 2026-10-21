@@ -6,3 +6,6 @@
    18 + 13×2 = 44 = var(--touch-target)，字号与圆角不动（app.wxss 的 .chip 定义本身不属本批写入集）。
    横向 padding 保持 14px：chip 之间只有 8px gap，横向加宽会先撞上"相邻热区重叠"那一类误触。 */
 .chip { padding: 13px 14px; }
+
+/* 风景/腐败指数：选中态复用全局 chip 形态，只换底色与字色（token 内） */
+.chip.on { background: var(--forest); color: var(--paper); }

@@ -15,6 +15,7 @@ const {
   selectAccess, selectNoticeManagement, selectExport, selectRoutes,
 } = require('./domain/selectors')
 const { planAssignments } = require('./domain/allocation')
+const { isActivityMediaFileId, removedActivityFiles } = require('./domain/files')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -158,6 +159,16 @@ async function actionDispatch(payload, openid) {
     // 以读取时的 revision 做 CAS；期间被他人写入则报 CONFLICT，客户端重读后再试
     const persisted = await store.persistState(db, before, result.value.state, before.revision, now)
     revision = persisted.revision
+    // 写后清理：只删「写入前被活动引用、写入后已无人引用」的图片。
+    // 事务已提交，删除失败只记日志，不回滚业务结果；未保存草稿的上传是孤儿，留给未来的 GC。
+    const removed = removedActivityFiles(before, result.value.state)
+    if (removed.length) {
+      try {
+        await cloud.deleteFile({ fileList: removed })
+      } catch (e) {
+        console.warn('[file-gc] 删除未引用图片失败：', (e && (e.errMsg || e.message)) || e)
+      }
+    }
   }
   return { targetIds, replayed, revision }
 }
@@ -310,6 +321,34 @@ async function actionGetWeatherByPoint(payload) {
 
 /* ---------- 路由 ---------- */
 
+/* ---------- 活动图片安全检查（UGC 图，公开发现可见） ---------- */
+// 客户端先 wx.cloud.uploadFile，再把 fileID 送进来。只返回 pass/reason，不回传图片内容。
+// 未授权/接口不可用时返回 {pass:false, reason:'unavailable'}——失败关闭，不静默放行。
+async function actionCheckImage(payload) {
+  const fileID = String((payload && payload.fileID) || '')
+  if (!isActivityMediaFileId(fileID)) fail('INVALID_INPUT', '图片标识无效。')
+  const contentType = payload && payload.contentType === 'image/png' ? 'image/png' : 'image/jpeg'
+  let file
+  try {
+    file = await cloud.downloadFile({ fileID })
+  } catch (e) {
+    return { pass: false, reason: 'read_failed' }
+  }
+  const buffer = file && file.fileContent
+  if (!buffer || !buffer.length) return { pass: false, reason: 'read_failed' }
+  // imgSecCheck 的同步接口只收 1MB 以内的图片；客户端压缩到 1280px/70 后通常远低于此。
+  if (buffer.length > 1024 * 1024) return { pass: false, reason: 'too_large' }
+  try {
+    await cloud.openapi.security.imgSecCheck({ media: { contentType, value: buffer } })
+    return { pass: true }
+  } catch (e) {
+    const errCode = e && (e.errCode !== undefined ? e.errCode : e.code)
+    if (errCode === 87014) return { pass: false, reason: 'unsafe' }
+    console.warn('[checkImage] unavailable:', errCode, e && (e.errMsg || e.message))
+    return { pass: false, reason: 'unavailable' }
+  }
+}
+
 const ROUTES = {
   read: actionRead,
   readForm: actionReadForm,
@@ -325,6 +364,7 @@ const ROUTES = {
   getWeatherByPoint: actionGetWeatherByPoint,
   getPhoneNumber: actionGetPhoneNumber,
   readRoutes: actionReadRoutes,
+  checkImage: actionCheckImage,
 }
 
 // 一次请求一行结构化日志（可观测性的唯一落点：本轮改造之前整个后端零 console 调用，

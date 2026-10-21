@@ -14,7 +14,7 @@ app.wxss     670 lines. THE design system: 44 CSS custom properties on `page`
 config.js    16 lines. CLOUD_ENV='cloud1-d9ghcm034574b9d55', FUNC_NAME='trailApi',
              NOTICE_TMPL_IDS={activity:''} (empty ⇒ clipboard fallback). Only env file.
 pages/       21 dirs, 1:1 with app.json.
-components/  14 dirs（13 在用 + privacy-popup 死代码）. custom-tab-bar/ sits outside components/（在 miniprogram/ 根下）.
+components/  15 dirs（14 在用 + privacy-popup 死代码）. custom-tab-bar/ sits outside components/（在 miniprogram/ 根下）.
 utils/       26 files → see utils/AGENTS.md（`journey.js` 是状态与下一步的唯一翻译层）
 wxs/text.wxs 16 lines. WXS regex must use getRegExp().
 assets/markers/  generated PNGs — map marker.iconPath rejects base64
@@ -34,7 +34,7 @@ assets/markers/  generated PNGs — map marker.iconPath rejects base64
 - **`weather-chart` is landscape** and reads its data from the `chart-store.js` singleton, never the URL (168 hours would blow the `navigateTo` query limit).
 - **`home` fires 4 parallel `api.read` calls** (`home.js:43-46`) and merges the perspectives client-side.
 
-## COMPONENTS (14 目录 = 13 在用 + `privacy-popup` 死代码)
+## COMPONENTS (15 目录 = 14 在用 + `privacy-popup` 死代码)
 
 Three of them are **self-fetching business panels** — they load in `attached` plus on a prop observer, guarded by a `this._loading` re-entrancy flag:
 
@@ -48,6 +48,7 @@ Three of them are **self-fetching business panels** — they load in `attached` 
 | `roam-scrubber` | 129 | 漫游时间轴控件；宿主是 `space-time` 组件（非页面）；`readout` 具名 slot ⇒ `options` 必须同时带 `multipleSlots: true` |
 | `icon` | 121 | SVG data-URI map; the only leaf component |
 | `route-profile` | 65+14+36 | 海拔剖面：连续高程 / 节点高程 / 无数据三态；SVG 纯函数在 `utils/route-profile.js`，不插值伪造地形 |
+| `profile-gate` | 158+38+41 | 按需补资料：报名/发布前自动弹出；微信头像/昵称/手机号按钮 + 手填兜底；保存 `profile.save` 后由宿主重读或续跑原动作 |
 | `overlay` / `status-panel` / `form-field` / `person-row` / `activity-card` | 27/19/12/19/16 | presentational |
 | `privacy-popup` | 49 | **dead code** — unregistered |
 

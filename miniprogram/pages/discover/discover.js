@@ -139,8 +139,8 @@ Page({
         const difficulty = F.difficultyLabel(a.routeSnapshot && a.routeSnapshot.difficulty)
         return {
           id: a.id,
-          // 封面氛围图：按活动 id 稳定选取（utils/covers.js），同一活动恒同一张
-          cover: covers.coverFor(a.id),
+          // 封面：优先后端解析的实拍封面；没有才退回按活动 id 派生的氛围图
+          cover: a.coverFileId || covers.coverFor(a.id),
           title: a.title || '未命名活动',
           date: F.dateLabel(a.startAt),
           // 同 home：缺里程不印「· 0 km」（没填 ≠ 0 公里）

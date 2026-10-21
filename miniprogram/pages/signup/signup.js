@@ -19,6 +19,7 @@ Page({
     mode: 'new', // new | edit
     purposeGate: false,
     profileGate: false,
+    profileGateOpen: false,
     purpose: '',
     activityTitle: '',
     remaining: 0,
@@ -88,8 +89,18 @@ Page({
         return
       }
       if (this.mode === 'new' && !profile.person.name) {
-        // 档案未激活：给直达出口（与编辑器 profileGate 同型，editor.wxml 的范式）
-        this.setData({ loading: false, denied: '请先完善姓名与联系电话，再来报名——大约 30 秒，报名表会自动带出这些信息。', profileGate: true })
+        // 按需补资料：不跳「我的」，在本页自动弹出微信资料 sheet；关闭后保留重开入口。
+        this.setData({
+          loading: false,
+          denied: '',
+          profileGate: true,
+          profileGateOpen: true,
+          activityTitle: v.activity.title || '未命名活动',
+          remaining: Math.max(0, v.counters.remaining),
+          approvalHint: v.activity.approvalMode === 'manual'
+            ? '提交后等待组织者审核，以活动页状态为准。'
+            : '符合条件时自动确认，以实际提交结果为准。',
+        })
         return
       }
       const own = {
@@ -126,6 +137,8 @@ Page({
       this.setData({
         loading: false,
         denied: '',
+        profileGate: false,
+        profileGateOpen: false,
         activityTitle: v.activity.title || '未命名活动',
         remaining: Math.max(0, v.counters.remaining),
         approvalHint: v.activity.approvalMode === 'manual'
@@ -445,8 +458,17 @@ Page({
 
   onWaitlist() { this.submit('waitlist') },
 
-  // 档案未激活时的直达出口：去「我的」补全（编辑器 profileGate 同型；报名草稿在本机，回来接着填）
-  onGoProfile() { wx.switchTab({ url: '/pages/me/me' }) },
+  // 微信资料门：保存成功后重读报名表；关闭只收起 sheet，不解除「必须补资料」状态。
+  onProfileSaved() {
+    this.setData({ profileGate: false, profileGateOpen: false, denied: '' })
+    this.reload()
+  },
+  onOpenProfileGate() {
+    this.setData({ profileGateOpen: true })
+  },
+  onProfileGateClose() {
+    this.setData({ profileGateOpen: false })
+  },
 
   // denied 页必须给出路：有活动编号就回那场活动，没有就回首页，
   // 不能把人关在一屏红字里只能靠导航条返回（分享链接冷启动时没有上一页可回）。

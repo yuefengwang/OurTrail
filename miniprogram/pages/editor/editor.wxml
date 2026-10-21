@@ -163,8 +163,8 @@
           </view>
         </view>
         <block wx:if="{{expandedIntro}}">
-          <form-field label="活动介绍" hint="行程节奏、适合人群、强度说明">
-            <textarea class="textarea slim" value="{{form.description}}" maxlength="2000" placeholder="可选。写两句，报名的人更安心" data-key="description" bindinput="onField" />
+          <form-field label="一句话简介" hint="一两句话；卡片和搜索会用">
+            <textarea class="textarea slim" value="{{form.description}}" maxlength="2000" placeholder="可选。比如：周末轻徒步，适合第一次上山的人" data-key="description" bindinput="onField" />
           </form-field>
           <form-field label="组织者与协作说明">
             <textarea class="textarea slim" value="{{form.organizerIntro}}" maxlength="2000" placeholder="可选。谁带队、如何分工协作" data-key="organizerIntro" bindinput="onField" />
@@ -173,8 +173,30 @@
       </view>
     </view>
 
-    <!-- 步骤 2：路线与集合 -->
+    <!-- 步骤 2：图文详情 -->
     <view wx:if="{{step === 1}}" class="stack-gap3">
+      <view class="section-head">
+        <text class="kicker">图文详情</text>
+        <text class="section-title">封面、正文与推荐理由</text>
+        <text class="section-sub">可以先发布后补；图片会经过安全检查。</text>
+      </view>
+      <content-editor
+        initial-content="{{form.content}}"
+        initial-cover="{{form.coverFileId}}"
+        reset-key="{{contentResetKey}}"
+        bind:change="onContentChange"
+        bind:busy="onContentBusy"
+      />
+      <view class="card stack-gap3">
+        <form-field label="推荐理由" hint="一行一条；详情页会以要点展示">
+          <textarea class="textarea slim" value="{{form.highlightsText}}" maxlength="2000" placeholder="如：直面主峰，云海日出；路线成熟，适合有一定经验的爱好者" data-key="highlightsText" bindinput="onField" />
+        </form-field>
+      </view>
+      <text wx:if="{{contentBusy}}" class="small muted">图片正在上传/检查，完成后才能保存、发布或切换步骤。</text>
+    </view>
+
+    <!-- 步骤 3：路线与集合 -->
+    <view wx:if="{{step === 2}}" class="stack-gap3">
       <view class="section-head">
         <text class="kicker">路线与集合</text>
         <text class="section-title">走哪条路，在哪集合</text>
@@ -372,12 +394,12 @@
       </view>
     </view>
 
-    <!-- 步骤 3：招募与风险 -->
-    <view wx:if="{{step === 2}}" class="stack-gap3">
+    <!-- 步骤 4：招募与费用 -->
+    <view wx:if="{{step === 3}}" class="stack-gap3">
       <view class="section-head">
-        <text class="kicker">招募与风险</text>
-        <text class="section-title">名额怎么定，风险怎么讲</text>
-        <text class="section-sub">风险与安全说明写清楚，报名的人才能自己判断。</text>
+        <text class="kicker">招募与费用</text>
+        <text class="section-title">名额、说明与费用</text>
+        <text class="section-sub">名额、活动说明、费用与风险写清楚，报名的人才能自己判断。</text>
       </view>
       <view class="cluster" style="align-items:flex-start;">
         <form-field label="人数上限" hint="1–500 人，待审核与已确认都占名额" style="flex:1;">
@@ -398,6 +420,44 @@
           <text class="check-text">发布后开放报名</text>
         </label>
       </checkbox-group>
+
+      <view class="card stack-gap3">
+        <view class="section-head">
+          <text class="kicker">活动说明</text>
+          <text class="section-title">领队、人数与指数</text>
+          <text class="section-sub">这些会出现在详情页的「活动说明」里；不填就不显示对应行。</text>
+        </view>
+        <form-field label="领队/发起团队" hint="一行；如「友友部落领队天团」">
+          <input class="input" value="{{form.leader}}" maxlength="100" data-key="leader" bindinput="onField" />
+        </form-field>
+        <form-field label="成行人数" hint="只作展示；不填则只显示人数上限">
+          <input class="input" type="number" value="{{form.minParticipants}}" data-key="minParticipants" bindinput="onField" />
+        </form-field>
+        <view class="cluster" style="justify-content:space-between;">
+          <text class="field-label">风景指数</text>
+          <view class="cluster" style="gap:6px;">
+            <view wx:for="{{ratingOptions}}" wx:key="*this" class="chip {{form.sceneryRating >= item ? 'on' : ''}}" data-key="sceneryRating" data-value="{{item}}" bindtap="onRating">{{item}}</view>
+          </view>
+        </view>
+        <view class="cluster" style="justify-content:space-between;">
+          <text class="field-label">腐败指数</text>
+          <view class="cluster" style="gap:6px;">
+            <view wx:for="{{ratingOptions}}" wx:key="*this" class="chip {{form.funRating >= item ? 'on' : ''}}" data-key="funRating" data-value="{{item}}" bindtap="onRating">{{item}}</view>
+          </view>
+        </view>
+        <form-field label="费用摘要" hint="一行；详情页活动说明会显示">
+          <input class="input" value="{{form.feeSummary}}" maxlength="200" data-key="feeSummary" bindinput="onField" placeholder="如：住木屋 498/人；露营 398/人" />
+        </form-field>
+        <form-field label="费用包含" hint="一行一条">
+          <textarea class="textarea slim" value="{{form.feeIncludesText}}" data-key="feeIncludesText" bindinput="onField" placeholder="如：大巴&#10;住宿&#10;领队" />
+        </form-field>
+        <form-field label="费用不含" hint="一行一条">
+          <textarea class="textarea slim" value="{{form.feeExcludesText}}" data-key="feeExcludesText" bindinput="onField" placeholder="如：餐食&#10;中转车" />
+        </form-field>
+        <form-field label="报名后须知" hint="如拉群方式、行前准备；详情页会显示">
+          <textarea class="textarea slim" value="{{form.signupNote}}" maxlength="2000" data-key="signupNote" bindinput="onField" />
+        </form-field>
+      </view>
 
       <view class="cluster" style="justify-content:space-between;">
         <text class="section-title">风险提示（可后补）</text>
@@ -489,28 +549,31 @@
     </view>
 
     <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>
-    <!-- 档案闸门直达修复：文案指路「我的」却没有跳转，新用户要自己摸 Tab（2026-09-30 实测） -->
-    <view wx:if="{{profileGate}}" class="button secondary block" hover-class="button-hover" bindtap="onGoProfile">去「我的」补全资料（草稿已在本机，回来接着填）</view>
+    <view wx:if="{{profileGate}}" class="callout warning">
+      <text class="callout-title">发布前需要同行资料</text>
+      <text style="display:block;margin-top:4px;">用微信头像、昵称和手机号补全后，会自动继续刚才的保存或发布；也可以手动填写。</text>
+    </view>
+    <view wx:if="{{profileGate}}" class="button secondary block" hover-class="button-hover" bindtap="onOpenProfileGate">补全资料后继续</view>
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
 
     <view class="form-actions">
-      <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSave'}}">{{saveLabel}}</view>
-      <view class="button secondary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSavePreview'}}">保存并预览</view>
+      <view class="button secondary {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onSave'}}">{{saveLabel}}</view>
+      <view class="button secondary {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onSavePreview'}}">保存并预览</view>
     </view>
     <text wx:if="{{draftSavedAt}}" class="small muted" style="text-align:center;">草稿已自动保存 · {{draftSavedAt}}</text>
   </view>
 
   <!-- 固定底栏（二阶段）：「下一步 / 发布活动」不再沉在长表单末尾——
-       三步表单里每一幕的主操作就该在同一位置。文案与 class 都不变（e2e-golden-path
+       四步表单里每一幕的主操作就该在同一位置。文案与 class 都不变（e2e-golden-path
        按「保存草稿」「发布活动」文案与 .seg 序号真实 tap）；次级的保存/预览留在内容区
        与「草稿已自动保存」同处，避免底栏堆四颗按钮。 -->
   <view wx:if="{{!denied && !loading}}" class="sticky-action">
-    <view wx:if="{{step > 0}}" class="button text" hover-class="button-hover" bindtap="prevStep">上一步</view>
-    <view wx:if="{{step < 2}}" class="button primary" hover-class="button-hover" bindtap="nextStep" style="flex:1;">
+    <view wx:if="{{step > 0}}" class="button text {{contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{contentBusy ? '' : 'prevStep'}}">上一步</view>
+    <view wx:if="{{step < 3}}" class="button primary {{contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{contentBusy ? '' : 'nextStep'}}" style="flex:1;">
       <text>下一步</text>
       <icon name="arrow" size="18" color="#FFFFFF" />
     </view>
-    <view wx:if="{{step === 2 && isDraft}}" class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onPublishIntent'}}">发布活动</view>
+    <view wx:if="{{step === 3 && isDraft}}" class="button primary block {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onPublishIntent'}}">发布活动</view>
   </view>
 
   <overlay open="{{deleteDraftOpen}}" kind="dialog" title="删除这份草稿？" bind:close="onDeleteDraftClose">
@@ -599,4 +662,6 @@
       </block>
     </view>
   </overlay>
+
+  <profile-gate open="{{profileGateOpen}}" bind:saved="onProfileSaved" bind:close="onProfileGateClose" />
 </view>

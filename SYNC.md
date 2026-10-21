@@ -790,6 +790,28 @@ outeSnapshot 必填需从路线构建；automator WebSocket 偶发超时重跑�
 
   **真机**：再次按授权 `close --project` → `open` → `auto`（不 `quit`）刷新 bundle，重拍 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/activity-weather-card.png`：出发日/小时读数/全天/起点/风险/双入口在 306×660 可读；剖面 `viewBox=0 0 280 160` 仍成立。**地图底图仍 UNVERIFIED**（同 Wave 1，IDE 瓦片空白）。
 
+- 2026-10-20（**首页两个列表合成一个：协作入口下沉到卡片**；用户真机截图报「首页同时存在两种形式的列表」，选定 B′ 方案。设计 `docs/superpowers/specs/2026-10-20-home-dual-list-dedup.md`）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动（Wave 1 欠的那次仍在原账上）。
+
+  **根因分两层，不是一层的"样式不统一"**：① 实现缺陷——任务区判据「非终态 ∧(`meta.staff`∨`meta.vehicle`)」与卡片区判据「非终态 ∧(`meta.owner`∨`meta.joined`)」**不互斥**，而服务端 `selectors.js:486-489` 那四个布尔彼此独立，所以同一场活动可以同时进两个区；本机必然命中，因为黄金路径 E2E 把 `vehicle_contact` 自授给组织者本人（`e2e-golden-path-test.js:890`）而草稿又只对 owner 可见。② 设计债——两个区用的是两套列表语言（裸 `.list-row` 与 2026-10-16 的编辑式 `activity-card`），且任务区算的是 `all`，根本不跟筛选与搜索走。
+
+  **为什么不是"谁排除谁"**：`/pages/staff/staff` 与 `/pages/vehicle/vehicle` 在全仓库**只有首页任务行这一个入口**（实测 grep）。卡片区排除任务区 ⇒ 组织者的草稿从「我的活动」消失、却被送进一个还没内容的车长页；任务区排除 owner∨joined ⇒ `joined ∧ staff` 的参与者失去 staff 页唯一入口。两个方向都做出丢失或死路，所以改结构：**只剩一个列表**，协作动作变成卡片上的一枚入口，待办可见性由筛选段第四档「需要协作 N」承接（计数为 0 时整档不出）。顺带关闭挂账 §8.6「双角色用户进不去车辆页」——一个角色一枚按钮，staff 不再吞掉 vehicle。
+
+  **落点**：`utils/journey.js` 新增 `COLLAB_ROLE_LABELS` + `collabRoles(meta)`（角色词原来只写在 `home.js:81` 的三元里，是铁律 22② 的形态；**没放进 `format.js`**——它正被 Wave 0 owner 独占且有 19 行未提交改动）。`pages/home/home.js` 删掉 `data.tasks`，四档共用同一个 `isCollab` 判据（计数、筛出、卡片入口三处同一批）；`filter==='collab'` 而这一档空掉时退回 `mine`（协作授权会过期，不许留一个谁都没选中的筛选段）；卡片归属前缀补第三支——纯协作者不再被印成「最近查看」（那是把"他被授了现场协作"印成"他不久前打开过"）。新字段叫 `collab` 不叫 `tasks`：在途的 `pages/tasks/` 是活动内 checklist，同名会被读成同一件事。`activity-card` 加 `collab` 属性与 `catchtap`（根节点自己 `bindtap` 打开活动，冒泡上去会变成"点车辆联络却进了详情页"）。两条 `navigateTo` 字面量**必须留在页面 JS**，否则 `journey-graph-test.js:44` 的静态边扫描看不见这两页。
+
+  **门禁读数（各脚本自打印 passed=N）**：新增 `tools/home-collab-list-test.js` **25**、`tools/home-collab-list-mutate.js` 变异 **9 条 0 漏网 0 崩红 0 误伤**；`a20-owner-hero-test` 的「两场都进任务区」改判为「两场都在第四档、各带自己的入口」**31→32**；`check.js`/`check-handlers.js`/`journey-test 155`/`journey-graph 15`/`b4-pad-final-value 32`/`swx1 45`/`swx2 117`/`page2-gates 97`/`m02 66`/`e08-remaining 79`/`ui-consistency 17`/`scenario-discover 36`/`scenario-editor 158` 全绿。**未跑全量 sweep，不编总数。**
+
+  **两条靠这条改动才暴露出来的账（都不是本次引入的，如实登记）**：① `tools/a20-owner-hero-mutate.js` 的 discover 四条变异（D1-D4）**先于本次就已经是"锚点命中 0＝没注入"的空证**——在途 Wave 1 把 `discover.js:152` 的 `featured:` 那行加了 `filterCount(filters) === 0`，锚点没跟上。已把锚点更新到新行并复跑 **10 条 0 漏网**；这正是 2026-10-17 收尾条里"合并后必须重跑全部 `*-mutate.js`"那条纪律的又一次实撞。② 顺着 D5（只回退 `filterCount` 半句）探了一下：`tools/discover-filter-test.js` 里 `featured`/`hero` **零命中** ⇒ 「筛选中不升 hero」这条新判据目前没有任何测试看着，属 Wave 1 的缺口，**未擅自补**（不属本次写入集），留给其 owner。
+
+  **留下的两处已知未收**：角色词在 `roster-panel.js:21 ROLE_OPTIONS` 与 `:409` 的三元、以及 `staff.wxml:4` 的页头 kicker 里还有第二、三份定义——与首页无关，本次判据只按"首页与活动卡不许自带字面量"落尺，存量在 `home-collab-list-test` 里以 `note` 明写不隐藏。`AGENTS.md` 的门禁清单没补这两套新脚本：该文件正被 Wave 改动（工作区 72 条未提交），按"不得把别人的未提交改动卷进来"留给合并窗口。
+
+  **真机 VERIFIED（用户选 A 授权重开项目会话）**：设备 390×753，自动化端口按轮次重绑 9425→9428，全程 `close --project` → `open` → `auto`，**未 `quit` IDE**。bundle 新鲜度用数据形状自证（页面 `data` 有 `collabCount` 且旧 `tasks` 数组已不存在）。14 条判定全过：真实账号 `collabCount=18`、`cards=151`，四档渲染为「我的活动/最近查看/已结束/需要协作 18」，**点第四档列表从 151 场收缩到 18 场且每张卡都带协作入口**；受控双角色卡两枚入口同行（`top` 相同）、各 48px ≥44px；`collabCount=0` 时第四档整档不出现。证据包 `docs/ui-ux-redesign/evidence/home-collab-2026-10-20/`（6 张截图 + `readings.json` + README）。
+
+  **真机首轮抓到两个静态门与 Node 逻辑门全部放过的缺陷**（正是 `docs/e2e-mp/README.md` 说的"数据对、渲染不对"那一类）：① 协作入口原用 `.button.text`（透明底 + `--forest` 深绿字），压在 featured 卡的 `--forest-deep` 深绿底上**几乎不可读**，箭头还是深色字面量 ⇒ 改与主入口同一套 `button leaf` 浅底深字；② `.affordance-open { flex: 1 1 auto }` 让主入口吃掉整行，两枚协作按钮被**挤成各占一行** ⇒ 主入口 `flex: 1 1 100%` 独占一行（与改前逐像素同形），协作入口包进 `.collab-row` 成组排第二行。两条都已转成**机器读数**（驱动记录每枚入口的 `top` 与 `class`），不是只留一句"看图发现了"。
+
+  **一条通道侧教训**：`cli auto` 回了 `autoPort`、WebSocket 也连得上，但每条命令 10s 超时——**通道"连着"不等于模拟器活着**。IDE 日志给了根因 `app.json: 在项目根目录未找到 app.json`：用 `execSync` 走 cmd.exe 时**单引号不是引号字符**，`--project 'D:\OurTrail'` 被原样带着撇号注册成一个假项目（AGENTS.md 记的是 Git Bash 吃反斜杠那个坑，同一族、换了触发方式）。改 `--project "D:\OurTrail"` 后立刻恢复。**判据**：重开后先跑最小探针（`reLaunch` + `data()`），拿不到读数就去 `WeappLog/logs` 最新文件找 `[ERROR]`，不要在驱动里加重试次数硬撑。
+
+  **仍未证 / 留裁决**：① **375px 未拍像素**——该 automator 版本没有 `setViewport`（实测报 `not a function`），换设备档位要动图形界面；按 390 实测反推一档文字需 71px、375 下等分只剩 67px ⇒ **推算**第四档标签会在按钮内换行（整段不溢出，`.segmented` 有 `flex-wrap`）。最短消除路径是「需要协作 18」→「协作 18」，一行改动，等裁决。② 点入口是否真落到 staff/vehicle 页只测到 DOM 与几何，跳转由 §5 判据与 `journey-graph` 静态边覆盖。③ featured 卡上最多三枚 leaf chip 叠排，主次靠"主入口整行"体现；若要再降一档权重可用 `--leaf-on-forest` 底 + `--leaf` 字（同卡那枚状态徽标已在用这对 token），本轮未擅自改。
+
 - 2026-10-20（**全局原型对齐 Wave 3：协作任务清单**；用户授权自由推进）：**需重新部署 trailApi：是（已执行）**——新增 `domain/tasks.js`、`ot_tasks` 集合、`task.create/update/status/remove` 4 条命令、`read {kind:'tasks'}`；`cloudfunctions/` 与 `store.js` 已改，`sync-lab` 已跑（16 files 逐字节一致）。
 
   **后端**：`Task`/`TaskInput`/`TaskStatus`/`TaskCategory`；owner-only 写入、参与者/协作者只读、归档/取消只读、每活动最多 100 条；任务按「进行中→待办→已完成→截止日」排序；草稿删除级联清任务。`task.status` 非法值由 schema 拒收；`taskId` 跨活动拒绝；被拒命令零副作用。`activity.delete` 的级联清单一并加上 tasks，避免悬空引用拖红全库不变量。
@@ -801,3 +823,32 @@ outeSnapshot 必填需从路线构建；automator WebSocket 偶发超时重跑�
   **真机**：已重编译并截图 `tasks-owner.png`、`tasks-filter-todo.png`、`tasks-new-sheet.png`、`tasks-participant.png`（306×660；owner 视图 3 条任务/计数/筛选/行内操作，参与者无新建与行内操作，sheet 可滚动）。证据包 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/README.md`。
 
   **部署与真实云端 CRUD（已执行）**：`cli cloud functions deploy --env cloud1-d9ghcm034574b9d55 --names trailApi --remote-npm-install` 成功（24 files / 111.9 KB）；`info` 回读 `Active / timeout 20 / Nodejs16.13`；下载线上包后 `tasks.js/schema.js/store.js` 与工作树逐字节相同。`trailApiLab` 同步部署（21 files / 83.4 KB，Active/timeout 20），其 `tasks.js/schema.js/store.js` 线上包也逐字节一致。用真实账号的「测试活动」（`activity-mv0q0bt305yaqe`）跑真实云端：创建任务 → `task.status` 置进行中 → `task.remove` 删除，三步均成功、页面回读数量回到 0；没有改动活动本身。输出留档 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/real-task-crud.txt`。**Wave 1 欠的 trailApi 重部署由此清零；Wave 1 的 task/schema 线上生效。**
+
+- 2026-10-21（**未登录可浏览，点报名/发布才补微信资料**；用户要求“点报名自动弹微信个人信息授权，不必去我的页手动写头像/昵称/手机号”）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，复用现有 `profile.save` / `getPhoneNumber`。
+
+  **实现**：新增可复用 `components/profile-gate/`。档案缺姓名/手机号时，报名页与编辑器在本页自动弹出补资料 sheet，提供：
+  ① 微信头像（`button open-type="chooseAvatar"`）→ 上传云存储 fileID；
+  ② 昵称（`input type="nickname"`，可获得微信昵称建议）；
+  ③ 手机号（`button open-type="getPhoneNumber"`）→ 现有服务端换取真实号码，失败/取消可手填；
+  ④ 保存走 `profile.save` + CAS，保留档案里的紧急联系人、医疗备注与已有头像。
+  报名页保存成功后重读报名表；编辑器保存成功后由 `_afterProfile` 自动续跑刚才的保存/发布，不再让用户去「我的」再回来。
+
+  **平台边界（没有假装能做到）**：微信不允许静默读取头像/昵称/手机号，`getUserProfile` 也不保证返回真实头像昵称，所以没有用它冒充“自动授权”。这里做的是**自动弹出补资料 sheet**，头像/昵称/手机号仍由用户逐项点击授权；不想授权可手填。浏览链路（发现/活动详情/任务只读）不经过此门。
+
+  **门禁**：新增 `tools/scenario-profile-gate-test.js` **19**（读档案预填、头像上传、微信手机号、取消手填、空姓名/非法手机号拦截、保留安全字段、CAS revision、CONFLICT 复位、saved/close 事件）；`scenario-signup 105→106`（缺资料不再 denied/跳我的，改为 `profileGate+profileGateOpen`，关闭只收 sheet，保存后重读）、`scenario-editor 158→160`（缺资料自动开门，保存后 `_afterProfile` 续跑）；`check.js`/`check-handlers`/`journey-graph` 全绿；工具数 100→**101**。`cloudfunctions/` 零改动 ⇒ 不需要部署。
+
+  **真机**：重编译后截图 `docs/ui-ux-redesign/evidence/profile-gate-2026-10-21/`：`profile-gate-signup.png`（自动弹出的 sheet：头像/昵称/手机号/手填/保存并继续）与 `profile-gate-required-card.png`（关闭后的重开卡）。截图前清空组件里的姓名/手机号显示，未截取真实账号资料；真实账号已有资料，未在真机提交 `profile.save`（避免覆盖用户真实姓名/手机号），保存与 CONFLICT 由 19 条组件测试覆盖。
+
+- 2026-10-21（**活动发布页对齐公众号图文：封面 + 图文正文 + 活动说明/费用**；用户提供俱乐部公众号活动文截图，选 C 档「封面 + 图集 + 图文混排」）。**需重新部署 trailApi：是（已执行）**——`domain/{schema,activity,selectors,files}.js`、`index.js`、`config.json` 与 `smoke-test.js` 改动；`sync-lab` 已跑；线上包下载后与工作树逐文件 diff 为空，`info` 回读 `Active / timeout 20 / Nodejs16.13`。
+
+  **数据模型（全部可选，旧数据零迁移）**：`content`（段落/图片组块，≤30 块）、`coverFileId`（必须在正文图片里）、`highlights`、`leader`、`minParticipants`、`sceneryRating`/`funRating`、`feeSummary`/`feeIncludes`/`feeExcludes`、`signupNote`。发布门不变（标题/三个时间/至少一个完整上车点）；图文整体可后补。`activity.edit` 的阶段锁不锁这些信息性字段，集合中/行程中仍可补；交易键仍锁。总图 ≤20、总文本 ≤20,000，空块/封面不在正文/非 `activity-media/` fileID/重复图/成行人数高于上限均 `INVALID_INPUT`。（`sync-lab` 后 `trailApiLab` 也已部署，Active/timeout 20，线上包 diff 空。）
+
+  **服务端**：`activityView(activity, {includeContent})`——detail 带正文块，home 不带（首页不为长文买单）；`discoverView` 带解析后的 `coverFileId`；discover 搜索补正文与推荐理由。新增 `domain/files.js` 的 `activityFiles/collectActivityFiles/removedActivityFiles`，`actionDispatch` 持久化成功后按引用计数 `cloud.deleteFile`（copy 共用不误删；删除失败只记日志）。新增 action `checkImage`（14→15）：校验 `activity-media/` 前缀 → 下载 → >1MB 拒绝 → `security.imgSecCheck`；返回 `{pass,reason}`，权限/接口不可用失败关闭。`config.json` 增加 `security.imgSecCheck`。
+
+  **客户端**：编辑器 3 步→4 步（内容/图文/路线/招募），新增 `components/content-editor`（段落/图片块、上移下移删除、并发 3 上传、压缩 1280/70、生产安全检查、封面从正文图选、20 张上限、上传中锁保存/发布/切步）；`activity` 详情新增活动介绍（分段/双列或三列图/亮点）、活动说明 fact card（时间/集合/人数/领队/强度/风景/腐败/费用/报名后）、费用包含/不含、报名后须知、封面三态脚注（实拍/氛围图+正文实拍/无图），实拍封面失败回退氛围图并改口；`discover`/`home`/`activity-card` 优先实拍封面、失败回退氛围图；新增 `utils/content-view.js` 纯函数。
+
+  **门禁（逐套实测）**：`smoke 210/0`、`scenario-editor 169/0`、`scenario-activity 151/0`、`content-editor 16/0`（新）、`content-view 14/0`（新）、`scenario-discover 36/0`、`scenario-signup 106/0`、`scenario-workspace 114/0`、`lab-dryrun 165/0`、`quick-create 65/0`、`e2e-test 72/0`、`e2e-client-cas 54/0 (bugs=1 既有 BUG-C2)`、`lifecycle-projection 132/0`、`a20-owner-hero 32/0`、`journey-graph 15/0`、`ui-consistency 17/0`；`check.js`/`check-handlers` 全过。工具数 101→**103**。**未跑全量 sweep，不编总数。**
+
+  **真机**：`close --project` → `open` → `auto`（不 `quit`）重编译；真实草稿活动 + 真实云图片，截图 `docs/ui-ux-redesign/evidence/activity-article-p2p3-2026-10-21/`（编辑器四步/图文块/两列封面、详情 hero/介绍/活动说明/费用/报名后）。删除草稿后两张图的 `checkImage` 均返回 `read_failed` ⇒ 引用计数清理在真实请求链路生效。**UNVERIFIED**：跨用户读图（单账号）、真实键盘焦点（automator 不触发 focus/blur）、原生相册选择器（图片是程序化上传）、分享卡 `imageUrl` 未截分享面板；`activity-facts.png` 是 `isDraft:false` + 字段注入的渲染证据，不是已发布活动。`e2e-golden-path` 已把步骤 3→4 的 `.seg` 序号与 `stepLabels` 更新，未跑（GP-01 既有红）。
+
+  **边界**：不收款、不做保险承诺；图片安全检查是公开发现页的必选项，权限不可用时失败关闭，不静默放行。

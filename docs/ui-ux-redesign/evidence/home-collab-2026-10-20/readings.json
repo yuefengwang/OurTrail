@@ -1,0 +1,1200 @@
+{
+  "startedAt": "2026-10-20T14:04:14.094Z",
+  "cases": {
+    "D_realCollabTab": {
+      "filter": "collab",
+      "cards": 18,
+      "everyCardHasEntry": true,
+      "collabKeys": [
+        "vehicle",
+        "vehicle",
+        "vehicle",
+        "vehicle",
+        "vehicle",
+        "vehicle"
+      ],
+      "segs": [
+        {
+          "text": "我的活动",
+          "width": 83,
+          "height": 60,
+          "left": 24,
+          "top": 174
+        },
+        {
+          "text": "最近查看",
+          "width": 83,
+          "height": 60,
+          "left": 111,
+          "top": 174
+        },
+        {
+          "text": "已结束",
+          "width": 83,
+          "height": 60,
+          "left": 197,
+          "top": 174
+        },
+        {
+          "text": "需要协作 18",
+          "width": 83,
+          "height": 60,
+          "left": 284,
+          "top": 174
+        }
+      ]
+    },
+    "A_dualRole": {
+      "segs": [
+        {
+          "text": "我的活动",
+          "width": 83,
+          "height": 60,
+          "left": 24,
+          "top": 174
+        },
+        {
+          "text": "最近查看",
+          "width": 83,
+          "height": 60,
+          "left": 111,
+          "top": 174
+        },
+        {
+          "text": "已结束",
+          "width": 83,
+          "height": 60,
+          "left": 197,
+          "top": 174
+        },
+        {
+          "text": "需要协作 2",
+          "width": 83,
+          "height": 60,
+          "left": 284,
+          "top": 174
+        }
+      ],
+      "segmentedHeight": 68,
+      "collab": [
+        {
+          "text": "现场协作",
+          "height": 48,
+          "width": 114,
+          "top": 752,
+          "left": 37,
+          "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+        },
+        {
+          "text": "车辆联络",
+          "height": 48,
+          "width": 114,
+          "top": 752,
+          "left": 159,
+          "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+        },
+        {
+          "text": "车辆联络",
+          "height": 48,
+          "width": 114,
+          "top": 1056,
+          "left": 36,
+          "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+        }
+      ],
+      "featuredTop": 340,
+      "crop": "03-A-featured-card-scrolled.png"
+    },
+    "A2_viewport375": {
+      "pixelVerified": false,
+      "reason": "automator 无 setViewport；换设备档位要动 IDE 图形界面",
+      "measured": {
+        "windowWidth": 390,
+        "segmentedWidth": 350,
+        "segOuter": 83,
+        "segTextWidth": 71
+      },
+      "computed": {
+        "innerTextWidthAt375": 67
+      },
+      "verdict": "推算：第四档标签会在按钮内换行（行高变两行，不是整段溢出）"
+    },
+    "B_noGrant": {
+      "segs": [
+        {
+          "text": "我的活动",
+          "width": 111,
+          "height": 60,
+          "left": 24,
+          "top": 174
+        },
+        {
+          "text": "最近查看",
+          "width": 111,
+          "height": 60,
+          "left": 139,
+          "top": 174
+        },
+        {
+          "text": "已结束",
+          "width": 111,
+          "height": 60,
+          "left": 255,
+          "top": 174
+        }
+      ],
+      "collab": []
+    },
+    "C_empty": {
+      "segs": 0
+    }
+  },
+  "gates": [
+    {
+      "name": "bundle 新鲜度：页面 data 里有 collabCount、且旧数组 tasks 已不存在",
+      "pass": true,
+      "extra": {
+        "collabCount": 18,
+        "hasTasksKey": false
+      }
+    },
+    {
+      "name": "真实读取没有落到 denied 面板",
+      "pass": true,
+      "extra": ""
+    },
+    {
+      "name": "筛选段实际渲染出的档位数量与 collabCount 一致（>0 才有第四档）",
+      "pass": true,
+      "extra": [
+        "我的活动",
+        "最近查看",
+        "已结束",
+        "需要协作 18"
+      ]
+    },
+    {
+      "name": "真实数据点第四档：列表从 151 场收缩到 collabCount 那 18 场",
+      "pass": true,
+      "extra": {
+        "cards": 18,
+        "collabCount": 18
+      }
+    },
+    {
+      "name": "第四档里每一张卡都至少带一枚协作入口（没有空入口的条目）",
+      "pass": true,
+      "extra": [
+        "vehicle",
+        "vehicle",
+        "vehicle",
+        "vehicle",
+        "vehicle",
+        "vehicle"
+      ]
+    },
+    {
+      "name": "第四档被选中（DOM 上 .seg.on 是第 4 个）",
+      "pass": true,
+      "extra": [
+        "我的活动",
+        "最近查看",
+        "已结束",
+        "需要协作 18"
+      ]
+    },
+    {
+      "name": "A 第四档存在且带计数",
+      "pass": true,
+      "extra": [
+        "我的活动",
+        "最近查看",
+        "已结束",
+        "需要协作 2"
+      ]
+    },
+    {
+      "name": "A 双角色卡上两枚入口都在（staff 不吞 vehicle）",
+      "pass": true,
+      "extra": [
+        {
+          "text": "现场协作",
+          "height": 48,
+          "width": 114,
+          "top": 752,
+          "left": 37,
+          "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+        },
+        {
+          "text": "车辆联络",
+          "height": 48,
+          "width": 114,
+          "top": 752,
+          "left": 159,
+          "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+        },
+        {
+          "text": "车辆联络",
+          "height": 48,
+          "width": 114,
+          "top": 1056,
+          "left": 36,
+          "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+        }
+      ]
+    },
+    {
+      "name": "A 每枚入口高度 ≥44px（触控目标）",
+      "pass": true,
+      "extra": [
+        48,
+        48,
+        48
+      ]
+    },
+    {
+      "name": "A 同一张卡的两枚入口排在同一行（top 相同，不再被主入口挤成一枚一行）",
+      "pass": true,
+      "extra": [
+        752,
+        752
+      ]
+    },
+    {
+      "name": "A 协作入口是浅底 leaf（不许退回透明底 + 深绿字压在森林底上）",
+      "pass": true,
+      "extra": [
+        "button card--button leaf card--leaf collab-leaf card--collab-leaf",
+        "button card--button leaf card--leaf collab-leaf card--collab-leaf",
+        "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+      ]
+    },
+    {
+      "name": "A 四档没有换行成两行（segmented 高度仍是一档高）",
+      "pass": true,
+      "extra": 68
+    },
+    {
+      "name": "A 四档都在视口内（最右一档不溢出 390px）",
+      "pass": true,
+      "extra": [
+        [
+          24,
+          83
+        ],
+        [
+          111,
+          83
+        ],
+        [
+          197,
+          83
+        ],
+        [
+          284,
+          83
+        ]
+      ]
+    },
+    {
+      "name": "B 只剩三档（计数为 0 时第四档不出现，不是灰掉）",
+      "pass": true,
+      "extra": [
+        "我的活动",
+        "最近查看",
+        "已结束"
+      ]
+    },
+    {
+      "name": "B 卡上零枚协作入口",
+      "pass": true,
+      "extra": []
+    }
+  ],
+  "systemInfo": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "platform": "devtools"
+  },
+  "real": {
+    "denied": "",
+    "loading": false,
+    "collabCount": 18,
+    "hasTasksKey": false,
+    "cards": [
+      {
+        "id": "activity-mul9cbyhpt9s4v",
+        "featured": true,
+        "collab": []
+      },
+      {
+        "id": "activity-muvxmudshley5t",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mv0q0bt305yaqe",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mvb1pkbov4td54",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mvb1tl02tgfzeh",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzgtea2qmof10",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzgu3qdnx7wkq",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muns9s5oyqeo98",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-musowqmx2my5m4",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-musowy9r3s06a4",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-musox8nvjgaox8",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-musoxjcepjq8ni",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-musoxtuh0gt497",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muspdqcjp25ady",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muspkx87ftla6z",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muspnzdu2jmr48",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut3q6od8w6kvh",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut3vil52idxay",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut42wdp2ffina",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut44452fxbf7c",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut4pcqed8as2z",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut4qpcbz6db19",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut4yu14nz06db",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut53pd0cjxubd",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut5fwfhc62oft",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut5m07nzy6oo3",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut5oyl08a48i3",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut5v1lzd83fb5",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut5yjln409p5o",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut65sothl1mje",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut71l2hdba66n",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut7nakoy3yq90",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut7uk9pfrne7t",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut7zrvsdghmsq",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut88qkkcliuz5",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mut8kp2tdixw81",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muthxwcxf3f26n",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutibvcf2lzkri",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutiojfbrvgorq",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutip6m0oqzg9g",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutiu75veidlyc",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutj2b7b33m55m",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutjahtv9g9l91",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutjizhkn1l2aw",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutsm81dyp4mam",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muttn5w59se9o2",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muttx5pm77y1am",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutu44xivme7b1",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutu5jstxgjyv6",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutub4iz2q7cmq",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutufx6el2bu8p",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutuplhq0mg98e",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muu58ss42j3u9j",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muulx6c3zcbwwv",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muum5g3p4kchqk",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muumod7o22q2k1",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muunvxxv9gsl7v",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muuo1p7aqo13kz",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muuwsp5to4rjy1",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muv849z4qnvnxg",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muv8aa6ohn7z83",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muvclb1aberf2g",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muvcqtk4i3apwu",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muxbopxnp1wxaq",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muxbvwvywbxvk4",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzk2fa7djokln",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzkbyf956amss",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzkiksnfcbxj8",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzkp8strl5zj2",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzksi79mc90lh",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzkzbbf29pcye",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzl24cjnv8kuv",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzl93n1qrzmcq",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzlaltr9wyibg",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzlhbdurd641c",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muznyq7btvoxa4",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzo5904k94nce",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzodfemvy9wt7",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzojy221tva77",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzov42bkj3038",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzpu1lexlc3dm",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muzq6x78lgpl23",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mv0pz8ecpwvpo1",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mv0thhuiwh6l5f",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mv0wawr01p05sp",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mvbpxp76u4zsck",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muvymaiuz4vkke",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwg4urp7rqloi",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwhc7gtgu4nak",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwiiwhwobq7zw",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwjujrzu6etqm",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwl2sn8p2xe2v",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwlzmdvo9bzk2",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwn0qdbuqpidu",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwogn0fnyw3oo",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwvm10q23reyw",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwwub7hnborn7",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muwxybm8br77c9",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mux087kzqv6oe6",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mux1e1siml496o",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mux2j9ea9t93ui",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mux3oma05pgifz",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mux4uasbu6ev9v",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mux5ndeno16pl8",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mux6s09b034cxu",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mux7w748tu59bk",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mux906jcm2luim",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muxa4dbkah15pw",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muxox50gzwqu06",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muxts1t696pk5w",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muy7nl3ymarebd",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muy8bdzki8po24",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutvozesnblyir",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutvwuugx4np3m",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-mutw5e6lnsllvt",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-mutwfqfxo6rmr4",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-mutwp1oghcajn9",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-mutxv5ade7few6",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-muty8ot6e1my30",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-mutyi3eyqu54q2",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-mutyqsol7d59nh",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-mutz3g27c2i0sh",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-mutzfdd3xyimvj",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-mutzryr9hf8oz1",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-muu09vvpobenyn",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-muu0wnq3sk5sv3",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-muu1blbq6ph9xl",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-muu1qrih5tiz6f",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-muukafigg4ju9l",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-muuls6mxd3qnn1",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muum1kk8l0gvar",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muum1p4y2g35wq",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muumas0yg1q1xy",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muumbbuxmover5",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muumip9lxatzn2",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muumiqntd8jt7h",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muumtit7ygmhcb",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muumtsolbp3atg",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muun4lqwbqdjd0",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muun4ndykvwdm2",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muuni35imn3ei1",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muunig2lruvpe9",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muunvwxvbdjuyi",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muupj23r482jn0",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muupl2b0s8yk9b",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muuq0esws01pwj",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muuq0srkhuzre9",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-muuvfo1m6rip18",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-muuw7avia8tvb1",
+        "featured": false,
+        "collab": [
+          "vehicle"
+        ]
+      },
+      {
+        "id": "activity-muvcmu368h7qcg",
+        "featured": false,
+        "collab": []
+      },
+      {
+        "id": "activity-muumb7pl5f0ry0",
+        "featured": false,
+        "collab": []
+      }
+    ],
+    "segs": [
+      {
+        "text": "我的活动",
+        "width": 83,
+        "height": 60,
+        "left": 24,
+        "top": 174
+      },
+      {
+        "text": "最近查看",
+        "width": 83,
+        "height": 60,
+        "left": 111,
+        "top": 174
+      },
+      {
+        "text": "已结束",
+        "width": 83,
+        "height": 60,
+        "left": 197,
+        "top": 174
+      },
+      {
+        "text": "需要协作 18",
+        "width": 83,
+        "height": 60,
+        "left": 284,
+        "top": 174
+      }
+    ],
+    "collabNodes": [
+      {
+        "text": "车辆联络",
+        "height": 48,
+        "width": 114,
+        "top": 31856,
+        "left": 36,
+        "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+      },
+      {
+        "text": "车辆联络",
+        "height": 48,
+        "width": 114,
+        "top": 32215,
+        "left": 36,
+        "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+      },
+      {
+        "text": "车辆联络",
+        "height": 48,
+        "width": 114,
+        "top": 32574,
+        "left": 36,
+        "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+      },
+      {
+        "text": "车辆联络",
+        "height": 48,
+        "width": 114,
+        "top": 32933,
+        "left": 36,
+        "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+      },
+      {
+        "text": "车辆联络",
+        "height": 48,
+        "width": 114,
+        "top": 33292,
+        "left": 36,
+        "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+      },
+      {
+        "text": "车辆联络",
+        "height": 48,
+        "width": 114,
+        "top": 33651,
+        "left": 36,
+        "cls": "button card--button leaf card--leaf collab-leaf card--collab-leaf"
+      }
+    ]
+  },
+  "finishedAt": "2026-10-20T14:04:39.988Z",
+  "fails": []
+}

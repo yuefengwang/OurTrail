@@ -255,8 +255,15 @@ async function main() {
     await waitFor(() => page.data.loading === false)
     page.onFilter({ currentTarget: { dataset: { value: 'recent' } } })
     await waitFor(() => page.data.cards.length === 2)
-    check('协作/车辆视角合并进来的两场都进了任务区（合并路径真的跑到了）',
-      page.data.tasks.length === 2, JSON.stringify(page.data.tasks.map(t => t.id)))
+    check('协作/车辆视角合并进来的两场都算进「需要协作」的计数（合并路径真的跑到了）',
+      page.data.collabCount === 2, JSON.stringify({ collabCount: page.data.collabCount, cards: page.data.cards.length }))
+    page.onFilter({ currentTarget: { dataset: { value: 'collab' } } })
+    await waitFor(() => page.data.cards.length === 2)
+    check('第四档筛出的恰好是这两场，且各自带着自己的协作入口（入口来自服务端 meta，不是 openedIds）',
+      page.data.cards.map(c => c.id).sort().join(',') === 'staff-only,veh-own'
+      && cardOf(page, 'staff-only').collab.map(r => r.key).join(',') === 'staff'
+      && cardOf(page, 'veh-own').collab.map(r => r.key).join(',') === 'vehicle',
+      JSON.stringify(page.data.cards.map(c => ({ id: c.id, collab: c.collab }))))
     check('合并后的卡里，非归属那条不含待审核、归属那条含（判据听 meta.owner，不听视角）',
       cardOf(page, 'staff-only').info.indexOf('待审核') === -1
       && cardOf(page, 'veh-own').info.indexOf('待审核 7 人') !== -1,

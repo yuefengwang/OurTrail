@@ -1,4 +1,4 @@
-<view class="page {{cards.length || tasks.length ? 'with-tabbar' : ''}}">
+<view class="page {{cards.length ? 'with-tabbar' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="暂时无法读取活动" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在核对与你有关的活动。" />
@@ -23,33 +23,19 @@
         <text class="muted" style="display:block;margin-top:8px;">从出发到平安到家，把安排放在一起。</text>
       </view>
 
-      <view wx:if="{{tasks.length}}" class="stack" style="gap:0;">
-        <text class="section-title">需要我协作</text>
-        <view
-          wx:for="{{tasks}}"
-          wx:key="id"
-          class="list-row"
-          hover-class="button-hover"
-          data-id="{{item.id}}"
-          data-gostaff="{{item.goStaff}}"
-          bindtap="onOpenTask"
-        >
-          <view class="list-main">
-            <text>{{item.title}}</text>
-            <text class="list-sub">{{item.roles}} · {{item.phase}}</text>
-          </view>
-          <icon name="arrow" size="18" color="#163E35" />
-        </view>
-      </view>
-
+      <!-- 「需要我协作」原来是列表上方的第二个列表（裸 .list-row）：与下面的活动卡是两种形态，
+           且同一场活动可以同时进两个区。2026-10-20 起它变成第四档筛选 + 卡片上的协作入口，
+           首页只剩一个列表。判据 docs/superpowers/specs/2026-10-20-home-dual-list-dedup.md，
+           门 tools/home-collab-list-test.js。计数为 0 时整档不出现（不是灰掉、不是空列表）。 -->
       <view wx:if="{{hasAny}}" class="stack-gap3">
         <view class="segmented" aria-label="活动范围">
           <view class="seg {{filter === 'mine' ? 'on' : ''}}" data-value="mine" bindtap="onFilter">我的活动</view>
           <view class="seg {{filter === 'recent' ? 'on' : ''}}" data-value="recent" bindtap="onFilter">最近查看</view>
           <view class="seg {{filter === 'finished' ? 'on' : ''}}" data-value="finished" bindtap="onFilter">已结束</view>
+          <view wx:if="{{collabCount}}" class="seg {{filter === 'collab' ? 'on' : ''}}" data-value="collab" bindtap="onFilter">需要协作 {{collabCount}}</view>
         </view>
         <view class="field">
-          <text class="field-label">查找我的活动</text>
+          <text class="field-label">查找活动</text>
           <input class="input" type="text" confirm-type="search" placeholder="搜索活动或路线" value="{{search}}" bindinput="onSearch" />
         </view>
       </view>
@@ -73,9 +59,11 @@
           when="{{item.when}}"
           featured="{{item.featured}}"
           info="{{item.info}}"
+          collab="{{item.collab}}"
           activity-id="{{item.id}}"
           data-id="{{item.id}}"
           bind:open="onOpenCard"
+          bind:collab="onCardCollab"
         />
       </view>
     </view>

@@ -17,7 +17,7 @@
 | 通知 Tab | `pages/notices` | 全部与我有关的通知、已读、组织者发布/复制/投递记录 |
 | 我的 Tab | `pages/me` | 常用资料（微信头像/昵称/一键手机号同步，无验证码）、常用同行人、协作身份码、位置授权撤回 |
 | 活动详情 | `pages/activity` | 状态视图、我与同行人、路线/集合/风险/装备（必带+建议）/费用、难度、分区锚点、海拔剖面、出发日天气摘要、自助操作弹层、分享 |
-| 报名 | `pages/signup` | 多人整组报名、同行人授权、满员整组候补；编辑模式按用途读取 |
+| 报名 | `pages/signup` | 多人整组报名、同行人授权、满员整组候补；档案未补时页面内自动弹出微信资料门（头像/昵称/手机号，可手填）；编辑模式按用途读取 |
 | 编辑器 | `pages/editor` | 三步编辑（内容时间/路线集合/招募风险）、**GPX 轨迹导入**（自动解析节点/里程/爬升）、从我组织的活动复制、发布 |
 | 工作台 | `pages/workspace` | 总览待办、名单、分车、现场四分区；阶段推进（带门槛校验） |
 | 任务清单 | `pages/tasks` | 活动内协作 checklist：装备/采购/记录分工、负责人、截止日、待办/进行中/已完成；组织者写、参与者只读 |
@@ -33,6 +33,8 @@
 | 时空天相图 | `components/space-time` | **P4**：把「时间×数值」补成「时间×海拔」——云层带 + 逐节点天相渐变轨迹 + 主窗口括号 + 抵达净空。几何抽到 `layout.js`，天相判定复用 `utils/sky.js`（不自建阈值） |
 | 漫游滑块 | `components/roam-scrubber` | 拖动/播放走完这一天。**哑控件**：不认识天相也不认识轨迹，读数由 `space-time` 算好后经 slot 传入，避免同一份天相算两遍 |
 | 海拔剖面 | `components/route-profile` | 活动/路线详情：连续轨迹高程 / 节点高程 / 无数据三态；无连续高程时明确标「节点高程，非连续剖面」，不插值伪造地形 |
+| 按需资料门 | `components/profile-gate` | 报名/发布前自动弹出；微信头像、昵称、手机号授权 + 手填兜底；保存后自动继续原动作 |
+| 图文编辑器 | `components/content-editor` | 活动发布的段落/图片块、封面选择、并发 3 上传与 `imgSecCheck`；块数据交给页面保存 |
 | 合规 | `pages/privacy` | 隐私指引（公众平台登记路径）。**全局授权弹窗已下线**：`components/privacy-popup` 组件文件按 2026-09-27 决策保留，但已从 `app.json` 注销、不再挂载 |
 
 ## 目录结构
@@ -45,7 +47,7 @@ miniprogram/
   components/                    icon(SVG data URI)/overlay/status-panel/person-row/
                                  form-field/activity-card/field-panel/roster-panel/
                                  transport-panel/meteogram/space-time/route-profile/
-                                 privacy-popup(已注销，保留文件)
+                                 profile-gate/content-editor/privacy-popup(已注销，保留文件)
   utils/
     api.js           云函数调用封装（read/dispatch + Result 解包）
     draft.js         本地草稿 + 最近查看活动

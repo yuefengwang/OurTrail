@@ -241,6 +241,27 @@ function transportLock(phase) {
   return ''
 }
 
+/* ---------- 协作角色（「需要我协作」那组词的唯一定义处） ---------- */
+
+// 这两个词原来只写在 pages/home/home.js 的三元表达式里（全仓唯一一处），页面自造受管中文词
+// 正是铁律 22② 拦的形态；卡片上的协作按钮与首页筛选项要用同一组词，就必须有单源。
+// 键与服务端 home 投影的 meta 同名（domain/selectors.js 的 staff / vehicle），不另立第二套命名。
+const COLLAB_ROLE_LABELS = { staff: '现场协作', vehicle: '车辆联络' }
+
+/**
+ * 本人在这一场活动上欠下的协作事项。两个角色各自独立成条——
+ * 旧首页是一个 goStaff 布尔决定整行跳哪儿，一个人同时是现场协作与车辆联络时，
+ * 车辆那一半就再也进不去（docs/testing/ui-user-journeys.md §8.6）。
+ * meta 缺键一律按「没有这个授权」处理（失败关闭）：越权入口宁可不出。
+ */
+function collabRoles(meta) {
+  const m = meta || {}
+  const roles = []
+  if (m.staff) roles.push({ key: 'staff', label: COLLAB_ROLE_LABELS.staff })
+  if (m.vehicle) roles.push({ key: 'vehicle', label: COLLAB_ROLE_LABELS.vehicle })
+  return roles
+}
+
 const TRANSITION_LABEL = {
   gathering: '开始集合', active: '确认出发', closing: '结束行程，进入返程', archived: '安全收尾并归档', cancelled: '取消这场活动',
 }
@@ -368,5 +389,6 @@ module.exports = {
   PHASE_ORDER, phaseLabel, phaseScene, phaseTone, signupLabel, statusFilterOptions, incidentOptions,
   remaining, dayPrefix, participantNext, leaderQueue, transitionBlocker, timeline,
   tripMixLine, fieldMetric, transportLock,
+  COLLAB_ROLE_LABELS, collabRoles,
   explain, disabledReason, busyStale, BUSY_LIMIT_MS, TRANSITION_LABEL,
 }

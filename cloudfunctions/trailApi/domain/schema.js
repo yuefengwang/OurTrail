@@ -172,6 +172,12 @@ const PickupPoint = specObj({
   id: specId, name: specText, meetingAt: specNull(specInstant),
   address: specText, coordinates: specNull(Coordinates),
 })
+// 活动图文正文块（2026-10-21）：段落与图片组交替。text 可含空行，渲染层拆段；
+// images 的 fileIds 必须在 activity-media/ 云存储路径下（validateInput 校验）。
+const ContentBlock = specUnion('type', {
+  text: specObj({ type: specEnum(['text']), text: specText }),
+  images: specObj({ type: specEnum(['images']), fileIds: specArr(specStr(1000), 1, 9) }),
+})
 const Phase = specEnum(['draft', 'published', 'gathering', 'active', 'closing', 'archived', 'cancelled'])
 const ApprovalMode = specEnum(['manual', 'automatic'])
 const Activity = specObj({
@@ -183,6 +189,18 @@ const Activity = specObj({
   // 「建议携带」是可选清单；equipment 继续表示「必带」，旧数据没有本键按空数组读。
   equipmentSuggested: specOpt(specArr(specText)),
   feeNote: specText, cancellationNote: specText,
+  // 公众号式图文（2026-10-21）：全部可选，旧数据不迁移。
+  content: specOpt(specArr(ContentBlock, 0, 30)),
+  coverFileId: specOpt(specStr(1000)),
+  highlights: specOpt(specArr(specStr(200), 0, 8)),
+  leader: specOpt(specStr(100)),
+  minParticipants: specOpt(specNum(1, 500, true)),
+  sceneryRating: specOpt(specNum(1, 5, true)),
+  funRating: specOpt(specNum(1, 5, true)),
+  feeSummary: specOpt(specStr(200)),
+  feeIncludes: specOpt(specArr(specStr(200), 0, 12)),
+  feeExcludes: specOpt(specArr(specStr(200), 0, 12)),
+  signupNote: specOpt(specText),
   publishedAt: specOpt(specInstant),
 })
 
