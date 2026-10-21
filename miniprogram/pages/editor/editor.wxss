@@ -9,3 +9,9 @@
 
 /* 风景/腐败指数：选中态复用全局 chip 形态，只换底色与字色（token 内） */
 .chip.on { background: var(--forest); color: var(--paper); }
+
+/* 可点的折叠行整行都是热区，纵向至少 44px；避免只剩右侧小字可点。 */
+.cluster-row-tap { min-height: var(--touch-target); }
+
+/* 底栏主操作吃剩余宽度；「上一步 / 继续完善」保持文字按钮的自然宽度。 */
+.sticky-action .button.text { flex: 0 0 auto; }

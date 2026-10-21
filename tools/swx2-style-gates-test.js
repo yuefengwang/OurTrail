@@ -696,8 +696,8 @@ section('§7b editor 可点 .cluster 行：作用域判据（本轮 DEFERRED；�
   check('T7.10 放弃结构选择器是有数可依的：注入 .stack-gap3 > .cluster:first-child 后，判据当场报出「抬到了不含高控件的不可点行」' +
     '（L' + audit.collateral.join(',L') + '）⇒ 它不是 faithful fix',
     injected !== null && audit.collateral.length > 0, JSON.stringify(audit))
-  check('T7.11 同一条注入规则对「覆盖可点行」这一半是够的（说明缺的只是精确性，不是方向）',
-    audit.uncovered.length === 0, audit.uncovered.join(','))
+  check('T7.11 结构选择器连「覆盖可点行」也不完整（编辑器新增的路线摘要行不是首子节点）',
+    audit.uncovered.length > 0, audit.uncovered.join(','))
   fs.rmSync(dir, { recursive: true, force: true })
 
   // 反向：本轮未派给我、但同页可点元素的读数（只登记不判红，避免扩大改动面）

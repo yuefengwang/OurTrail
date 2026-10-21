@@ -103,6 +103,11 @@ function bootEditor(opts) {
     cmds.push({ payload, revision })
     return Promise.resolve({ targetIds: opts.targetIds || ['act-new'], revision: (revision || 0) + 1 })
   }
+  // 路线库快速带入：列表与单条详情都是真读取契约的桩，不是页面内复制一份。
+  api.readRoutes = id => {
+    if (id) return Promise.resolve(opts.routeDetail || { route: null })
+    return Promise.resolve({ routes: opts.routes || [] })
+  }
   const page = makePage(pageConfig())
   page.onLoad(opts.options || {})
   return { page, cmds, reads, env }
@@ -153,6 +158,22 @@ function completeForm() {
     dt_start: { date: '2026-10-03', time: '08:00' },
     dt_end: { date: '2026-10-03', time: '16:00' },
     dt_deadline: { date: '2026-10-02', time: '08:00' },
+  }
+}
+
+// 路线库详情（selectors.routeView 形状）：用于快速带入与共享路线快照
+function routeDetail(over) {
+  return {
+    route: Object.assign({
+      id: 'route-1', isOwner: true, title: '飞泉沟环线', distanceKm: 12.8, ascentM: 680,
+      points: [
+        { id: 'rp-1', name: '溪谷起点', kind: 'start', coordinates: { lat: 30.9, lng: 103.5 }, ele: 700, time: '2026-10-03T00:40:00.000Z' },
+        { id: 'rp-2', name: '垭口', kind: 'checkpoint', coordinates: { lat: 30.95, lng: 103.55 }, ele: 1380 },
+      ],
+      risks: [{ id: 'rr-1', title: '湿滑', advice: '防滑鞋' }],
+      track: [{ lat: 30.9, lng: 103.5 }, { lat: 30.95, lng: 103.55 }],
+    }, over || {}),
+    revision: 7,
   }
 }
 
@@ -353,16 +374,14 @@ async function scenario4() {
     check('里程爬升仍按轨迹填充（设计如此）', page.data.form.distanceKm !== '' && page.data.form.ascentM !== '')
   }
   {
-    // 一键派生集合点（D1=C）：GPX 应用后无上车点时，起点直接变集合点
+    // 自动派生集合点：GPX 应用后无上车点时，起点直接变集合点（地址仍留空等人补）
     const { page } = bootEditor({ wx: GPX_WX })
     await settle(page)
     page.setData({ form: Object.assign({}, page.data.form, { dt_start: { date: '2026-10-03', time: '08:00' } }) })
     page.onImportGpx()
     page.onGpxApply()
-    check('前置：GPX 后仍无上车点', page.data.form.pickups.length === 0, String(page.data.form.pickups.length))
-    page.useStartAsPickup()
-    check('一键派生：1 个上车点，名称与坐标取自起点', page.data.form.pickups.length === 1
-      && page.data.form.pickups[0].name === '溪谷起点集合'
+    check('GPX 应用后自动生成 1 个上车点', page.data.form.pickups.length === 1, String(page.data.form.pickups.length))
+    check('自动集合点：名称与坐标取自起点', page.data.form.pickups[0].name === '溪谷起点集合'
       && page.data.form.pickups[0].lat === page.data.form.points[0].lat
       && page.data.form.pickups[0].lng === page.data.form.points[0].lng, JSON.stringify(page.data.form.pickups))
     check('集合时间默认出发前 30 分（与 addPickup 同口径）',
@@ -536,9 +555,9 @@ async function scenario6() {
     const d0 = page.deferredForPublish()
     check('空表单可后补点名 4 项', d0.length === 4, JSON.stringify(d0.map(x => x.label)))
     check('后补项覆盖图文/路线名称/节点/风险且各带步骤',
-      d0.some(x => x.label === '图文详情（封面、正文或图片）' && x.step === 1)
-      && d0.some(x => x.label === '路线名称' && x.step === 2)
-      && d0.some(x => x.label === '至少 1 个路线节点' && x.step === 2)
+      d0.some(x => x.label === '图文详情（封面、正文或图片）' && x.step === 2)
+      && d0.some(x => x.label === '路线名称' && x.step === 1)
+      && d0.some(x => x.label === '至少 1 个路线节点' && x.step === 1)
       && d0.some(x => x.label === '至少 1 条风险提示' && x.step === 3), JSON.stringify(d0))
 
     // ③ 必填未齐（上车点半成品 + 时间顺序错）：必填清单仍拦路
@@ -878,8 +897,143 @@ async function scenario12() {
   }
 }
 
+// 13. 快速创建主路径（2026-10-21）：路线带入 → 标题自动填 → 起点自动生成集合点 → 补地址即可发布。
+async function scenario13() {
+  section('13. 快速创建：路线自动带入、标题自动填写、集合自动派生、随时发布')
+  const detail = routeDetail()
+  const listItem = {
+    id: 'route-1', title: detail.route.title, distanceKm: 12.8, ascentM: 680,
+    pointCount: 2, riskCount: 1, isOwner: true,
+  }
+  {
+    const { page } = bootEditor({ routes: [listItem], routeDetail: detail })
+    await settle(page)
+    page.onDate(ev('dt_start', '2026-10-03'))
+    page.onTime(ev('dt_start', '08:00'))
+    check('先定出发：结束与截止自动估算', page.data.form.dt_end.date === '2026-10-03'
+      && page.data.form.dt_deadline.date === '2026-10-02', JSON.stringify({ end: page.data.form.dt_end, deadline: page.data.form.dt_deadline }))
+    page.onQuickRouteOpen()
+    await waitFor(() => page.data.quickRoutes.length === 1)
+    check('路线库列表打开并标明归属', page.data.quickRouteOpen === true && page.data.quickRoutes[0].badge === '我的'
+      && page.data.quickRoutes[0].statsText.indexOf('12.8 km') !== -1, JSON.stringify(page.data.quickRoutes))
+    page.onQuickRoutePick({ currentTarget: { dataset: { id: 'route-1' } } })
+    await waitFor(() => page.data.form.routeTitle === '飞泉沟环线')
+    check('路线带入名称/里程/爬升/节点/风险', page.data.form.routeTitle === '飞泉沟环线'
+      && page.data.form.distanceKm === '12.8' && page.data.form.ascentM === '680'
+      && page.data.form.points.length === 2 && page.data.form.risks.length === 1,
+      JSON.stringify({ title: page.data.form.routeTitle, points: page.data.form.points.length, risks: page.data.form.risks.length }))
+    check('活动名按路线名自动填写并标注来源', page.data.form.title === '飞泉沟环线'
+      && /路线名/.test(page.data.titleAutoSource), JSON.stringify({ title: page.data.form.title, source: page.data.titleAutoSource }))
+    check('标题未触碰时可被下一条路线替换（自动值不是用户输入）', (function () {
+      page.applyRouteSnapshot(routeDetail({ id: 'route-2', title: '第二条路线' }).route)
+      return page.data.form.title === '第二条路线'
+    })())
+    page.applyRouteSnapshot(detail.route)
+    const autoPickup = page.data.form.pickups[0]
+    check('起点自动生成集合点，名称/坐标来自路线', page.data.form.pickups.length === 1 && autoPickup.name === '溪谷起点集合'
+      && autoPickup.lat === '30.9' && autoPickup.lng === '103.5', JSON.stringify(page.data.form.pickups))
+    check('集合时间自动取出发前 30 分', autoPickup.meeting.date === '2026-10-03' && autoPickup.meeting.time === '07:30',
+      JSON.stringify(autoPickup.meeting))
+    check('集合地址留空 → 还不能发布', page.data.publishReady === false && /集合上车点/.test(page.data.requiredMissingText),
+      JSON.stringify({ ready: page.data.publishReady, missing: page.data.requiredMissingText }))
+    page.onPickup({ currentTarget: { dataset: { index: 0, key: 'address' } }, detail: { value: '地铁 A 口' } })
+    check('补一句集合地址 → 任意步骤都可直接发布', page.data.publishReady === true && page.data.requiredMissingText === '',
+      JSON.stringify({ ready: page.data.publishReady, missing: page.data.requiredMissingText }))
+    check('路线快照 buildInput 通过云端严检', S.validate(S.ActivityInput, page.buildInput()) === true)
+  }
+  {
+    const { page } = bootEditor({ routes: [listItem], routeDetail: detail })
+    await settle(page)
+    page.onTitleInput({ detail: { value: '我自己的活动名' } })
+    page.onQuickRouteOpen()
+    await waitFor(() => page.data.quickRoutes.length === 1)
+    page.onQuickRoutePick({ currentTarget: { dataset: { id: 'route-1' } } })
+    await waitFor(() => page.data.form.routeTitle === '飞泉沟环线')
+    check('用户改过标题后，选路线不覆盖', page.data.form.title === '我自己的活动名' && page.data.titleAutoSource === '',
+      JSON.stringify({ title: page.data.form.title, source: page.data.titleAutoSource }))
+  }
+  {
+    const shared = routeDetail({ id: 'route-shared', isOwner: false, title: '共享路线' })
+    const { page } = bootEditor({
+      routes: [{ id: 'route-shared', title: '共享路线', distanceKm: 12.8, ascentM: 680, pointCount: 2, riskCount: 1, isOwner: false }],
+      routeDetail: shared,
+    })
+    await settle(page)
+    page.onQuickRouteOpen()
+    await waitFor(() => page.data.quickRoutes.length === 1)
+    page.onQuickRoutePick({ currentTarget: { dataset: { id: 'route-shared' } } })
+    await waitFor(() => page.data.form.routeTitle === '共享路线')
+    check('共享路线只带快照，不挂 routeId（服务端只允许自己的路线）',
+      page.routeId === null && page.data.form.routeTitle === '共享路线' && page.data.form.points.length === 2,
+      JSON.stringify({ routeId: page.routeId, title: page.data.form.routeTitle }))
+  }
+  {
+    const { page } = bootEditor({ routes: [listItem], routeDetail: detail })
+    await settle(page)
+    page.onQuickRouteOpen()
+    await waitFor(() => page.data.quickRoutes.length === 1)
+    page.onQuickRoutePick({ currentTarget: { dataset: { id: 'route-1' } } })
+    await waitFor(() => page.data.form.routeTitle === '飞泉沟环线')
+    const originalReadRoutes = api.readRoutes
+    api.readRoutes = id => id
+      ? Promise.resolve(routeDetail({ id: 'route-2', title: '第二条路线', distanceKm: 5, points: routeDetail().route.points, risks: [] }))
+      : originalReadRoutes()
+    page.onQuickRouteOpen()
+    await waitFor(() => page.data.quickRoutes.length === 1)
+    page.onQuickRoutePick({ currentTarget: { dataset: { id: 'route-2' } } })
+    await waitFor(() => page.data.routeReplaceOpen === true)
+    check('已有路线时先确认替换，不静默覆盖', page.data.routeReplaceOpen === true && page.data.pendingRouteTitle === '第二条路线',
+      JSON.stringify({ open: page.data.routeReplaceOpen, title: page.data.pendingRouteTitle }))
+    page.onRouteReplaceConfirm()
+    check('确认后才替换路线快照', page.data.form.routeTitle === '第二条路线' && page.data.form.distanceKm === '5',
+      JSON.stringify({ title: page.data.form.routeTitle, distance: page.data.form.distanceKm }))
+  }
+  {
+    // 关闭选择器后，迟到的路线读取不得再改表单（尝试令牌）：否则用户以为取消了，内容却被换掉。
+    const { page } = bootEditor({ routes: [listItem], routeDetail: detail })
+    await settle(page)
+    page.onQuickRouteOpen()
+    await waitFor(() => page.data.quickRoutes.length === 1)
+    let release = null
+    const originalReadRoutes = api.readRoutes
+    api.readRoutes = () => new Promise(resolve => { release = () => resolve(detail) })
+    page.onQuickRoutePick({ currentTarget: { dataset: { id: 'route-1' } } })
+    page.onQuickRouteClose()
+    if (release) release()
+    await sleep(120)
+    check('关闭选择器后，迟到的路线读取不再替换路线', page.data.form.routeTitle === '' && page.routeId === undefined,
+      JSON.stringify({ title: page.data.form.routeTitle, routeId: page.routeId }))
+    api.readRoutes = originalReadRoutes
+  }
+  {
+    const { page } = bootEditor({
+      wx: { chooseLocation: o => o.success({ name: '犀浦站', address: '地铁 A 口', latitude: 30.8, longitude: 103.7 }) },
+    })
+    await settle(page)
+    page.onTitleInput({ detail: { value: '周末轻徒步' } })
+    const suggestion = page.data.startSuggestions[0]
+    page.useSuggestedStart({ currentTarget: { dataset: { key: suggestion.key } } })
+    check('点一下周六建议即写入出发时间，并自动估算结束/截止',
+      page.data.form.dt_start.date === suggestion.at.date && page.data.form.dt_start.time === suggestion.at.time
+        && !!page.data.form.dt_end.date && !!page.data.form.dt_deadline.date,
+      JSON.stringify({ start: page.data.form.dt_start, end: page.data.form.dt_end, deadline: page.data.form.dt_deadline }))
+    page.chooseNewPickupLocation()
+    check('地图选点一次补齐集合点名称/地址/坐标', page.data.form.pickups.length === 1
+      && page.data.form.pickups[0].name === '犀浦站' && page.data.form.pickups[0].address === '地铁 A 口'
+      && page.data.form.pickups[0].lat === '30.8' && page.data.form.pickups[0].lng === '103.7',
+      JSON.stringify(page.data.form.pickups))
+    check('集合时间自动取建议出发前 30 分', page.data.form.pickups[0].meeting.time === (function () {
+      const s = page.data.form.dt_start
+      const base = Date.parse(s.date + 'T' + s.time + ':00+08:00') - 30 * 60000
+      const iso = new Date(base + 8 * 3600000).toISOString()
+      return iso.slice(11, 16)
+    })(), JSON.stringify(page.data.form.pickups[0].meeting))
+    check('三件必填齐 → 可发布（仍可继续写介绍）', page.data.publishReady === true, page.data.requiredMissingText)
+  }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11, scenario12]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11, scenario12, scenario13]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

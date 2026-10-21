@@ -244,6 +244,24 @@ function toRoutePoints(parsed) {
 
 // 从解析结果推断建议的风险提示与装备清单：节点名关键词 + 里程/爬升/天数规则。
 // 只做"预填建议"——导入后在编辑器步骤 3 可修改，且只填空字段不覆盖用户已填内容。
+// 路线库里已有的路线（不是 GPX 现场解析）同样能给出建议：
+// 复用同一套关键词 + 里程/爬升规则，避免在编辑器里再写第二套“适合人群/装备”判断。
+// 没有节点名、也没有里程/爬升时返回 null——宁可不建议，也不凭标题编内容。
+function suggestForRoute(route) {
+  const r = route || {}
+  const points = Array.isArray(r.points) ? r.points : []
+  const track = Array.isArray(r.track) ? r.track : []
+  const distance = Number(r.distanceKm) || 0
+  const ascent = Number(r.ascentM) || 0
+  if (!points.length && distance <= 0 && ascent <= 0) return null
+  const parsed = {
+    waypoints: points.map(p => ({ name: p.name || '', time: p.time ? Date.parse(p.time) : NaN })),
+    routePoints: [],
+    track: track.map(t => ({ time: t.time ? Date.parse(t.time) : NaN })),
+  }
+  return suggestTrailInfo(parsed, { distance: distance, ascent: ascent })
+}
+
 function suggestTrailInfo(parsed, m) {
   const text = [].concat(parsed.waypoints, parsed.routePoints)
     .map(p => p.name || '').join(' ')
@@ -340,4 +358,4 @@ function parseGpx(xml) {
   }
 }
 
-module.exports = { parseGpx, decodeEntities, extractPoints, measure, haversineKm, wgsToGcj, gcjToWgs, simplifyTrack, suggestTrailInfo, saneEle, ELE_MIN, ELE_MAX, MAX_FILE_BYTES }
+module.exports = { parseGpx, decodeEntities, extractPoints, measure, haversineKm, wgsToGcj, gcjToWgs, simplifyTrack, suggestTrailInfo, suggestForRoute, saneEle, ELE_MIN, ELE_MAX, MAX_FILE_BYTES }

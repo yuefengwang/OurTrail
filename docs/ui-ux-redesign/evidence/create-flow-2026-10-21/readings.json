@@ -1,0 +1,94 @@
+{
+  "startedAt": "2026-10-21T03:28:22.276Z",
+  "steps": {
+    "boot": {
+      "stepLabels": [
+        "01 信息",
+        "02 路线",
+        "03 介绍",
+        "04 发布"
+      ],
+      "step": 0,
+      "title": "",
+      "publishReady": false,
+      "requiredMissingText": "活动名称、出发时间、预计结束时间、报名截止时间、至少 1 个集合上车点",
+      "suggestions": [
+        {
+          "key": "sat",
+          "label": "周六 08:00",
+          "at": {
+            "date": "2026-10-24",
+            "time": "08:00"
+          }
+        },
+        {
+          "key": "sun",
+          "label": "周日 08:00",
+          "at": {
+            "date": "2026-10-25",
+            "time": "08:00"
+          }
+        }
+      ],
+      "hasContentEditorInDom": false,
+      "shot": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\01-editor-basic.png"
+    },
+    "suggestedStart": {
+      "start": {
+        "date": "2026-10-24",
+        "time": "08:00"
+      },
+      "end": {
+        "date": "2026-10-24",
+        "time": "16:00"
+      },
+      "deadline": {
+        "date": "2026-10-23",
+        "time": "08:00"
+      },
+      "publishReady": false,
+      "failure": ""
+    },
+    "content": {
+      "textareaSize": {
+        "width": 350,
+        "height": 168
+      },
+      "hasAddButton": true,
+      "focusedAfterTap": false,
+      "typed": {
+        "bodyText": "周末轻徒步。\n\n适合第一次上山的人，路线成熟，集合后一起出发。",
+        "bodyLength": 31,
+        "paragraphCount": 2,
+        "bodyFocused": false,
+        "groups": [],
+        "parentContentFilled": true
+      },
+      "parentContentAfterLeave": 1,
+      "textareaStillInDom": true,
+      "bodyAfterRoundtrip": "周末轻徒步。\n\n适合第一次上山的人，路线成熟，集合后一起出发。",
+      "shotTyping": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\02-content-typing.png",
+      "shotRoundtrip": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\03-content-roundtrip.png"
+    },
+    "quickRoute": {
+      "open": true,
+      "loading": false,
+      "error": "",
+      "total": 296,
+      "matchedAfterSearch": 133,
+      "shownAfterSearch": 40,
+      "titlesAfterSearch": [
+        "飞泉沟—珊瑚温泉",
+        "飞泉沟—珊瑚温泉",
+        "飞泉沟—珊瑚温泉",
+        "飞泉沟—珊瑚温泉",
+        "飞泉沟—珊瑚温泉"
+      ],
+      "shot": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\04-quick-route-sheet.png"
+    },
+    "imagePicker": {
+      "addButtonInDom": true
+    }
+  },
+  "endedAt": "2026-10-21T03:28:43.277Z"
+}

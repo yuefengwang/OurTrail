@@ -369,6 +369,51 @@ async function scenario1() {
     check('自行前往的行不标「车辆待安排」', env.page.data.rows[0].subtitle === '自行前往',
       env.page.data.rows[0].subtitle)
   }
+  {
+    // 领队没写介绍：详情页用结构化字段生成事实摘要，并明确标注来源；不把空模块印成缺口。
+    const env = bootActivity({ view: viewFixture(v => {
+      v.activity.description = ''
+      delete v.activity.content
+      v.activity.highlights = []
+      v.activity.signupNote = ''
+    }) })
+    await settle(env.page)
+    const summary = env.page.data.autoSummary
+    check('无手写介绍 → 用时间/路线/集合生成事实摘要',
+      summary.indexOf('10/03 周六 08:00 出发') !== -1
+        && summary.indexOf('路线「青城后山穿越」') !== -1
+        && summary.indexOf('12.5 km') !== -1 && summary.indexOf('860 m') !== -1
+        && summary.indexOf('集合在「东门集合点」') !== -1 && summary.indexOf('07:30') !== -1,
+      summary)
+    check('事实摘要出现在介绍区，分区锚点同步保留',
+      env.page.data.description === '' && env.page.data.sectionNav.some(x => x.id === 'sec-intro'),
+      JSON.stringify({ desc: env.page.data.description, nav: env.page.data.sectionNav }))
+    check('无报名后须知 → 分区锚点不指向不存在的区块',
+      !env.page.data.sectionNav.some(x => x.id === 'sec-signup'), JSON.stringify(env.page.data.sectionNav))
+  }
+  {
+    const env = bootActivity({ view: viewFixture() })
+    await settle(env.page)
+    check('有手写介绍 → 不再叠加事实摘要', env.page.data.description !== '' && env.page.data.autoSummary === '',
+      JSON.stringify({ d: env.page.data.description, a: env.page.data.autoSummary }))
+  }
+  {
+    // 实拍封面失败的回退链：实拍 → 氛围图 → 纯色。两个 image 分支分开挂 binderror，
+    // 防止旧 src 的 error 在回退后迟到、把新换上的氛围图也判死。
+    const env = bootActivity({ view: viewFixture(v => { v.activity.coverFileId = 'cloud://env/activity-media/cover.jpg' }) })
+    await settle(env.page)
+    check('真实封面：coverIsReal=true', env.page.data.coverIsReal === true && env.page.data.cover === 'cloud://env/activity-media/cover.jpg',
+      JSON.stringify({ real: env.page.data.coverIsReal, cover: env.page.data.cover }))
+    env.page.onCoverError()
+    check('实拍封面失败 → 回退氛围图（不直接判死）', env.page.data.coverIsReal === false
+      && env.page.data.coverFailed === false && /\/assets\/photos\//.test(env.page.data.cover),
+      JSON.stringify({ real: env.page.data.coverIsReal, failed: env.page.data.coverFailed, cover: env.page.data.cover }))
+    env.page.onFallbackCoverError()
+    check('氛围图也失败 → 纯色 hero', env.page.data.coverFailed === true, env.page.data.coverFailed)
+    check('wxml：实拍/氛围两条错误路径分开绑定',
+      ACTIVITY_WXML.indexOf('binderror="onCoverError"') !== -1
+      && ACTIVITY_WXML.indexOf('binderror="onFallbackCoverError"') !== -1)
+  }
 }
 
 // 1b. 出发日天气摘要：只查起点、只看出发日；无数据/超窗口不渲染假读数

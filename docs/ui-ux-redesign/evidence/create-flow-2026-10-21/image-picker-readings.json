@@ -1,0 +1,62 @@
+{
+  "startedAt": "2026-10-21T03:18:51.590Z",
+  "before": {
+    "buttonText": "添加图片",
+    "size": {
+      "width": 114,
+      "height": 48
+    },
+    "offset": {
+      "left": 20,
+      "top": 634.3984375
+    },
+    "ceData": {
+      "bodyText": "",
+      "bodyLength": 0,
+      "bodyFocused": false,
+      "paragraphCount": 0,
+      "groups": [],
+      "managedGroupId": "",
+      "coverFileId": "",
+      "effectiveCover": "",
+      "coverOptions": [],
+      "coverOpen": false,
+      "imageCount": 0,
+      "uploading": false,
+      "uploadTotal": 0,
+      "uploadDone": 0,
+      "message": "",
+      "error": "",
+      "initialContent": [],
+      "initialCover": "",
+      "resetKey": 1
+    }
+  },
+  "afterTap": {
+    "first": "tap-resolved",
+    "page": {
+      "contentBusy": false,
+      "failure": "",
+      "message": "",
+      "step": 2
+    },
+    "ce": {
+      "uploading": false,
+      "uploadTotal": 0,
+      "uploadDone": 0,
+      "imageCount": 0,
+      "groups": [],
+      "error": "打开相册失败，请重试。",
+      "message": ""
+    },
+    "second": "tap-resolved"
+  },
+  "afterEscape": "tap-resolved",
+  "finalPage": {
+    "contentBusy": false,
+    "message": "",
+    "failure": ""
+  },
+  "endedAt": "2026-10-21T03:19:03.517Z",
+  "note": "IDE 模拟器 wx.chooseMedia 返回失败，未出现可选择文件的原生面板；05-native-image-picker.png 是无关桌面截图，已删除。"
+}

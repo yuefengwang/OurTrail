@@ -15,7 +15,10 @@
          氛围图也失败才 img-failed 隐藏照片，媒体盒高度仍在，退回纯色，不出破图。 -->
     <view class="hero-cover {{coverFailed ? 'img-failed' : ''}}">
       <view class="hero-cover-media">
-        <image class="hero-cover-img" src="{{cover}}" mode="aspectFill" binderror="onCoverError" />
+        <!-- 实拍封面与氛围图分开挂 binderror：同一个 image 切 src 时，旧请求的 error
+             可能在回退后到达，把刚换上的氛围图也判死。分元素后两条错误路径互不串味。 -->
+        <image wx:if="{{coverIsReal}}" class="hero-cover-img" src="{{cover}}" mode="aspectFill" binderror="onCoverError" />
+        <image wx:else class="hero-cover-img" src="{{cover}}" mode="aspectFill" binderror="onFallbackCoverError" />
         <view class="hero-cover-scrim" />
         <view class="hero-cover-top">
           <view class="cluster" style="gap:8px;min-width:0;">
@@ -90,12 +93,16 @@
       >{{item.label}}</view>
     </scroll-view>
 
-    <view wx:if="{{description || contentView.length || highlights.length}}" id="sec-intro" class="stack" style="gap:0;">
+    <view wx:if="{{description || autoSummary || contentView.length || highlights.length}}" id="sec-intro" class="stack" style="gap:0;">
       <view class="section-head">
         <text class="kicker">介绍</text>
         <text class="section-title">这一次，去哪里</text>
       </view>
       <text wx:if="{{description}}" class="lede">{{description}}</text>
+      <view wx:if="{{autoSummary}}" class="stack" style="gap:4px;">
+        <text class="small muted">领队还没写介绍 · 根据活动时间、路线与集合信息自动整理</text>
+        <text class="lede">{{autoSummary}}</text>
+      </view>
       <block wx:for="{{contentView}}" wx:key="index" wx:for-index="blockIndex">
         <block wx:if="{{item.type === 'text'}}">
           <text wx:for="{{item.paragraphs}}" wx:for-item="p" wx:key="index" class="article-p">{{p}}</text>

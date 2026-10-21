@@ -8,6 +8,7 @@ const J = require('../../utils/journey')
 const WB = require('../../utils/weather-brief')
 const covers = require('../../utils/covers')
 const CV = require('../../utils/content-view')
+const AS = require('../../utils/activity-summary')
 
 // 报备类型文案只在 format.INCIDENT_LABELS 定义一次，这里只规定出现顺序（默认落在最稳的一项）。
 const KIND_OPTIONS = J.incidentOptions()
@@ -150,6 +151,7 @@ Page({
     organizerIntro: '',
     contentView: [],
     contentImages: [],
+    autoSummary: '',
     hasContentImages: false,
     highlights: [],
     leader: '',
@@ -237,14 +239,14 @@ Page({
 
   // 实拍封面加载失败：先退回氛围图并把脚注改口；只有氛围图也失败才隐藏照片层。
   onCoverError() {
-    if (this.data.coverIsReal) {
-      console.warn('[activity] 实拍封面加载失败，回退氛围图：', this.data.cover)
-      this._shareImageUrl = ''
-      this.setData({ cover: covers.coverFor(this.activityId), coverIsReal: false, coverFailed: false })
-      return
-    }
+    if (!this.data.coverIsReal) return
+    console.warn('[activity] 实拍封面加载失败，回退氛围图：', this.data.cover)
+    this._shareImageUrl = ''
+    this.setData({ cover: covers.coverFor(this.activityId), coverIsReal: false, coverFailed: false })
+  },
+  onFallbackCoverError() {
     if (this.data.coverFailed) return
-    console.warn('[activity] 封面图加载失败，回退纯色 hero：', this.data.cover)
+    console.warn('[activity] 氛围封面加载失败，回退纯色 hero：', this.data.cover)
     this.setData({ coverFailed: true })
   },
 
@@ -365,6 +367,24 @@ Page({
     const contentView = CV.buildView(a.content || [])
     const contentImages = CV.allImages(contentView)
     const hasContentImages = contentImages.length > 0
+    // 领队没写介绍时，用结构化字段拼一句事实摘要；有手写内容就不叠加，避免重复。
+    const factSummary = AS.buildFactSummary(a)
+    const hasUserIntro = !!String(a.description || '').trim()
+      || contentView.length > 0
+      || (a.highlights || []).some(item => !!String(item || '').trim())
+    const introVisible = hasUserIntro || !!factSummary.text
+    const sectionNav = [
+      { id: 'sec-intro', label: '介绍', show: introVisible },
+      { id: 'sec-facts', label: '说明', show: a.phase !== 'draft' },
+      { id: 'sec-itinerary', label: '行程', show: true },
+      { id: 'sec-weather', label: '天气', show: a.phase !== 'draft' },
+      { id: 'meeting-block', label: '路线', show: true },
+      { id: 'sec-safety', label: '安全', show: true },
+      { id: 'sec-equipment', label: '装备', show: true },
+      { id: 'sec-fee', label: '费用', show: true },
+      { id: 'sec-signup', label: '报名后', show: !!String(a.signupNote || '').trim() },
+      { id: 'sec-peers', label: '同行人', show: rows.length > 0 },
+    ].filter(item => item.show).map(item => ({ id: item.id, label: item.label }))
     const coverIsReal = !!a.coverFileId
     const cover = a.coverFileId || covers.coverFor(a.id)
     const factTime = times[0].value + ' – ' + times[1].value
@@ -401,6 +421,7 @@ Page({
       nextActionTarget: journey.cta ? journey.cta.target : '',
       startAtLabel: F.dtLabel(a.startAt),
       title: a.title || '未命名活动',
+      sectionNav,
       routeTitle: a.routeSnapshot.title || '路线待完善',
       cover,
       coverFailed: false,
@@ -427,7 +448,8 @@ Page({
       selfButton: journey.cta && journey.cta.target === 'sheet' ? journey.cta.label : selfButton,
       rows,
       primaryId: v.primarySignupId || '',
-      description: a.description || (contentView.length ? '' : '活动说明待补充。'),
+      description: a.description || '',
+      autoSummary: hasUserIntro ? '' : factSummary.text,
       organizerIntro: a.organizerIntro,
       contentView,
       contentImages,

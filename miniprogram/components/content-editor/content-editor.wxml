@@ -1,41 +1,92 @@
-<view class="card stack-gap3">
-  <view wx:if="{{!blocks.length}}" class="callout info">
-    <text>还没有正文。可以先添加段落或图片，也可以发布后再补。</text>
+<view class="ce">
+  <!-- 一个连续文字区：不再要求先建段落卡片。空行分段，图片组按段落位置插入。 -->
+  <textarea
+    class="textarea ce-body {{bodyFocused ? 'is-focused' : ''}}"
+    value="{{bodyText}}"
+    maxlength="20000"
+    auto-height
+    cursor-spacing="24"
+    show-confirm-bar="{{false}}"
+    bindinput="onBodyInput"
+    bindfocus="onBodyFocus"
+    bindblur="onBodyBlur"
+    placeholder="写下这次活动：去哪里、走多久、适合谁。空行分段。"
+  />
+
+  <view class="ce-toolbar">
+    <view class="button secondary {{uploading ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{uploading ? '' : 'pickImages'}}">
+      <icon name="plus" size="16" color="#163E35" />
+      <text>{{uploading ? '处理中 ' + uploadDone + '/' + uploadTotal : '添加图片'}}</text>
+    </view>
+    <text class="small muted tabular">{{bodyLength}} 字 · {{paragraphCount}} 段 · 图片 {{imageCount}} / 20</text>
   </view>
 
-  <view wx:for="{{blocks}}" wx:key="id" wx:for-index="blockIndex" class="content-block">
-    <view class="cluster" style="justify-content:space-between;">
-      <text class="badge neutral">{{item.type === 'text' ? '段落' : '图片'}} {{blockIndex + 1}}</text>
-      <view class="cluster" style="gap:6px;">
-        <view class="button text" hover-class="button-hover" data-index="{{blockIndex}}" data-delta="-1" bindtap="{{uploading ? '' : 'moveBlock'}}">上移</view>
-        <view class="button text" hover-class="button-hover" data-index="{{blockIndex}}" data-delta="1" bindtap="{{uploading ? '' : 'moveBlock'}}">下移</view>
-        <view class="button text" hover-class="button-hover" data-index="{{blockIndex}}" bindtap="{{uploading ? '' : 'removeBlock'}}">删除</view>
+  <view wx:if="{{!bodyText && !groups.length}}" class="callout info">
+    <text>不写正文也能发布。可以先写几句，或直接加一组图片。</text>
+  </view>
+
+  <!-- 图片组：默认只展示预览与移除；上移/下移/删除收进「管理」。 -->
+  <view wx:for="{{groups}}" wx:key="id" wx:for-item="group" wx:for-index="groupIndex" class="ce-group">
+    <view class="ce-group-head">
+      <view class="cluster" style="gap:8px;min-width:0;">
+        <text class="badge neutral">图片组 {{groupIndex + 1}}</text>
+        <text class="small muted">{{group.anchor === 0 ? '正文开头' : '第 ' + group.anchor + ' 段后'}}</text>
+      </view>
+      <view class="button text" hover-class="button-hover" data-id="{{group.id}}" bindtap="{{uploading ? '' : 'toggleGroupManage'}}">
+        {{managedGroupId === group.id ? '收起' : '管理'}}
       </view>
     </view>
 
-    <textarea wx:if="{{item.type === 'text'}}" class="textarea slim" style="margin-top:8px;min-height:96px;" maxlength="2000" value="{{item.text}}" data-index="{{blockIndex}}" bindinput="onText" placeholder="写一段；空行会渲染成新段落" />
-    <block wx:else>
-      <view class="ce-grid {{item.fileIds.length === 1 ? 'single' : item.fileIds.length === 2 ? 'double' : 'triple'}}" style="margin-top:8px;">
-        <view wx:for="{{item.fileIds}}" wx:for-item="fileid" wx:for-index="fileIndex" wx:key="*this" class="ce-cell">
-          <image class="ce-thumb" src="{{fileid}}" mode="aspectFill" />
-          <view class="cluster" style="gap:4px;margin-top:4px;">
-            <view class="button text" hover-class="button-hover" data-index="{{blockIndex}}" data-fileid="{{fileid}}" bindtap="{{uploading ? '' : 'setCover'}}">{{coverFileId === fileid ? '封面' : '设为封面'}}</view>
-            <view class="button text" hover-class="button-hover" data-index="{{blockIndex}}" data-fileid="{{fileid}}" bindtap="{{uploading ? '' : 'removeImage'}}">移除</view>
-          </view>
-        </view>
+    <view class="ce-grid {{group.fileIds.length === 1 ? 'single' : group.fileIds.length === 2 ? 'double' : 'triple'}}">
+      <view wx:for="{{group.fileIds}}" wx:key="*this" wx:for-item="fileid" class="ce-cell">
+        <image class="ce-thumb" src="{{fileid}}" mode="aspectFill" lazy-load />
+        <view
+          class="ce-remove"
+          hover-class="button-hover"
+          data-id="{{group.id}}"
+          data-fileid="{{fileid}}"
+          catchtap="{{uploading ? '' : 'removeImage'}}"
+        >×</view>
+        <text wx:if="{{effectiveCover === fileid}}" class="ce-cover-mark">封面</text>
       </view>
-      <view class="button secondary block" hover-class="button-hover" style="margin-top:8px;" data-index="{{blockIndex}}" bindtap="{{uploading ? '' : 'pickImages'}}">{{uploading ? '处理中 ' + uploadDone + '/' + uploadTotal : '添加图片'}}</view>
-    </block>
+    </view>
+
+    <view wx:if="{{managedGroupId === group.id}}" class="ce-manage">
+      <view wx:if="{{group.anchor > 0}}" class="chip" hover-class="button-hover" data-id="{{group.id}}" data-delta="-1" bindtap="moveGroup">前移一段</view>
+      <view wx:if="{{group.anchor < paragraphCount}}" class="chip" hover-class="button-hover" data-id="{{group.id}}" data-delta="1" bindtap="moveGroup">后移一段</view>
+      <view class="button text" hover-class="button-hover" data-id="{{group.id}}" bindtap="{{uploading ? '' : 'removeGroup'}}">删除本组</view>
+    </view>
   </view>
 
-  <view class="cluster">
-    <view class="button secondary" hover-class="button-hover" bindtap="{{uploading ? '' : 'addText'}}">添加段落</view>
-    <view class="button secondary" hover-class="button-hover" bindtap="{{uploading ? '' : 'addImages'}}">添加图片</view>
+  <!-- 封面是可选操作：默认正文第一张；需要时再换，不需要逐张处理。 -->
+  <view wx:if="{{imageCount}}" class="ce-cover-row">
+    <image wx:if="{{effectiveCover}}" class="ce-cover-thumb" src="{{effectiveCover}}" mode="aspectFill" />
+    <view class="ce-cover-copy">
+      <text class="field-label">封面</text>
+      <text class="small muted">{{coverFileId ? '已指定正文中的一张图片' : '默认用正文第一张图片'}}</text>
+    </view>
+    <view class="button text" hover-class="button-hover" bindtap="{{uploading ? '' : 'openCover'}}">更换</view>
   </view>
 
-  <text wx:if="{{!coverFileId && imageCount}}" class="small muted">未选封面时，默认用正文第一张图片。</text>
-  <text wx:if="{{coverFileId}}" class="small muted">已选封面：正文中的一张图片，详情页与分享卡会使用它。</text>
   <view wx:if="{{message}}" class="callout success">{{message}}</view>
   <view wx:if="{{error}}" class="callout danger">{{error}}</view>
-  <text class="small muted">图片 {{imageCount}} / 20</text>
+
+  <overlay open="{{coverOpen}}" kind="sheet" title="选择封面" bind:close="closeCover">
+    <view class="stack">
+      <text class="small muted">封面只影响详情页与分享卡；正文图片顺序不变。</text>
+      <view class="ce-cover-grid">
+        <view
+          wx:for="{{coverOptions}}"
+          wx:key="*this"
+          wx:for-item="fileid"
+          class="ce-cover-choice {{effectiveCover === fileid ? 'on' : ''}}"
+          data-fileid="{{fileid}}"
+          bindtap="setCover"
+        >
+          <image class="ce-cover-choice-img" src="{{fileid}}" mode="aspectFill" />
+        </view>
+      </view>
+      <view class="button secondary block" hover-class="button-hover" bindtap="useDefaultCover">使用正文第一张（默认）</view>
+    </view>
+  </overlay>
 </view>
