@@ -250,6 +250,7 @@ function handleActivity(state, command, context) {
       state.positions = state.positions.filter(p => !removedSignups.has(p.signupId))
       // 历史变更事件挂在活动上，活动没了事件也一并清理（事件是活动作用域的日志，非安全档案）
       state.events = state.events.filter(e => e.activityId !== activityId)
+      state.tasks = state.tasks.filter(t => t.activityId !== activityId)
       // 私有路线保留：它是所有者可复用的路线资产（V2 路线库的种子）
       return success([])
     }

@@ -62,6 +62,9 @@ function handleRoutes(state, command, context) {
   if (p.type === 'route.update') {
     const valid = validateInput(p.input)
     if (!valid.ok) return valid
+    // 可选字段的「清空」：route.update 是全量替换，但 Object.assign 不会删除缺键。
+    // 用户把难度改回「未标注」时输入里没有 difficulty，必须显式删掉旧值。
+    if (!Object.prototype.hasOwnProperty.call(p.input, 'difficulty')) delete route.difficulty
     Object.assign(route, deepClone(p.input), normalize(p.input, actorId, context.now))
     return success([route.id])
   }

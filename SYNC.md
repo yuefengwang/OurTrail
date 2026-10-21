@@ -769,3 +769,35 @@ outeSnapshot 必填需从路线构建；automator WebSocket 偶发超时重跑�
   ③ **未派的代码项**：`ROUTE2`（M-15/A-11/A-12/D-05/D-13/D-14/B-03）、`TRIP2` 余量（D-02/A-13/A-21）、`with-tabbar` 假开关删除；半条挂账的 C-11（求值点只在 `reload()` 内、`field-panel` observers 两宿主共用）、M-18（anotices 活动身份）、M-07（editor 5 条 22px 命中区，纯 WXSS 会凭空拉高「集合时间」行）。P2 那一簇（M-05 触及 `domain/schema.js`、danger 分级、D-04、M-04/A-22 信息架构、R-4、A-25）属产品裁决，不归执行裁量。
 
   **两条留在纸上的纪律**：E-08 只剩 (9) picker `range-key`，那是按 findings 自己的判词（静态回溯数据形状不可靠）**有意不做成 FAIL** 的——不是漏做，下一轮别顺手把它硬塞成红门；以及**合并后必须重跑全部 `*-mutate.js`**（全量 sweep 只跑 `*-test.js`，一次缩进重排或一次判据搬家就能把变异仪的锚点打成"命中 0＝没注入"的空证，本轮实测到三次：`b4-e05`、`e08-remaining` V1、`m02` 的 privacy 五条）。
+
+- 2026-10-20（**全局原型对齐 Wave 1：发现筛选/地图、难度/装备建议/海拔剖面**；计划 `docs/ui-ux-redesign/2026-10-20-global-prototype-dev-plan.md`，原型副本 `docs/ui-ux-redesign/reference/global-prototype-2026-10-20.jpg`。用户批准按默认值开工：难度=组织者标注、详情=锚点导航、任务 V1 组织者写、实拍封面暂缓）。**需重新部署 trailApi：是**——`cloudfunctions/trailApi/domain/{schema,selectors,routes}.js` 与 `smoke-test.js` 改动，`sync-lab` 已跑、lab 副本逐字节一致。
+
+  **后端**：`RouteSnapshot`/`Route` 增可选 `difficulty`（easy/moderate/hard，缺省=未标注，不从里程自动推导）；`Activity` 增可选 `equipmentSuggested`（`equipment` 继续表示必带）；`TrackPoint` 增可选 `ele`。`selectors.discoverView` 暴露难度/建议装备，`activityView`/`routeView` 透传 track 高程与装备建议；`discover` 读支持 `dateFrom/dateTo/difficulty/sort`，无参数时行为与旧版逐字节一致。`route.update` 在缺 `difficulty` 时显式删键——`Object.assign` 不会删除可选字段，否则「清空难度」会静默保留旧值。GPX `simplifyTrack` 保留采样点高程；缺高程不补 0。
+
+  **客户端**：`pages/discover` 增列表/地图、日期/难度筛选、最新发布/最近出发排序、结果计数、筛选空态；地图只用 `discoverView` 已公开的路线节点坐标，不新增集合点/参与者字段。`pages/activity` 增分区锚点、难度徽标、必带/建议装备分组、`<route-profile>` 剖面（连续/节点/无数据三态）；`pages/route` 复用剖面；`pages/editor` 与 `pages/route-edit` 接难度与建议装备；`pages/routes`/`route` 显示难度。新增 `utils/route-profile.js`（纯函数、wx-free）与 `components/route-profile/`（SVG data-URI，`apply-shared`）。发现页 `.map-card` 在本页提到 340px，`.filter-chip`/`.section-nav__chip` 为页面局部类，未新增全局 token。
+
+  **门禁读数（各脚本自打印 passed=N）**：新增 `tools/discover-filter-test.js` **21**、`tools/route-profile-test.js` **27**；受影响套件：`smoke 173→176`、`gpx 57→59`、`routes 68→75`、`scenario-discover 21→36`、`scenario-activity 136→138`、`scenario-editor 153→158`、`quick-create 65/0`、`lab-dryrun 165/0`、`journey-graph 14→15`、`weather-page 189/0`；关键 E2E `e2e-test 72/0`、`e2e-permission 96/0`、`e2e-domain-negative 86/0`、`e2e-client-cas 54/0(bugs=1 既有 BUG-C2)`、`e2e-interleave 67/0/3 INCONCLUSIVE`、`e2e-panel-sync 40/0`、`e2e-release-gap 51/0`。`check.js`/`check-handlers.js` 全绿；**未跑全量 sweep，不编总数**。
+
+  **真机**：共享开发者工具 33278 已登录，`auto` 绑定 9423。首轮截图发现 bundle 停在旧 `route-profile`（SVG `viewBox=0 0 660 220`）后**已获用户授权**执行 `close --project 'D:\OurTrail'` → `open` → `auto`（只关项目，不 `quit` IDE）。重编译后先断言 `viewBox="0 0 280 160"`，再重拍：`activity-route-profile.png` 的 y 轴 **4,660 / 3,930 / 3,200**、x 轴 **0 km / 43.9 km** 在 306×660 视口下可读 ⇒ **剖面 VERIFIED**；发现筛选 sheet、列表/地图切换、详情分区锚点均已重拍。**地图底图仍 UNVERIFIED**：`discover-map-scrolled.png` 能看到腾讯地图 attribution（`©2026 Tencent - GS(2026)1190号`）、2 个 marker、地图控件与「底图未加载时可切回列表」兜底文案，但底图瓦片为空，只有零散矢量面 ⇒ 判为 IDE 瓦片/网络环境，真实底图未证。marker 点击后的选中卡在驱动里未显示（`_mapIndex` 来自真实 reload，与注入的 markerMap 不同源），选中逻辑由 `scenario-discover-test` 覆盖，不冒充像素证据。证据包 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/README.md`。
+
+- 2026-10-20（**全局原型对齐 Wave 2：活动级出发日天气摘要**；用户授权自由推进）：**需重新部署 trailApi：否**——本轮只动客户端 `utils/weather-brief.js`（新）、`pages/activity/activity.{js,wxml}` 与 `tools/weather-brief-test.js`（新）、`tools/scenario-activity-test.js`；`cloudfunctions/` 零改动（Wave 1 的 trailApi 重部署仍在账上）。
+
+  **做了什么**：活动详情新增「出发日天气」段——只查起点节点、只看出发日，用 `getWeatherByPoint` 已返回的 `days/series/detail` 组合出「出发日 / 出发小时 / 全天温度与降水 / 起点 / 首要风险」，并提供「查看路线天气」「看下方风险」两个入口。没有精确出发小时时**只给全天**，不拿 00:00 冒充 08:00；超 14 天、服务不可用、无出发时间、无起点各有具名文案；陈旧数据带取数时间。**不新增阈值、不重算天相、不承诺天气**。同时移除路线区重复的「天气参考」入口（天气卡已有「查看路线天气」）。
+
+  **修出的真实缺陷**：`api.getWeatherByPoint(lat,lng,date)` 是三个位置参数，页面首版误传了一个对象 `{lat,lng,date}`；纯函数测试全绿，是 `scenario-activity` 的新集成断言把请求形状抓出来的。已改为 `getWeatherByPoint(point.coordinates.lat, point.coordinates.lng, date)`。
+
+  **门禁**：新增 `tools/weather-brief-test.js` **21**（精确小时/无精确小时/超窗口/不可用/无出发时间/非法时刻/无起点/无逐日/陈旧/风险/无 NaN）；`scenario-activity` **138→144**（起点与出发日请求、ready 装配、重试、无出发时间不外呼）；`check.js`/`check-handlers`/`journey-graph` 全绿；`cloudfunctions/` 零改动。工具数 95→**96**，utils 25→**26**。
+
+  **真机**：再次按授权 `close --project` → `open` → `auto`（不 `quit`）刷新 bundle，重拍 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/activity-weather-card.png`：出发日/小时读数/全天/起点/风险/双入口在 306×660 可读；剖面 `viewBox=0 0 280 160` 仍成立。**地图底图仍 UNVERIFIED**（同 Wave 1，IDE 瓦片空白）。
+
+- 2026-10-20（**全局原型对齐 Wave 3：协作任务清单**；用户授权自由推进）：**需重新部署 trailApi：是（已执行）**——新增 `domain/tasks.js`、`ot_tasks` 集合、`task.create/update/status/remove` 4 条命令、`read {kind:'tasks'}`；`cloudfunctions/` 与 `store.js` 已改，`sync-lab` 已跑（16 files 逐字节一致）。
+
+  **后端**：`Task`/`TaskInput`/`TaskStatus`/`TaskCategory`；owner-only 写入、参与者/协作者只读、归档/取消只读、每活动最多 100 条；任务按「进行中→待办→已完成→截止日」排序；草稿删除级联清任务。`task.status` 非法值由 schema 拒收；`taskId` 跨活动拒绝；被拒命令零副作用。`activity.delete` 的级联清单一并加上 tasks，避免悬空引用拖红全库不变量。
+
+  **客户端**：新增 `pages/tasks/tasks`（列表/筛选/计数/新建/编辑/状态/删除，参与者只读），入口在工作台总览与活动详情；任务页走 `api.dispatchAndSync`，CAS 冲突自动重读；标签只在 `format.js` 定义（`TASK_STATUS_LABELS` / `TASK_CATEGORY_LABELS`），WXML 不比较服务端枚举。**没有**引入跨账号指派/通知：`assigneeName` 只作展示，V1 组织者管理。
+
+  **门禁**：新增 `tools/tasks-test.js` **27**、`tools/scenario-tasks-test.js` **24** 与 `tools/e2e-task-test.js` **28**（A 层信封：403/CONFLICT/幂等/REQUEST_REUSED/草稿级联）；`smoke 176/0`、`lab-dryrun 165/0`、`lifecycle-transitions 214/0`、`lifecycle-concurrency 126/0`、`lifecycle-fuzz 47/0`、`quick-create 65/0`；`check.js`/`check-handlers`/`journey-graph` 全绿。**一次集成测试抓出 API 形状错误**：首版页面把 `getWeatherByPoint(lat,lng,date)` 当对象参数传（Wave 2 的问题），Wave 3 之前已修；本轮 `scenario-tasks` 同样把 `getWeatherByPoint` 的请求形状钉住。工具文件数 `ls tools/*-test.js | wc -l` = **100**，页面 21，domain 15，store 17 集合。
+
+  **真机**：已重编译并截图 `tasks-owner.png`、`tasks-filter-todo.png`、`tasks-new-sheet.png`、`tasks-participant.png`（306×660；owner 视图 3 条任务/计数/筛选/行内操作，参与者无新建与行内操作，sheet 可滚动）。证据包 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/README.md`。
+
+  **部署与真实云端 CRUD（已执行）**：`cli cloud functions deploy --env cloud1-d9ghcm034574b9d55 --names trailApi --remote-npm-install` 成功（24 files / 111.9 KB）；`info` 回读 `Active / timeout 20 / Nodejs16.13`；下载线上包后 `tasks.js/schema.js/store.js` 与工作树逐字节相同。`trailApiLab` 同步部署（21 files / 83.4 KB，Active/timeout 20），其 `tasks.js/schema.js/store.js` 线上包也逐字节一致。用真实账号的「测试活动」（`activity-mv0q0bt305yaqe`）跑真实云端：创建任务 → `task.status` 置进行中 → `task.remove` 删除，三步均成功、页面回读数量回到 0；没有改动活动本身。输出留档 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/real-task-crud.txt`。**Wave 1 欠的 trailApi 重部署由此清零；Wave 1 的 task/schema 线上生效。**

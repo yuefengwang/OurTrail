@@ -5,6 +5,7 @@ const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
 const J = require('../../utils/journey')
+const WB = require('../../utils/weather-brief')
 const covers = require('../../utils/covers')
 
 // 报备类型文案只在 format.INCIDENT_LABELS 定义一次，这里只规定出现顺序（默认落在最稳的一项）。
@@ -151,6 +152,20 @@ Page({
     map: { visible: false },
     risks: [],
     equipment: [],
+    equipmentSuggested: [],
+    difficultyLabel: '',
+    track: [],
+    weatherBrief: { ready: false, status: 'idle', text: '', retry: false },
+    weatherLoading: false,
+    sectionNav: [
+      { id: 'sec-itinerary', label: '行程' },
+      { id: 'sec-weather', label: '天气' },
+      { id: 'meeting-block', label: '路线' },
+      { id: 'sec-safety', label: '安全' },
+      { id: 'sec-equipment', label: '装备' },
+      { id: 'sec-fee', label: '费用' },
+      { id: 'sec-peers', label: '同行人' },
+    ],
     feeNote: '',
     cancellationNote: '',
     // 弹层
@@ -269,6 +284,8 @@ Page({
       kind: p.kind,
       kindLabel: String(i + 1).padStart(2, '0') + ' · ' + (p.kind === 'start' ? '起点' : p.kind === 'finish' ? '终点' : '途中节点'),
       coordinates: p.coordinates || null,
+      // 剖面组件需要节点高程；没有就是 null，组件据此走「节点高程不足」的诚实空态。
+      ele: Number.isFinite(p.ele) ? p.ele : null,
     }))
     const pickups = a.pickupPoints.map(p => ({ id: p.id, name: p.name, address: p.address, time: F.dtLabel(p.meetingAt), coordinates: p.coordinates || null }))
     const risks = a.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice }))
@@ -303,6 +320,7 @@ Page({
       coverFailed: false,
       distance: a.routeSnapshot.distanceKm,
       ascent: a.routeSnapshot.ascentM,
+      difficultyLabel: F.difficultyLabel(a.routeSnapshot.difficulty),
       confirmed: v.counters.confirmed,
       capacity: a.capacity,
       stateKey,
@@ -327,13 +345,64 @@ Page({
       startDate: a.startAt ? F.cnParts(a.startAt).date : '',
       times, points, pickups, risks,
       map: buildRouteMap(a),
+      track: a.routeSnapshot.track || [],
       equipment: a.equipment,
+      equipmentSuggested: a.equipmentSuggested || [],
       feeNote: a.feeNote || '费用待组织者说明。',
       cancellationNote: a.cancellationNote,
       canCancelRow: v.permittedActions.indexOf('signup.cancel') !== -1,
       canEditRow: v.permittedActions.indexOf('signup.edit') !== -1,
     })
     wx.setNavigationBarTitle({ title: this.data.title || '活动详情' })
+    this.loadWeatherBrief(a)
+  },
+
+  // 出发日天气摘要：只查起点、只看出发日；不重算天相、不新增阈值。
+  // 同一活动/时刻/起点的重复 reload 不重复外呼；迟到的响应不得盖掉新一次查询。
+  loadWeatherBrief(a, force) {
+    if (!a || a.phase === 'draft') {
+      this._weatherKey = ''
+      this.setData({ weatherLoading: false, weatherBrief: { ready: false, status: 'idle', text: '', retry: false } })
+      return
+    }
+    const points = (a.routeSnapshot && a.routeSnapshot.points) || []
+    const point = points.find(p => p.kind === 'start' && p.coordinates) || points.find(p => p.coordinates) || null
+    const key = a.id + '|' + (a.startAt || '') + '|' + (point ? point.id : '')
+    if (!force && this._weatherKey === key) return
+    this._weatherKey = key
+    if (!point || !a.startAt) {
+      const brief = WB.buildBrief({ startAt: a.startAt, pointName: point ? point.name : '', result: null, risks: [] })
+      this.setData({ weatherLoading: false, weatherBrief: brief })
+      return
+    }
+    const date = F.cnParts(a.startAt).date
+    this.setData({ weatherLoading: true, weatherBrief: { ready: false, status: 'loading', text: '', retry: false } })
+    api.getWeatherByPoint(point.coordinates.lat, point.coordinates.lng, date).then(result => {
+      if (this._weatherKey !== key) return
+      const brief = WB.buildBrief({ startAt: a.startAt, pointName: point.name, result, risks: a.routeSnapshot.risks || [] })
+      this.setData({ weatherLoading: false, weatherBrief: brief })
+    }).catch(e => {
+      if (this._weatherKey !== key) return
+      this.setData({
+        weatherLoading: false,
+        weatherBrief: {
+          ready: false, status: 'empty', text: api.errorText(e), retry: true,
+          dayLabel: '', phraseLabel: '', tone: 'neutral', hourText: '', dayText: '',
+          pointText: '', staleText: '', riskText: '',
+        },
+      })
+    })
+  },
+
+  onWeatherRetry() {
+    if (!this.view) return
+    this.loadWeatherBrief(this.view.activity, true)
+  },
+
+  onSectionNav(e) {
+    const id = e.currentTarget.dataset.id
+    if (!id || typeof wx.pageScrollTo !== 'function') return
+    wx.pageScrollTo({ selector: '#' + id, duration: 300, fail: () => {} })
   },
 
   onToggleRow(e) {
@@ -422,6 +491,10 @@ Page({
 
   onWeather() {
     wx.navigateTo({ url: '/pages/weather/weather?id=' + this.activityId })
+  },
+  goTasks() {
+    if (!this.activityId) return
+    wx.navigateTo({ url: '/pages/tasks/tasks?id=' + this.activityId })
   },
 
   onNotices() {

@@ -4,13 +4,22 @@
 const {
   authRequired, canExecute, canReadNotice, canReadSensitive, hasProxyConsent, isCurrentSignup,
   isOwnSignup, isOwner, isSelfSignup, needsOutboundBoarding, needsReturnBoarding, needsSeatAssignment,
-  needsVehicleService, passengerAssignment, permissionDenied, requireActivity, requireSignups,
+  needsVehicleService, passengerAssignment, permissionDenied, missing, requireActivity, requireSignups,
   returnBoardingApplies, staffCan, vehicleCan, workDataAvailable, isVehicleTraveller,
 } = require('./permissions')
 // 「现场补录的门」由写侧自己给出（field.js），投影只消费：两处各写一遍必然漂移（审计 F4/F7）。
 const { lateArrivalDoor, departureDoor } = require('./field')
 
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key)
+
+// 北京时间日期键（YYYY-MM-DD）：发现页的日期筛选按「活动开始日」比较，
+// 不把 ISO 时刻直接做字符串比较（时区与毫秒会让边界日漏掉）。
+function cnDateOf(iso) {
+  const ms = Date.parse(iso)
+  if (!Number.isFinite(ms)) return ''
+  return new Date(ms + 8 * 3600000).toISOString().slice(0, 10)
+}
+const DISCOVER_DIFFICULTIES = ['easy', 'moderate', 'hard']
 
 // ---------- 投影边界：逐字段构造，不透传存储记录 ----------
 
@@ -29,6 +38,13 @@ function pointView(p) {
     coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null,
   }
   if (p.time) out.time = p.time
+  if (Number.isFinite(p.ele)) out.ele = p.ele
+  return out
+}
+// 轨迹折线投影：ele 只在真实存在时带出。旧轨迹没有它仍然合法，
+// 但剖面渲染必须能区分「没有高程」与「高程为 0」，所以不能补 0。
+function trackView(p) {
+  const out = { lat: p.lat, lng: p.lng }
   if (Number.isFinite(p.ele)) out.ele = p.ele
   return out
 }
@@ -60,17 +76,18 @@ function activityView(activity) {
     organizerIntro: activity.organizerIntro, startAt: activity.startAt, endAt: activity.endAt,
     deadlineAt: activity.deadlineAt, phase: activity.phase, acceptingSignups: activity.acceptingSignups,
     capacity: activity.capacity, approvalMode: activity.approvalMode, ownerId: activity.ownerId, routeId: activity.routeId,
-    routeSnapshot: {
+    routeSnapshot: Object.assign({
       title: activity.routeSnapshot.title, distanceKm: activity.routeSnapshot.distanceKm, ascentM: activity.routeSnapshot.ascentM,
       points: activity.routeSnapshot.points.map(p => pointView(p)),
       risks: activity.routeSnapshot.risks.map(r => riskView(r)),
-      track: activity.routeSnapshot.track ? activity.routeSnapshot.track.map(p => ({ lat: p.lat, lng: p.lng })) : undefined,
-    },
+      track: activity.routeSnapshot.track ? activity.routeSnapshot.track.map(trackView) : undefined,
+    }, activity.routeSnapshot.difficulty ? { difficulty: activity.routeSnapshot.difficulty } : {}),
     pickupPoints: activity.pickupPoints.map(p => ({
       id: p.id, name: p.name, meetingAt: p.meetingAt, address: p.address,
       coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null,
     })),
     equipment: activity.equipment.slice(), feeNote: activity.feeNote, cancellationNote: activity.cancellationNote,
+    equipmentSuggested: (activity.equipmentSuggested || []).slice(),
     completeness: routeCompleteness(activity),
   }
 }
@@ -80,12 +97,13 @@ function discoverView(activity, owner, confirmed) {
     organizerIntro: activity.organizerIntro, startAt: activity.startAt, endAt: activity.endAt,
     deadlineAt: activity.deadlineAt, phase: activity.phase, acceptingSignups: activity.acceptingSignups,
     capacity: activity.capacity, approvalMode: activity.approvalMode, routeId: activity.routeId,
-    routeSnapshot: {
+    routeSnapshot: Object.assign({
       title: activity.routeSnapshot.title, distanceKm: activity.routeSnapshot.distanceKm, ascentM: activity.routeSnapshot.ascentM,
       points: activity.routeSnapshot.points.map(p => ({ id: p.id, name: p.name, kind: p.kind, coordinates: p.coordinates ? { lat: p.coordinates.lat, lng: p.coordinates.lng } : null })),
       risks: activity.routeSnapshot.risks.map(r => riskView(r)),
-    },
+    }, activity.routeSnapshot.difficulty ? { difficulty: activity.routeSnapshot.difficulty } : {}),
     equipment: activity.equipment.slice(), feeNote: activity.feeNote, cancellationNote: activity.cancellationNote,
+    equipmentSuggested: (activity.equipmentSuggested || []).slice(),
     publishedAt: activity.publishedAt, owner, confirmed,
     completeness: routeCompleteness(activity),
   }
@@ -286,7 +304,7 @@ function routeVisible(route, userId) {
 // 旧路线（activity 快照副产品）没有 source/updatedAt/visibility 键，读取时按缺省值补，
 // 不写回存储——投影层补缺省，存储层保持原样。
 function routeView(route, isOwner) {
-  const out = {
+  const out = Object.assign({
     id: route.id, ownerId: route.ownerId, title: route.title,
     // isOwner 由服务端显式给出：客户端不得拿"sharedWith 在不在"反推——
     // 那是把投影的细节当成契约，投影一改，owner 专属的 UI 就会泄漏给协作者。
@@ -294,14 +312,54 @@ function routeView(route, isOwner) {
     distanceKm: route.distanceKm, ascentM: route.ascentM,
     points: route.points.map(pointView),
     risks: route.risks.map(riskView),
-    track: route.track ? route.track.map(p => ({ lat: p.lat, lng: p.lng })) : undefined,
+    track: route.track ? route.track.map(trackView) : undefined,
     source: route.source || 'copy',
     visibility: route.visibility || 'private',
     updatedAt: route.updatedAt || null,
-  }
+  }, route.difficulty ? { difficulty: route.difficulty } : {})
   // 共享名单只给创建者看：协作者不需要知道还有谁。
   if (isOwner) out.sharedWith = (route.sharedWith || []).slice()
   return out
+}
+// 进行中排最前：它是正在占人手的活；待办次之；已完成沉底。
+const TASK_STATUS_RANK = { doing: 0, todo: 1, done: 2 }
+function taskView(task) {
+  return {
+    id: task.id,
+    title: task.title,
+    note: task.note,
+    category: task.category,
+    assigneeName: task.assigneeName,
+    status: task.status,
+    dueAt: task.dueAt,
+    updatedAt: task.updated ? task.updated.at : null,
+  }
+}
+function selectTasks(state, actor, activityId, now) {
+  if (actor.userId === null) return authRequired()
+  const activity = state.activities.find(a => a.id === activityId)
+  if (!activity) return missing()
+  const owner = isOwner(state, actor, activityId)
+  const participant = state.signups.some(s => s.activityId === activityId && isOwnSignup(s, actor) && isCurrentSignup(s))
+  const staff = hasStaffMembership(state, actor, activityId, now)
+  if (!owner && !participant && !staff) return permissionDenied('没有此活动任务的访问权限。')
+  const tasks = (state.tasks || [])
+    .filter(t => t.activityId === activityId)
+    .slice()
+    .sort((a, b) => {
+      const rank = (TASK_STATUS_RANK[a.status] || 0) - (TASK_STATUS_RANK[b.status] || 0)
+      if (rank) return rank
+      const ad = a.dueAt ? Date.parse(a.dueAt) : Infinity
+      const bd = b.dueAt ? Date.parse(b.dueAt) : Infinity
+      if (ad !== bd) return ad - bd
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+    })
+    .map(taskView)
+  return { ok: true, value: {
+    kind: 'tasks', activityId, activityTitle: activity.title,
+    canManage: owner && workDataAvailable(state, activityId),
+    tasks,
+  } }
 }
 function selectRoutes(state, actor, routeId) {
   if (actor.userId === null) return authRequired()
@@ -321,6 +379,7 @@ function selectRoutes(state, actor, routeId) {
     .sort((a, b) => (b.updatedAt || '') < (a.updatedAt || '') ? -1 : (b.updatedAt || '') > (a.updatedAt || '') ? 1 : (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .map(r => ({
       id: r.id, title: r.title, distanceKm: r.distanceKm, ascentM: r.ascentM,
+      difficulty: r.difficulty || null,
       pointCount: r.points.length, riskCount: r.risks.length,
       updatedAt: r.updatedAt || null,
       source: r.source || 'copy',
@@ -441,20 +500,35 @@ function selectView(state, actor, request, now) {
     if (actor.userId === null) return deniedView('AUTH_REQUIRED', '请先完善资料，再看看别人发起的活动。')
     const nowMs = Date.parse(now)
     const search = typeof request.search === 'string' ? request.search.trim().toLowerCase() : ''
+    // 筛选参数全部可选；旧客户端只传 search 时，行为与历史逐字节一致。
+    const dateFrom = typeof request.dateFrom === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(request.dateFrom) ? request.dateFrom : ''
+    const dateTo = typeof request.dateTo === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(request.dateTo) ? request.dateTo : ''
+    const difficulty = DISCOVER_DIFFICULTIES.indexOf(request.difficulty) !== -1 ? request.difficulty : ''
+    const sort = request.sort === 'start' ? 'start' : 'published'
     const pubMs = a => (a.publishedAt ? Date.parse(a.publishedAt) : -Infinity)
     const startMs = a => (a.startAt ? Date.parse(a.startAt) : Infinity)
     const activities = state.activities
       .filter(a => {
         if (['draft', 'cancelled', 'archived'].indexOf(a.phase) !== -1) return false
         if (a.startAt && Date.parse(a.startAt) < nowMs) return false
+        const startDate = cnDateOf(a.startAt)
+        if (dateFrom && (!startDate || startDate < dateFrom)) return false
+        if (dateTo && (!startDate || startDate > dateTo)) return false
+        if (difficulty && a.routeSnapshot.difficulty !== difficulty) return false
         if (!search) return true
         const hay = (a.title + ' ' + a.routeSnapshot.title + ' ' + a.description).toLowerCase()
         return hay.indexOf(search) !== -1
       })
-      .sort((a, b) => pubMs(b) - pubMs(a) || startMs(a) - startMs(b))
+      .sort(sort === 'start'
+        ? (a, b) => startMs(a) - startMs(b) || pubMs(b) - pubMs(a)
+        : (a, b) => pubMs(b) - pubMs(a) || startMs(a) - startMs(b))
       .slice(0, 50)
       .map(a => discoverView(a, isOwner(state, actor, a.id), state.signups.filter(s => s.activityId === a.id && s.status === 'confirmed').length))
     return { kind: 'discover', activities }
+  }
+  if (request.kind === 'tasks') {
+    const result = selectTasks(state, actor, request.activityId, now)
+    return result.ok ? result.value : deniedView(result.error.code, result.error.message)
   }
   if (request.kind === 'notices') {
     if (actor.userId === null) return deniedView('AUTH_REQUIRED', '请先选择当前账号。')

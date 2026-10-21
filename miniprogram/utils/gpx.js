@@ -315,7 +315,15 @@ function parseGpx(xml) {
   }
   const m = measure(parsed.track.length >= 2 ? parsed.track : parsed.routePoints)
   const lineSource = parsed.track.length >= 2 ? parsed.track : (parsed.routePoints.length >= 2 ? parsed.routePoints : [])
-  const track = simplifyTrack(lineSource, 200).map(p => wgsToGcj(p.lat, p.lng))
+  // 折线保留采样点高程：地图只需要 lat/lng，但活动/路线的连续高程剖面需要 ele。
+  // 越界高程按 saneEle 剔除（与节点同口径），避免一条脏轨迹把整单 schema 校验拖红。
+  const track = simplifyTrack(lineSource, 200).map(p => {
+    const c = wgsToGcj(p.lat, p.lng)
+    const out = { lat: c.lat, lng: c.lng }
+    const ele = saneEle(p.ele)
+    if (ele !== null) out.ele = ele
+    return out
+  })
   return {
     ok: true,
     points,

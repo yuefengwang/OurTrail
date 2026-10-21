@@ -30,6 +30,14 @@
           <input class="input" type="number" value="{{form.ascentM}}" placeholder="0" data-key="ascentM" bindinput="onField" />
         </form-field>
       </view>
+      <form-field label="路线难度（可选）" hint="由你判断，不从里程自动推导；不填就是未标注">
+        <picker range="{{difficultyOptions}}" range-key="label" value="{{form.difficulty === 'easy' ? 1 : form.difficulty === 'moderate' ? 2 : form.difficulty === 'hard' ? 3 : 0}}" bindchange="onDifficulty">
+          <view class="picker">
+            <text class="picker-value">{{form.difficulty === 'easy' ? '轻松' : form.difficulty === 'moderate' ? '中等' : form.difficulty === 'hard' ? '挑战' : '未标注'}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
     </view>
 
     <view wx:if="{{failure}}" class="callout danger">{{failure}}</view>

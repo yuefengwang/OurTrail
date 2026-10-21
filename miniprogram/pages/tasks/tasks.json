@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "任务清单",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "overlay": "/components/overlay/overlay",
+    "status-panel": "/components/status-panel/status-panel",
+    "form-field": "/components/form-field/form-field"
+  }
+}

@@ -196,6 +196,19 @@ function canExecute(state, actor, payload, now) {
   const activity = requireActivity(state, activityId)
   if (!activity.ok) return activity
   const owner = isOwner(state, actor, activityId)
+
+  // 协作任务：V1 只有组织者写；归档/取消后任务只读。
+  // 不把 taskId 送进 requireSignups/requireVehicles——任务不是报名或车辆目标。
+  if (payload.type.indexOf('task.') === 0) {
+    if (!workDataAvailable(state, activityId)) return permissionDenied('活动已归档或取消，任务只读。')
+    if (payload.type !== 'task.create') {
+      const task = state.tasks.find(t => t.id === payload.taskId)
+      if (!task) return missing()
+      if (task.activityId !== activityId) return permissionDenied('任务不属于这场活动。')
+    }
+    return owner ? allowed() : permissionDenied()
+  }
+
   const signupIds = []
   const vehicleIds = []
   if ('signupId' in payload) signupIds.push(payload.signupId)

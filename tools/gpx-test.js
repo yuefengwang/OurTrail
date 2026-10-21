@@ -106,6 +106,11 @@ function run() {
   check('track 坐标范围合法', r3.ok && r3.track.every(p => Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180))
   const r4 = parseGpx(SAMPLE)
   check('有轨迹时 track 来自轨迹', r4.ok && r4.track.length >= 2, r4.ok && r4.track.length)
+  check('track 保留采样点高程（连续剖面用，地图仍只用 lat/lng）',
+    r4.ok && r4.track.every(p => Number.isFinite(p.ele)), r4.ok && r4.track.map(p => p.ele))
+  check('track 无高程时不补 0（缺数据与 0 m 必须分开）',
+    parseGpx('<gpx><trk><trkseg><trkpt lat="30" lon="103"/><trkpt lat="30.001" lon="103.001"/></trkseg></trk></gpx>')
+      .track.every(p => !('ele' in p)))
   const wptOnly = '<gpx><wpt lat="30.1" lon="103.1"><name>A</name></wpt><wpt lat="30.2" lon="103.2"><name>B</name></wpt></gpx>'
   const r5 = parseGpx(wptOnly)
   check('纯航点无轨迹 → track 为空数组', r5.ok && r5.track.length === 0, r5.ok && r5.track)

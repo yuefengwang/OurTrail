@@ -19,7 +19,10 @@
         <image class="hero-cover-img" src="{{cover}}" mode="aspectFill" binderror="onCoverError" />
         <view class="hero-cover-scrim" />
         <view class="hero-cover-top">
-          <text class="badge on-forest">{{badgeText}}</text>
+          <view class="cluster" style="gap:8px;min-width:0;">
+            <text class="badge on-forest">{{badgeText}}</text>
+            <text wx:if="{{difficultyLabel}}" class="badge on-forest">{{difficultyLabel}}</text>
+          </view>
           <text class="small tabular hero-date">{{startAtLabel}}</text>
         </view>
       </view>
@@ -75,7 +78,20 @@
       </button>
     </view>
 
-    <view wx:if="{{rows.length}}" class="stack" style="gap:0;">
+    <!-- 分区锚点：只做阅读跳转，不隐藏任何内容，也不替主操作做决定 -->
+    <scroll-view class="section-nav" scroll-x enhanced show-scrollbar="{{false}}">
+      <view
+        wx:for="{{sectionNav}}"
+        wx:key="id"
+        wx:if="{{item.id !== 'sec-weather' || !isDraft}}"
+        class="section-nav__chip"
+        hover-class="button-hover"
+        data-id="{{item.id}}"
+        bindtap="onSectionNav"
+      >{{item.label}}</view>
+    </scroll-view>
+
+    <view wx:if="{{rows.length}}" id="sec-peers" class="stack" style="gap:0;">
       <view class="section-head">
         <text class="kicker">同行人</text>
         <text class="section-title">我与同行人</text>
@@ -100,7 +116,7 @@
       </person-row>
     </view>
 
-    <view class="stack" style="gap:0;">
+    <view id="sec-itinerary" class="stack" style="gap:0;">
       <view class="section-head">
         <text class="kicker">行程</text>
         <text class="section-title">这一次的安排</text>
@@ -112,16 +128,47 @@
       <text wx:if="{{organizerIntro}}" class="small muted" style="display:block;margin-top:12px;">{{organizerIntro}}</text>
     </view>
 
+    <view wx:if="{{!isDraft}}" id="sec-weather" class="stack" style="gap:8px;">
+      <view class="section-head">
+        <text class="kicker">天气</text>
+        <text class="section-title">出发日天气</text>
+        <text class="section-sub">只看出发日的天气事实；不构成出发许可。</text>
+      </view>
+      <view class="card stack-gap3">
+        <block wx:if="{{weatherLoading}}">
+          <text class="small muted">正在查询出发日天气…</text>
+        </block>
+        <block wx:elif="{{weatherBrief.ready}}">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="badge {{weatherBrief.tone}}">{{weatherBrief.phraseLabel}}</text>
+            <text class="small muted">{{weatherBrief.dayLabel}}</text>
+          </view>
+          <text wx:if="{{weatherBrief.hourText}}" class="lede">{{weatherBrief.hourText}}</text>
+          <text class="small muted">{{weatherBrief.dayText}}</text>
+          <text wx:if="{{weatherBrief.pointText}}" class="small muted">{{weatherBrief.pointText}}</text>
+          <view wx:if="{{weatherBrief.staleText}}" class="callout warning">
+            <text class="small">{{weatherBrief.staleText}}</text>
+          </view>
+          <view wx:if="{{weatherBrief.riskText}}" class="callout warning">
+            <text class="callout-title">风险提示</text>
+            <text style="display:block;margin-top:4px;">{{weatherBrief.riskText}}</text>
+          </view>
+          <view class="cluster">
+            <view class="button text" hover-class="button-hover" bindtap="onWeather">查看路线天气</view>
+            <view wx:if="{{weatherBrief.riskText}}" class="button text" hover-class="button-hover" data-id="sec-safety" bindtap="onSectionNav">看下方风险</view>
+          </view>
+        </block>
+        <block wx:else>
+          <text class="small muted">{{weatherBrief.text || '正在准备天气信息…'}}</text>
+          <view wx:if="{{weatherBrief.retry}}" class="button text" hover-class="button-hover" bindtap="onWeatherRetry">重新查询</view>
+        </block>
+      </view>
+    </view>
+
     <view id="meeting-block" class="stack" style="gap:0;">
-      <view class="card-header">
-        <view class="section-head">
-          <text class="kicker">路线与集合</text>
-          <text class="section-title">怎么去 · 在哪集合</text>
-        </view>
-        <view class="button text" hover-class="button-hover" bindtap="onWeather">
-          <icon name="cloud" size="18" color="#163E35" />
-          <text>天气参考</text>
-        </view>
+      <view class="section-head">
+        <text class="kicker">路线与集合</text>
+        <text class="section-title">怎么去 · 在哪集合</text>
       </view>
       <view wx:if="{{map.visible}}" class="map-card">
         <map
@@ -136,6 +183,16 @@
           show-scale="{{false}}"
           bindmarkertap="onMapMarkerTap"
         />
+      </view>
+      <view class="stack" style="gap:8px;margin-top:12px;">
+        <view class="section-head">
+          <text class="kicker">剖面</text>
+          <text class="section-title">海拔怎么走</text>
+          <text class="section-sub">高程来自 GPX 或路线节点；节点剖面不是连续地形。</text>
+        </view>
+        <view class="card">
+          <route-profile track="{{track}}" points="{{points}}" />
+        </view>
       </view>
       <view class="timeline" style="margin-top:12px;">
         <view
@@ -195,7 +252,7 @@
       </view>
     </view>
 
-    <view class="stack" style="gap:12px;">
+    <view id="sec-safety" class="stack" style="gap:12px;">
       <view class="section-head">
         <text class="kicker">安全</text>
         <text class="section-title">风险提示</text>
@@ -209,18 +266,27 @@
       <text wx:else class="muted">组织者尚未补充具体风险；户外活动存在天气与路况变化。</text>
     </view>
 
-    <view class="stack" style="gap:12px;">
+    <view id="sec-equipment" class="stack" style="gap:12px;">
       <view class="section-head">
         <text class="kicker">装备</text>
         <text class="section-title">出发前，检查装备</text>
       </view>
-      <view class="cluster">
-        <text wx:for="{{equipment}}" wx:key="index" class="badge neutral">{{item}}</text>
-        <text wx:if="{{!equipment.length}}" class="muted">组织者未填写装备清单。</text>
-      </view>
+      <block wx:if="{{equipment.length}}">
+        <text class="field-label">必带</text>
+        <view class="cluster">
+          <text wx:for="{{equipment}}" wx:key="index" class="badge neutral">{{item}}</text>
+        </view>
+      </block>
+      <block wx:if="{{equipmentSuggested.length}}">
+        <text class="field-label" style="display:block;margin-top:12px;">建议</text>
+        <view class="cluster">
+          <text wx:for="{{equipmentSuggested}}" wx:key="index" class="badge neutral">{{item}}</text>
+        </view>
+      </block>
+      <text wx:if="{{!equipment.length && !equipmentSuggested.length}}" class="muted">组织者未填写装备清单。</text>
     </view>
 
-    <view class="stack" style="gap:12px;">
+    <view id="sec-fee" class="stack" style="gap:12px;">
       <view class="section-head">
         <text class="kicker">费用与约定</text>
         <text class="section-title">费用与退出约定</text>
@@ -236,6 +302,13 @@
       <view class="list-main">
         <text>活动通知</text>
         <text class="list-sub">集合变更与最新安排</text>
+      </view>
+      <icon name="arrow" size="22" color="#163E35" />
+    </view>
+    <view wx:if="{{!isDraft}}" class="list-row" hover-class="button-hover" bindtap="goTasks">
+      <view class="list-main">
+        <text>协作任务</text>
+        <text class="list-sub">装备、采购与记录的分工</text>
       </view>
       <icon name="arrow" size="22" color="#163E35" />
     </view>

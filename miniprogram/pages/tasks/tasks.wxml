@@ -1,0 +1,109 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="任务清单暂不可用" detail="{{denied}}" actionLabel="{{activityId ? '查看活动' : '回到我的活动'}}" bind:action="onDeniedAction" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在读取这场活动的分工。" />
+  </block>
+  <view wx:else class="stack-sections">
+    <view class="stack" style="gap:8px;">
+      <view class="section-head">
+        <text class="kicker">协作 · 任务清单</text>
+        <text class="page-title" style="display:block;margin-top:4px;">把分工说清楚。</text>
+        <text class="section-sub">{{activityTitle || '这场活动'}} · 装备、采购、记录，逐项有人负责</text>
+      </view>
+      <view wx:if="{{canManage}}" class="button primary block" hover-class="button-hover" bindtap="onNew">
+        <icon name="plus" size="18" color="#FFFFFF" />
+        <text>新建任务</text>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="metrics">
+        <view class="metric"><text class="metric-value">{{counts.todo}}</text><text class="metric-label">待办</text></view>
+        <view class="metric"><text class="metric-value">{{counts.doing}}</text><text class="metric-label">进行中</text></view>
+        <view class="metric"><text class="metric-value">{{counts.done}}</text><text class="metric-label">已完成</text></view>
+      </view>
+    </view>
+
+    <view class="segmented" aria-label="任务筛选">
+      <view
+        wx:for="{{filterOptions}}"
+        wx:key="value"
+        class="seg {{filter === item.value ? 'on' : ''}}"
+        data-value="{{item.value}}"
+        bindtap="onFilter"
+      >{{item.label}}</view>
+    </view>
+
+    <block wx:if="{{filtered.length}}">
+      <view class="stack-gap3">
+        <view wx:for="{{filtered}}" wx:key="id" class="card stack-gap3">
+          <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
+            <view style="min-width:0;flex:1;">
+              <text class="task-title">{{item.title}}</text>
+              <view class="cluster" style="gap:6px;margin-top:6px;">
+                <text class="badge neutral">{{item.categoryLabel}}</text>
+                <text wx:if="{{item.assigneeName}}" class="small muted">负责人 · {{item.assigneeName}}</text>
+                <text wx:if="{{item.dueText}}" class="small muted tabular">截止 {{item.dueText}}</text>
+              </view>
+            </view>
+            <text class="badge {{item.statusTone}}">{{item.statusLabel}}</text>
+          </view>
+          <text wx:if="{{item.note}}" class="small muted task-note">{{item.note}}</text>
+          <view wx:if="{{canManage}}" class="cluster task-actions">
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" data-next="{{item.actionNext}}" bindtap="onStatus">{{item.actionLabel}}</view>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEdit">编辑</view>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onDeleteOpen">删除</view>
+          </view>
+        </view>
+      </view>
+    </block>
+    <status-panel
+      wx:else
+      kind="empty"
+      title="{{emptyTitle}}"
+      detail="{{emptyDetail}}"
+      actionLabel="{{canManage ? '新建第一条任务' : ''}}"
+      bind:action="onEmptyAction"
+    />
+
+    <view wx:if="{{message}}" class="callout success">{{message}}</view>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+  </view>
+
+  <overlay open="{{sheetOpen}}" kind="sheet" title="{{editingId ? '编辑任务' : '新建任务'}}" bind:close="onSheetClose">
+    <view class="stack">
+      <form-field label="任务标题">
+        <input class="input" value="{{form.title}}" data-key="title" bindinput="onForm" placeholder="如：采购周六的饮用水" />
+      </form-field>
+      <form-field label="说明（可选）">
+        <textarea class="textarea" maxlength="2000" value="{{form.note}}" data-key="note" bindinput="onForm" placeholder="数量、标准、交付方式…" />
+      </form-field>
+      <form-field label="分类">
+        <picker range="{{categoryOptions}}" range-key="label" value="{{form.categoryIndex}}" bindchange="onCategory">
+          <view class="picker"><text class="picker-value">{{form.categoryLabel}}</text><text class="picker-arrow">▾</text></view>
+        </picker>
+      </form-field>
+      <form-field label="负责人（可选）" hint="只作展示；V1 不会给对方发通知或授权改状态">
+        <input class="input" value="{{form.assigneeName}}" data-key="assigneeName" bindinput="onForm" placeholder="如：王五" />
+      </form-field>
+      <form-field label="截止日期（可选）">
+        <picker mode="date" value="{{form.dueDate}}" bindchange="onDueDate">
+          <view class="picker {{form.dueDate ? '' : 'placeholder'}}"><text class="picker-value">{{form.dueDate || '不设截止'}}</text><text class="picker-arrow">▾</text></view>
+        </picker>
+      </form-field>
+      <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+      <view class="form-actions">
+        <view wx:if="{{editingId}}" class="button text" hover-class="button-hover" bindtap="onDeleteOpen" data-id="{{editingId}}">删除任务</view>
+        <view class="button primary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSave'}}" style="flex:1;">{{busy ? '正在保存…' : '保存任务'}}</view>
+      </view>
+    </view>
+  </overlay>
+
+  <overlay open="{{deleteOpen}}" kind="dialog" title="删除这条任务？" bind:close="onDeleteClose">
+    <view class="stack">
+      <text>将删除「{{deleteTask.title}}」，不可恢复。</text>
+      <view class="button danger block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onDeleteConfirm'}}">确认删除</view>
+      <view class="button text block" hover-class="button-hover" bindtap="onDeleteClose">先留着</view>
+    </view>
+  </overlay>
+</view>

@@ -11,7 +11,7 @@ const unique = values => new Set(values).size === values.length
 function assertInvariants(state) {
   if (!S.validate(S.stateSpec, state)) return invalid('记录字段不完整或格式不正确。')
   const collections = [state.profiles, state.routes, state.activities, state.groups, state.signups,
-    state.vehicles, state.memberships, state.incidents, state.events, state.notices]
+    state.vehicles, state.memberships, state.incidents, state.events, state.notices, state.tasks]
   if (collections.some(items => !unique(items.map(item => item.id)))) return invalid('记录标识不能重复。')
   if (!unique(state.receipts.map(r => r.actorId + '\u0000' + r.requestId))) return invalid('请求记录重复。')
   const profiles = new Map(state.profiles.map(p => [p.id, p]))
@@ -120,6 +120,9 @@ function assertInvariants(state) {
     const ids = new Set(state.signups.filter(s => s.groupId === group.id && s.status === 'confirmed').map(s => s.id))
     const cars = new Set(state.assignments.filter(a => ids.has(a.signupId)).map(a => a.vehicleId))
     if (cars.size > 1) return failure('GROUP_SCOPE', '同行组需要安排同车；请先明确记录允许分开。')
+  }
+  for (const task of state.tasks) {
+    if (!activities.has(task.activityId) || !task.title.trim()) return invalid('任务必须属于存在的活动，且有标题。')
   }
   for (const member of state.memberships) {
     if (!activities.has(member.activityId) || !profiles.has(member.userId)) return invalid('协作授权所属活动或账号不存在。')

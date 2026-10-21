@@ -6,12 +6,13 @@
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const gpx = require('../../utils/gpx')
+const F = require('../../utils/format')
 const J = require('../../utils/journey')
 
 const freshId = kind => kind + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6)
 
 function emptyForm() {
-  return { title: '', distanceKm: '', ascentM: '', points: [], risks: [], track: [] }
+  return { title: '', distanceKm: '', ascentM: '', difficulty: '', points: [], risks: [], track: [] }
 }
 
 function coordsOrNull(lat, lng) {
@@ -29,6 +30,7 @@ function toForm(route) {
     title: route.title || '',
     distanceKm: route.distanceKm ? String(route.distanceKm) : '',
     ascentM: route.ascentM ? String(route.ascentM) : '',
+    difficulty: route.difficulty || '',
     points: (route.points || []).map(p => ({
       id: p.id, name: p.name, kind: p.kind,
       lat: p.coordinates ? String(p.coordinates.lat) : '',
@@ -65,6 +67,7 @@ function buildInput(form, extra) {
       return risk
     }),
   }
+  if (form.difficulty) input.difficulty = form.difficulty
   if (Array.isArray(form.track) && form.track.length >= 2) input.track = form.track
   return Object.assign(input, extra || {})
 }
@@ -75,6 +78,7 @@ Page({
     denied: '',
     isNew: true,
     form: emptyForm(),
+    difficultyOptions: F.DIFFICULTY_OPTIONS,
     // GPX 导入
     gpxOpen: false,
     gpxError: '',
@@ -159,6 +163,12 @@ Page({
   onField(e) {
     const key = e.currentTarget.dataset.key
     const form = Object.assign({}, this.data.form, { [key]: e.detail.value })
+    this.setData({ form, message: '' })
+    this.persistDraft()
+  },
+  onDifficulty(e) {
+    const option = F.DIFFICULTY_OPTIONS[Number(e.detail.value)] || F.DIFFICULTY_OPTIONS[0]
+    const form = Object.assign({}, this.data.form, { difficulty: option.value })
     this.setData({ form, message: '' })
     this.persistDraft()
   },

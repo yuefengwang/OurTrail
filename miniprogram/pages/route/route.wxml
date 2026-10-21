@@ -20,6 +20,7 @@
       <view class="hero-cover-body">
         <text class="display hero-body">{{route.title}}</text>
         <view class="cluster" style="gap:8px;">
+          <text wx:if="{{route.difficultyLabel}}" class="badge on-forest">{{route.difficultyLabel}}</text>
           <text wx:if="{{route.visibility === 'shared'}}" class="badge on-forest">已共享</text>
           <text wx:if="{{!isOwner}}" class="badge on-forest">协作者视角</text>
           <text wx:if="{{route.track && route.track.length}}" class="small hero-sub">含轨迹</text>
@@ -56,6 +57,17 @@
         show-compass="{{false}}"
         show-scale="{{false}}"
       />
+    </view>
+
+    <view class="stack" style="gap:8px;">
+      <view class="section-head">
+        <text class="kicker">剖面</text>
+        <text class="section-title">海拔怎么走</text>
+        <text class="section-sub">高程来自 GPX 或路线节点；节点剖面不是连续地形。</text>
+      </view>
+      <view class="card">
+        <route-profile track="{{route.track}}" points="{{route.points}}" />
+      </view>
     </view>
 
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>

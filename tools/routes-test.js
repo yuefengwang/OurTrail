@@ -29,7 +29,7 @@ function emptyState() {
     schemaVersion: 1, revision: 0, savedAt: NOW,
     profiles: [], routes: [], activities: [], groups: [], signups: [], vehicles: [],
     assignments: [], memberships: [], attendance: [], positions: [], incidents: [],
-    events: [], notices: [], receipts: [],
+    events: [], notices: [], tasks: [], receipts: [],
   }
 }
 
@@ -154,6 +154,27 @@ function run() {
   state = r.value.state
   check('全量替换清空名单', state.routes.find(x => x.id === shared.id).sharedWith.length === 0)
   check('visibility 同步回落 private', state.routes.find(x => x.id === shared.id).visibility === 'private')
+
+  // 难度：组织者标注的可选字段；清空必须真的删键（Object.assign 不会删）
+  r = dispatch(state, A, { type: 'route.update', routeId: routeA.id, input: routeInput({ title: '难度路线', difficulty: 'hard' }) })
+  check('难度写入 ok', r.ok, r.error)
+  state = r.value.state
+  check('存储层带 difficulty', state.routes.find(x => x.id === routeA.id).difficulty === 'hard')
+  const diffOne = selectRoutes(state, { userId: A }, routeA.id).value.route
+  check('单条投影带 difficulty', diffOne.difficulty === 'hard', diffOne.difficulty)
+  const diffList = selectRoutes(state, { userId: A }, null).value.routes
+  check('列表投影带 difficulty', diffList.find(x => x.id === routeA.id).difficulty === 'hard',
+    diffList.find(x => x.id === routeA.id).difficulty)
+  r = dispatch(state, A, { type: 'route.update', routeId: routeA.id, input: routeInput({ title: '难度路线' }) })
+  state = r.value.state
+  check('不带 difficulty 的更新会清空旧值（不是保留）',
+    !Object.prototype.hasOwnProperty.call(state.routes.find(x => x.id === routeA.id), 'difficulty'))
+  const cleared = selectRoutes(state, { userId: A }, routeA.id).value.route
+  check('清空后单条投影不再带 difficulty', !('difficulty' in cleared), Object.keys(cleared))
+  check('非法难度被 schema 拒收', (function () {
+    const bad = dispatch(state, A, { type: 'route.update', routeId: routeA.id, input: routeInput({ title: '难度路线', difficulty: 'extreme' }) })
+    return !bad.ok && bad.error.code === 'INVALID_INPUT'
+  })())
 
   // 幂等：同 requestId + 同 fingerprint ⇒ replayed，状态不动
   const reqId = 'req-idem-1'

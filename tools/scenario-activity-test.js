@@ -102,7 +102,12 @@ function bootActivity(opts) {
   const reads = []      // read 的 request
   const cmds = []       // dispatch 的 {payload, expectedRevision, requestId}
   const sensitives = [] // readSensitive 的入参
+  const weathers = []   // getWeatherByPoint 的入参
   function respond(action, data) {
+    if (action === 'getWeatherByPoint') {
+      weathers.push({ lat: data.lat, lng: data.lng, date: data.date })
+      return { ok: true, data: opts.weather || { status: 'out_of_range' } }
+    }
     if (action === 'read') {
       reads.push(data.request)
       if (opts.failRead) return { ok: false, error: { code: opts.failRead.code, message: opts.failRead.message } }
@@ -127,7 +132,7 @@ function bootActivity(opts) {
   const page = makePage(pageConfig())
   page.onLoad(opts.options || { id: 'a1' })
   page.onShow()
-  return { page, rec, store, reads, cmds, sensitives, state }
+  return { page, rec, store, reads, cmds, sensitives, weathers, state }
 }
 
 // ---- 加载真页面配置并造实例（setData 支持 'map.xxx' 路径键，真机 setData 语义）----
@@ -204,18 +209,25 @@ function activityFixture() {
     phase: 'published', acceptingSignups: true, capacity: 20, approvalMode: 'manual', routeId: 'r1',
     routeSnapshot: {
       title: '青城后山穿越', distanceKm: 12.5, ascentM: 860,
+      difficulty: 'moderate',
       points: [
-        { id: 'pt-1', name: '泰安古镇', kind: 'start', coordinates: { lat: 30.9, lng: 103.5 } },
-        { id: 'pt-2', name: '又一村', kind: 'checkpoint', coordinates: { lat: 30.92, lng: 103.52 } },
-        { id: 'pt-3', name: '白云寺', kind: 'finish', coordinates: { lat: 30.94, lng: 103.54 } },
+        { id: 'pt-1', name: '泰安古镇', kind: 'start', coordinates: { lat: 30.9, lng: 103.5 }, ele: 700 },
+        { id: 'pt-2', name: '又一村', kind: 'checkpoint', coordinates: { lat: 30.92, lng: 103.52 }, ele: 900 },
+        { id: 'pt-3', name: '白云寺', kind: 'finish', coordinates: { lat: 30.94, lng: 103.54 }, ele: 860 },
       ],
       risks: [{ id: 'rk-1', title: '垭口风大', advice: '带防风外套，结伴通行。' }],
-      track: [{ lat: 30.9, lng: 103.5 }, { lat: 30.91, lng: 103.51 }, { lat: 30.92, lng: 103.52 }, { lat: 30.94, lng: 103.54 }],
+      track: [
+        { lat: 30.9, lng: 103.5, ele: 700 },
+        { lat: 30.91, lng: 103.51, ele: 780 },
+        { lat: 30.92, lng: 103.52, ele: 900 },
+        { lat: 30.94, lng: 103.54, ele: 860 },
+      ],
     },
     pickupPoints: [
       { id: 'pk-1', name: '东门集合点', meetingAt: '2026-10-03T07:30:00+08:00', address: '青城山快铁站出口', coordinates: { lat: 30.88, lng: 103.56 } },
     ],
     equipment: ['登山杖', '饮用水 2L', '防风外套'],
+    equipmentSuggested: ['备用袜', '防晒'],
     feeNote: '费用 AA，含车费约 80 元。', cancellationNote: '出发前 24 小时可免费退出。',
   }
 }
@@ -315,6 +327,17 @@ async function scenario1() {
       env.page.data.risks.length === 1 && env.page.data.risks[0].title === '垭口风大'
       && env.page.data.equipment.length === 3 && env.page.data.feeNote === '费用 AA，含车费约 80 元。'
       && env.page.data.cancellationNote === '出发前 24 小时可免费退出。')
+    check('难度/建议装备/剖面数据已装配',
+      env.page.data.difficultyLabel === '中等'
+      && env.page.data.equipmentSuggested.length === 2
+      && env.page.data.points[0].ele === 700
+      && env.page.data.track[0].ele === 700,
+      JSON.stringify({ d: env.page.data.difficultyLabel, s: env.page.data.equipmentSuggested, e: env.page.data.points[0].ele }))
+    check('wxml：分区锚点 + route-profile 已接线',
+      ACTIVITY_WXML.indexOf('bindtap="onSectionNav"') !== -1
+      && ACTIVITY_WXML.indexOf('<route-profile') !== -1
+      && ACTIVITY_JSON.usingComponents['route-profile'] === '/components/route-profile/route-profile'
+      && env.page.data.sectionNav.some(x => x.id === 'meeting-block'))
     check('操作位：已确认参与者不显示报名/自助入口，行级改/取消开放',
       env.page.data.isOwner === false && env.page.data.canSubmit === false && env.page.data.canSelfSheet === false
       && env.page.data.canCancelRow === true && env.page.data.canEditRow === true,
@@ -345,6 +368,49 @@ async function scenario1() {
     await settle(env.page)
     check('自行前往的行不标「车辆待安排」', env.page.data.rows[0].subtitle === '自行前往',
       env.page.data.rows[0].subtitle)
+  }
+}
+
+// 1b. 出发日天气摘要：只查起点、只看出发日；无数据/超窗口不渲染假读数
+async function scenario1b() {
+  section('1b. 出发日天气摘要')
+  const WEATHER = {
+    status: 'ready',
+    days: [{ date: '2026-10-03', code: 3, tMax: 18, tMin: 10, precipProbMax: 30 }],
+    series: [{ d: '2026-10-03', t: '08:00', code: 3, temp: 12, pop: 20, wind: 6 }],
+    stale: false,
+  }
+  {
+    const env = bootActivity({ view: viewFixture(), weather: WEATHER })
+    await settle(env.page)
+    await waitFor(() => env.page.data.weatherBrief && env.page.data.weatherBrief.ready)
+    check('只查起点节点（第一个有坐标的路线节点）',
+      env.weathers.length === 1 && env.weathers[0].lat === 30.9 && env.weathers[0].lng === 103.5,
+      JSON.stringify(env.weathers))
+    check('查询日期 = 出发日（北京时间）', env.weathers[0].date === '2026-10-03', JSON.stringify(env.weathers[0]))
+    check('摘要装配出发日读数',
+      env.page.data.weatherBrief.ready === true
+      && env.page.data.weatherBrief.hourText.indexOf('08:00') !== -1
+      && env.page.data.weatherBrief.dayText.indexOf('10–18°C') !== -1,
+      JSON.stringify(env.page.data.weatherBrief))
+    check('分区锚点含天气；wxml 有天气段与重试入口',
+      env.page.data.sectionNav.some(x => x.id === 'sec-weather')
+      && ACTIVITY_WXML.indexOf('id="sec-weather"') !== -1
+      && ACTIVITY_WXML.indexOf('bindtap="onWeatherRetry"') !== -1)
+    env.page.onWeatherRetry()
+    await waitFor(() => env.weathers.length === 2)
+    check('重试强制再查一次（读操作才允许重试）', env.weathers.length === 2)
+  }
+  {
+    const env = bootActivity({
+      view: viewFixture(v => { v.activity.startAt = null }),
+      weather: WEATHER,
+    })
+    await settle(env.page)
+    check('没有出发时间：不外呼、说明不能按出发日查',
+      env.weathers.length === 0 && env.page.data.weatherBrief.ready === false
+      && env.page.data.weatherBrief.text.indexOf('出发时间') !== -1,
+      JSON.stringify({ calls: env.weathers.length, brief: env.page.data.weatherBrief }))
   }
 }
 
@@ -978,7 +1044,7 @@ async function scenario8() {
     check('无日期时天气 URL 不带 date 参数',
       env.rec.nav.indexOf('/pages/weather/weather?id=a1&point=0') !== -1, JSON.stringify(env.rec.nav))
     env.page.onWeather()
-    check('「天气参考」入口 → 天气页（不带 point）',
+    check('天气卡「查看路线天气」入口 → 天气页（不带 point）',
       env.rec.nav.indexOf('/pages/weather/weather?id=a1') !== -1, JSON.stringify(env.rec.nav))
     env.page.onNotices()
     check('「活动通知」入口 → 活动通知页', env.rec.nav.indexOf('/pages/anotices/anotices?id=a1') !== -1,
@@ -1136,7 +1202,7 @@ async function scenario12() {
 }
 
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7,
+  const scenarios = [scenario1, scenario1b, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7,
     scenario8, scenario9, scenario10, scenario11, scenario12]
   for (const s of scenarios) {
     try { await s() } catch (e) {

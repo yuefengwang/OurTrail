@@ -29,6 +29,7 @@
           <view class="list-main">
             <view class="cluster" style="gap:8px;">
               <text style="font-weight:600;">{{item.title}}</text>
+              <text wx:if="{{item.difficultyText}}" class="badge neutral">{{item.difficultyText}}</text>
               <text wx:if="{{item.shared}}" class="badge info">已共享</text>
             </view>
             <text class="list-sub">{{item.statsText}}</text>
@@ -51,6 +52,7 @@
           <view class="list-main">
             <view class="cluster" style="gap:8px;">
               <text style="font-weight:600;">{{item.title}}</text>
+              <text wx:if="{{item.difficultyText}}" class="badge neutral">{{item.difficultyText}}</text>
             </view>
             <text class="list-sub">{{item.statsText}}</text>
             <text class="list-sub">{{item.sourceText}} · {{item.updatedText}} · {{item.refText}}</text>

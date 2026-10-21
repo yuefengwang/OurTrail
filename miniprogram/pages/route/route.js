@@ -161,6 +161,7 @@ Page({
         denied: '',
         route: Object.assign({}, route, {
           sourceText: SOURCE_LABELS[route.source] || route.source,
+          difficultyLabel: F.difficultyLabel(route.difficulty),
           updatedText: route.updatedAt ? F.dateLabel(route.updatedAt) : '早期路线',
           risks: (route.risks || []).map(r => Object.assign({}, r, {
             severityText: SEVERITY_LABELS[r.severity] || '',

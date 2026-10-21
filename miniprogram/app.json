@@ -11,6 +11,7 @@
     "pages/route/route",
     "pages/route-edit/route-edit",
     "pages/workspace/workspace",
+    "pages/tasks/tasks",
     "pages/staff/staff",
     "pages/vehicle/vehicle",
     "pages/weather/weather",

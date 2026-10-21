@@ -18,6 +18,7 @@ const COLLECTIONS = {
   incidents: 'ot_incidents',
   events: 'ot_events',
   notices: 'ot_notices',
+  tasks: 'ot_tasks',
   receipts: 'ot_receipts',
 }
 const ALL_COLLECTIONS = Object.keys(COLLECTIONS)

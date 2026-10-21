@@ -3,3 +3,43 @@
    上收单源需要动 app.wxss，已写进 out/SWX2/requests.md（见铁律：不要在第四页再抄一份）。 */
 .activity-card .activity-card__info { font-size: 12px; color: var(--muted); }
 .activity-card--featured .activity-card__info { color: var(--on-forest-muted); }
+
+/* 筛选与结果计数：横向排一行，不把筛选控件铺满首屏 */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.filter-chip {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-tag);
+  background: var(--stone);
+  color: var(--forest);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+.filter-chip.on {
+  background: var(--forest);
+  color: var(--white);
+}
+.result-count {
+  margin-left: auto;
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+/* 页面级覆盖：发现页地图比活动详情高一点，便于看多点分布 */
+.map-card {
+  height: 340px;
+}
+.discover-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

@@ -1,6 +1,6 @@
 # utils/ — 纯逻辑层
 
-20 files (2026-10-08 复点 `ls miniprogram/utils/*.js`). **All but `api.js` / `draft.js` are deliberately free of any `wx.*` API** so `tools/*-test.js` can `require()` them directly under plain Node. That property is the reason this directory is testable at all — do not break it.
+26 files (2026-10-20 复点 `ls miniprogram/utils/*.js`). **All but `api.js` / `draft.js` are deliberately free of any `wx.*` API** so `tools/*-test.js` can `require()` them directly under plain Node. That property is the reason this directory is testable at all — do not break it.
 
 | File | LOC | wx-free | Role |
 |---|---|---|---|
@@ -18,6 +18,8 @@
 | `weather-cache.js` | ~95 | yes | 天气本地缓存（2026-10-14 韧性轮新增）：查询失败时的**软降级**数据源——同一个点、同一天不久前取到过就照常展示，但必须带时效横幅（「X 小时前的数据」）。同款注入式 storage 工厂 + 假钟注入；CAP=6（单键 1MB 上限，wx storage 一条返回体约百 KB）、只收 `status==='ready'`、`MAX_AGE_MS=12h`（更旧的旧预报不冒充现在的天气）。**只在失败路径出场，不替代成功路径**；测试：`tools/weather-resilience-test.js` §1 |
 | `weather-model.js` | ~330 | yes | P4 轨迹层编排：`snap`/`nodeFacts`/`runsOf`/`annotateRuns`/`trackPoints`/`posAt`/`judge`。**不含任何天相阈值**——一律委托 `sky.js`；天相 key→颜色也在**不在**这里（`utils/` 不得反向依赖 `components/`，映射在 `components/space-time/layout.js`） |
 | `notices-page.js` | ~270 | yes | `makeNoticesPage(getActivityId, opts)` page factory（`opts.tabBarIndex` 供 Tab 页自报选中态；定向候选名单有 `targetsLoading`/`targetsError` 两个独立态，见下） |
+| `route-profile.js` | 171 | yes | 活动/路线海拔剖面纯函数：连续轨迹高程 / 节点高程 / 无数据三态；输出 SVG 字符串，调用方只负责编码成 data-URI。**不插值伪造地形**；轨迹高程缺口不跨线连接。测试：`tools/route-profile-test.js` |
+| `weather-brief.js` | 88 | yes | 活动详情「出发日天气」摘要：只组合 `getWeatherByPoint` 已返回的逐日/逐时事实，缺数据/超 14 天/陈旧三态分开；没有精确出发小时就只给全天，不拿 00:00 冒充。**不新增阈值、不重算天相、不承诺天气**。测试：`tools/weather-brief-test.js` |
 
 Measured reference centrality (files requiring each, 2026-10-08 复点): `format.js` 15 · `api.js` 13 · `journey.js` 7 · `draft.js` 7 · `astro.js` 5 · `sky.js` 4 · `route-schedule.js` 3 · `gpx.js` 3 · `chart-store.js` 3 · `weather-model.js` 1 · `notices-page.js` 2 · **`util.js` 0（死模块，见下）**.
 

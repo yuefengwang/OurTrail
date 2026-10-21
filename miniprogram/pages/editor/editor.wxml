@@ -352,7 +352,7 @@
       </view>
 
       <view class="card stack-gap3">
-        <text class="section-title">距离与爬升</text>
+        <text class="section-title">距离、爬升与难度</text>
         <view class="cluster" style="align-items:flex-start;">
           <form-field label="距离（km）" hint="导入 GPX 自动填写" style="flex:1;">
             <input class="input" type="digit" value="{{form.distanceKm}}" data-key="distanceKm" bindinput="onField" />
@@ -361,6 +361,14 @@
             <input class="input" type="number" value="{{form.ascentM}}" data-key="ascentM" bindinput="onField" />
           </form-field>
         </view>
+        <form-field label="路线难度（可选）" hint="由组织者判断，不从里程自动推导；不填就是未标注">
+          <picker range="{{difficultyOptions}}" range-key="label" value="{{form.difficulty === 'easy' ? 1 : form.difficulty === 'moderate' ? 2 : form.difficulty === 'hard' ? 3 : 0}}" bindchange="onDifficulty">
+            <view class="picker">
+              <text class="picker-value">{{form.difficulty === 'easy' ? '轻松' : form.difficulty === 'moderate' ? '中等' : form.difficulty === 'hard' ? '挑战' : '未标注'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+        </form-field>
       </view>
     </view>
 
@@ -430,18 +438,24 @@
         <view class="cluster" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleExtras">
           <text style="font-weight:600;">装备与费用说明（可选）</text>
           <view class="cluster" style="gap:8px;">
-            <text wx:if="{{form.equipmentText || form.feeNote || form.cancellationNote}}" class="badge success">已填写</text>
+            <text wx:if="{{form.equipmentText || form.equipmentSuggestedText || form.feeNote || form.cancellationNote}}" class="badge success">已填写</text>
             <text style="color:var(--forest);font-weight:600;">{{editingExtras ? '完成' : '编辑'}}</text>
           </view>
         </view>
 
         <!-- 阅读态：装备转徽标平铺、费用/取消为段落（textarea 读长清单会被截断） -->
         <block wx:if="{{!editingExtras}}">
-          <block wx:if="{{form.equipmentText || form.feeNote || form.cancellationNote}}">
+          <block wx:if="{{form.equipmentText || form.equipmentSuggestedText || form.feeNote || form.cancellationNote}}">
             <block wx:if="{{form.equipmentText}}">
-              <text class="field-label">装备清单</text>
+              <text class="field-label">必带装备</text>
               <view class="cluster" style="margin-top:8px;">
                 <text wx:for="{{text.lines(form.equipmentText)}}" wx:key="*this" class="badge neutral">{{item}}</text>
+              </view>
+            </block>
+            <block wx:if="{{form.equipmentSuggestedText}}">
+              <text class="field-label" style="display:block;margin-top:12px;">建议携带</text>
+              <view class="cluster" style="margin-top:8px;">
+                <text wx:for="{{text.lines(form.equipmentSuggestedText)}}" wx:key="*this" class="badge neutral">{{item}}</text>
               </view>
             </block>
             <block wx:if="{{form.feeNote}}">
@@ -458,8 +472,11 @@
 
         <!-- 编辑态 -->
         <block wx:else>
-          <form-field label="装备清单" hint="每行一项">
+          <form-field label="必带装备" hint="每行一项。发布后参与者的行前检查以此为准">
             <textarea class="textarea slim" value="{{form.equipmentText}}" data-key="equipmentText" bindinput="onField" placeholder="如：防滑徒步鞋&#10;头灯&#10;雨具" />
+          </form-field>
+          <form-field label="建议携带" hint="每行一项；可留空。仅作建议，不当作必带承诺">
+            <textarea class="textarea slim" value="{{form.equipmentSuggestedText}}" data-key="equipmentSuggestedText" bindinput="onField" placeholder="如：登山杖&#10;备用袜" />
           </form-field>
           <form-field label="费用说明" hint="仅说明费用，线下结算；不收款。">
             <textarea class="textarea slim" value="{{form.feeNote}}" data-key="feeNote" bindinput="onField" />

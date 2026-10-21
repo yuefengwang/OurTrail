@@ -456,6 +456,19 @@ async function scenario5() {
       && input.pickupPoints[0].coordinates.lat === 30.8, JSON.stringify(input.pickupPoints[0]))
     check('风险形状 {id,title,advice}', JSON.stringify(Object.keys(input.routeSnapshot.risks[0]).sort()) === JSON.stringify(['advice', 'id', 'title']))
     check('装备按行拆分', JSON.stringify(input.equipment) === JSON.stringify(['徒步鞋', '雨具']), JSON.stringify(input.equipment))
+    check('建议装备始终带键（空数组也能清空旧值）', Array.isArray(input.equipmentSuggested) && input.equipmentSuggested.length === 0,
+      JSON.stringify(input.equipmentSuggested))
+    check('未选难度时不带 difficulty 键', !('difficulty' in input.routeSnapshot), JSON.stringify(Object.keys(input.routeSnapshot)))
+    page.setData({ form: Object.assign({}, page.data.form, { equipmentSuggestedText: '备用袜\n防晒', difficulty: 'moderate' }) })
+    const withOptional = page.buildInput()
+    check('建议装备按行拆分', JSON.stringify(withOptional.equipmentSuggested) === JSON.stringify(['备用袜', '防晒']),
+      JSON.stringify(withOptional.equipmentSuggested))
+    check('难度进入 routeSnapshot', withOptional.routeSnapshot.difficulty === 'moderate', withOptional.routeSnapshot.difficulty)
+    page.setData({ form: Object.assign({}, page.data.form, { equipmentSuggestedText: '', difficulty: '' }) })
+    const cleared = page.buildInput()
+    check('清空建议装备/难度后提交可清旧值',
+      cleared.equipmentSuggested.length === 0 && !('difficulty' in cleared.routeSnapshot),
+      JSON.stringify([cleared.equipmentSuggested, Object.keys(cleared.routeSnapshot)]))
     check('无 track 时 buildInput 不带 track 键', !('track' in input.routeSnapshot))
     check('保存后 savedId 落为新建 id', id === 'act-new' && page.data.savedId === 'act-new')
     check('成功反馈', page.data.message === '草稿已保存' && page.data.busy === false)

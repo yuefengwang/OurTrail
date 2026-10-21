@@ -178,6 +178,7 @@ Page({
     this.onTab({ currentTarget: { dataset: { tab } } })
   },
   goNotices() { wx.navigateTo({ url: '/pages/anotices/anotices?id=' + this.activityId }) },
+  goTasks() { wx.navigateTo({ url: '/pages/tasks/tasks?id=' + this.activityId }) },
   goEdit() { wx.navigateTo({ url: '/pages/editor/editor?id=' + this.activityId }) },
   goDetail() { wx.navigateTo({ url: '/pages/activity/activity?id=' + this.activityId }) },
   // denied 时不能再把人导去另一个 denied 页：没有活动编号就回首页。

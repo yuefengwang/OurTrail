@@ -57,6 +57,13 @@
           </view>
           <icon name="arrow" size="18" color="#163E35" />
         </view>
+        <view class="list-row" hover-class="button-hover" bindtap="goTasks">
+          <view class="list-main">
+            <text>任务清单</text>
+            <text class="list-sub">装备、采购与记录的分工</text>
+          </view>
+          <icon name="arrow" size="18" color="#163E35" />
+        </view>
         <view class="list-row" hover-class="button-hover" bindtap="goNotices">
           <view class="list-main">
             <text>活动通知</text>

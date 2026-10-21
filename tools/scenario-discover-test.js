@@ -36,7 +36,10 @@ function discoverView(over) {
       { id: 'a1', title: '青城后山 · 周末轻徒步', phase: 'published', owner: true,
         startAt: '2026-10-03T08:00:00+08:00', organizerIntro: '老王带队',
         confirmed: 3, capacity: 20, acceptingSignups: true,
-        routeSnapshot: { title: '飞泉沟环线', distanceKm: 12.5 } },
+        routeSnapshot: {
+          title: '飞泉沟环线', distanceKm: 12.5,
+          points: [{ id: 'pt-1', name: '起点', kind: 'start', coordinates: { lat: 30.9, lng: 103.5 } }],
+        } },
       { id: 'a2', title: '', phase: 'gathering', owner: false,
         startAt: '2026-10-10T07:30:00+08:00', organizerIntro: null,
         confirmed: 0, capacity: 10, acceptingSignups: false,
@@ -205,6 +208,87 @@ async function main() {
     await waitFor(() => page.data.loading === false)
     check('AUTH_REQUIRED（无档案）→ errorText 透出进 denied',
       page.data.denied === '请先完善资料' && page.data.loading === false, page.data.denied)
+  }
+
+  section('6. 筛选、排序与地图')
+  {
+    const { page, env } = bootDiscover()
+    await waitFor(() => page.data.loading === false)
+    check('初始 viewMode=list', page.data.viewMode === 'list')
+    page.onOpenFilters()
+    check('打开筛选面板', page.data.filtersOpen === true)
+    page.onDateFrom({ detail: { value: '2026-10-05' } })
+    page.onDateTo({ detail: { value: '2026-10-08' } })
+    page.onApplyFilters()
+    await waitFor(() => env.reads.length > 1)
+    const req = env.reads[env.reads.length - 1]
+    check('日期筛选进入 read 请求', req.dateFrom === '2026-10-05' && req.dateTo === '2026-10-08', JSON.stringify(req))
+    check('筛选计数 = 2 且 featured 不再提升', page.data.filterCount === 2 && page.data.cards[0].featured === false,
+      JSON.stringify([page.data.filterCount, page.data.cards[0].featured]))
+    check('筛选后不再把第一条当编辑推荐', page.data.cards.every(c => c.featured === false))
+
+    const before = env.reads.length
+    page.onOpenFilters()
+    page.onDateFrom({ detail: { value: '2026-10-10' } })
+    page.onDateTo({ detail: { value: '2026-10-01' } })
+    page.onApplyFilters()
+    check('结束日期早于开始日期：拦下且不外呼', page.data.filterError !== '' && env.reads.length === before,
+      JSON.stringify([page.data.filterError, env.reads.length, before]))
+
+    page.onResetFilters()
+    await waitFor(() => env.reads.length > before)
+    const resetReq = env.reads[env.reads.length - 1]
+    check('清除筛选后请求回到 {kind, search}', keysOf(resetReq) === 'kind,search' && page.data.filterCount === 0,
+      JSON.stringify([resetReq, page.data.filterCount]))
+
+    page.onSort({ currentTarget: { dataset: { sort: 'start' } } })
+    await waitFor(() => env.reads.length > before + 1)
+    check('最近出发排序进入 read 请求', env.reads[env.reads.length - 1].sort === 'start',
+      JSON.stringify(env.reads[env.reads.length - 1]))
+
+    page.onViewMode({ currentTarget: { dataset: { mode: 'map' } } })
+    check('切到地图视图', page.data.viewMode === 'map')
+    check('地图标记 = 有坐标的活动数（a2 无坐标不画点）', page.data.map.visible === true && page.data.map.markers.length === 1,
+      JSON.stringify({ visible: page.data.map.visible, markers: page.data.map.markers.length }))
+    page.onMapMarkerTap({ detail: { markerId: 0 } })
+    check('点标记选中对应活动', page.data.mapSelected && page.data.mapSelected.id === 'a1',
+      JSON.stringify(page.data.mapSelected && page.data.mapSelected.id))
+  }
+  {
+    const view = discoverView({ activities: [discoverView().activities[1]] })
+    const { page } = bootDiscover({ view })
+    await waitFor(() => page.data.loading === false)
+    page.onViewMode({ currentTarget: { dataset: { mode: 'map' } } })
+    check('全部活动无坐标：地图不渲染，列表仍可用', page.data.map.visible === false && page.data.cards.length === 1,
+      JSON.stringify({ visible: page.data.map.visible, cards: page.data.cards.length }))
+  }
+  {
+    const diffView = discoverView()
+    diffView.activities = [Object.assign({}, diffView.activities[0], {
+      routeSnapshot: { title: '飞泉沟环线', distanceKm: 12.5, difficulty: 'moderate',
+        points: [{ id: 'pt-1', name: '起点', kind: 'start', coordinates: { lat: 30.9, lng: 103.5 } }] },
+    })]
+    const { page, env } = bootDiscover({ view: diffView })
+    await waitFor(() => page.data.loading === false)
+    check('难度进入卡片 meta（组织者标注）', page.data.cards[0].meta.indexOf('中等') !== -1,
+      page.data.cards[0].meta)
+    page.onOpenFilters()
+    page.onDifficultyFilter({ detail: { value: 2 } })
+    page.onApplyFilters()
+    await waitFor(() => env.reads.length > 1)
+    check('难度筛选进入 read 请求', env.reads[env.reads.length - 1].difficulty === 'moderate',
+      JSON.stringify(env.reads[env.reads.length - 1]))
+  }
+  {
+    const { page } = bootDiscover({ view: discoverView({ activities: [] }) })
+    await waitFor(() => page.data.loading === false)
+    page.onOpenFilters()
+    page.onDateFrom({ detail: { value: '2026-10-05' } })
+    page.onApplyFilters()
+    await waitFor(() => page.data.filterCount === 1)
+    check('筛选无结果：文案点名筛选而不是「还没有活动」',
+      page.data.emptyTitle === '没有符合条件的活动' && page.data.emptyAction === '清除筛选',
+      JSON.stringify([page.data.emptyTitle, page.data.emptyAction]))
   }
 
   console.log('\npassed=' + passed + ' failed=' + failed + ' skipped=' + skipped)

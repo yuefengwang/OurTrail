@@ -1,6 +1,6 @@
 # cloudfunctions/trailApi/ — 服务端
 
-**ONE production** cloud function. The 13 are `action` values multiplexed through a single `ROUTES` map (`index.js:256`). A second function is structurally possible but strongly discouraged — there is no shared package, so you would fork `domain/`, and the revision-CAS design spans the whole state.
+**ONE production** cloud function. The 14 are `action` values multiplexed through a single `ROUTES` map (`index.js:256`). A second function is structurally possible but strongly discouraged — there is no shared package, so you would fork `domain/`, and the revision-CAS design spans the whole state.
 
 Only dependency in the entire server: `wx-server-sdk ~3.0.1`. No weather SDK, no LLM SDK, no map/route package, no ORM, no test framework. `package.json` declares **no scripts**. Weather is a raw keyless `https.get` to `api.open-meteo.com` (`lib/weather.js:139`); only `crypto`, `https`, and `zlib` are Node builtins in use.
 
@@ -9,14 +9,14 @@ Only dependency in the entire server: `wx-server-sdk ~3.0.1`. No weather SDK, no
 ```
 index.js          288  exports.main(event); the ROUTES table; overrideEvidence;
                       the dispatch funnel (NO_REVISION gate); getCachedForecast; getPhoneNumber
-store.js          200  16 ot_* collections (14 mapped + ot_meta + weather_cache),
-                      loadState (meta + 14 collections read CONCURRENTLY — see per-request work),
+store.js          201  17 ot_* collections (15 mapped + ot_meta + weather_cache),
+                      loadState (meta + 15 collections read CONCURRENTLY — see per-request work),
                       diffCollections, persistState (revision CAS in a transaction),
                       ensureCollections (memoized per db instance: createCollection only on first
                       call in a container), ensureMeta (read failure ≠ missing doc: fail closed,
                       never blind-set revision 0)
 config.json         8  { timeout: 20, permissions: { openapi: [security.msgSecCheck] } }
-domain/          2409  13 pure modules, zero wx-server-sdk → see domain/AGENTS.md
+domain/          ~2600  15 pure modules, zero wx-server-sdk → see domain/AGENTS.md
 lib/weather.js    337  Open-Meteo proxy, GCJ→WGS, cloud-band reconstruction
 smoke-test.js     756  173 domain assertions; runs with NO wx-server-sdk
 ```
@@ -25,7 +25,7 @@ smoke-test.js     756  173 domain assertions; runs with NO wx-server-sdk
 
 There is no `common/`, `utils/`, or `_shared` module. Sharing is relative `require` inside one deployed package.
 
-## THE 13 ACTIONS
+## THE 14 ACTIONS
 
 `exports.main` resolves `ROUTES[event.action]`, injects the actor as `cloud.getWXContext().OPENID` (never from the payload), and always returns `{ok:true, data}` or `{ok:false, error:{code, message}}`. Only the two weather actions skip the OPENID check (`lib/weather.js:278` `FREE_ACTIONS` = `getWeather` + `getWeatherByPoint`) — weather is non-personal data by design; every other action fails `AUTH_REQUIRED` without it.
 
@@ -45,9 +45,9 @@ There is no `common/`, `utils/`, or `_shared` module. Sharing is relative `requi
 | `getWeatherByPoint` | `{lat, lng, date}` | 同上（按坐标直取，供未挂活动的路线点用） |
 | `getPhoneNumber` | `{code}` | `{phone}` |
 
-`read` sub-dispatches on `request.kind` inside `selectors.js:246` — `profile` | `home` | `discover` | `notices` | `activity`; anything else returns a `deniedView('FORBIDDEN')`. `kind:'activity'` also takes `perspective` (`participant|organizer|staff|vehicle`) and `vehicleId`.
+`read` sub-dispatches on `request.kind` inside `selectors.js:246` — `profile` | `me` | `home` | `discover` | `notices` | `activity` | `tasks`; anything else returns a `deniedView('FORBIDDEN')`. `kind:'activity'` also takes `perspective` (`participant|organizer|staff|vehicle`) and `vehicleId`; `kind:'tasks'` takes `activityId` and returns `{canManage,tasks}`.
 
-**`dispatch` is the only write path.** All 39 command types funnel through it.
+**`dispatch` is the only write path.** All 46 command types funnel through it（2026-10-20 新增 `task.*` 4 条）.
 
 ## THE DISPATCH FUNNEL (`index.js:112` `actionDispatch`)
 

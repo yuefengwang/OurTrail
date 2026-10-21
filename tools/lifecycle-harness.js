@@ -37,7 +37,7 @@ function emptyState() {
     schemaVersion: 1, revision: 0, savedAt: '2026-10-08T07:00:00+08:00',
     profiles: [], routes: [], activities: [], groups: [], signups: [], vehicles: [],
     assignments: [], memberships: [], attendance: [], positions: [], incidents: [],
-    events: [], notices: [], receipts: [],
+    events: [], notices: [], tasks: [], receipts: [],
   }
 }
 

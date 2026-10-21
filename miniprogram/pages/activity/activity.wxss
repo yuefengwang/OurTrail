@@ -7,3 +7,23 @@
 .hero .metric-unit { color: var(--on-forest-muted); }
 /* 主状态 callout：编辑式"当前该做什么"——比其他提示重半格，但不换语义色体系 */
 .callout .callout-title { font-size: 15px; line-height: 22px; }
+
+/* 分区锚点：横向滚动，不换行；只做阅读跳转 */
+.section-nav {
+  white-space: nowrap;
+  width: 100%;
+}
+.section-nav__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  margin-right: 8px;
+  border-radius: var(--radius-tag);
+  background: var(--stone);
+  color: var(--forest);
+  font-size: 13px;
+  font-weight: 600;
+}
+.section-nav__chip:last-child { margin-right: 0; }

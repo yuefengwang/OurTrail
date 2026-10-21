@@ -27,7 +27,7 @@ function emptyState() {
     schemaVersion: 1, revision: 0, savedAt: '2026-09-26T07:00:00+08:00',
     profiles: [], routes: [], activities: [], groups: [], signups: [], vehicles: [],
     assignments: [], memberships: [], attendance: [], positions: [], incidents: [],
-    events: [], notices: [], receipts: [],
+    events: [], notices: [], tasks: [], receipts: [],
   }
 }
 
@@ -200,7 +200,13 @@ function run() {
 
   console.log('== 10. 路线轨迹 track（GCJ-02 折线） ==')
   const withTrack = fullActivityInput()
-  withTrack.routeSnapshot.track = [{ lat: 30.9394, lng: 103.4901 }, { lat: 30.9458, lng: 103.4769 }, { lat: 30.9565, lng: 103.4769 }]
+  withTrack.routeSnapshot.track = [
+    { lat: 30.9394, lng: 103.4901, ele: 700 },
+    { lat: 30.9458, lng: 103.4769, ele: 860 },
+    { lat: 30.9565, lng: 103.4769, ele: 820 },
+  ]
+  withTrack.routeSnapshot.difficulty = 'moderate'
+  withTrack.equipmentSuggested = ['备用袜']
   let sTrack = emptyState()
   r = dispatch(sTrack, LIN, { type: 'profile.save', person: { name: '林溪', phone: '00000000001', emergency: { name: '林母', phone: '00000000051' }, medical: '' } })
   sTrack = r.value.state
@@ -210,8 +216,14 @@ function run() {
   const act2 = sTrack.activities[0]
   check('activity 保留 track', act2.routeSnapshot.track.length === 3)
   check('私有路线携带 track', sTrack.routes[0].track && sTrack.routes[0].track.length === 3)
+  check('私有路线携带难度', sTrack.routes[0].difficulty === 'moderate')
   const view2 = selectView(sTrack, { userId: LIN }, { kind: 'activity', activityId: act2.id, perspective: 'organizer' }, '2026-09-26T07:00:00+08:00')
   check('视图透传 track', view2.kind === 'activity' && view2.activity.routeSnapshot.track && view2.activity.routeSnapshot.track.length === 3)
+  check('视图透传 track 高程（连续剖面用）',
+    view2.kind === 'activity' && view2.activity.routeSnapshot.track.every(p => Number.isFinite(p.ele)))
+  check('视图透传难度与建议装备',
+    view2.kind === 'activity' && view2.activity.routeSnapshot.difficulty === 'moderate'
+    && view2.activity.equipmentSuggested[0] === '备用袜')
   const noTrack = fullActivityInput()
   delete noTrack.routeSnapshot.track
   r = dispatch(sTrack, LIN, { type: 'activity.create', input: noTrack })

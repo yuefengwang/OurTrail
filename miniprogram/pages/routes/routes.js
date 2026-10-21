@@ -34,6 +34,7 @@ Page({
         id: r.id,
         title: r.title || '未命名路线',
         sourceText: SOURCE_LABELS[r.source] || r.source,
+        difficultyText: F.difficultyLabel(r.difficulty),
         shared: r.visibility === 'shared',
         mine: r.isOwner,
         statsText: routeStats(r),

@@ -11,8 +11,8 @@ const emptyInput = () => ({
   title: '', description: '', organizerIntro: '',
   startAt: null, endAt: null, deadlineAt: null,
   acceptingSignups: true, capacity: 24, approvalMode: 'manual', routeId: null,
-  routeSnapshot: { title: '', distanceKm: 0, ascentM: 0, points: [], risks: [] },
-  pickupPoints: [], equipment: [], feeNote: '', cancellationNote: '',
+  routeSnapshot: { title: '', distanceKm: 0, ascentM: 0, difficulty: '', points: [], risks: [] },
+  pickupPoints: [], equipment: [], equipmentSuggested: [], feeNote: '', cancellationNote: '',
 })
 
 // 把 ActivityInput 摊平成便于 WXML 绑定的形状（dt_*: {date,time} / equipmentText）
@@ -32,6 +32,7 @@ function toForm(input) {
     routeTitle: input.routeSnapshot.title,
     distanceKm: input.routeSnapshot.distanceKm === 0 ? '' : String(input.routeSnapshot.distanceKm),
     ascentM: input.routeSnapshot.ascentM === 0 ? '' : String(input.routeSnapshot.ascentM),
+    difficulty: input.routeSnapshot.difficulty || '',
     // time/ele 是 GPX 附带的元数据，用户不可编辑：必须原样带进表单，否则编辑一次草稿就丢了
     points: input.routeSnapshot.points.map(p => ({
       id: p.id, name: p.name, kind: p.kind,
@@ -44,6 +45,7 @@ function toForm(input) {
     track: (input.routeSnapshot.track || []).slice(),
     pickups: input.pickupPoints.map(p => ({ id: p.id, name: p.name, address: p.address, lat: p.coordinates ? String(p.coordinates.lat) : '', lng: p.coordinates ? String(p.coordinates.lng) : '', meeting: split(p.meetingAt) })),
     equipmentText: input.equipment.join('\n'),
+    equipmentSuggestedText: (input.equipmentSuggested || []).join('\n'),
     feeNote: input.feeNote,
     cancellationNote: input.cancellationNote,
     dt_start: split(input.startAt),
@@ -102,6 +104,7 @@ Page({
     saveLabel: '保存草稿',
     step: 0,
     stepLabels: ['01 内容与时间', '02 路线与集合', '03 招募与风险'],
+    difficultyOptions: F.DIFFICULTY_OPTIONS,
     form: toForm(emptyInput()),
     // 复制
     myActivities: [],
@@ -208,10 +211,10 @@ Page({
           startAt: null, endAt: null, deadlineAt: null,
           acceptingSignups: true, capacity: 24, approvalMode: 'manual', routeId: r.id,
           routeSnapshot: {
-            title: r.title, distanceKm: r.distanceKm, ascentM: r.ascentM,
+            title: r.title, distanceKm: r.distanceKm, ascentM: r.ascentM, difficulty: r.difficulty || '',
             points: r.points || [], risks: r.risks || [], track: r.track,
           },
-          pickupPoints: [], equipment: [], feeNote: '', cancellationNote: '',
+          pickupPoints: [], equipment: [], equipmentSuggested: [], feeNote: '', cancellationNote: '',
         }
       }
       if (saved && !denied) initial = saved
@@ -264,7 +267,7 @@ Page({
       capacity: Math.max(1, Math.min(500, Math.round(Number(f.capacity) || 24))),
       approvalMode: f.approvalMode,
       routeId: this.routeId || null,
-      routeSnapshot: {
+      routeSnapshot: Object.assign({
         title: f.routeTitle,
         distanceKm: Number(f.distanceKm) || 0,
         ascentM: Math.round(Number(f.ascentM)) || 0,
@@ -280,13 +283,16 @@ Page({
           )
         }),
         risks: f.risks.map(r => riskForm(r)),
-      },
+      }, f.difficulty ? { difficulty: f.difficulty } : {}),
       pickupPoints: f.pickups.map(p => ({
         id: p.id, name: p.name, address: p.address,
         meetingAt: composeDateTime(p.meeting.date, p.meeting.time),
         coordinates: coordsOrNull(p.lat, p.lng),
       })),
-      equipment: f.equipmentText.split('\n').map(s => s.trim()).filter(Boolean),
+      equipment: (f.equipmentText || '').split('\n').map(s => s.trim()).filter(Boolean),
+      // 始终带键：activity.edit 是 Object.assign，缺键会把「清空建议装备」变成静默保留旧值。
+      // 旧草稿没有这个字段，按空串读，避免一次编辑把发布链打断。
+      equipmentSuggested: (f.equipmentSuggestedText || '').split('\n').map(s => s.trim()).filter(Boolean),
       feeNote: f.feeNote,
       cancellationNote: f.cancellationNote,
     }
@@ -308,6 +314,10 @@ Page({
   },
   onApproval(e) {
     this.setForm({ approvalMode: ['manual', 'automatic'][Number(e.detail.value) || 0] })
+  },
+  onDifficulty(e) {
+    const option = F.DIFFICULTY_OPTIONS[Number(e.detail.value)] || F.DIFFICULTY_OPTIONS[0]
+    this.setForm({ difficulty: option.value })
   },
   onAccepting(e) {
     this.setForm({ acceptingSignups: e.detail.value.length > 0 })

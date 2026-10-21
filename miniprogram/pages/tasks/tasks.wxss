@@ -1,0 +1,16 @@
+.task-title {
+  display: block;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.task-note {
+  display: block;
+  line-height: 20px;
+}
+.task-actions {
+  flex-wrap: wrap;
+  gap: 4px;
+}

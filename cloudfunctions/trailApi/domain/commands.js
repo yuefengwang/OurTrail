@@ -12,6 +12,7 @@ const { handleField } = require('./field')
 const { handleProfile, ensureMembershipId } = require('./profile')
 const { handleNotices } = require('./notices')
 const { handleRoutes } = require('./routes')
+const { handleTasks } = require('./tasks')
 
 const summaries = {
   'activity.create': '活动草稿已保存', 'activity.edit': '活动说明与安排已更新', 'activity.copy': '已复制为新的活动草稿',
@@ -27,6 +28,7 @@ const summaries = {
   'position.report': '已主动上报一次位置', 'position.revoke': '位置授权已撤回',
   'incident.report': '收到现场情况报备', 'incident.resolve': '现场情况已核实处理',
   'notice.publish': '站内通知已发布', 'notice.read': '已阅读站内通知', 'notice.delivery': '已记录通知渠道结果',
+  'task.create': '任务已添加', 'task.update': '任务内容已更新', 'task.status': '任务状态已更新', 'task.remove': '任务已删除',
   'export.record': '已记录名单导出用途', 'profile.save': '常用资料已保存', 'companion.save': '常用同行人已保存', 'companion.remove': '常用同行人已移除',
 }
 
@@ -48,6 +50,8 @@ function handle(state, command, context) {
       return handleNotices(state, command, context)
     case 'route.create': case 'route.update': case 'route.delete':
       return handleRoutes(state, command, context)
+    case 'task.create': case 'task.update': case 'task.status': case 'task.remove':
+      return handleTasks(state, command, context)
     default:
       return failure('INVALID_INPUT', '不支持此操作。')
   }
