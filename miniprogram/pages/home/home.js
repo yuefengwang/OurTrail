@@ -9,6 +9,18 @@ const draft = require('../../utils/draft')
 const F = require('../../utils/format')
 const J = require('../../utils/journey')
 
+// 指标行（N2 2026-10-22 照片在上卡）：距离 / 爬升 / 人数三件「扫一眼的事实」。
+// 每一项只在投影**确有**该字段时出现——缺字段整项不出现，不许印「0 km / 0 m」：
+// 把「没填」印成零事实是凭空造事实（路线可整体后补，与 meta 行距离同款口径）。
+// 人数取服务端 home 投影的 meta.confirmed/capacity，不从 info 行文案反解（铁律 19 单向）。
+function cardMetrics(a) {
+  const metrics = []
+  if (a.routeSnapshot.distanceKm) metrics.push({ key: 'distance', label: '距离', value: String(a.routeSnapshot.distanceKm), unit: 'km' })
+  if (a.routeSnapshot.ascentM) metrics.push({ key: 'ascent', label: '爬升', value: String(a.routeSnapshot.ascentM), unit: 'm' })
+  if (a.meta.capacity) metrics.push({ key: 'people', label: '人数', value: a.meta.confirmed + '/' + a.meta.capacity, unit: '' })
+  return metrics
+}
+
 Page({
   data: {
     loading: true,
@@ -108,6 +120,10 @@ Page({
         // 路线可整体后补（2026-10-14 快速创建）：缺里程就不印「· 0 km」——
         // 那会把「没填」印成「一场 0 公里的活动」，是凭空造事实。
         meta: (a.routeSnapshot.title || '路线待完善') + (a.routeSnapshot.distanceKm ? ' · ' + a.routeSnapshot.distanceKm + ' km' : ''),
+        // N2（2026-10-22）照片在上卡的两个纯展示派生字段：sub 行用路线名（meta 行里的 km
+        // 已由指标行承担，同一个数不印两遍），指标行见 cardMetrics。都不进投影契约的既有字段。
+        routeName: a.routeSnapshot.title || '路线待完善',
+        metrics: cardMetrics(a),
         // 状态词只在 journey 一处定义；卡片再补一句「还有多久」，
         // 因为首页真正要回答的是「哪一场快到时间了」，不是「它在哪个 phase」。
         // 归属前缀按事实排：既不是组织者也不是报名者时，「最近查看」只是当时唯一可能的来由；

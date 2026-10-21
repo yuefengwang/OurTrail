@@ -5,8 +5,14 @@
   </block>
   <block wx:else>
     <view class="stack">
+      <!-- N2（2026-10-22）页头压缩：品牌眉题 + 一行主标题在左、两个入口在右，
+           拼板屏 1.1 的首屏把空间给列表；旧的第二行导语删除，其「安排放在一起」的语义
+           由卡片正文（日期·倒计时·指标·人数）承担，不再单独占一行。 -->
       <view class="card-header">
-        <text class="eyebrow">OURTRAIL · 一起走过</text>
+        <view class="home-head__text">
+          <text class="eyebrow">OURTRAIL · 一起走过</text>
+          <view class="home-title">{{profileName ? profileName + '，' : ''}}下一次同行</view>
+        </view>
         <view class="cluster">
           <view class="button text" hover-class="button-hover" bindtap="onGoDiscover">
             <icon name="search" size="16" color="#163E35" />
@@ -18,25 +24,24 @@
           </view>
         </view>
       </view>
-      <view>
-        <text class="page-title">{{profileName ? profileName + '，' : ''}}下一次同行</text>
-        <text class="muted" style="display:block;margin-top:8px;">从出发到平安到家，把安排放在一起。</text>
-      </view>
 
       <!-- 「需要我协作」原来是列表上方的第二个列表（裸 .list-row）：与下面的活动卡是两种形态，
            且同一场活动可以同时进两个区。2026-10-20 起它变成第四档筛选 + 卡片上的协作入口，
            首页只剩一个列表。判据 docs/superpowers/specs/2026-10-20-home-dual-list-dedup.md，
-           门 tools/home-collab-list-test.js。计数为 0 时整档不出现（不是灰掉、不是空列表）。 -->
+           门 tools/home-collab-list-test.js。计数为 0 时整档不出现（不是灰掉、不是空列表）。
+           N2：搜索从带 label 的表单字段改为图标内嵌搜索条（.searchbar，T001 交付）；
+           原 field-label「查找活动」的语义由 input 的 aria-label 承接，onSearch/onClearSearch 能力不删。 -->
       <view wx:if="{{hasAny}}" class="stack-gap3">
+        <view class="searchbar">
+          <!-- icon 的 color 属性拿不到 var()：#5F6E66 与 --muted 逐字节同值（既有 token，不是新色） -->
+          <icon name="search" size="16" color="#5F6E66" />
+          <input class="searchbar__input" type="text" confirm-type="search" placeholder="搜索活动或路线" aria-label="查找活动" value="{{search}}" bindinput="onSearch" />
+        </view>
         <view class="segmented" aria-label="活动范围">
           <view class="seg {{filter === 'mine' ? 'on' : ''}}" data-value="mine" bindtap="onFilter">我的活动</view>
           <view class="seg {{filter === 'recent' ? 'on' : ''}}" data-value="recent" bindtap="onFilter">最近查看</view>
           <view class="seg {{filter === 'finished' ? 'on' : ''}}" data-value="finished" bindtap="onFilter">已结束</view>
           <view wx:if="{{collabCount}}" class="seg {{filter === 'collab' ? 'on' : ''}}" data-value="collab" bindtap="onFilter">需要协作 {{collabCount}}</view>
-        </view>
-        <view class="field">
-          <text class="field-label">查找活动</text>
-          <input class="input" type="text" confirm-type="search" placeholder="搜索活动或路线" value="{{search}}" bindinput="onSearch" />
         </view>
       </view>
 
@@ -53,6 +58,9 @@
           wx:for="{{cards}}"
           wx:key="id"
           title="{{item.title}}"
+          cover="{{item.cover}}"
+          route-name="{{item.routeName}}"
+          metrics="{{item.metrics}}"
           date="{{item.date}}"
           meta="{{item.meta}}"
           status="{{item.status}}"
