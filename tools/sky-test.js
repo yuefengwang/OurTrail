@@ -174,6 +174,100 @@ section('4. 晴天但高空有云：晨昏光染成立（低云少 + 中高云�
   check('方向建议为朝东至东北', /朝东至东北/.test(alp.look), alp.look)
   check('文案列出判断依据', /低云少|中高云可被染色|无降水/.test(alp.text), alp.text)
   check('窗口非空', !!alp.window, alp.window)
+  /* F6 光染拆分：**没有地形输入**时，不拿「山体被光染」（无数据）出星级——
+     分数照旧（≥40 档的分数路径不受影响），文案主语换成同一份云量/降水真的能回答的
+     「天空与中高云」，并当场披露没有目标山峰数据。look 保留 heading 后缀。 */
+  check('无地形：分数与改前相同（' + alp.score + '）', alp.score === 92, alp.text)
+  check('无地形：文案不再说「山体被光染」', !/山体被光染/.test(alp.text), alp.text)
+  check('无地形：文案说清真正可见的现象（天空与中高云有被染色的条件）',
+    alp.text.indexOf('天空与中高云有被染色的条件') !== -1, alp.text)
+  check('无地形：披露没有目标山峰数据、判断不了哪座山会被染',
+    alp.text.indexOf('没有目标山峰数据') !== -1
+      && alp.text.indexOf('判断不了哪座山会被染') !== -1, alp.text)
+  check('无地形：look 指向天空与山脊线，朝东至东北开头且保留走向粗判后缀',
+    alp.look.indexOf('看天空与山脊线') !== -1
+      && alp.look.indexOf('朝东至东北') === 0
+      && /按轨迹走向朝.+，为粗判/.test(alp.look), alp.look)
+}
+
+section('4b. 光染 25–40 两档：标记与加分同一把尺（F6）')
+{
+  /* hourMarks 出标记的下界是 25、结论原加分界是 40：25–40 以前「有标记、有星级、没理由」。
+     现在这一档 +8「中高云偏少」（两个界都是现成数，不新造）。夹具都用无地形，
+     让「有地形逐字节相同」的阳性对照留在 §19。 */
+  const tier30 = byKey(S.summarize(ctx(day({ '*': { low: 10, mid: 15, high: 15 } }), { heading: 90 })), 'alpenglow')
+  check('25–40 档分数 86（30+18+8+16+6+8，' + tier30.score + '）', tier30.score === 86, tier30.text)
+  check('25–40 档理由给「中高云偏少」，不再缺中高云那句', /中高云偏少/.test(tier30.text), tier30.text)
+  check('25–40 档不冒充「中高云可被染色」', !/中高云可被染色/.test(tier30.text), tier30.text)
+  check('25–40 档仍判 possible', tier30.verdict === 'possible', tier30.verdict)
+
+  // 边界 40：20+20 仍走原 +14 路径（分数与改前相同）
+  const tier40 = byKey(S.summarize(ctx(day({ '*': { low: 10, mid: 20, high: 20 } }), { heading: 90 })), 'alpenglow')
+  check('边界 40 走 +14（92，' + tier40.score + '）', tier40.score === 92, tier40.text)
+  check('边界 40 理由含「中高云可被染色」且不含「中高云偏少」',
+    /中高云可被染色/.test(tier40.text) && !/中高云偏少/.test(tier40.text), tier40.text)
+
+  // 边界 24：低于标记下界 ⇒ 没有标记、excluded、0 分；无地形零列表文案改说天空
+  const tier24detail = day({ '*': { low: 10, mid: 12, high: 12 } })
+  const tier24res = S.summarize(ctx(tier24detail, { heading: 90 }))
+  const tier24 = byKey(tier24res, 'alpenglow')
+  check('边界 24 无 alpenglow 标记', marksOf(tier24res, 'alpenglow').length === 0)
+  check('边界 24 判 excluded 且 0 分', tier24.verdict === 'excluded' && tier24.score === 0, tier24.text)
+  check('边界 24（无地形零列表）文案不含「山体被光染」', !/山体被光染/.test(tier24.text), tier24.text)
+  check('边界 24 文案把主语放回天空（不把缺数据印成山体结论）',
+    /天空与中高云/.test(tier24.text) && /被染色/.test(tier24.text), tier24.text)
+  check('边界 24 保持概率语气（不写成绝对否定）', /概率很低/.test(tier24.text), tier24.text)
+}
+
+section('4c. 光染 25 界与有地形/无地形分支（第二轮硬化）')
+{
+  /* 四条边界都按「实测读数」写死，而不是只断言相对大小：
+     基准为 low 10、无降水、无云带、heading 90、无地形 ⇒ 30+18+16+6+8=78，
+     25–40 档再加 8 ⇒ 86。25（恰好达到 hourMarks 的标记下界）与 39（差 1 到 +14 界）
+     必须与 30 一样走「中高云偏少」；heading 未知时方向不加 8、但理由仍要出现。 */
+  const terrainAll = (angle, distance, elevation) => {
+    const horizon = []
+    for (let a = 0; a < 360; a += 22.5) horizon.push({ azimuth: a, angle, distance, elevation })
+    return { horizon, openness: angle < 1 ? 1 : 0 }
+  }
+
+  const tier25res = S.summarize(ctx(day({ '*': { low: 10, mid: 12, high: 13 } }), { heading: 90 }))
+  const tier25 = byKey(tier25res, 'alpenglow')
+  check('精确 25 界：有标记、86 分、「中高云偏少」且 verdict possible（' + tier25.score + '）',
+    marksOf(tier25res, 'alpenglow').length > 0 && tier25.score === 86
+      && /中高云偏少/.test(tier25.text) && !/中高云可被染色/.test(tier25.text)
+      && tier25.verdict === 'possible', tier25.text)
+
+  const tier39 = byKey(S.summarize(ctx(day({ '*': { low: 10, mid: 20, high: 19 } }), { heading: 90 })), 'alpenglow')
+  check('39 界：仍走 +8（86 分），不提前进入「中高云可被染色」（' + tier39.score + '）',
+    tier39.score === 86 && /中高云偏少/.test(tier39.text) && !/中高云可被染色/.test(tier39.text), tier39.text)
+
+  /* 防「+8 只在 heading 非空时生效」：heading 未知也必须拿到 25–40 档的 +8 与理由，
+     方向分不加、但仍要说清「需东至东北侧视野开阔」。 */
+  const noHeading = byKey(S.summarize(ctx(day({ '*': { low: 10, mid: 15, high: 15 } }))), 'alpenglow')
+  check('heading 未知：25–40 档仍 +8（78 分）、理由含「中高云偏少」与「视野开阔」（' + noHeading.score + '）',
+    noHeading.score === 78 && /中高云偏少/.test(noHeading.text) && /视野开阔/.test(noHeading.text), noHeading.text)
+
+  /* 有地形 + 零列表：excluded 走 hasTerrain 真分支（angle -5 的开阔地平线也非 null），
+     这是「有地形 = 有可用地形块，不是有山脊」的直接判据。零列表时 isDawn=false ⇒ side=昏光。 */
+  const terrExcludedRes = S.summarize(ctx(day({ '*': { low: 10, mid: 12, high: 12 } }), {
+    terrain: terrainAll(-5, 0, 0), heading: 90,
+  }))
+  const terrExcluded = byKey(terrExcludedRes, 'alpenglow')
+  const EXCLUDED_WITH_TERRAIN = '今天昏光前后云量或降水条件不足，山体被光染的概率很低。'
+  check('有地形 + 零列表：无标记、0 分、excluded，文案逐字保留「山体被光染」',
+    marksOf(terrExcludedRes, 'alpenglow').length === 0
+      && terrExcluded.score === 0 && terrExcluded.verdict === 'excluded'
+      && terrExcluded.text === EXCLUDED_WITH_TERRAIN, terrExcluded.text)
+
+  /* 有地形 + 25–40：同一档 +8，但主语不退回天空（口径仍是 DEM 的目标山体）。 */
+  const terr30 = byKey(S.summarize(ctx(day({ '*': { low: 5, mid: 15, high: 15 } }), {
+    terrain: terrainAll(-5, 0, 0),
+  })), 'alpenglow')
+  check('有地形 + 25–40：86 分、「中高云偏少」且仍说「山体被光染」；look 只说看山脊线',
+    terr30.score === 86 && /中高云偏少/.test(terr30.text) && /山体被光染/.test(terr30.text)
+      && /看山脊线/.test(terr30.look) && !/天空与山脊线/.test(terr30.look),
+    terr30.text + ' / ' + terr30.look)
 }
 
 section('5. 低云厚：无光染（云挡住山体）')
@@ -625,6 +719,21 @@ section('19. 地形地平线（terrain）：银河遮挡、彩虹反日方向、
     glowBlocked.score < glowOpen.score && /太阳低于此方位山脊/.test(glowBlocked.text), glowBlocked.text)
   check('光染：太阳高于山脊 ⇒ 加分并给出山脊方位',
     /太阳高于此方位山脊/.test(glowOpen.text) && /看山脊线/.test(glowOpen.look), glowOpen.text + ' / ' + glowOpen.look)
+  /* 阳性对照（F6）：**有地形**时口径逐字节不变——文案仍说「山体被光染」、look 仍是「看山脊线」，
+     不得出现无地形分支的「天空与山脊线」；两个精确分数就是改前值（30+18+14+16+6+8 / −10；
+     open 92、blocked 74）。 */
+  check('有地形：look 仍是「看山脊线」且不出现「天空与山脊线」',
+    /看山脊线/.test(glowOpen.look) && !/天空与山脊线/.test(glowOpen.look), glowOpen.look)
+  check('有地形：文案仍是「山体被光染」且分数 92（' + glowOpen.score + '）',
+    /山体被光染/.test(glowOpen.text) && glowOpen.score === 92, glowOpen.text)
+  check('有地形：太阳低于山脊 74 分且仍说「山体被光染」',
+    glowBlocked.score === 74 && /山体被光染/.test(glowBlocked.text)
+      && /太阳低于此方位山脊/.test(glowBlocked.text), glowBlocked.text)
+  /* 同一支的措辞也钉住：74 分的结论必须说「概率较低」，不能印成「概率较高」——
+     文案换向时分数与主语都还「看着对」，只有这一条会红。 */
+  check('有地形：被山脊挡住说「概率较低」且不说「概率较高」（' + glowBlocked.score + '）',
+    glowBlocked.score === 74 && /概率较低/.test(glowBlocked.text) && !/概率较高/.test(glowBlocked.text)
+      && /山体被光染/.test(glowBlocked.text), glowBlocked.text)
 }
 
 section('20. 大气透明度 / seeing / 气溶胶（atmosphere）')

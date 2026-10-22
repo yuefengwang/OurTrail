@@ -517,6 +517,14 @@ function civilClip(hours, sun) {
 // 晨昏光染的经验时间窗：日出后 50 分钟内、日落前 50 分钟内（徒步者的经验窗口）
 const LIGHT_WINDOW_MIN = 50
 
+/* 光染「中高云」两把尺的两个界都是现成的，不新造数字：
+   - 25 = hourMarks 出 alpenglow 标记的下界（有标记 ⇒ 中高云和至少 25）；
+   - 40 = 结论卡原来的加分界（+14「中高云可被染色」）。
+   以前 25–40 会出现「有标记、有星级，理由里却没有中高云」；现在这一档给 +8「中高云偏少」，
+   让标记与加分读同一组界（阈值本身一个都没改）。 */
+const ALPENGLOW_MIDHIGH_MARK_MIN = 25
+const ALPENGLOW_MIDHIGH_BONUS_MIN = 40
+
 /* ---------- 逐小时天相判定（meteogram 标记行与结论卡同源） ---------- */
 
 /**
@@ -549,7 +557,7 @@ function hourMarks(ctx) {
     // 晨昏光染：落在晨昏窗口内，且低云少（光能到山体）、中高云有（被染色）、无降水
     const inLightWindow = hourTouches(m, riseMin, riseMin + LIGHT_WINDOW_MIN)
       || hourTouches(m, setMin - LIGHT_WINDOW_MIN, setMin)
-    if (inLightWindow && hasCloudData(h) && c.precip < 0.3 && c.pop < 40 && lightReachesGround(c) && c.mid + c.high >= 25) {
+    if (inLightWindow && hasCloudData(h) && c.precip < 0.3 && c.pop < 40 && lightReachesGround(c) && c.mid + c.high >= ALPENGLOW_MIDHIGH_MARK_MIN) {
       add(h, 'alpenglow')
     }
     if (win.morningGolden && hourTouches(m, hourMin(win.morningGolden.from), hourMin(win.morningGolden.to))) add(h, 'golden')
@@ -624,7 +632,20 @@ function alpenglowConclusion(ctx) {
     return Object.assign(item, grade(0), { verdict: VERDICT.UNKNOWN })
   }
   if (!list.length) {
-    item.text = '今天' + side + '前后云量或降水条件不足，山体被光染的概率很低。'
+    /* 零列表没有「第一个可用小时」可取太阳方位：用该侧窗口边缘的方位去问同一份地形数据
+       （只回答"有没有地形"，不参与打分）。极昼/极夜（sunTimes 双侧 null）到不了这里：
+       windowHours 为空 ⇒ cover.enough 为假（0/0 小时）⇒ 上面已按 UNKNOWN 返回。
+       cnToMs 的 00:00 兜底只在 sunTimes 单侧 null 的注入场景可达，且不抛错，判据仍是 terrainAt。
+       有地形 ⇒ 保留原「山体被光染」口径（DEM 是真实输入）；无地形 ⇒ 只说天空与中高云，
+       不拿"山体"这个没有数据的对象出结论（无数据不等于没机会，见下方正向分支同一披露）。
+       hasTerrain 表示「这一方位有可用地形块」，不是「有山脊」：angle 为 -5 的开阔地平线
+       也会返回非 null。 */
+    const edgeT = isDawn ? sun.sunrise : sun.sunset
+    const edgeSolar = A.solarPosition(A.cnToMs(date, edgeT), lat, lng)
+    const hasTerrain = terrainAt(ctx.terrain, edgeSolar.azimuth) !== null
+    item.text = hasTerrain
+      ? '今天' + side + '前后云量或降水条件不足，山体被光染的概率很低。'
+      : '今天' + side + '前后天空与中高云被染色的概率很低。'
     item.look = heading == null ? '' : '前进方向朝' + A.bearingLabel(heading)
     /* 判过了：晨昏窗口内没有一小时满足"低云少 + 无降水" ⇒ 必要条件不成立，页面沉默 */
     return Object.assign(item, grade(0), { verdict: VERDICT.EXCLUDED })
@@ -637,7 +658,11 @@ function alpenglowConclusion(ctx) {
   let score = 30
   const reasons = []
   if (c.low < 25) { score += 18; reasons.push('低云少') }
-  if (c.mid + c.high >= 40) { score += 14; reasons.push('中高云可被染色') }
+  /* 中高云两档与 hourMarks 的标记界同源（25 出标记、40 是原加分界，两个都是现成口径）：
+     25–40 有标记却曾无理由，这一档补 +8「中高云偏少」；低于 25 本来就没有标记、list 为空。 */
+  const midHigh = c.mid + c.high
+  if (midHigh >= ALPENGLOW_MIDHIGH_BONUS_MIN) { score += 14; reasons.push('中高云可被染色') }
+  else if (midHigh >= ALPENGLOW_MIDHIGH_MARK_MIN) { score += 8; reasons.push('中高云偏少') }
   if (c.precip === 0 && c.pop < 30) { score += 16; reasons.push('无降水') }
   if (c.band) {
     if (elevOK && elevation > c.band.top) { score += 14; reasons.push('此点在云层带上方') }
@@ -669,19 +694,23 @@ function alpenglowConclusion(ctx) {
   }
   const g = grade(score)
   const blockedByRidge = !!(ridge && !sunAboveRidge)
-  const caveat = ridge
-    ? '地形为 90 m DEM 粗判，未计树木/建筑；坡向与山体材质仍需现场判断。'
-    : '这里只用了云量与降水：本工具没有目标山峰的位置、坡向、遮挡（DEM）数据，给不出「某座山会不会金山」。'
-  item.text = (blockedByRidge
-    ? side + '在 ' + windowText(list) + ' 太阳低于此方位山脊，山体被光染的概率较低（'
-    : side + '在 ' + windowText(list) + ' 有山体被光染的可能（')
-    + reasons.join('、') + '）。' + caveat
+  /* 主语按**有没有地形输入**分岔（不是按分数）：有 DEM 时「山体被光染」有依据；
+     没有地形数据时只承诺「天空与中高云有被染色的条件」——那是同一份云量/降水真的能回答的事，
+     并当场披露「没有目标山峰数据，判断不了哪座山会被染」。分数不动：它回答的是窗口光线条件，
+     天空染色是真实可见现象。 */
+  item.text = ridge
+    ? (blockedByRidge
+      ? side + '在 ' + windowText(list) + ' 太阳低于此方位山脊，山体被光染的概率较低（'
+      : side + '在 ' + windowText(list) + ' 有山体被光染的可能（')
+      + reasons.join('、') + '）。地形为 90 m DEM 粗判，未计树木/建筑；坡向与山体材质仍需现场判断。'
+    : side + '在 ' + windowText(list) + ' 天空与中高云有被染色的条件（'
+      + reasons.join('、') + '）。没有目标山峰数据，判断不了哪座山会被染（日照金山）。'
   item.look = ridge
     ? '朝' + A.bearingLabel(solar.azimuth) + '看山脊线'
       + (ridge.distance > 0
         ? '（此方位地形最高点约 ' + Math.round(ridge.elevation) + ' m / 距离约 ' + Math.round(ridge.distance) + ' km，DEM 90 m 粗判）'
         : '（此方位无更高地形，地平线约 ' + Math.round(ridge.angle) + '°）')
-    : (isDawn ? '朝东至东北' : '朝西至西北') + '看山脊线'
+    : (isDawn ? '朝东至东北' : '朝西至西北') + '看天空与山脊线'
       + (heading == null ? '' : '（按轨迹走向朝' + A.bearingLabel(heading) + '，为粗判）')
   item.window = windowText(list)
   return Object.assign(item, g, { verdict: VERDICT.POSSIBLE })
