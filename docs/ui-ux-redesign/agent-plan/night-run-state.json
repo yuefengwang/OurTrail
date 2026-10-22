@@ -5,6 +5,14 @@
   "branch": "agent/ourtrail-night-ui-v1",
   "startedAt": "2026-10-22",
   "finishedAt": "2026-10-22",
+  "mergedIntoMaster": {
+    "mergeCommit": "c0da80a",
+    "mergedAt": "2026-10-22",
+    "method": "--no-ff 递归合并（用户指令）",
+    "conflictSurface": "脚本核验两侧改动文件零重叠（master 独有 116 / night 独有 165，交集为空）：master 侧为天气修复线（cloudfunctions/trailApi、weather 页、utils 天气模块）与 42 个 tools 文件；night 侧为 UI 页面与 agent-plan 文档。共享文件（utils/api.js、utils/format.js、app.json）night 为冻结集未动，master 侧对其改动经逐行核验为纯增量（新增 getSkyContext 导出、一条天气标签、一条权限描述串）",
+    "postMergeVerification": "合并后全量复跑 79 个套件：零新增失败。四条非零经合并前 master 工作树（693bba4）同款复跑归因为存量——m02 65/1（privacy 章节标题计数）、g2 14/1（slot 样本）、e2e-ui/e2e-ui-state/e2e-golden-path exit=2（automator 9420 环境门，INCONCLUSIVE）、cold-start 8/2（master 天气线多一个集合/一次读）、e2e-client-cas bugs=1（测试自带「只归档不修」的 BUG-C2）。附带收益：swx2 从合并前 master 的 109/1 修成 110/0——T004 的 .highlight-dot 字重修复随合并带过去，关掉了 master 自己的一条存量红",
+    "queueNote": "T011（notices/anotices/me）未开始；T012（weather）冻结。night 分支已快进到合并提交，后续任务在整合后代码上继续"
+  },
   "inputsRead": [
     "OurTrail_UI_交付包/01_全局视觉参考.png",
     "OurTrail_UI_交付包/02_设计与业务边界.md",
