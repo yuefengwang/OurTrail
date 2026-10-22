@@ -1,0 +1,38 @@
+{
+  "mode": "after",
+  "wsPort": "9436",
+  "shots": {
+    "vehicle-roster": {
+      "file": "after-vehicle-roster.png",
+      "scrollTop": 0
+    },
+    "vehicle-depart-ask": {
+      "file": "after-vehicle-depart-ask.png",
+      "scrollTop": 0
+    },
+    "vehicle-departed": {
+      "file": "after-vehicle-departed.png",
+      "scrollTop": 0
+    },
+    "staff-shell": {
+      "file": "after-staff-shell.png",
+      "scrollTop": 0
+    },
+    "tasks-list": {
+      "file": "after-tasks-list.png",
+      "scrollTop": 0
+    }
+  },
+  "gates": {
+    "sectionBadges": [
+      "逐人清点后再发车"
+    ],
+    "hitHeights": {
+      ".person-row": -1,
+      ".button": 48,
+      ".seg": 60
+    },
+    "taskCards": 4,
+    "taskSegs": 4
+  }
+}

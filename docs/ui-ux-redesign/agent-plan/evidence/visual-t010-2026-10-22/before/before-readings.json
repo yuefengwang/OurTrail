@@ -1,0 +1,36 @@
+{
+  "mode": "before",
+  "wsPort": "9435",
+  "shots": {
+    "vehicle-roster": {
+      "file": "before-vehicle-roster.png",
+      "scrollTop": 0
+    },
+    "vehicle-depart-ask": {
+      "file": "before-vehicle-depart-ask.png",
+      "scrollTop": 0
+    },
+    "vehicle-departed": {
+      "file": "before-vehicle-departed.png",
+      "scrollTop": 0
+    },
+    "staff-shell": {
+      "file": "before-staff-shell.png",
+      "scrollTop": 0
+    },
+    "tasks-list": {
+      "file": "before-tasks-list.png",
+      "scrollTop": 0
+    }
+  },
+  "gates": {
+    "sectionBadges": [],
+    "hitHeights": {
+      ".person-row": -1,
+      ".button": 48,
+      ".seg": 60
+    },
+    "taskCards": 4,
+    "taskSegs": 4
+  }
+}
