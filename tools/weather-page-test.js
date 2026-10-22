@@ -1291,6 +1291,71 @@ section('13. 天相卡沉默闸：真页面 buildCondCards / condSilent / 总评
   })(), JSON.stringify(cond.overallGrade(ocSky.items)))
 }
 
+section('13b. F4 阶段一：页面把结论项传进 factsFor，看图能跳到次日')
+{
+  /* 页面装配这一层只做两件事：把**这张卡自己的**结论项交给 factsFor（用副本，不改共享 ctx），
+     以及让「看图↗」先按完整日期键匹配。判据全部打在真页面函数上，不在这里重写装配。 */
+  const page = makePage(pageConfig())
+  const d1 = []
+  const d2 = []
+  for (let hh = 0; hh < 24; hh++) {
+    const t = String(hh).padStart(2, '0') + ':00'
+    d1.push({ d: '2026-07-15', t, temp: 12, pop: 0, precip: 0, showers: 0, code: 2, wind: 6, rh: 60, cloud: { low: 0, mid: 0, high: 0 }, band: null })
+    d2.push({ d: '2026-07-16', t, temp: 12, pop: 0, precip: 0, showers: 0, code: 2, wind: 6, rh: 60, cloud: { low: 0, mid: 0, high: 0 }, band: null })
+  }
+  d1[22].cloud = { low: 20, mid: 20, high: 20 }
+  d1[23].cloud = { low: 20, mid: 20, high: 20 }
+  d2[0].cloud = { low: 10, mid: 10, high: 10 }
+  const skyOut = sky.summarize({
+    date: '2026-07-15', lat: COORD.lat, lng: COORD.lng, elevation: 1200, elevOK: true,
+    detail: d1, series: d1.concat(d2), days: [], heading: null,
+    lightPollution: { bortle: 2, sqm: 21.8 },
+  })
+  const galaxy = skyOut.items.filter(i => i.key === 'galaxy')[0]
+  const ctx = {
+    date: '2026-07-15', detail: d1, days: [], elevation: 1200,
+    sun: skyOut.sun, moon: skyOut.moon, night: skyOut.night,
+  }
+  const cards = page.buildCondCards(skyOut, ctx)
+  const gCard = cards.filter(c => c.key === 'galaxy')[0]
+  const sCard = cards.filter(c => c.key === 'star')[0]
+  check('银河卡存在且证据非空（' + (gCard && gCard.evidence.length) + ' 条）', !!gCard && gCard.evidence.length > 0)
+  check('页面把 item 传进 factsFor：银河证据 at === item.at（次日 ' + (galaxy && galaxy.at) + '）',
+    !!gCard && gCard.evidence.every(f => f.at === galaxy.at), gCard && JSON.stringify(gCard.evidence))
+  check('星空卡（同日 at）证据仍是 HH:mm（页面只替跨夜的那张改锚点）',
+    !!sCard && sCard.evidence.every(f => /^\d{2}:\d{2}$/.test(f.at)), sCard && JSON.stringify(sCard.evidence))
+  check('共享 ctx 未被写入 item（每张卡各拿副本）', ctx.item === undefined, String(ctx.item))
+
+  // 「看图↗」：完整键优先，旧 HH:mm 仍按原行为落到当日同小时
+  page.data.chartView = [
+    { d: '2026-07-15', t: '00:00' },
+    { d: '2026-07-15', t: '06:00' },
+    { d: '2026-07-16', t: '01:00' },
+    { d: '2026-07-16', t: '06:00' },
+  ]
+  let jumped = null
+  page.selectHour = (d, t) => { jumped = { d, t } }
+  page.onEvidenceJump({ currentTarget: { dataset: { at: galaxy.at } } })
+  check('onEvidenceJump 按完整日期键跳到次日同小时',
+    !!jumped && jumped.d === '2026-07-16' && jumped.t === '01:00', JSON.stringify(jumped))
+  page.onEvidenceJump({ currentTarget: { dataset: { at: '06:00' } } })
+  check('旧 HH:mm 锚点仍落到同日同小时（首列不是 06:00 也能分辨）',
+    !!jumped && jumped.d === '2026-07-15' && jumped.t === '06:00', JSON.stringify(jumped))
+  page.onEvidenceJump({ currentTarget: { dataset: { at: '2026-07-17T01:00' } } })
+  check('视图里查无此键 ⇒ 落到最近可见列（不是首列）',
+    !!jumped && jumped.d === '2026-07-16' && jumped.t === '06:00', JSON.stringify(jumped))
+
+  /* 默认 24h 视图只有所选日 00–23 时：跨夜锚点必然不在视图内。
+     计划 §5.2.3 允许「该小时的最近可见列」——对次日 01:00 而言是当日 23:00，
+     不是首列 00:00（那是最远列，也是本轮修掉的回归）。 */
+  page.data.chartView = Array.from({ length: 24 }, (_, hh) => ({
+    d: '2026-07-15', t: String(hh).padStart(2, '0') + ':00',
+  }))
+  page.onEvidenceJump({ currentTarget: { dataset: { at: galaxy.at } } })
+  check('24h 视图没有次日列：跨夜锚点落到当日最后一列（最近可见列），不跳回 00:00',
+    !!jumped && jumped.d === '2026-07-15' && jumped.t === '23:00', JSON.stringify(jumped))
+}
+
 raceCases()
   .catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') })
   .then(windowCases)

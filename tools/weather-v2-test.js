@@ -358,6 +358,52 @@ section('3. Evidence 事实清单（factsFor）')
   check('detail 为空返回空数组', cond.factsFor('cloudSea', { date: DATE, detail: [], days: [], elevation: ELEV }).length === 0)
 }
 
+/* ---------- 3b. 跨夜证据锚点（F4 阶段一） ---------- */
+
+section('3b. 跨夜证据锚点：只有 at 变完整日期，事实文本不动')
+{
+  /* 与 sky-test §23 同一立场，这里从**页面会传的 ctx 形状**再钉一次：
+     detail 是所选日 24h、night 是 sky.summarize 产出的跨夜序列。 */
+  const makeDay = (d) => {
+    const out = []
+    for (let hh = 0; hh < 24; hh++) {
+      out.push({
+        d, t: String(hh).padStart(2, '0') + ':00', temp: 12, pop: 0, precip: 0, showers: 0,
+        code: 2, wind: 6, rh: 60, cloud: { low: 0, mid: 0, high: 0 }, band: null,
+      })
+    }
+    return out
+  }
+  const d1 = makeDay('2026-07-15')
+  const d2 = makeDay('2026-07-16')
+  d1[22].cloud = { low: 20, mid: 20, high: 20 }
+  d1[23].cloud = { low: 20, mid: 20, high: 20 }
+  d2[0].cloud = { low: 10, mid: 10, high: 10 }
+  const skyOut = sky.summarize({
+    date: '2026-07-15', lat: COORD.lat, lng: COORD.lng, elevation: ELEV, elevOK: true,
+    detail: d1, series: d1.concat(d2), days: [], heading: null,
+    lightPollution: { bortle: 2, sqm: 21.8 },
+  })
+  const galaxy = skyOut.items.filter(i => i.key === 'galaxy')[0]
+  const star = skyOut.items.filter(i => i.key === 'star')[0]
+  const fctx = {
+    date: '2026-07-15', detail: d1, days: [], elevation: ELEV,
+    sun: skyOut.sun, moon: skyOut.moon, night: skyOut.night,
+  }
+  const base = cond.factsFor('galaxy', fctx)
+  const withItem = cond.factsFor('galaxy', Object.assign({}, fctx, { item: galaxy }))
+  check('跨夜 item.at 落在次日（' + galaxy.at + '）', galaxy.at.slice(0, 10) === '2026-07-16', galaxy.at)
+  check('跨夜证据的 at 全部变成完整日期，且 === item.at',
+    withItem.length > 0 && withItem.every(f => f.at === galaxy.at), JSON.stringify(withItem))
+  check('跨夜证据的 fact/kind/顺序与不传 item 时逐字节相同（只改锚点，不改事实）',
+    withItem.length === base.length
+      && withItem.every((f, i) => f.fact === base[i].fact && f.kind === base[i].kind)
+      && base.every(f => /^\d{2}:\d{2}$/.test(f.at)), JSON.stringify({ base, withItem }))
+  check('非跨夜（star 的 at 就在所选日）仍输出 HH:mm，与旧形态一致',
+    cond.factsFor('star', Object.assign({}, fctx, { item: star }))
+      .every(f => /^\d{2}:\d{2}$/.test(f.at)))
+}
+
 /* ---------- 4. Optional 字段缺失降级 ---------- */
 
 section('4. Optional 字段缺失：旧返回体整链不炸')

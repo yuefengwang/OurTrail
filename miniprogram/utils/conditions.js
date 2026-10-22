@@ -25,6 +25,10 @@ const sky = require('./sky')
 const CLF = require('./cloud-layer-facts.js')
 const K = require('./evidence-kind.js').KIND
 
+/* 结论项 `at` 的完整形态 `YYYY-MM-DDTHH:mm`。只有这种**带日期**的值才可能表示跨夜；
+   旧的 `HH:mm` 锚点与任何缺测一律按"同日"处理（失败关闭到旧行为，不猜日期）。 */
+const AT_FULL_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
+
 /* ---------- 安全提示的字面规则 ---------- */
 
 // WMO 天气码 → 是否雪：71–77 雪、85–86 阵雪；**80–82 是阵雨**（rain showers）
@@ -128,11 +132,14 @@ function meanOf(list, get) {
  * 「<30」这类天相阈值仍然一个都没有。
  *
  * @param key sky.js 结论 key（cloudSea/alpenglow/rainbow/galaxy/star）
- * @param ctx { date, detail(当日24h), days, elevation, sun(sunTimes), moon(moonInfo), lightPollution }
+ * @param ctx { date, detail(当日24h), days, elevation, sun(sunTimes), moon(moonInfo), lightPollution,
+ *   night?, item? } night = sky.summarize 的跨夜小时序列；item = 该卡自己的结论项（页面传入），
+ *   其 `at` 只在**真跨夜**时接管 galaxy/star 的锚点（F4 阶段一）。
  * @param opts { omitLightPollution } OI 证据不注入光污染事实行：OI 窗口判据不读光污染，
  *   边界由 `outdoor-intelligence.nightLimit` 统一声明，两套口径不能混进同一张卡。
  * @returns [{ fact:'清晨低云 86%', at:'07:00', kind:'cloud-amount' }]
- *   at = 「看图↗」锚定的小时列；kind = 证据类别（`utils/evidence-kind.js`），
+ *   at = 「看图↗」锚定的小时列；非跨夜为 `HH:mm`，跨夜（F4 阶段一）为完整
+ *   `YYYY-MM-DDTHH:mm`，页面按完整键跳到次日。kind = 证据类别（`utils/evidence-kind.js`），
  *   呈现层据此挑摘要与分组，**不解析 fact**。
  */
 function factsFor(key, ctx, opts) {
@@ -221,27 +228,40 @@ function factsFor(key, ctx, opts) {
     const night = (ctx && ctx.night) || (Number.isFinite(dawn) && Number.isFinite(dusk)
       ? d.filter(h => { const m = sky.hourMin(h.t); return m < dawn || m > dusk })
       : [])
+    /* F4 阶段一：结论项自报的 `at` 只在**真跨夜**（它的日期与本节所选日不同）且
+       **页面传入了非空夜段**（ctx.night）时才接管锚点——那时证据行与「看图」必须落到次日
+       那个小时，否则会指到银河没升起的前夜。其余一切情况（无 item / at 缺失 / 格式不对 /
+       同日 / 没有 ctx.night）保持旧的 dusk 锚点，非跨夜输出因此逐字节不变（阳性对照）。
+       注意夜段判据只看**调用方传入的** ctx.night：下面为本函数自己算的 fallback 夜段
+       （自然日口径）服务的，缺 ctx.night 时不能凭它猜"这是跨夜场景"。 */
+    const itemAt = ctx && ctx.item && typeof ctx.item.at === 'string' ? ctx.item.at : ''
+    const hasNightCtx = !!(ctx && Array.isArray(ctx.night) && ctx.night.length > 0)
+    const crossNight = !!date && AT_FULL_RE.test(itemAt) && itemAt.slice(0, 10) !== date && hasNightCtx
+    /* 证据行的 at：跨夜给完整日期（页面据此跳到次日同小时），非跨夜仍是 HH:mm（旧形态）。
+       atmosphereAt 的时间参数同样用完整日期——否则会读到**本节所选日**的气溶胶/seeing。 */
+    const rowAt = crossNight ? itemAt : anchor
+    const atmosphereTime = crossNight ? itemAt : date + 'T' + anchor
     const high = meanOf(night, h => h.cloud && h.cloud.high)
     const mid = meanOf(night, h => h.cloud && h.cloud.mid)
-    if (high != null) out.push({ fact: '夜段高层云 ' + high + '% · 中层云 ' + (mid == null ? '—' : mid) + '%', at: anchor, kind: K.CLOUD_AMOUNT })
+    if (high != null) out.push({ fact: '夜段高层云 ' + high + '% · 中层云 ' + (mid == null ? '—' : mid) + '%', at: rowAt, kind: K.CLOUD_AMOUNT })
     // 观察点上方云量剖面：低云在脚下不挡天顶，在头顶才挡（sky.cloudAboveAt 单源）
     const profiles = night
       .map(h => sky.cloudAboveAt(h, date, ctx && ctx.cloudLevels, ctx && ctx.elevation))
       .filter(Boolean)
     if (profiles.length) {
       const peak = Math.round(profiles.reduce((s, p) => s + p.max, 0) / profiles.length)
-      out.push({ fact: '夜段观察点上方云量峰值 平均 ' + peak + '%', at: anchor, kind: K.CLOUD_AMOUNT })
+      out.push({ fact: '夜段观察点上方云量峰值 平均 ' + peak + '%', at: rowAt, kind: K.CLOUD_AMOUNT })
     }
-    if (moon) out.push({ fact: '月照 ' + moon.illumination + '%（' + moon.name + '）', at: anchor, kind: K.MOONLIGHT })
+    if (moon) out.push({ fact: '月照 ' + moon.illumination + '%（' + moon.name + '）', at: rowAt, kind: K.MOONLIGHT })
     /* 大气透明度/seeing/气溶胶：有就读出来，缺测不编 0 */
-    const atm = sky.atmosphereAt(ctx && ctx.atmosphere, date + 'T' + anchor)
+    const atm = sky.atmosphereAt(ctx && ctx.atmosphere, atmosphereTime)
     if (atm) {
-      if (atm.aod != null) out.push({ fact: 'CAMS 气溶胶 AOD ' + atm.aod, at: anchor, kind: K.VISIBILITY })
+      if (atm.aod != null) out.push({ fact: 'CAMS 气溶胶 AOD ' + atm.aod, at: rowAt, kind: K.VISIBILITY })
       if (atm.transparency != null || atm.seeing != null) {
         out.push({
           fact: '7Timer 透明度 ' + (atm.transparency == null ? '—' : atm.transparency + '/8')
             + '（越小越好） · seeing ' + (atm.seeing == null ? '—' : atm.seeing + '/8') + '（越小越好）',
-          at: anchor,
+          at: rowAt,
           kind: K.VISIBILITY,
         })
       }
@@ -251,12 +271,12 @@ function factsFor(key, ctx, opts) {
         const bits = []
         if (ctx.lightPollution.bortle != null) bits.push('Bortle ' + ctx.lightPollution.bortle)
         if (ctx.lightPollution.sqm != null) bits.push('SQM ' + ctx.lightPollution.sqm)
-        out.push({ fact: '天空亮度 ' + bits.join(' · ') + '（DarkSkySites.com，模型估算）', at: anchor, kind: K.LIGHT_POLLUTION })
+        out.push({ fact: '天空亮度 ' + bits.join(' · ') + '（DarkSkySites.com，模型估算）', at: rowAt, kind: K.LIGHT_POLLUTION })
         /* 「没有读数」有两种来源：显式 null（查过、没有值）与调用方根本没传这个字段
            （首屏 / getSkyContext 整体失败 / 配额用尽，页面传的就是 undefined）。
            两者都必须在证据行里说出来——缺测不许印成「天空很暗」，也不许悄悄消失。 */
       } else if (ctx) {
-        out.push({ fact: '光污染未计入（无读数）', at: anchor, kind: K.NIGHT_LIMIT })
+        out.push({ fact: '光污染未计入（无读数）', at: rowAt, kind: K.NIGHT_LIMIT })
       }
     }
     return out

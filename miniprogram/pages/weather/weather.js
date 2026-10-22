@@ -138,13 +138,16 @@ Page({
     emptyKind: 'empty',
     retryNote: '',
     weatherStale: null,
+    skyInputLoading: false,
+    skyInputNote: '',
     isOwner: false,
     // 节点抵达日程（需求：按轨迹标注点判断第几天抵达）
     schedule: [],
     scheduleBasis: '',
     spanDays: null,
     // meteogram
-    chartSeries: [],
+    // 完整 7 天序列只活在实例上（this._chartSeries）：WXML 不读它，
+    // 24/48/72h 切窗与「全图展示」直接从内存取——不能让 168 小时再进一次 setData。
     chartMarks: {},
     chartNight: {},
     chartSelected: {},
@@ -159,21 +162,13 @@ Page({
     chartPick: null,
     hourChip: null,
     agenda: [],
-    // 时空天相图（P4）。spaceNodes 只含可信抵达时刻的节点，见 setData 处的注释。
-    spaceSeries: [],
     // Weather V2：统一 Meteogram 卡（additive）。null = 数据缺失/渲染失败 → 回退经典 canvas。
     unified: null,
+    // 云层剖面数据缺失（≠ 此窗没有成层云）：页面必须显式说明并给重试。
+    cloudFieldMissing: false,
     // Weather V2 OI Phase 2：Outdoor Intelligence 卡（additive，全防御降级）。
     oiCard: null,
     oiHorizon: null,
-    // sky.js 的「前日有降水」依据。dayCards 是转换后的展示形状，不能直接喂给 sky.js
-    spaceDays: [],
-    spaceNodes: [],
-    spaceLat: NaN,
-    spaceLng: NaN,
-    // 抵达节点（观景位）的海拔与时刻，作为图的参考线输入
-    spaceObsAlt: null,
-    spaceArriveT: '',
     // V2 户外条件：总评 + 评级卡（Evidence 锚点在 Phase 4 由 factsFor 注入）
     condOverall: null,
     condSilent: null,
@@ -345,29 +340,6 @@ Page({
       if (ctx.title && typeof wx !== 'undefined' && wx.setNavigationBarTitle) {
         wx.setNavigationBarTitle({ title: ctx.title, fail: () => {} })
       }
-      // 时空天相图的节点输入：**只收有可信抵达时刻的节点**。
-      // route-schedule 的立场是「没有时间信息就不给提醒，不按距离插值」，这里必须一致
-      // ——宁可图上少几个点，也不编造抵达时刻。
-      // 坐标逐节点带上：太阳高度角沿路线会偏移，全组共用一个经纬度会算错天文时刻。
-      // km 暂缺：GPX 的 toRoutePoints 不输出数值化累计里程（只在 name 里写「约 X 公里处」），
-      // 给它加字段会改动 weather-page/editor 场景测试断言的点结构，留到漫游滑块那期一起做。
-      const spaceNodes = points.reduce((acc, pt, i) => {
-        const s = ctx.sched[i]
-        if (!s || !s.known || !s.arriveTime || !s.arriveDate) return acc
-        const co = pt.coordinates || {}
-        acc.push({
-          t: s.arriveTime,
-          d: s.arriveDate,
-          alt: Number.isFinite(pt.ele) ? pt.ele : null,
-          name: pt.name || '',
-          lat: Number.isFinite(co.lat) ? co.lat : undefined,
-          lng: Number.isFinite(co.lng) ? co.lng : undefined,
-        })
-        return acc
-      }, [])
-      const spaceLast = spaceNodes.length ? spaceNodes[spaceNodes.length - 1] : null
-      // 缺省坐标兜底用当前所选节点——单点查询与「local」模式下这就是唯一坐标
-      const curCo = (points[this.data.pointIndex] || p0 || {}).coordinates || {}
       this.setData({
         loading: false,
         denied: '',
@@ -380,11 +352,6 @@ Page({
         schedule: ctx.sched,
         scheduleBasis: RS.basisText(ctx.sched, ctx.hasStart),
         spanDays: RS.spanDays(ctx.sched),
-        spaceNodes,
-        spaceLat: Number.isFinite(curCo.lat) ? curCo.lat : NaN,
-        spaceLng: Number.isFinite(curCo.lng) ? curCo.lng : NaN,
-        spaceObsAlt: spaceLast && Number.isFinite(spaceLast.alt) ? spaceLast.alt : null,
-        spaceArriveT: spaceLast ? spaceLast.t : '',
         pointIndex: ctx.pointIndex,
         date,
         isOwner: ctx.isOwner,
@@ -438,18 +405,27 @@ Page({
     return (result.days || []).some(d => d.date === date)
   },
 
+  // 重新查询必须绕过内存复用：fetchWeather 命中 _lastResult 时只重绘不重取，
+  // 对「陈旧兜底」与「云层剖面缺失」这类要再问一次上游的场景等于没点。
+  onRetryWeather() {
+    this._lastResult = null
+    this.fetchWeather()
+  },
+
   fetchWeather() {
     const points = this.getPoints()
     const point = points[this.data.pointIndex]
     if (!point) return
+    this._chartSeries = []
     const reset = {
       loadingWeather: true, dayCards: [], callouts: [],
-      detailRows: [], chartSeries: [], chartMarks: {}, chartNight: {},
+      detailRows: [], chartMarks: {}, chartNight: {},
       chartView: [], chartSunBands: {}, chartSunLines: {}, chartNow: null, chartElev: null,
       chartPick: null, hourChip: null, agenda: [],
-      unified: null, oiCard: null, oiHorizon: null,
+      unified: null, cloudFieldMissing: false, oiCard: null, oiHorizon: null,
       condOverall: null, condSilent: null, condCards: [], openEvidence: {},
       emptyKind: 'empty', retryNote: '', weatherStale: null,
+      skyInputLoading: false, skyInputNote: '',
     }
     // 兜底：日期尚未落定时不外呼（云函数会回"日期无效"，那句话对用户没意义）。
     // resolveDate 兜底链必然产出合法日期，收敛一次即可，不会循环。
@@ -465,6 +441,7 @@ Page({
     const cached = this._lastResult
     if (this.covers(cached, this.data.date, point.id)) {
       this.applyWeather(Object.assign({}, cached), point, reset)
+      this.loadSkyContext(point)
       return
     }
     this._wxToken = (this._wxToken || 0) + 1
@@ -513,6 +490,8 @@ Page({
     const _co = point.coordinates || {}
     this._oiCoords = { lat: Number.isFinite(_co.lat) ? _co.lat : null, lng: Number.isFinite(_co.lng) ? _co.lng : null }
     this.applyWeather(result, point, reset)
+    // 方向性天气是增强项：不阻塞首屏；到达后原地重算天相卡，失败则保持无 spatial 的旧口径
+    this.loadSkyContext(point)
     // 云端陈旧兜底（外呼失败但给了 12 小时内的旧预报）：照常展示，但必须说清不是实时数据
     if (result.stale) {
       this.setData({
@@ -532,13 +511,94 @@ Page({
     return point.id + '@' + lat + ',' + lng
   },
 
+  // 方向性天气的点/日身份：换点、换日都不能复用上一份 spatial
+  skyContextKey(point) {
+    const c = point.coordinates || {}
+    const lat = Number.isFinite(c.lat) ? c.lat.toFixed(2) : 'na'
+    const lng = Number.isFinite(c.lng) ? c.lng.toFixed(2) : 'na'
+    const elev = Number.isFinite(this._skyElevation) ? Math.round(this._skyElevation) : 'na'
+    return (point.id || '') + '@' + lat + ',' + lng + '@' + this.data.date + '@' + elev
+  },
+
+  /* 方向云/降水是“增强项”：单独外呼、单独失败，不阻塞天气主体。
+     到达后只重算页面，不再次拉天气；迟到的响应按 key 丢弃。
+     sources 必须上屏：用户要能区分“今天没戏”与“这层输入没取到”。 */
+  loadSkyContext(point) {
+    const key = this.skyContextKey(point)
+    if (this._skyContextKey === key) {
+      this.setData({
+        skyInputLoading: false,
+        skyInputNote: this._skyContext && this._skyContext.note ? this._skyContext.note : '',
+      })
+      return
+    }
+    this._skyContextKey = key
+    this._skyContext = null
+    const c = point.coordinates || {}
+    if (!Number.isFinite(c.lat) || !Number.isFinite(c.lng)) {
+      this.setData({ skyInputLoading: false, skyInputNote: '此点没有坐标，天相增强输入未查询。' })
+      return
+    }
+    this.setData({ skyInputLoading: true, skyInputNote: '' })
+    /* 包一层 Promise：api.getSkyContext 若在返回 Promise 之前同步抛错（wx.cloud 不可用等），
+       不能让异常穿过天气取数的 .catch 被误判成“天气没取到”并触发缓存降级。
+       增强项失败只允许走下面的 .catch，保持旧口径。 */
+    Promise.resolve()
+      .then(() => api.getSkyContext(c.lat, c.lng, this.data.date, this._skyElevation))
+      .then(res => {
+      if (this._skyContextKey !== key) return
+      if (!res || res.status !== 'ready'
+        || (!res.spatial && !res.terrain && !res.atmosphere && !res.lightPollution)) {
+        // 配额用尽不是故障：必须把云端的可行动话术上屏，而不是笼统说“没取到”
+        const limited = res && res.reason === 'rate_limited'
+        this.setData({
+          skyInputLoading: false,
+          skyInputNote: limited && res.message
+            ? res.message
+            : '方向云/地形/透明度/光污染没有取到；天相卡按云/月照旧口径。',
+        })
+        return
+      }
+      const labels = { spatial: '方向云', terrain: '地形', atmosphere: '透明度/seeing', lightPollution: '光污染' }
+      const src = res.sources || {}
+      const missing = Object.keys(labels).filter(k => src[k] !== 'ok').map(k => labels[k])
+      const stale = res.stale && typeof res.stale === 'object'
+        ? Object.keys(res.stale).some(k => res.stale[k])
+        : !!res.stale
+      const note = (missing.length ? '天相增强输入缺少：' + missing.join('、') + '；相关卡片按可用数据降级。' : '')
+        + (stale ? '（部分输入为旧数据）' : '')
+      this._skyContext = {
+        key,
+        spatial: res.spatial || null,
+        terrain: res.terrain || null,
+        atmosphere: res.atmosphere || null,
+        lightPollution: res.lightPollution || null,
+        lightPollutionReason: res.lightPollutionReason || null,
+        sources: src,
+        stale: res.stale || null,
+        note,
+      }
+      this.setData({ skyInputLoading: false, skyInputNote: note })
+      if (this._lastResult && this._lastPoint === point) {
+        this.applyWeather(this._lastResult, point, {})
+      }
+    }).catch(e => {
+      // 方向天气不可用不是用户操作失败：保持旧口径，但必须告诉用户输入缺失
+      this.setData({
+        skyInputLoading: false,
+        skyInputNote: '方向云/地形/透明度/光污染没有取到；天相卡按云/月照旧口径。',
+      })
+      console.warn('[weather] 方向天气不可用，天相保持旧口径：', e && e.message)
+    })
+  },
+
   // 全部尝试失败后的呈现。优先级：同点同日的本地缓存（软降级，数据照常展示）>
   // 分场景的错误文案。缓存路径**不写 _lastResult**——否则随后的重试会被 covers()
   // 直接复用旧数据，用户点「重新查询」也拿不到新数据。
   showWeatherFailure(kind, payload, point, reset, attempt) {
     const hit = wCache.get(this.weatherScope(point), this.data.date)
     if (hit && hit.ageMs <= wCache.MAX_AGE_MS) {
-      this.applyWeather(hit.result, point, reset)
+      this.applyWeather(hit.result, point, reset, false)
       this.setData({
         loadingWeather: false, retryNote: '',
         weatherStale: {
@@ -577,7 +637,14 @@ Page({
 
   // 把返回体装配成页面数据。detail 在此从 series 里按所选日切出（云端也返回 detail，
   // 但窗口内切日时我们用的是本地缓存，统一在这里切，保证两条路径口径一致）。
-  applyWeather(result, point, reset) {
+  applyWeather(result, point, reset, remember) {
+    /* 供 loadSkyContext 到达后原地重算，不重新外呼天气。
+       remember=false 只给「本地缓存软降级」用：那条路必须**不写** _lastResult，
+       否则用户随后点重试会被 covers() 直接复用旧数据，重试等于没发生。 */
+    if (remember !== false) {
+      this._lastResult = result
+      this._lastPoint = point
+    }
     const series = result.series || []
     const detail = series.filter(h => h.d === this.data.date)
     const day = (result.days || []).find(x => x.date === this.data.date) || {}
@@ -592,6 +659,7 @@ Page({
     /* 判定基准与出处同源（format.resolveElev 是唯一分类点）：模型估算海拔有 ±300–600m
        误差带，落在带内的高差不足以判定云在上方还是下方——页面不再自己分类。 */
     this.elevBasis = EV.basis
+    this._skyElevation = Number.isFinite(elevation) ? elevation : null
     const skyCtx = {
       date: this.data.date,
       lat: point.coordinates.lat,
@@ -599,12 +667,26 @@ Page({
       elevation,
       elevOK,
       detail,
+      series: result.series || [],
+      cloudLevels: result.cloudLevels || null,
+      spatial: this._skyContext && this._skyContext.key === this.skyContextKey(point)
+        ? this._skyContext.spatial : null,
+      terrain: this._skyContext && this._skyContext.key === this.skyContextKey(point)
+        ? this._skyContext.terrain : null,
+      atmosphere: this._skyContext && this._skyContext.key === this.skyContextKey(point)
+        ? this._skyContext.atmosphere : null,
+      lightPollution: this._skyContext && this._skyContext.key === this.skyContextKey(point)
+        ? (this._skyContext.lightPollution || null)
+        : undefined,
       days: result.days || [],
       heading: this.headingAt(this.data.pointIndex),
     }
     const skyOut = sky.summarize(skyCtx)
     const chartSeries = this.buildChartSeries(series, this.data.date)
-    const chartMarks = this.buildChartMarks(series, point.coordinates, elevation, elevOK, result.days || [])
+    this._chartSeries = chartSeries
+    const skyLive = this._skyContext && this._skyContext.key === this.skyContextKey(point) ? this._skyContext : null
+    const chartMarks = this.buildChartMarks(series, point.coordinates, elevation, elevOK, result.days || [], result.cloudLevels || null, skyLive)
+    this._chartMarks = chartMarks
     const chartNight = this.buildNightMap(series, point.coordinates, elevation)
     const chartSelected = { [this.data.date]: true }
     // V2 装配：日照轴带/日出日落线/现在线/云带剖面海拔——全部纯函数，wx-free（可 node 测）
@@ -631,11 +713,6 @@ Page({
         stars: '★★★★★'.slice(0, filled) + '☆☆☆☆☆'.slice(0, 5 - filled),
       })
     })
-    // 时空天相图要**完整** series，不是 chartSeries 那个从所选日起的 7 天切片——
-    // 多日线路的后续节点常落在切片之外，节点会静默拿不到天相。
-    // 这里多传一份完整序列是有意的取舍；若日后性能吃紧，可裁到
-    // 「spaceNodes 涉及的日期 ±1 天」而不是整条 168 小时。
-    const spaceSeries = series
     /* Weather V2：统一 Meteogram 卡（additive）。内部全防御——数据缺失/渲染异常
        只降级本卡（unified = null → 回退经典 canvas meteogram），其余不受影响。 */
     let unified = null
@@ -690,10 +767,16 @@ Page({
         detail,
         days: result.days || [],
         elevation,
+        cloudLevels: result.cloudLevels || null,
+        atmosphere: this._skyContext && this._skyContext.key === this.skyContextKey(point)
+          ? this._skyContext.atmosphere : null,
+        lightPollution: this._skyContext && this._skyContext.key === this.skyContextKey(point)
+          ? (this._skyContext.lightPollution || null)
+          : undefined,
         sun: skyOut ? skyOut.sun : null,
         moon: skyOut ? skyOut.moon : null,
+        night: skyOut ? skyOut.night : null,
       }),
-      chartSeries,
       chartMarks,
       chartNight,
       chartSelected,
@@ -702,8 +785,7 @@ Page({
       chartNow,
       chartElev: Number.isFinite(elevation) ? elevation : null,
       chartView: this.buildViewSeries(chartSeries, this.data.viewSpan),
-      spaceSeries,
-      spaceDays: result.days || [],
+      cloudFieldMissing: !!this._cloudFieldMissing,
       unified: unified,
       oiCard: oiCard,
       oiHorizon: oiHorizon,
@@ -737,6 +819,9 @@ Page({
        cloudField 同窗（buildCloudFieldRange），day header/昼夜分段用逐日 label 与日出日落。 */
     const horizon = this.data.viewSpan === 48 || this.data.viewSpan === 72 ? this.data.viewSpan : 24
     const field = WCFF.buildCloudFieldRange(result, { startDate: this.data.date, hours: horizon, userAltitude: elevation })
+    /* 云层剖面没取到 ≠ 此窗没有云：前者要显式告诉用户并给重试，后者由图上的
+       「没有 ≥80% 成层云带」说明。这个旗标只回答「数据在不在」。 */
+    this._cloudFieldMissing = !field
     if (!field) return null
     const startIdx = (result.series || []).findIndex(h => h.d === this.data.date)
     if (startIdx < 0) return null
@@ -933,8 +1018,12 @@ Page({
   buildOiCard(result, point, elevation) {
     const field = WCFF.buildCloudField(result, { date: this.data.date, userAltitude: elevation })
     const coords = point.coordinates || {}
+    const sky = this._skyContext && this._skyContext.key === this.skyContextKey(point) ? this._skyContext : null
+    const skyKey = sky
+      ? (sky.terrain ? 't' : '') + (sky.lightPollution ? 'l' : '') + (sky.spatial ? 's' : '') + (sky.atmosphere ? 'a' : '')
+      : ''
     const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' +
-      (coords.lat == null ? '' : coords.lat.toFixed(2)) + '|' + this.cfWidth()
+      (coords.lat == null ? '' : coords.lat.toFixed(2)) + '|' + this.cfWidth() + '|' + skyKey
     if (!this._oiCache || this._oiCache.key !== key) {
       const detail = (result.series || []).filter(h => h.d === this.data.date)
       if (detail.length < 24) return null
@@ -947,6 +1036,9 @@ Page({
         lat: Number.isFinite(coords.lat) ? coords.lat : null,
         lng: Number.isFinite(coords.lng) ? coords.lng : null,
         cloudField: field,
+        terrain: sky ? sky.terrain : null,
+        lightPollution: sky ? sky.lightPollution : null,
+        marks: this._chartMarks || this.data.chartMarks || [],
         days: result.days || [],
       })
       this._oiCache = { key: key, oi: oi }
@@ -968,8 +1060,12 @@ Page({
   /* Phase 4：逐日 OI（horizon 卡的共享缓存） */
   buildOiDays(result, point, elevation, horizon) {
     const coords = point.coordinates || {}
+    const sky = this._skyContext && this._skyContext.key === this.skyContextKey(point) ? this._skyContext : null
+    const skyKey = sky
+      ? (sky.terrain ? 't' : '') + (sky.lightPollution ? 'l' : '') + (sky.spatial ? 's' : '') + (sky.atmosphere ? 'a' : '')
+      : ''
     const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' +
-      (coords.lat == null ? '' : coords.lat.toFixed(2)) + '|h' + horizon
+      (coords.lat == null ? '' : coords.lat.toFixed(2)) + '|h' + horizon + '|' + skyKey
     if (!this._oiDays || this._oiDays.key !== key) {
       const labels = this.cfDayLabels(this.data.date, horizon)
       const days = []
@@ -990,6 +1086,9 @@ Page({
             lat: Number.isFinite(coords.lat) ? coords.lat : null,
             lng: Number.isFinite(coords.lng) ? coords.lng : null,
             cloudField: WCFF.buildCloudFieldRange(result, { startDate: d, hours: 24, userAltitude: elevation }),
+            terrain: sky ? sky.terrain : null,
+            lightPollution: sky ? sky.lightPollution : null,
+            marks: this._chartMarks || this.data.chartMarks || [],
             days: result.days || [],
           }),
         })
@@ -1146,7 +1245,9 @@ Page({
         stars: cond.starsOf(it.score),
         featured: it.key === 'cloudSea',
         advice: F.phenoAdvice(it.key),
-        evidence: cond.factsFor(it.key, ctx),
+        /* 把这张卡自己的结论项交给 factsFor：证据锚点要落在它真正说的小时（银河 best 可能
+           在次日）。用副本传参，**不改共享 ctx**——其余卡仍拿同一份输入。 */
+        evidence: cond.factsFor(it.key, Object.assign({}, ctx, { item: it })),
       }))
     cards.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
     return cards
@@ -1181,7 +1282,17 @@ Page({
     const at = e.currentTarget.dataset.at
     if (!at) return
     const view = this.data.chartView || []
-    const h = view.find(x => x.t === at) || view[0]
+    /* `at` 有两种形态：F4 之后跨夜证据给完整 `YYYY-MM-DDTHH:mm`（要跳到次日），
+       其余仍是旧的 `HH:mm`。先按完整键匹配，再回落到"当日第一个同小时"；
+       默认 24h 视图没有次日列时，落到**最近可见列**（所选日最后一列），而不是
+       跳回 00:00——计划 §5.2.3 允许"该小时的最近可见列"，但首列是最远列。 */
+    const targetDay = at.indexOf('T') !== -1 ? at.slice(0, 10) : ''
+    const fallback = targetDay && view.length && targetDay > view[0].d
+      ? view[view.length - 1]
+      : view[0]
+    const h = view.find(x => (x.d + 'T' + x.t) === at)
+      || view.find(x => x.t === at)
+      || fallback
     if (!h) return
     this.selectHour(h.d, h.t)
     if (typeof wx !== 'undefined' && wx.pageScrollTo) {
@@ -1209,13 +1320,18 @@ Page({
   },
 
   // 逐日算天相标记（图表标记行）。只算标记不算文案，结论卡另按所选日算。
-  buildChartMarks(series, coords, elevation, elevOK, days) {
+  buildChartMarks(series, coords, elevation, elevOK, days, cloudLevels, skyLive) {
     const out = {}
     const byDate = {}
     for (const h of series) (byDate[h.d] = byDate[h.d] || []).push(h)
     Object.keys(byDate).forEach(d => {
       const marks = sky.hourMarks({
         date: d, lat: coords.lat, lng: coords.lng, elevation, elevOK, detail: byDate[d], days,
+        cloudLevels: cloudLevels || null,
+        terrain: skyLive ? skyLive.terrain : null,
+        lightPollution: skyLive ? skyLive.lightPollution : null,
+        atmosphere: skyLive ? skyLive.atmosphere : null,
+        spatial: skyLive ? skyLive.spatial : null,
       })
       Object.keys(marks).forEach(t => { out[d + 'T' + t] = marks[t] })
     })
@@ -1289,7 +1405,7 @@ Page({
     if (span !== 24 && span !== 48 && span !== 72) return
     this.setData({
       viewSpan: span,
-      chartView: this.buildViewSeries(this.data.chartSeries, span),
+      chartView: this.buildViewSeries(this._chartSeries || [], span),
       chartPick: null,
       hourChip: null,
     })
@@ -1318,7 +1434,7 @@ Page({
     } else {
       try { oiHorizon = this.buildOiHorizonCard(result, point, elevation) } catch (e) { oiHorizon = null }
     }
-    this.setData({ unified: unified, oiCard: oiCard, oiHorizon: oiHorizon })
+    this.setData({ unified: unified, cloudFieldMissing: !!this._cloudFieldMissing, oiCard: oiCard, oiHorizon: oiHorizon })
   },
 
   // 关闭小时浮条
@@ -1424,7 +1540,7 @@ Page({
 
   // 全图展示：横屏整屏看。canvas 是原生组件压不出屏幕，只有更宽的视口能让 7 天一屏看完。
   onFullscreen() {
-    if (!this.data.chartSeries.length) {
+    if (!(this._chartSeries || []).length) {
       wx.showToast({ title: '图表还没有数据，先等预报加载完。', icon: 'none' })
       return
     }
@@ -1484,6 +1600,21 @@ Page({
   // 分享（P3 §5.3 决策 (b)）：URL 只带 3dp 降精度坐标与日期，不带 name/ele——
   // 这是本仓首个带坐标的分享链路，宁可少给信息也不泄露精确位置；≈百米网格足够定位山头。
   // 接收方落地的点显示坐标文案名、海拔用模型值，可自行「存入观察点」。
+  // 小程序内不能直接开外链：把已显示的来源与许可链接复制给用户（Open-Meteo 要求数据旁可追溯）
+  onCopySources() {
+    const text = [
+      'Open-Meteo https://open-meteo.com/ (CC BY 4.0)',
+      '7Timer! https://www.7timer.info/ (free for non-commercial use)',
+      'CAMS/Open-Meteo Air Quality: Generated using Copernicus Atmosphere Monitoring Service information 2026',
+      'Copernicus DEM GLO-90: © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved',
+      'DarkSkySites.com https://darkskysites.com (modeled sky brightness, not live SQM measurements)',
+    ].join('\n')
+    wx.setClipboardData({
+      data: text,
+      success: () => api.toast('数据来源与许可已复制'),
+    })
+  },
+
   // 活动模式已在 onLoad hideShareMenu，此 handler 不会走到。
   onShareAppMessage() {
     if (this.mode !== 'local') return { title: 'OurTrail 天气' }

@@ -604,7 +604,12 @@ function alpenglowConclusion(ctx) {
   const isDawn = dawnList.length > 0
   const list = isDawn ? dawnList : duskList
   const side = isDawn ? '晨光' : '昏光'
-  const item = { key: 'alpenglow', title: '晨昏光染', window: '', look: '', text: '' }
+  /* `at` 是附加字段（F4 阶段一）：结论项自报它真正在说的那个小时，证据锚点与「看图」
+     都按它落点。没有可用小时时是空串——缺测不印成"有"（失败关闭）。 */
+  const item = {
+    key: 'alpenglow', title: '晨昏光染', at: list.length ? date + 'T' + list[0].t : '',
+    window: '', look: '', text: '',
+  }
   const sun = A.sunTimes(date, lat, lng, elevation)
   const riseMin = hourMin(sun.sunrise)
   const setMin = hourMin(sun.sunset)
@@ -691,7 +696,13 @@ function cloudSeaConclusion(ctx) {
   const sun = A.sunTimes(date, lat, lng, elevation)
   const listAll = detail.filter(h => (marks[h.t] || []).indexOf('cloudSea') !== -1)
   const list = civilClip(listAll, sun)
-  const item = { key: 'cloudSea', title: '云海', window: '', look: '站在此点向低处与远处看云顶', text: '' }
+  /* `at`：优先可行动窗口（裁剪后），没有窗口时退回事实层第一段云带——它仍是"这个结论
+     在说哪几个小时"。两者都没有才是空串。窗口文本本身不改（window 另有其字段）。 */
+  const atHour = list[0] || listAll[0]
+  const item = {
+    key: 'cloudSea', title: '云海', at: atHour ? date + 'T' + atHour.t : '',
+    window: '', look: '站在此点向低处与远处看云顶', text: '',
+  }
   if (!elevOK) {
     item.text = '此点缺少可信海拔（GPX 未记录高程），无法判断是否高过云层带。'
     /* 判不出 ≠ 不成立：没有海拔不能断言"这里看不到云海"，卡片必须留着说缺什么 */
@@ -801,7 +812,10 @@ function starConclusion(ctx) {
   const sun = A.sunTimes(date, lat, lng, elevation)
   const night = ctx.night || nightHoursForDate(ctx, sun)
   const moon = A.moonInfo(date)
-  const item = { key: 'star', title: '星空', window: '', look: '关掉手电、避开城镇光害，找开阔北向视野', text: '' }
+  /* `at`：夜段第一个小时（有 series 时是今晚入夜那一小时；无 series 时退回自然日
+     口径的首个小时，可能是前夜尾段的 00:00）。没有夜段 ⇒ ''。 */
+  const at = night.length ? (night[0].d || date) + 'T' + night[0].t : ''
+  const item = { key: 'star', title: '星空', at, window: '', look: '关掉手电、避开城镇光害，找开阔北向视野', text: '' }
   if (!night.length) {
     item.text = '天文暗夜时段数据不足（今日极昼/极夜或无数据）。'
     /* 没有暗夜时段的读数 ⇒ 没判过，不能断言"看不到星空" */
@@ -885,7 +899,9 @@ function galaxyConclusion(ctx) {
   const sun = A.sunTimes(date, lat, lng, elevation)
   const night = ctx.night || nightHoursForDate(ctx, sun)
   const moon = A.moonInfo(date)
-  const item = { key: 'galaxy', title: '银河', window: '', look: '', text: '' }
+  /* `at` 默认同星空（夜段第一小时）；算出 best 后覆盖成 best 的真实小时（可能是次日）——
+     这样证据锚点与「朝××找银心带」落在同一小时，而不是傍晚 dusk。 */
+  const item = { key: 'galaxy', title: '银河', at: night.length ? (night[0].d || date) + 'T' + night[0].t : '', window: '', look: '', text: '' }
   if (!night.length) {
     item.text = '天文暗夜时段数据不足。'
     return Object.assign(item, grade(0), { verdict: VERDICT.UNKNOWN })
@@ -998,6 +1014,7 @@ function galaxyConclusion(ctx) {
   score = cap69(score, lpMissing || lpPoor || moonEffective >= 35)
   const g = grade(score)
   const maxAlt = Math.max.apply(null, visible.map(r => r.gp.altitude))
+  item.at = (best.h.d || date) + 'T' + best.h.t
   item.window = best.h.t + ' 前后' + (best.h.d && best.h.d !== date ? '（次日）' : '')
   const ridgeNote = best.terrain && best.terrain.angle > 0
     ? '（此方位山脊约 ' + Math.round(best.terrain.angle) + '°）'
@@ -1024,7 +1041,11 @@ function rainbowConclusion(ctx) {
   const { date, lat, lng, elevation, detail, spatial } = ctx
   const marks = hourMarks(ctx)
   const list = detail.filter(h => (marks[h.t] || []).indexOf('rainbow') !== -1)
-  const item = { key: 'rainbow', title: '彩虹', window: '', look: '', text: '' }
+  /* `at`：第一个出现彩虹条件的钟点；没有就是空串（封面那句"读数不足"不借它造事实）。 */
+  const item = {
+    key: 'rainbow', title: '彩虹', at: list.length ? date + 'T' + list[0].t : '',
+    window: '', look: '', text: '',
+  }
   const cover = dataCoverage(detail)
   if (!cover.enough) {
     item.text = '全天云量/降水读数不足（' + cover.valid + '/' + cover.total + ' 小时），无法判断彩虹条件。'
@@ -1103,6 +1124,8 @@ function lightConclusion(ctx) {
     label: '客观时刻',
     /* 客观时刻不是"概率判断"，永远不因天气被沉默（页面本来也不渲染这张卡） */
     verdict: VERDICT.POSSIBLE,
+    /* 客观时刻：日出钟点就是这张卡的"真实小时"，没有日出时留空串（失败关闭）。 */
+    at: sun.sunrise ? date + 'T' + sun.sunrise : '',
     window: '',
     look: '',
     text: '日出 ' + (sun.sunrise || '--') + ' · 日落 ' + (sun.sunset || '--')

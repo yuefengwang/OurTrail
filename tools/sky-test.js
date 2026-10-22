@@ -1024,5 +1024,136 @@ section('22. 云海主卡：民用晨昏裁剪 + 云带分层（2026-10-21 F3）
     S.civilClip([{ t: '19:00' }, { t: '20:00' }, { t: '21:00' }, { t: '22:00' }], sun2k).map(h => h.t).join(','))
 }
 
+section('23. 结论项的 at 锚点（F4 阶段一）')
+{
+  /* 计划 §5.2：结论项新增附加字段 `at`（它真正在说的那个小时），`factsFor` 的
+     star/galaxy 证据锚点据此落在跨夜后的次日；非跨夜输出必须逐字节不变。
+     本节的跨夜夹具刻意让银河 best 落在次日 01:00（不是夜段第一小时，也不是 dusk），
+     这样「用 night[0] 冒充 best」「无条件改锚点」两种错法都会被抓到。 */
+  const C = require('../miniprogram/utils/conditions')
+  const FULL_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
+
+  // 跨夜夹具：所选日 2026-07-15（银心季 + 新月），series 覆盖到次日
+  const d1 = day({ '*': { low: 0, mid: 0, high: 0 } }).map(h => Object.assign({}, h, { d: '2026-07-15' }))
+  const d2 = day({ '*': { low: 0, mid: 0, high: 0 } }).map(h => Object.assign({}, h, { d: '2026-07-16' }))
+  d1[22].cloud = { low: 20, mid: 20, high: 20 }
+  d1[23].cloud = { low: 20, mid: 20, high: 20 }
+  d2[0].cloud = { low: 10, mid: 10, high: 10 } // 00:00 略多云 ⇒ best 不会停在它身上
+  const series = d1.concat(d2)
+  const res = S.summarize(ctx(d1, {
+    date: '2026-07-15', series, lightPollution: { bortle: 2, sqm: 21.8 },
+  }))
+  const star = byKey(res, 'star')
+  const galaxy = byKey(res, 'galaxy')
+  const light = byKey(res, 'light')
+
+  // ① 六项都有 at（string；空串或完整日期时刻）
+  check('六项结论都有 at 字段且为 string', res.items.length === 6
+    && res.items.every(it => typeof it.at === 'string'), res.items.map(it => it.key + ':' + typeof it.at).join(','))
+  check('at 要么是空串、要么是完整 YYYY-MM-DDTHH:mm（没有半截日期）',
+    res.items.every(it => it.at === '' || FULL_RE.test(it.at)), res.items.map(it => it.at).join(' | '))
+  check('light.at = 日出钟点（' + light.at + '）', light.at === '2026-07-15T' + res.sun.sunrise, light.at)
+  check('star.at = 夜段第一个小时（所选日 22:00）', star.at === '2026-07-15T22:00', star.at)
+  check('galaxy.at = best 小时（次日 01:00，不是夜段第一个小时）',
+    galaxy.at === '2026-07-16T01:00' && star.at !== galaxy.at, galaxy.at)
+  check('galaxy.at 的日期确实是次日', galaxy.at.slice(0, 10) === '2026-07-16', galaxy.at)
+  check('窗口文本未被 at 替代（仍是「01:00 前后（次日）」）',
+    galaxy.window === '01:00 前后（次日）', galaxy.window)
+
+  // ② 其余三项：有可行动窗口时 at 指向第一个小时
+  const wet = day({ 7: { low: 30, mid: 20, high: 10, precip: 0.4, rh: 92 }, '*': {} })
+  const wetRes = S.summarize(ctx(wet))
+  const rb = byKey(wetRes, 'rainbow')
+  check('rainbow.at = 第一个彩虹小时（07:00）', rb.at === DATE + 'T07:00', rb.at)
+  const alpDay = day({ '*': { low: 10, mid: 50, high: 40 } })
+  const alp = byKey(S.summarize(ctx(alpDay)), 'alpenglow')
+  check('alpenglow.at = 第一个光染小时（06:00）', alp.at === DATE + 'T06:00', alp.at)
+  const bandLow = { base: 1000, top: 1600, cover: 95 }
+  const seaDay = day({ '*': { high: 10, wind: 6 }, 6: { band: bandLow }, 7: { band: bandLow } })
+  const sea = byKey(S.summarize(ctx(seaDay, { elevation: 2000 })), 'cloudSea')
+  check('cloudSea.at = 裁剪后可行动窗口的第一小时（06:00）', sea.at === DATE + 'T06:00', sea.at)
+
+  // ③ 非跨夜：只给 detail、没有 series ⇒ at 都是同日（阳性对照的输入）
+  const flat = day({ '*': { low: 0, mid: 0, high: 0 } })
+  const flatRes = S.summarize(ctx(flat))
+  const fStar = byKey(flatRes, 'star')
+  const fGal = byKey(flatRes, 'galaxy')
+  check('无 series 时 star/galaxy 的 at 都是同日（不是次日）',
+    fStar.at.slice(0, 10) === DATE && fGal.at.slice(0, 10) === DATE, fStar.at + ' / ' + fGal.at)
+  const polar = S.summarize(ctx(day(), { date: '2026-07-15', lat: 78, lng: 15, elevation: 100 }))
+  check('极昼/无暗夜小时 ⇒ star/galaxy.at 为空串（没有可用小时就不编日期）',
+    byKey(polar, 'star').at === '' && byKey(polar, 'galaxy').at === '',
+    byKey(polar, 'star').at + ' / ' + byKey(polar, 'galaxy').at)
+
+  const fctx = {
+    date: DATE, detail: flat, days: [], elevation: 1200,
+    sun: flatRes.sun, moon: flatRes.moon, night: flatRes.night,
+  }
+  check('非跨夜 + 传 item：star 证据逐字节相同（阳性对照）',
+    JSON.stringify(C.factsFor('star', Object.assign({}, fctx, { item: fStar })))
+      === JSON.stringify(C.factsFor('star', fctx)))
+  check('非跨夜 + 传 item：galaxy 证据逐字节相同（阳性对照）',
+    JSON.stringify(C.factsFor('galaxy', Object.assign({}, fctx, { item: fGal })))
+      === JSON.stringify(C.factsFor('galaxy', fctx)))
+
+  // ④ 跨夜：只有 at 换成完整日期，fact/kind/顺序/条数逐字节相同
+  const xctx = {
+    date: '2026-07-15', detail: d1, days: [], elevation: 1200,
+    sun: res.sun, moon: res.moon, night: res.night,
+  }
+  const baseGal = C.factsFor('galaxy', xctx)
+  const itemGal = C.factsFor('galaxy', Object.assign({}, xctx, { item: galaxy }))
+  const duskMin = S.hourMin(res.sun.astroDusk)
+  const legacyAnchor = (d1.find(h => duskMin >= S.hourMin(h.t) && duskMin < S.hourMin(h.t) + 60) || d1[0]).t
+  check('跨夜 + 不传 item：仍是旧的 dusk 锚点（HH:mm，不是无条件改）',
+    baseGal.length > 0 && baseGal.every(f => f.at === legacyAnchor) && /^\d{2}:\d{2}$/.test(legacyAnchor),
+    baseGal.map(f => f.at).join(',') + ' anchor=' + legacyAnchor)
+  check('跨夜 + 传 item：证据条数相同', itemGal.length === baseGal.length,
+    baseGal.length + ' vs ' + itemGal.length)
+  check('跨夜 + 传 item：fact / kind / 顺序逐字节相同，只有 at 变完整日期',
+    itemGal.every((f, i) => f.fact === baseGal[i].fact && f.kind === baseGal[i].kind)
+      && itemGal.every(f => f.at === galaxy.at), JSON.stringify(itemGal))
+  const itemStar = C.factsFor('star', Object.assign({}, xctx, { item: star }))
+  check('跨夜夜段里 star.at 不是次日 ⇒ star 证据保持 HH:mm（逐字节相同）',
+    JSON.stringify(itemStar) === JSON.stringify(C.factsFor('star', xctx)))
+  /* star 自己的 at 取夜段第一小时（通常同日晚间），所以它不会自然走到跨夜分支；
+     但 factsFor 的接管是**按数据**判的，不是按 key 判的。直接喂一个次日 at 证明
+     star 与 galaxy 共用同一条判据，避免「只给 galaxy 写了分支」这种假实现。 */
+  const starCross = C.factsFor('star', Object.assign({}, xctx, { item: { at: '2026-07-16T01:00' } }))
+  check('star 分支同样按跨夜 at 接管（数据驱动，不依赖 at 恰好由 star 产生）',
+    starCross.length === C.factsFor('star', xctx).length
+    && starCross.every(f => f.at === '2026-07-16T01:00'), JSON.stringify(starCross))
+  check('item.at 缺失/格式不对（半截日期、纯 HH:mm）⇒ 一律回落到旧输出',
+    JSON.stringify(C.factsFor('galaxy', Object.assign({}, xctx, { item: { at: '2026-07-16' } })))
+      === JSON.stringify(baseGal)
+    && JSON.stringify(C.factsFor('galaxy', Object.assign({}, xctx, { item: { at: '01:00' } })))
+      === JSON.stringify(baseGal))
+  /* 调用方没给 ctx.night（旧调用形态）时不许凭 detail 自己推"跨夜"：没有页面给的夜段，
+     就没有"次日"这个概念，锚点必须留在旧口径（失败关闭）。 */
+  const noNight = Object.assign({}, xctx)
+  delete noNight.night
+  check('跨夜 item 但缺 ctx.night ⇒ 不猜日期，证据与旧输出逐字节相同',
+    JSON.stringify(C.factsFor('galaxy', Object.assign({}, noNight, { item: galaxy })))
+      === JSON.stringify(C.factsFor('galaxy', noNight)))
+  /* 连所选日都没有时，任何完整日期都无法判断"是不是次日"——失败关闭到旧锚点，
+     不能把 date='' 当成"一定跨夜"（那会让证据行凭空带上一个日期）。 */
+  const noDate = Object.assign({}, xctx, { date: '' })
+  check('ctx.date 缺失 ⇒ 不判跨夜（失败关闭到旧输出）',
+    JSON.stringify(C.factsFor('galaxy', Object.assign({}, noDate, { item: galaxy })))
+      === JSON.stringify(C.factsFor('galaxy', noDate)))
+
+  /* ⑤ atmosphereAt 的时间参数必须是 anchorFull：本夹具刻意给两天不同的气溶胶，
+     旧口径（date + 'T' + dusk 小时）会读到本日 22:00 的 0.9，新口径读次日 01:00 的 0.1。
+     这条是**故意的读数修正**（设计要求的同一条），不与上面的「fact 逐字节相同」冲突——
+     上面那条的上下文没有 atmosphere 数据。 */
+  const atm = {
+    air: { series: [{ at: '2026-07-15T22:00', aod: 0.9 }, { at: '2026-07-16T01:00', aod: 0.1 }] },
+  }
+  const atmFacts = C.factsFor('galaxy', Object.assign({}, xctx, { atmosphere: atm, item: galaxy }))
+  const aod = atmFacts.filter(f => /CAMS 气溶胶/.test(f.fact))[0]
+  check('跨夜证据读的是 anchorFull 那一格的气溶胶（次日 0.1，不是本日 0.9）',
+    !!aod && /AOD 0\.1$/.test(aod.fact) && aod.at === galaxy.at, JSON.stringify(atmFacts))
+}
+
 console.log('\npassed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)
