@@ -654,6 +654,242 @@ section('18. 方向性天气（spatial）：银河看银心方向、彩虹看反
     /反日方向未检出降水/.test(dry.text), dry.text)
   check('反日方向有降水 ⇒ 彩虹分数更高并说清（' + wet.score + ' vs ' + dry.score + '）',
     wet.score > dry.score && /反日方向有降水信号/.test(wet.text), wet.text)
+
+  /* ---- F7：反日方向明确有读数、却没有湿小时 ⇒ 封 44（「条件较差」），与「条件不足」措辞一致。
+     封顶必须发生在全部加分之后（含 list.length>=3 的 +10）；有湿小时完全不动。 ---- */
+  check('dry1h：反日无雨封顶 44（' + dry.score + ' / ' + dry.label + '）', dry.score === 44)
+  check('dry1h：星级与「条件不足」一致（' + dry.tone + ' / ' + dry.label + '）',
+    dry.tone === 'neutral' && dry.label === '条件较差' && /条件不足/.test(dry.text), dry.text)
+  check('wet1h：有湿不封顶（' + wet.score + '）',
+    wet.score === 80 && wet.score > 44 && /有降水信号/.test(wet.text), wet.text)
+
+  const rainy3 = day({ '*': { low: 0, mid: 0, high: 0, precip: 0, rh: 70 } })
+  ;[7, 8, 9].forEach(i => { rainy3[i].precip = 0.2; rainy3[i].rh = 90 })
+  const dry3 = byKey(S.summarize(ctx(rainy3, {
+    date: '2026-07-15', spatial: makeSpatial({ precip: 0, pop: 0 }),
+  })), 'rainbow')
+  const wet3 = byKey(S.summarize(ctx(rainy3, {
+    date: '2026-07-15', spatial: makeSpatial({ precip: 0.5, pop: 80 }),
+  })), 'rainbow')
+  check('dry3h：封顶发生在 list.length 加分之后（' + dry3.score + '，未封顶应为 60）',
+    dry3.score === 44)
+  check('dry3h：文案仍写「条件不足」（封了分不能改口；' + dry3.label + '）',
+    /条件不足/.test(dry3.text), dry3.text)
+  check('wet3h：三小时湿 ⇒ 100，不受封顶影响（' + wet3.score + '）',
+    wet3.score === 100 && wet3.score > 44, wet3.text)
+
+  const terrainAll = (angle, distance, elevation) => {
+    const horizon = []
+    for (let a = 0; a < 360; a += 22.5) horizon.push({ azimuth: a, angle, distance, elevation })
+    return { horizon, openness: angle < 1 ? 1 : 0 }
+  }
+  const terrainDry = byKey(S.summarize(ctx(rainy, {
+    date: '2026-07-15', terrain: terrainAll(10, 10, 3000), spatial: makeSpatial({ precip: 0, pop: 0 }),
+  })), 'rainbow')
+  check('terrainBlockedDry：cap 只封不抬，35 不会被抬到 44（' + terrainDry.score + '）',
+    terrainDry.score === 35, terrainDry.score + ' / ' + terrainDry.label)
+
+  check('cap44 直接单元：50/true→44、50/false→50、30/true→30、44/true→44、43/true→43、45/true→44',
+    S.cap44(50, true) === 44 && S.cap44(50, false) === 50 &&
+      S.cap44(30, true) === 30 && S.cap44(44, true) === 44 &&
+      S.cap44(43, true) === 43 && S.cap44(45, true) === 44)
+}
+
+section('18b. 彩虹太阳下限（F7：视地平线 = 蒙气差 + 海拔俯角，与 astro.sunTimes 同源）')
+{
+  check('astro.SUN_HORIZON 已导出且为数值（' + A.SUN_HORIZON + '）',
+    typeof A.SUN_HORIZON === 'number' && A.SUN_HORIZON === -0.833)
+  check('astro.horizonDip 已导出：海平面 0°、1200 m 约 1.112°（' + A.horizonDip(1200).toFixed(3) + '°）',
+    typeof A.horizonDip === 'function' && A.horizonDip(0) === 0 && Math.abs(A.horizonDip(1200) - 1.112) < 0.01)
+
+  /* 2026-01-15 日出 07:56：08:00 的太阳几何中心约 -1.11°。
+     - 海平面视地平线 = -0.833 - 0 = -0.833° ⇒ -1.11 在它下面，不是彩虹小时；
+     - 1200 m 视地平线 = -0.833 - 1.112 = -1.945° ⇒ -1.11 在它上面，彩虹小时保留。
+     同一份逐时数据只改 elevation，就能把「俯角」这一项单独分离出来。 */
+  const seaFloor = A.SUN_HORIZON - A.horizonDip(0)
+  const highFloor = A.SUN_HORIZON - A.horizonDip(1200)
+  const alt0800 = A.solarPosition(A.cnToMs('2026-01-15', '08:00'), LAT, LNG).altitude
+  const alt1200 = A.solarPosition(A.cnToMs('2026-01-15', '12:00'), LAT, LNG).altitude
+
+  /* ---- 第一组：海平面 ---- */
+  check('海平面夹具有效性：08:00 高度落在 (-2, 视地平线]（' + alt0800.toFixed(2) + '）',
+    alt0800 > -2 && alt0800 <= seaFloor)
+  check('海平面夹具有效性：12:00 高度 > 视地平线且 < 40（' + alt1200.toFixed(2) + '）',
+    alt1200 > seaFloor && alt1200 < 40)
+
+  const morning = day({ '*': { low: 0, mid: 0, high: 0, precip: 0, rh: 70 } })
+  morning[8].precip = 0.2
+  morning[8].rh = 90
+  morning[12].precip = 0.2
+  morning[12].rh = 90
+  const seaRes = S.summarize(ctx(morning, { date: '2026-01-15', elevation: 0 }))
+  const seaRb = byKey(seaRes, 'rainbow')
+  const seaMarks = marksOf(seaRes, 'rainbow')
+  check('海平面 08:00（' + alt0800.toFixed(2) + '°）低于视地平线（' + seaFloor.toFixed(3) + '°）⇒ 无彩虹标记（' + seaMarks.join(',') + '）',
+    seaMarks.indexOf('08:00') === -1)
+  check('海平面 12:00 仍有彩虹标记', seaMarks.indexOf('12:00') !== -1)
+  check('海平面 rainbow.at 落在 12:00（' + seaRb.at + '）', seaRb.at === '2026-01-15T12:00')
+  check('海平面 rainbow 仍判 possible', seaRb.verdict === 'possible', seaRb.text)
+  check('海平面 rainbow.score = 60（40 + 湿 1h 20，35.3° 无低太阳加分；' + seaRb.score + '）',
+    seaRb.score === 60, seaRb.text)
+
+  /* ---- 第二组：1200 m 正对照（高海拔不误删 —— M10/M11 的牙齿）---- */
+  check('1200 m 夹具有效性：08:00 高度 > 视地平线且 < 12（' + alt0800.toFixed(2) + ' > ' + highFloor.toFixed(3) + '）',
+    alt0800 > highFloor && alt0800 < 12)
+  const highRes = S.summarize(ctx(morning, { date: '2026-01-15', elevation: 1200 }))
+  const highRb = byKey(highRes, 'rainbow')
+  const highMarks = marksOf(highRes, 'rainbow')
+  check('1200 m 正对照：08:00 仍有彩虹标记（' + highMarks.join(',') + '）', highMarks.indexOf('08:00') !== -1)
+  check('1200 m 正对照：12:00 仍有彩虹标记', highMarks.indexOf('12:00') !== -1)
+  check('1200 m 正对照：rainbow.at 落在 08:00（' + highRb.at + '）', highRb.at === '2026-01-15T08:00')
+  check('1200 m 正对照：rainbow 判 possible', highRb.verdict === 'possible', highRb.text)
+  check('1200 m 正对照：rainbow.score = 90（40 + 湿 2h 30 + 低太阳 20；' + highRb.score + '）',
+    highRb.score === 90, highRb.text)
+  check('同一份数据只改 elevation ⇒ 08:00 从无到有（差异只能来自俯角）',
+    seaMarks.indexOf('08:00') === -1 && highMarks.indexOf('08:00') !== -1)
+
+  /* 黄昏正对照：防止把下限改得过严（例如 > 0）。2026-12-15 18:00 太阳恰为 0°，
+     仍在视地平线之上 ⇒ 必须保留标记与低太阳 +20（40+20+20=80）。 */
+  const dusk = day({ '*': { low: 0, mid: 0, high: 0, precip: 0, rh: 70 } })
+  dusk[18].precip = 0.2
+  dusk[18].rh = 90
+  const alt1800 = A.solarPosition(A.cnToMs('2026-12-15', '18:00'), LAT, LNG).altitude
+  check('夹具有效性：18:00 高度 > 视地平线且 < 12（' + alt1800.toFixed(2) + '）',
+    alt1800 > A.SUN_HORIZON - A.horizonDip(1200) && alt1800 < 12)
+  const dRes = S.summarize(ctx(dusk, { date: '2026-12-15' }))
+  const dRb = byKey(dRes, 'rainbow')
+  const dMarks = marksOf(dRes, 'rainbow')
+  check('黄昏 18:00 仍有彩虹标记（' + dMarks.join(',') + '）', dMarks.indexOf('18:00') !== -1)
+  check('黄昏正对照：rainbow.score = 80（' + dRb.score + '）', dRb.score === 80, dRb.text)
+  check('黄昏正对照：rainbow 判 possible', dRb.verdict === 'possible', dRb.text)
+}
+
+section('18c. 彩虹封顶与方向读数的边界（C6 收口）')
+{
+  /* 方向性 spatial 的最小形态：只给需要被读的字段（precip / pop 可缺）。
+     2026-07-15 的彩虹小时覆盖 07:00（太阳 8.98°）与 08:00（21.24°）。 */
+  const times0715 = []
+  for (let h = 0; h < 24; h++) times0715.push('2026-07-15T' + String(h).padStart(2, '0') + ':00')
+  const spatialAt = (times, vals) => ({
+    times,
+    hours: times.map(t => t.slice(11, 16)),
+    byAzimuth: [0, 45, 90, 135, 180, 225, 270, 315].map(az => {
+      const row = {
+        azimuth: az,
+        low: times.map(() => 0),
+        mid: times.map(() => 0),
+        high: times.map(() => 0),
+      }
+      if (vals.precip !== undefined) row.precip = times.map(() => vals.precip)
+      if (vals.pop !== undefined) row.pop = times.map(() => vals.pop)
+      return row
+    }),
+  })
+
+  /* ---- 1）非方向性高湿、无降水：不得被封 44。
+     wetHours 的非方向性分支只数 precip/showers（0），`directional &&` 守卫必须让它保持 60。
+     删掉守卫 ⇒ 60 被封成 44「条件较差」，本组立刻红。 ---- */
+  const humid = day({ '*': { rh: 70 } })
+  humid[7].rh = 90
+  const humidRes = S.summarize(ctx(humid, { date: '2026-07-15' }))
+  const humidRb = byKey(humidRes, 'rainbow')
+  check('非方向性高湿：rainbow 标记只在 07:00（' + marksOf(humidRes, 'rainbow').join(',') + '）',
+    marksOf(humidRes, 'rainbow').join(',') === '07:00')
+  check('非方向性高湿：rainbow.score = 60（40 + 低太阳 20，不被封 44；' + humidRb.score + '）',
+    humidRb.score === 60, humidRb.text)
+  check('非方向性高湿：分档仍是「条件一般」(warning)（' + humidRb.tone + ' / ' + humidRb.label + '）',
+    humidRb.tone === 'warning' && humidRb.label === '条件一般', humidRb.text)
+  check('非方向性高湿：文案走单点口径（有降水或高湿 + 可能性存在）',
+    /有降水或高湿/.test(humidRb.text) && /可能性存在/.test(humidRb.text), humidRb.text)
+  check('非方向性高湿：verdict = possible', humidRb.verdict === 'possible', humidRb.verdict)
+
+  /* ---- 2）高海拔 3004 m 的视地平线（紧边界）。
+     2026-02-16 19:00 太阳约 -2.53°，视地平线 -2.592°：只差 0.06°，仍在上面。
+     把 dip 钳到 1.5 ⇒ 视地平线 -2.333°，19:00 被误删 ⇒ 本组三项全红。 ---- */
+  const highAlt = day({ '*': { rh: 70 } })
+  highAlt[19].precip = 0.2
+  highAlt[19].rh = 90
+  const alt1900 = A.solarPosition(A.cnToMs('2026-02-16', '19:00'), LAT, LNG).altitude
+  const floor3004 = A.SUN_HORIZON - A.horizonDip(3004)
+  check('3004 m 夹具有效性：19:00 高度 > 视地平线（' + alt1900.toFixed(2) + ' > ' + floor3004.toFixed(3) + '）',
+    alt1900 > floor3004)
+  check('3004 m 夹具有效性：高度距视地平线 < 0.2°（紧边界；' + (alt1900 - floor3004).toFixed(3) + '）',
+    alt1900 - floor3004 < 0.2)
+  const highAltRes = S.summarize(ctx(highAlt, { date: '2026-02-16', elevation: 3004 }))
+  const highAltRb = byKey(highAltRes, 'rainbow')
+  check('3004 m：19:00 仍有彩虹标记（' + marksOf(highAltRes, 'rainbow').join(',') + '）',
+    marksOf(highAltRes, 'rainbow').indexOf('19:00') !== -1)
+  check('3004 m：rainbow.score = 80（40 + 低太阳 20 + wetHours 1×20；' + highAltRb.score + '）',
+    highAltRb.score === 80, highAltRb.text)
+  check('3004 m：rainbow.at = 2026-02-16T19:00（' + highAltRb.at + '）',
+    highAltRb.at === '2026-02-16T19:00')
+  check('3004 m：rainbow 判 possible', highAltRb.verdict === 'possible', highAltRb.text)
+
+  /* ---- 3）方向性读数的混合覆盖：some ≠ every。
+     spatial 只覆盖 07:00；08:00 也满足彩虹小时但没有方向读数。
+     `some` ⇒ directional=true、wetHours=0（07:00 的反日 precip/pop 都是 0）⇒ 封 44。
+     改成 `every` ⇒ directional=false ⇒ 退回单点口径（两个湿小时）⇒ 90 分 + 另一套文案。 ---- */
+  const mixed = day({ '*': { rh: 70 } })
+  ;[7, 8].forEach(i => { mixed[i].precip = 0.2; mixed[i].rh = 90 })
+  const mixedRes = S.summarize(ctx(mixed, {
+    date: '2026-07-15', spatial: spatialAt(['2026-07-15T07:00'], { precip: 0, pop: 0 }),
+  }))
+  const mixedRb = byKey(mixedRes, 'rainbow')
+  check('混合覆盖：两个彩虹小时都在（' + marksOf(mixedRes, 'rainbow').join(',') + '）',
+    marksOf(mixedRes, 'rainbow').join(',') === '07:00,08:00')
+  check('混合覆盖：directional=true 且 wetHours=0 ⇒ score 44（' + mixedRb.score + '）',
+    mixedRb.score === 44, mixedRb.text)
+  check('混合覆盖：走方向性文案「反日方向未检出降水」，不是单点口径',
+    /反日方向未检出降水/.test(mixedRb.text) && !/有降水或高湿/.test(mixedRb.text), mixedRb.text)
+  check('混合覆盖：verdict = possible', mixedRb.verdict === 'possible', mixedRb.verdict)
+  /* 部分覆盖 ≠ 未检出：08:00 没有方向读数，文案必须把「未知」披露出来，
+     否则「反日方向未检出降水」就是把缺测印成了否定事实（铁律 26② / 33②）。 */
+  check('混合覆盖：缺测必须披露「部分时段无方向读数」（部分覆盖 ≠ 未检出）',
+    /部分时段无方向读数/.test(mixedRb.text), mixedRb.text)
+  /* 披露只加话、不改判断：封顶触发条件仍是 directional && wetHours === 0，分数/档位一个数都不动。 */
+  check('混合覆盖：披露不改变判断（仍 44 分、仍写「反日方向未检出降水」）',
+    mixedRb.score === 44 && /反日方向未检出降水/.test(mixedRb.text), mixedRb.score + ' / ' + mixedRb.text)
+  /* 两条 directional 分支都要披露：07:00 有方向读数（有雨）、08:00 未知 ⇒ 80 分 + 「有降水信号」。
+     缺了这条，wetText 的前半支漏加披露不会被任何用例发现（只测 dry 分支等于只测一半）。 */
+  const mixedWet = day({ '*': { rh: 70 } })
+  ;[7, 8].forEach(i => { mixedWet[i].precip = 0.2; mixedWet[i].rh = 90 })
+  const mixedWetRb = byKey(S.summarize(ctx(mixedWet, {
+    date: '2026-07-15', spatial: spatialAt(['2026-07-15T07:00'], { precip: 0.5, pop: 80 }),
+  })), 'rainbow')
+  check('混合覆盖（有湿分支）：wetHours=1 ⇒ 80 分，且同样披露「部分时段无方向读数」（' + mixedWetRb.score + '）',
+    mixedWetRb.score === 80 && /反日方向有降水信号/.test(mixedWetRb.text)
+      && /部分时段无方向读数/.test(mixedWetRb.text), mixedWetRb.text)
+
+  /* ---- 4）湿小时的两条臂：precip 与 pop 各自成立，也各自可缺。
+     precip-only：pop 字段整体缺失；方向性判定必须仍为 true（`||`，不是 `&&`），
+                  wetHours 认 0.5 mm/h 的降水（> 0.05）⇒ 80。
+     pop-only：precip 全 0、pop 80 ⇒ 湿小时成立（>= 50）⇒ 80。 ---- */
+  const precipDay = day({ '*': { rh: 70 } })
+  precipDay[7].precip = 0.2
+  precipDay[7].rh = 90
+  const precipRes = S.summarize(ctx(precipDay, {
+    date: '2026-07-15', spatial: spatialAt(times0715, { precip: 0.5 }),
+  }))
+  const precipRb = byKey(precipRes, 'rainbow')
+  check('precip-only：directional=true 且 wetHours=1 ⇒ score 80（' + precipRb.score + '）',
+    precipRb.score === 80, precipRb.text)
+  check('precip-only：文案「反日方向有降水信号」', /反日方向有降水信号/.test(precipRb.text), precipRb.text)
+  check('precip-only：verdict = possible', precipRb.verdict === 'possible', precipRb.verdict)
+  /* dirPartial 的阴性对照：spatial 覆盖全部彩虹小时 ⇒ 不得无条件追加「部分时段无方向读数」。
+     没有这条，「永远追加」也能让上面的混合覆盖断言全绿（铁律 33⑥ 的阳性/阴性对照同源教训）。 */
+  check('全覆盖（precip-only）：不追加「部分时段无方向读数」（dirPartial=false）',
+    /部分时段无方向读数/.test(precipRb.text) === false, precipRb.text)
+
+  const popDay = day({ '*': { rh: 70 } })
+  popDay[7].precip = 0.2
+  popDay[7].rh = 90
+  const popRes = S.summarize(ctx(popDay, {
+    date: '2026-07-15', spatial: spatialAt(times0715, { precip: 0, pop: 80 }),
+  }))
+  const popRb = byKey(popRes, 'rainbow')
+  check('pop-only：wetHours=1 ⇒ score 80（' + popRb.score + '）', popRb.score === 80, popRb.text)
+  check('pop-only：文案「反日方向有降水信号」', /反日方向有降水信号/.test(popRb.text), popRb.text)
+  check('pop-only：verdict = possible', popRb.verdict === 'possible', popRb.verdict)
 }
 
 section('19. 地形地平线（terrain）：银河遮挡、彩虹反日方向、光染目标山脊')

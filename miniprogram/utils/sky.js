@@ -111,6 +111,15 @@ function cap69(score, cond) {
   return cond && score > top ? top : score
 }
 
+/* 「条件较差」的上界（= GRADES 里「条件一般」的下界减 1）。
+   彩虹在「反日方向明确有读数、却没有任何湿小时」时文案写「条件不足」，
+   星级就不能再挂「条件一般」：上限读 GRADES 而不是写字面量 44（铁律 31③）。
+   与 cap69 同模式：只封不抬，且只在条件成立时封。 */
+function cap44(score, cond) {
+  const top = GRADES[1].min - 1
+  return cond && score > top ? top : score
+}
+
 /* 「光到不到得了山体」的唯一口径：低云 < 40%。
    三处消费同一个数：逐小时光染判据、彩虹的"太阳照得出来"闸、时间轴摄影窗口的事实后缀。
    放进**导出的对象**而不是 const 字面量，是为了让影子测试改得动（铁律 31③）——
@@ -535,6 +544,19 @@ const ALPENGLOW_MIDHIGH_BONUS_MIN = 40
 function hourMarks(ctx) {
   const { date, lat, lng, elevation, elevOK, detail, cloudLevels, terrain } = ctx
   const sun = A.sunTimes(date, lat, lng, elevation)
+  /* 彩虹的太阳下限 = **视地平线**，与 sunTimes 算日出日落用的是同一个表达式：
+       A.SUN_HORIZON        -0.833°，**蒙气差**（太阳几何中心还在地平线下，
+                            但大气折射把它"抬"了上来，所以日出日落按这个高度角算）；
+       A.horizonDip(elev)   观察点海拔带来的**几何地平线俯角**（1200 m ≈ 1.112°，
+                            3004 m ≈ 1.759°，4058 m ≈ 2.044°）：站得越高，地平线越低，
+                            太阳几何中心在更负的高度角上就已经"看得见"。
+     所以这里不是"与日出日落同一个数"（那只在常量层成立），而是同一个**表达式**
+     `SUN_HORIZON - dip`：海平面仍是 -0.833°，3004 m 放宽到 -2.592°。
+     计划写的 -0.9° 是「几何位置 + 蒙气差」的近似值；按现有常量 + 真实俯角几何实现，
+     海平面比它保守约 0.067°，高海拔按几何放宽——不新造数字。
+     第一轮只用了 A.SUN_HORIZON（漏掉俯角），把峨眉山 3004 m 07:00（-1.770°）与
+     理塘 4058 m 19:00（-1.800°）两个实际看得见的彩虹标记误删了。 */
+  const rainbowHorizon = A.SUN_HORIZON - A.horizonDip(elevation)
   const win = A.photoWindows(date, lat, lng, elevation)
   const dawnMin = hourMin(sun.astroDawn)
   const duskMin = hourMin(sun.astroDusk)
@@ -566,6 +588,10 @@ function hourMarks(ctx) {
     if (win.duskBlue && hourTouches(m, hourMin(win.duskBlue.from), hourMin(win.duskBlue.to))) add(h, 'blueHour')
 
     // 彩虹：太阳高度 < 40 度（主虹在反日点 42 度半径）、**太阳照得出来**、且空气有水分。
+    // 太阳下限用**视地平线**（SUN_HORIZON 减去 horizonDip，见函数顶部那块注释）：
+    // 蒙气差 + 观察点海拔的几何俯角，与 sunTimes 的日出日落同源。旧界 -2° 是个近似：
+    // 海平面偏松（把 -1.11° 也算成"照得出来"）、高海拔偏紧（3004 m 的 -1.77° 反被排除）；
+    // 俯角是几何量，两头自动对齐。海平面比计划里的 -0.9° 保守约 0.067°。
     // 「有水分」这一支以前还包含 `c.low >= 70`——那是把"满天低云"当成水分信号，
     // 而低云恰恰是把太阳遮死的东西：实测全天 low/mid/high=100%、一滴雨没下，
     // 彩虹照样拿 40+30=70 分 = 「条件较好 ★★★★」。同一天光染判 0 分并明说云量不足，
@@ -576,7 +602,7 @@ function hourMarks(ctx) {
     const solar = A.solarPosition(A.cnToMs(date, h.t), lat, lng)
     const wet = c.precip > 0.05 || c.showers > 0.05 || (c.rh != null && c.rh >= 88)
     const sunVisible = lightReachesGround(c) && (c.mid + c.high) / 2 < 30
-    if (hasCloudData(h) && solar.altitude < 40 && solar.altitude > -2 && wet && sunVisible) add(h, 'rainbow')
+    if (hasCloudData(h) && solar.altitude < 40 && solar.altitude > rainbowHorizon && wet && sunVisible) add(h, 'rainbow')
 
     // 星空 / 银河：天文暗夜 + 观察点上方云少 + 无降水；银河另需银心真的在地平线上、月照不压
     const dark = Number.isFinite(dawnMin) && Number.isFinite(duskMin) && (m < dawnMin || m > duskMin)
@@ -591,7 +617,7 @@ function hourMarks(ctx) {
         if (gp.altitude > 0 && (!ridge || gp.altitude > ridge.angle + 1)) {
           const mp = A.moonPosition(ms, lat, lng)
           const sep = angularSeparation(gp, mp)
-          const moonUp = mp.altitude > -0.833
+          const moonUp = mp.altitude > A.SUN_HORIZON
           if (moonIll < 35 && (!moonUp || sep > 60)) add(h, 'galaxy')
         }
       }
@@ -1105,6 +1131,10 @@ function rainbowConclusion(ctx) {
     }
   })
   const directional = dirWet.some(x => x.precip != null || x.pop != null)
+  /* 部分覆盖不是「未检出」：spatial 只覆盖部分彩虹小时的时候，其余小时的反日方向是**未知**。
+     缺测只能披露（下面的 wetText 追加「部分时段无方向读数」），**不改变判断方向**——
+     cap44 的触发条件仍是 `directional && wetHours === 0`，分数一个数都不动。 */
+  const dirPartial = directional && dirWet.some(x => x.precip == null && x.pop == null)
   const wetHours = directional
     ? dirWet.filter(x => (x.precip != null && x.precip > 0.05) || (x.pop != null && x.pop >= 50)).length
     : list.filter(h => hourCloud(h).precip > 0.05 || hourCloud(h).showers > 0.05).length
@@ -1118,17 +1148,23 @@ function rainbowConclusion(ctx) {
   if (solar.altitude < 12) score += 20
   else if (solar.altitude < 25) score += 10
   if (list.length >= 3) score += 10
-  const g = grade(score)
+  /* 反日方向**明确有读数**、却没有任何湿小时 ⇒ 文案写「条件不足」，星级必须与措辞一致。
+     封顶放在全部加分之后（含 list.length>=3 的 +10），否则 3 小时以上的反日无雨
+     会从 60 分「条件一般」再爬回「条件较好」。有湿小时（wetHours > 0）完全不动。 */
+  const g = grade(cap44(score, directional && wetHours === 0))
   item.window = windowText(list)
   /* 方位角必须取整再印：`anti` 是 `norm360(solar.azimuth + 180)` 的原始浮点，
      以前直接拼进中文，真机上出现过「朝正西（约 284.15999999999997 度）看」。
      银河那句（galaxyConclusion）用的是 galaxyPosition 的方位角，并且自己也 Math.round——
      同一写法不等于同一个数，所以这里不能省。*/
   item.look = '背对太阳，朝' + A.bearingLabel(anti) + '（约 ' + Math.round(anti) + ' 度，反日点方向）看，主虹顶部仰角约 ' + top + ' 度'
+  /* 缺测披露只加在两条**方向性**分支末尾：非方向性（单点口径）本来就没有方向读数，
+     不存在"部分时段无方向读数"这回事，加一句只会让文案变长而不更准确（铁律 26/33）。 */
+  const partialDirText = dirPartial ? '（部分时段无方向读数）' : ''
   const wetText = directional
     ? (wetHours
-      ? '反日方向有降水信号（方向为模式粗判），彩虹出现的可能性存在'
-      : '反日方向未检出降水（方向为模式粗判），彩虹出现的条件不足')
+      ? '反日方向有降水信号（方向为模式粗判），彩虹出现的可能性存在' + partialDirText
+      : '反日方向未检出降水（方向为模式粗判），彩虹出现的条件不足' + partialDirText)
     : '有降水或高湿，彩虹出现的可能性存在'
   const terrainText = terrainBlocked
     ? '；反日方向地平线被山脊挡住（约 '
@@ -1190,7 +1226,7 @@ function summarize(ctx) {
 
 module.exports = {
   hourMin, num, mean, bearingBetween, inArc, inWindow, hourTouches, addDays,
-  grade, cap69, hourCloud, nightHours, nightHoursForDate, nightWindowText, cloudAboveAt, inversionAt,
+  grade, cap69, cap44, hourCloud, nightHours, nightHoursForDate, nightWindowText, cloudAboveAt, inversionAt,
   directionValue, terrainAt, atmosphereAt, atmosphereImpact, lightPollutionImpact,
   hourMarks, hourSegments, summarize, LIGHT_WINDOW_MIN,
   civilWindow, clipRange, civilClip,
