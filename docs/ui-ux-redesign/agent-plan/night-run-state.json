@@ -15,12 +15,12 @@
   ],
   "executionModel": "platform-assigned subagents（Agent 工具不暴露模型字段，无法指定 DeepSeek Flash；主控独立审 diff，未伪称 Flash）",
   "visualVerification": "PASSED 2026-10-22：4 张截图 VALID（before=truth@e818e63 / after=night@b385ae7），注入自证+bundle 新鲜度门全过，主控目视通过；中途 ENV-ABORT 已翻案为自建 cli.js 传路径未加单引号（bash 吃反斜杠⇒IDE 注册坏路径⇒模拟器编译错误⇒agent 死）；取证 evidence/visual-2026-10-22/README.md；会话已恢复主项目窗口",
-  "preExistingRed": "swx2-style-gates T5.1 = pages/activity/activity.wxss:90 .highlight-dot（AGENTS.md Gate recount 27 已登记；三轮复跑同一条）",
+  "preExistingRed": "swx2-style-gates T5.1 = pages/activity/activity.wxss:90 .highlight-dot（AGENTS.md Gate recount 27 已登记）—— T004 授权顺手修已清零（117-1 → 118-0）。新登记一条先于本轮存在的红：trip2-gates-test.js 66/10（A0×4/A1×4/A5×1/A0×1），根因是该套件 stubWx 未桩 wx.cloud 而 activity.js 的天气外呼走 wx.cloud.callFunction，renderView 抛错被 reload 的 catch 吃成 denied 级联；在 D:/OurTrail 主工作区与 night worktree 改动前均同款复现，tools/* 在 T004 禁止清单，未擅动",
   "tasks": {
     "T001": { "status": "passed", "commit": "d8400a7", "tests": "check0/handlers0/swx1 45-0/swx2 117-1存量/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0/b4-pad 32-0", "note": "首版 .metrics__* 被 G11 拦下（撞存量 .metrics）⇒ 删除改复用存量" },
     "T002": { "status": "passed", "commit": "bd24085", "tests": "check0/handlers0/a20 32-0/home-collab 25-0/b4-pad 32-0/swx1 45-0/swx2 117-1存量/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0/workspace 114-0/journey-graph 15-0" },
     "T003": { "status": "passed", "commit": "454ee7b", "tests": "check0/handlers0/scenario-discover 36-0/b4-pad 32-0/swx1 45-0/swx2 117-1存量/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0/journey-graph 15-0" },
-    "T004": { "status": "ready", "scope": "pages/activity 长图文展示层（门禁钉点清单齐；授权顺手修 swx2 存量红 activity.wxss:90）" },
+    "T004": { "status": "passed", "commit": "235ee19", "tests": "check0/handlers0/scenario-activity 159-0/trip2 66-10存量(与基线逐条同款)/style-semantics 92-0/a20 32-0/swx1 45-0/swx2 118-0(存量红已清)/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0", "note": "章节编号 secNo 纯展示派生（草稿相位不跳号，探针实测 published 01-10 / draft 01-08）；风光图组 gap/圆角；授权修 swx2 存量红 + 行内 700→600。差异未实现：拼板 B 行程时间轴无数据源；底部 CTA 保留 form-actions（固定底栏会压住同行人弹层主操作）。视觉 VERIFIED 2026-10-22（用户授权开发者工具，before=truth@e818e63/after=night@235ee19，10 锚点 scrollTop 逐项相同）；中途抓到真回归：gap 8→12 未同步列宽 calc 减数致 double 第二张被 wrap 挤下行（锚点整体 +152px），已修并把教训写进 wxss 注释；证据 evidence/visual-t004-2026-10-22/" },
     "T005": { "status": "blocked", "reason": "weather-hub/weather 冻结集；G-02/03/04 永久排除" },
     "T006": { "status": "ready", "scope": "signup 表单层级与状态视觉（trip2 钉点逐字）" },
     "T007": { "status": "ready", "scope": "editor 四步视觉（draft/发布门/GPX/.cluster 钉点）" },
@@ -31,8 +31,10 @@
     "T012": { "status": "blocked", "reason": "weather/weather-chart 冻结集" }
   },
   "commits": ["373da6b", "d8400a7", "bd24085", "454ee7b", "6dc466d", "b385ae7", "700a0ac"],
-  "nextExecutable": "T004",
+  "nextExecutable": "T006",
   "openDebts": [
+    "trip2-gates-test.js 存量红 66/10（stubWx 缺 wx.cloud 桩；tools/ 冻结未修，归因见 preExistingRed）",
+    "article-images 的 gap 与列宽 calc 减数是两本账（已注释登记同账要求；T008/T011 若调间距先看这条）",
     "home.js 与 discover.js 各一份 cardMetrics 同口径拷贝（utils 冻结所致，已注释登记）",
     "home/discover 页头同形类各一份（待 app.wxss 解冻上收）",
     "discover .filter-chip 命中高 34px < 44（M-07 清单未含 discover，未擅改）",
