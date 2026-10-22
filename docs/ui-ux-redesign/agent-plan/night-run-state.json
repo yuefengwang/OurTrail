@@ -20,10 +20,17 @@
     "T001": { "status": "passed", "commit": "d8400a7", "tests": "check0/handlers0/swx1 45-0/swx2 117-1存量/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0/b4-pad 32-0", "note": "首版 .metrics__* 被 G11 拦下（撞存量 .metrics）⇒ 删除改复用存量" },
     "T002": { "status": "passed", "commit": "bd24085", "tests": "check0/handlers0/a20 32-0/home-collab 25-0/b4-pad 32-0/swx1 45-0/swx2 117-1存量/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0/workspace 114-0/journey-graph 15-0" },
     "T003": { "status": "passed", "commit": "454ee7b", "tests": "check0/handlers0/scenario-discover 36-0/b4-pad 32-0/swx1 45-0/swx2 117-1存量/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0/journey-graph 15-0" },
-    "T004": { "status": "pending", "note": "活动详情长图文展示层，下一夜第一顺位" },
-    "T005": { "status": "blocked", "reason": "weather-hub 在主工作区 91 处未提交在途改动内（冻结集）" }
+    "T004": { "status": "ready", "scope": "pages/activity 长图文展示层（门禁钉点清单齐；授权顺手修 swx2 存量红 activity.wxss:90）" },
+    "T005": { "status": "blocked", "reason": "weather-hub/weather 冻结集；G-02/03/04 永久排除" },
+    "T006": { "status": "ready", "scope": "signup 表单层级与状态视觉（trip2 钉点逐字）" },
+    "T007": { "status": "ready", "scope": "editor 四步视觉（draft/发布门/GPX/.cluster 钉点）" },
+    "T008": { "status": "ready", "scope": "routes/route/route-edit（GPX time/ele 与底栏终值钉点）" },
+    "T009": { "status": "ready", "scope": "workspace 壳（三面板组件不动；written/sync-key 钉点）" },
+    "T010": { "status": "ready", "scope": "tasks/staff/vehicle（发车预检与薄壳钉点）" },
+    "T011": { "status": "ready", "scope": "notices/anotices/me（privacy 冻结排除；两页 wxml 同源）" },
+    "T012": { "status": "blocked", "reason": "weather/weather-chart 冻结集" }
   },
-  "commits": ["373da6b", "d8400a7", "bd24085", "454ee7b"],
+  "commits": ["373da6b", "d8400a7", "bd24085", "454ee7b", "6dc466d", "b385ae7", "700a0ac"],
   "nextExecutable": "T004",
   "openDebts": [
     "home.js 与 discover.js 各一份 cardMetrics 同口径拷贝（utils 冻结所致，已注释登记）",

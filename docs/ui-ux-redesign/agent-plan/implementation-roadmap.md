@@ -2,14 +2,23 @@
 
 依赖链：**T001 → T002 → T003**（共享样式串行）。T004/T005 及后续夜任务本夜只立任务书不实施。
 
-| ID | 名称 | 范围 | 依赖 | 本夜 | 准入判定 |
+| ID | 名称 | 范围 | 依赖 | 状态 | 准入判定 |
 |---|---|---|---|---|---|
-| T001 | N1 设计系统共用类 | app.wxss 追加 + design-system.md 登记 | — | ✅ 实施 | 设计资料齐/不改存量/可回滚（单文件追加） |
-| T002 | N2 首页 | home.wxml/wxss + activity-card | T001 | ✅ 实施 | home 不在冻结集；搜索/分段数据已有 |
-| T003 | N3 发现页 | discover.wxml/wxss | T001 | ✅ 实施 | discover 不在冻结集；筛选能力已有 |
-| T004 | N4 活动详情展示层 | activity.wxml/wxss + 长图文 12 段排版 | T001 | ⏸ 任务书 | 需 B 图逐段核对 ContentBlock 字段；中风险 |
-| T005 | N5 天气入口 | weather-hub | T001 | ⛔ 跳过 | **weather-hub 在冻结集**（用户在途改动） |
-| T006+ | 后续夜 | signup/workspace/routes/editor/staff/vehicle/notices/me/privacy/tasks/weather-chart/anotices | T001 | ⏸ 任务书占位 | 见 page-coverage-matrix |
+| T001 | N1 设计系统共用类 | app.wxss 追加 + 登记 | — | ✅ passed d8400a7 | 已验 |
+| T002 | N2 首页 | home + activity-card | T001 | ✅ passed bd24085 | 已验 |
+| T003 | N3 发现页 | discover | T001 | ✅ passed 454ee7b | 已验 |
+| T004 | N4 活动详情长图文展示层 | activity.wxml/wxss | T001 | ready（任务书全规格，含门禁钉点清单与 swx2 存量红顺手修授权） | 设计齐/钉点可指认/可回滚 |
+| T005 | N5 天气入口 | weather-hub | 冻结解锁 | ⛔ blocked-by-freeze | 永久排除 G-02/03/04 |
+| T006 | 报名页 | signup | T001 | ready | trip2 钉点已列 |
+| T007 | 创建编辑器 | editor | T001 | ready | scenario-editor harness 约束已列 |
+| T008 | 路线三页 | routes/route/route-edit | T001 | ready | GPX time/ele 钉点已列 |
+| T009 | 工作台 | workspace 壳（三面板不动） | T001 | ready（高风险串行位） | 面板联动钉点已列 |
+| T010 | 现场协作三页 | tasks/staff/vehicle | T001 | ready | 发车预检/薄壳钉点已列 |
+| T011 | 轻量组 | notices/anotices/me（privacy 排除） | T001 | ready | 两页 wxml 同源性已列 |
+| T012 | 天气展示层微调 | weather/weather-chart | 冻结解锁 | ⛔ blocked（冻结集） | 同 T005 |
+
+执行顺序建议：T004 → T006 → T007 → T008 → T009 → T010 → T011（全串行：共享 app.wxss 语义与 activity-card 辐射面）。
+每任务执行协议同 T002/T003：执行 Agent 先报盘点→实施→跑任务书门禁→主控审 diff→单提交→主控 shot.js 对拍。
 
 ## 天气线专项（只规划不实施）
 C 图 5 屏拆为：W1 入口与观察点（=T005，冻结跳过）/ W2 逐时与多日（现有 unified meteogram，视觉微调需真机证据）/
