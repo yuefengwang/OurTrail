@@ -480,8 +480,12 @@ section('6. overallGrade 与星级语言')
   check('light 不参与均分；无戏项不拉低（(80+50)/2 = 65 → 条件一般）',
     g.score === 65 && g.label === '条件一般', JSON.stringify(g))
   check('星级映射：65 → ★★★☆☆（3 星）', g.stars === '★★★☆☆', g.stars)
-  check('≥70 → ★★★★☆（最高四星，第五颗永远空着）',
-    cond.starsOf(100) === '★★★★☆' && cond.overallGrade([{ key: 'cloudSea', score: 90 }]).stars === '★★★★☆')
+  /* 纯映射：≥70 就是四星（第五颗永远空着）。
+     旧断言把「单项 90 ⇒ 总评四星」写在同一句里，C4/F5 起单项只能到 69——
+     替换理由：星级映射是纯函数，能不能拿四星取决于**有几个 live 项**，两件事分开测；
+     合并测会让契约自相矛盾（映射说 90 是四星、总评说 90 只能 69）。 */
+  check('星级纯映射：≥70 → ★★★★☆，69 → ★★★☆☆（最高四星，第五颗永远空着）',
+    cond.starsOf(100) === '★★★★☆' && cond.starsOf(70) === '★★★★☆' && cond.starsOf(69) === '★★★☆☆')
   check('<45 → ★★☆☆☆（最低两星，不打一星）', cond.starsOf(10) === '★★☆☆☆')
   check('空清单 → 数据不足，不冒充条件较差', (() => {
     const e = cond.overallGrade([])
@@ -491,25 +495,93 @@ section('6. overallGrade 与星级语言')
     const e = cond.overallGrade([{ key: 'light', score: 100 }])
     return e.label === '数据不足' && e.insufficient === true
   })())
+  /* 弃权不是否定：全 unknown 是「没数据」，不是「条件较差」，也不是 0 分均值。 */
+  check('全 unknown → 数据不足（不是条件较差，也不是 0 分）', (() => {
+    const e = cond.overallGrade([
+      { key: 'cloudSea', score: 80, verdict: 'unknown' },
+      { key: 'star', score: 90, verdict: 'unknown' },
+    ])
+    return e.label === '数据不足' && e.insufficient === true && e.stars === ''
+  })())
+  /* ---------- F5（C4）：4 星要求 ≥2 个 live 项 ----------
+     docs/superpowers/specs/2026-10-21-sky-phenomena-inference-fix-plan.md §6：
+     4 星是「两件独立好事」的语言，单个 live 项不得独自把总评推成 ≥70（cap69）。
+     下面每条都配阳性对照（双项 80+80 不变）——只测"被压下去了"的话，
+     无条件 cap 也能全绿，分不清闸在判还是一刀切。 */
+  check('单项 80 ⇒ 69 / ★★★☆☆ / 条件一般（不是 80 / 四星）', (() => {
+    const r = cond.overallGrade([{ key: 'cloudSea', score: 80, verdict: 'possible' }])
+    return r.score === 69 && r.tone === 'warning' && r.label === '条件一般' && r.stars === '★★★☆☆'
+  })(), JSON.stringify(cond.overallGrade([{ key: 'cloudSea', score: 80, verdict: 'possible' }])))
+  check('双项 80+80 ⇒ 80 / ★★★★☆（阳性对照：证明不是无条件封顶）', (() => {
+    const r = cond.overallGrade([
+      { key: 'cloudSea', score: 80, verdict: 'possible' },
+      { key: 'rainbow', score: 80, verdict: 'possible' },
+    ])
+    return r.score === 80 && r.tone === 'success' && r.label === '条件较好' && r.stars === '★★★★☆'
+  })())
+  check('一个 live 90 + 一个非 live 20 ⇒ 69（计数看 live，不是 dedup/known 总数）', (() => {
+    const r = cond.overallGrade([
+      { key: 'cloudSea', score: 90, verdict: 'possible' },
+      { key: 'rainbow', score: 20, verdict: 'possible' },
+    ])
+    return r.score === 69 && r.stars === '★★★☆☆'
+  })())
+  check('单项 90 + excluded 64 ⇒ 69（excluded 不凑成"第二件好事"）', (() => {
+    const r = cond.overallGrade([
+      { key: 'star', score: 90, verdict: 'possible' },
+      { key: 'cloudSea', score: 64, verdict: 'excluded' },
+    ])
+    return r.score === 69 && r.stars === '★★★☆☆'
+  })())
+  check('单项但 <70（65）不触发 cap：65 原样（阳性对照的近邻）', (() => {
+    const r = cond.overallGrade([{ key: 'cloudSea', score: 65, verdict: 'possible' }])
+    return r.score === 65 && r.stars === '★★★☆☆'
+  })())
+  /* 边界：单项 69.6 若先 grade 再 cap/或 cap 后重新 grade 写错，会舍入成 70/四星。
+     正确顺序是「cap → grade」：69 封顶之后才分档，不能先四舍五入到 70。 */
+  check('单项 69.6 ⇒ cap 后 grade 为 69 / ★★★☆☆（不得舍入成 70/四星）', (() => {
+    const r = cond.overallGrade([{ key: 'cloudSea', score: 69.6, verdict: 'possible' }])
+    return r.score === 69 && r.tone === 'warning' && r.label === '条件一般' && r.stars === '★★★☆☆'
+  })())
+  /* 三项 80：少数派写 `live.length !== 2` 时会被误 cap；三项必须原样 80/四星。 */
+  check('三项 80+80+80 ⇒ 80 / ★★★★☆（≥2 live 的正向边界）', (() => {
+    const r = cond.overallGrade([
+      { key: 'cloudSea', score: 80, verdict: 'possible' },
+      { key: 'rainbow', score: 80, verdict: 'possible' },
+      { key: 'alpenglow', score: 80, verdict: 'possible' },
+    ])
+    return r.score === 80 && r.stars === '★★★★☆'
+  })())
+
   /* 沉默闸（第十轮）：页面上已经不出现的卡，不能再替总评投票。
      被排除的云海可以攥着 64 分（≥45 会进 live），旧规则下它会把 90 的星空拉成 77——
-     看不见的证据决定看得见的结论。 */
-  check('excluded 的高分项不进 live（只剩星空 90 说话）', (() => {
-    const g2 = cond.overallGrade([
-      { key: 'cloudSea', score: 64, tone: 'warning', label: '条件一般', verdict: 'excluded' },
+     看不见的证据决定看得见的结论。
+     替换（C4/F5）：旧断言期望「只剩星空 90 ⇒ 90」，等于又把单项推成四星。
+     新判据保留原意图（excluded 不投票）并加强：改 excluded 的分数（0/64/100）
+     结果必须不变——证明 69 不是被那张看不见的卡"拉低"的，它根本没进池子。 */
+  check('excluded 的高分项不投票：只剩星空 90 ⇒ 69，且改 excluded 分数不影响结果', (() => {
+    const run = s => cond.overallGrade([
+      { key: 'cloudSea', score: s, tone: 'warning', label: '条件一般', verdict: 'excluded' },
       { key: 'star', score: 90, tone: 'success', label: '条件较好', verdict: 'possible' },
     ])
-    return g2.score === 90
+    const a = run(64)
+    return a.score === 69 && a.stars === '★★★☆☆'
+      && run(0).score === 69 && run(100).score === 69
   })(), JSON.stringify(cond.overallGrade([
     { key: 'cloudSea', score: 64, verdict: 'excluded' },
     { key: 'star', score: 90, verdict: 'possible' },
   ])))
-  check('unknown 不投票（缺测不是 0 分）', (() => {
-    const g3 = cond.overallGrade([
-      { key: 'cloudSea', score: 80, verdict: 'unknown' },
+  /* 替换（C4/F5）：旧断言期望「unknown 80 + 星空 90 ⇒ 90」；单项四星现在不成立。
+     原意图（unknown 不投票、缺测不是 0 分）保留并加强：改 unknown 的分数
+     （0/80/100）结果必须完全不变——若它投票，至少有一个变体不同。 */
+  check('unknown 不投票：只剩星空 90 ⇒ 69，且改 unknown 分数不影响结果', (() => {
+    const run = s => cond.overallGrade([
+      { key: 'cloudSea', score: s, verdict: 'unknown' },
       { key: 'star', score: 90, verdict: 'possible' },
     ])
-    return g3.score === 90
+    const a = run(80)
+    return a.score === 69 && a.stars === '★★★☆☆'
+      && run(0).score === 69 && run(100).score === 69
   })())
   check('全部被判不成立 → 条件较差，不是数据不足', (() => {
     const g6 = cond.overallGrade([
@@ -518,19 +590,22 @@ section('6. overallGrade 与星级语言')
     ])
     return g6.label === '条件较差' && g6.insufficient === false && !!g6.stars
   })())
-  check('星空/银河同一类只投一次（银河优先）', (() => {
+  /* 替换（C4/F5）：旧断言期望「星空 60 + 银河 90 ⇒ 90」。去重仍然成立（银河优先），
+     但去重后只剩**一个** live 类，所以必须 69。这条同时钉住「只算一次」：
+     若双计，(60+90)/2 = 75 ⇒ 四星；断言不等于 75 才算真的证明去重没被绕过。 */
+  check('星空/银河去重后只剩一个 live 类 ⇒ 69，且 ≠ 75（双计会得 75/四星）', (() => {
     const g4 = cond.overallGrade([
       { key: 'star', score: 60, verdict: 'possible' },
       { key: 'galaxy', score: 90, verdict: 'possible' },
     ])
-    return g4.score === 90
+    return g4.score === 69 && g4.score !== 75 && g4.stars === '★★★☆☆'
   })())
-  check('银河 unknown 时星空仍可代表夜空', (() => {
+  check('银河 unknown 时星空仍可代表夜空：star 60 ⇒ 60（单项但 <70，不触发 cap）', (() => {
     const g5 = cond.overallGrade([
       { key: 'star', score: 60, verdict: 'possible' },
       { key: 'galaxy', score: 90, verdict: 'unknown' },
     ])
-    return g5.score === 60
+    return g5.score === 60 && g5.stars === '★★★☆☆'
   })())
   /* 反向：没有 verdict 的旧形状必须照常参与（isSilent 失败开放）。
      上面那组 65 分的用例就是这一条的活证据，这里再点名一次，免得以后有人

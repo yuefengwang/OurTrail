@@ -84,6 +84,12 @@ function starsOf(score) {
  * 计入均值（score ≥ 45；「没有彩虹」不是这条线路的缺陷），客观时刻（light）不参与，
  * 分档仍交给 sky.grade。**不新增任何阈值。**
  *
+ * **4 星要求 ≥2 个 live 项**（F5，2026-10-21）：4 星是「两件独立好事」的语言，
+ * 一个 80 分的单项不该独自把总评推成 80 = ★★★★☆「条件较好」。只有 1 个 live 项时
+ * 用 sky.cap69 封到「条件一般」上界（= GRADES 里「条件较好」的下界减一，不新造阈值）。
+ * live 计数发生在星空/银河去重**之后**——同一类夜空不因为两张卡就变成两件独立的好事。
+ * 这是**故意的用户可见变化**：单项独高的日子总评降一档（对拍：tools/ab-overall.js）。
+ *
  * 判过不成立（verdict==='excluded'）的项必须一起退出：它们在页面上已经不出现，
  * 却可能带着不低的分数（云海"此点不在带顶上方"最高可到 62 = 条件一般 ★★★）——
  * 让看不见的卡决定看得见的总评，等于用被撤回的证据下结论。
@@ -108,7 +114,13 @@ function overallGrade(items) {
   }
   const live = dedup.filter(it => it.score >= 45)
   const pool = live.length ? live : dedup
-  const score = pool.reduce((s, x) => s + x.score, 0) / pool.length
+  const raw = pool.reduce((s, x) => s + x.score, 0) / pool.length
+  /* 4 星是“两件独立好事”的语言：只有一个 live 项时，单项 80 不能把总评推成 4 星。
+     复用 sky.cap69（= 条件较好下界减一），不新造阈值。live 计数在星空/银河去重之后
+     （同一类夜空不因为两张卡就变成两件独立的好事）。
+     注意 pool 在 live 为空时退回 dedup，但此时分数 <45，cap 不会触发（live.length 不是 1）；
+     不要改成无条件 cap。 */
+  const score = sky.cap69(raw, live.length === 1)
   const g = sky.grade(score)
   return { score: g.score, tone: g.tone, label: g.label, stars: starsOf(g.score), insufficient: false }
 }
