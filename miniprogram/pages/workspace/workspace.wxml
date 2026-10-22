@@ -13,12 +13,14 @@
       <text class="muted">{{subtitle}}</text>
     </view>
 
-    <!-- 指标即入口：点数字直接跳到对应工作区。石色带分组，不是三张卡片 -->
+    <!-- 指标即入口：点数字直接跳到对应工作区。石色带分组，不是三张卡片。
+         三级结构（值/单位/标签）用存量 .metric-unit：三格数的都是人数（待审核/待安排车辆/
+         待签到或待到家），单位「人」是事实不是装饰；入口语义不变（bindtap 原样保留）。 -->
     <view class="workspace-band">
       <view class="metrics">
-        <view class="metric" hover-class="button-hover" bindtap="goRoster"><text class="metric-value">{{pending}}</text><text class="metric-label">待审核 ›</text></view>
-        <view class="metric" hover-class="button-hover" bindtap="goTransport"><text class="metric-value">{{unassigned}}</text><text class="metric-label">待安排车辆 ›</text></view>
-        <view class="metric" hover-class="button-hover" bindtap="goField"><text class="metric-value">{{thirdValue}}</text><text class="metric-label">{{thirdLabel}} ›</text></view>
+        <view class="metric" hover-class="button-hover" bindtap="goRoster"><text class="metric-value">{{pending}}<text class="metric-unit">人</text></text><text class="metric-label">待审核 ›</text></view>
+        <view class="metric" hover-class="button-hover" bindtap="goTransport"><text class="metric-value">{{unassigned}}<text class="metric-unit">人</text></text><text class="metric-label">待安排车辆 ›</text></view>
+        <view class="metric" hover-class="button-hover" bindtap="goField"><text class="metric-value">{{thirdValue}}<text class="metric-unit">人</text></text><text class="metric-label">{{thirdLabel}} ›</text></view>
       </view>
       <!-- 出行方式构成写在指标下面：待安排车辆只统计「需要乘车」的人，自行到达的人不是缺事项 -->
       <text class="small muted" style="display:block;margin-top:10px;">{{tripSummaryLine}}</text>
@@ -43,6 +45,7 @@
         <text class="callout-title">● {{milestone}}</text>
       </view>
 
+      <!-- 待办与入口行改卡列（T009）：section-head + .card 承载，文案零改动 -->
       <view class="stack" style="gap:0;">
         <view class="section-head">
           <text class="kicker">先处理这些</text>
@@ -50,45 +53,55 @@
         </view>
         <!-- 待办由 journey.leaderQueue 生成：只列真的拦路的事，每条带人数与去处；
              没有拦路事时给一句话，而不是摆四个 0 让人以为都欠着 -->
-        <view wx:for="{{queue}}" wx:key="id" class="list-row" hover-class="button-hover" bindtap="goQueueItem" data-target="{{item.target}}">
-          <view class="list-main">
-            <text>{{item.label}}{{item.blocking ? '（拦路）' : ''}}</text>
-            <text class="list-sub">{{item.detail}}</text>
+        <view class="card" style="padding:4px 16px;">
+          <view wx:for="{{queue}}" wx:key="id" class="list-row" hover-class="button-hover" bindtap="goQueueItem" data-target="{{item.target}}">
+            <view class="list-main">
+              <text>{{item.label}}{{item.blocking ? '（拦路）' : ''}}</text>
+              <text class="list-sub">{{item.detail}}</text>
+            </view>
+            <icon name="arrow" size="18" color="#163E35" />
           </view>
-          <icon name="arrow" size="18" color="#163E35" />
-        </view>
-        <view class="list-row" hover-class="button-hover" bindtap="goTasks">
-          <view class="list-main">
-            <text>任务清单</text>
-            <text class="list-sub">装备、采购与记录的分工</text>
+          <view class="list-row" hover-class="button-hover" bindtap="goTasks">
+            <view class="list-main">
+              <text>任务清单</text>
+              <text class="list-sub">装备、采购与记录的分工</text>
+            </view>
+            <icon name="arrow" size="18" color="#163E35" />
           </view>
-          <icon name="arrow" size="18" color="#163E35" />
-        </view>
-        <view class="list-row" hover-class="button-hover" bindtap="goNotices">
-          <view class="list-main">
-            <text>活动通知</text>
-            <text class="list-sub">发布安排，核对通知的实际状态</text>
+          <view class="list-row" hover-class="button-hover" bindtap="goNotices">
+            <view class="list-main">
+              <text>活动通知</text>
+              <text class="list-sub">发布安排，核对通知的实际状态</text>
+            </view>
+            <icon name="arrow" size="18" color="#163E35" />
           </view>
-          <icon name="arrow" size="18" color="#163E35" />
         </view>
       </view>
 
-      <view class="stack" style="gap:12px;">
+      <!-- 阶段区块（T009）：时间轴入卡（与路线详情同款卡语言），区块间距走存量 stack-gap3 -->
+      <view class="stack-gap3">
         <view class="section-head">
           <text class="kicker">阶段</text>
           <text class="section-title">活动进程</text>
         </view>
         <!-- ✓ 已完成 · ● 当前 · ○ 还没到：户外强光下不能只靠颜色承载状态（AGENTS 铁律 / 设计走查） -->
-        <view class="timeline">
-          <view wx:for="{{phaseTimeline}}" wx:key="phase" class="timeline-item">
-            <text class="badge {{item.current ? 'on-forest' : (item.done ? 'success' : 'neutral')}}">{{item.mark}} {{item.label}}{{item.current ? ' · 当前' : ''}}</text>
+        <view class="card">
+          <view class="timeline">
+            <view wx:for="{{phaseTimeline}}" wx:key="phase" class="timeline-item">
+              <text class="badge {{item.current ? 'on-forest' : (item.done ? 'success' : 'neutral')}}">{{item.mark}} {{item.label}}{{item.current ? ' · 当前' : ''}}</text>
+            </view>
           </view>
         </view>
         <view class="button primary block {{canTransition && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canTransition && !busy ? 'onTransition' : ''}}">{{nextPhaseLabel || '这一步现在还不能做'}}</view>
         <!-- 门槛不满足时先说清缺什么、去哪儿补，而不是给一个点不动的灰按钮 -->
-        <!-- 这行只由 transitionHint 决定：权限位（canTransition）与门槛清没清是两件事，挂上去等于说明永不上屏（审计 F-01） -->
-        <text wx:if="{{transitionHint}}" class="small muted" style="display:block;">为什么现在不能推进：{{transitionHint}}</text>
-        <text wx:elif="{{!canTransition}}" class="small muted" style="display:block;">这一阶段没有可推进的下一步；已归档或已取消的活动只读。</text>
+        <!-- 这行只由 transitionHint 决定：权限位（canTransition）与门槛清没清是两件事，挂上去等于说明永不上屏（审计 F-01）。
+             说明升格为 callout.info（T009）：层级从「按钮脚注」提到「拦路原因」，文案与渲染条件一字未动。 -->
+        <view wx:if="{{transitionHint}}" class="callout info">
+          <text class="small">为什么现在不能推进：{{transitionHint}}</text>
+        </view>
+        <view wx:elif="{{!canTransition}}" class="callout info">
+          <text class="small">这一阶段没有可推进的下一步；已归档或已取消的活动只读。</text>
+        </view>
         <view wx:if="{{canEdit}}" class="button text" hover-class="button-hover" bindtap="goEdit">编辑活动</view>
       </view>
       <!-- 取消是破坏性动作，降级为文字入口；真正的危险确认留在弹层里 -->
