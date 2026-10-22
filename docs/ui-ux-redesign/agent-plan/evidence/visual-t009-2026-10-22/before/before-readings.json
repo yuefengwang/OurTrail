@@ -1,0 +1,29 @@
+{
+  "mode": "before",
+  "wsPort": "9435",
+  "page": "pages/workspace/workspace",
+  "shots": {
+    "overview-top": {
+      "file": "before-overview-top.png",
+      "scrollTop": 0
+    },
+    "phase-ready": {
+      "file": "before-phase-ready.png",
+      "scrollTop": 566.5
+    },
+    "phase-blocked": {
+      "file": "before-phase-blocked.png",
+      "scrollTop": 614.5
+    },
+    "tab-roster": {
+      "file": "before-tab-roster.png",
+      "scrollTop": 0
+    }
+  },
+  "gates": {
+    "metricUnits": 0,
+    "callouts": [
+      "callout"
+    ]
+  }
+}

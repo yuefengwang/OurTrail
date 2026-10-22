@@ -4,25 +4,32 @@
     <status-panel kind="loading" title="正在载入" detail="正在整理已发布的活动。" />
   </block>
   <view wx:else class="stack">
-    <view>
-      <text class="eyebrow">发现活动</text>
-      <text class="page-title" style="display:block;margin-top:4px;">看看别人在约什么。</text>
-      <text class="muted" style="display:block;margin-top:4px;">只显示尚未出发的公开活动；筛选条件会一起生效。</text>
+    <!-- N3（2026-10-22）页头压缩为一行：眉题+主标题在左、视图分段在右（交付包拼板屏 1.2）。
+         旧的第二行导语「只显示尚未出发的公开活动；筛选条件会一起生效。」删除，其语义由
+         诚实 callout（个人发起/自行评估）与筛选 chip 行的计数承担，与 home N2 同款处理。 -->
+    <view class="card-header">
+      <view class="discover-head__text">
+        <text class="eyebrow">发现活动</text>
+        <view class="discover-title">看看别人在约什么。</view>
+      </view>
+      <view class="segmented discover-views" aria-label="发现视图">
+        <view class="seg {{viewMode === 'list' ? 'on' : ''}}" data-mode="list" bindtap="onViewMode">列表</view>
+        <view class="seg {{viewMode === 'map' ? 'on' : ''}}" data-mode="map" bindtap="onViewMode">地图</view>
+      </view>
     </view>
 
-    <view class="callout">
+    <!-- 诚实 callout：文案一字不改（铁律），只压到 caption 级（.discover-note 在页 wxss）。 -->
+    <view class="callout discover-note">
       <text class="callout-title">这些活动由个人发起</text>
-      <text style="display:block;margin-top:4px;">平台尚未做领队资质认证。路线强度、风险与装备要求以活动说明为准，报名前请自行评估是否适合自己。</text>
+      <text style="display:block;margin-top:2px;">平台尚未做领队资质认证。路线强度、风险与装备要求以活动说明为准，报名前请自行评估是否适合自己。</text>
     </view>
 
-    <view class="segmented" aria-label="发现视图">
-      <view class="seg {{viewMode === 'list' ? 'on' : ''}}" data-mode="list" bindtap="onViewMode">列表</view>
-      <view class="seg {{viewMode === 'map' ? 'on' : ''}}" data-mode="map" bindtap="onViewMode">地图</view>
-    </view>
-
-    <view class="field">
-      <text class="field-label">查找已发布的活动</text>
-      <input class="input" type="text" confirm-type="search" placeholder="搜索活动名、路线或描述" value="{{search}}" bindinput="onSearch" />
+    <!-- N3：搜索从带 label 的表单字段改为图标内嵌搜索条（.searchbar，T001 交付）；
+         原 field-label「查找已发布的活动」的语义由 input 的 aria-label 承接，onSearch 能力不删。 -->
+    <view class="searchbar">
+      <!-- icon 的 color 属性拿不到 var()：#5F6E66 与 --muted 逐字节同值（既有 token，不是新色；与 home.wxml 同口径） -->
+      <icon name="search" size="16" color="#5F6E66" />
+      <input class="searchbar__input" type="text" confirm-type="search" placeholder="搜索活动名、路线或描述" aria-label="查找已发布的活动" value="{{search}}" bindinput="onSearch" />
     </view>
 
     <view class="filter-row">
@@ -48,6 +55,8 @@
           wx:key="id"
           title="{{item.title}}"
           cover="{{item.cover}}"
+          route-name="{{item.routeName}}"
+          metrics="{{item.metrics}}"
           date="{{item.date}}"
           meta="{{item.meta}}"
           status="{{item.status}}"
@@ -80,10 +89,14 @@
       <view wx:else class="callout warning">
         <text>地图上暂无可定位的活动；有路线坐标的活动才会出现在这里，其余活动仍在列表里。</text>
       </view>
+      <!-- 选中卡取自 cards 数组（onMapMarkerTap 从 this.data.cards 取），routeName/metrics 已自带，
+           这里显式传同一批字段，与列表卡形态逐字一致。 -->
       <activity-card
         wx:if="{{mapSelected}}"
         title="{{mapSelected.title}}"
         cover="{{mapSelected.cover}}"
+        route-name="{{mapSelected.routeName}}"
+        metrics="{{mapSelected.metrics}}"
         date="{{mapSelected.date}}"
         meta="{{mapSelected.meta}}"
         status="{{mapSelected.status}}"

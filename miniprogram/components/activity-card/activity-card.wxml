@@ -1,8 +1,10 @@
-<article class="card activity-card {{featured ? 'hero activity-card--featured' : ''}} {{coverFailed ? 'cover-failed' : ''}}" bindtap="onTap" hover-class="card-hover">
-  <!-- 编辑式卡片（2026-10-16）：featured 用大幅封面照 + 压底，普通卡用左侧缩略图。
+<article class="card activity-card {{featured ? 'hero activity-card--featured' : 'activity-card--plain'}} {{coverFailed ? 'cover-failed' : ''}}" bindtap="onTap" hover-class="card-hover">
+  <!-- 编辑式卡片（2026-10-16）→ N2（2026-10-22）普通卡改照片在上：
+       featured 保留大幅封面照 + 压底；普通卡改为 168px 媒体盒贴卡顶 + 状态 badge 压图左上，
+       正文＝标题 + 路线/日期 sub 行 + 指标行 + info 行 + 入口行（交付包拼板屏 1.1/1.2 的列表语言）。
        照片是场景氛围图（utils/covers.js 按活动 id 稳定选取），非活动实拍；
        加载失败根节点加 cover-failed：featured 藏起照片退回纯色 hero，
-       普通卡隐藏缩略图退回纯文字，都不出破图。 -->
+       普通卡藏起整块媒体退回纯文字卡，都不出破图。 -->
   <block wx:if="{{featured}}">
     <view class="activity-card__media">
       <image class="activity-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
@@ -37,28 +39,36 @@
     </view>
   </block>
   <block wx:else>
-    <view class="activity-card__row">
-      <image class="activity-card__thumb" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
-      <view class="activity-card__body">
-        <view class="card-header activity-card__header">
-          <text class="activity-card__date small tabular" id="date">{{date}}{{when ? ' · 出发 ' + when : ''}}</text>
-          <text class="badge neutral" id="status">{{status}}</text>
-        </view>
-        <view class="activity-card__title">{{title}}</view>
-        <text class="activity-card__meta muted" id="meta">{{meta}}</text>
-      </view>
+    <view class="activity-card__media">
+      <image class="activity-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
+      <text class="badge on-forest activity-card__badge" id="status">{{status}}</text>
     </view>
-    <view wx:if="{{info}}" class="activity-card__info">{{info}}</view>
-    <view class="activity-card__affordance">
-      <view class="button leaf affordance-leaf affordance-open hero-body" aria-hidden="true">
-        <text>查看活动安排</text>
-        <icon name="arrow" size="18" color="#163E35" />
+    <view class="activity-card__plain">
+      <view class="activity-card__title">{{title}}</view>
+      <!-- sub 行＝路线名 + 日期 + 倒计时：三件短事实合成一行 caption。
+           没传 routeName 的使用方（发现页）回落到 meta（路线名 · km），信息不丢。 -->
+      <text wx:if="{{routeName || meta || date}}" class="activity-card__sub small muted" id="date">{{routeName || meta}}{{date ? ' · ' + date : ''}}{{when ? ' · 出发 ' + when : ''}}</text>
+      <!-- 指标行复用全局 .metrics/.metric*（app.wxss），组件内压成一行 caption 级事实；
+           缺字段整项不出现由页面派生时保证（home.js cardMetrics），这里只画给的项。 -->
+      <view wx:if="{{metrics.length}}" class="metrics activity-card__metrics">
+        <view wx:for="{{metrics}}" wx:key="key" class="metric">
+          <text class="metric-label">{{item.label}}</text>
+          <text class="metric-value">{{item.value}}</text>
+          <text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text>
+        </view>
       </view>
-      <view wx:if="{{collab.length}}" class="collab-row">
-        <view wx:for="{{collab}}" wx:key="key" class="button leaf collab-leaf" hover-class="button-hover"
-          data-key="{{item.key}}" catchtap="onCollab">
-          <text>{{item.label}}</text>
-          <icon name="arrow" size="16" color="#163E35" />
+      <view wx:if="{{info}}" class="activity-card__info">{{info}}</view>
+      <view class="activity-card__affordance">
+        <view class="button leaf affordance-leaf affordance-open hero-body" aria-hidden="true">
+          <text>查看活动安排</text>
+          <icon name="arrow" size="18" color="#163E35" />
+        </view>
+        <view wx:if="{{collab.length}}" class="collab-row">
+          <view wx:for="{{collab}}" wx:key="key" class="button leaf collab-leaf" hover-class="button-hover"
+            data-key="{{item.key}}" catchtap="onCollab">
+            <text>{{item.label}}</text>
+            <icon name="arrow" size="16" color="#163E35" />
+          </view>
         </view>
       </view>
     </view>

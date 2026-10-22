@@ -668,3 +668,26 @@ button.button { font-family: inherit; }
   border-radius: var(--radius-tag);
   padding: 2px 6px;
 }
+
+/* ---------- Night V1 共用类（2026-10-22 T001 追加；只增不改、零新色值） ----------
+   背景：交付包 1.1/1.2 的列表语言需要「图标内嵌搜索条」。
+   盘点后确认 .segmented/.seg/.field/.input/.filter-chip、activity-card 的媒体形态、
+   以及指标行 .metrics/.metric/.metric-value/.metric-unit/.metric-label（6 页在用，含 M-16 修复）
+   均已存在 ⇒ 一律复用不重定义；这里只新增搜索条一组。取色一律 var()，
+   登记见 docs/ui-ux-redesign/design-system.md §9。 */
+/* 搜索条：图标内嵌的圆角条（替代带 label 的表单字段形态；.field/.input 保留给真表单） */
+.searchbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--radius-button);
+  background: var(--stone);
+}
+.searchbar__input {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-body);
+  color: var(--ink);
+}

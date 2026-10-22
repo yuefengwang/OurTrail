@@ -199,3 +199,19 @@
 3. 微信开发者工具真机截图：同一夹具数据前后对照（`docs/ui-ux-redesign/screens/before|after`）。
 4. 真实交互：导航/报名入口/工作台 tab/天气时间轴各至少一次真实 tap。
 5. 小屏（iPhone SE 375×667）与长标题边界各一例。
+
+## 9. Night V1 登记（2026-10-22，T001）
+
+新增共用类（`app.wxss` 末尾「Night V1 共用类」分区，只增不改、零新色值、零新 token）：
+
+| 类 | 语义 | 取色/取尺 |
+|---|---|---|
+| `.searchbar` | 图标内嵌圆角搜索条（列表页顶部） | `--stone` / `--radius-button` / 高 36px |
+| `.searchbar__input` | 搜索条内输入区 | `--text-body` / `--ink` |
+
+指标行**不新增**：复用存量 `.metrics / .metric / .metric-value / .metric-unit / .metric-label`
+（app.wxss:437–447，6 页在用，含 M-16 溢出处置）。T001 首版曾追加 `.metrics__*` 平行体系，
+被 G11（同选择器关键布局属性双写）当场拦下 ⇒ 已删除，改为复用存量。
+
+明确**不新增**（盘点实测已存在）：`.segmented/.seg`、`.field/.input`、`.filter-chip`、`.hero-cover*`、
+activity-card 媒体形态。浅色导航栏由页面 json 承担（`app.json` 冻结），不进 WXSS。

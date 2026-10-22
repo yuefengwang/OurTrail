@@ -33,10 +33,13 @@
       <text class="page-title" style="display:block;margin-top:4px;">修改一位参与人的资料</text>
       <text class="section-sub">资料包含紧急联络与健康备注。请说明本次读取、修改的必要用途。</text>
     </view>
-    <form-field label="修改用途">
-      <input class="input" value="{{purpose}}" bindinput="onPurpose" placeholder="例如：本人更新本次上车点" />
-    </form-field>
-    <view class="button primary block {{purpose ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{purpose ? 'onApprovePurpose' : ''}}">按此用途读取资料</view>
+    <!-- 用途登记卡片化（T006）：与参与人卡同一张圆角表面，触发逻辑零改动 -->
+    <view class="card stack-gap3">
+      <form-field label="修改用途">
+        <input class="input" value="{{purpose}}" bindinput="onPurpose" placeholder="例如：本人更新本次上车点" />
+      </form-field>
+      <view class="button primary block {{purpose ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{purpose ? 'onApprovePurpose' : ''}}">按此用途读取资料</view>
+    </view>
   </view>
 
   <!-- 编辑模式：表单 -->
@@ -125,6 +128,8 @@
             <text class="badge neutral tabular">{{pi + 1}}</text>
             <text style="font-weight:600;">{{p.person.name || '未命名参与人'}}</text>
             <text class="small muted">{{p.kindLabel}} · {{p.tripSummary}}</text>
+            <!-- 必勾授权徽标（T006）：分母只算 validate() 会拦的项，proxyHome 可选不计 -->
+            <text class="badge neutral">授权 {{consentBadge[p.key]}}</text>
           </view>
           <view class="cluster" style="gap:8px;flex:0 0 auto;">
             <text class="badge {{p.complete ? 'success' : 'warning'}}">{{p.complete ? '资料齐' : '待补全'}}</text>
@@ -149,67 +154,88 @@
         <text wx:if="{{errors['p' + pi + '-dataUse'] || errors['p' + pi + '-proxyAuthority']}}" class="field-error">{{errors['p' + pi + '-dataUse'] || errors['p' + pi + '-proxyAuthority']}}</text>
       </view>
 
-      <!-- 展开态：完整资料编辑 -->
+      <!-- 展开态：完整资料编辑。分组（身份/联系/出行/授权）用存量 .section-head + .kicker，
+           组间距由 .part-group 承载（signup.wxss）；所有绑定与条件分支原样保留。 -->
       <view wx:else class="card stack-gap3">
         <view class="card-header">
           <text class="section-title">{{pi + 1}} / {{p.kindLabel === '本人' ? '我的资料' : '同行人资料'}}</text>
           <view class="button text" hover-class="button-hover" data-key="{{p.key}}" bindtap="togglePart">收起</view>
         </view>
-        <form-field label="姓名" error="{{errors['p' + pi + '-name']}}">
-          <input class="input" value="{{p.person.name}}" maxlength="80" data-index="{{pi}}" data-key="name" bindinput="onPartField" />
-        </form-field>
-        <form-field label="联系电话" error="{{errors['p' + pi + '-phone']}}">
-          <input class="input" type="number" maxlength="11" value="{{p.person.phone}}" data-index="{{pi}}" data-key="phone" bindinput="onPartField" />
-        </form-field>
-        <form-field label="紧急联系人" error="{{errors['p' + pi + '-ename']}}">
-          <input class="input" value="{{p.person.emergency.name}}" maxlength="80" data-index="{{pi}}" data-key="ename" bindinput="onPartField" />
-        </form-field>
-        <form-field label="紧急联系电话" error="{{errors['p' + pi + '-ephone']}}">
-          <input class="input" type="number" maxlength="11" value="{{p.person.emergency.phone}}" data-index="{{pi}}" data-key="ephone" bindinput="onPartField" />
-        </form-field>
-        <form-field label="健康与用药备注" hint="可选，仅用于本次活动的必要安全协作。">
-          <textarea class="textarea slim" value="{{p.person.medical}}" maxlength="2000" data-index="{{pi}}" data-key="medical" bindinput="onPartField" />
-        </form-field>
-        <form-field label="这次怎么去？" error="{{errors['p' + pi + '-trip']}}">
-          <radio-group data-index="{{pi}}" bindchange="onPartMode">
-            <label class="radio-label" wx:for="{{tripModes}}" wx:for-item="opt" wx:key="value">
-              <radio color="#163E35" value="{{opt.value}}" checked="{{p.trip.mode === opt.value}}" />
-              <view class="check-text">
-                <text>{{opt.label}}</text>
-                <text class="small muted" style="display:block;">{{opt.hint}}</text>
+        <view class="part-group">
+          <view class="section-head">
+            <text class="kicker">身份</text>
+          </view>
+          <form-field label="姓名" error="{{errors['p' + pi + '-name']}}">
+            <input class="input" value="{{p.person.name}}" maxlength="80" data-index="{{pi}}" data-key="name" bindinput="onPartField" />
+          </form-field>
+        </view>
+        <view class="part-group">
+          <view class="section-head">
+            <text class="kicker">联系</text>
+          </view>
+          <form-field label="联系电话" error="{{errors['p' + pi + '-phone']}}">
+            <input class="input" type="number" maxlength="11" value="{{p.person.phone}}" data-index="{{pi}}" data-key="phone" bindinput="onPartField" />
+          </form-field>
+          <form-field label="紧急联系人" error="{{errors['p' + pi + '-ename']}}">
+            <input class="input" value="{{p.person.emergency.name}}" maxlength="80" data-index="{{pi}}" data-key="ename" bindinput="onPartField" />
+          </form-field>
+          <form-field label="紧急联系电话" error="{{errors['p' + pi + '-ephone']}}">
+            <input class="input" type="number" maxlength="11" value="{{p.person.emergency.phone}}" data-index="{{pi}}" data-key="ephone" bindinput="onPartField" />
+          </form-field>
+          <form-field label="健康与用药备注" hint="可选，仅用于本次活动的必要安全协作。">
+            <textarea class="textarea slim" value="{{p.person.medical}}" maxlength="2000" data-index="{{pi}}" data-key="medical" bindinput="onPartField" />
+          </form-field>
+        </view>
+        <view class="part-group">
+          <view class="section-head">
+            <text class="kicker">出行</text>
+          </view>
+          <form-field label="这次怎么去？" error="{{errors['p' + pi + '-trip']}}">
+            <radio-group data-index="{{pi}}" bindchange="onPartMode">
+              <label class="radio-label" wx:for="{{tripModes}}" wx:for-item="opt" wx:key="value">
+                <radio color="#163E35" value="{{opt.value}}" checked="{{p.trip.mode === opt.value}}" />
+                <view class="check-text">
+                  <text>{{opt.label}}</text>
+                  <text class="small muted" style="display:block;">{{opt.hint}}</text>
+                </view>
+              </label>
+            </radio-group>
+          </form-field>
+          <form-field wx:if="{{p.trip.mode === 'shared'}}" label="上车点" error="{{errors['p' + pi + '-trip']}}">
+            <picker range="{{pickupOptions}}" value="{{p.pickupIndex < 0 ? 0 : p.pickupIndex}}" data-index="{{pi}}" bindchange="onPartPickup">
+              <view class="picker {{p.pickupIndex < 0 ? 'placeholder' : ''}}">
+                <text class="picker-value">{{p.pickupIndex < 0 ? '请选择上车点' : pickupOptions[p.pickupIndex]}}</text>
+                <text class="picker-arrow">▾</text>
               </view>
-            </label>
-          </radio-group>
-        </form-field>
-        <form-field wx:if="{{p.trip.mode === 'shared'}}" label="上车点" error="{{errors['p' + pi + '-trip']}}">
-          <picker range="{{pickupOptions}}" value="{{p.pickupIndex < 0 ? 0 : p.pickupIndex}}" data-index="{{pi}}" bindchange="onPartPickup">
-            <view class="picker {{p.pickupIndex < 0 ? 'placeholder' : ''}}">
-              <text class="picker-value">{{p.pickupIndex < 0 ? '请选择上车点' : pickupOptions[p.pickupIndex]}}</text>
-              <text class="picker-arrow">▾</text>
-            </view>
-          </picker>
-        </form-field>
-        <view catchtap="noop">
-          <checkbox-group data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent">
-            <label class="check-label" style="padding-top:0;padding-bottom:0;">
-              <checkbox color="#163E35" value="1" checked="{{p.consent.dataUse}}" />
-              <text class="check-text">同意本次活动使用报名与安全联络资料</text>
-            </label>
-          </checkbox-group>
-          <text wx:if="{{errors['p' + pi + '-dataUse']}}" class="field-error">{{errors['p' + pi + '-dataUse']}}</text>
-          <checkbox-group wx:if="{{p.personRef.kind === 'companion'}}" data-index="{{pi}}" data-key="proxyAuthority" bindchange="onPartConsent">
-            <label class="check-label">
-              <checkbox color="#163E35" value="1" checked="{{p.consent.proxyAuthority}}" />
-              <text class="check-text">已获同行人授权，代为报名和处理行程</text>
-            </label>
-          </checkbox-group>
-          <text wx:if="{{errors['p' + pi + '-proxyAuthority']}}" class="field-error">{{errors['p' + pi + '-proxyAuthority']}}</text>
-          <checkbox-group data-index="{{pi}}" data-key="proxyHome" bindchange="onPartConsent">
-            <label class="check-label">
-              <checkbox color="#163E35" value="1" checked="{{p.consent.proxyHome}}" />
-              <text class="check-text">授权代为确认安全到家（可选，独立授权）</text>
-            </label>
-          </checkbox-group>
+            </picker>
+          </form-field>
+        </view>
+        <view class="part-group">
+          <view class="section-head">
+            <text class="kicker">授权</text>
+          </view>
+          <view catchtap="noop">
+            <checkbox-group data-index="{{pi}}" data-key="dataUse" bindchange="onPartConsent">
+              <label class="check-label" style="padding-top:0;padding-bottom:0;">
+                <checkbox color="#163E35" value="1" checked="{{p.consent.dataUse}}" />
+                <text class="check-text">同意本次活动使用报名与安全联络资料</text>
+              </label>
+            </checkbox-group>
+            <text wx:if="{{errors['p' + pi + '-dataUse']}}" class="field-error">{{errors['p' + pi + '-dataUse']}}</text>
+            <checkbox-group wx:if="{{p.personRef.kind === 'companion'}}" data-index="{{pi}}" data-key="proxyAuthority" bindchange="onPartConsent">
+              <label class="check-label">
+                <checkbox color="#163E35" value="1" checked="{{p.consent.proxyAuthority}}" />
+                <text class="check-text">已获同行人授权，代为报名和处理行程</text>
+              </label>
+            </checkbox-group>
+            <text wx:if="{{errors['p' + pi + '-proxyAuthority']}}" class="field-error">{{errors['p' + pi + '-proxyAuthority']}}</text>
+            <checkbox-group data-index="{{pi}}" data-key="proxyHome" bindchange="onPartConsent">
+              <label class="check-label">
+                <checkbox color="#163E35" value="1" checked="{{p.consent.proxyHome}}" />
+                <text class="check-text">授权代为确认安全到家（可选，独立授权）</text>
+              </label>
+            </checkbox-group>
+          </view>
         </view>
       </view>
     </block>

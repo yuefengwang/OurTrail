@@ -37,6 +37,8 @@ Page({
     busy: false,
     busyAt: 0,
     expandedParts: {},
+    // 收合态授权徽标（T006）：key → '已勾/必勾' 文本；与 consent 同步刷新，不落草稿
+    consentBadge: {},
     // 编辑模式
     editForm: null,
     editPickupIndex: -1,
@@ -146,6 +148,7 @@ Page({
           : '符合条件时自动确认，以实际提交结果为准。',
         candidates: [own].concat(companions),
         participants: withTrip,
+        consentBadge: this.consentBadgeMap(withTrip),
         expandedParts,
         keepTogether,
         pickupOptions,
@@ -168,6 +171,9 @@ Page({
 
   // 渲染前的展示装饰：资料完整度徽标 + 上车点 picker 选中下标。
   // 草稿存原始参与者（不含装饰键），装饰只进 setData；complete 不含 medical（备注可选）。
+  // 注意：本方法的产出形状被 tools/scenario-signup-test.js 的夹具深比较钉住
+  //（complete/pickupIndex/tripSummary 一个不能多）——新增展示派生请放 consentBadgeMap，
+  // 不要往参与人对象上挂键。
   decorateParticipant(p) {
     const person = p.person || {}
     const emergency = person.emergency || {}
@@ -176,6 +182,21 @@ Page({
       pickupIndex: this.pickupIndexOf(p),
       tripSummary: this.tripLabel(p),
     })
+  },
+
+  // 收合态授权徽标（T006）：只数 validate() 真正会拦的必勾授权——dataUse，同行人再加
+  // proxyAuthority；proxyHome 是可选独立授权，不计入（否则徽标显示齐了却仍被 validate 拦下）。
+  // 放在并行 map 而不是参与人对象上：见 decorateParticipant 上面的形状钉点说明。
+  consentBadgeMap(participants) {
+    const map = {}
+    ;(participants || []).forEach(p => {
+      const consent = p.consent || {}
+      const isCompanion = !!(p.personRef && p.personRef.kind === 'companion')
+      const required = isCompanion ? 2 : 1
+      const granted = (consent.dataUse ? 1 : 0) + (isCompanion && consent.proxyAuthority ? 1 : 0)
+      map[p.key] = granted + '/' + required
+    })
+    return map
   },
 
   /** 出行方式变化后要重算的派生显示键：同车约束只对「需要乘车」的人生成意义。 */
@@ -244,7 +265,11 @@ Page({
       keepTogether: this.data.keepTogether,
     }, patch)
     if (patch.participants) {
-      patch = Object.assign({}, patch, { participants: patch.participants.map(p => this.decorateParticipant(p)) })
+      const decorated = patch.participants.map(p => this.decorateParticipant(p))
+      patch = Object.assign({}, patch, {
+        participants: decorated,
+        consentBadge: this.consentBadgeMap(decorated),
+      })
     }
     draft.setDraft(this.activityId, 'signup', next)
     this.setData(patch)

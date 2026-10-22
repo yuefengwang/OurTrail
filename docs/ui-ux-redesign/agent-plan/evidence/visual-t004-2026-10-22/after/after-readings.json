@@ -1,0 +1,64 @@
+{
+  "mode": "after",
+  "wsPort": "9436",
+  "page": "pages/activity/activity",
+  "shots": {
+    "hero": {
+      "file": "after-hero.png",
+      "scrollTop": 0
+    },
+    "intro": {
+      "file": "after-intro.png",
+      "scrollTop": 727.5
+    },
+    "facts": {
+      "file": "after-facts.png",
+      "scrollTop": 1289
+    },
+    "itinerary": {
+      "file": "after-itinerary.png",
+      "scrollTop": 1980
+    },
+    "weather": {
+      "file": "after-weather.png",
+      "scrollTop": 2209
+    },
+    "route": {
+      "file": "after-route.png",
+      "scrollTop": 2505
+    },
+    "safety": {
+      "file": "after-safety.png",
+      "scrollTop": 3482.5
+    },
+    "equipment": {
+      "file": "after-equipment.png",
+      "scrollTop": 3709.5
+    },
+    "fee": {
+      "file": "after-fee.png",
+      "scrollTop": 3875.5
+    },
+    "signup": {
+      "file": "after-signup.png",
+      "scrollTop": 3875.5
+    }
+  },
+  "gates": {
+    "kickers": [
+      "01 活动简介",
+      "推荐理由",
+      "02 活动信息",
+      "03 同行人",
+      "04 行程安排",
+      "05 天气",
+      "06 路线与集合",
+      "剖面",
+      "07 安全",
+      "08 装备",
+      "09 费用与约定",
+      "10 报名后"
+    ],
+    "articleImgRadius": "14px"
+  }
+}

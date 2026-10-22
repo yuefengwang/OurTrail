@@ -95,7 +95,7 @@
 
     <view wx:if="{{description || autoSummary || contentView.length || highlights.length}}" id="sec-intro" class="stack" style="gap:0;">
       <view class="section-head">
-        <text class="kicker">介绍</text>
+        <text class="kicker">{{secNo.intro}} 活动简介</text>
         <text class="section-title">这一次，去哪里</text>
       </view>
       <text wx:if="{{description}}" class="lede">{{description}}</text>
@@ -125,7 +125,7 @@
 
     <view wx:if="{{!isDraft}}" id="sec-facts" class="stack" style="gap:0;">
       <view class="section-head">
-        <text class="kicker">活动说明</text>
+        <text class="kicker">{{secNo.facts}} 活动信息</text>
         <text class="section-title">时间、集合与费用</text>
       </view>
       <view class="fact-row"><text class="fact-label">活动时间</text><text class="fact-value tabular">{{factTime}}</text></view>
@@ -147,7 +147,7 @@
 
     <view wx:if="{{rows.length}}" id="sec-peers" class="stack" style="gap:0;">
       <view class="section-head">
-        <text class="kicker">同行人</text>
+        <text class="kicker">{{secNo.peers}} 同行人</text>
         <text class="section-title">我与同行人</text>
         <text class="section-sub">每个人，独立确认</text>
       </view>
@@ -172,7 +172,7 @@
 
     <view id="sec-itinerary" class="stack" style="gap:0;">
       <view class="section-head">
-        <text class="kicker">行程</text>
+        <text class="kicker">{{secNo.itinerary}} 行程安排</text>
         <text class="section-title">这一次的安排</text>
       </view>
       <view class="fact-row"><text class="fact-label">{{times[0].label}}</text><text class="fact-value tabular">{{times[0].value}}</text></view>
@@ -183,7 +183,7 @@
 
     <view wx:if="{{!isDraft}}" id="sec-weather" class="stack" style="gap:8px;">
       <view class="section-head">
-        <text class="kicker">天气</text>
+        <text class="kicker">{{secNo.weather}} 天气</text>
         <text class="section-title">出发日天气</text>
         <text class="section-sub">只看出发日的天气事实；不构成出发许可。</text>
       </view>
@@ -220,7 +220,7 @@
 
     <view id="meeting-block" class="stack" style="gap:0;">
       <view class="section-head">
-        <text class="kicker">路线与集合</text>
+        <text class="kicker">{{secNo.route}} 路线与集合</text>
         <text class="section-title">怎么去 · 在哪集合</text>
       </view>
       <view wx:if="{{map.visible}}" class="map-card">
@@ -259,7 +259,7 @@
           <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
             <view style="min-width:0;">
               <text class="eyebrow">{{item.kindLabel}}</text>
-              <text style="display:block;font-weight:700;margin-top:2px;">{{item.name}}</text>
+              <text style="display:block;font-weight:600;margin-top:2px;">{{item.name}}</text>
             </view>
             <block wx:if="{{item.coordinates}}">
               <view
@@ -307,7 +307,7 @@
 
     <view id="sec-safety" class="stack" style="gap:12px;">
       <view class="section-head">
-        <text class="kicker">安全</text>
+        <text class="kicker">{{secNo.safety}} 安全</text>
         <text class="section-title">风险提示</text>
       </view>
       <block wx:if="{{risks.length}}">
@@ -321,7 +321,7 @@
 
     <view id="sec-equipment" class="stack" style="gap:12px;">
       <view class="section-head">
-        <text class="kicker">装备</text>
+        <text class="kicker">{{secNo.equipment}} 装备</text>
         <text class="section-title">出发前，检查装备</text>
       </view>
       <block wx:if="{{equipment.length}}">
@@ -341,7 +341,7 @@
 
     <view id="sec-fee" class="stack" style="gap:12px;">
       <view class="section-head">
-        <text class="kicker">费用与约定</text>
+        <text class="kicker">{{secNo.fee}} 费用与约定</text>
         <text class="section-title">费用与退出约定</text>
       </view>
       <text wx:if="{{feeSummary}}" class="lede">{{feeSummary}}</text>
@@ -364,7 +364,7 @@
 
     <view wx:if="{{signupNote}}" id="sec-signup" class="stack" style="gap:8px;">
       <view class="section-head">
-        <text class="kicker">报名后</text>
+        <text class="kicker">{{secNo.signup}} 报名后</text>
         <text class="section-title">进群与行前准备</text>
       </view>
       <text class="lede">{{signupNote}}</text>

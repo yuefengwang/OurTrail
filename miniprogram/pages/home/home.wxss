@@ -10,3 +10,8 @@
    需要动 app.wxss（不属本批写入集），已写进 out/SWX2/requests.md。12px 这一支同理待收（--text-caption）。 */
 .activity-card .activity-card__info { font-size: 12px; color: var(--muted); }
 .activity-card--featured .activity-card__info { color: var(--on-forest-muted); }
+/* N2（2026-10-22）页头压缩：主标题从 .page-title 的 28px/700 编辑式大标题降为一行 20px/600，
+   首屏把空间让给列表（交付包拼板屏 1.1）。左列 min-width:0 保证窄屏上右侧两个入口不被挤掉；
+   长昵称 + 标题用断行兜底（与 .activity-card__title 同款策略，不截断语义）。 */
+.home-head__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.home-title { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.3px; color: var(--ink); overflow-wrap: anywhere; }

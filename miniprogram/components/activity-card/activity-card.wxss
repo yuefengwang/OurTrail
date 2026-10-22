@@ -1,4 +1,4 @@
-/* 编辑式活动卡（2026-10-16）。全局 token 在 app.wxss；这里只放卡片自身布局。 */
+/* 编辑式活动卡（2026-10-16；N2 2026-10-22 普通卡改照片在上）。全局 token 在 app.wxss；这里只放卡片自身布局。 */
 .card-hover { opacity: 0.9; }
 .activity-card__meta { margin-top: -4px; }
 .affordance-leaf { border-radius: var(--radius-button, 8px); min-height: 44px; }
@@ -11,6 +11,7 @@
   background: var(--forest-deep, #122E28);
   border-color: var(--forest-deep, #122E28);
 }
+/* 媒体盒：featured 与普通卡共用（定高 px + 文档流 image，平台坑 §6 的稳绘制路径） */
 .activity-card__media {
   position: relative;
   height: 148px;
@@ -43,16 +44,23 @@
 .activity-card--featured .activity-card__date { color: var(--on-forest-muted, #D0D8D7); }
 .activity-card--featured .activity-card__info { border-color: var(--on-forest-line, #4E6C65); }
 
-/* ---- 普通卡：左缩略图 + 右文字 ---- */
-.activity-card__row { display: flex; align-items: flex-start; gap: 12px; }
-.activity-card__thumb {
-  flex: 0 0 84px;
-  width: 84px;
-  height: 84px;
-  border-radius: var(--radius-button, 8px);
-  background: var(--stone, #EDE9DE);
-}
-.activity-card__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+/* ---- N2 普通卡：照片在上（媒体盒贴卡顶，正文自带留白） ----
+   根节点 padding 归零让媒体盒出血到卡边；圆角与裁切交给 .card 的 radius + 这里 overflow。
+   选择器比 app.wxss 的 .activity-card 深一档，层叠稳赢（不依赖样式表载入次序）。 */
+.activity-card.activity-card--plain { padding: 0; gap: 0; overflow: hidden; }
+.activity-card--plain .activity-card__media { height: 168px; background: var(--stone, #EDE9DE); }
+/* 状态 badge 压图左上：on-forest 的深底 leaf 字在任何照片上都读得清（featured 压底同款词表） */
+.activity-card__badge { position: absolute; left: 12px; top: 12px; z-index: 2; }
+.activity-card__plain { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 16px; }
+/* sub 行：路线名 + 日期 + 倒计时合成一行 caption；长路线名断行不截断（与标题同款策略） */
+.activity-card__sub { overflow-wrap: anywhere; }
+/* 指标行：复用全局 .metrics/.metric* 但压成 caption 级一行——列表卡上的数字是「扫一眼」的事实，
+   不是详情页那档 26px 大数字。选择器一律比 app.wxss 深一档保证层叠稳赢；
+   **不碰 overflow-wrap**：M-16 的 anywhere 断行兜底留在 app.wxss 继续承重（swx1 §3 钉着）。 */
+.activity-card__metrics .metric { flex: 0 0 auto; display: flex; align-items: baseline; }
+.activity-card__metrics .metric .metric-label { display: inline; margin-top: 0; margin-right: 4px; }
+.activity-card__metrics .metric .metric-value { display: inline; font-size: var(--text-body, 14px); line-height: 22px; letter-spacing: 0; color: var(--ink, #202A26); font-weight: 600; }
+.activity-card__metrics .metric .metric-unit { margin-left: 2px; }
 
 /* ---- 协作入口（2026-10-20）：affordance 行从「一个按钮」变成「主入口一行 + 协作入口一行」 ----
    主入口 flex-basis 100% ⇒ 它与改前逐像素同形（整行 leaf chip，文案靠左、箭头靠右）；
@@ -64,4 +72,5 @@
 
 /* ---- 照片加载失败：藏起照片，退回纯色/纯文字形态 ---- */
 .activity-card.cover-failed .activity-card__cover { display: none; }
-.activity-card.cover-failed .activity-card__thumb { visibility: hidden; }
+/* 普通卡整块媒体消失 ⇒ 退回纯文字卡（不留 168px 空洞）；featured 仍留森林底纯色 hero */
+.activity-card--plain.cover-failed .activity-card__media { display: none; }

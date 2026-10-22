@@ -27,8 +27,13 @@
          名单像另一件事）。 -->
     <view class="section-head">
       <text class="kicker">清点</text>
-      <text class="section-title">应到 {{expectedCount}} 人 · 已上车 {{boardedCount}} 人</text>
-      <text class="section-sub">{{legState}}</text>
+      <view class="cluster" style="justify-content:space-between;align-items:center;">
+        <text class="section-title">应到 {{expectedCount}} 人 · 已上车 {{boardedCount}} 人</text>
+        <!-- legState 三态改用语义色徽标（T010，文案零改动）：已完成=success / 已发车=info /
+             逐人清点=warning。色调由本页已有的 departed/completed 两个布尔决定，
+             不在模板里新造判据（铁律 19）；三种状态在强光下靠形状+颜色双通道可辨。 -->
+        <text class="badge {{completed ? 'success' : (departed ? 'info' : 'warning')}}">{{legState}}</text>
+      </view>
     </view>
 
     <view class="person-list">
@@ -52,7 +57,7 @@
          不留一颗点了才撞红字的主按钮）。名单取本页同屏那两个数背后的同一对集合，不另推一遍规则。 -->
     <view wx:if="{{showPendingNotice}}" class="callout warning stack-gap3">
       <text class="callout-title">还差 {{pendingCount}} 人没有上车记录</text>
-      <text>{{pendingNames}}。请先逐人点「确认上车」，或请现场负责人核实其去向。</text>
+      <text class="pending-names">{{pendingNames}}。请先逐人点「确认上车」，或请现场负责人核实其去向。</text>
     </view>
 
     <view wx:if="{{canOperate}}" class="form-actions">
@@ -70,7 +75,7 @@
   <overlay open="{{departAsk}}" kind="dialog" title="确认本程发车" bind:close="onDepartCancel">
     <view class="stack">
       <text>发车后本车人员的上车记录不可改写，请确认已逐人清点。</text>
-      <text wx:if="{{pendingCount}}" class="small">还有 {{pendingCount}} 人没有上车记录：{{pendingNames}}。可以让现场负责人先核实其去向，再回来发车。</text>
+      <text wx:if="{{pendingCount}}" class="small pending-names">还有 {{pendingCount}} 人没有上车记录：{{pendingNames}}。可以让现场负责人先核实其去向，再回来发车。</text>
       <view class="button danger block {{busy || departed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || departed ? '' : 'onDepart'}}">仍然确认发车</view>
       <view class="button text" hover-class="button-hover" bindtap="onDepartCancel">先回去清点</view>
     </view>

@@ -175,6 +175,8 @@ Page({
     equipmentSuggested: [],
     difficultyLabel: '',
     track: [],
+    // 章节编号（长图文节奏）：只装可见章节的序号，键与模板 wx:if 逐条同源
+    secNo: {},
     weatherBrief: { ready: false, status: 'idle', text: '', retry: false },
     weatherLoading: false,
     sectionNav: [
@@ -385,6 +387,27 @@ Page({
       { id: 'sec-signup', label: '报名后', show: !!String(a.signupNote || '').trim() },
       { id: 'sec-peers', label: '同行人', show: rows.length > 0 },
     ].filter(item => item.show).map(item => ({ id: item.id, label: item.label }))
+    // 章节编号（纯展示派生）：长图文按阅读顺序给章节编号；只发给可见章节——
+    // 草稿没有 sec-facts/sec-weather，写死静态序号会跳号，看起来像页面坏了。
+    // 这里的可见条件必须与模板各处 wx:if 逐条同源（改一处要同时改另一处）。
+    const secNo = {}
+    let chapterSeq = 0
+    ;[
+      ['intro', introVisible],
+      ['facts', a.phase !== 'draft'],
+      ['peers', rows.length > 0],
+      ['itinerary', true],
+      ['weather', a.phase !== 'draft'],
+      ['route', true],
+      ['safety', true],
+      ['equipment', true],
+      ['fee', true],
+      ['signup', !!String(a.signupNote || '').trim()],
+    ].forEach(function (pair) {
+      if (!pair[1]) return
+      chapterSeq += 1
+      secNo[pair[0]] = String(chapterSeq).padStart(2, '0')
+    })
     const coverIsReal = !!a.coverFileId
     const cover = a.coverFileId || covers.coverFor(a.id)
     const factTime = times[0].value + ' – ' + times[1].value
@@ -429,6 +452,7 @@ Page({
       distance: a.routeSnapshot.distanceKm,
       ascent: a.routeSnapshot.ascentM,
       difficultyLabel: F.difficultyLabel(a.routeSnapshot.difficulty),
+      secNo,
       confirmed: v.counters.confirmed,
       capacity: a.capacity,
       stateKey,

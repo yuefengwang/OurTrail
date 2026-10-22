@@ -4,7 +4,21 @@
 .activity-card .activity-card__info { font-size: 12px; color: var(--muted); }
 .activity-card--featured .activity-card__info { color: var(--on-forest-muted); }
 
-/* 筛选与结果计数：横向排一行，不把筛选控件铺满首屏 */
+/* N3（2026-10-22）页头一行化：左列与 home.wxss 的 home-head__text 同形（第二份拷贝，同族债务待解冻后上收）；
+   主标题从 .page-title 的 28px/700 编辑式大标题降为一行 20px/600，首屏把空间让给列表与筛选行
+   （交付包拼板屏 1.2）。min-width:0 保证窄屏上右侧视图分段不被挤掉；长标题断行兜底不截断语义。 */
+.discover-head__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.discover-title { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.3px; color: var(--ink); overflow-wrap: anywhere; }
+/* 页头右槽的视图分段：不跟左列抢宽（card-header 是 space-between + wrap），
+   给最小宽让「列表/地图」两键的命中宽度不被压到文字宽以下；高度仍由全局 .seg 的 --touch-target 给。 */
+.discover-views { flex: 0 0 auto; min-width: 132px; }
+/* 诚实 callout 压到 caption 级：文案一字不改（铁律），只收字号/行高/内边距，不让它抢首屏；
+   底色/边线/字色全部继承全局 .callout，这里不引入任何新色值。 */
+.discover-note { font-size: var(--text-caption); line-height: 18px; padding: 10px 12px; }
+
+/* 筛选与结果计数：横向排一行，不把筛选控件铺满首屏。
+   N3 只整理间距/对齐（横向滚动 + 基线对齐 + 计数右靠均为原语义），控件与数量一个不增不减：
+   筛选按钮 + 两枚排序 chip + 结果计数。 */
 .filter-row {
   display: flex;
   align-items: center;
@@ -34,9 +48,11 @@
   font-size: 12px;
   color: var(--muted);
 }
-/* 页面级覆盖：发现页地图比活动详情高一点，便于看多点分布 */
+/* 页面级覆盖：发现页地图比活动详情高一点，便于看多点分布。
+   N3：圆角改引用 token，与全局 .map-card 的字面量 14px 终值同值（无视觉变化，单源化方向）；高度保持 340px。 */
 .map-card {
   height: 340px;
+  border-radius: var(--radius-card);
 }
 .discover-map {
   display: block;

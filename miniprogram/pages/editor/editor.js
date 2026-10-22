@@ -158,6 +158,8 @@ Page({
     saveLabel: '保存草稿',
     step: 0,
     stepLabels: ['01 信息', '02 路线', '03 介绍', '04 发布'],
+    // 步骤指示完成态（纯展示派生，T007）：与发布门同读一份 missing，见 checklistPatch
+    stepDone: [false, false, false, false],
     ratingOptions: [1, 2, 3, 4, 5],
     difficultyOptions: F.DIFFICULTY_OPTIONS,
     form: toForm(emptyInput()),
@@ -441,27 +443,21 @@ Page({
     this.titleAutoValue = ''
     this.titleAutoSource = ''
     const form = Object.assign({}, this.data.form, { title: e.detail.value })
-    const missing = this.missingForPublish(form)
-    this.setData({
+    this.setData(Object.assign({
       form,
       message: '',
       titleAutoSource: '',
       routeAutoText: routeAutoTextOf(form),
-      publishReady: missing.length === 0,
-      requiredMissingText: missing.map(item => item.label).join('、'),
-    })
+    }, this.checklistPatch(form)))
     this.persistDraft()
   },
   setForm(patch) {
     const form = Object.assign({}, this.data.form, patch)
-    const missing = this.missingForPublish(form)
-    this.setData({
+    this.setData(Object.assign({
       form,
       message: '',
       routeAutoText: routeAutoTextOf(form),
-      publishReady: missing.length === 0,
-      requiredMissingText: missing.map(item => item.label).join('、'),
-    })
+    }, this.checklistPatch(form)))
     this.persistDraft()
   },
   onContentChange(e) {
@@ -532,15 +528,12 @@ Page({
       editingPickups = Object.assign({}, editingPickups)
       editingPickups[auto.id] = true
     }
-    const missing = this.missingForPublish(form)
-    this.setData({
+    this.setData(Object.assign({
       form,
       editingPickups,
       message: auto.created ? '已用路线起点生成集合点，补一句集合位置说明就能发布。' : '',
       routeAutoText: routeAutoTextOf(form),
-      publishReady: missing.length === 0,
-      requiredMissingText: missing.map(item => item.label).join('、'),
-    })
+    }, this.checklistPatch(form)))
     this.persistDraft()
   },
   // 出发时间一旦确定，若已有路线起点且还没有上车点，就用起点生成一个待补地址的集合点。
@@ -571,7 +564,19 @@ Page({
     return {
       publishReady: missing.length === 0,
       requiredMissingText: missing.map(item => item.label).join('、'),
+      // 步骤指示的完成态（T007，纯展示派生）：不新造「一步怎样算完成」的判据——
+      // 与发布门同读这一份 missing。「哪些步骤有必填项」也问门本身：拿一份空白
+      // 表单跑同一判据（答案恒为步骤 0/1；介绍与发布没有必填项，不印「完成」，
+      // 不替用户宣布一件没发生的事）。步骤标签固定，答案算一次就够。
+      stepDone: this.data.stepLabels.map((_, i) =>
+        this.requiredSteps().indexOf(i) !== -1 && missing.every(m => m.step !== i)),
     }
+  },
+  requiredSteps() {
+    if (!this._requiredSteps) {
+      this._requiredSteps = this.missingForPublish(toForm(emptyInput())).map(m => m.step)
+    }
+    return this._requiredSteps
   },
   updatePublishReadiness(form) {
     this.setData(this.checklistPatch(form || this.data.form))

@@ -37,10 +37,12 @@
   color: var(--ink);
 }
 
+/* 风光图组（T004）：只调间距与圆角，不改布局语义——圆角跟摄影卡同一档
+   （--radius-card），长图文里图片才像「相册」而不是贴图 */
 .article-images {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
   margin-top: 12px;
 }
 
@@ -51,20 +53,23 @@
   height: auto;
 }
 
+/* 列宽里的减数必须与 .article-images 的 gap 同账：gap 改 12px 后减数不跟着改，
+   两列总宽会超出容器、第二张被 flex-wrap 挤到下一行（T004 真机对拍当场抓到，
+   after 侧章节锚点整体下移 152px = 一行 140px 图 + 12px 间隙）。 */
 .article-images.double .article-cell {
-  width: calc((100% - 8px) / 2);
+  width: calc((100% - 12px) / 2);
   height: 140px;
 }
 
 .article-images.triple .article-cell {
-  width: calc((100% - 16px) / 3);
+  width: calc((100% - 24px) / 3);
   height: 96px;
 }
 
 .article-img {
   width: 100%;
   height: 100%;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   background: var(--stone);
 }
 
@@ -75,7 +80,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   background: var(--stone);
   color: var(--muted);
   font-size: var(--text-caption);
@@ -87,9 +92,10 @@
   align-items: flex-start;
 }
 
+/* T004 授权顺手修：swx2 存量红（B-16 字重两档，700 只许 app.wxss 的 .page-title） */
 .highlight-dot {
   color: var(--forest);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 24px;
 }
 
