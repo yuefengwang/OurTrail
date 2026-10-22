@@ -49,7 +49,8 @@
 
     <view class="stack" style="gap:4px;">
       <view class="segmented" aria-label="活动编辑步骤">
-        <view wx:for="{{stepLabels}}" wx:key="index" class="seg {{step === index ? 'on' : ''}}" data-step="{{index}}" bindtap="setStep">{{item}}</view>
+        <!-- 完成态只做视觉记号（.seg.done 的 ✓）：判据来自发布门的 missing，不在模板里重算 -->
+        <view wx:for="{{stepLabels}}" wx:key="index" class="seg {{step === index ? 'on' : ''}} {{stepDone[index] ? 'done' : ''}}" data-step="{{index}}" bindtap="setStep">{{item}}</view>
       </view>
       <text class="small muted tabular">第 {{step + 1}} 步 / 共 {{stepLabels.length}} 步</text>
     </view>
@@ -62,27 +63,37 @@
         <text class="section-sub">系统会自动估算结束时间、报名截止与集合时间；只有名称、出发时间和集合位置会拦发布。</text>
       </view>
 
-      <!-- 先选路线，能自动带入名称与路线数据 -->
-      <view class="card stack-gap3">
+      <!-- 步内分组（T007）：眉题用存量 .kicker，组间距由 .step-group 承载（editor.wxss） -->
+      <view class="step-group">
         <view class="section-head">
-          <text class="section-title">从路线开始（可选，但最省事）</text>
-          <text class="small muted">选一条路线或导入 GPX，名称、里程、爬升、节点和风险会自动带入。</text>
+          <text class="kicker">基本</text>
         </view>
-        <view class="cluster">
-          <view class="button secondary {{canChangeRoute ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canChangeRoute ? 'onQuickRouteOpen' : ''}}">从路线库选择</view>
-          <view class="button secondary {{canChangeRoute ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canChangeRoute ? 'onImportGpx' : ''}}">导入 GPX</view>
+        <!-- 先选路线，能自动带入名称与路线数据 -->
+        <view class="card stack-gap3">
+          <view class="section-head">
+            <text class="section-title">从路线开始（可选，但最省事）</text>
+            <text class="small muted">选一条路线或导入 GPX，名称、里程、爬升、节点和风险会自动带入。</text>
+          </view>
+          <view class="cluster">
+            <view class="button secondary {{canChangeRoute ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canChangeRoute ? 'onQuickRouteOpen' : ''}}">从路线库选择</view>
+            <view class="button secondary {{canChangeRoute ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canChangeRoute ? 'onImportGpx' : ''}}">导入 GPX</view>
+          </view>
+          <view wx:if="{{form.routeTitle}}" class="callout success">
+            <text class="callout-title">已带入：{{form.routeTitle}}</text>
+            <text wx:if="{{routeAutoText}}" class="small muted" style="display:block;margin-top:4px;">{{routeAutoText}}。接下来确认时间和集合位置即可。</text>
+          </view>
+          <text wx:if="{{!canChangeRoute}}" class="small muted">集合或行程中路线只能补充，不能更换。</text>
         </view>
-        <view wx:if="{{form.routeTitle}}" class="callout success">
-          <text class="callout-title">已带入：{{form.routeTitle}}</text>
-          <text wx:if="{{routeAutoText}}" class="small muted" style="display:block;margin-top:4px;">{{routeAutoText}}。接下来确认时间和集合位置即可。</text>
-        </view>
-        <text wx:if="{{!canChangeRoute}}" class="small muted">集合或行程中路线只能补充，不能更换。</text>
+
+        <form-field label="活动名称" hint="{{titleAutoSource || '必填。从路线或 GPX 开始会自动填写，可修改。'}}">
+          <input class="input" value="{{form.title}}" maxlength="100" placeholder="这次想去哪里？如：青城后山 · 周末轻徒步" bindinput="onTitleInput" />
+        </form-field>
       </view>
 
-      <form-field label="活动名称" hint="{{titleAutoSource || '必填。从路线或 GPX 开始会自动填写，可修改。'}}">
-        <input class="input" value="{{form.title}}" maxlength="100" placeholder="这次想去哪里？如：青城后山 · 周末轻徒步" bindinput="onTitleInput" />
-      </form-field>
-
+      <view class="step-group">
+        <view class="section-head">
+          <text class="kicker">时间</text>
+        </view>
       <view class="card stack-gap3">
         <view class="cluster" style="justify-content:space-between;">
           <text class="section-title">出发时间</text>
@@ -173,8 +184,10 @@
           </view>
         </view>
       </view>
+      </view>
 
-      <view wx:if="{{!publishReady}}" class="callout info">
+      <!-- 缺项=warning（拦发布），可后补=info（不拦）——层级只换语气，文案零改动 -->
+      <view wx:if="{{!publishReady}}" class="callout warning">
         <text class="callout-title">还差：{{requiredMissingText}}</text>
         <text class="small muted" style="display:block;margin-top:4px;">补齐后底栏会直接出现「发布活动」，不要求先写完介绍。</text>
       </view>
@@ -205,30 +218,39 @@
         </view>
 
         <block wx:if="{{routeDetailsOpen}}">
-          <form-field label="路线名称" hint="可后补；从路线库或 GPX 带入">
-            <input class="input" value="{{form.routeTitle}}" data-key="routeTitle" bindinput="onField" />
-          </form-field>
-          <view class="cluster" style="align-items:flex-start;">
-            <form-field label="距离（km）" hint="自动获取，可修改" style="flex:1;">
-              <input class="input" type="digit" value="{{form.distanceKm}}" data-key="distanceKm" bindinput="onField" />
+          <view class="step-group">
+            <view class="section-head">
+              <text class="kicker">路线指标</text>
+            </view>
+            <form-field label="路线名称" hint="可后补；从路线库或 GPX 带入">
+              <input class="input" value="{{form.routeTitle}}" data-key="routeTitle" bindinput="onField" />
             </form-field>
-            <form-field label="爬升（m）" hint="不确定可留空" style="flex:1;">
-              <input class="input" type="number" value="{{form.ascentM}}" data-key="ascentM" bindinput="onField" />
+            <view class="cluster" style="align-items:flex-start;">
+              <form-field label="距离（km）" hint="自动获取，可修改" style="flex:1;">
+                <input class="input" type="digit" value="{{form.distanceKm}}" data-key="distanceKm" bindinput="onField" />
+              </form-field>
+              <form-field label="爬升（m）" hint="不确定可留空" style="flex:1;">
+                <input class="input" type="number" value="{{form.ascentM}}" data-key="ascentM" bindinput="onField" />
+              </form-field>
+            </view>
+            <form-field label="路线难度（可选）" hint="由组织者判断，不从里程自动推导；不填就是未标注">
+              <picker range="{{difficultyOptions}}" range-key="label" value="{{form.difficulty === 'easy' ? 1 : form.difficulty === 'moderate' ? 2 : form.difficulty === 'hard' ? 3 : 0}}" bindchange="onDifficulty">
+                <view class="picker">
+                  <text class="picker-value">{{form.difficulty === 'easy' ? '轻松' : form.difficulty === 'moderate' ? '中等' : form.difficulty === 'hard' ? '挑战' : '未标注'}}</text>
+                  <text class="picker-arrow">▾</text>
+                </view>
+              </picker>
             </form-field>
           </view>
-          <form-field label="路线难度（可选）" hint="由组织者判断，不从里程自动推导；不填就是未标注">
-            <picker range="{{difficultyOptions}}" range-key="label" value="{{form.difficulty === 'easy' ? 1 : form.difficulty === 'moderate' ? 2 : form.difficulty === 'hard' ? 3 : 0}}" bindchange="onDifficulty">
-              <view class="picker">
-                <text class="picker-value">{{form.difficulty === 'easy' ? '轻松' : form.difficulty === 'moderate' ? '中等' : form.difficulty === 'hard' ? '挑战' : '未标注'}}</text>
-                <text class="picker-arrow">▾</text>
-              </view>
-            </picker>
-          </form-field>
 
-          <view class="cluster" style="justify-content:space-between;">
-            <text class="section-title">路线节点（可后补）</text>
-            <view wx:if="{{!form.points.length}}" class="button text" hover-class="button-hover" bindtap="useSampleRoute">用示例路线</view>
-          </view>
+          <view class="step-group">
+            <view class="section-head">
+              <text class="kicker">路线节点</text>
+            </view>
+            <view class="cluster" style="justify-content:space-between;">
+              <text class="section-title">路线节点（可后补）</text>
+              <view wx:if="{{!form.points.length}}" class="button text" hover-class="button-hover" bindtap="useSampleRoute">用示例路线</view>
+            </view>
           <text class="small muted">节点是你计划经过的关键位置（起点、垭口、终点……），用于途中清点与进度确认。</text>
           <block wx:for="{{form.points}}" wx:key="id">
             <view
@@ -293,6 +315,7 @@
             <icon name="plus" size="18" color="#163E35" />
             <text>添加路线节点</text>
           </view>
+          </view>
         </block>
       </view>
 
@@ -302,6 +325,10 @@
         <text class="section-sub">发布必填至少 1 个集合点；地图选点会同时填好名称、地址与坐标。</text>
       </view>
 
+      <view class="step-group">
+        <view class="section-head">
+          <text class="kicker">上车点</text>
+        </view>
       <view wx:if="{{!form.pickups.length}}" class="card stack-gap3">
         <text>还没有集合点。选一个地图位置最快；也可以先手动添加，地址之后补。</text>
         <view class="button secondary block" hover-class="button-hover" bindtap="chooseNewPickupLocation">
@@ -390,6 +417,7 @@
         <icon name="plus" size="18" color="#163E35" />
         <text>添加上车点</text>
       </view>
+      </view>
     </view>
 
     <!-- ========== 步骤 3：介绍（可选） ========== -->
@@ -439,6 +467,10 @@
         <text class="section-sub">名额已默认 24 人、手动审核；不改也能直接发布。</text>
       </view>
 
+      <view class="step-group">
+        <view class="section-head">
+          <text class="kicker">名额审核</text>
+        </view>
       <view class="card stack-gap3">
         <view class="cluster" style="justify-content:space-between;">
           <text class="section-title">名额与报名</text>
@@ -464,7 +496,12 @@
           </label>
         </checkbox-group>
       </view>
+      </view>
 
+      <view class="step-group">
+        <view class="section-head">
+          <text class="kicker">费用文本</text>
+        </view>
       <view class="card stack-gap3">
         <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleDetailExtras">
           <text style="font-weight:600;">活动说明与费用（可选）</text>
@@ -506,7 +543,12 @@
           </form-field>
         </block>
       </view>
+      </view>
 
+      <view class="step-group">
+        <view class="section-head">
+          <text class="kicker">风险</text>
+        </view>
       <view class="card stack-gap3">
         <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleRisks">
           <text style="font-weight:600;">风险提示（可选）</text>
@@ -546,7 +588,12 @@
           <view class="button secondary block" hover-class="button-hover" bindtap="addRisk">添加风险提示</view>
         </block>
       </view>
+      </view>
 
+      <view class="step-group">
+        <view class="section-head">
+          <text class="kicker">装备</text>
+        </view>
       <view class="card stack-gap3">
         <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleExtras">
           <text style="font-weight:600;">装备与费用说明（可选）</text>
@@ -597,12 +644,14 @@
           </form-field>
         </block>
       </view>
+      </view>
 
       <view wx:if="{{publishReady}}" class="callout success">
         <text class="callout-title">必填项已齐，可以直接发布。</text>
         <text class="small muted" style="display:block;margin-top:4px;">图文、路线、风险与费用都能发布后继续补。</text>
       </view>
-      <view wx:else class="callout info">
+      <!-- 缺项=warning（拦发布），可后补=info（不拦）——层级只换语气，文案零改动 -->
+      <view wx:else class="callout warning">
         <text class="callout-title">还差：{{requiredMissingText}}</text>
       </view>
     </view>

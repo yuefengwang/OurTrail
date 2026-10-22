@@ -15,3 +15,19 @@
 
 /* 底栏主操作吃剩余宽度；「上一步 / 继续完善」保持文字按钮的自然宽度。 */
 .sticky-action .button.text { flex: 0 0 auto; }
+
+/* 步骤指示的完成态记号（T007）：只加一个 ✓，不碰 .seg 既有尺寸/配色/字重
+   （swx1 §1 钉着 .seg 的 min-height 与终值，这里写任何高度都会撞门）。 */
+.seg.done::before {
+  content: '✓';
+  margin-right: 4px;
+  font-size: 11px;
+  color: var(--forest);
+}
+
+/* 步内分组（T007）：与报名页 .part-group 同构——组内 8px、组间 16px，
+   眉题一律用存量 .kicker；不新增颜色与字重（swx2 两档口径）。
+   注意：这里不得出现抬升 .cluster 纵向尺寸的规则（swx2 §7b 的 DEFERRED 判据
+   盯着 .cluster 行高；M-07 的 44px 补救在 .cluster-row-tap 上，各管各的）。 */
+.step-group { display: flex; flex-direction: column; gap: 8px; }
+.step-group + .step-group { margin-top: 16px; }
