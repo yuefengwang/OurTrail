@@ -484,6 +484,36 @@ function windowText(list) {
   return hourSegments(list).join(' / ')
 }
 
+/* ---------- 民用晨昏裁剪：唯一判据 ---------- */
+
+/* 云海是「看得见」的现象，而 hourMarks 只回答「这个小时的云况成不成立」——凌晨 01:00 的
+   云带照样成层、照样在此点下方，但天是黑的。日出前的窗口写进主卡就是替用户安排了一件看不见的事。
+   裁剪的判据只有这一份：主卡（本文件 cloudSeaConclusion）与日程（agenda.visibleSeaWindow）、
+   机会窗口（outdoor-intelligence）都走它。判据住在本文件是因为 agenda → sky 已存在，
+   反向 require 会成环（计划 §4.2）。
+   缺天文数据时**不裁剪**：宁可多给一个看不见的窗口，也不给一个错窗口（铁律 26②的同一条立场）。 */
+function civilWindow(sun) {
+  const from = hourMin(sun && sun.civilDawn)
+  const to = hourMin(sun && sun.civilDusk)
+  return { from, to, ok: Number.isFinite(from) && Number.isFinite(to) }
+}
+
+/* 分钟区间 [start, end) 与民用晨昏的交集。civil.ok=false 原样返回；空交集返回 null。
+   半开区间是有意的：小时 h 覆盖 [t, t+60)，05:46 的晨光落在 05:00 那一小时里 ⇒ 该小时保留。 */
+function clipRange(start, end, civil) {
+  if (!civil.ok) return { from: start, to: end }
+  const s = Math.max(start, civil.from)
+  const e = Math.min(end, civil.to)
+  return e > s ? { from: s, to: e } : null
+}
+
+/* 只保留与民用晨昏有交集的小时。缺天文数据时原样返回（见 civilWindow）。 */
+function civilClip(hours, sun) {
+  const civil = civilWindow(sun)
+  if (!civil.ok) return hours.slice()
+  return hours.filter(h => clipRange(hourMin(h.t), hourMin(h.t) + 60, civil) !== null)
+}
+
 // 晨昏光染的经验时间窗：日出后 50 分钟内、日落前 50 分钟内（徒步者的经验窗口）
 const LIGHT_WINDOW_MIN = 50
 
@@ -656,7 +686,11 @@ function alpenglowConclusion(ctx) {
 function cloudSeaConclusion(ctx) {
   const { date, lat, lng, elevation, elevOK, detail, days, cloudLevels } = ctx
   const marks = hourMarks(ctx)
-  const list = detail.filter(h => (marks[h.t] || []).indexOf('cloudSea') !== -1)
+  /* 标记行是事实层（黑夜里"云带在此点下方"仍是事实，图表照画）；这里裁的是**可行动窗口**：
+     窗口与文案只说天光照得到的那几个小时。裁剪判据单源在 civilClip，与 agenda/OI 同一份。 */
+  const sun = A.sunTimes(date, lat, lng, elevation)
+  const listAll = detail.filter(h => (marks[h.t] || []).indexOf('cloudSea') !== -1)
+  const list = civilClip(listAll, sun)
   const item = { key: 'cloudSea', title: '云海', window: '', look: '站在此点向低处与远处看云顶', text: '' }
   if (!elevOK) {
     item.text = '此点缺少可信海拔（GPX 未记录高程），无法判断是否高过云层带。'
@@ -683,12 +717,17 @@ function cloudSeaConclusion(ctx) {
   let score = 20
   const reasons = []
   const baseMin = Math.min.apply(null, morningSolid.map(h => h.band.base))
-  if (baseMin <= 2200) {
+  /* 2200 是「贴地云海」与「中高云带」的分界（沿用本文件既有判据，本轮不新造数字）。
+     分两层后果：理由句老实说"可能不是贴地云海"，且分数必须与这句话一致（末位 cap69）——
+     旧实现只少加 14 分，于是 3500–3800 m 的中高云带 + 观察点 4000 m 仍拿 74 分 4 星，
+     理由写着"云带偏高"却同时说"有在云顶之上看云海的机会"。 */
+  const highBand = baseMin > 2200
+  if (!highBand) {
     score += 18
     reasons.push('低层有云带（底约 ' + Math.round(baseMin) + ' m）')
   } else {
     score += 4
-    reasons.push('云带偏高（底约 ' + Math.round(baseMin) + ' m）')
+    reasons.push('云带偏高（底约 ' + Math.round(baseMin) + ' m，可能不是贴地云海）')
   }
   /* “此点在云带上方”是几何事实；“有没有成云海窗口”还取决于高层云/风。
      旧实现把两者压成一个 above，于是高层云多时也会说“此点不在云带上方”。 */
@@ -735,16 +774,25 @@ function cloudSeaConclusion(ctx) {
       reasons.push('四周视野较开阔（DEM 90 m）')
     }
   }
-  const g = grade(score)
+  /* 全被裁掉 ≠ 高层云多/风大。旧文案把"天光不足"归因成"清晨高层云较多或风偏大"，
+     那是把一件没发生的事当原因（铁律 33③：归因必须指回真的判据）。 */
+  const clippedOut = aboveBand && !visible && listAll.length > 0
+  /* 所有加分算完之后才封顶：高云带与「云带全被晨昏裁掉」是同一条立场——
+     文案已经说了「可能不是贴地云海」或「能看清云顶的可能性低」，星级不得再挂「条件较好」。
+     复用既有 cap69（= GRADES[0].min - 1，与星空/银河同一机制），不新造阈值；
+     verdict 仍是几何事实（possible），不因为看不见而改判（看不见 ≠ 判过了不成立，铁律 33②）。 */
+  score = cap69(score, highBand || clippedOut)
   item.text = aboveBand
     ? (visible
       ? '清晨 ' + windowText(list) + ' 有在云顶之上看云海的机会（' + reasons.join('、') + '）。'
-      : '此点在云带上方，但清晨高层云较多或风偏大，云顶被遮住的概率较高（' + reasons.join('、') + '）。')
+      : clippedOut
+        ? '有云海条件的时段落在民用晨光之前，天光不足，此时能看清云顶的可能性低（' + reasons.join('、') + '）。'
+        : '此点在云带上方，但清晨高层云较多或风偏大，云顶被遮住的概率较高（' + reasons.join('、') + '）。')
     : '今天有云带但此点在云带内或云带偏高，云海机会低（' + reasons.join('、') + '）。'
   item.window = visible ? windowText(list) : ''
   /* aboveBand===false 是“判过了”：有可信海拔、有成层云带，但此点不在带顶之上 ⇒ 站在这里看不到云顶。
      高层云多/风大只影响窗口质量，不等于“此点不在云带上方”。 */
-  return Object.assign(item, g, { verdict: aboveBand ? VERDICT.POSSIBLE : VERDICT.EXCLUDED })
+  return Object.assign(item, grade(score), { verdict: aboveBand ? VERDICT.POSSIBLE : VERDICT.EXCLUDED })
 }
 
 // 星空：天文暗夜窗口 + 晴空率 + 月光实际影响（月照 × 在地平线上的小时 × 高度）
@@ -1093,5 +1141,6 @@ module.exports = {
   grade, cap69, hourCloud, nightHours, nightHoursForDate, nightWindowText, cloudAboveAt, inversionAt,
   directionValue, terrainAt, atmosphereAt, atmosphereImpact, lightPollutionImpact,
   hourMarks, hourSegments, summarize, LIGHT_WINDOW_MIN,
+  civilWindow, clipRange, civilClip,
   VERDICT, isSilent, LIGHT_LIMITS, lightReachesGround,
 }

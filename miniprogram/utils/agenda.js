@@ -8,9 +8,10 @@
  * 摄影窗口（黄金/蓝调）的"当时值不值得蹲"后缀只按**引用**读 `sky.LIGHT_LIMITS.LOW_CLOUD_MAX`
  * （与光染、彩虹同一把尺），数字不在本文件里出现第二次。
  *
- * 可见性规则（presentation 层唯一一处裁剪）：云海窗口与**民用晨光–民用暮光**取交集。
+ * 可见性规则（裁剪判据的单源在 sky.js）：云海窗口与**民用晨光–民用暮光**取交集。
  * sky.js 的 cloudSea 判定不含昼夜条件，凌晨 01:00 的云况成立但不可见；
- * 在聚合层裁掉，sky.js 阈值与其余 65 例测试零改动（任务 §20 的落点）。
+ * 判据住在 `sky.civilWindow` / `sky.clipRange`（依赖方向 agenda → sky 已存在，反向会成环），
+ * 结论卡、本日程、机会窗口三处走同一份，不存在"第二处裁剪"。
  *
  * wx-free：不得出现任何 wx.*，否则会被移出 Node 测试覆盖（utils/AGENTS.md 铁律）。
  */
@@ -87,20 +88,19 @@ function clustersOf(detail, marks) {
   return out
 }
 
-// 民用晨光–暮光窗口（分钟）。天文数据缺失时 ok=false，调用方不裁剪（宁可多给，不给错）
+// 民用晨光–暮光窗口（分钟）。判据本体在 sky.civilWindow（单源）；本处保留同名导出供 OI 使用。
 function civilWindow(sun) {
-  const from = sky.hourMin(sun && sun.civilDawn)
-  const to = sky.hourMin(sun && sun.civilDusk)
-  return { from, to, ok: Number.isFinite(from) && Number.isFinite(to) }
+  return sky.civilWindow(sun)
 }
 
 // 云海簇与民用晨昏取交集。返回 null = 整段不可见（应从日程丢弃）
 function visibleSeaWindow(fromT, toT, civil) {
-  if (!civil.ok) return { fromT, toT }
-  const s = Math.max(sky.hourMin(fromT), civil.from)
-  const e = Math.min(sky.hourMin(toT) + 60, civil.to) // 簇末小时覆盖 [toT, toT+60)
-  if (!(e > s)) return null
-  return { fromT: F.minutesLabel(s), toT: F.minutesLabel(e) }
+  /* 缺天文数据时原样返回（宁可多给，不给错）。不能把 `civil` 直接当 [fromT,toT] 用：
+     clipRange 吃的是半开区间 [start,end)，簇末小时必须先把结束时刻补成 toT+60 再取交集。 */
+  if (!civil.ok) return { fromT: fromT, toT: toT }
+  const seg = sky.clipRange(sky.hourMin(fromT), sky.hourMin(toT) + 60, civil) // 簇末小时覆盖 [toT, toT+60)
+  if (!seg) return null
+  return { fromT: F.minutesLabel(seg.from), toT: F.minutesLabel(seg.to) }
 }
 
 /* 某个标记在这一天是否真的出现过。口径一律在 sky.hourMarks 里（银心季 + 月照 + 暗夜晴空

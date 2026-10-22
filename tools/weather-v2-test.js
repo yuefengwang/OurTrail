@@ -105,6 +105,10 @@ section('2. 云海可见性：Agenda 只给看得见的窗口')
   check('凌晨簇窗口起点 = 民用晨光（' + sun.civilDawn + '，非天文晨光 ' + sun.astroDawn + '）',
     !!dawnEvent && sky.hourMin(dawnEvent.window.slice(0, 5)) === civilDawnMin,
     dawnEvent && dawnEvent.window)
+  /* 簇末 08 时覆盖 [08:00,09:00)，窗口终点必须补满这一小时再与暮光取交集。
+     只测起点会让"+60 去掉"在单小时簇之外漏网（多时段簇仍能过）。 */
+  check('凌晨簇窗口终点 = 簇末小时 +60 分钟（08 时 → 09:00）',
+    !!dawnEvent && dawnEvent.window.slice(-5) === '09:00', dawnEvent && dawnEvent.window)
   check('02:00（民用晨光前）不进任何窗口',
     seaEvents.every(e => {
       const from = sky.hourMin(e.window.slice(0, 5))

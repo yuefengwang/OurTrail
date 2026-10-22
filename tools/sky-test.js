@@ -829,5 +829,200 @@ section('21. 光污染（lightPollution）：暗空加分、污染降分、缺�
   check('星空：暗空(Bortle 2) 不被封顶（' + darkStar.score + '）', darkStar.score > 69)
 }
 
+section('22. 云海主卡：民用晨昏裁剪 + 云带分层（2026-10-21 F3）')
+{
+  /* 缺陷一：主卡窗口取的是 hourMarks 的原始小时，从来没做民用晨昏裁剪——云带只在 01–05 时，
+     卡片就写「清晨 01:00-05:00 有…机会」，而凌晨是黑的。agenda 与 OI 早就裁了，只有主卡漏了。
+     修法把判据收进 S.civilClip（单源），窗口与文案都走它；**标记行不裁**（事实层）。
+     期望边界一律来自 A.sunTimes，交叉判定在本节独立重写一遍，不调用被测实现。 */
+  const V = S.VERDICT
+  const bandLow = { base: 1000, top: 1600, cover: 95 }
+  const sun2k = A.sunTimes(DATE, LAT, LNG, 2000)      // 云海卡内部用同一个海拔算民用晨昏
+  const civilFrom = S.hourMin(sun2k.civilDawn)
+  const civilTo = S.hourMin(sun2k.civilDusk)
+  const label = h => String(h).padStart(2, '0') + ':00'
+  const overlap = h => Math.min(h * 60 + 60, civilTo) > Math.max(h * 60, civilFrom)
+  /* 窗口文本按 hourSegments 的格式独立拼一遍：单个小时也印成「HH:00-HH:00」，
+     这正是生产格式（hourSegments 对单元素同样 `start.t + '-' + prev.t`）。 */
+  const expectWindow = hs => {
+    const keep = hs.filter(overlap)
+    const segs = []
+    let start = null
+    let prev = null
+    keep.forEach(h => {
+      if (start === null) { start = h }
+      else if (h !== prev + 1) { segs.push(label(start) + '-' + label(prev)); start = h }
+      prev = h
+    })
+    if (start !== null) segs.push(label(start) + '-' + label(prev))
+    return segs.join(' / ')
+  }
+
+  // ① 云带只在 01–05 时：窗口必须裁到民用晨光之后的第一小时
+  const nightBand = day({
+    '*': { high: 10, wind: 6 },
+    1: { band: bandLow }, 2: { band: bandLow }, 3: { band: bandLow }, 4: { band: bandLow }, 5: { band: bandLow },
+  })
+  const nightRes = S.summarize(ctx(nightBand, { elevation: 2000, days: [{ date: '2026-07-17', precipSum: 3.2 }] }))
+  const nightSea = byKey(nightRes, 'cloudSea')
+  check('黑夜云带：窗口被裁到民用晨光覆盖的那个小时（民用晨光 ' + sun2k.civilDawn + '，期望 ' + expectWindow([1, 2, 3, 4, 5]) + '）',
+    nightSea.window === expectWindow([1, 2, 3, 4, 5]) && nightSea.window === '05:00-05:00',
+    nightSea.window)
+  check('黑夜云带：文案不再出现「清晨 01:00」，只写天光内的时段',
+    !/01:00/.test(nightSea.text) && /清晨 05:00/.test(nightSea.text), nightSea.text)
+  check('黑夜云带的标记行不裁剪：图表仍标出 01–05（事实层与可行动窗口分开）',
+    marksOf(nightRes, 'cloudSea').join(',') === '01:00,02:00,03:00,04:00,05:00',
+    marksOf(nightRes, 'cloudSea').join(','))
+  check('黑夜云带 verdict 不变：裁剪只动窗口，不动「此点在云带上方」这个几何事实',
+    nightSea.verdict === V.POSSIBLE && nightSea.score === 100, nightSea.verdict + '/' + nightSea.score)
+
+  // ② 3500–3800 m 中高云带 + 观察点 4000 m：分数必须与「云带偏高」这句话一致
+  const bandHigh = { base: 3500, top: 3800, cover: 95 }
+  const highDay = day({
+    '*': { high: 10, wind: 6 },
+    6: { band: bandHigh }, 7: { band: bandHigh }, 8: { band: bandHigh }, 9: { band: bandHigh },
+  })
+  const highSea = byKey(S.summarize(ctx(highDay, { elevation: 4000, days: [] })), 'cloudSea')
+  /* 改前（D:/ot-baselines/c2 快照实测）：score=74 / tone=success / 4 星，理由写「云带偏高」，
+     文案却仍是「有在云顶之上看云海的机会」。下面钉的是封顶后的准确值而不是模糊的 ≤69。 */
+  check('中高云带（3500–3800 m）+ 点 4000 m：分数被封顶 69（改前 74）', highSea.score === 69, highSea.score)
+  check('中高云带：tone/label 与 grade(69) 自洽（不再 4 星）',
+    highSea.tone === 'warning' && highSea.label === '条件一般'
+    && highSea.tone === S.grade(highSea.score).tone && highSea.label === S.grade(highSea.score).label,
+    highSea.tone + '/' + highSea.label)
+  check('中高云带：verdict 仍是 possible（站在实心云带上方是几何事实，不是「判过了不成立」）',
+    highSea.verdict === V.POSSIBLE, highSea.verdict)
+  check('中高云带：文案不再断言「低层有云带」', !/低层/.test(highSea.text), highSea.text)
+  check('中高云带：文案点名「可能不是贴地云海」', /可能不是贴地云海/.test(highSea.text), highSea.text)
+
+  /* ②-b 分层边界：2200 是本文件既有分界，改成 >= 会把恰好 2200 m 的贴地云带也封顶。
+     两个边界各钉一次，防止「阈值承重却没有边界夹具」。 */
+  const bandEdgeLow = { base: 2200, top: 2600, cover: 95 }
+  const edgeLowDay = day({
+    '*': { high: 10, wind: 6 },
+    6: { band: bandEdgeLow }, 7: { band: bandEdgeLow }, 8: { band: bandEdgeLow }, 9: { band: bandEdgeLow },
+  })
+  const edgeLowSea = byKey(S.summarize(ctx(edgeLowDay, { elevation: 3000, days: [] })), 'cloudSea')
+  check('分层边界：底恰好 2200 m 仍按贴地云带（分数 88，不出现「可能不是贴地云海」）',
+    edgeLowSea.score === 88 && !/可能不是贴地云海/.test(edgeLowSea.text), edgeLowSea.score + '/' + edgeLowSea.text)
+  const bandEdgeHigh = { base: 2201, top: 2600, cover: 95 }
+  const edgeHighDay = day({
+    '*': { high: 10, wind: 6 },
+    6: { band: bandEdgeHigh }, 7: { band: bandEdgeHigh }, 8: { band: bandEdgeHigh }, 9: { band: bandEdgeHigh },
+  })
+  const edgeHighSea = byKey(S.summarize(ctx(edgeHighDay, { elevation: 3000, days: [] })), 'cloudSea')
+  check('分层边界：底 2201 m 起按中高云带封顶 69 且点名「可能不是贴地云海」',
+    edgeHighSea.score === 69 && /可能不是贴地云海/.test(edgeHighSea.text), edgeHighSea.score + '/' + edgeHighSea.text)
+
+  /* ②-c 有云带、此点也在带顶之上，但高层云 ≥30% 使 hourMarks 一个云海标记都不打。
+     这不是「天光不足」——clippedOut 必须只在**确有标记被裁空**时成立。
+     （分数 74/4 星与「云顶被遮住的概率较高」同屏是既有张力，计划未列，只登记不修；
+     这里钉的是归因与封顶判据，不是认可那个分数。） */
+  const blockedDay = day({
+    '*': { high: 50, wind: 6 },
+    6: { band: bandLow, high: 50, wind: 6 }, 7: { band: bandLow, high: 50, wind: 6 },
+    8: { band: bandLow, high: 50, wind: 6 }, 9: { band: bandLow, high: 50, wind: 6 },
+  })
+  const blockedRes = S.summarize(ctx(blockedDay, { elevation: 2000, days: [] }))
+  const blockedSea = byKey(blockedRes, 'cloudSea')
+  check('高层云遮住、无任何云海标记：归因为高层云，不得说成「天光不足」',
+    /高层云较多/.test(blockedSea.text) && !/天光不足/.test(blockedSea.text), blockedSea.text)
+  check('无标记可裁时不得触发 clippedOut 封顶（分数仍 >69，改前 74）',
+    blockedSea.score > 69 && marksOf(blockedRes, 'cloudSea').length === 0,
+    blockedSea.score + '/' + marksOf(blockedRes, 'cloudSea').join(','))
+
+  /* ②-d 混合日：晨光前有云海标记（会被裁空），白天还有成层云带但被高层云遮住（本来就没标记）。
+     clippedOut 只能说「**有云海条件**的时段落在晨光前」，不能说「云带时段」——
+     后者会把白天那条被遮住的带也算成"在天光之外"，是把没发生的事当原因。 */
+  const mixedDay = day({
+    '*': { high: 10, wind: 6 },
+    1: { band: bandLow }, 2: { band: bandLow }, 3: { band: bandLow },
+    6: { band: bandLow, high: 50, wind: 6 }, 7: { band: bandLow, high: 50, wind: 6 },
+    8: { band: bandLow, high: 50, wind: 6 }, 9: { band: bandLow, high: 50, wind: 6 },
+  })
+  const mixedRes = S.summarize(ctx(mixedDay, { elevation: 2000, days: [] }))
+  const mixedSea = byKey(mixedRes, 'cloudSea')
+  check('混合日：全裁空文案限定为「有云海条件的时段」，不把白天被遮住的云带算进来',
+    mixedSea.window === '' && /有云海条件的时段落在民用晨光之前/.test(mixedSea.text)
+    && !/云带时段落在/.test(mixedSea.text), mixedSea.window + '/' + mixedSea.text)
+  check('混合日：封顶 69 且 verdict 仍是 possible',
+    mixedSea.score === 69 && mixedSea.verdict === V.POSSIBLE, mixedSea.score + '/' + mixedSea.verdict)
+
+  // ③ 阳性对照（改前值取自 D:/ot-baselines/c2 快照，硬编码为逐字节期望）
+  /* ③-1 低层云带整段落在民用晨光之后：一个都不裁 ⇒ 分数与文案必须与改前逐字节相同。
+     没有这条，「全都变了」就分不清是裁剪在判还是把文案推倒重写。 */
+  const insideDay = day({
+    '*': { high: 10, wind: 6 },
+    6: { band: bandLow }, 7: { band: bandLow }, 8: { band: bandLow }, 9: { band: bandLow },
+  })
+  const insideSea = byKey(S.summarize(ctx(insideDay, { elevation: 2000, days: [{ date: '2026-07-17', precipSum: 3.2 }] })), 'cloudSea')
+  check('阳性对照：低层云带全在天光内 ⇒ 分数与文案与改前逐字节相同',
+    insideSea.score === 100
+    && insideSea.text === '清晨 06:00-09:00 有在云顶之上看云海的机会（低层有云带（底约 1000 m）、此点在云带上方、清晨高层云少、清晨微风（7 km/h）、前日有降水（3.2 mm））。',
+    insideSea.text)
+  /* ③-2 §7 那组（04–09 时）：04:00 那一小时覆盖 [04:00,05:00)，整段早于民用晨光 05:46 ⇒
+     被裁掉是**正确**的，所以它的文案只差窗口这一处（04:00-09:00 → 05:00-09:00），
+     分数与其后每个字必须与改前逐字节相同。计划里写的「§7 文案逐字节相同」与代码事实不符：
+     那组云带含 04 时，任何诚实的晨昏裁剪都会摘掉它。此处按更强的形态钉住：
+     score 逐字节相同 + 文案除窗口外逐字节相同（窗口另有一条独立断言）。 */
+  const s7Day = day({
+    '*': { high: 10, wind: 6 },
+    4: { band: bandLow }, 5: { band: bandLow }, 6: { band: bandLow }, 7: { band: bandLow },
+    8: { band: bandLow }, 9: { band: bandLow },
+  })
+  const s7Sea = byKey(S.summarize(ctx(s7Day, { elevation: 2000, days: [{ date: '2026-07-17', precipSum: 3.2 }] })), 'cloudSea')
+  check('§7 低层云带：分数与改前逐字节相同（100）', s7Sea.score === 100, s7Sea.score)
+  check('§7 低层云带：窗口 04:00-09:00 → 05:00-09:00（只摘掉整段在晨光前的 04 时）',
+    s7Sea.window === '05:00-09:00', s7Sea.window)
+  check('§7 低层云带：文案除被裁窗口外与改前逐字节相同',
+    s7Sea.text === '清晨 05:00-09:00 有在云顶之上看云海的机会（低层有云带（底约 1000 m）、此点在云带上方、清晨高层云少、清晨微风（7 km/h）、前日有降水（3.2 mm））。',
+    s7Sea.text)
+
+  // ④ 全被裁空：listAll 非空而 list 空 ⇒ 文案必须点名天光，不得沿用「高层云较多/风偏大」
+  const preDawnOnly = day({ '*': { high: 10, wind: 6 }, 1: { band: bandLow }, 2: { band: bandLow }, 3: { band: bandLow } })
+  const emptyRes = S.summarize(ctx(preDawnOnly, { elevation: 2000, days: [] }))
+  const emptySea = byKey(emptyRes, 'cloudSea')
+  check('全被裁空：窗口为空，但标记行仍完整（01–03 三个事实小时）',
+    emptySea.window === '' && marksOf(emptyRes, 'cloudSea').join(',') === '01:00,02:00,03:00',
+    JSON.stringify({ window: emptySea.window, marks: marksOf(emptyRes, 'cloudSea') }))
+  check('全被裁空：文案点名民用晨光 / 天光不足',
+    /民用晨光/.test(emptySea.text) && /天光不足/.test(emptySea.text), emptySea.text)
+  check('全被裁空：不再把没发生的事当原因（不出现「高层云较多|风偏大」）',
+    !/高层云较多|风偏大/.test(emptySea.text), emptySea.text)
+  /* 文案已经说「可能性低」，星级不得再挂「条件较好」（改前 score=88 / success / 4 星）。
+     与高云带共用既有 cap69，不新造阈值。 */
+  check('全被裁空：分数被封顶恰为 69（改前 88；≤69 会放过更低分）', emptySea.score === 69, emptySea.score)
+  check('全被裁空：tone/label 与 grade(score) 自洽，且不再是 success / 条件较好',
+    emptySea.tone !== 'success' && emptySea.label !== '条件较好'
+    && emptySea.tone === S.grade(emptySea.score).tone && emptySea.label === S.grade(emptySea.score).label,
+    emptySea.tone + '/' + emptySea.label + '/' + emptySea.score)
+  check('全被裁空：verdict 仍是 possible（看不见 ≠ 判过了不成立）',
+    emptySea.verdict === V.POSSIBLE, emptySea.verdict)
+
+  // ⑤ civilClip / clipRange 的缺测与边界语义
+  const someHours = [{ t: '01:00' }, { t: '12:00' }]
+  const kept = S.civilClip(someHours, { civilDawn: null, civilDusk: null })
+  check('civilClip 缺天文数据：原样返回（宁可多给，不给错）',
+    kept.length === 2 && kept[0] === someHours[0] && kept[1] === someHours[1], JSON.stringify(kept))
+  check('civilClip 缺天文数据：返回副本，不与入参共用数组', kept !== someHours)
+  check('civilWindow：缺字段/传 null 都是 ok=false',
+    S.civilWindow({}).ok === false && S.civilWindow(null).ok === false
+    && S.civilWindow({ civilDawn: '05:46' }).ok === false)
+  check('clipRange 缺天文数据：原样返回区间',
+    JSON.stringify(S.clipRange(60, 120, { ok: false })) === JSON.stringify({ from: 60, to: 120 }))
+  /* 半开区间 [start,end)：只在边界上相接不算相交（`>` 写成 `>=` 就会凭空多出一小时）。 */
+  const cw = { from: 300, to: 400, ok: true }
+  check('clipRange 边界：区间末端恰好等于晨光起点 ⇒ 不相交', S.clipRange(240, 300, cw) === null)
+  check('clipRange 边界：区间起点恰好等于暮光终点 ⇒ 不相交', S.clipRange(400, 460, cw) === null)
+  check('clipRange 边界：与晨光有一分钟交集即保留（300–301）',
+    JSON.stringify(S.clipRange(240, 301, cw)) === JSON.stringify({ from: 300, to: 301 }))
+  /* 日落这一侧同样要裁：20:34 的民用暮光之后，21 时起的小时整段在天光之外。
+     （云海标记本身只落在 10 点前，所以这条只能直接钉判据；变异「只裁起点不裁终点」专抓它。） */
+  check('civilClip 也裁日落一侧：19/20 时保留（与暮光有交集），21/22 时整段丢弃',
+    S.civilClip([{ t: '19:00' }, { t: '20:00' }, { t: '21:00' }, { t: '22:00' }], sun2k)
+      .map(h => h.t).join(',') === '19:00,20:00',
+    S.civilClip([{ t: '19:00' }, { t: '20:00' }, { t: '21:00' }, { t: '22:00' }], sun2k).map(h => h.t).join(','))
+}
+
 console.log('\npassed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)

@@ -164,10 +164,24 @@ section('4. 结论卡：与图表标记同源不打架')
   check('概率卡都带三级标签', out.items.filter(i => i.key !== 'light').every(i => ['条件较好', '条件一般', '条件较差'].indexOf(i.label) !== -1),
     out.items.map(i => i.key + ':' + i.label).join(' '))
   check('返回日出日落与月相', !!out.sun.sunrise && !!out.sun.sunset && Number.isFinite(out.moon.illumination))
-  // 同源校验：图上有云海标记 → 结论也说有云海机会
+  /* 分层契约（C2/F3）：标记是事实层（不裁），窗口是可行动层（裁到民用晨昏）。
+     正确方向是「窗口内的每个小时都必须有云海标记」；反方向不成立——
+     凌晨的云带仍有标记但窗口为空。旧断言写成「有标记 ⇒ 有窗口」，
+     夹具恰好只有 06–09 的白天标记，于是把分层写反了也没红。 */
   const sea = out.items.filter(i => i.key === 'cloudSea')[0]
-  const hasMark = Object.keys(out.marks).some(k => out.marks[k].indexOf('cloudSea') !== -1)
-  check('图上有云海标记时结论也给出时段（' + sea.window + '）', !hasMark || !!sea.window, sea.text)
+  const seaWindowHours = (() => {
+    if (!sea.window) return []
+    return sea.window.split(' / ').reduce((acc, seg) => {
+      const parts = seg.split('-')
+      for (let m = sky.hourMin(parts[0]); m <= sky.hourMin(parts[1]); m += 60) acc.push(m)
+      return acc
+    }, [])
+  })()
+  check('云海窗口 ⊆ 云海标记（窗口内每小时都有事实标记；反过来不必成立）',
+    seaWindowHours.length > 0 && seaWindowHours.every(m => {
+      const hh = String(Math.floor(m / 60)).padStart(2, '0') + ':00'
+      return (out.marks[hh] || []).indexOf('cloudSea') !== -1
+    }), sea.window + ' / ' + Object.keys(out.marks).filter(k => (out.marks[k] || []).indexOf('cloudSea') !== -1).join(','))
   check('图上有星空标记时星空结论给窗口', (() => {
     const star = out.items.filter(i => i.key === 'star')[0]
     return Object.keys(out.marks).some(k => out.marks[k].indexOf('star') !== -1) ? !!star.window : true
@@ -613,6 +627,34 @@ function fcConfig() {
   check('store 的选中日 = 所选日', !!p && p.selected[DATE] === true, p && Object.keys(p.selected || {}))
   check('store 的 marks/night 与页面数据同源',
     !!p && p.marks === page.data.chartMarks && p.night === page.data.chartNight)
+
+  /* 2026-10-21：云层剖面缺失必须显式可见（缺失 ≠ 此窗没有 ≥80% 成层云带） */
+  check('没有 cloudLevels ⇒ cloudFieldMissing=true，统一图回退经典图',
+    page.data.cloudFieldMissing === true && page.data.unified === null,
+    'missing=' + page.data.cloudFieldMissing + ' unified=' + !!page.data.unified)
+
+  const n = result.series.length
+  const cloudLevels = {
+    times: result.series.map(h => h.d + 'T' + h.t),
+    levels: [
+      { altitudes: Array(n).fill(1000), cloudCover: Array(n).fill(20) },
+      { altitudes: Array(n).fill(2500), cloudCover: Array(n).fill(90) },
+      { altitudes: Array(n).fill(4000), cloudCover: Array(n).fill(30) },
+    ],
+  }
+  page.applyWeather(Object.assign({}, result, { cloudLevels }), { name: '冷杉坪', coordinates: COORD }, {})
+  check('有 cloudLevels ⇒ cloudFieldMissing=false 且统一图生成（旗标不是一红到底）',
+    page.data.cloudFieldMissing === false && !!page.data.unified,
+    'missing=' + page.data.cloudFieldMissing + ' unified=' + !!page.data.unified)
+
+  // 「重新查询」必须绕过内存复用，否则只是重绘同一份缺失数据
+  page._lastResult = {}
+  let refetch = 0
+  page.fetchWeather = function () { refetch++ }
+  page.onRetryWeather()
+  check('onRetryWeather 清掉 _lastResult 并真的再取一次',
+    page._lastResult === null && refetch === 1,
+    '_lastResult=' + JSON.stringify(page._lastResult) + ' refetch=' + refetch)
 
   const savedWx = global.wx
   global.wx = { getSystemInfoSync: () => ({ windowWidth: 780, windowHeight: 390 }) }
