@@ -23,7 +23,7 @@
     "T004": { "status": "passed", "commit": "235ee19", "tests": "check0/handlers0/scenario-activity 159-0/trip2 66-10存量(与基线逐条同款)/style-semantics 92-0/a20 32-0/swx1 45-0/swx2 118-0(存量红已清)/t4-e08 41-0/m02 66-0/page2 97-0/ui-cons 17-0", "note": "章节编号 secNo 纯展示派生（草稿相位不跳号，探针实测 published 01-10 / draft 01-08）；风光图组 gap/圆角；授权修 swx2 存量红 + 行内 700→600。差异未实现：拼板 B 行程时间轴无数据源；底部 CTA 保留 form-actions（固定底栏会压住同行人弹层主操作）。视觉 VERIFIED 2026-10-22（用户授权开发者工具，before=truth@e818e63/after=night@235ee19，10 锚点 scrollTop 逐项相同）；中途抓到真回归：gap 8→12 未同步列宽 calc 减数致 double 第二张被 wrap 挤下行（锚点整体 +152px），已修并把教训写进 wxss 注释；证据 evidence/visual-t004-2026-10-22/" },
     "T005": { "status": "blocked", "reason": "weather-hub/weather 冻结集；G-02/03/04 永久排除" },
     "T006": { "status": "passed", "commit": "ff55dd6", "tests": "check0/handlers0/scenario-signup 106-0/trip2 66-10存量(S0-S8全过,10条全是活动A-02桩红)/t2-m11 46-0/b4-c11 171-0/swx1 45-0/swx2 118-0/t4-e08 41-0/m02 66-0/ui-cons 17-0", "note": "展开态四分组(身份/联系/出行/授权, 绑定逐项计数不变)；收合态授权徽标走并行 map consentBadge（decorateParticipant 产出形状被 scenario-signup 夹具深比较钉住，挂键即红——实测抓到并写进注释）；purposeGate 卡片化。差异未实现：第1步/第2步眉题与底栏三态现状已具备；拼板 2.1/2.2 性别年龄行/集合地图无数据源不造。视觉 VERIFIED 2026-10-22（用户授权，before=truth@e818e63/after=night@ff55dd6，6 态对拍全过；mp.evaluate 闭包不随行的坑记进 shot-signup.js 注释）；证据 evidence/visual-t006-2026-10-22/" },
-    "T007": { "status": "ready", "scope": "editor 四步视觉（draft/发布门/GPX/.cluster 钉点）" },
+    "T007": { "status": "passed", "commit": "3164cf3", "tests": "check0/handlers0/scenario-editor 188-0/quick-create 65-0/trip-mode 78-0/swx1 45-0/swx2 118-0/t4-e08 41-0/m02 66-0/b4-pad 32-0/ui-cons 17-0", "note": "分段条完成态 ✓（stepDone 与发布门同源，requiredSteps 问门本身；介绍/发布无必填项不印完成）；步内 9 组 kicker 分组；缺项 callout info→warning 两处（文案零改动）；三处内联发布态计算收口到 checklistPatch（此前 applyTimeEdit/onTitleInput 不刷新 stepDone，探针抓到）。绑定计数前后相同（bindtap63/catchtap5/bindinput28/bindchange17/data-key37/data-index20/wx:if72/wx:for12，可点 .cluster 行 5 条原样）。差异未实现：步1 集合建议无数据源；拼板封面上传槽/Day 时间轴/装备 chips 输入/公开开关/路线缩略图不造。视觉 VERIFIED 2026-10-22（用户授权，before=truth@e818e63/after=night@3164cf3，7 态对拍全过，含 step4 顶部补拍）；证据 evidence/visual-t007-2026-10-22/" },
     "T008": { "status": "ready", "scope": "routes/route/route-edit（GPX time/ele 与底栏终值钉点）" },
     "T009": { "status": "ready", "scope": "workspace 壳（三面板组件不动；written/sync-key 钉点）" },
     "T010": { "status": "ready", "scope": "tasks/staff/vehicle（发车预检与薄壳钉点）" },
@@ -31,7 +31,7 @@
     "T012": { "status": "blocked", "reason": "weather/weather-chart 冻结集" }
   },
   "commits": ["373da6b", "d8400a7", "bd24085", "454ee7b", "6dc466d", "b385ae7", "700a0ac"],
-  "nextExecutable": "T007",
+  "nextExecutable": "T008",
   "openDebts": [
     "trip2-gates-test.js 存量红 66/10（stubWx 缺 wx.cloud 桩；tools/ 冻结未修，归因见 preExistingRed）",
     "article-images 的 gap 与列宽 calc 减数是两本账（已注释登记同账要求；T008/T011 若调间距先看这条）",
