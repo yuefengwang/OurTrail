@@ -58,8 +58,11 @@ const marksOf = (res, key) => Object.keys(res.marks).filter(t => (res.marks[t] |
 section('1. 晴朗无月夜：星空与银河条件最好')
 {
   // 7 月中旬天文暗夜约 21:40–04:50；全夜晴、月照低（月龄 4 天）
+  /* 夹具必须带上暗空读数：F1 之后「没有 lightPollution 字段」按失败关闭封顶 69，
+     再断言「条件较好」就不再是测天气，而是在测那个可以省略的输入。
+     暗空是本节「条件最好」成立的必要条件之一，写进来才是完整夹具。 */
   const detail = day({ '*': { low: 5, mid: 5, high: 10, temp: 14 } })
-  const res = S.summarize(ctx(detail, { date: '2026-07-15' }))
+  const res = S.summarize(ctx(detail, { date: '2026-07-15', lightPollution: { bortle: 2, sqm: 21.8 } }))
   const star = byKey(res, 'star')
   const galaxy = byKey(res, 'galaxy')
   check('星空结论为条件较好（' + star.score + '）', star.tone === 'success', star.text)
@@ -361,6 +364,469 @@ section('12. 三态判定 verdict：判过不成立要沉默，判不出仍要�
       && S.isSilent({ verdict: V.UNKNOWN }) === false
       && S.isSilent({ verdict: V.POSSIBLE }) === false
       && S.isSilent({}) === false && S.isSilent(undefined) === false)
+}
+
+section('13. 月球高度与银心高度（2026-10 新增）')
+{
+  const clear = day({ '*': { low: 5, mid: 5, high: 10 } })
+  const res = S.summarize(ctx(clear, { date: '2026-07-15' }))
+  const g = byKey(res, 'galaxy')
+  const at = (g.window.match(/\d\d:\d\d/) || [])[0]
+  const gp = A.galaxyPosition(A.cnToMs('2026-07-15', at), LAT, LNG)
+  check('银河「往哪看」与该小时实际银心方位一致（' + at + ' / ' + gp.azimuth + '°）',
+    g.look.indexOf(String(Math.round(gp.azimuth))) >= 0, g.look)
+
+  const full = S.summarize(ctx(clear, { date: '2026-09-26' }))
+  check('满月夜文案说明月亮在夜段地平线上',
+    /月亮在夜段 \d+\/\d+ 小时在地平线上/.test(byKey(full, 'star').text), byKey(full, 'star').text)
+
+  /* 本节测的是「月亮整天在地平线下也不按 53% 扣分」，不是测缺测封顶；
+     给一份暗空读数，让分数只由月光决定（否则 F1 的失败关闭会先把分数压到 69）。 */
+  const highLat = S.summarize(ctx(clear, {
+    date: '2026-09-19', lat: 65, lng: 20, elevation: 0, lightPollution: { bortle: 2, sqm: 21.8 },
+  }))
+  const hs = byKey(highLat, 'star')
+  check('高纬 53% 月亮整夜在地平线下 ⇒ 不按 53% 扣分（' + hs.score + '）',
+    /月亮在整个夜段都在地平线下/.test(hs.text) && hs.score >= 70, hs.text)
+
+  const noCore = S.summarize(ctx(clear, { date: '2026-10-07', lat: 50, lng: 104, elevation: 1200 }))
+  const ng = byKey(noCore, 'galaxy')
+  check('银心整夜在地平线下 ⇒ 银河判 excluded，不再给「找银心带」',
+    ng.verdict === 'excluded' && /地平线以下/.test(ng.text) && !ng.look, ng.text + ' / ' + ng.look)
+}
+
+section('14. 跨夜窗口：今晚入夜 → 次日晨（有 series 时）')
+{
+  const d1 = day({ '*': { low: 0, mid: 0, high: 0 } }).map(h => Object.assign({}, h, { d: '2026-07-15' }))
+  const d2 = day({ '*': { low: 0, mid: 0, high: 0 } }).map(h => Object.assign({}, h, { d: '2026-07-16' }))
+  // 所选日清晨全阴、入夜转晴；次日清晨也晴 ⇒ 今晚应该是 100% 晴
+  d1.slice(0, 5).forEach(h => { h.cloud = { low: 100, mid: 100, high: 100 } })
+  const res = S.summarize(ctx(d1, { date: '2026-07-15', series: d1.concat(d2) }))
+  const star = byKey(res, 'star')
+  check('夜窗口从所选日入夜开始，次日晨带前缀（' + star.window + '）',
+    /^22:00-23:00 \/ 次日 00:00-04:00$/.test(star.window), star.window)
+  check('夜窗口不再混入所选日清晨的云（晴空 100%）', /暗夜晴空 100%/.test(star.text), star.text)
+  check('文案说明这是今晚入夜到次日晨', /今晚入夜到次日晨/.test(star.text), star.text)
+
+  // 次日清晨全阴 ⇒ 后半夜确实被算进来（旧口径会把它漏掉）
+  const d2bad = day({ '*': { low: 100, mid: 100, high: 100 } }).map(h => Object.assign({}, h, { d: '2026-07-16' }))
+  const resBad = S.summarize(ctx(d1, { date: '2026-07-15', series: d1.concat(d2bad) }))
+  const badStar = byKey(resBad, 'star')
+  check('次日清晨全阴会被计入今晚（星空不强判 possible）',
+    badStar.verdict === 'excluded' || /暗夜晴空 [0-6]\d%/.test(badStar.text), badStar.text)
+}
+
+section('15. 低云按观察点海拔参与星空（cloudLevels）')
+{
+  const times = []
+  for (let h = 0; h < 24; h++) times.push('2026-07-15T' + String(h).padStart(2, '0') + ':00')
+  const fill = v => Array(24).fill(v)
+  const cloudLevels = {
+    times,
+    levels: [
+      { pressure: 900, altitudes: fill(1000), cloudCover: fill(100) },
+      { pressure: 700, altitudes: fill(2500), cloudCover: fill(0) },
+      { pressure: 500, altitudes: fill(5500), cloudCover: fill(0) },
+    ],
+  }
+  const detail = day({ '*': { low: 0, mid: 0, high: 0 } })
+  const lowPoint = S.summarize(ctx(detail, { date: '2026-07-15', elevation: 500, elevOK: true, cloudLevels }))
+  const highPoint = S.summarize(ctx(detail, { date: '2026-07-15', elevation: 3000, elevOK: true, cloudLevels }))
+  check('500 m 点：1000 m 的低云在头顶 ⇒ 星空不判晴', byKey(lowPoint, 'star').verdict === 'excluded'
+    || /暗夜晴空 0%/.test(byKey(lowPoint, 'star').text), byKey(lowPoint, 'star').text)
+  check('3000 m 点：同一层低云在脚下 ⇒ 星空仍可判晴', /暗夜晴空 100%/.test(byKey(highPoint, 'star').text),
+    byKey(highPoint, 'star').text)
+  const p500 = S.cloudAboveAt({ t: '23:00', d: '2026-07-15' }, '2026-07-15', cloudLevels, 500)
+  const p3000 = S.cloudAboveAt({ t: '23:00', d: '2026-07-15' }, '2026-07-15', cloudLevels, 3000)
+  check('cloudAboveAt 只统计观察点上方（500m: ' + p500.max + '% / 3000m: ' + p3000.max + '%）',
+    p500 && p500.max === 100 && p3000 && p3000.max === 0)
+}
+
+section('16. 缺测失败关闭：不把 null 当 0')
+{
+  const missing = day({}).map(h => ({ t: h.t }))
+  const res = S.summarize(ctx(missing))
+  ;['star', 'galaxy', 'cloudSea', 'alpenglow', 'rainbow'].forEach(key => {
+    const it = byKey(res, key)
+    check(key + ' 缺测 → unknown（不是 excluded/possible，也不崩）', it.verdict === 'unknown',
+      it.verdict + ' / ' + it.text)
+  })
+
+  const noBand = day({ '*': { low: 0, mid: 0, high: 0 } }).map(h => {
+    const o = Object.assign({}, h)
+    delete o.band
+    return o
+  })
+  const noBandRes = S.summarize(ctx(noBand))
+  check('没有 band 字段 ⇒ 云海 unknown，不印「没有成层云带」',
+    byKey(noBandRes, 'cloudSea').verdict === 'unknown' && !/没有成层的低云带/.test(byKey(noBandRes, 'cloudSea').text),
+    byKey(noBandRes, 'cloudSea').text)
+
+  const partial = day({ '*': { low: 0, mid: 0, high: 0 } }).map((h, i) => i < 2 ? h : { t: h.t })
+  const partialRes = S.summarize(ctx(partial))
+  check('夜段只有 2/7 小时有读数 ⇒ 星空 unknown（80% 覆盖门）',
+    byKey(partialRes, 'star').verdict === 'unknown', byKey(partialRes, 'star').text)
+
+  const afternoonBand = day({ '*': { low: 0, mid: 0, high: 0 } }).map((h, i) => {
+    h.band = i === 15 ? { base: 2000, top: 2500, cover: 90 } : null
+    return h
+  })
+  const afternoon = byKey(S.summarize(ctx(afternoonBand)), 'cloudSea')
+  check('只有下午云带 ⇒ 云海 excluded 并说明不在清晨时段',
+    afternoon.verdict === 'excluded' && /不在清晨时段/.test(afternoon.text), afternoon.text)
+}
+
+section('17. 云海逆温（profile + cloudLevels）')
+{
+  const times = []
+  for (let h = 0; h < 24; h++) times.push('2026-07-15T' + String(h).padStart(2, '0') + ':00')
+  const fill = v => Array(24).fill(v)
+  const cloudLevels = {
+    times,
+    levels: [
+      { pressure: 925, altitudes: fill(1000), cloudCover: fill(0) },
+      { pressure: 850, altitudes: fill(2800), cloudCover: fill(0) },
+      { pressure: 700, altitudes: fill(3800), cloudCover: fill(0) },
+    ],
+  }
+  const make = inv => day({ '*': { low: 0, mid: 0, high: 0 } }).map((h, i) => Object.assign({}, h, {
+    temp: 10,
+    profile: {
+      925: { t: inv ? 12 : 8, rh: 80 },
+      850: { t: inv ? 12 : 8, rh: 70 },
+      700: { t: 2, rh: 50 },
+    },
+    band: i < 10 ? { base: 2000, top: 2500, cover: 90 } : null,
+  }))
+  const invRes = S.summarize(ctx(make(true), { date: '2026-07-15', elevation: 2600, cloudLevels }))
+  const noRes = S.summarize(ctx(make(false), { date: '2026-07-15', elevation: 2600, cloudLevels }))
+  const inv = byKey(invRes, 'cloudSea')
+  const no = byKey(noRes, 'cloudSea')
+  check('有逆温：加分且文案点名（' + inv.score + ' vs ' + no.score + '）',
+    inv.score > no.score && /有逆温/.test(inv.text), inv.text)
+  check('无逆温：扣分且文案点名', /无明显逆温/.test(no.text), no.text)
+  const iv = S.inversionAt(make(true)[3], '2026-07-15', cloudLevels, 2600)
+  check('inversionAt 选此点上方最近层（850）', iv && iv.inversion && iv.pressure === 850, iv)
+  const ivHigh = S.inversionAt(make(true)[3], '2026-07-15', cloudLevels, 2900)
+  check('点高于 850 层时不会被地下层误判', ivHigh && ivHigh.pressure === 700 && !ivHigh.inversion, ivHigh)
+}
+
+section('18. 方向性天气（spatial）：银河看银心方向、彩虹看反日方向')
+{
+  const times = []
+  for (let h = 0; h < 24; h++) times.push('2026-07-15T' + String(h).padStart(2, '0') + ':00')
+  const makeSpatial = vals => ({
+    times,
+    hours: times.map(t => t.slice(11, 16)),
+    byAzimuth: [0, 45, 90, 135, 180, 225, 270, 315].map(az => ({
+      azimuth: az,
+      low: times.map(() => vals.low == null ? 0 : vals.low),
+      mid: times.map(() => vals.mid == null ? 0 : vals.mid),
+      high: times.map(() => vals.high == null ? 0 : vals.high),
+      precip: times.map(() => vals.precip == null ? 0 : vals.precip),
+      pop: times.map(() => vals.pop == null ? 0 : vals.pop),
+    })),
+  })
+  const one = { times: ['2026-07-15T22:00'], hours: ['22:00'], byAzimuth: [
+    { azimuth: 0, mid: [0] }, { azimuth: 90, mid: [100] },
+    { azimuth: 180, mid: [50] }, { azimuth: 270, mid: [0] },
+    { azimuth: 315, mid: [40] },
+  ] }
+  check('directionValue 命中最近方位', S.directionValue(one, '2026-07-15T22:00', 90, 'mid') === 100)
+  check('directionValue 两个方位之间线性插值（45°→50）', S.directionValue(one, '2026-07-15T22:00', 45, 'mid') === 50)
+  const wrap = S.directionValue(one, '2026-07-15T22:00', 350, 'mid')
+  check('directionValue 跨 0° 圆周插值（350° 在 315° 与 0° 之间）', wrap > 5 && wrap < 15, wrap)
+  check('directionValue 缺时刻/缺值返回 null', S.directionValue(one, '2026-07-15T23:00', 90, 'mid') === null &&
+    S.directionValue(one, '2026-07-15T22:00', 90, 'precip') === null)
+
+  const clear = day({ '*': { low: 5, mid: 5, high: 10 } })
+  const noSpatial = byKey(S.summarize(ctx(clear, { date: '2026-07-15' })), 'galaxy')
+  const cloudyDir = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', spatial: makeSpatial({ mid: 100 }),
+  })), 'galaxy')
+  check('银心方向云 100% ⇒ 银河降分且文案点名方向（' + cloudyDir.score + ' vs ' + noSpatial.score + '）',
+    cloudyDir.score < noSpatial.score && /银心方向云较多|银心方向云约/.test(cloudyDir.text), cloudyDir.text)
+
+  const rainy = day({ '*': { low: 0, mid: 0, high: 0, precip: 0, rh: 70 } })
+  rainy[7].precip = 0.2
+  rainy[7].rh = 90
+  const dry = byKey(S.summarize(ctx(rainy, {
+    date: '2026-07-15', spatial: makeSpatial({ precip: 0, pop: 0 }),
+  })), 'rainbow')
+  const wet = byKey(S.summarize(ctx(rainy, {
+    date: '2026-07-15', spatial: makeSpatial({ precip: 0.5, pop: 80 }),
+  })), 'rainbow')
+  check('反日方向未检出降水 ⇒ 彩虹降分并说清（' + dry.score + '）',
+    /反日方向未检出降水/.test(dry.text), dry.text)
+  check('反日方向有降水 ⇒ 彩虹分数更高并说清（' + wet.score + ' vs ' + dry.score + '）',
+    wet.score > dry.score && /反日方向有降水信号/.test(wet.text), wet.text)
+}
+
+section('19. 地形地平线（terrain）：银河遮挡、彩虹反日方向、光染目标山脊')
+{
+  const terrainAll = (angle, distance, elevation) => {
+    const horizon = []
+    for (let a = 0; a < 360; a += 22.5) horizon.push({ azimuth: a, angle, distance, elevation })
+    return { horizon, openness: angle < 1 ? 1 : 0 }
+  }
+  const interp = {
+    horizon: [
+      { azimuth: 0, angle: 0, distance: 0, elevation: 0 },
+      { azimuth: 45, angle: 10, distance: 8, elevation: 3000 },
+    ],
+  }
+  const at = S.terrainAt(interp, 22.5)
+  check('terrainAt 圆周线性插值（22.5°→5°）', at && Math.abs(at.angle - 5) < 0.01, at)
+
+  const clear = day({ '*': { low: 5, mid: 5, high: 10 } })
+  const blocked = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', terrain: terrainAll(80, 10, 6000),
+  })), 'galaxy')
+  check('银心被 80° 山脊挡住 ⇒ galaxy excluded 且说明山脊',
+    blocked.verdict === 'excluded' && /山脊挡住/.test(blocked.text), blocked.text)
+  const open = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', terrain: terrainAll(-5, 0, 0),
+  })), 'galaxy')
+  check('地平线开阔 ⇒ galaxy 仍可判 possible', open.verdict === 'possible', open.text)
+  const marksBlocked = S.hourMarks({
+    date: '2026-07-15', lat: LAT, lng: LNG, elevation: 1200, elevOK: true,
+    detail: clear, terrain: terrainAll(80, 10, 6000),
+  })
+  const marksOpen = S.hourMarks({
+    date: '2026-07-15', lat: LAT, lng: LNG, elevation: 1200, elevOK: true,
+    detail: clear, terrain: terrainAll(-5, 0, 0),
+  })
+  check('hourMarks 与主卡共用同一地形门（时间轴/OI 不再另说一套）',
+    marksOf({ marks: marksBlocked }, 'galaxy').length === 0 &&
+      marksOf({ marks: marksOpen }, 'galaxy').length > 0,
+    'blocked=' + marksOf({ marks: marksBlocked }, 'galaxy').length +
+      ' open=' + marksOf({ marks: marksOpen }, 'galaxy').length)
+
+  const rainy = day({ '*': { low: 0, mid: 0, high: 0, precip: 0, rh: 70 } })
+  rainy[7].precip = 0.2
+  rainy[7].rh = 90
+  const rbBlocked = byKey(S.summarize(ctx(rainy, {
+    date: '2026-07-15', terrain: terrainAll(10, 10, 3000),
+  })), 'rainbow')
+  const rbOpen = byKey(S.summarize(ctx(rainy, {
+    date: '2026-07-15', terrain: terrainAll(-5, 0, 0),
+  })), 'rainbow')
+  check('反日方向 10° 山脊 ⇒ 彩虹降分并说明（' + rbBlocked.score + ' vs ' + rbOpen.score + '）',
+    rbBlocked.score < rbOpen.score && /山脊挡住/.test(rbBlocked.text), rbBlocked.text)
+
+  const glow = day({ '*': { low: 5, mid: 30, high: 10 } })
+  const glowBlocked = byKey(S.summarize(ctx(glow, {
+    date: '2026-07-15', terrain: terrainAll(20, 10, 4000),
+  })), 'alpenglow')
+  const glowOpen = byKey(S.summarize(ctx(glow, {
+    date: '2026-07-15', terrain: terrainAll(-5, 0, 0),
+  })), 'alpenglow')
+  check('光染：太阳低于山脊 ⇒ 降分并说明（' + glowBlocked.score + ' vs ' + glowOpen.score + '）',
+    glowBlocked.score < glowOpen.score && /太阳低于此方位山脊/.test(glowBlocked.text), glowBlocked.text)
+  check('光染：太阳高于山脊 ⇒ 加分并给出山脊方位',
+    /太阳高于此方位山脊/.test(glowOpen.text) && /看山脊线/.test(glowOpen.look), glowOpen.text + ' / ' + glowOpen.look)
+}
+
+section('20. 大气透明度 / seeing / 气溶胶（atmosphere）')
+{
+  const at = { sevenTimer: { series: [{ at: '2026-07-15T23:00', seeing: 2, transparency: 7, cloudPct: 0 }] }, air: { series: [{ at: '2026-07-15T23:00', aod: 0.1, pm25: 10 }] } }
+  const got = S.atmosphereAt(at, '2026-07-15T23:00')
+  check('atmosphereAt 合并 7Timer 与 CAMS', got && got.seeing === 2 && got.transparency === 7 && got.aod === 0.1, got)
+  check('atmosphereAt 缺该小时 → null', S.atmosphereAt(at, '2026-07-16T10:00') === null)
+  const poor = S.atmosphereImpact({ aod: 0.5, transparency: 8, seeing: 7 })
+  const good = S.atmosphereImpact({ aod: 0.1, transparency: 2, seeing: 2 })
+  check('气溶胶/透明度/seeing 差 ⇒ 负分并点名（' + poor.score + '）',
+    poor.score < 0 && /气溶胶偏高/.test(poor.text) && /透明度偏低/.test(poor.text), poor.text)
+  check('气溶胶低/透明度好/seeing 好 ⇒ 正分（' + good.score + '）',
+    good.score > 0 && /气溶胶低/.test(good.text) && /7Timer 透明度好/.test(good.text), good.text)
+
+  const atmAll = (vals, date) => {
+    const d = date || '2026-07-15'
+    const seven = [], air = []
+    for (let h = 0; h < 24; h++) {
+      const t = d + 'T' + String(h).padStart(2, '0') + ':00'
+      seven.push({ at: t, seeing: vals.seeing, transparency: vals.transparency, cloudPct: 0 })
+      air.push({ at: t, aod: vals.aod, pm25: vals.pm25 })
+    }
+    return { sevenTimer: { series: seven }, air: { series: air } }
+  }
+  const clear = day({ '*': { low: 5, mid: 5, high: 10 } })
+  /* 本节的自变量是大气，光污染必须给一个中性读数（Bortle 5 ⇒ 0 分、不封顶）：
+     F1 之后缺测会封顶 69，「空气好 vs 空气差」就都被压到同一条线上，比不出东西，
+     文案也会先被「光污染未计入」抢走。缺测那一支由 §21 单独覆盖。 */
+  const LP_MID = { bortle: 5, sqm: 20.3 }
+  const starGood = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: LP_MID, atmosphere: atmAll({ seeing: 2, transparency: 2, aod: 0.1 }),
+  })), 'star')
+  const starBad = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: LP_MID, atmosphere: atmAll({ seeing: 7, transparency: 8, aod: 0.5 }),
+  })), 'star')
+  check('星空：空气好 ⇒ 分数更高且点名（' + starGood.score + ' vs ' + starBad.score + '）',
+    starGood.score > starBad.score && /气溶胶低|7Timer 透明度好/.test(starGood.text), starGood.text)
+  check('星空：空气差 ⇒ 降分且说明', /大气透明度\/seeing 偏弱/.test(starBad.text) && /气溶胶偏高/.test(starBad.text), starBad.text)
+
+  const galGood = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: LP_MID, atmosphere: atmAll({ seeing: 2, transparency: 2, aod: 0.1 }),
+  })), 'galaxy')
+  const galBad = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: LP_MID, atmosphere: atmAll({ seeing: 7, transparency: 8, aod: 0.5 }),
+  })), 'galaxy')
+  check('银河：空气差 ⇒ 降分并说明（' + galGood.score + ' vs ' + galBad.score + '）',
+    galBad.score < galGood.score && /大气透明度\/seeing 偏弱/.test(galBad.text), galBad.text)
+
+  const fullGal = byKey(S.summarize(ctx(day({ '*': { low: 5, mid: 5, high: 10 } }), {
+    date: '2026-09-26', lightPollution: { bortle: 2, sqm: 21.8 },
+    atmosphere: atmAll({ seeing: 2, transparency: 2, aod: 0.1 }, '2026-09-26'),
+  })), 'galaxy')
+  check('满月 + 通透天空：银河封顶 69，不出现 4 星与“不建议”打架',
+    fullGal.score <= 69 && /不建议|月光/.test(fullGal.text), fullGal.text)
+}
+
+section('21. 光污染（lightPollution）：暗空加分、污染降分、缺失/污染封顶')
+{
+  const dark = S.lightPollutionImpact({ bortle: 2, sqm: 21.8 })
+  const polluted = S.lightPollutionImpact({ bortle: 8, sqm: 18 })
+  const mid = S.lightPollutionImpact({ bortle: 5, sqm: 20.3 })
+  check('Bortle 2 / SQM 21.8 ⇒ 暗空加分', dark.score > 0 && /天空较暗/.test(dark.text), dark)
+  check('Bortle 8 / SQM 18 ⇒ 光污染扣分', polluted.score < 0 && polluted.poor && /光污染较高/.test(polluted.text), polluted)
+  check('Bortle 5 / SQM 20.3 ⇒ 中性', mid.score === 0 && /光污染中等/.test(mid.text), mid)
+
+  /* cap69 是“文案已经说机会低/不建议时星级必须一致”的唯一出口（月光封顶与光污染封顶同源）。
+     边界钉在这里：70 必须落到 69，69 原样，条件为假时不许动分数。 */
+  check('cap69：70→69、69→69、条件不成立不动分',
+    S.cap69(70, true) === 69 && S.cap69(69, true) === 69
+    && S.cap69(80, false) === 80 && S.cap69(100, true) === 69,
+    [S.cap69(70, true), S.cap69(69, true), S.cap69(80, false), S.cap69(100, true)].join('/'))
+
+  const clear = day({ '*': { low: 5, mid: 5, high: 10 } })
+  /* 通透空气 +11 分，把“光污染差”的两张卡推到 69 之上，封顶才有可观测的后果 */
+  const atmClear = vals => {
+    const seven = [], air = []
+    for (let h = 0; h < 24; h++) {
+      const t = '2026-07-15T' + String(h).padStart(2, '0') + ':00'
+      seven.push({ at: t, seeing: vals.seeing, transparency: vals.transparency, cloudPct: 0 })
+      air.push({ at: t, aod: vals.aod, pm25: vals.pm25 })
+    }
+    return { sevenTimer: { series: seven }, air: { series: air } }
+  }
+  const VERY_CLEAR = { seeing: 2, transparency: 2, aod: 0.1 }
+  const darkStar = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: { bortle: 2, sqm: 21.8 },
+  })), 'star')
+  const dirtyStar = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: { bortle: 8, sqm: 18 },
+  })), 'star')
+  const missingStar = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: null,
+  })), 'star')
+  const noFieldStar = byKey(S.summarize(ctx(clear, { date: '2026-07-15' })), 'star')
+  check('星空：暗空加分且点名（' + darkStar.score + '）', darkStar.score > noFieldStar.score && /天空较暗/.test(darkStar.text), darkStar.text)
+  check('星空：光污染降分且说明（' + dirtyStar.score + '）', dirtyStar.score < noFieldStar.score && /光污染较高/.test(dirtyStar.text), dirtyStar.text)
+  check('星空：光污染显式缺失 ⇒ 封顶 69 且说明（' + missingStar.score + '）',
+    missingStar.score === 69 && /未计入光污染/.test(missingStar.text), missingStar.text)
+  /* 契约替换（2026-10-21 F1）：旧断言是「没有 lightPollution 字段 ⇒ 保持旧行为（不封顶）」，
+     它把“调用方没传这个字段”读成“天空很暗”。页面的三个真实状态——首屏、getSkyContext 整体失败、
+     配额用尽/非 ready——传的正是 undefined，于是封顶与披露在最需要的时候恰好失效
+     （探针：星空 73、银河 88）。纯函数分不清“没有这个概念”与“问了没取到”，按失败关闭处理；
+     这条换成**更强**的判据：undefined 与 null 同样封顶并披露。 */
+  check('星空：没有 lightPollution 字段（undefined）⇒ 与 null 同样封顶 69 且披露（' + noFieldStar.score + '）',
+    noFieldStar.score === 69 && /未计入光污染/.test(noFieldStar.text), noFieldStar.text)
+  /* 封顶必须有可观测后果：不叠空气加分时 Bortle 8 星空只有 63 分，封不封都一样。
+     叠上通透空气（+11）后是 74 —— 文案说“光污染较高、条件一般”，星级却仍是 4 星，
+     正是用户能同时读到的那句自相矛盾。 */
+  const dirtyStarAtm = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: { bortle: 8, sqm: 18 }, atmosphere: atmClear(VERY_CLEAR),
+  })), 'star')
+  check('星空：光污染差（Bortle 8）+ 通透空气 ⇒ 封顶 69 且只点一次“光污染较高”（' + dirtyStarAtm.score + '）',
+    dirtyStarAtm.score === 69 && /条件一般|不建议/.test(dirtyStarAtm.text)
+    && (dirtyStarAtm.text.match(/光污染较高/g) || []).length === 1,
+    dirtyStarAtm.text)
+
+  const darkGal = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: { bortle: 2, sqm: 21.8 },
+  })), 'galaxy')
+  const dirtyGal = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: { bortle: 8, sqm: 18 },
+  })), 'galaxy')
+  const missingGal = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: null,
+  })), 'galaxy')
+  const noFieldGal = byKey(S.summarize(ctx(clear, { date: '2026-07-15' })), 'galaxy')
+  check('银河：光污染高 ⇒ 降分且不建议（' + dirtyGal.score + '）',
+    dirtyGal.score < darkGal.score && /光污染较高/.test(dirtyGal.text), dirtyGal.text)
+  check('银河：光污染显式缺失 ⇒ 封顶 69 且说明（' + missingGal.score + '）',
+    missingGal.score === 69 && /未计入光污染/.test(missingGal.text), missingGal.text)
+  /* 同一条契约替换的另一半：没有 lightPollution 字段（undefined）必须与 null 同罚。
+     探针里银河在这一支拿 88 分 ★★★★☆，而文案写“不建议抱太大期望”。 */
+  check('银河：没有 lightPollution 字段（undefined）⇒ 封顶 69 且披露（' + noFieldGal.score + '）',
+    noFieldGal.score === 69 && /未计入光污染/.test(noFieldGal.text)
+    && /不建议/.test(noFieldGal.text), noFieldGal.text)
+  check('银河：光污染高 ⇒ 封顶 69 且只点一次“光污染较高”（' + dirtyGal.score + '）',
+    dirtyGal.score === 69 && (dirtyGal.text.match(/光污染较高/g) || []).length === 1, dirtyGal.text)
+  /* 封印必须落在**所有**加减分之后：方向云 <30% 会给银河 +5。旧实现先封 69 再加 5，
+     结果是 74 分「条件较好」——文案明明写着「光污染未计入」，星级却当成没这回事。
+     这条用缺读数 + 方向云开阔的一小时钉住次序（变异 M5 专抓）。 */
+  const times = []
+  for (let h = 0; h < 24; h++) times.push('2026-07-15T' + String(h).padStart(2, '0') + ':00')
+  const openDir = {
+    times,
+    hours: times.map(t => t.slice(11, 16)),
+    byAzimuth: [0, 45, 90, 135, 180, 225, 270, 315].map(az => ({
+      azimuth: az,
+      low: times.map(() => 5),
+      mid: times.map(() => 5),
+      high: times.map(() => 10),
+      precip: times.map(() => 0),
+      pop: times.map(() => 0),
+    })),
+  }
+  const openDirGal = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', spatial: openDir,
+  })), 'galaxy')
+  /* 反方向的同一份方向网格：银心方向云 ≥60% ⇒ dirHigh 支路（reason 改由方向云先说）。 */
+  const dirHi = {
+    times,
+    hours: times.map(t => t.slice(11, 16)),
+    byAzimuth: [0, 45, 90, 135, 180, 225, 270, 315].map(az => ({
+      azimuth: az,
+      low: times.map(() => 85),
+      mid: times.map(() => 85),
+      high: times.map(() => 85),
+      precip: times.map(() => 0),
+      pop: times.map(() => 0),
+    })),
+  }
+  check('银河：缺光污染 + 银心方向云开阔（+5）⇒ 仍在加完之后封顶 69（' + openDirGal.score + '）',
+    openDirGal.score === 69 && /未计入光污染/.test(openDirGal.text)
+    /* 这条夹具必须真的走到 +5 那一支：方向云若被静默算成 null，上面的 69 会照旧成立，
+       而它证明的就不再是“加完再封”。 */
+    && /银心方向云约 \d{1,2}%/.test(openDirGal.text)
+    && Number((openDirGal.text.match(/银心方向云约 (\d+)%/) || [])[1]) < 30,
+    openDirGal.text)
+  /* 去重不能过头：reason 链先说了别的（有云 / 方向云）时，证据句必须把光污染说完。
+     把 lpNamed 写成 `lpPoor` 就会在这些支路里静默丢掉唯一一次「光污染较高」（变异 M10 专抓）。 */
+  const cloudyNight = day({ '*': { low: 95, mid: 95, high: 95 } })
+  const dirtyCloudyGal = byKey(S.summarize(ctx(cloudyNight, {
+    date: '2026-07-15', lightPollution: { bortle: 8, sqm: 18 },
+  })), 'galaxy')
+  check('银河：有云（晴 0%）+ 光污染高 ⇒ reason 未点名时证据句仍说一次「光污染较高」（' + dirtyCloudyGal.score + '）',
+    /暗夜有云/.test(dirtyCloudyGal.text)
+    && (dirtyCloudyGal.text.match(/光污染较高/g) || []).length === 1, dirtyCloudyGal.text)
+  const dirHighGal = byKey(S.summarize(ctx(clear, {
+    date: '2026-07-15', lightPollution: { bortle: 8, sqm: 18 }, spatial: dirHi,
+  })), 'galaxy')
+  check('银河：银心方向云多 + 光污染高 ⇒ reason 未点名时证据句仍说一次「光污染较高」（' + dirHighGal.score + '）',
+    /银心方向云较多/.test(dirHighGal.text)
+    && (dirHighGal.text.match(/光污染较高/g) || []).length === 1, dirHighGal.text)
+  const dirtyCloudyStar = byKey(S.summarize(ctx(cloudyNight, {
+    date: '2026-07-15', lightPollution: { bortle: 8, sqm: 18 },
+  })), 'star')
+  check('星空：有云（晴 0%）+ 光污染高 ⇒ 文案不点名光污染时证据句仍说一次（' + dirtyCloudyStar.score + '）',
+    /夜间云量高|夜间有云/.test(dirtyCloudyStar.text)
+    && (dirtyCloudyStar.text.match(/光污染较高/g) || []).length === 1, dirtyCloudyStar.text)
+  /* 阳性对照：暗空(Bortle 2) 不受封顶影响 —— 证明上面的 69 不是无条件封顶。 */
+  check('银河：暗空(Bortle 2) 不被封顶（' + darkGal.score + '）', darkGal.score > 69)
+  check('星空：暗空(Bortle 2) 不被封顶（' + darkStar.score + '）', darkStar.score > 69)
 }
 
 console.log('\npassed=' + passed + ' failed=' + failed)

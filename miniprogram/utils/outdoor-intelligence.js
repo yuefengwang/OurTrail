@@ -51,6 +51,17 @@ const OPPORTUNITY = {
  * 光污染与地形遮挡没有可靠数据源，必须写出来，否则读者会以为已经纳入。 */
 const NIGHT_LIMIT = '只看云量与月照：光污染与地形遮挡无数据源，未纳入判断'
 
+/* OI 的夜间窗口仍只由 hourMarks（云/月照）决定；地形/光污染已经进入主结论卡，
+   所以边界话术要分开说，不能在有输入时还宣称“无数据源”。 */
+function nightLimit(ctx) {
+  const hasLP = !!(ctx && ctx.lightPollution)
+  const hasTerrain = !!(ctx && ctx.terrain && Array.isArray(ctx.terrain.horizon) && ctx.terrain.horizon.length)
+  if (hasLP && hasTerrain) return 'OI 窗口只看云量与月照；光污染与地形已用于主结论卡'
+  if (hasLP) return 'OI 窗口只看云量与月照；光污染已用于主结论卡，地形遮挡无读数'
+  if (hasTerrain) return 'OI 窗口只看云量与月照；地形已用于主结论卡，光污染无读数'
+  return NIGHT_LIMIT
+}
+
 /* Rank：静态基础优先级（稀有性 × 户外价值），不伪装成科学评分 */const BASE_RANK = {
   CLOUD_SEA: 'primary',
   ALPENGLOW: 'primary',
@@ -451,7 +462,7 @@ function buildOpportunities(ctx, conditions) {
     const ev = (ctx.factsFor && ctx.factsFor(c.key)) || []
     if (NIGHT_TYPES[type]) {
       if (skyBlocked(conditions, from, to)) return   // 剖面说头顶有云 ⇒ 这张卡不成立，省略
-      ev.push({ fact: NIGHT_LIMIT, at: from, kind: K.NIGHT_LIMIT })
+      ev.push({ fact: nightLimit(ctx), at: from, kind: K.NIGHT_LIMIT })
     }
     out.push(makeWindow(type, from, to, ev, extra, hours, ctx))
   })
@@ -602,7 +613,9 @@ function makeWindow(type, from, to, evidence, extra, hours, ctx) {
  *   lat, lng, heading?,
  *   cloudField?（Phase 1 适配器产出，含 covered；有则走云场条件）
  *   marks?（缺省由 sky.hourMarks 计算——单源阈值，不改）
- *   sun/win/moon/galaxySeason?（缺省由 astro 计算）
+ *   cloudLevels/terrain/lightPollution/atmosphere/spatial?（缺省 marks 也要拿到与主卡相同的
+ *     增强输入，否则同一时刻的 OI 窗口与结论卡会各判一套）
+ *   sun/win/moon?（缺省由 astro 计算）
  *   factsFor?（缺省 conditions.factsFor）
  * }
  * @returns { conditions, opportunities, meta }
@@ -627,6 +640,11 @@ function buildOutdoorIntelligence(ctx) {
       date: ctx.date, lat: ctx.lat, lng: ctx.lng,
       elevation: ctx.userAltitude, elevOK: ctx.elevOK !== false,
       detail: ctx.detail,
+      cloudLevels: ctx.cloudLevels || null,
+      terrain: ctx.terrain || null,
+      lightPollution: ctx.lightPollution,
+      atmosphere: ctx.atmosphere,
+      spatial: ctx.spatial,
     })
     full.marks = {}
     Object.keys(raw).forEach(function (t) {
@@ -636,10 +654,12 @@ function buildOutdoorIntelligence(ctx) {
   if (!full.sun && ctx.lat != null) full.sun = require('./astro.js').sunTimes(ctx.date, ctx.lat, ctx.lng, ctx.userAltitude)
   if (!full.win && ctx.lat != null) full.win = require('./astro.js').photoWindows(ctx.date, ctx.lat, ctx.lng, ctx.userAltitude)
   if (!full.moon && ctx.date) full.moon = require('./astro.js').moonInfo(ctx.date)
+  /* 光污染事实行不进 OI 证据：OI 窗口只看云量与月照，边界由 nightLimit(ctx) 统一声明。
+     注入主卡那行会让同一张卡同时出现「光污染未计入」与「光污染已用于主结论卡」。 */
   if (!full.factsFor) full.factsFor = function (key) { return require('./conditions.js').factsFor(key, {
     date: ctx.date, detail: ctx.detail, days: ctx.days || [], elevation: ctx.userAltitude,
     sun: full.sun, moon: full.moon,
-  }) }
+  }, { omitLightPollution: true }) }
 
   const conditions = buildConditions(full)
   let opportunities = buildOpportunities(full, conditions)
@@ -692,7 +712,8 @@ function buildOutdoorIntelligence(ctx) {
   if (!full.moon) evidenceGaps.push('moon')
   if (!(full.detail || []).some(h => Number.isFinite(h.visibility))) evidenceGaps.push('visibility')
   if (!(full.detail || []).some(h => Number.isFinite(h.rh))) evidenceGaps.push('humidity')
-  evidenceGaps.push('lightPollution')   // 永远缺：无数据源，星空/银河类只能声明边界
+  if (!full.lightPollution) evidenceGaps.push('lightPollution')
+  if (!full.terrain) evidenceGaps.push('terrain')
 
   return {
     conditions: conditions,

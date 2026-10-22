@@ -76,7 +76,7 @@ function starsOf(score) {
 }
 
 /**
- * 徒步条件总评：与 utils/weather-model.js judge() 同规则——只把 sky.js 判为「有戏」的项
+ * 徒步条件总评：只把 sky.js 判为「有戏」的项
  * 计入均值（score ≥ 45；「没有彩虹」不是这条线路的缺陷），客观时刻（light）不参与，
  * 分档仍交给 sky.grade。**不新增任何阈值。**
  *
@@ -86,16 +86,27 @@ function starsOf(score) {
  * @returns { score, tone, label, stars }
  */
 function overallGrade(items) {
-  const all = (items || []).filter(it => it.key !== 'light' && !sky.isSilent(it))
-  const live = all.filter(it => it.score >= 45)
-  const pool = live.length ? live : all
-  if (!pool.length) {
-    const g = sky.grade(0)
-    return { score: g.score, tone: g.tone, label: g.label, stars: starsOf(g.score) }
+  /* 只让“判过且不是未知”的天相投票；unknown 不是 0 分，不该拉低总评。
+     星空与银河是同一类（银河是星空子集），同时出现时只算银河一次，避免双计。
+     全部被判不成立（excluded）是“条件差”，不是“没数据”；只有没有任何可判读项
+     （空清单 / 全 unknown / 全 light）才说“数据不足”。 */
+  const present = (items || []).filter(it => it.key !== 'light')
+  const excluded = present.filter(it => sky.isSilent(it))
+  const known = present.filter(it => !sky.isSilent(it) && it.verdict !== sky.VERDICT.UNKNOWN)
+  const hasGalaxy = known.some(it => it.key === 'galaxy')
+  const dedup = known.filter(it => it.key !== 'star' || !hasGalaxy)
+  if (!dedup.length) {
+    if (excluded.length) {
+      const g = sky.grade(0)
+      return { score: g.score, tone: g.tone, label: g.label, stars: starsOf(g.score), insufficient: false }
+    }
+    return { score: null, tone: 'neutral', label: '数据不足', stars: '', insufficient: true }
   }
+  const live = dedup.filter(it => it.score >= 45)
+  const pool = live.length ? live : dedup
   const score = pool.reduce((s, x) => s + x.score, 0) / pool.length
   const g = sky.grade(score)
-  return { score: g.score, tone: g.tone, label: g.label, stars: starsOf(g.score) }
+  return { score: g.score, tone: g.tone, label: g.label, stars: starsOf(g.score), insufficient: false }
 }
 
 /* ---------- Evidence（V2 核心新增）：结论 → 可验证的事实清单 ---------- */
@@ -117,12 +128,15 @@ function meanOf(list, get) {
  * 「<30」这类天相阈值仍然一个都没有。
  *
  * @param key sky.js 结论 key（cloudSea/alpenglow/rainbow/galaxy/star）
- * @param ctx { date, detail(当日24h), days, elevation, sun(sunTimes), moon(moonInfo) }
+ * @param ctx { date, detail(当日24h), days, elevation, sun(sunTimes), moon(moonInfo), lightPollution }
+ * @param opts { omitLightPollution } OI 证据不注入光污染事实行：OI 窗口判据不读光污染，
+ *   边界由 `outdoor-intelligence.nightLimit` 统一声明，两套口径不能混进同一张卡。
  * @returns [{ fact:'清晨低云 86%', at:'07:00', kind:'cloud-amount' }]
  *   at = 「看图↗」锚定的小时列；kind = 证据类别（`utils/evidence-kind.js`），
  *   呈现层据此挑摘要与分组，**不解析 fact**。
  */
-function factsFor(key, ctx) {
+function factsFor(key, ctx, opts) {
+  const omitLP = !!(opts && opts.omitLightPollution)
   const date = (ctx && ctx.date) || ''
   const d = (ctx && ctx.detail) || []
   const days = (ctx && ctx.days) || []
@@ -155,6 +169,14 @@ function factsFor(key, ctx) {
       if (low != null) out.push({ fact: '清晨低云 ' + low + '% · 高层云 ' + (high == null ? '—' : high) + '%', at, kind: K.CLOUD_AMOUNT })
       const wind = meanOf(morning, h => h.wind)
       if (wind != null) out.push({ fact: '清晨风 ' + wind + ' km/h', at, kind: K.WIND })
+      /* 逆温是云海的关键条件；只有温湿廓线与层高都在时才给这条，缺测不编 0 */
+      const inv = morning
+        .map(h => sky.inversionAt(h, date, ctx && ctx.cloudLevels, ctx && ctx.elevation))
+        .filter(Boolean)
+      if (inv.length) {
+        const n = inv.filter(x => x.inversion).length
+        out.push({ fact: '清晨逆温 ' + n + '/' + inv.length + ' 小时', at, kind: K.INVERSION })
+      }
     }
     const prev = days.find(x => x.date === sky.addDays(date, -1))
     if (prev && Number(prev.precipSum) > 0) {
@@ -194,13 +216,49 @@ function factsFor(key, ctx) {
       const hit = d.find(h => dusk >= sky.hourMin(h.t) && dusk < sky.hourMin(h.t) + 60)
       if (hit) anchor = hit.t
     }
-    const night = Number.isFinite(dawn) && Number.isFinite(dusk)
+    /* 夜段优先用 sky.summarize 算好的跨夜窗口（今晚入夜 → 次日晨）；
+       没有它时退回自然日口径，保持旧调用可用。 */
+    const night = (ctx && ctx.night) || (Number.isFinite(dawn) && Number.isFinite(dusk)
       ? d.filter(h => { const m = sky.hourMin(h.t); return m < dawn || m > dusk })
-      : []
+      : [])
     const high = meanOf(night, h => h.cloud && h.cloud.high)
     const mid = meanOf(night, h => h.cloud && h.cloud.mid)
     if (high != null) out.push({ fact: '夜段高层云 ' + high + '% · 中层云 ' + (mid == null ? '—' : mid) + '%', at: anchor, kind: K.CLOUD_AMOUNT })
+    // 观察点上方云量剖面：低云在脚下不挡天顶，在头顶才挡（sky.cloudAboveAt 单源）
+    const profiles = night
+      .map(h => sky.cloudAboveAt(h, date, ctx && ctx.cloudLevels, ctx && ctx.elevation))
+      .filter(Boolean)
+    if (profiles.length) {
+      const peak = Math.round(profiles.reduce((s, p) => s + p.max, 0) / profiles.length)
+      out.push({ fact: '夜段观察点上方云量峰值 平均 ' + peak + '%', at: anchor, kind: K.CLOUD_AMOUNT })
+    }
     if (moon) out.push({ fact: '月照 ' + moon.illumination + '%（' + moon.name + '）', at: anchor, kind: K.MOONLIGHT })
+    /* 大气透明度/seeing/气溶胶：有就读出来，缺测不编 0 */
+    const atm = sky.atmosphereAt(ctx && ctx.atmosphere, date + 'T' + anchor)
+    if (atm) {
+      if (atm.aod != null) out.push({ fact: 'CAMS 气溶胶 AOD ' + atm.aod, at: anchor, kind: K.VISIBILITY })
+      if (atm.transparency != null || atm.seeing != null) {
+        out.push({
+          fact: '7Timer 透明度 ' + (atm.transparency == null ? '—' : atm.transparency + '/8')
+            + '（越小越好） · seeing ' + (atm.seeing == null ? '—' : atm.seeing + '/8') + '（越小越好）',
+          at: anchor,
+          kind: K.VISIBILITY,
+        })
+      }
+    }
+    if (!omitLP) {
+      if (ctx && ctx.lightPollution) {
+        const bits = []
+        if (ctx.lightPollution.bortle != null) bits.push('Bortle ' + ctx.lightPollution.bortle)
+        if (ctx.lightPollution.sqm != null) bits.push('SQM ' + ctx.lightPollution.sqm)
+        out.push({ fact: '天空亮度 ' + bits.join(' · ') + '（DarkSkySites.com，模型估算）', at: anchor, kind: K.LIGHT_POLLUTION })
+        /* 「没有读数」有两种来源：显式 null（查过、没有值）与调用方根本没传这个字段
+           （首屏 / getSkyContext 整体失败 / 配额用尽，页面传的就是 undefined）。
+           两者都必须在证据行里说出来——缺测不许印成「天空很暗」，也不许悄悄消失。 */
+      } else if (ctx) {
+        out.push({ fact: '光污染未计入（无读数）', at: anchor, kind: K.NIGHT_LIMIT })
+      }
+    }
     return out
   }
 

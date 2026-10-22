@@ -8,7 +8,7 @@
 //   3. Evidence——每张条件卡的事实清单非空，每条含事实文案与合法锚点小时
 //   4. Optional 字段缺失降级——旧返回体（无 windDir/pressure/dewPoint）整页装配不炸、显示 '—'
 //   5. 视图切片——24/48/72h；非法 span 回落 24h；chartSeries 的 7 天语义不受影响
-//   6. 总评均分——light 不参与；「有戏项均值」规则与 weather-model.judge 同源
+//   6. 总评均分——light 不参与；「有戏项均值」规则与 conditions.overallGrade 一致
 'use strict'
 
 let passed = 0
@@ -332,6 +332,24 @@ section('3. Evidence 事实清单（factsFor）')
     && cond.factsFor('cloudSea', ctx).some(f => f.fact.indexOf('低层云带') !== -1))
   check('galaxy 证据含月照',
     cond.factsFor('galaxy', ctx).some(f => f.fact.indexOf('月照') !== -1))
+  /* F1（2026-10-21）：证据行里的「光污染未计入」也必须覆盖 undefined。
+     页面的三个真实状态——首屏、getSkyContext 整体失败、配额用尽——传的正是 undefined；
+     旧实现只认 `=== null`，于是缺测在最需要披露的时候恰好从证据里消失。
+     三态成对：没传 / 显式 null / 有读数，缺一不可（有读数那侧是阳性对照）。 */
+  const lpFacts = extra => cond.factsFor('star', Object.assign({}, ctx, extra))
+  const absent = lpFacts({})
+  const explicitNull = lpFacts({ lightPollution: null })
+  const undefinedKey = lpFacts({ lightPollution: undefined })
+  const withReading = lpFacts({ lightPollution: { bortle: 2, sqm: 21.8 } })
+  const lim = list => list.filter(f => f.kind === 'night-limit')
+  check('光污染缺字段（不传）⇒ 证据里点名「未计入」且 kind=night-limit',
+    lim(absent).length === 1 && /光污染未计入/.test(lim(absent)[0].fact), JSON.stringify(absent))
+  check('光污染显式 null ⇒ 同样点名「未计入」', lim(explicitNull).length === 1, JSON.stringify(explicitNull))
+  check('光污染字段值是 undefined ⇒ 与不传同解（页面真实形态）',
+    lim(undefinedKey).length === 1, JSON.stringify(undefinedKey))
+  check('光污染有读数 ⇒ 给出天空亮度、且不再说「未计入」（阳性对照）',
+    withReading.some(f => f.kind === 'light-pollution' && /Bortle 2/.test(f.fact))
+    && lim(withReading).length === 0, JSON.stringify(withReading))
   check('未知 key 返回空数组（不抛异常）', cond.factsFor('nope', ctx).length === 0)
   check('detail 为空返回空数组', cond.factsFor('cloudSea', { date: DATE, detail: [], days: [], elevation: ELEV }).length === 0)
 }
@@ -398,7 +416,7 @@ section('5. buildViewSeries：24/48/72h 切窗，7 天契约不动')
   check('buildChartSeries 仍是 7 天 168 条', page.buildChartSeries(series, '2026-10-06').length === 168)
 }
 
-/* ---------- 6. 总评均分（light 不参与，规则同 weather-model.judge） ---------- */
+/* ---------- 6. 总评均分（light 不参与，规则同 conditions.overallGrade） ---------- */
 
 section('6. overallGrade 与星级语言')
 {
@@ -415,8 +433,14 @@ section('6. overallGrade 与星级语言')
   check('≥70 → ★★★★☆（最高四星，第五颗永远空着）',
     cond.starsOf(100) === '★★★★☆' && cond.overallGrade([{ key: 'cloudSea', score: 90 }]).stars === '★★★★☆')
   check('<45 → ★★☆☆☆（最低两星，不打一星）', cond.starsOf(10) === '★★☆☆☆')
-  check('空清单 → 条件较差不炸', cond.overallGrade([]).label === '条件较差')
-  check('全为 light → 用其余项（空）走较差档', cond.overallGrade([{ key: 'light', score: 100 }]).label === '条件较差')
+  check('空清单 → 数据不足，不冒充条件较差', (() => {
+    const e = cond.overallGrade([])
+    return e.label === '数据不足' && e.insufficient === true && e.stars === ''
+  })())
+  check('全为 light → 同样数据不足', (() => {
+    const e = cond.overallGrade([{ key: 'light', score: 100 }])
+    return e.label === '数据不足' && e.insufficient === true
+  })())
   /* 沉默闸（第十轮）：页面上已经不出现的卡，不能再替总评投票。
      被排除的云海可以攥着 64 分（≥45 会进 live），旧规则下它会把 90 的星空拉成 77——
      看不见的证据决定看得见的结论。 */
@@ -430,6 +454,34 @@ section('6. overallGrade 与星级语言')
     { key: 'cloudSea', score: 64, verdict: 'excluded' },
     { key: 'star', score: 90, verdict: 'possible' },
   ])))
+  check('unknown 不投票（缺测不是 0 分）', (() => {
+    const g3 = cond.overallGrade([
+      { key: 'cloudSea', score: 80, verdict: 'unknown' },
+      { key: 'star', score: 90, verdict: 'possible' },
+    ])
+    return g3.score === 90
+  })())
+  check('全部被判不成立 → 条件较差，不是数据不足', (() => {
+    const g6 = cond.overallGrade([
+      { key: 'star', score: 0, verdict: 'excluded' },
+      { key: 'cloudSea', score: 64, verdict: 'excluded' },
+    ])
+    return g6.label === '条件较差' && g6.insufficient === false && !!g6.stars
+  })())
+  check('星空/银河同一类只投一次（银河优先）', (() => {
+    const g4 = cond.overallGrade([
+      { key: 'star', score: 60, verdict: 'possible' },
+      { key: 'galaxy', score: 90, verdict: 'possible' },
+    ])
+    return g4.score === 90
+  })())
+  check('银河 unknown 时星空仍可代表夜空', (() => {
+    const g5 = cond.overallGrade([
+      { key: 'star', score: 60, verdict: 'possible' },
+      { key: 'galaxy', score: 90, verdict: 'unknown' },
+    ])
+    return g5.score === 60
+  })())
   /* 反向：没有 verdict 的旧形状必须照常参与（isSilent 失败开放）。
      上面那组 65 分的用例就是这一条的活证据，这里再点名一次，免得以后有人
      把"缺 verdict"当成"已被沉默"来减卡。 */
