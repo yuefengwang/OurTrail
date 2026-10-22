@@ -61,8 +61,8 @@
 
     <!-- 激活引导卡（非模态，04 §3）：未激活时出现在最前，点开激活 sheet -->
     <view wx:if="{{!activated}}" class="card" hover-class="button-hover" bindtap="onOpenOnboarding">
-      <view class="cluster" style="justify-content:space-between;gap:12px;">
-        <view class="stack" style="gap:4px;">
+      <view class="cluster onboard-row">
+        <view class="stack onboard-main">
           <text class="card-label" style="margin-bottom:0;">完善同行资料</text>
           <text class="small muted">点头像用微信头像，昵称可一键填入；补全姓名与手机号，报名和协作授权就都通了。</text>
         </view>
