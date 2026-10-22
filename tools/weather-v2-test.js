@@ -300,6 +300,174 @@ section('2c. 天文暗夜始的 sub 只在真有银河小时时说，否则只�
       .match(/银河与深空窗口/g) || []).length === 1)
 }
 
+/* ---------- 2d. 跨夜日程（F4 阶段二 · 保守方案） ---------- */
+
+section('2d. 跨夜日程：galaxy/star 按今晚序列聚类，次日事件标「次日」并排在今日之后')
+{
+  const D = '2026-10-06'
+  const D2 = '2026-10-07'
+  const hourOf = (d, hh) => ({
+    d, t: String(hh).padStart(2, '0') + ':00', temp: 8, pop: 0, precip: 0, showers: 0,
+    code: 2, wind: 5, rh: 55, cloud: { low: 5, mid: 5, high: 5 }, band: null,
+  })
+  const dayDetail = () => {
+    const out = []
+    for (let hh = 0; hh < 24; hh++) out.push(hourOf(D, hh))
+    return out
+  }
+  const seqOf = spans => {
+    const out = []
+    spans.forEach(sp => { for (let hh = sp[0]; hh <= sp[1]; hh++) out.push(hourOf(sp[2] || D, hh)) })
+    return out
+  }
+  const marksFor = (hours, keys) => {
+    const m = {}
+    hours.forEach(h => { m[h.d + 'T' + h.t] = keys })
+    return m
+  }
+  const sunOf = (over) => Object.assign({
+    astroDawn: '05:20', sunrise: '06:10', sunset: '18:50', astroDusk: '19:40',
+    civilDawn: '05:50', civilDusk: '19:10',
+  }, over || {})
+
+  // ① 跨零点：今晚 20–23 + 次日 00–05 连成一簇，窗口 = 今晚 … → 次日 …
+  {
+    const night = seqOf([[20, 23, D], [0, 5, D2]])
+    const events = agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks: marksFor(night, ['galaxy']),
+      sun: null, win: null, nightHours: night,
+    })
+    check('跨零点银河簇 → 一条事件、窗口「今晚 20:00 → 次日 05:00」',
+      events.length === 1 && events[0].key === 'galaxy' &&
+      events[0].t === '20:00' && events[0].window === '今晚 20:00 → 次日 05:00',
+      JSON.stringify(events))
+    check('跨零点事件不加 dayOffset（它从今晚开始，排序用起点）',
+      events.length === 1 && !('dayOffset' in events[0]))
+  }
+
+  // ② 同日簇：窗口仍是旧格式，不加 dayOffset
+  {
+    const night = seqOf([[21, 23, D]])
+    const events = agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks: marksFor(night, ['star']),
+      sun: null, win: null, nightHours: night,
+    })
+    check('同日夜间簇 → 窗口保持旧格式「21:00–23:00」且无 dayOffset',
+      events.length === 1 && events[0].window === '21:00–23:00' && !('dayOffset' in events[0]),
+      JSON.stringify(events))
+  }
+
+  // ③ 纯次日簇：t = 「次日 HH:mm」，dayOffset=1，且排在所有今日事件之后
+  {
+    const detail = dayDetail()
+    const marks = marksFor(seqOf([[2, 5, D2]]), ['star'])
+    // 今日两个事件（01:00 / 23:00 彩虹），验证今日内部相对顺序不变
+    marks[D + 'T01:00'] = ['rainbow']
+    marks[D + 'T23:00'] = ['rainbow']
+    const events = agenda.buildDayAgenda({
+      date: D, detail, marks, sun: null, win: null,
+      nightHours: seqOf([[2, 5, D2]]),
+    })
+    const today = events.filter(e => e.t.indexOf('次日 ') !== 0)
+    const last = events[events.length - 1] || {}
+    check('纯次日簇：t = 「次日 02:00」、window = 「次日 02:00–05:00」、dayOffset=1',
+      last.t === '次日 02:00' && last.window === '次日 02:00–05:00' && last.dayOffset === 1,
+      JSON.stringify(events))
+    check('纯次日事件排在全部今日事件之后，今日事件相对顺序不变（01:00 → 23:00）',
+      events.length === 3 && today.length === 2 &&
+      today[0].t === '01:00' && today[1].t === '23:00',
+      JSON.stringify(events.map(e => e.t)))
+  }
+
+  // ④ 前夜尾段：今日 00–05 的 star 是昨夜，不是今晚
+  {
+    const tail = seqOf([[0, 5, D]])
+    const tonight = seqOf([[21, 23, D]])
+    const marks = Object.assign(marksFor(tail, ['star']), marksFor(tonight, ['galaxy']))
+    const withNight = agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks, sun: null, win: null, nightHours: tonight,
+    })
+    const withoutNight = agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks, sun: null, win: null,
+    })
+    check('有今晚序列：今日 00–05 的 star 尾段整条被移除（不留同名条目）',
+      !withNight.some(e => e.key === 'star') &&
+      withNight.some(e => e.key === 'galaxy' && e.t === '21:00'),
+      JSON.stringify(withNight))
+    check('阳性对照（不传 nightHours）：同一份数据里 00–05 star 窗口照旧存在',
+      withoutNight.some(e => e.key === 'star' && e.window === '00:00–05:00'),
+      JSON.stringify(withoutNight.map(e => e.key + '@' + e.t)))
+  }
+
+  // ⑤ 「天文暗夜始」的机会句问的是今晚序列，不是当日尾段
+  {
+    const tonightGalaxy = seqOf([[21, 23, D], [0, 0, D2]])
+    const tailGalaxy = seqOf([[0, 5, D]])
+    const duskOf = (events) => (events.filter(e => e.title === '天文暗夜始')[0] || {}).sub || null
+
+    const subTonightOnly = duskOf(agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks: marksFor(tonightGalaxy, ['galaxy']),
+      sun: sunOf(), win: null, nightHours: tonightGalaxy,
+    }))
+    check('今晚有银河、今日 detail 没有 ⇒ 机会句出现', subTonightOnly === '银河与深空窗口', String(subTonightOnly))
+
+    const subTailOnly = duskOf(agenda.buildDayAgenda({
+      date: D, detail: dayDetail(),
+      marks: Object.assign(marksFor(tailGalaxy, ['galaxy']), marksFor(seqOf([[21, 23, D]]), ['star'])),
+      sun: sunOf(), win: null, nightHours: seqOf([[21, 23, D]]),
+    }))
+    check('今晚没有银河、只有今日尾段有 ⇒ 机会句为空（尾段不是今晚）', subTailOnly === null, String(subTailOnly))
+
+    const subOld = duskOf(agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks: marksFor(tailGalaxy, ['galaxy']),
+      sun: sunOf(), win: null,
+    }))
+    check('不传 nightHours 时旧行为逐字节相同：今日尾段有银河 ⇒ 机会句出现',
+      subOld === '银河与深空窗口', String(subOld))
+  }
+
+  // ⑥ 无 nightHours：整份事件数组与手写期望逐字节相同（含字段集合）
+  {
+    const detail = dayDetail()
+    const marks = {
+      [D + 'T10:00']: ['cloudSea'], [D + 'T11:00']: ['cloudSea'],
+      [D + 'T15:00']: ['rainbow'],
+    }
+    const input = { date: D, detail, marks, sun: sunOf(), win: null }
+    const a = agenda.buildDayAgenda(input)
+    const b = agenda.buildDayAgenda(input)
+    const expected = [
+      { t: '05:20', title: '天文晨光始', sub: '天空开始变亮', l2: false },
+      { t: '06:10', title: '日出', sub: null, l2: false },
+      { t: '10:00', title: '云海观察窗口', sub: null, l2: true, key: 'cloudSea', window: '10:00–12:00' },
+      { t: '15:00', title: '彩虹可能', sub: null, l2: true, key: 'rainbow', window: '15:00' },
+      { t: '18:50', title: '日落', sub: null, l2: false },
+      { t: '19:40', title: '天文暗夜始', sub: null, l2: false },
+    ]
+    check('不传 nightHours：事件数组与手写期望逐字节相同（两次调用也一致）',
+      JSON.stringify(a) === JSON.stringify(expected) && JSON.stringify(b) === JSON.stringify(expected),
+      JSON.stringify(a))
+    check('不传 nightHours：任何事件都没有 dayOffset 字段（形状不变）',
+      a.every(e => !('dayOffset' in e)))
+  }
+
+  // ⑦ 形状门：没有日期 / 不递增的列表不得被当成「今晚」
+  check('isNightSequence：空数组 / 缺 d / 不递增 一律 false',
+    agenda.isNightSequence([]) === false &&
+    agenda.isNightSequence([{ t: '21:00' }]) === false &&
+    agenda.isNightSequence([hourOf(D, 23), hourOf(D, 1)]) === false &&
+    agenda.isNightSequence(seqOf([[20, 23, D], [0, 5, D2]])) === true)
+  check('isNightKey 只认 galaxy/star',
+    agenda.isNightKey('galaxy') && agenda.isNightKey('star') &&
+    !agenda.isNightKey('cloudSea') && !agenda.isNightKey('rainbow'))
+  check('isSpanningNightEvent 只认「跨零点 / 纯次日」的 galaxy/star（同日窗口继续由 OI 卡表达）',
+    agenda.isSpanningNightEvent({ l2: true, key: 'galaxy', dayOffset: 1, window: '次日 02:00–05:00' }) &&
+    agenda.isSpanningNightEvent({ l2: true, key: 'star', window: '今晚 23:00 → 次日 04:00' }) &&
+    !agenda.isSpanningNightEvent({ l2: true, key: 'galaxy', window: '20:00–22:00' }) &&
+    !agenda.isSpanningNightEvent({ l2: true, key: 'cloudSea', window: '今晚 23:00 → 次日 04:00' }) &&
+    !agenda.isSpanningNightEvent({ l2: false, key: 'galaxy', window: '今晚 23:00 → 次日 04:00' }))
+}
+
 /* ---------- 3. Evidence：每张卡都有事实与锚点 ---------- */
 
 section('3. Evidence 事实清单（factsFor）')

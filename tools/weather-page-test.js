@@ -1356,6 +1356,96 @@ section('13b. F4 阶段一：页面把结论项传进 factsFor，看图能跳到
     !!jumped && jumped.d === '2026-07-15' && jumped.t === '23:00', JSON.stringify(jumped))
 }
 
+section('13c. 跨夜日程与 OI 24h：今晚银河进日程，时间轴只画今晚段')
+{
+  /* 用真实页面装配（applyWeather）跑一条能产生今晚银河窗口的 7 天序列：
+     2026-09-11 新月 + 银心季，晴空低海拔点；早晨 05–08 有一条 100–400 m 的成层云带
+     （用来证明「OI 可见时非夜间 L2 仍被过滤」不是空过滤）。 */
+  const agenda = require('../miniprogram/utils/agenda')
+  const D = '2026-09-11'
+  const page = makePage(pageConfig())
+  page.data.date = D
+  const series = []
+  for (let i = 0; i < 7 * 24; i++) {
+    const hh = i % 24
+    series.push({
+      d: addDays(D, Math.floor(i / 24)),
+      t: String(hh).padStart(2, '0') + ':00',
+      temp: 10, pop: 0, precip: 0, showers: 0, code: 2, wind: 5, rh: 50, uv: 0,
+      cloud: { low: 0, mid: 0, high: 0 },
+      band: hh >= 5 && hh <= 8 ? { base: 100, top: 400, cover: 90 } : null,
+    })
+  }
+  const n = series.length
+  const cloudLevels = {
+    times: series.map(h => h.d + 'T' + h.t),
+    levels: [
+      { altitudes: Array(n).fill(300), cloudCover: Array(n).fill(10) },
+      { altitudes: Array(n).fill(900), cloudCover: Array(n).fill(10) },
+      { altitudes: Array(n).fill(4000), cloudCover: Array(n).fill(10) },
+    ],
+  }
+  const result = {
+    series, days: fakeDays(D, 7), updatedAt: D + 'T00:00:00+08:00',
+    pointElevation: 500, cloudLevels,
+  }
+  const point = { name: '测试点', coordinates: COORD, ele: 500, eleSource: 'manual' }
+  page.applyWeather(result, point, {})
+
+  const agendaView = page.data.agenda || []
+  const nightL2 = agendaView.filter(e => e.l2 && (e.key === 'galaxy' || e.key === 'star'))
+  check('页面日程出现今晚银河窗口（' + nightL2.map(e => e.t + ' ' + e.window).join(' / ') + '）',
+    nightL2.some(e => e.key === 'galaxy' && /今晚 .* → 次日/.test(e.window || '')),
+    JSON.stringify(nightL2))
+  check('纯次日窗口标「次日 HH:mm」且排在全部今日事件之后', (() => {
+    const idx = agendaView.findIndex(e => e.key === 'star' && e.t.indexOf('次日 ') === 0)
+    return idx >= 0 && agendaView.slice(idx + 1).every(e => e.dayOffset === 1)
+  })(), JSON.stringify(agendaView.map(e => e.t + ':' + (e.key || e.title))))
+
+  const card = page.data.oiCard
+  check('OI 卡与统一图同时存在（后续「过滤」判据才有意义）', !!card && !!page.data.unified,
+    'oi=' + !!card + ' unified=' + !!page.data.unified)
+  const allOiItems = card ? card.items.concat(card.moreItems || []) : []
+  const crossItems = allOiItems.filter(i => i.crossMidnight)
+  check('OI 24h 卡出现跨零点窗口，列表文案是「今晚 … → 次日 …」',
+    crossItems.length > 0 && crossItems.every(i => /^今晚 .* → 次日 /.test(i.timeText)),
+    JSON.stringify(crossItems.map(i => i.timeText)))
+  check('OI 跨零点窗口的时间轴只有今晚段（每个机会恰 1 个 zone，无多余次日段）', (() => {
+    if (!card || !crossItems.length) return false
+    const crossOk = crossItems.every(it => {
+      const left = +(it.fromMin / 1440 * 100).toFixed(2)
+      const width = +((1440 - it.fromMin) / 1440 * 100).toFixed(2)
+      const hit = card.tapZones.filter(z => +z.left === left && +z.width === width)
+      return hit.length === 1
+    })
+    /* 旧的 `!some(left=0 && width<=3.1)` 只能抓结束于 00:00–00:43 的次日段：
+       21:00→05:00 的旧次日段宽 20.83%，会被放行。机会数 = zone 数是更强的判据——
+       每个机会在 24h 卡上只该占一段，多出来的就是越日假跨度。 */
+    return crossOk && card.tapZones.length === allOiItems.length
+  })(), JSON.stringify({ zones: card && card.tapZones.length, items: allOiItems.length }))
+  check('OI 可见时日程仍保留 galaxy/star 夜间条目（否则次日窗口永远看不到）',
+    nightL2.length > 0 && agendaView.some(e => e.l2 && e.key === 'galaxy'))
+  check('OI 可见时日程只保留 OI 卡表达不了的夜间条目（同日窗口不重复）',
+    agendaView.filter(e => e.l2 && agenda.isNightKey(e.key))
+      .every(e => e.dayOffset === 1 || /→ 次日/.test(e.window || '')),
+    JSON.stringify(agendaView.filter(e => e.l2 && agenda.isNightKey(e.key)).map(e => e.t + '|' + e.window)))
+  check('OI 可见时 cloudSea 等非夜间 L2 仍按旧规则过滤',
+    agendaView.every(e => !(e.l2 && e.key === 'cloudSea')),
+    JSON.stringify(agendaView.filter(e => e.l2).map(e => e.key)))
+
+  /* 阳性对照：不经页面过滤的同一份日程里确实有云海条目——
+     证明上面那条不是"本来就没有"，而是过滤真的在起作用。 */
+  const raw = agenda.buildDayAgenda({
+    date: D, detail: series.filter(h => h.d === D), marks: page.data.chartMarks,
+    sun: A.sunTimes(D, COORD.lat, COORD.lng, 500),
+    win: A.photoWindows(D, COORD.lat, COORD.lng, 500),
+    nightHours: page._skyNight,
+  })
+  check('阳性对照：未过滤的日程里确有云海条目（过滤不是空转）',
+    raw.some(e => e.l2 && e.key === 'cloudSea'),
+    JSON.stringify(raw.filter(e => e.l2).map(e => e.key + '@' + e.t)))
+}
+
 raceCases()
   .catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') })
   .then(windowCases)

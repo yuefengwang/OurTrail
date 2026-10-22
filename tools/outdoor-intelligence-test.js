@@ -155,6 +155,127 @@ check('无云场：band ∩ 用户海拔外的脚下层 → CLOUD_BELOW（cloudS
 check('无云场：夜段云海被民用晨昏可见性规则正确丢弃（沉默）',
   !oiBand.opportunities.some(w => w.type === 'CLOUD_SEA'))
 
+/* ---------- 跨夜（F4 阶段二）：今晚序列 → galaxy/star 窗口 ---------- */
+section('跨夜：nightHours 决定 galaxy/star 窗口归属；前夜尾段不再产出')
+const ND = '2026-10-07'
+const ND2 = '2026-10-08'
+const nightHour = (d, hh, over) => Object.assign({
+  d, t: String(hh).padStart(2, '0') + ':00', temp: 10, pop: 0, precip: 0, showers: 0,
+  code: 2, wind: 4, rh: 45, visibility: 35, cloud: { low: 5, mid: 5, high: 5 }, band: null,
+}, over || {})
+const nightSeq = spans => {
+  const out = []
+  spans.forEach(sp => { for (let hh = sp[0]; hh <= sp[1]; hh++) out.push(nightHour(sp[2] || ND, hh)) })
+  return out
+}
+const marksWith = (hours, keys) => {
+  const m = {}
+  hours.forEach(h => { m[h.d + 'T' + h.t] = keys })
+  return m
+}
+const noCloudDay = detail24(TIMES.map(() => ({ low: 5, mid: 5, high: 5 })), {}, {})
+// 今日 00–05 是**前夜尾段**；15–16 的彩虹是阳性对照（与夜段无关，必须逐字节不变）
+const tailStar = []
+for (let hh = 0; hh <= 5; hh++) tailStar.push(nightHour(ND, hh))
+const tailMarks = Object.assign(marksWith(tailStar, ['star']), {
+  [ND + 'T15:00']: ['rainbow'], [ND + 'T16:00']: ['rainbow'],
+})
+const crossNight = nightSeq([[21, 23, ND], [0, 0, ND2]])
+const crossMarks = Object.assign({}, tailMarks, marksWith(crossNight, ['galaxy']))
+const crossCtx = Object.assign({}, baseCtx, {
+  detail: noCloudDay, userAltitude: 3500, elevOK: true,
+  marks: crossMarks, nightHours: crossNight,
+})
+const crossOi = OI.buildOutdoorIntelligence(crossCtx)
+const mkW = crossOi.opportunities.filter(w => w.type === 'MILKY_WAY')
+check('今晚 21:00 → 次日 00:00 产出一个银河窗口（from 今晚、to 次日，to<from）',
+  mkW.length === 1 && mkW[0].from === '21:00' && mkW[0].to === '00:00',
+  JSON.stringify(mkW.map(w => [w.type, w.from, w.to])))
+check('跨零点窗口的 hours 用簇自己的序列（含次日 00:00，长度 4）',
+  mkW.length === 1 && mkW[0].hours.length === 4 && mkW[0].hours.some(h => h.d === ND2),
+  mkW[0] && JSON.stringify(mkW[0].hours.map(h => h.d + ' ' + h.t)))
+check('今日 detail 的前夜尾段 star 窗口消失（00–05 不再产 STARGAZING）',
+  !crossOi.opportunities.some(w => w.type === 'STARGAZING'),
+  JSON.stringify(crossOi.opportunities.map(w => [w.type, w.from, w.to])))
+
+const noNightCtx = Object.assign({}, crossCtx)
+delete noNightCtx.nightHours
+const noNightOi = OI.buildOutdoorIntelligence(noNightCtx)
+check('阳性对照（不传 nightHours）：同一份数据里 00–05 star 窗口照旧存在',
+  noNightOi.opportunities.some(w => w.type === 'STARGAZING' && w.from === '00:00' && w.to === '05:00'),
+  JSON.stringify(noNightOi.opportunities.map(w => [w.type, w.from, w.to])))
+/* 存在性门先立：两侧都找不到 rainbow 时 JSON.stringify(undefined) 相等，会把空跑记成绿 */
+const crossRainbow = crossOi.opportunities.find(w => w.type === 'RAINBOW')
+const noNightRainbow = noNightOi.opportunities.find(w => w.type === 'RAINBOW')
+check('与夜段无关的窗口逐字节不变（彩虹窗口，阳性对照）',
+  !!crossRainbow && !!noNightRainbow && JSON.stringify(crossRainbow) === JSON.stringify(noNightRainbow),
+  JSON.stringify({ cross: crossRainbow || null, noNight: noNightRainbow || null }))
+check('不传 nightHours 与显式 null 输出逐字节相同（旧路径不变）',
+  JSON.stringify(noNightOi) === JSON.stringify(OI.buildOutdoorIntelligence(Object.assign({}, noNightCtx, { nightHours: null }))))
+
+// 纯次日窗口（fromD 已在次日）在 24h 卡里无法表示 ⇒ 不产出
+const nextOnlyNight = nightSeq([[1, 5, ND2]])
+const nextOnly = OI.buildOutdoorIntelligence(Object.assign({}, baseCtx, {
+  detail: noCloudDay, userAltitude: 3500, elevOK: true,
+  marks: marksWith(nextOnlyNight, ['star']), nightHours: nextOnlyNight,
+}))
+check('纯次日簇（次日 01–05）不产出窗口（24h 卡无法表示）',
+  !nextOnly.opportunities.some(w => w.type === 'STARGAZING'),
+  JSON.stringify(nextOnly.opportunities.map(w => [w.type, w.from, w.to])))
+const nextPlusTonight = nightSeq([[23, 23, ND], [0, 5, ND2]])
+const nextPlusOi = OI.buildOutdoorIntelligence(Object.assign({}, baseCtx, {
+  detail: noCloudDay, userAltitude: 3500, elevOK: true,
+  marks: marksWith(nextPlusTonight, ['star']), nightHours: nextPlusTonight,
+}))
+check('阳性对照：同一序列加上今晚 23:00 ⇒ 跨零点窗口产出（证明上一条不是整体失效）',
+  nextPlusOi.opportunities.some(w => w.type === 'STARGAZING' && w.from === '23:00' && w.to === '05:00'),
+  JSON.stringify(nextPlusOi.opportunities.map(w => [w.type, w.from, w.to])))
+
+// skyBlocked：跨零点只检查今日段 [from,24:00)；缺今日 conditions 不得误杀
+const blockCtx = {
+  date: ND, detail: noCloudDay, marks: marksWith(nextPlusTonight, ['star']), nightHours: nextPlusTonight,
+  sun: null, win: null, factsFor: function () { return [] },
+}
+const blocked = OI.buildOpportunities(blockCtx, [{ t: '23:00', key: 'CLOUD_ABOVE', holds: ['mid'], evidence: [] }])
+check('skyBlocked 跨零点：今日 23:00 头顶有云 ⇒ 窗口不产出',
+  !blocked.some(w => w.type === 'STARGAZING'), JSON.stringify(blocked.map(w => [w.type, w.from, w.to])))
+const unblocked = OI.buildOpportunities(blockCtx, [])
+check('缺今日 conditions（空数组）不得把跨零点窗口误杀',
+  unblocked.some(w => w.type === 'STARGAZING' && w.from === '23:00' && w.to === '05:00'),
+  JSON.stringify(unblocked.map(w => [w.type, w.from, w.to])))
+const dayNight = nightSeq([[20, 22, ND]])
+const nonCrossCtx = {
+  date: ND, detail: noCloudDay, marks: marksWith(dayNight, ['star']), nightHours: dayNight,
+  sun: null, win: null, factsFor: function () { return [] },
+}
+check('skyBlocked 非跨零点行为不变：窗口内 21:00 头顶有云 ⇒ 不产出',
+  !OI.buildOpportunities(nonCrossCtx, [{ t: '21:00', key: 'CLOUD_ABOVE', holds: ['mid'], evidence: [] }])
+    .some(w => w.type === 'STARGAZING'))
+check('skyBlocked 非跨零点：与窗口无关的时刻（06:00）不误杀',
+  OI.buildOpportunities(nonCrossCtx, [{ t: '06:00', key: 'CLOUD_ABOVE', holds: ['mid'], evidence: [] }])
+    .some(w => w.type === 'STARGAZING'))
+
+// factsFor 的夜段必须切到今晚（否则跨零点窗口的证据还在统计前夜尾段）
+const highDay = detail24(TIMES.map(() => ({ low: 5, mid: 5, high: 90 })), {}, {})
+const ghostNight = nightSeq([[23, 23, ND], [0, 5, ND2]])
+ghostNight[0].cloud = { low: 5, mid: 5, high: 90 }        // 今晚 23:00 仍是高云
+for (let i = 1; i < ghostNight.length; i++) ghostNight[i].cloud = { low: 5, mid: 5, high: 0 }
+const ghostMarks = Object.assign(marksWith(tailStar, ['star']), marksWith(ghostNight, ['star']))
+const factsCtx = Object.assign({}, baseCtx, {
+  detail: highDay, userAltitude: 3500, elevOK: true, marks: ghostMarks, nightHours: ghostNight,
+})
+const factsWith = OI.buildOutdoorIntelligence(factsCtx)
+const factsWithout = OI.buildOutdoorIntelligence(Object.assign({}, factsCtx, { nightHours: null }))
+const nightFact = (oi) => {
+  const w = oi.opportunities.filter(x => x.type === 'STARGAZING')[0]
+  const e = w && w.evidence.filter(x => /夜段高层云/.test(x.fact))[0]
+  return e ? e.fact : ''
+}
+check('跨夜证据的夜段 = 今晚序列（高层云 13%，不是前夜尾段的 90%）',
+  /夜段高层云 13%/.test(nightFact(factsWith)), nightFact(factsWith))
+check('阳性对照（不传 nightHours）：夜段仍按自然日口径（90%）',
+  /夜段高层云 90%/.test(nightFact(factsWithout)), nightFact(factsWithout))
+
 /* ---------- Determinism ---------- */
 section('Determinism：同输入同输出')
 const oi1b = OI.buildOutdoorIntelligence(ctx1)
@@ -230,6 +351,34 @@ section('Evidence kind 契约：摘要由类别决定，不由中文决定')
   const real = oi1.opportunities.filter(w => (w.evidence || []).length > 0)
   check('真实窗口的摘要逐条等于 primaryEvidence 的 fact（不是"碰巧第一条"）',
     real.length > 0 && real.every(w => OIP.summaryOf(w) === OIP.primaryEvidence(w).fact))
+}
+
+/* ---------- Fallback marks 与主卡同源 ---------- */
+section('Fallback marks：增强输入必须与主卡同一份（不是两套判据）')
+{
+  /* 2026-07-15 银心季 + 残月：晴朗低月夜本应出银河窗口。
+     不传 marks，逼 buildOutdoorIntelligence 自己调 sky.hourMarks；
+     再注入一道 89° 山脊，若 fallback 没把 terrain 传下去，银河窗口不会消失。 */
+  const gd = []
+  for (let h = 0; h < 24; h++) gd.push({
+    d: '2026-07-15', t: (h < 10 ? '0' : '') + h + ':00',
+    temp: 14, pop: 0, precip: 0, showers: 0, code: 0, wind: 4, gust: 8,
+    windDir: 90, rh: 40, visibility: 35, cloud: { low: 5, mid: 5, high: 10 }, band: null,
+  })
+  const gctx = { date: '2026-07-15', lat: 30.67, lng: 104.07, detail: gd, userAltitude: 1200, elevOK: true }
+  const open = OI.buildOutdoorIntelligence(gctx)
+  const ridge = {
+    horizon: Array.from({ length: 16 }, (_, i) => ({
+      azimuth: i * 22.5, angle: 89, distance: 1, elevation: 9000,
+    })),
+  }
+  const blocked = OI.buildOutdoorIntelligence(Object.assign({}, gctx, { terrain: ridge }))
+  check('晴朗低月夜：fallback 产出银河窗口',
+    open.opportunities.some(w => w.type === 'MILKY_WAY'),
+    open.opportunities.map(w => w.type).join(','))
+  check('同一份数据 + 89° 山脊：fallback 与主卡同源地不产银河窗口（terrain 真的传下去了）',
+    !blocked.opportunities.some(w => w.type === 'MILKY_WAY'),
+    blocked.opportunities.map(w => w.type).join(','))
 }
 
 /* ---------- Performance ---------- */

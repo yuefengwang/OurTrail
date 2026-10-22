@@ -54,13 +54,18 @@
       <!-- 软降级横幅：数据是旧的（连不上实时源时兜底），必须有名有姓地说清时效与出路 -->
       <view wx:if="{{weatherStale}}" class="callout warning">
         <text class="callout-title">{{weatherStale.text}}</text>
-        <view class="button text stale-retry" hover-class="button-hover" bindtap="fetchWeather">重新查询</view>
+        <view class="button text stale-retry" hover-class="button-hover" bindtap="onRetryWeather">重新查询</view>
+      </view>
+      <view wx:if="{{cloudFieldMissing}}" class="callout warning">
+        <text class="callout-title">这次没取到云层剖面</text>
+        <text style="display:block;margin-top:4px;">上游气象服务这次没有返回可用的云层剖面数据，云图暂缺；温度、降水与风仍按已取到的数据展示。可以重新查询再试一次。</text>
+        <view class="button text stale-retry" hover-class="button-hover" bindtap="onRetryWeather">重新查询</view>
       </view>
       <!-- ============ 事实层：逐时天气（V2 核心时间轴） ============ -->
       <view class="section-head">
         <view class="section-id">
           <text class="section-title">逐时天气</text>
-          <text class="section-sub">温度 · 降水 · 云层带 · 风 — {{providerLabel}}</text>
+          <text class="section-sub" bindtap="onCopySources" hover-class="button-hover">温度 · 降水 · 云层带 · 风 — {{providerLabel}}.com</text>
         </view>
         <button class="button text" hover-class="button-hover" bindtap="onFullscreen">全图展示</button>
       </view>
@@ -257,7 +262,7 @@
             data-hour="{{item.hour}}"
           >
             <view class="oi-row">
-              <text class="oi-time tabular">{{item.timeText}}</text>
+              <text class="oi-time tabular {{item.crossMidnight ? 'cross' : ''}}">{{item.timeText}}</text>
               <text class="oi-name">{{item.title}}{{item.live ? ' · 进行中' : ''}}</text>
               <text wx:if="{{item.tierClass !== 'good'}}" class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
             </view>
@@ -282,7 +287,7 @@
               data-hour="{{item.hour}}"
             >
               <view class="oi-row">
-                <text class="oi-time tabular">{{item.timeText}}</text>
+                <text class="oi-time tabular {{item.crossMidnight ? 'cross' : ''}}">{{item.timeText}}</text>
                 <text class="oi-name">{{item.title}}</text>
                 <text wx:if="{{item.tierClass !== 'good'}}" class="oi-tier {{item.tierClass}}">{{item.tierText}}</text>
               </view>
@@ -326,21 +331,6 @@
         </view>
         <text class="chart-caption small muted">OurTrail 户外解读由当日天气数据推导 · 天文时刻为确定性事件 · 天气窗口标注置信</text>
       </view>
-
-      <!-- P4 时空天相图：把 meteogram 的「时间×数值」补成「时间×海拔」，
-           云层带 + 逐节点天相轨迹 + 主窗口括号 + 抵达净空，一眼看懂云在不在脚下。
-           没有可信抵达时刻的节点不画（宁可少几个点，不编造）；
-           单点查询没有节点维度，整卡隐藏（QA 发现的空壳卡，2026-10-06）。 -->
-      <space-time
-        wx:if="{{spaceNodes.length}}"
-        series="{{spaceSeries}}"
-        days="{{spaceDays}}"
-        nodes="{{spaceNodes}}"
-        lat="{{spaceLat}}"
-        lng="{{spaceLng}}"
-        obs-alt="{{spaceObsAlt}}"
-        arrive-t="{{spaceArriveT}}"
-      />
 
       <!-- V2 今日户外时间轴：天文/天气事实（灰）+ OurTrail 窗口（绿，与图上标记同源）。
            回答「什么时候值得出去」；云海窗口已按民用晨昏裁剪（凌晨不可见段不展示） -->
@@ -386,16 +376,19 @@
            ⚠ 复验请用「渲染后可见文本」口径（剥掉注释），别用整文件 grep：
            本条注释本身就是这条纪律的活教材——写进注释会让计数假性变多。 -->
       <view class="section-head">
-        <text class="section-title">户外条件</text>
-        <text class="section-sub">由上方天气事实推算的条件判断，不是气象预报</text>
+        <text class="section-title">天相条件</text>
+        <text class="section-sub">由云/月/地形/光害推算；只汇总天相，不是徒步安全评级</text>
       </view>
+      <text wx:if="{{skyInputLoading}}" class="section-sub">正在补充方向云/地形/透明度/光污染…</text>
+      <text wx:if="{{skyInputNote}}" class="section-sub">{{skyInputNote}}</text>
 
-      <!-- 徒步条件总评（均分规则与 utils/weather-model.js judge 同源，不新增阈值） -->
+      <!-- 天相条件总评（同一类只投一次：星空/银河不双计；unknown 不拉低） -->
       <view wx:if="{{condOverall}}" class="card cond-card">
         <view class="cond-main">
-          <text class="cond-label">徒步条件</text>
-          <text class="cond-grade"><text class="cond-stars">{{condOverall.stars}}</text><text class="ag-grade {{condOverall.tone}}">{{condOverall.label}}</text></text>
+          <text class="cond-label">天相条件</text>
+          <text class="cond-grade"><text wx:if="{{condOverall.stars}}" class="cond-stars">{{condOverall.stars}}</text><text class="ag-grade {{condOverall.tone}}">{{condOverall.label}}</text></text>
         </view>
+        <text wx:if="{{condOverall.insufficient}}" class="small muted">可判读的天相不足，未给总评；这不是“条件差”。</text>
       </view>
 
       <view wx:for="{{condCards}}" wx:key="key" class="card cond-pheno {{item.featured ? 'featured' : ''}}">
@@ -463,7 +456,9 @@
       </view>
 
       <text class="small muted">更新时间：{{updatedAt}}</text>
-      <text class="small muted">数据来源 {{providerLabel || 'Open-Meteo'}}（CC BY 4.0）· 日出日落与天相判断为本机按坐标与海拔推算</text>
+      <text class="small muted">数据来源 {{providerLabel || 'Open-Meteo'}}.com（https://open-meteo.com/，CC BY 4.0）· 日出日落与天相判断为本机按坐标与海拔推算</text>
+      <text class="small muted">天相增强输入：7Timer!（https://www.7timer.info/，非商业）· CAMS/Open-Meteo Air Quality（生成使用 Copernicus Atmosphere Monitoring Service 信息）· Copernicus DEM 90 m（© DLR/Airbus DS, COPERNICUS）· DarkSkySites.com（https://darkskysites.com，模型估算，非现场实测）</text>
+      <text class="small muted" bindtap="onCopySources" hover-class="button-hover">点按复制数据来源与许可链接</text>
     </block>
     <status-panel wx:else kind="{{emptyKind}}" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此路线节点没有坐标，暂无法查询天气。'}}" action-label="重新查询" bind:action="fetchWeather" />
   </view>

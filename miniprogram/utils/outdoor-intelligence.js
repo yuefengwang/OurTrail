@@ -440,9 +440,15 @@ function buildOpportunities(ctx, conditions) {
   const out = []
   const detail = ctx.detail || []
   const civil = agenda.civilWindow(ctx.sun)
+  /* 今晚跨夜序列（可选）。只有形状合法（带 d、绝对时间严格递增）才启用；
+     没有它时本函数的所有输出与旧实现逐字节相同（48/72h 逐日 OI 走这条）。 */
+  const nights = agenda.isNightSequence(ctx.nightHours) ? ctx.nightHours : null
 
   /* 1) hourMarks 簇 → 天相窗口（cloudSea/golden/blueHour/star/galaxy/rainbow/alpenglow） */
   agenda.clustersOf(detail, ctx.marks || {}).forEach(function (c) {
+    /* 当日 detail 里的 galaxy/star 是**前夜尾段**（00:00–05:00），不是今晚的窗口；
+       有今晚序列时改由下面的夜簇产出，这里必须跳过，否则同一现象会被标成"今天凌晨"。 */
+    if (nights && agenda.isNightKey(c.key)) return
     const type = markType(c.key)
     if (!type) return
     let from = c.from, to = c.to
@@ -466,6 +472,25 @@ function buildOpportunities(ctx, conditions) {
     }
     out.push(makeWindow(type, from, to, ev, extra, hours, ctx))
   })
+
+  /* 1b) 今晚序列 → galaxy/star 跨零点窗口（from 今晚、to 次日时钟串：to<from 即跨零点）。
+     纯次日窗口（fromD 已在次日）在 24h 卡里无法表示，一律不产出（结论卡/日程仍会显示）。
+     窗口小时用**簇自己的 hours**：detailHours(detail, ...) 只认当日 24h，会把跨零点的后半段筛掉。 */
+  if (nights) {
+    agenda.clustersOf(nights, ctx.marks || {}, ctx.date).forEach(function (c) {
+      if (!agenda.isNightKey(c.key)) return
+      if (c.fromD !== ctx.date) return
+      const type = markType(c.key)
+      if (!type) return
+      const from = c.from, to = c.to
+      const ev = (ctx.factsFor && ctx.factsFor(c.key)) || []
+      if (NIGHT_TYPES[type]) {
+        if (skyBlocked(conditions, from, to)) return
+        ev.push({ fact: nightLimit(ctx), at: from, kind: K.NIGHT_LIMIT })
+      }
+      out.push(makeWindow(type, from, to, ev, {}, c.hours, ctx))
+    })
+  }
 
   /* 2) 条件态连续段 → IN_CLOUD / VIEW_WINDOW / CLOUD_BELOW 窗口 */
   const runs = conditionRuns(conditions)
@@ -583,9 +608,14 @@ const NIGHT_BLOCKED = { IN_CLOUD: true, CLOUD_ABOVE: true }
 function skyBlocked (conditions, from, to) {
   if (!conditions || !conditions.length) return false
   const f = sky.hourMin(from), t = sky.hourMin(to)
+  /* 跨零点窗口（to < from，to 是次日时钟）：conditions 只有**今天**的逐时条件态，
+     次日没有读数。按旧式 [f-30, t+30] 去比会把整个今日段漏掉、反而去查次日凌晨
+     （永远查不到 ⇒ 误判"没被挡"）。这里只检查今日段 [from, 24:00)：
+     缺测不是"被挡"，但今天已经测到的头顶云必须照挡。 */
+  const end = t < f ? 1440 : t
   return conditions.some(function (c) {
     const m = sky.hourMin(c.t)
-    if (!(m >= f - 30 && m <= t + 30)) return false
+    if (!(m >= f - 30 && m <= end + 30)) return false
     return NIGHT_BLOCKED[c.key] === true || (c.holds || []).indexOf('mid') !== -1
   })
 }
@@ -625,6 +655,9 @@ function buildOutdoorIntelligence(ctx) {
     return { conditions: [], opportunities: [], meta: { silence: true } }
   }
   const full = Object.assign({}, ctx)
+  /* 今晚跨夜序列（可选，计划 §5.3）：只接受形状合法的序列（带 d、绝对时间严格递增）。
+     它只影响 galaxy/star 的窗口归属与证据夜段，不碰云海/光染/彩虹/条件态。 */
+  full.nightHours = agenda.isNightSequence(ctx.nightHours) ? ctx.nightHours : null
   /* 云场采样器：适配器产出是 {times, altitudes, values} 数据网格，
      这里包装成 sample(t, alt)（时间维 CR、海拔维线性）供条件态与证据采样。 */
   if (full.cloudField && !full.cloudField.sample) {
@@ -659,6 +692,9 @@ function buildOutdoorIntelligence(ctx) {
   if (!full.factsFor) full.factsFor = function (key) { return require('./conditions.js').factsFor(key, {
     date: ctx.date, detail: ctx.detail, days: ctx.days || [], elevation: ctx.userAltitude,
     sun: full.sun, moon: full.moon,
+    /* 只影响 galaxy/star 分支：证据里的「夜段」要用真实的今晚序列，
+       否则跨零点窗口的证据仍在统计当日凌晨那段前夜尾段。 */
+    night: full.nightHours || null,
   }, { omitLightPollution: true }) }
 
   const conditions = buildConditions(full)

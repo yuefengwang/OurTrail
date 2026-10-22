@@ -109,7 +109,9 @@
 .agenda { padding: 14px 14px 10px; }
 .agenda-item { display: flex; gap: 10px; position: relative; padding-bottom: 14px; }
 .agenda-item:last-child { padding-bottom: 2px; }
-.ag-time { flex: 0 0 44px; font-size: var(--text-caption); color: var(--muted); padding-top: 1px; }
+/* 58px：装得下「次日 06:00」（跨夜日程会把起点在次日的事件标出来）。
+   旧列宽下这段文字会挤进标题列；只加宽时间列，不动字号与颜色。 */
+.ag-time { flex: 0 0 58px; font-size: var(--text-caption); color: var(--muted); padding-top: 1px; }
 .ag-line { flex: 0 0 14px; position: relative; }
 .ag-line::before {
   content: ""; position: absolute; left: 6px; top: 14px; bottom: -2px;
@@ -268,6 +270,9 @@
 .oi-item.on { background: var(--paper); }
 .oi-row { display: flex; align-items: baseline; gap: 8px; }
 .oi-time { font-size: 11px; color: var(--muted); min-width: 96px; }
+/* 跨零点窗口的列表文案是「今晚 23:00 → 次日 04:00」：给足一列宽度并允许两行，
+   避免把名称列挤到换行（时间轴本身仍只画今晚段）。 */
+.oi-time.cross { flex: 0 0 122px; width: 122px; min-width: 122px; line-height: 15px; white-space: normal; }
 .oi-name { font-size: 12.5px; font-weight: 500; color: var(--ink); flex: 1; }
 .oi-tier { font-size: 10px; }
 .oi-tier.astro { color: var(--info); }

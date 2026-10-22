@@ -682,6 +682,11 @@ Page({
       heading: this.headingAt(this.data.pointIndex),
     }
     const skyOut = sky.summarize(skyCtx)
+    /* 今晚跨夜序列（今晚入夜 → 次日晨；计划 §5.3）：日程与 OI 的夜间窗口都按它聚类。
+       没有 series 时 sky.summarize 退回**自然日夜段**；它同样通过 isNightSequence，
+       但重聚类后的 galaxy/star 输出与旧实现逐字节相同（A/B 的阳性对照），
+       不是"被形状门拒绝"——形状门拒绝的是缺 d / 非递增的裸小时列表。 */
+    this._skyNight = skyOut ? skyOut.night : null
     const chartSeries = this.buildChartSeries(series, this.data.date)
     this._chartSeries = chartSeries
     const skyLive = this._skyContext && this._skyContext.key === this.skyContextKey(point) ? this._skyContext : null
@@ -699,6 +704,7 @@ Page({
     const agendaEvents = agenda.buildDayAgenda({
       date: this.data.date, detail, marks: chartMarks,
       sun: skyOut ? skyOut.sun : null, win,
+      nightHours: this._skyNight,
     })
     const itemByKey = {}
     if (skyOut) skyOut.items.forEach(it => { itemByKey[it.key] = it })
@@ -727,7 +733,7 @@ Page({
     let oiCard = null
     if (this.data.viewSpan === 24) {
       try {
-        oiCard = this.buildOiCard(result, point, elevation)
+        oiCard = this.buildOiCard(result, point, elevation, this._skyNight)
       } catch (e) {
         console.warn('[weather] OI 渲染降级：', e)
         oiCard = null
@@ -792,8 +798,12 @@ Page({
       /* Phase 3 §十二：OI 卡可见时，Agenda 里的 L2「OurTrail 分析」窗口与 OI 重复
          —— 页面级过滤（agenda.js 不动），Agenda 保留天气节奏与天文时刻（L1）。
          可见判据须同时覆盖 oiHorizon：24h 与 48/72h 按 viewSpan 互斥构建，
-         只认 oiCard 会让 48/72h（horizon 卡渲染修复后）L2 窗口与卡内条目重复。 */
-      agenda: (unified && (oiCard || oiHorizon)) ? agendaView.filter(e => !e.l2) : agendaView,
+         只认 oiCard 会让 48/72h（horizon 卡渲染修复后）L2 窗口与卡内条目重复。
+         例外只给 24h 卡表达不了的夜间窗口（跨零点 / 纯次日）：同日夜间窗口 OI 列表已有，
+         仍按旧规则隐藏，避免同一窗口在卡与日程各出现一次。 */
+      agenda: (unified && (oiCard || oiHorizon))
+        ? agendaView.filter(e => !e.l2 || agenda.isSpanningNightEvent(e))
+        : agendaView,
     }), () => {
       this.probeStageWidth()
       /* A-07：改过日期之后，把主图带回视口——原来这条链路上一次滚动都没有，
@@ -1014,16 +1024,20 @@ Page({
   /* ---------- Weather V2 OI Phase 2：Opportunity 卡 ---------- */
 
   /* OI 模型（outdoor-intelligence.js）→ 呈现适配（oi-presentation.js）→ 卡数据。
-     几何/窗口按 (updatedAt|date|elev|coords|width) 缓存；选中只改 selIndex。 */
-  buildOiCard(result, point, elevation) {
+     几何/窗口按 (updatedAt|date|elev|coords|width|夜段长度) 缓存；选中只改 selIndex。
+     night = sky.summarize 的 night（今晚序列）；它决定 galaxy/star 的跨零点窗口归属，
+     所以必须进缓存键——否则夜段缺席时建好的卡会被后续带夜段的调用复用。 */
+  buildOiCard(result, point, elevation, night) {
     const field = WCFF.buildCloudField(result, { date: this.data.date, userAltitude: elevation })
     const coords = point.coordinates || {}
+    const nightHours = Array.isArray(night) ? night : null
     const sky = this._skyContext && this._skyContext.key === this.skyContextKey(point) ? this._skyContext : null
     const skyKey = sky
       ? (sky.terrain ? 't' : '') + (sky.lightPollution ? 'l' : '') + (sky.spatial ? 's' : '') + (sky.atmosphere ? 'a' : '')
       : ''
     const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' +
-      (coords.lat == null ? '' : coords.lat.toFixed(2)) + '|' + this.cfWidth() + '|' + skyKey
+      (coords.lat == null ? '' : coords.lat.toFixed(2)) + '|' + this.cfWidth() + '|' + skyKey +
+      '|n' + (nightHours ? nightHours.length : 0)
     if (!this._oiCache || this._oiCache.key !== key) {
       const detail = (result.series || []).filter(h => h.d === this.data.date)
       if (detail.length < 24) return null
@@ -1040,6 +1054,7 @@ Page({
         lightPollution: sky ? sky.lightPollution : null,
         marks: this._chartMarks || this.data.chartMarks || [],
         days: result.days || [],
+        nightHours: nightHours,
       })
       this._oiCache = { key: key, oi: oi }
     }
@@ -1430,7 +1445,8 @@ Page({
     let oiCard = null
     let oiHorizon = null
     if (this.data.viewSpan === 24) {
-      try { oiCard = this.buildOiCard(result, point, elevation) } catch (e) { oiCard = null }
+      // 夜段随 sky.summarize 一起算好（applyWeather 写入 _skyNight）；48/72h 分支不传
+      try { oiCard = this.buildOiCard(result, point, elevation, this._skyNight || null) } catch (e) { oiCard = null }
     } else {
       try { oiHorizon = this.buildOiHorizonCard(result, point, elevation) } catch (e) { oiHorizon = null }
     }
