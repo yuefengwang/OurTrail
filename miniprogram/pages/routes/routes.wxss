@@ -1,1 +1,20 @@
-/* 路线库列表：样式全部复用 app.wxss 既有类（page/stack/card/list-row/badge），无新增 token */
+/* 路线库列表（T008 卡化）：封面位 + 标题行 + 指标行 + 摘要行。
+   取色一律 var()；指标行/徽标/摘要全部复用 app.wxss 存量类，
+   这里只放「卡」本身的形态（封面空槽与卡体内边距）。 */
+.route-card {
+  display: block;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+/* 封面位：路线模型没有图片字段——空槽用 --stone 底，不假图、不借氛围图冒充实拍 */
+.route-card__media {
+  height: 72px;
+  background: var(--stone);
+}
+.route-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+}

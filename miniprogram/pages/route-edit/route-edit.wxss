@@ -1,1 +1,6 @@
-/* 路线编辑器：样式全部复用 app.wxss 既有类（page/stack/card/form-field/picker/sticky-action/overlay），无新增 token */
+/* 路线编辑器：样式全部复用 app.wxss 存量类（page/stack/card/form-field/picker/
+   sticky-action/overlay）；这里只放 T008 新增的收合行触控区类。 */
+
+/* 收合的节点/风险行：整行可点，纵向至少 --touch-target（移动中单手操作，
+   原先只有一行小字的高度）；内边距与原行内值相同，视觉不变。 */
+.row-tap { min-height: var(--touch-target); padding: 12px 16px; }

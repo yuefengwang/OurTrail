@@ -59,7 +59,8 @@
       />
     </view>
 
-    <view class="stack" style="gap:8px;">
+    <!-- 章节节奏统一：本页所有章节都是 stack-gap3（剖面原先 gap:8 是唯一例外） -->
+    <view class="stack-gap3">
       <view class="section-head">
         <text class="kicker">剖面</text>
         <text class="section-title">海拔怎么走</text>
@@ -139,16 +140,19 @@
         <text class="section-title">路线节点</text>
         <text class="section-sub">途中清点与进度确认的位置</text>
       </view>
-      <view wx:if="{{route.points.length}}" class="timeline">
-        <view wx:for="{{route.points}}" wx:key="id" class="timeline-item">
-          <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
-            <view style="min-width:0;">
-              <text class="eyebrow">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中'}}</text>
-              <text style="display:block;font-weight:700;margin-top:2px;">{{item.name}}</text>
-            </view>
-            <view class="cluster" style="gap:8px;flex:0 0 auto;">
-              <text wx:if="{{item.ele}}" class="small tabular muted">{{item.ele}} m</text>
-              <text wx:if="{{!item.coordinates}}" class="small muted">无坐标</text>
+      <!-- 节点时间轴入卡（T008）：与分段天气/风险同一卡语言，章节间距统一 -->
+      <view wx:if="{{route.points.length}}" class="card">
+        <view class="timeline">
+          <view wx:for="{{route.points}}" wx:key="id" class="timeline-item">
+            <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
+              <view style="min-width:0;">
+                <text class="eyebrow">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中'}}</text>
+                <text class="route-node-name">{{item.name}}</text>
+              </view>
+              <view class="cluster" style="gap:8px;flex:0 0 auto;">
+                <text wx:if="{{item.ele}}" class="small tabular muted">{{item.ele}} m</text>
+                <text wx:if="{{!item.coordinates}}" class="small muted">无坐标</text>
+              </view>
             </view>
           </view>
         </view>
@@ -163,17 +167,16 @@
         <text class="section-title">风险提示</text>
         <text class="section-sub">{{route.risks.length ? route.risks.length + ' 条 · 从这条路线发起活动时会带给大家' : '还没有风险提示'}}</text>
       </view>
-      <view wx:if="{{route.risks.length}}" class="card">
-        <view wx:for="{{route.risks}}" wx:key="id" class="list-row">
-          <view class="list-main">
-            <view class="cluster" style="gap:8px;">
-              <text style="font-weight:600;">{{item.title}}</text>
-              <text wx:if="{{item.severityText}}" class="badge {{item.severityBadge}}">{{item.severityText}}</text>
-            </view>
-            <text class="list-sub">{{item.advice}}</text>
+      <!-- 风险段用 .callout.warning 存量语义（与活动详情同形）：每条风险一张警示卡 -->
+      <block wx:if="{{route.risks.length}}">
+        <view wx:for="{{route.risks}}" wx:key="id" class="callout warning">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="callout-title">{{item.title}}</text>
+            <text wx:if="{{item.severityText}}" class="badge {{item.severityBadge}}">{{item.severityText}}</text>
           </view>
+          <text class="small" style="display:block;margin-top:4px;">{{item.advice}}</text>
         </view>
-      </view>
+      </block>
       <text wx:else class="muted">风险提示会在从这条路线发起活动时带给大家；建议尽早补上。</text>
     </view>
 

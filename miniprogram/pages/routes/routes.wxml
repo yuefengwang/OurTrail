@@ -17,25 +17,32 @@
       </view>
     </view>
 
-    <!-- 我的路线：行组用一张卡 + 发丝线分隔，不做成一卡一路（路线库不是卡片墙） -->
+    <!-- 路线卡（T008）：每条一卡＝封面位（路线模型没有图片字段，--stone 空槽不假图）
+         + 标题行 + 指标行（.metrics 存量）+ 摘要行；分组标题用 .section-head -->
     <view wx:if="{{mineRoutes.length}}" class="stack" style="gap:0;">
       <view class="section-head">
         <text class="kicker">我的</text>
         <text class="section-title">我的路线</text>
         <text class="section-sub">{{mineRoutes.length}} 条 · 可编辑、可共享、可删除</text>
       </view>
-      <view class="card" style="padding:4px 16px;">
-        <view wx:for="{{mineRoutes}}" wx:key="id" class="list-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
-          <view class="list-main">
+      <view class="stack" style="gap:12px;">
+        <view wx:for="{{mineRoutes}}" wx:key="id" class="route-card" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
+          <view class="route-card__media" />
+          <view class="route-card__body">
             <view class="cluster" style="gap:8px;">
               <text style="font-weight:600;">{{item.title}}</text>
               <text wx:if="{{item.difficultyText}}" class="badge neutral">{{item.difficultyText}}</text>
               <text wx:if="{{item.shared}}" class="badge info">已共享</text>
             </view>
-            <text class="list-sub">{{item.statsText}}</text>
-            <text class="list-sub">{{item.sourceText}} · {{item.updatedText}} · {{item.refText}}</text>
+            <view class="metrics">
+              <view wx:for="{{item.metrics}}" wx:key="label" class="metric">
+                <text class="metric-value">{{item.value}}<text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text></text>
+                <text class="metric-label">{{item.label}}</text>
+              </view>
+            </view>
+            <text class="small muted">{{item.statsText}}</text>
+            <text class="small muted">{{item.sourceText}} · {{item.updatedText}} · {{item.refText}}</text>
           </view>
-          <icon name="arrow" size="20" color="#5F6E66" />
         </view>
       </view>
     </view>
@@ -47,17 +54,23 @@
         <text class="section-title">共享给我</text>
         <text class="section-sub">同行领队共享的路线，可查看与使用，不能修改</text>
       </view>
-      <view class="card" style="padding:4px 16px;">
-        <view wx:for="{{sharedRoutes}}" wx:key="id" class="list-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
-          <view class="list-main">
+      <view class="stack" style="gap:12px;">
+        <view wx:for="{{sharedRoutes}}" wx:key="id" class="route-card" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
+          <view class="route-card__media" />
+          <view class="route-card__body">
             <view class="cluster" style="gap:8px;">
               <text style="font-weight:600;">{{item.title}}</text>
               <text wx:if="{{item.difficultyText}}" class="badge neutral">{{item.difficultyText}}</text>
             </view>
-            <text class="list-sub">{{item.statsText}}</text>
-            <text class="list-sub">{{item.sourceText}} · {{item.updatedText}} · {{item.refText}}</text>
+            <view class="metrics">
+              <view wx:for="{{item.metrics}}" wx:key="label" class="metric">
+                <text class="metric-value">{{item.value}}<text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text></text>
+                <text class="metric-label">{{item.label}}</text>
+              </view>
+            </view>
+            <text class="small muted">{{item.statsText}}</text>
+            <text class="small muted">{{item.sourceText}} · {{item.updatedText}} · {{item.refText}}</text>
           </view>
-          <icon name="arrow" size="20" color="#5F6E66" />
         </view>
       </view>
     </view>
