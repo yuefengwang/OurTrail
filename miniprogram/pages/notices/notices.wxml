@@ -16,7 +16,7 @@
       <text>发布活动通知</text>
     </view>
 
-    <view class="stack" style="gap:12px;">
+    <view class="stack-gap3">
       <view wx:if="{{items.length}}" class="section-head">
         <text class="kicker">通知</text>
         <text class="section-title">最新的在最上面</text>

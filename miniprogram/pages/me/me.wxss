@@ -72,7 +72,7 @@
   border: none;
   border-radius: 0;
   background: transparent;
-  font-size: 17px;
+  font-size: var(--text-title, 18px);
   font-weight: 600;
   line-height: 40px;
 }
@@ -98,4 +98,6 @@ button.phone-btn { font-family: inherit; }
 /* 其余 */
 .who { display: flex; align-items: center; gap: 12px; }
 .code-text { flex: 1; min-width: 0; word-break: break-all; }
+/* 位置撤回：行级危险动作＝text + danger 语义色（T011 规格）；实心红只进确认弹窗（ourtrail-ui 规则 10） */
+.revoke-text { color: var(--danger, #B43D3B); font-weight: 600; }
 .textarea.slim { min-height: 72px; }
