@@ -121,18 +121,21 @@
       <block wx:if="{{gpxMeta && !gpxError}}">
         <view class="callout">
           <text class="callout-title">{{gpxMeta.fileName}}</text>
-          <text style="display:block;margin-top:4px;">解析出 {{gpxMeta.count}} 个路线节点{{gpxMeta.distanceKm > 0 ? ' · 全程约 ' + gpxMeta.distanceKm + ' km' : ''}}{{gpxMeta.hasElevation ? ' · 累计爬升约 ' + gpxMeta.ascentM + ' m' : ''}}{{gpxMeta.hasTime ? ' · 含时刻（可推算抵达日）' : ''}}。</text>
+          <text style="display:block;margin-top:4px;">解析出 {{gpxMeta.count}} 个路线节点{{gpxMeta.count > gpxPoints.length ? '，保留 ' + gpxPoints.length + ' 个' : ''}}{{gpxMeta.distanceKm > 0 ? ' · 全程约 ' + gpxMeta.distanceKm + ' km' : ''}}{{gpxMeta.hasElevation ? ' · 累计爬升约 ' + gpxMeta.ascentM + ' m' : ''}}{{gpxMeta.hasTime ? ' · 含时刻（可推算抵达日）' : ''}}。</text>
         </view>
         <view class="stack" style="gap:4px;">
-          <text class="small muted">确认前可先核对各节点：</text>
+          <text class="small muted">确认前可先核对各节点，多余的可以删掉：</text>
           <view wx:for="{{gpxPoints}}" wx:key="index" class="list-row">
             <view class="list-main">
               <text>{{item.name}}</text>
               <text class="list-sub tabular">{{item.coordinates.lat}}, {{item.coordinates.lng}}</text>
             </view>
+            <view class="button text" hover-class="button-hover" catchtap="onGpxRemove" data-index="{{index}}">删除</view>
           </view>
         </view>
-        <view class="button primary block" hover-class="button-hover" bindtap="onGpxApply">存为轨迹点组</view>
+        <view wx:if="{{gpxMeta.count > gpxPoints.length}}" class="button text block" hover-class="button-hover" bindtap="onGpxReset">恢复全部节点</view>
+        <text wx:if="{{!(gpxPoints.length >= 2)}}" class="small muted">至少保留 2 个节点才能存为轨迹点组。</text>
+        <view class="button primary block {{gpxPoints.length >= 2 ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{gpxPoints.length >= 2 ? 'onGpxApply' : ''}}">存为轨迹点组</view>
       </block>
       <block wx:elif="{{gpxError}}">
         <text class="small muted">请确认文件是标准 GPX（含 wpt/rtept/trkpt）后重试。</text>

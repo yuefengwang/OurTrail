@@ -381,8 +381,7 @@ function baseWeatherData(over) {
     dayCards: [], viewSpan: 24, unified: null, oiCard: null, oiHorizon: null, oiMultiDay: [],
     chartView: [], chartMarks: {}, chartNight: {}, chartSelected: {}, chartElev: null, chartNow: null,
     chartPick: null, hourChip: null, agenda: [], callouts: [], detailRows: [], showDetail: false,
-    condOverall: null, condCards: [], condSilent: null, openEvidence: {}, spaceNodes: [], spaceDays: [],
-    spaceSeries: [], spaceLat: 30, spaceLng: 103, spaceObsAlt: null, spaceArriveT: '',
+    condOverall: null, condCards: [], condSilent: null, openEvidence: {},
   }, over || {})
 }
 const WEATHER_STATES = {
@@ -528,8 +527,10 @@ guarded('§1', () => {
       return !!owner && renderedText(t) === '生成天气提醒草稿' &&
         attrResolved(owner, 'class').indexOf('secondary') !== -1 && attrOf(owner, 'bindtap') === 'onDraftNotice'
     })(), '')
-  check('脚注原文一字未改（CC BY 4.0 署名与「本机按坐标与海拔推算」仍在）',
-    !!prov && renderedText(prov).indexOf('（CC BY 4.0）') !== -1 && renderedText(prov).indexOf('本机按坐标与海拔推算') !== -1,
+  /* 许可与出处必须仍在同一条脚注里。括号形状不是契约：URL 也放在同一对括号内时，
+     `（CC BY 4.0）` 这种带括号的精确串会假红，而真正要守的是署名文本本身。 */
+  check('脚注原文未回退（CC BY 4.0 署名与「本机按坐标与海拔推算」仍在）',
+    !!prov && renderedText(prov).indexOf('CC BY 4.0') !== -1 && renderedText(prov).indexOf('本机按坐标与海拔推算') !== -1,
     prov && renderedText(prov))
   check('切日入口没有变多：mode="date" 的 picker 全页恰好一个',
     pickerOf(e).length === 1, String(pickerOf(e).length))
@@ -717,9 +718,14 @@ async function gateWeatherJs() {
     check('改日期 ⇒ 恰一次 pageScrollTo（不新造第二套滚动状态）',
       rec.scrolls.length === 1 && rec.scrolls[0].selector === '.timeline-card', JSON.stringify(rec.scrolls))
     check('数据真的落到页面（图与卡非空，滚动才有意义）',
-      page.data.dayCards.length === 7 && page.data.chartSeries.length === 168,
-      page.data.dayCards.length + '/' + page.data.chartSeries.length)
+      page.data.dayCards.length === 7 && (page._chartSeries || []).length === 168,
+      page.data.dayCards.length + '/' + (page._chartSeries || []).length)
     check('一次性闩已消费（不留挂起）', page._revealChartAfterApply === false, String(page._revealChartAfterApply))
+    /* 页面重量：7 天 168 小时序列只活在实例上。WXML 没有任何 {{chartSeries}}，
+       进了 data 就是白付一次 setData 序列化。 */
+    check('168 小时序列不进入 setData（this._chartSeries 持有）',
+      page.data.chartSeries === undefined && page._chartSeries.length === 168,
+      String(page.data.chartSeries && page.data.chartSeries.length))
   }
   {
     const rec = stubWx({ '.timeline-card': { top: 5000 } })
@@ -921,21 +927,23 @@ section('§5 A-26：逐卡免责已收敛（区块副标题说一次就够）')
 guarded('§5', () => {
   const five = render(src(WEATHER_WXML), WEATHER_STATES.data)
   const one = render(src(WEATHER_WXML), WEATHER_STATES.dataClassic)
-  const hits5 = textsWith(five, '气象预报')
-  const hits1 = textsWith(one, '气象预报')
-  check('5 张结论卡时，「气象预报」这层意思在页面上恰好出现 1 次（原先是 1+5）',
+  /* 2026-10-21 起区块从「户外条件/气象预报」改名为「天相条件」，免责语也随之改成
+     「只汇总天相，不是徒步安全评级」——A-26 要守的是“免责只说一次”，不是旧词本身。 */
+  const hits5 = textsWith(five, '只汇总天相')
+  const hits1 = textsWith(one, '只汇总天相')
+  check('5 张结论卡时，「只汇总天相」的边界在页面上恰好出现 1 次（原先是 1+5）',
     hits5.length === 1, String(hits5.length))
   check('1 张结论卡时也恰好 1 次（收敛与卡数无关，不是数出来的巧合）',
     hits1.length === 1, String(hits1.length))
-  check('那唯一一次就是「户外条件」区块副标题（不是别处冒出来的）',
+  check('那唯一一次就是「天相条件」区块副标题（不是别处冒出来的）',
     (() => {
-      const head = entriesWithClass(five, 'section-head').filter(x => textsWith(within(five, x), '气象预报').length)[0]
+      const head = entriesWithClass(five, 'section-head').filter(x => textsWith(within(five, x), '只汇总天相').length)[0]
       return !!head && head.path.length > 0
     })(), '')
   check('每张结论卡内部都不带免责行（按卡作用域逐个查，不是全站总数）',
     (() => {
       const cards = entriesWithClass(five, 'cond-pheno')
-      return cards.length === 5 && cards.every(c => textsWith(within(five, c), '气象预报').length === 0)
+      return cards.length === 5 && cards.every(c => textsWith(within(five, c), '只汇总天相').length === 0)
     })(), String(entriesWithClass(five, 'cond-pheno').length))
   // 防误伤：合规话术三处一个都不能少
   check('页首「不是出发许可」的概率声明仍在（合规职责，不能顺手删）',
@@ -947,7 +955,11 @@ guarded('§5', () => {
     textsWith(five, '灰底 = 天文暗夜').length + textsWith(one, '灰底 = 天文暗夜').length >= 1, '')
   check('OI 卡图注里「天文时刻为确定性事件」仍在模板中（客观时刻与天气推算的分界句）',
     stripComments(src(WEATHER_WXML)).indexOf('天文时刻为确定性事件') !== -1, '')
-  check('出处脚注（Open-Meteo 署名）仍在', textsWith(five, '数据来源').length === 1, String(textsWith(five, '数据来源').length))
+  /* 「点按复制数据来源与许可链接」也含“数据来源”四个字；按脚注正文计数，
+     否则一行新增的复制入口会把这条门变成“页面只能有一个来源标签”的假契约。 */
+  check('出处脚注（Open-Meteo 署名）仍在且只有一条',
+    textsWith(five, '本机按坐标与海拔推算').length === 1,
+    String(textsWith(five, '本机按坐标与海拔推算').length))
   check('沉默说明卡的判据仍在（不出卡 ≠ 不说明，第十轮的承重设计没被一起清掉）',
     (() => {
       const e = render(src(WEATHER_WXML), baseWeatherData({

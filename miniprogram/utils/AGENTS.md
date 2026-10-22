@@ -1,27 +1,26 @@
 # utils/ — 纯逻辑层
 
-26 files (2026-10-20 复点 `ls miniprogram/utils/*.js`). **All but `api.js` / `draft.js` are deliberately free of any `wx.*` API** so `tools/*-test.js` can `require()` them directly under plain Node. That property is the reason this directory is testable at all — do not break it.
+27 files (2026-10-21 复点 `ls miniprogram/utils/*.js`). **All but `api.js` / `draft.js` are deliberately free of any `wx.*` API** so `tools/*-test.js` can `require()` them directly under plain Node. That property is the reason this directory is testable at all — do not break it.
 
 | File | LOC | wx-free | Role |
 |---|---|---|---|
-| `api.js` | ~128 | **NO** | The only `wx.cloud.callFunction` site in the entire mini program. 15 exports（含 `getWeatherByPoint`）. |
+| `api.js` | ~132 | **NO** | The only `wx.cloud.callFunction` site in the entire mini program. 16 exports（含 `getWeatherByPoint` / `getSkyContext`）. |
 | `draft.js` | ~92 | **NO** | wx storage 的两个落点之一：本地草稿 + 最近查看 + `wxStorage` 通用适配器（供注入式纯 util 用，见 `watch-points.js`）。 |
 | `format.js` | 128 | yes | UTC+8 formatting + every label-copy map + WMO `weatherPhrase` |
 | `journey.js` | 322 | yes | **状态与「下一步」的唯一翻译层**（2026-10-08 旅程重构新增）：`phaseLabel/phaseScene/phaseTone`、`signupLabel`、`statusFilterOptions`、`incidentOptions`、`remaining/dayPrefix`、`participantNext`、`leaderQueue`、`tripMixLine/fieldMetric/transportLock`、`TRANSITION_LABEL`、`transitionBlocker`、`timeline`（✓/●/○）、`explain`（每个 `ERROR_CODES` 都有中文标题+原因+出路）、`busyStale`。**页面只插值，不再自造状态词，也不在 WXML 里比较服务端枚举。** 测试：`tools/journey-test.js`（138）；结构门：`tools/journey-graph-test.js`（12）。方向仍是 domain → projection → label（根 AGENTS.md 铁律 19/22）。 |
 | `util.js` | 111 | yes | `distanceKm` (haversine), `maskPhone`/`maskId`, `relativeDeadline`, `buildRosterTsv` (clipboard), `buildRosterCsv` (BOM + full PII, for insurance), `wmoText`, `reportText` |
-| `astro.js` | 283 | yes | NOAA solar/lunar math, twilights, 银心 season + azimuth |
-| `sky.js` | 433 | yes | 天相 probability engine, 6 phenomena |
+| `astro.js` | ~360 | yes | NOAA solar math, twilights, 月相 + 月球高度/升落 + 银心高度/方位（`moonPosition` / `galaxyPosition`） |
+| `sky.js` | ~1064 | yes | 天相 probability engine, 6 phenomena；跨夜窗口 / 低云按海拔 / 缺测失败关闭 / 方向云（spatial）/ 地形地平线（terrain）/ 透明度 seeing（atmosphere）/ 光污染（lightPollution） |
 | `route-schedule.js` | 110 | yes | GPX offsets → per-node arrival day/time |
 | `gpx.js` | 318 | yes | GPX parser + GCJ↔WGS transforms + track simplification |
 | `chart-store.js` | 14 | yes | Module-singleton bus, weather page → landscape chart page |
 | `watch-points.js` | ~180 | yes | 观察点/轨迹点组（P3 独立天气）。**注入式 storage**：`createWatchPoints(storage)` 工厂，页面注入 `draft.wxStorage`、测试注入内存 Map——它是 wx-free 的同时仍走 wx 存储 |
 | `weather-cache.js` | ~95 | yes | 天气本地缓存（2026-10-14 韧性轮新增）：查询失败时的**软降级**数据源——同一个点、同一天不久前取到过就照常展示，但必须带时效横幅（「X 小时前的数据」）。同款注入式 storage 工厂 + 假钟注入；CAP=6（单键 1MB 上限，wx storage 一条返回体约百 KB）、只收 `status==='ready'`、`MAX_AGE_MS=12h`（更旧的旧预报不冒充现在的天气）。**只在失败路径出场，不替代成功路径**；测试：`tools/weather-resilience-test.js` §1 |
-| `weather-model.js` | ~330 | yes | P4 轨迹层编排：`snap`/`nodeFacts`/`runsOf`/`annotateRuns`/`trackPoints`/`posAt`/`judge`。**不含任何天相阈值**——一律委托 `sky.js`；天相 key→颜色也在**不在**这里（`utils/` 不得反向依赖 `components/`，映射在 `components/space-time/layout.js`） |
 | `notices-page.js` | ~270 | yes | `makeNoticesPage(getActivityId, opts)` page factory（`opts.tabBarIndex` 供 Tab 页自报选中态；定向候选名单有 `targetsLoading`/`targetsError` 两个独立态，见下） |
 | `route-profile.js` | 171 | yes | 活动/路线海拔剖面纯函数：连续轨迹高程 / 节点高程 / 无数据三态；输出 SVG 字符串，调用方只负责编码成 data-URI。**不插值伪造地形**；轨迹高程缺口不跨线连接。测试：`tools/route-profile-test.js` |
 | `weather-brief.js` | 88 | yes | 活动详情「出发日天气」摘要：只组合 `getWeatherByPoint` 已返回的逐日/逐时事实，缺数据/超 14 天/陈旧三态分开；没有精确出发小时就只给全天，不拿 00:00 冒充。**不新增阈值、不重算天相、不承诺天气**。测试：`tools/weather-brief-test.js` |
 
-Measured reference centrality (files requiring each, 2026-10-08 复点): `format.js` 15 · `api.js` 13 · `journey.js` 7 · `draft.js` 7 · `astro.js` 5 · `sky.js` 4 · `route-schedule.js` 3 · `gpx.js` 3 · `chart-store.js` 3 · `weather-model.js` 1 · `notices-page.js` 2 · **`util.js` 0（死模块，见下）**.
+Measured reference centrality (files requiring each, 2026-10-08 复点): `format.js` 15 · `api.js` 13 · `journey.js` 7 · `draft.js` 7 · `astro.js` 5 · `sky.js` 4 · `route-schedule.js` 3 · `gpx.js` 3 · `chart-store.js` 3 · `notices-page.js` 2 · **`util.js` 0（死模块，见下）**.
 
 **`util.js` 是零引用死模块，且这句话现在被门钉住了。** `tools/journey-graph-test.js` 把它登记进 `DEAD_MODULES`：名单导出早已走服务端 `readExport`，而它内部的 `buildRosterTsv/buildRosterCsv` 仍按 `status === 'active'` 说话——那个取值在域里已经不存在（`LIVE_SIGNUP = pending/confirmed/waitlisted`）。仓库的先例是「停用但保留文件」（`components/privacy-popup` 同例），所以没有删；**一旦被 require，词汇单源那条门会先红**，届时必须先改它的旧文案。它的 `relativeDeadline`（与 `format.js` 逐字节相同、与 `journey.remaining` 同语义）已于本轮删除——倒计时只有 `journey.js` 一个出处。
 
@@ -31,7 +30,9 @@ Measured reference centrality (files requiring each, 2026-10-08 复点): `format
 
 Consequences worth knowing before you touch these files:
 - **Time is Beijing time, hardcoded UTC+8, no timezone library and no DST.** `format.js` does the offset arithmetic by hand.
-- `astro.js` computes the sun's azimuth with `atan2` because `acos` overflows near the zenith. Its 银心 (galactic center) azimuth comes from an empirical 25–40°N curve — the source comment says explicitly 「不是星历」 (not an ephemeris). Do not "upgrade" it to a real ephemeris; the tests pin the empirical curve.
+- `astro.js` computes the sun's azimuth with `atan2` because `acos` overflows near the zenith. Moon and galactic-center positions are computed from date + lat/lng (`moonPosition` / `galaxyPosition`); the old empirical 25–40°N `galaxyBearing` table was removed in 2026-10 because it ignored longitude/latitude. `tools/astro-test.js` pins full-moon/new-moon and galactic-center transit. **Do not reintroduce a clock-only azimuth table.**
+- `sky.js` uses `series` to build the selected date's night (`astroDusk` → next day's `astroDawn`); without `series` it falls back to the old calendar-day window. Missing cloud/precip readings must yield `unknown`, never `0`; `cloudAboveAt` decides whether low cloud is above or below the observer's elevation.
+- `getSkyContext` (cloud action) returns four optional blocks: `spatial` (8 方位 × 3 距离云/降水), `terrain` (16 方位 DEM 地平线), `atmosphere` (7Timer seeing/transparency + CAMS AOD), `lightPollution` (DarkSkySites SQM/Bortle). The page loads it **non-blocking** and re-renders when it arrives; every block must be optional. `lightPollution: null` means "explicitly missing" and caps star/galaxy at 69; `undefined` (no sky context at all) keeps the old behaviour. The DarkSkySites key lives only in the cloud function env `DARKSKY_API_KEY` — never in the mini program.
 - `sky.js` opens with 「这是『概率判断』，不是预报产品」. All output uses probability language and every conclusion carries its evidence, a bearing, and a time window.
 
 ## `api.js` — TWO RESULT SHAPES（都会 reject）
@@ -88,10 +89,6 @@ A module-level `let payload` with `set`/`get`/`clear`, carrying `{series, marks,
 | `sky.js` | `node tools/sky-test.js` | 65 |
 | `route-schedule.js` | `node tools/route-schedule-test.js` | 41 |
 | `watch-points.js` | `node tools/watch-points-test.js` | 37 |
-| `weather-model.js`（P4 轨迹层编排） | `node tools/weather-model-test.js` | 82 |
-| `components/space-time/layout.js`（P4 几何 + 漫游读数） | `node tools/space-time-test.js` | 109 |
-| `components/space-time/` 组件（执行真实 `draw()`） | `node tools/space-time-draw-test.js` | 55 |
-| `components/roam-scrubber/` 组件 | `node tools/roam-scrubber-test.js` | 33 |
 | `sky`+`astro`+`route-schedule` + `lib/weather` + weather 页（含 local 模式） | `node tools/weather-page-test.js` | 129 |
 | `api.js` (monkey-patched) + `draft.js` | `node tools/scenario-editor-test.js` | 137 |
 | `lib/weather` 纯函数（byPoint 校验/缓存 key/免鉴权集合） | `node cloudfunctions/trailApi/smoke-test.js` §15 | （并入 smoke） |
@@ -112,8 +109,5 @@ A module-level `let payload` with `set`/`get`/`clear`, carrying `{series, marks,
 - **Do not mirror page logic inside a test.** `SYNC.md:162` records a test that was backing a stale contract precisely because it re-implemented the page's builder. Extract the logic to a module and have the test assert the real function — that is why `components/meteogram/layout.js` exists.
 - **WXS regex must use `getRegExp()`** — literals are unsupported (`wxs/text.wxs:2`).
 - **`sky.js`'s mark keys must stay in sync with `components/meteogram/layout.js` `MARK_STYLE`.** The chart and the prose conclusions share one threshold set; if the keys diverge, the chart silently drops a mark.
-- **`weather-model.js` 不许持有天相阈值。** 它是 P4 的轨迹编排层，天相一律 `require('./sky')`。原型（Figma Make React 工程）自带一套阈值是因为那边没有 `sky.js`；照搬就会留下第二套引擎，同一时刻图表与结论卡可能给不同结论，而 `sky-test.js` 的 65 例测不到它。
-- **逐节点判定要用节点自己的海拔与坐标。** 「云在脚下」正来自同一天气下不同海拔的判定差（低处 `inCloud` / 高处 `cloudSea`）；太阳高度角沿路线也会偏移，全组共用一个经纬度会算错天文时刻。
-- **没有可信抵达时刻的节点就不画。** `route-schedule.js` 的立场是「无时间信息时宁可沉默，不可编造」，时空天相图必须一致——宁可图上少几个点。
 - **A node with no GPX timestamp yields 「无时间信息」 — never fabricate an arrival time by interpolating on distance.** `route-schedule.js` is deliberately silent rather than wrong.
 - **`gpx.js` caps input at 8 MB / 12 points** and back-fills `time`/`ele` onto named waypoints from the nearest track point, because named waypoints normally lack both but are exactly the anchors users compare the sky against. Do not "simplify" that back-fill away.

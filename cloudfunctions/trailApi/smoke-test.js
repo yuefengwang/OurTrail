@@ -321,6 +321,27 @@ function run() {
   check('NaN/Infinity 不离开数据层（转 null）',
     clNaN.levels[0].cloudCover[0] === null && clNaN.levels[0].altitudes[1] === null, clNaN)
 
+  console.log('== 12c. 天气：低层温湿廓线 / 总云量 / PBLH（2026-10 天相输入修正） ==')
+  const { hourView, PROFILE_LEVELS } = require('./lib/weather')
+  const hProf = {
+    temperature_2m: [10], temperature_925hPa: [12], relative_humidity_925hPa: [90],
+    temperature_850hPa: [8], relative_humidity_850hPa: [80],
+    temperature_700hPa: [2], relative_humidity_700hPa: [70],
+    cloud_cover: [55], cloud_cover_low: [10], cloud_cover_mid: [20], cloud_cover_high: [30],
+    boundary_layer_height: [800],
+    precipitation: [0], precipitation_probability: [0], weather_code: [0],
+    wind_speed_10m: [5], wind_gusts_10m: [8], relative_humidity_2m: [60],
+  }
+  const hv = hourView(['2026-10-06T00:00'], hProf, 0)
+  check('廓线档位固定为 925/850/700', PROFILE_LEVELS.join(',') === '925,850,700')
+  check('hourView 带气压层温湿廓线', hv.profile && hv.profile[925].t === 12 && hv.profile[850].rh === 80, hv.profile)
+  check('hourView 总云量 / PBLH additive', hv.cloud.total === 55 && hv.pblh === 800, { cloud: hv.cloud, pblh: hv.pblh })
+  const hvMissing = hourView(['2026-10-06T00:00'], {
+    temperature_925hPa: [null], relative_humidity_925hPa: [null],
+    temperature_850hPa: [undefined], relative_humidity_850hPa: [undefined],
+  }, 0)
+  check('廓线全缺 → null，不编 0', hvMissing.profile === null, hvMissing.profile)
+
   console.log('== 13. 删除草稿 ==')
   r = dispatch(sTrack, LIN, { type: 'activity.create', input: fullActivityInput() })
   check('再建一份草稿用于删除', r.ok, r.error)

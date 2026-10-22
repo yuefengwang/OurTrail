@@ -1,8 +1,8 @@
 # cloudfunctions/trailApi/ — 服务端
 
-**ONE production** cloud function. The 14 are `action` values multiplexed through a single `ROUTES` map (`index.js:256`). A second function is structurally possible but strongly discouraged — there is no shared package, so you would fork `domain/`, and the revision-CAS design spans the whole state.
+**ONE production** cloud function. The 16 are `action` values multiplexed through a single `ROUTES` map (`index.js:256`). A second function is structurally possible but strongly discouraged — there is no shared package, so you would fork `domain/`, and the revision-CAS design spans the whole state.
 
-Only dependency in the entire server: `wx-server-sdk ~3.0.1`. No weather SDK, no LLM SDK, no map/route package, no ORM, no test framework. `package.json` declares **no scripts**. Weather is a raw keyless `https.get` to `api.open-meteo.com` (`lib/weather.js:139`); only `crypto`, `https`, and `zlib` are Node builtins in use.
+Only dependency in the entire server: `wx-server-sdk ~3.0.1`. No weather SDK, no LLM SDK, no map/route package, no ORM, no test framework. `package.json` declares **no scripts**. Weather is raw `https.get` to Open-Meteo (`lib/weather.js`), 7Timer! (`lib/atmosphere.js`), and DarkSkySites (`lib/light-pollution.js`); only `crypto`, `https`, and `zlib` are Node builtins in use.
 
 ## STRUCTURE
 
@@ -17,7 +17,11 @@ store.js          201  17 ot_* collections (15 mapped + ot_meta + weather_cache)
                       never blind-set revision 0)
 config.json         8  { timeout: 20, permissions: { openapi: [security.msgSecCheck] } }
 domain/          ~2600  15 pure modules, zero wx-server-sdk → see domain/AGENTS.md
-lib/weather.js    337  Open-Meteo proxy, GCJ→WGS, cloud-band reconstruction
+lib/weather.js    367  Open-Meteo proxy, GCJ→WGS, cloud-band + pressure profile
+lib/spatial.js    126  8 方位 × 3 距离的方向云/降水（同一 Open-Meteo，多点一次请求）
+lib/terrain.js    107  16 方位 × 9 距离 Copernicus DEM 90 m 地平线
+lib/atmosphere.js 108  7Timer! ASTRO（seeing/transparency）+ CAMS AOD/PM
+lib/light-pollution.js 66 DarkSkySites SQM/Bortle（x-api-key 来自环境变量）
 smoke-test.js     756  173 domain assertions; runs with NO wx-server-sdk
 ```
 
@@ -25,9 +29,9 @@ smoke-test.js     756  173 domain assertions; runs with NO wx-server-sdk
 
 There is no `common/`, `utils/`, or `_shared` module. Sharing is relative `require` inside one deployed package.
 
-## THE 14 ACTIONS
+## THE 16 ACTIONS
 
-`exports.main` resolves `ROUTES[event.action]`, injects the actor as `cloud.getWXContext().OPENID` (never from the payload), and always returns `{ok:true, data}` or `{ok:false, error:{code, message}}`. Only the two weather actions skip the OPENID check (`lib/weather.js:278` `FREE_ACTIONS` = `getWeather` + `getWeatherByPoint`) — weather is non-personal data by design; every other action fails `AUTH_REQUIRED` without it.
+`exports.main` resolves `ROUTES[event.action]`, injects the actor as `cloud.getWXContext().OPENID` (never from the payload), and always returns `{ok:true, data}` or `{ok:false, error:{code, message}}`. Only the three weather/sky actions skip the OPENID check (`lib/weather.js` `FREE_ACTIONS` = `getWeather` + `getWeatherByPoint` + `getSkyContext`) — weather/sky inputs are non-personal data by design; every other action fails `AUTH_REQUIRED` without it.
 
 | action | Input | Returns `data` |
 |---|---|---|
@@ -43,6 +47,7 @@ There is no `common/`, `utils/`, or `_shared` module. Sharing is relative `requi
 | `dispatch` | `{payload, requestId, expectedRevision}` | `{targetIds, replayed, revision}` |
 | `getWeather` | `{activityId, pointId, date}` | `{status, hours, days, detail, series, pointElevation}` |
 | `getWeatherByPoint` | `{lat, lng, date}` | 同上（按坐标直取，供未挂活动的路线点用） |
+| `getSkyContext` | `{lat, lng, date, elevation?}` | `{status, date, endDate, spatial, terrain, atmosphere, lightPollution, sources, stale}`；四个数据块均可为 null，单源失败不拖垮整条 |
 | `getPhoneNumber` | `{code}` | `{phone}` |
 
 `read` sub-dispatches on `request.kind` inside `selectors.js:246` — `profile` | `me` | `home` | `discover` | `notices` | `activity` | `tasks`; anything else returns a `deniedView('FORBIDDEN')`. `kind:'activity'` also takes `perspective` (`participant|organizer|staff|vehicle`) and `vehicleId`; `kind:'tasks'` takes `activityId` and returns `{canManage,tasks}`.
@@ -61,7 +66,7 @@ There is no `common/`, `utils/`, or `_shared` module. Sharing is relative `requi
 
 ## STORE (`store.js`)
 
-Document-per-record, not one blob — this exists to stay under the 512 KB single-document limit. `COLLECTIONS` (`store.js:7`) maps 14 state keys to `ot_*` collections; each document's `_id` is `record.id` **except** `assignments` / `attendance` / `positions` (keyed by `record.signupId`) and `receipts` (keyed `actorId + '__' + requestId`). Plus `ot_meta` (doc `main`, the global `{revision, savedAt}` CAS counter) and `weather_cache` (key `w_<lat.2>_<lng.2>_<date>`, 30-min TTL).
+Document-per-record, not one blob — this exists to stay under the 512 KB single-document limit. `COLLECTIONS` (`store.js:7`) maps 14 state keys to `ot_*` collections; each document's `_id` is `record.id` **except** `assignments` / `attendance` / `positions` (keyed by `record.signupId`) and `receipts` (keyed `actorId + '__' + requestId`). Plus `ot_meta` (doc `main`, the global `{revision, savedAt}` CAS counter) and `weather_cache` (key prefixes: `w_` weather 30 min, `s_` spatial 30 min / 2 h stale, `t_` terrain 30 days, `a_` atmosphere 3 h / 6 h stale, `l_` light pollution 30 days).
 
 **`loadCollection` 回读的是 `orderBy('_id','asc')`，所以数组顺序 = 文档键字典序，不是写入顺序。** 对 receipts（键以 openid 开头）尤其致命：openid 是随机串，与时间毫无关系。任何"保留最近 N 条 / 取最后一条"的写法都必须显式按时间字段判 —— `commands.js` 的 `pruneRecent` 就是为这件事存在；把 `slice(-N)` 请回来会静默删掉"键序最靠前那个人"的幂等记忆（回归：`tools/receipt-window-test.js`）。同理 `diffCollections` 是按 `recordKey` 建 Map 比 JSON 的，**与顺序无关**，所以规范化排序不会造成额外写。
 
@@ -75,17 +80,18 @@ Document-per-record, not one blob — this exists to stay under the 512 KB singl
 
 - **Cloud-function edits require redeploying `trailApi`; nothing hot-reloads.** `config.json`'s `timeout: 20` (vs the 3 s default) *also* only takes effect on redeploy — the console value is the sole authority. This is the project's most repeated time sink.
 - **`config.json` declares `security.msgSecCheck` but the code calls `cloud.openapi.phonenumber.getPhoneNumber`** — undeclared. It works via the verified-entity path, but do not assume declared permissions are the ones in use.
-- **No secrets exist and no infrastructure reads them.** Zero `process.env`, zero API keys, no `.env`. Identity is `cloud.getWXContext().OPENID`; the server is env-agnostic via `cloud.DYNAMIC_CURRENT_ENV`. Do not introduce a hardcoded env id.
+- **One external secret exists: `DARKSKY_API_KEY`** — a cloud-function environment variable (console-set, never committed) for the free DarkSkySites light-pollution API. If it is missing/401, `getSkyContext` returns `lightPollution:null` + `lightPollutionReason`, and the client caps star/galaxy at 69 rather than pretending the sky is dark. All other sources (Open-Meteo, 7Timer!, CAMS, Copernicus DEM) are keyless. Identity is still `cloud.getWXContext().OPENID`; the server is env-agnostic via `cloud.DYNAMIC_CURRENT_ENV`. Do not introduce a hardcoded env id.
+- **`getSkyContext` is a partial-success action.** `spatial` / `terrain` / `atmosphere` / `lightPollution` are independent; a failed source is `null` + `sources.<name>='missing'`, never a whole-action failure. Do not make one source's outage blank the weather page. 7Timer! is free for non-commercial use and requires attribution (footer + evidence); CAMS/Copernicus/DarkSkySites also require attribution.
 - **The actor is server-injected — never read identity from `event`.** Collaboration targets arrive as a 身份码 (an openid the user copies from 「我的」), but authorization still resolves against `cloud.getWXContext()`.
 - **Never trust `payload` structure before `overrideEvidence`.** The override is what makes the audit log unforgeable.
-- **`loadState` reads 15 collections on every single action** (all 14 in `COLLECTIONS` + `ot_meta`) — full state hydration per request. `weather_cache` is not part of it; only `getWeather` touches that. Fine at V1 scale; it is the first scaling wall. Don't "optimize" it locally without changing the CAS design.
+- **`loadState` reads 15 collections on every single action** (all 14 in `COLLECTIONS` + `ot_meta`) — full state hydration per request. `weather_cache` is not part of it; only the weather/sky actions (`getWeather`, `getWeatherByPoint`, `getSkyContext`) touch that. Fine at V1 scale; it is the first scaling wall. Don't "optimize" it locally without changing the CAS design.
 - **Do not use `structuredClone`, `crypto.randomUUID`, or `String.replaceAll`** — cloud-function Node compatibility. Use `deepClone` / `genId` from `domain/contracts.js` (SYNC.md:101).
 - **`gcjToWgs` is duplicated on purpose.** A cloud function deploys as an isolated package and cannot `require` from `miniprogram/`. `lib/weather.js` and `miniprogram/utils/gpx.js` must change together; `tools/weather-page-test.js` cross-checks them.
 - **Open-Meteo wants WGS-84; the DB and `map` want GCJ-02.** Convert at this boundary, never in the page.
-- **`weather_cache` is a 30-minute TTL keyed on rounded coordinates** — a forecast is never fresher than 30 min regardless of client needs.
+- **`weather_cache` is not one TTL.** Prefixes: `w_` weather 30 min, `s_` spatial 30 min (2 h stale fallback), `t_` terrain 30 days, `a_` atmosphere 3 h (6 h stale), `l_` light pollution 30 days. Keys are rounded coordinates; a forecast is never fresher than 30 min regardless of client needs. Do not assume a single TTL when adding a new key.
 
 ## TESTING
 
-`node cloudfunctions/trailApi/smoke-test.js` → `passed=106 failed=0`。另有服务链路端到端 `node tools/e2e-test.js`（62 项，把客户端真实信封直接打进 `exports.main`）与 `node tools/e2e-fault-probe-test.js`（31 项结果模型自证）. It exercises the full reducer / invariants / selectors / allocation stack **without importing `wx-server-sdk`** — that is the whole reason `domain/` is a separate, dependency-free directory. `exports._internal` on `index.js` is the test hook that lets the test reach `assertInvariants` without pulling in the SDK.
+`node cloudfunctions/trailApi/smoke-test.js` → `passed=214 failed=0`。另有服务链路端到端 `node tools/e2e-test.js`（72 项，把客户端真实信封直接打进 `exports.main`）、`node tools/e2e-fault-probe-test.js`（34 项结果模型自证）与 `node tools/sky-context-test.js`（13 项：四源并行/部分缺失/无 key LP/null 海拔中心回填）。It exercises the full reducer / invariants / selectors / allocation stack **without importing `wx-server-sdk`** — that is the whole reason `domain/` is a separate, dependency-free directory. `exports._internal` on `index.js` is the test hook that lets the test reach `assertInvariants` without pulling in the SDK.
 
 **Any change to `domain/`, `store.js`, or a command handler must keep this suite runnable under plain Node.** Adding an `index.js`/`store.js` dependency into `domain/` breaks the project's only backend test.

@@ -12,6 +12,8 @@
 
 **Gate recount 26:** 2026-10-21 活动发布页对齐公众号图文（P0–P3）。新增 `components/content-editor`、`utils/content-view.js`、`domain/files.js`（fileID 白名单/引用计数）；`trailApi` 新增 action `checkImage`（14→15）+ `security.imgSecCheck`，新增 11 个可选活动字段与 `ContentBlock`（正文块）；编辑器 3→4 步，详情页加活动介绍/活动说明/费用明细/报名后须知/封面三态，发现/首页/卡片优先实拍封面。**已部署 trailApi**（线上包与工作树逐文件 diff 空，Active/timeout 20/Node16.13）；`trailApiLab` 同步部署（Active/timeout 20，线上包 diff 空）。新增工具 `content-view-test` 14、`content-editor-test` 16，工具数 101→**103**；`smoke 176→210`（实测）、`scenario-editor 160→169`、`scenario-activity 144→151`、`scenario-discover 36/0`、`scenario-signup 106/0`、`scenario-workspace 114/0`、`lab-dryrun 165/0`、`quick-create 65/0`、`e2e-test 72/0`、`e2e-client-cas 54/0 (bugs=1 既有 BUG-C2)`、`lifecycle-projection 132/0`、`a20-owner-hero 32/0`、`journey-graph 15/0`、`ui-consistency 17/0`；`check.js`/`check-handlers` 全过。**未跑全量 sweep**，不编总数。真机证据 `docs/ui-ux-redesign/evidence/activity-article-p2p3-2026-10-21/`；UNVERIFIED：跨用户读图、真实键盘焦点、原生相册选择器、分享卡 `imageUrl`；`activity-facts.png` 是注入 `isDraft:false` 的渲染证据，不是已发布活动。`e2e-golden-path` 已改 4 步序号但未跑（GP-01 既有红）。设计稿 `docs/superpowers/specs/2026-10-21-activity-article-publishing-design.md`。
 
+**Gate recount 27:** 2026-10-21 沿线时空天相下线 + 统一图 gutter 可读性 + 云层剖面缺失状态。**已删除** `components/space-time`、`components/roam-scrubber`、`utils/weather-model.js`（删除前已无 require）与 4 套测试（space-time 109 / space-time-draw 55 / roam-scrubber 33 / weather-model 82）；工具数 110→**106**，组件目录 16→**14**（13 在用 + privacy-popup），utils 27。天气页：左 gutter 行标题拆两行 + `L=44`（「降水 mm/h」「云量 · 高度 m」不再与刻度叠字）、无成层云带文案改为「没有 ≥80% 成层云带」、`cloudFieldMissing` 缺失 callout + `onRetryWeather` 绕过 `_lastResult` 复用（陈旧横幅同用）。**逐套实测**：`weather-page 192/0`、`meteogram-readability 86/0`（新增 §9 gutter 门；回旧布局变异 9 红）、`page2 98/0`、`meteogram-svg 25/0`、`meteogram-multiday 48/0`、`weather-v2-visual-audit 43/0`、`weather-v2 71/0`、`cloud-field-svg 29/0`、`cloud-position 62/0`、`weather-cloud-field 31/0`、`t4-e08 41/0`（R3 真实具名 slot 样本归零，判据由合成夹具自证）、`journey-graph 15/0`、`oi-claim-gate 26/0`；`check.js`/`check-handlers` 全过。**既有红（非本轮）**：`swx2 109/1`（`pages/activity/activity.wxss:90 .highlight-dot` font-weight 700，先前已登记）、`weather-resilience 43/2`（工作区天气线在途改动；干净 HEAD 45/0）；`swx2-style-gates-mutate` 因这条既存红以前置门 exit 2（INVALID，不是通过）。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。真机 **NOT_RUN**（无运行中的开发者工具自动化会话）；标签与云缺失态待重编译/上传后确认。详见 SYNC.md 2026-10-21 对应条目。
+
 ---
 
 ## OVERVIEW
@@ -22,11 +24,11 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 
 | Layer | Reality |
 |---|---|
-| Client | WeChat mini program, **native WXML/WXSS/CommonJS JS**. **21 pages**（`app.json` 实测，2026-10-20 新增 `pages/tasks`——协作任务清单）, **15 个组件目录**（14 在用 + `privacy-popup` 死代码；2026-10-21 新增 `profile-gate`）+ 位于 `miniprogram/custom-tab-bar/`（不在 components/ 下）, **zero npm dependencies** (no `miniprogram/package.json`, no `miniprogram_npm/`). `libVersion 3.8.12`, appid `wx1227a277a3f2f7ea` |
-| Backend | **ONE production** cloud function `trailApi` — 14 `action` values multiplexed through one `ROUTES` map (`index.js:259`), fanning out to **46 command types**（2026-10-20 新增 `task.*` 4 条）. Sole dependency `wx-server-sdk ~3.0.1`. 另有 **`trailApiLab`**：私有预演工具云函数（只给 `pages/lab` 造 `[预演]` 沙盒），与生产**共用同一套 `ot_*` 集合**，不是第二条服务链路 |
+| Client | WeChat mini program, **native WXML/WXSS/CommonJS JS**. **21 pages**（`app.json` 实测，2026-10-20 新增 `pages/tasks`——协作任务清单）, **14 个组件目录**（13 在用 + `privacy-popup` 死代码；2026-10-21 新增 `profile-gate`、`content-editor`；`space-time`/`roam-scrubber` 随时空天相功能下线）+ 位于 `miniprogram/custom-tab-bar/`（不在 components/ 下）, **zero npm dependencies** (no `miniprogram/package.json`, no `miniprogram_npm/`). `libVersion 3.8.12`, appid `wx1227a277a3f2f7ea` |
+| Backend | **ONE production** cloud function `trailApi` — 16 `action` values multiplexed through one `ROUTES` map (`index.js:259`), fanning out to **46 command types**（2026-10-20 新增 `task.*` 4 条）. Sole dependency `wx-server-sdk ~3.0.1`. 另有 **`trailApiLab`**：私有预演工具云函数（只给 `pages/lab` 造 `[预演]` 沙盒），与生产**共用同一套 `ot_*` 集合**，不是第二条服务链路 |
 | Store | Document-per-record across **17** `ot_*` collections (15 in the `COLLECTIONS` map, plus `ot_meta` and `weather_cache`). `ot_meta/main` = `{revision, savedAt}`. Writes diff records inside one transaction with a **revision CAS** |
 | Domain | 15 pure JS modules in `cloudfunctions/trailApi/domain/` — all authorization, business rules, and response shapes live here and **the client cannot bypass any of it**（`routes.js` 路线资产；`tasks.js` 协作任务） |
-| Weather | Keyless `https.get` to `api.open-meteo.com` via a cloud-function proxy, 30-min `weather_cache`. **All astronomy/天相 computation is client-side** |
+| Weather | `https.get` to Open-Meteo（天气/方向网格/90 m DEM/CAMS）、7Timer!（透明度/seeing）与 DarkSkySites（光污染，云函数环境变量 `DARKSKY_API_KEY`）via a cloud-function proxy；`weather_cache` 按源分 TTL（w/s/t/a/l 前缀）。**All astronomy/天相 computation is client-side** |
 | Design source of truth | `miniprogram/app.wxss`（**670 行**，`page` 块 4–77 行；**44 个自定义属性＝29 单值色 + 3 渐变 + 1 rgba + 11 数值/时长**，2026-10-17 复测并分区闭合。计数会漂——数属性用 `grep -c -- '--[a-z0-9-]*:' app.wxss`，数行数用 `wc -l app.wxss`（本文件不再抄行号，抄一次漂一次）+ 全站共用类）+ `.agents/skills/ourtrail-ui/` |
 
 **No root `package.json`. No `node_modules/` anywhere. No ESLint/Prettier/EditorConfig/tsconfig/biome. No lint, format, typecheck, or build step for the mini program.** The only automated gates are `node tools/check.js` and `node tools/check-handlers.js`.
@@ -64,23 +66,26 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── app.js/json/wxml/wxss   # entry; app.wxss IS the design system
 │   ├── config.js      # CLOUD_ENV / FUNC_NAME / NOTICE_TMPL_IDS — the only env file
 │   ├── pages/         # 21 dirs, 1:1 with app.json `pages`
-│   ├── components/    # 15 dirs（14 在用 + privacy-popup 死代码）
+│   ├── components/    # 14 dirs（13 在用 + privacy-popup 死代码）
 │   ├── custom-tab-bar/  # 与 components/ 同级，样式必须自包含
-│   ├── utils/         # 26 files — see miniprogram/utils/AGENTS.md
+│   ├── utils/         # 27 files — see miniprogram/utils/AGENTS.md
 │   ├── wxs/           # text.wxs
 │   └── assets/markers/  # generated PNGs (map markers reject base64)
 ├── cloudfunctions/trailApi/   # BACKEND — see cloudfunctions/trailApi/AGENTS.md
-│   ├── index.js        # 13-action router (ROUTES@244), overrideEvidence, weather
-│   ├── store.js        # 16 ot_* collections, loadState, persistState CAS
-│   ├── domain/         # 13 pure modules — see .../domain/AGENTS.md
+│   ├── index.js        # 16-action router (ROUTES), overrideEvidence, weather/sky context
+│   ├── store.js        # 17 ot_* collections, loadState, persistState CAS
+│   ├── domain/         # 15 pure modules — see .../domain/AGENTS.md
 │   ├── lib/weather.js  # Open-Meteo proxy (duplicates gcjToWgs — keep in sync)
-│   └── smoke-test.js   # 173 cases (measured 2026-10-09), needs no wx-server-sdk
-├── tools/             # 72 个零依赖 node 脚本（实测 2026-10-10 三层切片后）：65 个 `*-test.js`
-│                      #   （62 个可无头进门禁；3 个需开发者工具：`e2e-ui-test` /
-│                      #   `e2e-ui-state-test` / `e2e-golden-path-test`）+ 2 个静态检查 +
-│                      #   `e2e-result.js`（结果账本，被上述 3 套真机层与变异自证 require）+
-│                      #   `lifecycle-harness.js`（6 套 lifecycle-* 套件共用的世界驱动器，本身不是套件）+
-│                      #   桩/生成器（gen-map-markers / sync-lab / stub-wx-server-sdk）
+│   ├── lib/spatial.js  # 8 方位 × 3 距离方向云/降水（Open-Meteo 多点）
+│   ├── lib/terrain.js  # 16 方位 × 9 距离 Copernicus DEM 90 m 地平线
+│   ├── lib/atmosphere.js       # 7Timer! seeing/transparency + CAMS AOD/PM
+│   ├── lib/light-pollution.js  # DarkSkySites SQM/Bortle（环境变量 key）
+│   └── smoke-test.js   # 214 cases (measured 2026-10-21), needs no wx-server-sdk
+├── tools/             # 106 个 `*-test.js`（2026-10-21 实测；其中 3 个需开发者工具：
+│                      #   `e2e-ui-test` / `e2e-ui-state-test` / `e2e-golden-path-test`）
+│                      #   + 2 个静态检查 + `e2e-result.js`（结果账本）+ `lifecycle-harness.js`
+│                      #   （6 套 lifecycle-* 共用的世界驱动器）+ 桩/生成器
+│                      #   （gen-map-markers / sync-lab / stub-wx-server-sdk）
 │                      #   ⚠ 改过 cloudfunctions/trailApi/domain/* 或 store.js 后必须跑
 │                      #   `node tools/sync-lab.js`，否则 trailApiLab 副本与生产不一致，
 │                      #   `lab-dryrun` 会红（Phase 8 就留过这条残留，Phase 9 才补跑）。
@@ -130,12 +135,11 @@ Reference centrality measured by **grep require-count** (no TS/JS LSP and no ast
 | `miniprogram/utils/draft.js` | 7 | wx-storage drafts + opened-activity LRU |
 | `domain/permissions.js` | 7 | All authorization |
 | `miniprogram/utils/astro.js` | 5 | NOAA solar/lunar math |
-| `miniprogram/utils/weather-model.js` | 1 | P4 track/node orchestration over `sky.js` (wx-free; **holds no 天相 thresholds**) |
 | `domain/schema.js` / `invariants.js` | 4 / 4 | Entity specs / referential integrity |
 | `domain/selectors.js` | 2 (but 493 LOC) | Every response shape |
 | `utils/{sky,route-schedule,gpx,chart-store}` | 3 each | 天相 / schedule mapping / GPX / cross-page bus |
 
-**Complexity hotspots** (>400 LOC, `wc -l`, 2026-10-04 实测): `miniprogram/pages/editor/editor.js` (828) · `editor.wxml` (528) · `pages/activity/activity.js` (551) · `domain/selectors.js` (493) · `app.wxss` (502) · `components/meteogram/meteogram.js` (520) · `components/transport-panel/transport-panel.js` (457) · `utils/sky.js` (433) · `pages/signup/signup.js` (482).
+**Complexity hotspots** (>400 LOC, `wc -l`, 2026-10-04 实测): `miniprogram/pages/editor/editor.js` (828) · `editor.wxml` (528) · `pages/activity/activity.js` (551) · `domain/selectors.js` (493) · `app.wxss` (502) · `components/meteogram/meteogram.js` (520) · `components/transport-panel/transport-panel.js` (457) · `utils/sky.js` (~1064, 2026-10-21) · `pages/signup/signup.js` (482).
 
 ---
 
@@ -166,19 +170,15 @@ node tools/check-handlers.js weather   # optional: single page/component target
 #   本仓库常有并行工作在进行（trailApiLab / lab 页 / 各类 bug 修复），
 #   那些改动会增删用例（例：smoke 104→106→167、workspace 104→111 均非本轮 P4 改动）。
 #   **以每个脚本自己打印的 passed=N 为准**，不要信任何写死的总数。
-node cloudfunctions/trailApi/smoke-test.js   # 领域层（167）
-node tools/astro-test.js                     # 天文（60）
+node cloudfunctions/trailApi/smoke-test.js   # 领域层 + 天气投影（214，2026-10-21 实测）
+node tools/astro-test.js                     # 天文（60；含月球高度/升落、银心高度/方位的物理事实断言）
 node tools/gpx-test.js                       # GPX + 坐标转换（57）
-node tools/sky-test.js                       # 天相结论（82；§3 彩虹遮光闸成对反例，§12 三态 verdict 沉默闸）
+node tools/sky-test.js                       # 天相结论（135；§3 彩虹遮光闸成对反例，§12 三态 verdict 沉默闸，§13 月球/银心，§14 跨夜窗口，§15 低云按海拔，§16 缺测失败关闭，§17 逆温，§18 方向云，§19 地形，§20 透明度/seeing，§21 光污染）
 node tools/route-schedule-test.js            # 日程推算（41）
 node tools/weather-page-test.js              # 云函数→页面→组件契约（189；§13 天相卡沉默闸走真页面 buildCondCards）
 node tools/watch-points-test.js              # 观察点/轨迹点组（37）
-node tools/weather-model-test.js             # P4 轨迹层编排（wx-free 纯函数）（82）
 node tools/weather-v2-test.js                # Weather V2：WMO 雪码/云海可见性/Evidence/optional 降级/总评剔除被沉默卡/摄影窗口事实后缀/暗夜机会句同源标记（67）
 node tools/meteogram-draw-test.js            # meteogram 真实 draw()：V2 云带剖面/风/日照轴（记录式 2D）（30）
-node tools/space-time-test.js                # P4 时空天相图几何 + 漫游读数（109）
-node tools/space-time-draw-test.js           # P4 真实 draw() 执行（记录式 2D 上下文）（55）
-node tools/roam-scrubber-test.js             # P4 漫游控件定时器与事件契约（33）
 node tools/cloud-field-svg-test.js           # Cloud Field 等值带 SVG 渲染器：网格/开链配对/碎片过滤 + 三态结论与 reason（29）
 node tools/weather-cloud-field-test.js       # 生产返回体 → cloudField 适配器 + inferState（31）
 node tools/meteogram-svg-test.js             # Unified Meteogram SVG 构建（25）
@@ -188,6 +188,13 @@ node tools/outdoor-intelligence-test.js      # Outdoor Intelligence 条件态/�
 node tools/outdoor-intelligence-ui-test.js   # OI 呈现层 + 天气页集成（47）
 node tools/trip-mode-test.js                  # 出行方式 self/shared：Case 1-10 业务态 + 投影/动作/导出/detailState（78）
 node tools/weather-v2-visual-audit-test.js   # Weather V2 视觉保真审计：跨宽度几何归一化/YOU 锚点/covered 透传/OI 卡契约（43）
+
+# 天相输入 Slice 2–5（2026-10-21）
+node tools/spatial-test.js                   # 方向性天气采样 8 方位 × 3 距离（22）
+node tools/terrain-test.js                   # Copernicus DEM 90 m 地平线几何（15）
+node tools/atmosphere-test.js                # 7Timer/CAMS 解析与日期过滤（14）
+node tools/light-pollution-test.js           # DarkSkySites 解析/无 key 明确缺失（9）
+node tools/sky-context-test.js               # getSkyContext 四源并行 + 部分源失败 + null 海拔（13）
 
 # 旅程可解释性两套（2026-10-08 新增；被测层是 miniprogram/utils/journey.js——状态与下一步的唯一翻译层）
 node tools/journey-test.js                   # 阶段/报名/出行/指标/构成/门槛/错误码/时间线/只读锁：四问是否齐备（138）
@@ -244,6 +251,7 @@ node tools/scenario-notices-test.js          # 67
 node tools/scenario-vehicle-test.js          # 56
 node tools/scenario-api-test.js              # 27
 node tools/scenario-discover-test.js         # 36
+node tools/weather-hub-gpx-test.js           # 23（GPX 预览删除/恢复/保存点集；2026-10-21）
 node tools/scenario-lab-test.js              # 20
 node tools/scenario-staff-test.js            # 18
 
@@ -265,9 +273,10 @@ node tools/meteogram-svg-test.js && node tools/meteogram-multiday-test.js && \
 node tools/outdoor-cloud-sea-test.js && node tools/outdoor-intelligence-test.js && \
 node tools/outdoor-intelligence-ui-test.js && node tools/trip-mode-test.js && \
 node tools/weather-v2-visual-audit-test.js && \
+node tools/spatial-test.js && node tools/terrain-test.js && \
+node tools/atmosphere-test.js && node tools/light-pollution-test.js && \
+node tools/sky-context-test.js && \
 node tools/watch-points-test.js && \
-node tools/weather-model-test.js && node tools/space-time-test.js && \
-node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
 node tools/e2e-test.js && node tools/e2e-fault-probe-test.js && \
 node tools/e2e-revision-guard-test.js && node tools/meta-revision-guard-test.js && \
 node tools/cold-start-work-test.js && \
@@ -288,7 +297,7 @@ node tools/journey-test.js && node tools/journey-graph-test.js && \
 node tools/scenario-editor-test.js && \
 node tools/t4-e08-test.js && node tools/swx1-style-gates-test.js && \
 node tools/swx2-style-gates-test.js && node tools/b4-pad-final-value-test.js && \
-node tools/page2-gates-test.js && node tools/a20-owner-hero-test.js && \
+node tools/page2-gates-test.js && node tools/weather-hub-gpx-test.js && node tools/a20-owner-hero-test.js && \
 node tools/b4-c11-busy-selfheal-test.js && node tools/b4-e05-checklabel-test.js && \
 node tools/rb-vehicle-dependency-test.js && node tools/rb-toggle-guard-test.js && \
 node tools/rc-transport-test.js && node tools/ra-field-panel-test.js && \
@@ -382,10 +391,8 @@ await mp.pageScrollTo(1400)                                  // canvas 常在折
 const buf = Buffer.from(String(await mp.screenshot()), 'base64')   // ⚠ 见下
 fs.writeFileSync(out, buf)
 
-const st = await page.$('space-time')                        // 自定义组件用标签名直接选
-console.log(await st.data())                                  // 读组件内部 data
-const sc = await page.$('roam-scrubber')
-await sc.callMethod('onChanging', { detail: { value: 570 } })  // 直接调组件方法驱动交互
+const mg = await page.$('meteogram')                          // 自定义组件用标签名直接选
+console.log(await mg.data())                                  // 读组件内部 data
 await mp.disconnect()
 ```
 
@@ -399,7 +406,7 @@ await mp.disconnect()
 3. **`pages/weather` 的渲染门槛链**（`weather.wxml`）：`denied` → `elif loading` → `else` 内
    `wx:if loadingWeather`（**只出「正在查询天气」面板**）→ `wx:elif dayCards.length`（**图表在这里**）。
    注入数据必须 `denied=''`、`loading=false`、`loadingWeather=false` 且 `dayCards` 非空，
-   否则元素根本不在 DOM 里，`page.$('space-time')` 返回 null。
+   否则元素根本不在 DOM 里，`page.$('meteogram')` 返回 null。
 4. **`page.$()` 在滚动后可能拿不到元素**，重新取一次 `page` 句柄再试。
 5. **PowerShell 5.1 改 UTF-8 源文件会毁文件**：`Get-Content`/`Set-Content` 默认按 ANSI 读写，
    中文与全角引号全变乱码。本轮因此重建过一个测试文件。**改仓库文件一律用编辑工具。**
@@ -422,10 +429,10 @@ await mp.disconnect()
 | 手段 | 覆盖 | 何时用 |
 |---|---|---|
 | 纯逻辑测试 | 函数契约、阈值、边界 | 每次改动都跑 |
-| `space-time-draw-test`（记录式 2D 上下文） | **真的执行 `draw()`**，断言图层顺序 / dpr / 色值 / 无 NaN 坐标 | 改 canvas 绘制时 |
+| `meteogram-draw-test`（记录式 2D 上下文） | **真的执行 `draw()`**，断言图层顺序 / dpr / 色值 / 无 NaN 坐标 | 改 canvas 绘制时 |
 | **真机（本节）** | 像素、slot 是否显示、实际布局、文字是否折行 | 改 WXML/WXSS/组件结构时 |
 
-`space-time-draw-test.js` 是前两者之间的中间档：它不需要 DevTools，能进 CI，但**看不见 slot 与像素**。
+`meteogram-draw-test.js` 是前两者之间的中间档：它不需要 DevTools，能进 CI，但**看不见 slot 与像素**。
 本轮 `multipleSlots` 那个 bug 就是它放过的。
 
 ---
@@ -608,7 +615,7 @@ await mp.disconnect()
       （`low >= 70` 与闸的 `low < 40` 互斥，加回去是死分支）。规矩：报"漏网"前先判断变异体在行为上
       是否真的不等价；把死分支抄回来不构成回归，反之把等价变异当牙齿也不构成证明。
    ⑤ 文案门是活的、会拦新写的句子：本轮新写的否定句里有「不会有」，被
-      `weather-model-test` 的"不含断言式承诺"门当场拦下（铁律 12）⇒ 改成条件语言「这个条件不成立」。
+      文案门当场拦下（铁律 12）⇒ 改成条件语言「这个条件不成立」。
       **否定式陈述同样要用概率/条件语气，绝对断言（哪怕断言的是"不会"）一律不许出现。**
    ⑥ **真机核验的三道门槛，缺一张就不算页面级证据**（本轮连犯三次，全留在
       `docs/weather-ux/qa/v2-rainbow-gate-2026-10-10/device/invalid/`）：

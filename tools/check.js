@@ -104,6 +104,16 @@ for (const page of appJson.pages) {
 }
 ok('pages 文件齐全（' + appJson.pages.length + ' 页）')
 
+// 4b. 微信上传硬限制：permission.<scope>.desc 不超过 30 字（错误码 80058），按字符计（含 / 、）。
+// 2026-10-21 上传被 40 字拦下。判据自带反例——31 字必须拒绝、30 字必须接受，否则这条门是空的。
+const descLenOk = d => typeof d === 'string' && d.trim() !== '' && Array.from(d).length <= 30
+if (descLenOk('x'.repeat(31)) || !descLenOk('x'.repeat(30))) fail('权限描述长度判据自证失败（31 字应拒绝、30 字应接受）')
+for (const [scope, cfg] of Object.entries(appJson.permission || {})) {
+  const d = cfg && cfg.desc
+  if (!descLenOk(d)) fail('permission.' + scope + '.desc 必须非空且 ≤30 字（微信上传错误码 80058），当前 ' + (typeof d === 'string' ? Array.from(d).length : 0) + ' 字')
+}
+ok('权限描述长度检查完成（≤30 字）')
+
 // tabBar 页面检查
 if (appJson.tabBar && appJson.tabBar.custom) {
   ok('自定义 tabBar：' + appJson.tabBar.list.map(t => t.pagePath).join(', '))

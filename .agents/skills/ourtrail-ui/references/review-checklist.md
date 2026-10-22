@@ -27,7 +27,7 @@
 | 复用优先 | 新写的类/色/字号在 `app.wxss` 或 `design-system.md` 里没有等价物（全局搜过） | 搜过的类名清单 |
 | 颜色 | 组件与页面 wxss 不出现新的色字面量；`var(--x, #literal)` 兜底与注释不计；tab-bar 是唯一允许的字面量区 | 行号；新语义色已进 `app.wxss` 并登记 `design-system.md` |
 | 已知债不扩大 | 不新增 `home/discover/weather/activity/overlay` 那类字面量副本（清单见 `design-system.md` §现状色值债登记） | diff 内 0 新命中 |
-| 天相/图表配色 | 改 `MARK_STYLE` 同步 `sky.js` `hourMarks` + `space-time/layout.js`；画布字面量带 `// = --token` 注释 | 三处行号；`weather-page-test.js` 交叉核对退出码 |
+| 天相/图表配色 | 改 `MARK_STYLE` 同步 `sky.js` `hourMarks`；画布字面量带 `// = --token` 注释 | 两处行号；`weather-page-test.js` 交叉核对退出码 |
 | 对比度 | 正文对 ≥4.5:1、描边 ≥3:1；`--muted` 不再调淡；色块上文字用 `inkOn()` 判 | 配对计算或引用 `layout.js:106-113` |
 | 触控与节奏 | 新可点主目标引用 `--touch-target`/`--action-height`；纵向用 `.stack` 而非随意 margin | 行号；豁免要写理由 |
 | 座位网格 | 仍是 4 座 + 1 过道，宽度表达式未回退成 `25%` | `app.wxss:406/:425` 或页面覆写行号 |

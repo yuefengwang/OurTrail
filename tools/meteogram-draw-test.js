@@ -6,7 +6,7 @@
 // 干净 master 同错，与本次改动无关——证据见 docs/weather-ux/production-gap-analysis.md §6），
 // 先以记录式 2D 上下文把绘制层钉住；真机像素验证待 IDE 修复后补跑。
 //
-// 手法沿用 tools/space-time-draw-test.js：global.Component 捕获真实配置 +
+// 手法沿用本仓既有的记录式 2D 上下文试法：global.Component 捕获真实配置 +
 // global.wx 桩 + 记录式 2D 上下文，**执行真实的 draw()** 并对命令流断言。
 // ⚠ 这不是视觉验证：它证明「画布代码跑得通、图元合法、V2 图层按预期着色」，
 //   不证明「看起来对」。
@@ -26,7 +26,7 @@ function section(t) { console.log('== ' + t + ' ==') }
 
 const DATE = '2026-10-06'
 
-/* ---------- 记录式 2D 上下文（同 space-time-draw-test） ---------- */
+/* ---------- 记录式 2D 上下文 ---------- */
 
 const NUMERIC_METHODS = [
   'clearRect', 'fillRect', 'strokeRect', 'moveTo', 'lineTo', 'arc',

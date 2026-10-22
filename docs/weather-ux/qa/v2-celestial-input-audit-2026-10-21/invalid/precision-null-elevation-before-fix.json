@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-21",
+  "points": [
+    {
+      "point": {
+        "name": "冷湖",
+        "lat": 38.6,
+        "lng": 93.3,
+        "elevation": 4200,
+        "expect": null
+      },
+      "ok": true,
+      "status": "ready",
+      "sources": {
+        "spatial": "ok",
+        "terrain": "ok",
+        "atmosphere": "ok",
+        "lightPollution": "ok"
+      },
+      "lp": {
+        "source": "darkskysites",
+        "sqm": 21.91,
+        "bortle": 2,
+        "dataset": "[object Object]"
+      },
+      "lpReason": null,
+      "terrain": {
+        "elevation": 4200,
+        "dip": 2.08,
+        "openness": 1,
+        "maxAngle": 0.6
+      }
+    },
+    {
+      "point": {
+        "name": "阿里天文台",
+        "lat": 32.3,
+        "lng": 80,
+        "elevation": 4500,
+        "expect": null
+      },
+      "ok": true,
+      "status": "ready",
+      "sources": {
+        "spatial": "ok",
+        "terrain": "ok",
+        "atmosphere": "ok",
+        "lightPollution": "ok"
+      },
+      "lp": {
+        "source": "darkskysites",
+        "sqm": 21.8,
+        "bortle": 2,
+        "dataset": "[object Object]"
+      },
+      "lpReason": null,
+      "terrain": {
+        "elevation": 4500,
+        "dip": 2.15,
+        "openness": 0.06,
+        "maxAngle": 15.32
+      }
+    },
+    {
+      "point": {
+        "name": "峨眉山(不传海拔)",
+        "lat": 29.52,
+        "lng": 103.33,
+        "elevation": null,
+        "expect": 3099
+      },
+      "ok": true,
+      "status": "ready",
+      "sources": {
+        "spatial": "ok",
+        "terrain": "ok",
+        "atmosphere": "ok",
+        "lightPollution": "ok"
+      },
+      "lp": {
+        "source": "darkskysites",
+        "sqm": 21.42,
+        "bortle": 3,
+        "dataset": "[object Object]"
+      },
+      "lpReason": null,
+      "terrain": {
+        "elevation": 0,
+        "dip": 0,
+        "openness": 0,
+        "maxAngle": 71.8
+      }
+    },
+    {
+      "point": {
+        "name": "理塘(不传海拔)",
+        "lat": 30,
+        "lng": 100.27,
+        "elevation": null,
+        "expect": 4000
+      },
+      "ok": true,
+      "status": "ready",
+      "sources": {
+        "spatial": "ok",
+        "terrain": "ok",
+        "atmosphere": "ok",
+        "lightPollution": "ok"
+      },
+      "lp": {
+        "source": "darkskysites",
+        "sqm": 20.82,
+        "bortle": 4,
+        "dataset": "[object Object]"
+      },
+      "lpReason": null,
+      "terrain": {
+        "elevation": 0,
+        "dip": 0,
+        "openness": 0,
+        "maxAngle": 76.51
+      }
+    }
+  ]
+}

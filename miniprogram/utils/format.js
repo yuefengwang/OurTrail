@@ -255,7 +255,7 @@ function cloudPositionReason(reason) {
 const CLOUD_WINDOW_NOTES = {
   'clipped-above': '窗外上方还有云带',
   'clipped-below': '窗外下方还有云带',
-  'no-deck': '实测高度范围内没有有意义云量',
+  'no-deck': '实测高度范围内没有 ≥80% 成层云带',
 }
 function cloudWindowNote(key) {
   if (!key) return ''

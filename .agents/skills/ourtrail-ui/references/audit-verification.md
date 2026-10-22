@@ -38,7 +38,7 @@
 
 ## 3. 误判防线（每条都是实测撞过的）
 
-1. `var(--x, #literal)` 兜底**不是**发明色值；注释里的 hex 不算使用（`space-time.wxss`、`meteogram.wxss` 各 1 处是注释假阳）。
+1. `var(--x, #literal)` 兜底**不是**发明色值；注释里的 hex 不算使用（`meteogram.wxss` 1 处是注释假阳）。
 2. 两个 `.button primary` 若被 `wx:if`/`wx:else`、`step` 或不同 overlay 隔开 ⇒ 不计同屏违例；**判不出运行时组合就降 E2/E3**（实测 `activity.wxml:231-232`、`workspace.wxml:70+91` 属这一类）。
 3. 确认弹窗内的红实心 `.danger` 是规范允许的，不是"危险色裸露"。
 4. 纯静态页（`staff`/`privacy`/`cloud-field-poc`）没有四态分支是合理的；`weather-hub` 有数据源却裸文本 ⇒ 才是 DEBT。

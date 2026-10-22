@@ -58,7 +58,7 @@
 | `--radius-button` | 8px | :51 | `app.wxss:107` | S |
 | `--radius-card` | 14px | :52 | `app.wxss:84` `.card` | S |
 | `--radius-sheet` | 20px | :53 | 由 `overlay.wxss:39` 消费（`kind="sheet"`）。**`app.wxss` 内无 `.sheet` 选择器**（仅死代码 `privacy-popup.wxss:7` 有） | S |
-| `--touch-target` | 44px | :54 | 实测 7 处引用（`app.wxss`:130/131/317/325/475 + `roam-scrubber.wxss`:13/14）；页面 wxss 0 引用 ⇒ 规则适用范围见 SKILL.md #8（R 档） | R |
+| `--touch-target` | 44px | :54 | 实测 5 处引用，全在 `app.wxss`（:130/131/317/325/475）；页面 wxss 0 引用（`roam-scrubber` 已随时空天相下线）⇒ 规则适用范围见 SKILL.md #8（R 档） | R |
 | `--action-height` | 48px | :55 | 实测 7 处，全在 `app.wxss`（:103/274/301/363/409/441/442）；`.button` 的 `min-height` 走它 | R |
 | `--motion` | 180ms | :56 | **仅 `overlay.wxss`:14/29/47/48 消费**，且都写成 `var(--motion, 180ms)`。此前本文件完全未登记它，而 `platform-pitfalls.md` §4 的代码块已在用 | S |
 
@@ -83,7 +83,7 @@
 
 - **温度线不许用红。** `--danger` #B43D3B 与 `alpenglow` 光染是同一色值，图例里的红色分不清是温度还是光染。温度线用 `--ink` 中性墨色。
 - **色块上的字用 `inkOn()` 判，不要写死白字。** 黄金 #D6A33C 这类浅色配白字对比度只有 ~1.9:1，图上浅色标记的白字一直看不清。判据实现：`components/meteogram/layout.js:106-113`（亮度 >0.55 走深墨）。
-- **天相 key 增删必须同批改三处**：`utils/sky.js` 的 `hourMarks`、`meteogram/layout.js` 的 `MARK_STYLE`、以及任何消费方（如 `space-time/layout.js`）。key 分叉会让图表**静默丢标记**。
+- **天相 key 增删必须同批改两处**：`utils/sky.js` 的 `hourMarks` 与 `meteogram/layout.js` 的 `MARK_STYLE`。key 分叉会让图表**静默丢标记**（`space-time` 已下线，不再有第三个消费方）。
 - `meteogram.js:34` 的 `showers:'#2E8B8B'` 注释写「无 token」，但 `app.wxss:27` 现在已有同值的 `--chart-showers` ⇒ 注释已过时（画布仍不能取 `var()`，字面量本身保留是对的，只该把注释补成 `// = --chart-showers`）。登记为文档级 STALE，未改代码。
 
 **禁止发明新色值。** 需要新语义色时：在 app.wxss 加 token + 在本表登记。
@@ -100,7 +100,7 @@
 | `weather.wxss` | 2 | `rgba(255,255,255,0.7)`（`:195`，森林底上的药丸标签底）+ `#8C5A12`（`:222` = `--warning`） |
 | `overlay.wxss` | 2 发明 + 4 兜底 | `rgba(22,62,53,0.38)`:27 遮罩、`rgba(22,62,53,0.06)`:42 阴影属发明色；:38/40/41/69 是 `var(--x,#literal)` 兜底 |
 
-**不算违反的**：`me.wxss` 4 处全是 `var(--x,#literal)` 兜底；`space-time.wxss`、`meteogram.wxss` 各 1 处在注释里；`custom-tab-bar/index.wxss` 5 处全字面量（规则明确允许的例外位）；`privacy-popup.wxss` 7 处属死代码。
+**不算违反的**：`me.wxss` 4 处全是 `var(--x,#literal)` 兜底；`meteogram.wxss` 1 处在注释里；`custom-tab-bar/index.wxss` 5 处全字面量（规则明确允许的例外位）；`privacy-popup.wxss` 7 处属死代码。
 
 > 判据提醒：报"发明色值"前先确认那一行不是 `var()` 兜底、不是注释、不是 tab-bar、不是死代码（`audit-verification.md` §3 第 1 条）。债不属本轮修，但**新写的每一行不得再加**。
 

@@ -34,7 +34,7 @@ const ROWS = {
   axis: { y: 394, h: 18 },
 }
 const TOTAL_H = ROWS.axis.y + ROWS.axis.h
-const L = 38, R = 10
+const L = 44, R = 10
 
 const C = {
   ink: '#202A26',
@@ -461,14 +461,19 @@ function renderUnifiedBase(geo, opts) {
   ;[ROWS.precip.y - 6, ROWS.cloud.y - 6, ROWS.wind.y - 6].forEach(function (y) {
     s += '<line x1="' + geo.L + '" y1="' + y + '" x2="' + (geo.L + geo.plotW) + '" y2="' + y + '" stroke="' + C.grid + '" stroke-width="0.6"/>'
   })
-  /* 行标题（左侧 gutter 空档内小字，弱化）
-     不用行顶 y-2：gutter 同列叠着各轴刻度，行顶恰好压最近一档
-     （降水 max/云量 0/风 2000 与标题字形重叠 1~5px）。四条统一落在
-     行内刻度带之间的净空（各行 y+12~+16），与刻度字形净距 ≥4px。 */
-  s += '<text x="0" y="' + (ROWS.iconTemp.y + 16) + '" font-size="7.5" fill="#a9aca6">温度 °C</text>'
-  s += '<text x="0" y="' + (ROWS.precip.y + 16) + '" font-size="7.5" fill="#a9aca6">降水 mm/h</text>'
-  s += '<text x="0" y="' + (ROWS.cloud.y + 16) + '" font-size="7.5" fill="#a9aca6">云量 · 高度 m</text>'
-  s += '<text x="0" y="' + (ROWS.wind.y + 12) + '" font-size="7.5" fill="#a9aca6">风 km/h</text>'
+  /* 行标题（左侧 gutter，弱化）。旧写法把「降水 mm/h」「云量 · 高度 m」写成整行
+     （≈52px），而刻度标签右对齐在 L-5，gutter 只有 38px ⇒ 真机上这两行与 0/0.1、
+     4,500 的刻度字形叠在一起。现在拆成「指标 / 单位」两行（每行 ≤ ~23px），并把
+     L 加宽到 44：标题占 0–23px，刻度从 ~19px 起，仍有水平间隔，且两行落在行顶
+     刻度与下一档刻度之间的净空里。 */
+  s += '<text x="0" y="' + (ROWS.iconTemp.y + 12) + '" font-size="7.5" fill="#a9aca6">温度</text>'
+  s += '<text x="0" y="' + (ROWS.iconTemp.y + 20) + '" font-size="7" fill="#a9aca6">°C</text>'
+  s += '<text x="0" y="' + (ROWS.precip.y + 12) + '" font-size="7.5" fill="#a9aca6">降水</text>'
+  s += '<text x="0" y="' + (ROWS.precip.y + 20) + '" font-size="7" fill="#a9aca6">mm/h</text>'
+  s += '<text x="0" y="' + (ROWS.cloud.y + 12) + '" font-size="7.5" fill="#a9aca6">云量</text>'
+  s += '<text x="0" y="' + (ROWS.cloud.y + 20) + '" font-size="7" fill="#a9aca6">高度 m</text>'
+  s += '<text x="0" y="' + (ROWS.wind.y + 8) + '" font-size="7.5" fill="#a9aca6">风</text>'
+  s += '<text x="0" y="' + (ROWS.wind.y + 16) + '" font-size="7" fill="#a9aca6">km/h</text>'
   if (HZ > 24) {
     /* day header：今天 | 明天 | 后天（含每日最高/最低，§11） */
     geo.days.forEach(function (d, di) {

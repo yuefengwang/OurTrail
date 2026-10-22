@@ -48,7 +48,7 @@ section('Layout：gutter / safe area 不变量（375/390/414）')
   const g = build(24, 3500, W)
   const b = UMG.renderUnifiedBase(g, { sunrise: 7, sunset: 19, dateLabel: 'X' })
   /* 左轴刻度锚点 = L-5，右对齐；最长刻度「6000 m」7.5px 约需 26px → 需 L ≥ 31 且锚点 ≥ 26 */
-  const L = 38
+  const L = g.L
   check(W + 'px：左轴锚点 x=' + (L - 5) + ' ≥ 最长刻度宽（26px）', L - 5 >= 26)
   check(W + 'px：YOU 标签右缘 ≤ 绘图区右缘', (() => {
     const m = b.svg.match(/<text x="([0-9.]+)"[^>]*>此点 3,500 m/)
@@ -64,11 +64,11 @@ const gA = build(72, 3500, 318)   // DevTools stage 宽
 const gB = build(72, 3500, 636)   // 2× 假想 supersample
 check('等值带 path 数一致', gA.stats.pathCount === gB.stats.pathCount)
 check('几何点数一致', gA.stats.pointCount === gB.stats.pointCount)
-/* 归一化必须用 (x−L)/plotW：左右留边 L=38/R=10 是固定 px 不随宽度缩放，
+/* 归一化必须用 (x−L)/plotW：左右留边 L/R 是固定 px 不随宽度缩放，
    x/W 只在无留边时才是恒等式（318/636 实测 x/W 偏差 0.06 ≫ 容差，恒假）。 */
 check('归一化几何逐点一致（(x−L)/plotW 线性 + y 恒定）', (() => {
   if (gA.bands.length !== gB.bands.length) return false
-  const na = 318 - 48, nb = 636 - 48
+  const na = gA.plotW, nb = gB.plotW
   for (let bi = 0; bi < gA.bands.length; bi++) {
     const pa = gA.bands[bi].d.split(/[MLZ]/).filter(Boolean)
     const pb = gB.bands[bi].d.split(/[MLZ]/).filter(Boolean)
@@ -78,7 +78,7 @@ check('归一化几何逐点一致（(x−L)/plotW 线性 + y 恒定）', (() =>
       const cb = pb[pi].trim().split(' ').map(s => s.split(','))
       if (ca.length !== cb.length) return false
       for (let ci = 0; ci < ca.length; ci++) {
-        const xa = (+ca[ci][0] - 38) / na, xb = (+cb[ci][0] - 38) / nb
+        const xa = (+ca[ci][0] - gA.L) / na, xb = (+cb[ci][0] - gB.L) / nb
         if (Math.abs(xa - xb) > 0.002) return false   // 归一化 x 不变式
         if (Math.abs(+ca[ci][1] - +cb[ci][1]) > 0.01) return false  // y 与宽度无关
       }
@@ -134,7 +134,7 @@ section('Horizon / Selection：不漂移')
 const g72 = build(72, 3500, 375)
 const b72 = UMG.renderUnifiedBase(g72, { sunTimes: [{ rise: 7, set: 19 }, { rise: 7, set: 19 }, { rise: 7, set: 19 }] })
 ;[[24, '明天'], [48, '后天']].forEach(function (bd) {
-  const x = 38 + bd[0] / 72 * (375 - 48)
+  const x = g72.L + bd[0] / 72 * g72.plotW
   const rx = (b72.svg.match(new RegExp('x1="' + x.toFixed(1) + '"[^>]*stroke-width="1"', 'g')) || []).length
   check('日界线 @' + bd[0] + 'h 存在于精确 x', rx >= 1)
 })

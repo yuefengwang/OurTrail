@@ -30,8 +30,6 @@
 | 天气查询 | `pages/weather` | 三种模式共用：活动流（节点→天气，含天气提醒草稿）与自由查询（单点/轨迹组，抵达日程、保存/分享降精度）；Open-Meteo 云函数代理+缓存、**天相结论卡**（云海/日照金山/星空/银河/彩虹/晨昏光） |
 | 天气全图 | `pages/weather-chart` | 横屏整屏看 7×24 小时 meteogram 时间坐标图（数据经 `utils/chart-store.js` 交接，不走 URL） |
 | 天相图表 | `components/meteogram` | canvas 自绘 meteogram：温度线/降水双柱/三层云量/天相窗口标记/日时轴（几何抽到 `layout.js` 供测试断言） |
-| 时空天相图 | `components/space-time` | **P4**：把「时间×数值」补成「时间×海拔」——云层带 + 逐节点天相渐变轨迹 + 主窗口括号 + 抵达净空。几何抽到 `layout.js`，天相判定复用 `utils/sky.js`（不自建阈值） |
-| 漫游滑块 | `components/roam-scrubber` | 拖动/播放走完这一天。**哑控件**：不认识天相也不认识轨迹，读数由 `space-time` 算好后经 slot 传入，避免同一份天相算两遍 |
 | 海拔剖面 | `components/route-profile` | 活动/路线详情：连续轨迹高程 / 节点高程 / 无数据三态；无连续高程时明确标「节点高程，非连续剖面」，不插值伪造地形 |
 | 按需资料门 | `components/profile-gate` | 报名/发布前自动弹出；微信头像、昵称、手机号授权 + 手填兜底；保存后自动继续原动作 |
 | 图文编辑器 | `components/content-editor` | 活动发布的段落/图片块、封面选择、并发 3 上传与 `imgSecCheck`；块数据交给页面保存 |
@@ -46,7 +44,7 @@ miniprogram/
   custom-tab-bar/                自定义底部导航（活动/天气/通知/我的）
   components/                    icon(SVG data URI)/overlay/status-panel/person-row/
                                  form-field/activity-card/field-panel/roster-panel/
-                                 transport-panel/meteogram/space-time/route-profile/
+                                 transport-panel/meteogram/route-profile/
                                  profile-gate/content-editor/privacy-popup(已注销，保留文件)
   utils/
     api.js           云函数调用封装（read/dispatch + Result 解包）
@@ -55,7 +53,6 @@ miniprogram/
     notices-page.js  通知页共享逻辑（Tab 与活动内两处复用）
     gpx.js           GPX 解析 + GCJ↔WGS 坐标转换
     astro.js/sky.js  天文层与天相概率判断（纯计算，客户端侧）
-    weather-model.js P4 轨迹层编排：逐时插值/逐节点天相/连续段/评分（纯计算；**天相阈值一律委托 sky.js**）
     route-schedule.js  GPX 时间戳 → 各节点第几天抵达
     chart-store.js   天气页 → 横屏图页的内存交接
     watch-points.js  观察点/轨迹点组（纯 util，storage 注入；P3 独立天气）
@@ -130,8 +127,6 @@ node tools/check.js && node tools/check-handlers.js && \
 node cloudfunctions/trailApi/smoke-test.js && node tools/astro-test.js && \
 node tools/gpx-test.js && node tools/sky-test.js && node tools/route-schedule-test.js && \
 node tools/weather-page-test.js && node tools/watch-points-test.js && \
-node tools/weather-model-test.js && node tools/space-time-test.js && \
-node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
 node tools/weather-v2-test.js && node tools/meteogram-draw-test.js && \
 node tools/cloud-field-svg-test.js && node tools/weather-cloud-field-test.js && \
 node tools/meteogram-svg-test.js && node tools/meteogram-multiday-test.js && \
@@ -151,8 +146,6 @@ node tools/lab-dryrun-test.js
 共 **44 个套件**（断言总数是快照，2026-10-08 出行方式解耦后全量复跑测得 2845 —— 本仓库常有并行工作增删用例，**以各脚本自己打印的 `passed=N` 为准**）：
 `smoke` 167（领域层，不需 wx-server-sdk）· `astro` 60 · `gpx` 57 · `sky` 65 · `route-schedule` 41 ·
 `weather-page` 136（云函数→页面→组件契约）· `watch-points` 37 ·
-`weather-model` 82（P4 轨迹层编排）· `space-time` 109（P4 几何 + 漫游读数）·
-`space-time-draw` 55（执行真实 `draw()`，记录式 2D 上下文）· `roam-scrubber` 33（漫游控件定时器与事件）·
 Weather V2 渲染链（`weather-v2` 45 / `meteogram-draw` 30 / `cloud-field-svg` 27 /
 `weather-cloud-field` 29 / `meteogram-svg` 25 / `meteogram-multiday` 44 / `outdoor-cloud-sea` 20 /
 `outdoor-intelligence` 24 / `outdoor-intelligence-ui` 46 / `trip-mode` 78（出行方式 self/shared：
@@ -183,9 +176,9 @@ BUSINESS（后端状态对不对）与 UI（用户在界面上做没做成）各
 **注意**：需要 trailApiLab 部署版含批量重构与 timeout 20，否则 lab 阶段可能超时（脚本会幂等重试并给出指引）；
 沙盒活动收尾为 cancelled，可在预演面板 cleanup 清理。
 
-> `space-time-draw` / `roam-scrubber` 是 canvas 组件的**执行级**回归：
-> 它们真的把 `draw()` 跑起来并断言图元与色值，但**不等于视觉验证**——
-> 像素级效果与滑块手感仍需微信开发者工具真机确认。
+> `meteogram-draw-test` 是 canvas 组件的**执行级**回归：
+> 它真的把 `draw()` 跑起来并断言图元与色值，但**不等于视觉验证**——
+> 像素级效果仍需微信开发者工具真机确认。
 
 ## 上线检查清单（沿用 V1 要求）
 

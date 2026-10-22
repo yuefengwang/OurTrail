@@ -98,7 +98,6 @@ function insertAfterBlock(sel, added) {
 }
 
 /* ---------------- 变异表 ---------------- */
-const ST = 'components/space-time/space-time.wxss'
 const WX = 'pages/weather/weather.wxss'
 const HM = 'pages/home/home.wxss'
 const AC = 'pages/activity/activity.wxss'
@@ -107,15 +106,6 @@ const ED = 'pages/editor/editor.wxss'
 const ME = 'pages/me/me.wxss'
 
 const REGRESS = [
-  ['M1 B-09 复发：留宿开关 on 态改回死 token var(--surface-alt)（解析成透明）', ST,
-    setBlock('.space-time-stay.on', ['color: var(--muted)', 'background: var(--surface-alt)', 'border-color: var(--line)'])],
-  ['M2 B-09 复发：astro-text 改回 var(--text-2, var(--ink))（死 token + fallback 掩体）', ST,
-    setBlock('.space-time-astro-text', ['display: block', 'margin-top: 2px', 'font-size: 12px', 'line-height: 18px', 'color: var(--text-2, var(--ink))'])],
-  ['M3 B-09 变体：on 态换成 --surface（token 是活的，但与卡片底同色 = 选中态仍然看不见）', ST,
-    setBlock('.space-time-stay.on', ['color: var(--muted)', 'background: var(--surface)', 'border-color: var(--line)'])],
-  ['M4 M-07 复发：留宿开关退回「padding 撑高度」（实算 28px），而那句声称 ≥44px 的注释原样留着', ST,
-    setBlock('.space-time-stay', ['font-size: 11px', 'line-height: 16px', 'color: var(--info)', 'background: var(--info-soft)',
-      'border: 1px solid var(--info)', 'border-radius: 5px', 'padding: 5px 8px'])],
   ['M5 B-10 复发：「此刻处于云中」的读数色抄回字面量 #8C5A12', WX,
     setBlock('.cf-readout .ro-l3.in', ['color: #8C5A12'])],
   ['M6 B-10 复发：首页活动卡信息行抄回 #5F6E66', HM,
@@ -168,8 +158,6 @@ const EQUIVALENT = [
       const rest = (text.slice(0, b.from) + text.slice(b.to)).replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n')
       return rest.replace(/\s*$/, '') + eolOf(text) + eolOf(text) + block
     }],
-  ['E6 留宿开关的 min-height 取字面量 44px（终值不变 ⇒ 同一扇门该放行两种写法）', ST,
-    replOnce('  min-height: var(--touch-target);', '  min-height: 44px;')],
 ]
 
 /* ---------------- 跑一轮 ---------------- */

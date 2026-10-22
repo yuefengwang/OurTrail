@@ -58,8 +58,7 @@ Agenda → Cloud Sea（剖面行+featured 卡）→ Evidence → Numbers。每�
 用户读到的三句话，不需要任何文字解释：**「云在我下面」「云正好罩住我」「云在我头顶」**。
 原型见 `prototype/fallback/` 的「带」行；数据契约零新增（band 字段现网已有）。
 
-多日轨迹场景的强化版是现有 `space-time` 组件（时间×海拔+节点轨迹），保留不动，仅在
-活动/轨迹组模式展示。
+多日轨迹场景的强化版曾是 `space-time` 组件（时间×海拔+节点轨迹）；2026-10-21 产品决定下线，代码已删除。
 
 ## 3. OurTrail 24h Weather Timeline（§11，规格要点）
 

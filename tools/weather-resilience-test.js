@@ -165,7 +165,9 @@ async function pageCases() {
     check('① 重试期间有"正在重试"提示（不是静默转圈）',
       page._patches.some(p => /正在重试/.test(p.retryNote || '')),
       JSON.stringify(page._patches.filter(p => p.retryNote).map(p => p.retryNote)))
-    check('① 成功后无错误态残留', page.data.emptyTitle === '' && page.data.weatherStale === null && page.data.loadingWeather === false)
+    check('① 成功后无错误态残留', page.data.emptyTitle === '' && page.data.weatherStale === null && page.data.loadingWeather === false,
+      'title=' + JSON.stringify(page.data.emptyTitle) + ' stale=' + JSON.stringify(page.data.weatherStale) +
+      ' loading=' + page.data.loadingWeather + ' skyNote=' + JSON.stringify(page.data.skyInputNote))
   }
 
   // ② 持续 NETWORK 失败且无缓存：友好文案 + 恰好 3 次尝试（1 + 2 重试）

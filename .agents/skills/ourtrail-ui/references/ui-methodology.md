@@ -28,7 +28,7 @@
 | 单对象详情（一条活动/一条路线） | `.section-head` 分段 + 段内 `.card` 一到两张 | 同级 8–11 张卡竖排（实测 `me.wxml` 9 张、`route.wxml` 8 张、`editor.wxml` 11 张且 `:188/:205/:256/:271` 卡中嵌卡） |
 | 输入为主 | `<form-field>` + `.form-actions`，一屏一件事，多步用 `step` | 一个大长表单不分步；标签在屏内重复出现 |
 | 需要"先看全局再决定" | `.hero`/`.metrics` 顶栏 + `.segmented` 分区 + 面板 | 用文字列表复述指标（`.metrics/.metric` 已存在且 hero 内自动反白） |
-| 时间/数量随维度变化的数据 | 自绘图表（`<meteogram>`/`<space-time>`，几何在 `layout.js` sidecar） | 把时序表写成 `label: value` 罗列 |
+| 时间/数量随维度变化的数据 | 自绘图表（`<meteogram>`，几何在 `layout.js` sidecar） | 把时序表写成 `label: value` 罗列 |
 | 破坏性动作 | 入口用文字/次要样式，红实心只在 `overlay kind="dialog"` 内 | 页面主体直接放 `.button danger block`（实测 `route.wxml:189`、`lab.wxml:76`） |
 | 临时选择/筛选/批量 | `overlay kind="sheet"` + 弹层内主按钮 | 把选项摊成正文一长列 |
 

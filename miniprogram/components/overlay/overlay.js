@@ -2,6 +2,36 @@
 // 同 form-field：options 只能写一次，否则 apply-shared 被覆盖，弹层内的 .icon-button /
 // .stack 等 app.wxss 类选择器不生效。
 'use strict'
+// 自定义 tabBar 是框架的独立高层，页面里 z-index 再高也压不住它：sheet 贴底时末行按钮
+// 会落在 tabBar 后面，滚到底也露不出来（2026-10-21 真机实测）。所以弹层打开期间隐藏
+// 当前页的 tabBar，关闭时恢复；同页多个弹层（如面板里再开确认层）按引用计数共用一次隐藏。
+const tabBarLocks = new WeakMap()
+function lockTabBar(inst) {
+  if (inst._tabBarPage || typeof getCurrentPages !== 'function') return
+  const pages = getCurrentPages()
+  const page = pages[pages.length - 1]
+  if (!page) return
+  inst._tabBarPage = page
+  let lock = tabBarLocks.get(page)
+  if (!lock) {
+    lock = { count: 0, bar: typeof page.getTabBar === 'function' ? page.getTabBar() : null }
+    tabBarLocks.set(page, lock)
+  }
+  lock.count++
+  if (lock.count === 1 && lock.bar) lock.bar.setData({ hidden: true })
+}
+function unlockTabBar(inst) {
+  const page = inst._tabBarPage
+  if (!page) return
+  inst._tabBarPage = null
+  const lock = tabBarLocks.get(page)
+  if (!lock) return
+  lock.count--
+  if (lock.count > 0) return
+  tabBarLocks.delete(page)
+  if (lock.bar) lock.bar.setData({ hidden: false })
+}
+
 Component({
   options: { styleIsolation: 'apply-shared', multipleSlots: false },
   properties: {
@@ -16,7 +46,12 @@ Component({
     // 关闭态的安全性由 overlay.wxss 的 pointer-events:none + visibility:hidden 承担
     // （platform-pitfalls §4 的承重墙，注释就写在那里）。
     open(v) {
-      if (v) this.setData({ rendered: true })
+      if (v) {
+        this.setData({ rendered: true })
+        lockTabBar(this)
+      } else {
+        unlockTabBar(this)
+      }
     },
   },
   methods: {

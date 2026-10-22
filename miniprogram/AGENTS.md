@@ -14,13 +14,13 @@ app.wxss     670 lines. THE design system: 44 CSS custom properties on `page`
 config.js    16 lines. CLOUD_ENV='cloud1-d9ghcm034574b9d55', FUNC_NAME='trailApi',
              NOTICE_TMPL_IDS={activity:''} (empty ⇒ clipboard fallback). Only env file.
 pages/       21 dirs, 1:1 with app.json.
-components/  15 dirs（14 在用 + privacy-popup 死代码）. custom-tab-bar/ sits outside components/（在 miniprogram/ 根下）.
-utils/       26 files → see utils/AGENTS.md（`journey.js` 是状态与下一步的唯一翻译层）
+components/  14 dirs（13 在用 + privacy-popup 死代码）. custom-tab-bar/ sits outside components/（在 miniprogram/ 根下）.
+utils/       27 files → see utils/AGENTS.md（`journey.js` 是状态与下一步的唯一翻译层）
 wxs/text.wxs 16 lines. WXS regex must use getRegExp().
 assets/markers/  generated PNGs — map marker.iconPath rejects base64
 ```
 
-**Hard layout convention:** every page/component is a same-named dir holding `<name>.{js,json,wxml,wxss}`. No barrels, no index re-exports, no nesting. The only nested files are the **pure-geometry sidecars** `components/meteogram/layout.js` and `components/space-time/layout.js` — they exist so `tools/*-test.js` can assert geometry/colors without re-implementing the component (复刻页面计算会让测试为过期契约背书). All component paths in JSON are **root-absolute** (`"/components/icon/icon"`).
+**Hard layout convention:** every page/component is a same-named dir holding `<name>.{js,json,wxml,wxss}`. No barrels, no index re-exports, no nesting. The only nested file is the **pure-geometry sidecar** `components/meteogram/layout.js` — it exists so `tools/*-test.js` can assert geometry/colors without re-implementing the component (复刻页面计算会让测试为过期契约背书). All component paths in JSON are **root-absolute** (`"/components/icon/icon"`).
 
 ## PAGES (21)
 
@@ -34,7 +34,7 @@ assets/markers/  generated PNGs — map marker.iconPath rejects base64
 - **`weather-chart` is landscape** and reads its data from the `chart-store.js` singleton, never the URL (168 hours would blow the `navigateTo` query limit).
 - **`home` fires 4 parallel `api.read` calls** (`home.js:43-46`) and merges the perspectives client-side.
 
-## COMPONENTS (15 目录 = 14 在用 + `privacy-popup` 死代码)
+## COMPONENTS (14 目录 = 13 在用 + `privacy-popup` 死代码)
 
 Three of them are **self-fetching business panels** — they load in `attached` plus on a prop observer, guarded by a `this._loading` re-entrancy flag:
 
@@ -44,8 +44,6 @@ Three of them are **self-fetching business panels** — they load in `attached` 
 | `transport-panel` | 461 | 分车: vehicles, auto-assign preview/commit, manual assign/swap, seat map |
 | `field-panel` | 245 | 现场: check-in / departure verify / nodes / home-safe / incidents / position. The `perspective` prop serves both `workspace` (organizer) and `staff`. Action buttons are gated by **per-row facts** from `rowView` (`checkedIn`, `needsOutboundBoarding`, `outboundBoarded`) so a row whose server-side precondition is unmet never shows a doomed button; when 「核实已随队出发」 is hidden the sheet prints where to go instead (车长任务页) |
 | `meteogram` | 719+132 | canvas 2d 天相 time-coordinate chart（`layout.js` 132 行是几何与配色 sidecar） |
-| `space-time` | 492+466 | P4 时空天相图（云带/风/日照轴，几何在 `space-time/layout.js`，**复用** `meteogram/layout.js` 的 `MARK_STYLE`）；宿主只有 `pages/weather`（实测 `weather.json` 注册，`weather-chart` 未注册） |
-| `roam-scrubber` | 129 | 漫游时间轴控件；宿主是 `space-time` 组件（非页面）；`readout` 具名 slot ⇒ `options` 必须同时带 `multipleSlots: true` |
 | `icon` | 121 | SVG data-URI map; the only leaf component |
 | `route-profile` | 65+14+36 | 海拔剖面：连续高程 / 节点高程 / 无数据三态；SVG 纯函数在 `utils/route-profile.js`，不插值伪造地形 |
 | `profile-gate` | 158+38+41 | 按需补资料：报名/发布前自动弹出；微信头像/昵称/手机号按钮 + 手填兜底；保存 `profile.save` 后由宿主重读或续跑原动作 |
@@ -109,7 +107,7 @@ Beyond the root list, specific to this directory:
 - **Nothing is mounted globally.** `app.json` has no `usingComponents` key and `app.wxml` has no tags — `app.json`/`app.wxml` are the floor of the tree, not a place to register things. `components/privacy-popup/` is kept on disk but dead. Register page components in the *page's* `.json`.
 - **A new page requires 5 steps:** create `pages/<n>/<n>.{js,json,wxml,wxss}` → register in `app.json` `pages` → declare `usingComponents` with root-absolute paths → add `styleIsolation` if you rely on `app.wxss` classes → `node tools/check.js`.
 - **`meteogram.js` re-measures its canvas twice** (`scheduleSync`, 100 ms and 320 ms). A `type="2d"` canvas caches its layer offset at `node.width` assignment and does not follow later reflow; measure after async layout settles or the chart overlays body text.
-- **`meteogram/layout.js` exists on purpose** — geometry and mark colors were extracted out of the component purely so `tools/` can assert them. The `MARK_STYLE` keys must stay in sync with `sky.js`'s `hourMarks` keys. Canvas cannot read CSS vars, so its palette is literal; keep it in sync with `app.wxss`. `components/space-time/layout.js` follows the same pattern and **reuses** `meteogram/layout.js`'s `MARK_STYLE` rather than re-mapping the 天相 colors (they are the single source; if a key is added, change `sky.js` + `meteogram/layout.js` + `space-time/layout.js` together or the chart silently drops a mark).
+- **`meteogram/layout.js` exists on purpose** — geometry and mark colors were extracted out of the component purely so `tools/` can assert them. The `MARK_STYLE` keys must stay in sync with `sky.js`'s `hourMarks` keys. Canvas cannot read CSS vars, so its palette is literal; keep it in sync with `app.wxss`. If a mark key is added, change `sky.js` + `meteogram/layout.js` together or the chart silently drops it.（`space-time` 已随时空天相功能下线，不再有第三个消费方。）
 - **静态门禁通过 ≠ 页面正常。** 改完 WXML/WXSS/组件结构后跑一次真机（微信开发者工具）驱动，
   见 `../AGENTS.md` 的「直连微信开发者工具」一节与 `../docs/e2e-mp/README.md`。
   判据很硬：**凡是「数据对、渲染不对」的问题，逻辑测试天然测不到** ——

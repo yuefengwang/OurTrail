@@ -32,6 +32,7 @@ function check(name, cond, extra) {
 function section(t) { console.log('== ' + t + ' ==') }
 
 const OV = f => path.join(__dirname, '..', 'miniprogram', 'components', 'overlay', f)
+const TB = f => path.join(__dirname, '..', 'miniprogram', 'custom-tab-bar', f)
 
 // ---------- §1 WXSS：层叠完成后的最终生效值 ----------
 // 解析器只处理本文件实际用到的形态（纯类选择器规则块，无 @media/keyframes）。
@@ -269,6 +270,96 @@ check('S3.14 遮罩点击：恰好发一次 close 事件、组件自身 data 一
 inst.onCloseTap()
 check('S3.15 关闭按钮点击：同上，只发 close（把 setData({rendered:false}) 塞进 tap 的「直觉修法」在此红）',
   inst.events.length === 2 && inst.events[1].name === 'close' && inst.data.rendered === true)
+
+// ---------- §4 打开弹层 ⇒ 隐藏自定义 tabBar ----------
+// 真机 2026-10-21 实测：自定义 tabBar 是框架的独立高层，页面里 z-index 200 也压不住它，
+// 贴底 sheet 的末行按钮滚到底仍落在 tabBar 后面。判据是「真观察者驱动后 tabBar 实例收到了什么」，
+// 不是源码里有没有 hideTabBar 这几个字（铁律 30）。
+section('§4 弹层打开时隐藏当前页 tabBar（引用计数 + 非 tab 页无副作用）')
+function makeBar() {
+  return { sets: [], setData(obj) { this.sets.push(obj); Object.assign(this, obj) } }
+}
+function makePage(bar) { return { getTabBar() { return bar } } }
+
+let bar = makeBar()
+let page = makePage(bar)
+global.getCurrentPages = () => [page]
+
+inst = makeInstance(cfg)
+openWith(inst, cfg, true)
+check('S4.0 有效性门：已装弹层能拿到夹具页面的 tabBar，并写入 hidden=true（下面不是空转）',
+  bar.sets.length === 1 && bar.sets[0].hidden === true && bar.hidden === true,
+  'sets=' + JSON.stringify(bar.sets))
+openWith(inst, cfg, false)
+check('S4.1 关闭弹层 ⇒ tabBar 恢复可见，且是同一实例上的恢复',
+  bar.sets.length === 2 && bar.sets[1].hidden === false && bar.hidden === false,
+  'sets=' + JSON.stringify(bar.sets))
+
+// 同页两个弹层：先关其中一个不能提前把 tabBar 放出来（面板里再开确认层是真实路径）
+bar = makeBar()
+page = makePage(bar)
+global.getCurrentPages = () => [page]
+const ovA = makeInstance(cfg)
+const ovB = makeInstance(cfg)
+openWith(ovA, cfg, true)
+openWith(ovB, cfg, true)
+check('S4.2 两个弹层同时打开：只隐藏一次，第二个不重复写',
+  bar.sets.length === 1 && bar.hidden === true, 'sets=' + JSON.stringify(bar.sets))
+openWith(ovA, cfg, false)
+check('S4.3 先关一个：tabBar 仍保持隐藏（另一个还开着）',
+  bar.hidden === true && bar.sets.length === 1, 'sets=' + JSON.stringify(bar.sets))
+openWith(ovB, cfg, false)
+check('S4.4 最后一个关闭：tabBar 恢复，且只恢复一次',
+  bar.hidden === false && bar.sets.length === 2 && bar.sets[1].hidden === false,
+  'sets=' + JSON.stringify(bar.sets))
+
+// 一次性特例不算过：关闭后再次打开必须还能隐藏
+const ovC = makeInstance(cfg)
+openWith(ovC, cfg, true)
+check('S4.5 关闭后再次打开：仍会隐藏（锁状态没有残留）',
+  bar.hidden === true, 'last=' + JSON.stringify(bar.sets[bar.sets.length - 1]))
+openWith(ovC, cfg, false)
+check('S4.6 再次关闭后恢复', bar.hidden === false)
+
+// 非 tab 页（没有 getTabBar）不得抛错、不得写任何东西
+global.getCurrentPages = () => [{}]
+const ovD = makeInstance(cfg)
+let threw = null
+try { openWith(ovD, cfg, true); openWith(ovD, cfg, false) } catch (e) { threw = e }
+check('S4.7 非 tab 页打开/关闭弹层：不抛错（没有 tabBar 是正常路径，不是异常）', !threw, threw && threw.message)
+
+// 运行环境没有 getCurrentPages（Node 直跑等）同样不得抛错
+delete global.getCurrentPages
+const ovE = makeInstance(cfg)
+threw = null
+try { openWith(ovE, cfg, true); openWith(ovE, cfg, false) } catch (e) { threw = e }
+check('S4.8 没有 getCurrentPages：弹层照常渲染、不抛错',
+  !threw && ovE.data.rendered === true, threw && threw.message)
+
+// 旗标必须真的被 tabBar 模板消费，否则 hidden:true 只是 data 上的一个数（假绿）
+const barCfg = (() => {
+  let c = null
+  const prev = global.Component
+  global.Component = x => { c = x }
+  delete require.cache[require.resolve(TB('index.js'))]
+  require(TB('index.js'))
+  global.Component = prev
+  return c
+})()
+const barWxml = fs.readFileSync(TB('index.wxml'), 'utf8')
+const barRoot = (barWxml.match(/<view[^>]*class="tabbar"[^>]*>/) || [''])[0]
+const ifExpr = (barRoot.match(/wx:if="\{\{([\s\S]+?)\}\}"/) || [])[1]
+let whenHidden = null
+let whenShown = null
+try {
+  whenHidden = new Function('hidden', 'return ' + ifExpr)(true)
+  whenShown = new Function('hidden', 'return ' + ifExpr)(false)
+} catch (e) { /* 下面按 null 判红 */ }
+check('S4.9 tabBar 的 data 默认 hidden=false（初次进入页面时可见）',
+  barCfg && barCfg.data && barCfg.data.hidden === false)
+check('S4.10 tabBar 模板消费 hidden：true ⇒ 根节点不渲染、false ⇒ 渲染（旗标不是摆设）',
+  whenHidden === false && whenShown === true,
+  'wx:if=' + ifExpr + ' whenHidden=' + whenHidden + ' whenShown=' + whenShown)
 
 global.setTimeout = realSetTimeout
 global.clearTimeout = realClearTimeout

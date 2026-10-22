@@ -8,11 +8,16 @@ const https = require('https')
 const HOURLY = [
   'temperature_2m', 'apparent_temperature', 'precipitation_probability', 'precipitation', 'showers',
   'weather_code', 'wind_speed_10m', 'wind_gusts_10m', 'relative_humidity_2m',
-  'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high',
-  'uv_index', 'visibility', 'freezing_level_height',
+  'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'cloud_cover',
+  'uv_index', 'visibility', 'freezing_level_height', 'boundary_layer_height',
   // V2 additive（2026-10）：风向（Timeline 风行箭头）/ 气压与露点（Numbers 折叠表）。
   // 三者均为 optional：旧客户端忽略，新客户端对缺失降级（'—'/不画箭头），不得因单字段缺失失败。
   'wind_direction_10m', 'surface_pressure', 'dew_point_2m',
+  // 2026-10 天相输入修正：低层温度/湿度廓线，用于云海逆温判断（925/850/700 hPa）。
+  // 与云量/位势高度同一 provider，仍为 optional；缺一档只丢该档，不影响整条天气响应。
+  'temperature_925hPa', 'relative_humidity_925hPa',
+  'temperature_850hPa', 'relative_humidity_850hPa',
+  'temperature_700hPa', 'relative_humidity_700hPa',
 ]
 const CLOUD_LEVELS = [1000, 975, 950, 925, 900, 850, 825, 800, 775, 750, 725, 700, 675, 650, 625, 600, 575, 550, 525, 500, 475, 450]
 // 气压层剖面：云量（相对湿度近似）+ 位势高度（换算层海拔 m ASL）
@@ -237,7 +242,21 @@ function buildCloudLevels(times, h, start, count) {
 // 单小时投影（detail/series 共用）：t 保持 'HH:mm'（既有消费者依赖），d 为所属日期。
 // windDir/pressure/dewPoint 为 V2 additive：Open-Meteo 请求里带了就有、没带（旧返回体/测试桩）就是
 // undefined——消费方必须按缺失降级，不得假设存在。
+const PROFILE_LEVELS = [925, 850, 700]
+
+function profileLevel(h, lv, i) {
+  const t = (h['temperature_' + lv + 'hPa'] || [])[i]
+  const rh = (h['relative_humidity_' + lv + 'hPa'] || [])[i]
+  const tOK = Number.isFinite(t)
+  const rhOK = Number.isFinite(rh)
+  if (!tOK && !rhOK) return null
+  return { t: tOK ? t : null, rh: rhOK ? rh : null }
+}
+
 function hourView(times, h, i) {
+  const p925 = profileLevel(h, 925, i)
+  const p850 = profileLevel(h, 850, i)
+  const p700 = profileLevel(h, 700, i)
   return {
     t: times[i].slice(11, 16),
     d: times[i].slice(0, 10),
@@ -255,6 +274,8 @@ function hourView(times, h, i) {
     pressure: (h.surface_pressure || [])[i],
     dewPoint: (h.dew_point_2m || [])[i],
     cloud: {
+      // 总云量：三层之外的一个交叉校验；旧返回体没有就是 undefined
+      total: (h.cloud_cover || [])[i],
       low: (h.cloud_cover_low || [])[i],
       mid: (h.cloud_cover_mid || [])[i],
       high: (h.cloud_cover_high || [])[i],
@@ -262,6 +283,10 @@ function hourView(times, h, i) {
     uv: (h.uv_index || [])[i],
     visibility: Number.isFinite((h.visibility || [])[i]) ? Math.round((h.visibility || [])[i] / 100) / 10 : null,
     freezing: (h.freezing_level_height || [])[i],
+    // 边界层高度（m）：霾/扩散的辅助信号，可选
+    pblh: (h.boundary_layer_height || [])[i],
+    // 低层温湿廓线：云海逆温判断用；缺档为 null，三档全缺则整体 null
+    profile: (p925 || p850 || p700) ? { 925: p925, 850: p850, 700: p700 } : null,
     band: cloudBandAt(h, i),
   }
 }
@@ -275,7 +300,8 @@ const PROVIDER = { id: 'open-meteo', label: 'Open-Meteo', attribution: 'Open-Met
 // smoke-test.js 不依赖 wx-server-sdk 即可覆盖。设计文档：天气模块升级-P3 §8。
 
 // 免 OPENID 的天气 action：天气是非个人数据，v1 起 getWeather 即免鉴权，byPoint 沿用同一语义。
-const FREE_ACTIONS = { getWeather: true, getWeatherByPoint: true }
+// getSkyContext 是同一类“按点取环境事实”的只读 action，也不携带个人信息。
+const FREE_ACTIONS = { getWeather: true, getWeatherByPoint: true, getSkyContext: true }
 function isWeatherFreeAction(action) {
   return FREE_ACTIONS[action] === true
 }
@@ -335,7 +361,7 @@ function pointResponse(forecast) {
 }
 
 module.exports = {
-  fetchForecast, cnToday, gcjToWgs, cloudBandAt, hourView, PROVIDER,
+  fetchForecast, fetchJson, cnToday, gcjToWgs, cloudBandAt, hourView, PROVIDER, PROFILE_LEVELS,
   isWeatherFreeAction, weatherCacheKey, resolvePointQuery, pointResponse,
   buildCloudLevels,
 }

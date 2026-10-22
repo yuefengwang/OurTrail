@@ -65,7 +65,8 @@ section('§2 输入非空')
   const m2 = (results.R2.stat || '').match(/扫了 (\d+) 个含 Component\(\) 的文件/)
   check('R2：含 Component() 的文件 ≥ 13（13 组件目录 + custom-tab-bar）', m2 && Number(m2[1]) >= 13, results.R2.stat)
   const m3 = (results.R3.stat || '').match(/具名 slot 声明 (\d+) 处/)
-  check('R3：全仓确有具名 slot 声明（本仓 1 处：roam-scrubber 的 readout）', m3 && Number(m3[1]) >= 1, results.R3.stat)
+  check('R3：本仓具名 slot 已归零（roam-scrubber 随「沿线时空天相」下线）；判据本体由 §4 合成夹具自证，真实样本数只作读数',
+    m3 && Number(m3[1]) === 0, results.R3.stat)
   const m4 = (results.R4.stat || '').match(/app\.wxss 类名 (\d+) 个；检查了 (\d+) 个组件模板/)
   check('R4：app.wxss 类清单与组件模板清单都非空', m4 && Number(m4[1]) >= 50 && Number(m4[2]) >= 13, results.R4.stat)
   check('R4：真实仓库的组件模板没有「options 写在变量里」的（有的话必须显式登记，不能静默放过）',

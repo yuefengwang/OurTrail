@@ -53,7 +53,6 @@ const W = {
   activity: 'pages/activity/activity.wxss',
   editor: 'pages/editor/editor.wxss',
   me: 'pages/me/me.wxss',
-  spaceTime: 'components/space-time/space-time.wxss',
 }
 const WRITE_SET = Object.keys(W).map(k => W[k])
 const APP = 'app.wxss'
@@ -402,25 +401,6 @@ section('§2 B-09：var() 引用必须有定义（未定义 token 命中 2→0�
   })
   check('T2.4 没有「死 token + fallback」的掩体写法（B-09 的第二真值源形态）', masked.length === 0, masked.join(' | '))
 
-  const st = cascade('.space-time-stay.on', [APP, W.spaceTime])
-  const onBg = finalValue(st, 'background', TOKENS)
-  check('T2.5 .space-time-stay.on 的 background 解析成真实色值（不再是失效声明 ⇒ 不是透明）',
-    onBg && toRgb(onBg.value) !== null, onBg && onBg.value)
-  check('T2.6 该底色与卡片底 --surface 不同色（on 态在纯白宿主上真的看得见）',
-    onBg && normColor(onBg.value) !== normColor(TOKENS['--surface']), onBg && onBg.value)
-  check('T2.7 该底色是既有 token 的引用（值 = --forest-soft，即全仓「选中态表面」的既有约定）',
-    onBg && onBg.raw.indexOf('--forest-soft') !== -1 && normColor(onBg.value) === normColor(TOKENS['--forest-soft']), JSON.stringify(onBg))
-  const astro = finalValue(cascade('.space-time-astro-text', [APP, W.spaceTime]), 'color', TOKENS)
-  check('T2.8 .space-time-astro-text 的 color 终值 = --ink 的实际值，且声明里没有 fallback',
-    astro && astro.value.toLowerCase() === TOKENS['--ink'].toLowerCase() && astro.raw.indexOf('--text-2') === -1 && astro.raw.indexOf(',') === -1,
-    JSON.stringify(astro))
-  const shadowTokens = Object.assign({}, TOKENS, { '--forest-soft': '#123456' })
-  const shadowOn = finalValue(cascade('.space-time-stay.on', [APP, W.spaceTime]), 'background', shadowTokens)
-  check('T2.9 影子改写 --forest-soft ⇒ on 态底色一起动（单源是可改写的行为，不是常量名）',
-    shadowOn && shadowOn.value.toLowerCase() === '#123456', JSON.stringify(shadowOn))
-  const backOn = finalValue(cascade('.space-time-stay.on', [APP, W.spaceTime]), 'background', TOKENS)
-  check('T2.10 还原对照：影子之后重读原文件，on 态底色回到基线（影子没留状态，也不是两个零恰好对上）',
-    normColor(backOn.value) === normColor(TOKENS['--forest-soft']), JSON.stringify(backOn))
 }
 
 /* ================================================================= */
@@ -613,7 +593,6 @@ const TARGETS = [
   [W.weather, '.cond-why', '证据展开开关（view bindtap=onToggleEvidence）'],
   [W.weather, '.reason-link', '看图 ↗（text catchtap=onEvidenceJump）'],
   [W.weather, '.oi-link', 'OI 看图（text catchtap=onOiEvidence）'],
-  [W.spaceTime, '.space-time-stay', '留宿开关（view bindtap=onToggleOvernight）'],
   [W.editor, '.chip', '快捷估算 chip（view bindtap=onQuickEnd/onQuickDeadline/onPickupQuickTime）'],
 ]
 {
@@ -818,8 +797,8 @@ section('§8 B-14（重复规则两例）：同文件同选择器不得声明两
 /* ================================================================= */
 section('§9 边界与越界自检')
 {
-  check('T9.1 写入集就是我领到的 9 个文件（不多不少，且不含 app.wxss）',
-    WRITE_SET.length === 9 && WRITE_SET.indexOf(APP) === -1, JSON.stringify(WRITE_SET))
+  check('T9.1 写入集就是我领到的 8 个文件（不多不少，且不含 app.wxss）',
+    WRITE_SET.length === 8 && WRITE_SET.indexOf(APP) === -1, JSON.stringify(WRITE_SET))
   check('T9.2 我没碰 tabbar 与设计系统文档：写入集里没有 custom-tab-bar（E-12 属 SWX1）',
     WRITE_SET.every(f => f.indexOf('custom-tab-bar') === -1))
   const other = []

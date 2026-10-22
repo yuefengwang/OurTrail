@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-21",
+  "url": "/pages/weather/weather?src=local&lat=30.0&lng=100.27&ele=4000&name=%E7%90%86%E5%A1%98&date=2026-10-21",
+  "state": {
+    "date": "2026-10-21",
+    "dayCards": 7,
+    "condCards": 2,
+    "condSilent": true,
+    "condOverall": {
+      "score": 60,
+      "tone": "warning",
+      "label": "条件一般",
+      "stars": "★★★☆☆",
+      "insufficient": false
+    },
+    "skyInputLoading": true,
+    "skyInputNote": "",
+    "updatedAt": "2026-10-21 12:35",
+    "providerLabel": "Open-Meteo",
+    "hasChartSeriesInData": false,
+    "agenda": 8
+  },
+  "hits": {
+    "title": [
+      "天相条件",
+      "天相条件"
+    ],
+    "footer": [
+      "数据来源 Open-Meteo.com（https://open-meteo.com/，CC BY 4.0）· 日出日落与天相判断为本机按坐标与海拔推算",
+      "天相增强输入：7Timer!（https://www.7timer.info/，非商业）· CAMS/Open-Meteo Air Quality（生成使用 Copernicus Atmosphere Monitoring Service 信息）· Copernicus DEM 90 m（© DLR/Airbus DS, COPERNICUS）· DarkSkySites.com（https://darkskysites.com，模型估算，非现场实测）"
+    ],
+    "sourceCopy": [
+      "点按复制数据来源与许可链接"
+    ],
+    "missing": []
+  },
+  "priv": {
+    "ttl": [],
+    "date": [
+      "更新日期：2026-10-21"
+    ]
+  },
+  "errors": [],
+  "screenshots": {
+    "fullBytes": 36878,
+    "bottomBytes": 58577,
+    "privBytes": 89270
+  }
+}

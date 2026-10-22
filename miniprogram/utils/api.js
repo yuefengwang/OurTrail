@@ -106,6 +106,11 @@ function readRoutes(routeId) {
 function getWeatherByPoint(lat, lng, date) {
   return call('getWeatherByPoint', { lat, lng, date })
 }
+// 天相输入（Slice 2/4）：8 方位 × 3 距离的云/降水聚合 + 90 m DEM 地平线；
+// 失败时页面保持无 spatial/terrain 的旧口径
+function getSkyContext(lat, lng, date, elevation) {
+  return call('getSkyContext', { lat, lng, date, elevation })
+}
 
 /** 提交命令；CONFLICT 时自动标记 needRefresh（页面应重读后重试） */
 function dispatch(payload, expectedRevision, requestId) {
@@ -217,7 +222,7 @@ function errorText(e) {
 module.exports = {
   call, read, readOr, dispatch, dispatchAndSync, toast, errorText,
   readForm, readTransport, readSensitive, readContact, readExport, previewAssignments, getWeather,
-  getWeatherByPoint, readRoutes,
+  getWeatherByPoint, getSkyContext, readRoutes,
   // toast 文案的撰写预算（M-11）：导出它是为了让「上屏实际收到的长度」与「写在调用点旁边的数」
   // 必须是同一个——由 tools/t2-m11-test.js 用真函数量，不许本文件里再出现第二个硬编码长度。
   TOAST_TEXT_BUDGET,

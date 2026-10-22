@@ -20,7 +20,7 @@
 - **根因**：一个 `Component()` 里写两个 `options:` 键，后者整体覆盖前者（不是合并），`styleIsolation` 随之丢失。
 - **正确处理**：`options` 每 `Component()` 只出现一次，多个标志写在同一对象里：`options: { styleIsolation: 'apply-shared', multipleSlots: true }`。守卫注释在 `components/form-field/form-field.js:1-3` 与 `components/overlay/overlay.js:1-3`；事故修复见提交 `daa0508`。
 - **最小验证**：`grep -c "^\s*options:" <组件>.js` 必须 ≤1。
-- **连带**：具名 slot 必须 `multipleSlots: true`。实测现状：`form-field` true、`roam-scrubber` true（`wxml:34` 有 `<slot name="readout">`）、`overlay` **显式 false**（它不用具名 slot）。把 overlay 改造成具名 slot 时必须同时把这个 false 改掉，否则内容被静默丢弃、组件 `data` 一切正常、页面上什么都没有（本项目 P4 的真机 bug 之一，逻辑测试测不到）。
+- **连带**：具名 slot 必须 `multipleSlots: true`。实测现状：`form-field` true、`overlay` **显式 false**（它不用具名 slot）；本仓唯一的具名 slot 用例（`roam-scrubber` 的 `readout`）已随「沿线时空天相」下线，所以当前没有活样本（`t4-e08` 的 R3 真实读数归零，判据由合成夹具自证）。新增具名 slot 时，若组件原先写着 `multipleSlots: false` 必须同时改掉，否则内容被静默丢弃、组件 `data` 一切正常、页面上什么都没有（本项目 P4 的真机 bug 之一，逻辑测试测不到）。
 
 ### 3. `color-mix()` 不可用 `[保守约定]`
 - WXSS 编译/渲染不支持 `color-mix()`，混合色用 `app.wxss` 里预算好的字面量（如 `--forest-soft: #ECF0EF`）。
@@ -45,6 +45,7 @@
 - **实测归属（容易记错的一点）**：`app.wxss` 的 `.page` 只有 `padding: 24px 20px 32px`（`:68`），`.page.has-sticky` 是 `120px`（`:72`）；**`calc(32px + 84px + env(safe-area-inset-bottom))` 写在每个 tab/root 页自己的 wxss**（`home.wxss:2`、`notices.wxss:2`、`anotices.wxss:2`、`me.wxss:2`、`weather-hub.wxss:6`），新 tab 页不会自动继承。`app.wxss:482` 另有 `.tabbar-safe { height: calc(84px + env(safe-area-inset-bottom)) }` 可作占位块。
 - **事故**：`weather-hub.wxss:4-5` 的注释原话——缺失时"观察点列表最后几行被固定 tabBar 拦腰截断、删除按钮点不到（2026-09-30 实测复现）"。
 - **最小验证**：真机把列表滚到底，最后一行的可点控件必须完整可见且能点。
+- **弹层压不住自定义 tabBar**（2026-10-21 天气页 GPX 导入真机截图）：`custom-tab-bar` 是框架的独立高层，`overlay.wxss:7` 的 `z-index: 200` 只赢页面内的 `z-index: 100`，真机上 tabBar 仍画在弹层之上。贴底 sheet 的底部只有 `16px + 安全区`，末行按钮会落在 tabBar 后面，**滚到底也露不出来**。现修法：`components/overlay/overlay.js` 在 `open` 时取当前页 `getTabBar()` 并 `setData({ hidden: true })`、关闭时恢复（同页多弹层按引用计数）；`custom-tab-bar/index.wxml` 用 `wx:if="{{!hidden}}"` 消费。最小验证：tab 页打开长 sheet，滚到底部按钮完整可见且能点。
 
 ### 6. 安全区 `[现行]`
 底部固定元素：`padding-bottom: calc(<常规> + env(safe-area-inset-bottom))`。顶部用系统导航栏，不要自定义头部（本项目 `app.json:65` `style: "v2"`，导航栏配色在 `app.json` window 段硬编码 `#163E35` / `#F5F5F0`）。
@@ -82,7 +83,7 @@ WXSS 对 `100dvh` 支持不稳，用 `100vh` 或 `min-height:100vh`（现状：`
 ## 微信能力
 
 ### 15. 获取用户信息的现行合法入口 `[现行]`
-`wx.getUserProfile` 已废弃（返回匿名数据）。头像=`<button open-type="chooseAvatar">`；昵称=`<input type="nickname">`；手机号=`<button open-type="getPhoneNumber">`——**需平台《用户隐私保护指引》声明「手机号」**，否则报 "api scope is not declared in the privacy agreement"。失败必须显式提示（区分取消 / 无权限 / 开发者工具），禁止静默 return。本项目 `app.json` 已声明 `permission.scope.userLocation`(:55-59) 与 `requiredPrivateInfos`(getLocation/chooseLocation :60-63)、`__usePrivacyCheck__`(:67)。
+`wx.getUserProfile` 已废弃（返回匿名数据）。头像=`<button open-type="chooseAvatar">`；昵称=`<input type="nickname">`；手机号=`<button open-type="getPhoneNumber">`——**需平台《用户隐私保护指引》声明「手机号」**，否则报 "api scope is not declared in the privacy agreement"。失败必须显式提示（区分取消 / 无权限 / 开发者工具），禁止静默 return。本项目 `app.json` 已声明 `permission.scope.userLocation`(:56-60) 与 `requiredPrivateInfos`(getLocation/chooseLocation :61-64)、`__usePrivacyCheck__`(:68)。`scope.userLocation.desc` **上限 30 字**（按字符计，含 `/`、`、`；2026-10-21 曾因 40 字导致上传报 80058），`tools/check.js` 的 app.json 段会拦。
 
 ### 16. 内容安全 `[现行]`
 用户提交文本（标题/说明/备注/通知）由云函数 `checkText` 过滤，客户端不做、也不要绕过。
