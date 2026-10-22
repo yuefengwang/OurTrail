@@ -1,1 +1,6 @@
 /* 报名页 */
+
+/* 参与人卡展开态的分组（T006）：组内 8px、组间 16px——眉题用存量 .kicker，
+   分组只为扫读，不新增颜色与字重（swx2 两档口径）。 */
+.part-group { display: flex; flex-direction: column; gap: 8px; }
+.part-group + .part-group { margin-top: 16px; }
