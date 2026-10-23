@@ -4,11 +4,9 @@
 .activity-card .activity-card__info { font-size: 12px; color: var(--muted); }
 .activity-card--featured .activity-card__info { color: var(--on-forest-muted); }
 
-/* N3（2026-10-22）页头一行化：左列与 home.wxss 的 home-head__text 同形（第二份拷贝，同族债务待解冻后上收）；
+/* N3（2026-10-22）页头一行化：左列与 home 页头文字列同形（已上收 app.wxss 的 .list-head__*，FH-01）；
    主标题从 .page-title 的 28px/700 编辑式大标题降为一行 20px/600，首屏把空间让给列表与筛选行
    （交付包拼板屏 1.2）。min-width:0 保证窄屏上右侧视图分段不被挤掉；长标题断行兜底不截断语义。 */
-.discover-head__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.discover-title { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.3px; color: var(--ink); overflow-wrap: anywhere; }
 /* 页头右槽的视图分段：不跟左列抢宽（card-header 是 space-between + wrap），
    给最小宽让「列表/地图」两键的命中宽度不被压到文字宽以下；高度仍由全局 .seg 的 --touch-target 给。 */
 .discover-views { flex: 0 0 auto; min-width: 132px; }
@@ -28,7 +26,8 @@
 }
 .filter-chip {
   flex: 0 0 auto;
-  min-height: 34px;
+  /* FD-01：命中高对齐 ourtrail-ui 规则 8 与 --touch-target（app.wxss:67）；原 34px 低于 44px 触控下限。 */
+  min-height: var(--touch-target);
   padding: 0 12px;
   border-radius: var(--radius-tag);
   background: var(--stone);

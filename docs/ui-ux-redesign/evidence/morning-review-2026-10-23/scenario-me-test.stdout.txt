@@ -1,0 +1,155 @@
+== 1. 首屏装配：空壳档案 / denied / 读失败 / 完整档案 / 统计与最近活动 ==
+  ✓ onShow 即触发 reload（无 onLoad）
+  ✓ 单读 me 视图（profile+stats+recent+positionRows 一次出齐）
+  ✓ 空壳档案不炸：loading 收尾、无 denied
+  ✓ 空档案展示：identity 取 profile.id、姓名电话为空
+  ✓ 空档案 avatar 兜底空串、无同行人、无位置授权行
+  ✓ 空档案未激活（激活卡出现的数据位）
+  ✓ 无残留错误/提示
+  ✓ ★ profile.id 到手即回填草稿账号段（draft.setOpenId 修复）
+  ✓ 档案 denied：透出原文引导
+  ✓ 读取失败：errorText 落到 denied
+  ✓ me 视图缺 stats：页面置 null（隐藏指标行）
+  ✓ me 视图缺 recent：recent 为空（空态组件接管）
+  ✓ 完整档案：头像/健康备注透传
+  ✓ 同行人装配为 {id,name,avatar} 行
+  ✓ 位置授权行带「活动名 · 角色」标签与撤回所需的 activityId/signupId
+  ✓ revision 取自档案读（后续 CAS 基准）
+  ✓ 完整档案已激活
+  ✓ 协作码缩略展示：前 4 + … + 后 4
+  ✓ 完整 id 保留在 identity（复制出口用）
+  ✓ 短 id 原样展示
+== 2. 激活流：sheet 打开 / 缺项点名 / 完成落库 / 跳过零写 ==
+  ✓ 未激活时 onboardingOpen 默认关闭（引导卡非模态）
+  ✓ 点引导卡打开激活 sheet
+  ✓ 缺姓名电话：不发命令，sheet 内点名缺项
+  ✓ 跳过：关闭 sheet、不发命令
+  ✓ 只补姓名仍差手机号：点名且不落库
+  ✓ 补齐后「完成」：发 profile.save 并关闭 sheet
+  ✓ 激活完成后 activated 翻真
+  ✓ 已激活：无待完善徽标数据位
+  ✓ 打开手机号 sheet：页面级错误被清空（作用域隔离）
+  ✓ 关闭 sheet：全部编辑面复位
+== 3. 微信资料同步：一键取号成功 / 取消 / 隐私 / 无权限 / 开发者工具 / 换码失败 ==
+  ✓ 取号调 getPhoneNumber action 并透传 code
+  ✓ 回填手机号字段
+  ✓ 用户可见反馈「已使用微信手机号」
+  ✓ 姓名+电话齐全 → 自动发 profile.save（免确认）
+  ✓ 姓名未齐：取号回填但不发 profile.save
+  ✓ 给「补全后自动保存」引导
+  ✓ 用户取消：不调 getPhoneNumber、不发 profile.save
+  ✓ 用户取消：sheet 内给「已取消」提示（非 error 作用域）
+  ✓ 隐私 scope 未声明：sheet 内指引去平台配置《用户隐私保护指引》
+  ✓ 隐私分支：不调接口（服务端换码无从谈起）
+  ✓ 未开通权限：sheet 内提示手动填写
+  ✓ 开发者工具：sheet 内提示真机预览或手动填写
+  ✓ 换码失败：可读报错透出到 sheet
+== 4. 自动保存与草稿 v2：落库 / 草稿存活 / 防抖 / 防重 / 失败恢复 ==
+  ✓ 姓名+电话齐全：失焦即发 profile.save
+  ✓ payload = {type, person} 两键，person 带姓名电话（免确认）
+  ✓ person 键集 = avatar/emergency/medical/name/phone（无杂散键）
+  ✓ CAS 基准 = 档案读的 revision
+  ✓ 保存成功反馈「资料已保存」+ saving 复位 + revision 前滚
+  ✓ 落库后提示已保存（待自动清除），error 为空
+  ✓ ★ 落库成功后草稿（账号键与 v1）都被清掉
+  ✓ ★ 落库成功后横幅数据位复位
+  ✓ 输入即覆盖对应字段
+  ✓ 不齐：不发命令
+  ✓ 不齐：给「补全后自动保存」引导
+  ✓ 补齐后失焦：自动落库带姓名电话
+  ✓ 补齐落库后催填引导消失（换成已保存）
+  ✓ 健康备注失焦同样触发落库并带最新值
+  ✓ 门槛未满足时把输入写进本地草稿 v2（含 fields.savedAt）
+  ✓ 草稿不含 avatar（云存储 fileID 由 onChooseAvatar 单独落库）
+  ✓ ★ 第一次切页回来：紧急联系人与健康备注仍在（页面值）
+  ✓ ★ 第一次切页回来：草稿仍在 storage（横幅数据位亮起）
+  ✓ ★ 第二次切页回来：输入仍未丢（旧实现在这里丢数据）
+  ✓ ★ 草稿横幅时间戳存在（v2 savedAt）
+  ✓ 服务端头像已回填
+  ✓ ★ 草稿合入时 avatar 仍取服务端值，不被草稿污染
+  ✓ 草稿里的紧急联系人合入成功
+  ✓ 服务端已有手输字段保持不变
+  ✓ ★ v1 草稿被读出并合入（medical/emergency 来自旧键）
+  ✓ ★ v1 草稿无时间戳：横幅亮起但不显示时间
+  ✓ ★ v1 草稿落库成功后旧键被清掉（迁移完成）
+  ✓ 迁移落库 payload 带迁移来的值
+  ✓ 落库 payload 带全部字段（含紧急联系人）
+  ✓ ★ 落库成功后草稿被清掉
+  ✓ ★ 落库失败时草稿保留（不丢用户输入）
+  ✓ 落库失败给出错误提示
+  ✓ 刚输入完还没到防抖窗口，不该立刻发
+  ✓ ★ 输入停顿后自动落库（无需点别处触发）
+  ✓ ★ 自动保存不弹 toast（只给 hint 确认）
+  ✓ 自动保存给「已保存」确认
+  ✓ ★ 页面卸载后不再触发自动保存
+  ✓ 保存进行中的重复失焦不重复落库（_saving 防重）
+  ✓ 保存失败：可读报错 + saving 复位
+  ✓ 失败不发成功 toast
+  ✓ 失败后可重试：第二次失焦重新落库成功并清掉报错
+== 5. 本机未保存横幅：条件 / 立即保存 / 放弃本机修改 ==
+  ✓ 无草稿时横幅数据位为假
+  ✓ 输入后（门槛未满足）横幅数据位亮起
+  ✓ 横幅时间戳来自草稿 v2 savedAt
+  ✓ 立即保存（门槛未满足）：不落库、草稿保留、横幅仍亮
+  ✓ 立即保存：落库成功后横幅数据位熄灭、草稿清空
+  ✓ 放弃前：横幅亮起
+  ✓ 放弃入口：先出确认 dialog
+  ✓ 取消放弃：复位不删
+  ✓ 确认放弃：草稿清除、横幅熄灭
+  ✓ 确认放弃：页面显示回服务端值
+  ✓ ★ 放弃后越过防抖窗口：草稿不被写回、不发任何命令
+== 6. 头像/昵称：即点即覆盖并自动保存 ==
+  ✓ 上传云存储：cloudPath = avatars/{identity}/{ts}.jpg，filePath 透传
+  ✓ 头像字段覆盖为云存储 fileID
+  ✓ 反馈「已使用微信头像」
+  ✓ 头像同步后自动落库（payload 带新 avatar）
+  ✓ 上传失败：可读报错、不落库
+  ✓ 云能力不可用：可读报错、不崩
+  ✓ 无 avatarUrl（用户中断）：不上传不落库
+  ✓ 昵称输入覆盖 name 字段，失焦自动落库带新值
+== 7. D 组 sheet / 同行人 / 紧急联系人映射 ==
+  ✓ 紧急联系人摘要行打开 sheet
+  ✓ 紧急联系两列输入映射到 emergency.name/phone（非杂散键）
+  ✓ 紧急联系人填齐后失焦：profile.save 的 emergency 干净可收（服务端严格 schema）
+  ✓ 健康备注摘要行打开 sheet
+  ✓ sheet 内输入写入 medical 字段
+  ✓ 关闭后内容保留在页面态（草稿/自动保存接管）
+  ✓ 添加入口：打开同行人弹层并铺空表单
+  ✓ 保存新同行人发 companion.save，companionId 为 null
+  ✓ 同行人 person 键集对齐 Person schema（avatar 兜底空串，无杂散键）
+  ✓ 同行人保存反馈 + 弹层收起
+  ✓ 同行人保存后重读（me 单读回填列表）
+  ✓ 姓名或电话缺失：不发命令并在弹层内点名
+  ✓ 编辑入口：按 id 回填同行人资料（重新读档案）
+  ✓ 编辑已有同行人：companion.save 带同一 companionId
+  ✓ 移除先二次确认（removeId 状态位）
+  ✓ 取消确认：复位不删
+  ✓ 确认后发 companion.remove 带目标 id（payload 两键）
+  ✓ 移除反馈 + 确认态复位
+  ✓ 移除后重读回填列表
+  ✓ 同行人弹层的紧急联系人字段映射到 emergency.name/phone
+== 8. 协作码 / 最近活动 / 位置撤回 / 下拉刷新 ==
+  ✓ 身份码完整值保留（identity = profile.id）
+  ✓ 复制按钮调 wx.setClipboardData 且内容 = 完整协作码
+  ✓ 复制成功反馈「协作码已复制」
+  ✓ 最近活动装配（来源 home 读，slim 行）
+  ✓ 点击最近活动行发起 navigateTo 详情页
+  ✓ 撤回位置授权发 position.revoke（activityId+signupId）
+  ✓ 撤回反馈
+  ✓ 撤回后重读回填
+  ✓ 下拉刷新：重读 me 视图
+  ✓ 刷新完成收尾 stopPullDownRefresh
+  ✓ 刷新失败同样收尾下拉动画（catch 分支）
+== 9. 错误作用域：页面级 / sheet / companion 三槽位 ==
+  ✓ sheet 内保存失败：错误落在 sheetError，页面级 error 为空
+  ✓ 页面级保存失败：错误落在 error
+  ✓ 打开编辑面清掉页面级残留错误
+  ✓ 同行人保存失败：错误落在 companionError（弹层内，P0-4 位置），页面级 error 为空
+  ✓ 同行人失败不发第一条计划外命令
+== 10. me 视图装配：stats/recent fixtures → data + 展示文案映射 ==
+  ✓ 页面装配：stats 三计数原样进 data（服务端口径，客户端不复算）
+  ✓ 页面装配：recent 顺序保持服务端排序（≤3 条）
+  ✓ 展示文案映射：dateText（北京时间 MM/DD 周X）与 phaseText（PHASE_LABELS）
+  ✓ slim 行不携带 routeSnapshot/meta
+
+passed=143 failed=0 skipped=0

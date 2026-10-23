@@ -1,5 +1,7 @@
 # Flash 多 Agent 协同调度工具包（flash-dispatch-kit）
 
+> **DEPRECATED（2026-10-23）**：worktree D:/OurTrail-night-ui-v1 已删除；T004–T011 队列已完成/变更。请使用 FLASH_EXECUTION_PLAN.md 与 FLASH_TASKS/。
+
 用途：驱动执行模型（任务书称 Flash；本平台 Agent 工具不暴露模型字段时＝平台可用编码模型，**不得伪称 Flash**）
 按 T004→T006→T007→T008→T009→T010→T011 顺序实施 UI 重构。两种用法：
 A. 在本平台由主控（我）用 Agent 工具逐任务派发：把 §2 模板 + §3 对应任务段拼进子 Agent prompt。

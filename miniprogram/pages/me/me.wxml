@@ -53,7 +53,7 @@
     <view wx:if="{{draftPending}}" class="callout warning">
       <view class="callout-title">本机有未保存的修改{{draftSavedAt ? '（' + draftSavedAt + '）' : ''}}</view>
       <text class="small muted">已按服务端要求等待补全或保存；服务端已保存的内容不受影响。</text>
-      <view class="cluster" style="margin-top:8px;gap:8px;">
+      <view class="cluster" style="margin-top:8px;">
         <view class="button text" hover-class="button-hover" bindtap="onSaveDraftNow">立即保存</view>
         <view class="button text" hover-class="button-hover" bindtap="onAskDiscard">放弃本机修改</view>
       </view>
@@ -61,8 +61,8 @@
 
     <!-- 激活引导卡（非模态，04 §3）：未激活时出现在最前，点开激活 sheet -->
     <view wx:if="{{!activated}}" class="card" hover-class="button-hover" bindtap="onOpenOnboarding">
-      <view class="cluster" style="justify-content:space-between;gap:12px;">
-        <view class="stack" style="gap:4px;">
+      <view class="cluster onboard-row">
+        <view class="stack onboard-main">
           <text class="card-label" style="margin-bottom:0;">完善同行资料</text>
           <text class="small muted">点头像用微信头像，昵称可一键填入；补全姓名与手机号，报名和协作授权就都通了。</text>
         </view>
@@ -72,7 +72,7 @@
 
     <!-- C 最近活动 + 路线库入口（二阶段合并成一组）：
          两者都是「和我有关的出行资产」，拆成两张卡只会让页面变成功能墙。 -->
-    <view class="stack" style="gap:12px;">
+    <view class="stack-gap3">
       <view class="section-head">
         <text class="kicker">我的出行</text>
         <text class="section-title">最近活动</text>
@@ -112,7 +112,7 @@
     </view>
 
     <!-- D 同行与安全：摘要行只读，编辑进 sheet（09 §3） -->
-    <view class="stack" style="gap:12px;">
+    <view class="stack-gap3">
       <view class="card-header">
         <view class="section-head">
           <text class="kicker">安全档案</text>
@@ -137,7 +137,7 @@
         </view>
         <view class="list-row" hover-class="button-hover" bindtap="onOpenMedical">
           <view class="list-main">
-            <view class="cluster" style="gap:8px;">
+            <view class="cluster">
               <text>健康与用药备注</text>
               <text wx:if="{{person.medical}}" class="badge success">已填写</text>
             </view>
@@ -149,7 +149,7 @@
     </view>
 
     <!-- E 常用同行人 -->
-    <view class="stack" style="gap:12px;">
+    <view class="stack-gap3">
       <view class="card-header">
         <view class="section-head">
           <text class="kicker">同行人</text>
@@ -181,7 +181,7 @@
 
     <!-- F+G+H 协作与权限（二阶段合并）：协作码 / 位置授权 / 隐私指引本来就是同一类
          「谁能看到我、我授权了什么」，拆三张卡让低频项占满首屏。 -->
-    <view class="stack" style="gap:12px;">
+    <view class="stack-gap3">
       <view class="section-head">
         <text class="kicker">协作与权限</text>
         <text class="section-title">谁能看到我</text>
@@ -208,7 +208,7 @@
                 <text>{{item.label}}</text>
                 <text class="list-sub">本次活动的位置授权仍然有效</text>
               </view>
-              <view class="button text" hover-class="button-hover" data-activity-id="{{item.activityId}}" data-signup-id="{{item.signupId}}" bindtap="onRevoke">撤回</view>
+              <view class="button text revoke-text" hover-class="button-hover" data-activity-id="{{item.activityId}}" data-signup-id="{{item.signupId}}" bindtap="onRevoke">撤回</view>
             </view>
             <text class="small muted">只在活动中主动上报一次位置，不会后台追踪。</text>
           </view>

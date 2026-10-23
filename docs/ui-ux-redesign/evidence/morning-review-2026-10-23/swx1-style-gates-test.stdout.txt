@@ -1,0 +1,52 @@
+== §1 M-06 分段控件：尺寸吃 token、未选中态过对比门（终值判据） ==
+  ✓ T1.1 .seg 的 min-height 终值 ≥ 44px 且可解析（改前实测 36px）
+  ✓ T1.2 min-height 的终值恰等于 page 上 --touch-target 的实际值（同一支数，不是另写一个 44）
+  ✓ T1.3 影子把 --touch-target 改成 60px ⇒ .seg 的 min-height 终值必须跟着变成 60px（单源可测，不是抄了个数）
+  ✓ T1.4 未选中态字色对轨道底色的 WCAG 对比度 ≥ 4.5:1（12px 属正文，无大字放宽）
+  ✓ T1.5 改前该组合确实是红的：把字色与轨道底色按缺陷形状重算必须 <4.5（门不是空转）
+  ✓ T1.6 选中态仍过对比门（白底药丸 + --forest），且区分线索不是「把未选中印淡」
+  ✓ T1.7 .seg 自己不铺底（未选中态的底色确实来自轨道，判据没有拿错背景）
+  ✓ T1.8 字号/行高/内边距一个都没动（本轮只抬高可点区与改字色，纵向节奏零变化）
+  ✓ T1.9 分段间距维持 4px（M-06 只治高度与对比度；相邻分段误触的间距取舍属 M-07，不在本条）
+  ✓ T1.10 app.wxss 除 page 的 token 定义区外零字面色（改前实测 0，配色只能引用已登记 token）
+== §2 E-12 tabbar 只有一个真值源，且「谁决定终值」必须是组件那份 ==
+  ✓ T2.1 tabbar 三个节点上，每一条**赢家声明**的来源都是 custom-tab-bar/index.wxss（值相等不算通过）
+  ✓ T2.2 把 app.wxss 从层叠里拿掉，tabbar 的终值集合逐项不变（删除不改变像素的唯一静态可证形态）
+  ✓ T2.3 app.wxss 单独成层时，对 tabbar 节点贡献**零条**声明（重复块真的没了，不是被压住）
+  ✓ T2.4 收敛后 tabbar 规格仍然齐全（删错份会在这里红）：fixed / bottom 0 / z-index 100 / #FFFFFF 底 / #DEE3DB 上边线
+  ✓ T2.5 tab 终值：min-height 44px、color #5F6E66、font-size 12px、border-radius 8px（触控高度没塌）
+  ✓ T2.6 选中 tab 终值：#163E35 字 + 600 字重 + #ECF0EF 底
+  ✓ T2.7 组件那份继续是**字面量**自包含（改成 var() 就把规格交回全局表，正是 E-12 的成因）
+  ✓ T2.8 全仓没有第二个文件定义能匹配 tabbar 节点的裸 .tab/.tabbar（apply-shared 下页面样式会漏进导航控件）
+== §3 M-16 承载用户自由输入的类：断行策略必须是层叠后真生效的那一句 ==
+  ✓ T3.1 活动标题：终值里真的有可算进 min-content 的断行策略（overflow-wrap=anywhere）
+  ✓ T3.1 精选卡标题：终值里真的有可算进 min-content 的断行策略（overflow-wrap=anywhere）
+  ✓ T3.1 人员行姓名：终值里真的有可算进 min-content 的断行策略（overflow-wrap=anywhere）
+  ✓ T3.1 指标值：终值里真的有可算进 min-content 的断行策略（overflow-wrap=anywhere）
+  ✓ T3.1 hero 内指标值：终值里真的有可算进 min-content 的断行策略（overflow-wrap=anywhere）
+  ✓ T3.2 姓名所在的 flex 项兜底没被旁路：.person-row__body 的 min-width 仍是 0（原有合规点位未误伤）
+  ✓ T3.3 .metric 的 min-width 仍是 0（列可被压窄是溢出成因；这句不许顺手删）
+  ✓ T3.4 没有一处用「nowrap 又不带 ellipsis」冒充溢出策略（那是把文本裁没，不是兜底）
+  ✓ T3.5 原有唯一合规样板 .picker .picker-value 的 ellipsis 三件套完好（本轮不重推它）
+  ✓ T3.6 抗重构（幂等）：表尾追加同特异度同值的断行声明 ⇒ 精选卡标题终值集合逐项不变
+  ✓ T3.7 注册表以实现为准：design-system.md 的 .metrics/.metric 行同时登记「默认三列」与「route 详情四列」
+  ✓ T3.8 注册表登记的策略与 app.wxss 终值一致（文档说 anywhere、代码写别的 ⇒ 红）
+== §4 B-14 死定义不复活 / 活定义不误删 / 删 token 不留悬空引用 ==
+  ✓ T4.1 节点 class="tabbar-safe" 的终值集合为空（死定义真的没了；改前它有 height: calc(84px + …)）
+  ✓ T4.2 且全仓仍然没有任何文件引用它（wxml class 普查 + js 串普查，命中数 0）
+  ✓ T4.3 page 上不再有 --focus（实测引用 0 次的死 token 已删）
+  ✓ T4.4 我这两个文件里每一个 var() 引用都能解析到实际值（删 token 之后不留悬空引用；改前 --focus 也在这条的覆盖内）
+  ✓ T4.5 .page.has-sticky 的 padding-bottom 终值仍是 120px（审计说它零引用是旧账：route-edit 正在用，且 T4 的新门依赖它存在）
+  ✓ T4.6 收回旧账的实测证据：has-sticky 在 wxml 里的引用数 ≥ 1（命中 3）
+  ✓ T4.7 收回旧账的实测证据：with-tabbar 在 wxml 里的引用数 ≥ 1 且 app.wxss 从未定义它（是「用了没定义」，不是死工具，无可删项）
+  ✓ T4.8 .page 基础内边距未被改动（with-tabbar 没有定义这件事留 requests，不许靠改 .page 蒙混）
+  ✓ T4.9 注册表里没有 --focus 的登记表行（token 删了还留着表 = 下一个维护者照表把它请回来）
+== §9 读数量闭合 ==
+  ✓ T9.1 app.wxss 解析出规则与 token（693 条声明 / 44 个 token）
+  ✓ T9.2 custom-tab-bar/index.wxss 解析出规则（24 条声明）
+  ✓ T9.3 解析器没有把注释当规则读（app.wxss 里不存在 sel 含 /* 的规则）
+  ✓ T9.4 门不空转（M-06）：表尾追加一条同特异度的缺陷声明（36px + --muted）⇒ 尺寸与对比度两条都必须红
+  ✓ T9.5 门不空转（E-12）：在 app.wxss 里重新注入一条能匹配 tab 的规则，来源判据必须立刻红
+  ✓ T9.6 判据读层叠赢家而不是读文本（M-16）：表尾追加同特异度的 overflow-wrap: normal ⇒ 该属性终值必须变 normal 且断行判据转假
+
+passed=45 failed=0

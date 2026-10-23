@@ -1,5 +1,7 @@
 {
   "navigationBarTitleText": "我的",
+  "navigationBarBackgroundColor": "#F6F3EC",
+  "navigationBarTextStyle": "black",
   "usingComponents": {
     "icon": "/components/icon/icon",
     "overlay": "/components/overlay/overlay",

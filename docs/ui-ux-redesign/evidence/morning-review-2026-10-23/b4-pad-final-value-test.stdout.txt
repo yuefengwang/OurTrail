@@ -1,0 +1,74 @@
+== §1 输入：tabBar 名单现场读、遮挡物高度现场算（不许凭印象） ==
+  ✓ T1.1 app.json 的 tabBar.list 读得出，且每一页的文件真的在（读不出来整条门就没有输入）
+  ✓ T1.2 页面样式目录扫到 ≥ 15 页（本仓库实测 20 页；扫太少说明判据没吃到输入）
+  ✓ T1.3 遮挡物自己占的高度由 index.wxss 算得出来：61px + 安全区
+  ✓ T1.4 tabBar 是 position:fixed（不计入文档流）⇒ 这份高度必须由页面自己让，本判据才有存在理由
+  ✓ T1.5 app.wxss 的 .page 基线读得出（padding 简写已展开成长方值，不是把整条 padding 当字符串比）
+  ✓ T1.6 没有 `.x .page` 这类后代形态来抢这份留白（有的话本判据的祖先模型要升级，不许静默误判）
+    · 根节点不带 .page 的页面（不参与本判据，如实登记）：weather-chart
+== §2 tab 页：每个可达根类分支都必须留够（终值判据） ==
+  ✓ T2.1 tab 页数与 app.json 名单一致（4 页：home/me/notices/weather-hub）
+    · [tab] home (无附加类) ⇒ 116px + 安全区 ← pages/home/home.wxss [.page]
+    · [tab] home +with-tabbar ⇒ 116px + 安全区 ← pages/home/home.wxss [.page]
+    · [tab] me (无附加类) ⇒ 116px + 安全区 ← pages/me/me.wxss [.page]
+    · [tab] notices (无附加类) ⇒ 116px + 安全区 ← pages/notices/notices.wxss [.page]
+    · [tab] weather-hub (无附加类) ⇒ 116px + 安全区 ← pages/weather-hub/weather-hub.wxss [.page]
+  ✓ T2.2 四页的每一支都 ≥ 基线32px + 底栏61px，且都吃安全区（红 0 条）
+  ✓ T2.3 tab 页之间同构：四页的底部留白终值互相相同（漂移 0 处——「五份复制」真正要防的就是这个）
+  ✓ T2.4 home 的根类分支被穷举到（2 支）⇒ 「有卡片才留底」这条路要逐支过门，不是只过主干
+  ✓ T2.5 home 的**空状态那一支**也留够（把公式收进 .page.with-tabbar 再删页级载体，就是在这一支失守 ⇒ 现在必须是绿的）
+== §3 非 tab 页：不许吃这份留白（名单同样由 app.json 决定） ==
+    · [子页] activity (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] anotices (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] cloud-field-poc (无附加类) ⇒ 32px ← pages/cloud-field-poc/cloud-field-poc.wxss [.poc]
+    · [子页] discover (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] editor (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] editor +has-sticky ⇒ 120px ← app.wxss [.page.has-sticky]
+    · [子页] lab (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] privacy (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] route (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] route-edit (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] route-edit +has-sticky ⇒ 120px ← app.wxss [.page.has-sticky]
+    · [子页] routes (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] signup (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] signup +has-sticky ⇒ 120px ← app.wxss [.page.has-sticky]
+    · [子页] staff (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] tasks (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] vehicle (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] weather (无附加类) ⇒ 32px ← app.wxss [.page]
+    · [子页] workspace (无附加类) ⇒ 32px ← app.wxss [.page]
+  ✓ T3.1 全仓 16 个非 tab 页里没有一个整套抄走 tab 留白（抄走＝页尾多出一截空白，M-18/E-03）
+  ✓ T3.2 非 tab 且没有固定底栏的 13 页，底部留白终值都等于基线（页级超额覆盖 0 份）
+    · 其中把「同一个基线数」在自己文件里重印一遍的页（值相同、来源不同 ⇒ 只登记不判红）：cloud-field-poc[.poc]
+  ✓ T3.3 M-18/E-03 的实测目标：anotices 终值 = 基线 32px（改前是 116px+安全区，多出来的那截就是用户报的空白）
+  ✓ T3.4 超额留白必须能指回一个真的遮挡物：比基线多的非 tab 页，页面必须真的在用 .sticky-action
+== §4 根节点条件类：用终值差判断它是真开关还是假开关 ==
+    · 根节点上的条件类：has-sticky / with-tabbar（出现在：editor/home/route-edit/signup）
+    · 其中「加上它任何终值都不变」的空开关：with-tabbar
+  ✓ T4.1 条件类普查确实扫到 ≥ 2 个（with-tabbar 与 has-sticky 这一族；扫到 0 个就是枚举空转）
+  ✓ T4.2 has-sticky 是真开关：加上它底部留白终值确实变大（app.wxss 定义它）
+  ✓ T4.3 with-tabbar 是空开关（读数）：home 加上它与不加它，整个赢家映射逐字相同 ⇒ 它不产生任何样式
+    · 无定义的条件类用法：改前 1（with-tabbar）→ 改后 1（本 Agent 禁写 wxml；「删这个假开关」的论证与动作归属写在 requests.md）
+== §5 计数闭合：复制份数 / 终值分组 / 文档里写成完整声明的次数 ==
+  ✓ T5.1 tab 页载体份数 = tab 页数（每页一份且由 T2.3 钉成同构；不再是「5 份里有 1 份用错了页」）
+    · 复制份数（页级声明条数）：改前 5（home/me/notices/anotices/weather-hub）→ 改后 4（全部落在 tab 页；anotices 那份是错抄，已删）
+    · 底部留白终值分组：tab 页 4 页 = 116px + 安全区 ← pages/home/home.wxss [.page] ｜ 非 tab 无固定底栏 = 32px ← app.wxss [.page] ｜ 非 tab 带固定底栏（route-edit 的 has-sticky 支）= 120px ← app.wxss [.page.has-sticky]
+  ✓ T5.2 规范文档里被写成**完整声明**的这份公式，数值全部相同（design-system.md 1 处 / 5 份文档共 1 处）：两处文档各写一套数就是第二个真值源
+    · design-system.md 内写成完整声明的处数：1（改前 0 ⇒ 这条规则从未被登记；改后应为 1，且「页面模板」那节改为本节引用）
+== §6 唯一规则登记在 design-system.md，且与代码终值一致 ==
+  ✓ T6.1 注册表那一行读得出（读不出就谈不上单一真值源）
+  ✓ T6.2 注册表写的数 == tab 页解析后的终值（文档说 32+84、代码跑成别的 ⇒ 红）
+  ✓ T6.3 注册表自己也得盖得住遮挡物（93px 是由底栏声明算出的下限，不是偏好）
+== §7 门不空转：四个方向各合成一个违例（判「相对真实树新增了什么」，不拿绝对红数充数） ==
+  ✓ T7.1 方向 A（非 tab 页吃 tab 留白）：给子页 route 挂上那份 84px 复制 ⇒ 必须**新增**一条 T3
+  ✓ T7.1b 同一形状塞回 anotices（M-18/E-03 的历史现场）⇒ 判据必须报 T3（改前它是存量红，改后它是新增红）
+  ✓ T7.2 方向 B（tab 页没留白）：删掉 home 那一行 ⇒ 必须**新增**一条「没有底部留白终值」，而不是静默放过
+  ✓ T7.3 方向 B-2：把公式收进 .page.with-tabbar 并删掉页级载体 ⇒ **不带该类那一支**（home 的空状态）失去留白 ⇒ 必须新增红（这条就是「给假开关补唯一定义」那条路的实测代价）
+  ✓ T7.4 方向 C：只把 me 的留白改成 48px+安全区（< 基线 32 + 底栏 61）⇒ 新增红只落在 me，别的 tab 页一条不新增（判据拿的是遮挡物高度，不是抄 84）
+  ✓ T7.5 方向 D：数值够但丢掉 env(safe-area-inset-bottom) ⇒ 必须新增一条「没吃安全区」的红（platform-pitfalls §6）
+== §8 等价重构控制：判据读层叠赢家，不读「第几行写了什么」 ==
+  ✓ T8.1 把 home 那一行从第 2 行挪到末尾（同特异度同值）⇒ 违例集合既不新增也不减少（否则判据记住的是文本，铁律 30 的原事故）
+  ✓ T8.2 app.wxss 多一条同值的 .page.with-tabbar（页级载体仍保留）⇒ 两支终值都不变 ⇒ 违例集合零变化（红了就是在数声明条数）
+  ✓ T8.3 反向：真值源被搬进 var()＋一个根节点拿不到的类 ⇒ 终值塌回基线，必须新增 home 的红（把四页收成一条「看不见的定义」是回归不是收敛）
+
+passed=32 failed=0
