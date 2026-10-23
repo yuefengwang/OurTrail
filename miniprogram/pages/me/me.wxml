@@ -206,7 +206,9 @@
             <view wx:for="{{positionRows}}" wx:key="signupId" class="list-row">
               <view class="list-main">
                 <text>{{item.label}}</text>
-                <text class="list-sub">本次活动的位置授权仍然有效</text>
+                <text class="list-sub">{{item.expired ? '已过期（活动已结束）' : '本次活动的位置授权仍然有效'}}</text>
+                <!-- D-04：撤回不设二次确认，代价必须写在按钮旁边（一次点击＝一次不可撤销的共享终止） -->
+                <text class="list-sub">撤回后本次不再共享；如需恢复需重新上报。</text>
               </view>
               <view class="button text revoke-text" hover-class="button-hover" data-activity-id="{{item.activityId}}" data-signup-id="{{item.signupId}}" bindtap="onRevoke">撤回</view>
             </view>

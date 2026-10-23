@@ -9,6 +9,10 @@ const api = require('./api')
 const draft = require('./draft')
 const F = require('./format')
 
+// D-02 B：首屏 20 条 + 每次再展开 20 条。只省渲染与 setData 体积，
+// 列表读仍是全量（服务端游标分页未做），所以界面任何文案都不得暗示「下载变少了」。
+const PAGE_SIZE = 20
+
 module.exports = function makeNoticesPage(getActivityId, opts) {
   const tabBarIndex = opts && Number.isInteger(opts.tabBarIndex) ? opts.tabBarIndex : null
   return {
@@ -16,6 +20,8 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       loading: true,
       denied: '',
       items: [],
+      visibleItems: [],
+      hiddenCount: 0,
       canPublish: false,
       publishOpen: false,
       content: '',
@@ -34,6 +40,7 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
     onLoad(options) {
       this._options = options || {}
       this._tabBarIndex = tabBarIndex
+      this._visibleCount = PAGE_SIZE
     },
 
     onShow() {
@@ -49,6 +56,24 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
 
     activityId() {
       return getActivityId.call(this)
+    },
+
+    /* items 持全量（计数、handler 查表都用它），visibleItems 才进 WXML。
+       已展开的条数在重读/刷新后保留；列表缩短时收敛到实有条数。 */
+    applyItems(items, extra) {
+      const count = Math.min(Math.max(this._visibleCount || PAGE_SIZE, PAGE_SIZE), items.length)
+      this._visibleCount = count
+      this.setData(Object.assign({
+        items,
+        visibleItems: items.slice(0, count),
+        hiddenCount: items.length - count,
+      }, extra || {}))
+    },
+
+    onLoadMore() {
+      if (!this.data.hiddenCount) return
+      this._visibleCount = (this._visibleCount || PAGE_SIZE) + PAGE_SIZE
+      this.applyItems(this.data.items)
     },
 
     reload() {
@@ -68,7 +93,7 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
           time: F.dtFull(n.publishedAt),
           read: n.read,
         }))
-        this.setData({ loading: false, denied: '', items })
+        this.applyItems(items, { loading: false, denied: '' })
         if (activityId) this.loadPublishContext(activityId)
       }).catch(e => {
         this.setData({ loading: false, denied: api.errorText(e) })
@@ -97,12 +122,12 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
             && ['archived', 'cancelled'].indexOf(res.view.activity.phase) === -1
           // 发布上下文里读到的 revision 才是发布/已读/投递命令的 CAS 基准（写实例，不进 data）
           this.revision = res.revision
-          this.setData({ items, canPublish })
+          this.applyItems(items, { canPublish })
           if (res.view.kind === 'activity') this.now = res.now
         })
       }).catch(() => {
         // 非所有者：不显示发布与投递记录
-        this.setData({ items: this.data.items.map(i => Object.assign({}, i, { owned: false, deliveries: [] })), canPublish: false })
+        this.applyItems(this.data.items.map(i => Object.assign({}, i, { owned: false, deliveries: [] })), { canPublish: false })
       })
     },
 

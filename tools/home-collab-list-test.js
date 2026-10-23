@@ -163,6 +163,9 @@ async function main() {
     check('搜索把列表清空时计数照旧（搜索过滤视图，不清除待办事实）',
       page.data.cards.length === 0 && page.data.collabCount === base,
       ids(page) + ' / ' + page.data.collabCount)
+    check('D-06：搜索空态说明搜索只在当前范围内（不跳出当前档）',
+      page.data.emptyTitle === '没有匹配的活动' && page.data.emptyDetail.indexOf('当前活动范围') !== -1,
+      page.data.emptyDetail)
     page.onSearch({ detail: { value: '青城后山' } })
     await sleep(30)
     check('搜索词命中时协作档同样被过滤（治病灶：原来那一区根本不跟搜索走）',

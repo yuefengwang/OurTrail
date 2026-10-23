@@ -5,6 +5,8 @@
 // 手法与 tools/scenario-signup-test.js 一致：global.Page 捕获真配置 + wx.cloud.callFunction 信封桩
 // （read/dispatch 走真 utils/api，errorText/denied 透出全是真代码路径）。
 'use strict'
+const fs = require('fs')
+const path = require('path')
 const DISCOVER_PATH = require.resolve('../miniprogram/pages/discover/discover.js')
 const api = require('../miniprogram/utils/api')
 const F = require('../miniprogram/utils/format')
@@ -120,8 +122,10 @@ async function main() {
     await waitFor(() => page.data.loading === false)
     check('无活动 → 全局空态文案', page.data.cards.length === 0
       && page.data.emptyTitle === '还没有发布的活动'
-      && page.data.emptyDetail === '等有人发起第一场同行，你也可以先开一场。',
+      && page.data.emptyDetail === '列表只含尚未出发的活动；等有人发起下一场，你也可以先开一场。',
       JSON.stringify([page.data.emptyTitle, page.data.emptyDetail]))
+    check('D-06：空态点名列表范围（只含尚未出发）',
+      page.data.emptyDetail.indexOf('尚未出发') !== -1, page.data.emptyDetail)
   }
   {
     const { page, env } = bootDiscover({ view: discoverView({ activities: [] }) })
@@ -129,8 +133,18 @@ async function main() {
     page.data.search = '雪山' // 模拟搜索中状态下的重查（防抖计时器已把 search 写进 data）
     await page.reload()
     check('带搜索词无结果 → 搜索空态文案',
-      page.data.emptyTitle === '没有匹配的活动' && page.data.emptyDetail.indexOf('换个关键词') === 0,
+      page.data.emptyTitle === '没有匹配的活动' && page.data.emptyDetail.indexOf('换个关键词') !== -1,
       JSON.stringify([page.data.emptyTitle, page.data.emptyDetail]))
+    check('D-06：搜索空态也说明范围（搜索不跳出「尚未出发」）',
+      page.data.emptyDetail.indexOf('尚未出发') !== -1, page.data.emptyDetail)
+    /* D-06 的另一半落在筛选计数处：结果数旁必须写明「均未出发」，
+       否则清掉筛选后「N 场」仍会被读成全部已发布活动。文案是静态 WXML，只能按源码断言。 */
+    {
+      const wxml = fs.readFileSync(path.join(__dirname, '..', 'miniprogram/pages/discover/discover.wxml'), 'utf8')
+      check('D-06：结果计数处标注列表范围（N 场 · 均未出发）',
+        /result-count[^>]*>\{\{cards\.length\}\} 场 · 均未出发</.test(wxml),
+        (wxml.match(/result-count[^\n]*/) || [''])[0])
+    }
     check('搜索词进入 read 请求', env.reads[env.reads.length - 1].search === '雪山', JSON.stringify(env.reads[env.reads.length - 1]))
   }
 
@@ -289,6 +303,9 @@ async function main() {
     check('筛选无结果：文案点名筛选而不是「还没有活动」',
       page.data.emptyTitle === '没有符合条件的活动' && page.data.emptyAction === '清除筛选',
       JSON.stringify([page.data.emptyTitle, page.data.emptyAction]))
+    check('D-06：筛选空态同时说明「筛选叠加」与「只含尚未出发」',
+      page.data.emptyDetail.indexOf('尚未出发') !== -1 && page.data.emptyDetail.indexOf('清除筛选') !== -1,
+      page.data.emptyDetail)
   }
 
   console.log('\npassed=' + passed + ' failed=' + failed + ' skipped=' + skipped)

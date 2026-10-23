@@ -186,9 +186,11 @@ Page({
         map: { visible: map.visible, markers: map.markers, markerMap: map.markerMap, latitude: map.latitude, longitude: map.longitude, scale: map.scale, includePoints: map.includePoints },
         mapSelected: null,
         emptyTitle: search ? '没有匹配的活动' : (count ? '没有符合条件的活动' : '还没有发布的活动'),
+        /* D-06：删掉的第二行导语里的 scope 语义在这里补回来——「只含尚未出发」是列表本身的
+           范围，「筛选同时生效」是空态的成因；两句都不占首屏。 */
         emptyDetail: search
-          ? '换个关键词，或清空搜索看看全部已发布的活动。'
-          : (count ? '放宽日期或难度，或者清除筛选看看全部已发布的活动。' : '等有人发起第一场同行，你也可以先开一场。'),
+          ? '列表只含尚未出发的活动；换个关键词，或清空搜索。'
+          : (count ? '列表只含尚未出发的活动；放宽日期或难度，或清除筛选。' : '列表只含尚未出发的活动；等有人发起下一场，你也可以先开一场。'),
         emptyAction: search ? '清除搜索' : (count ? '清除筛选' : ''),
       })
     }).catch(e => {

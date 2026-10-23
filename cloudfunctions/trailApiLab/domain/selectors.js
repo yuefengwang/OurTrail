@@ -172,6 +172,8 @@ function noticeView(notice) {
   return {
     id: notice.id, activityId: notice.activityId, content: notice.content, publishedAt: notice.publishedAt,
     sourceEventId: notice.sourceEventId,
+    // D-03：历史通知没有 kind 键，投影显式报 unknown，读端不按文案猜类型
+    kind: notice.kind || 'unknown',
     audience: notice.audience.kind === 'activity' ? { kind: 'activity' }
       : notice.audience.kind === 'vehicle' ? { kind: 'vehicle', vehicleId: notice.audience.vehicleId }
         : { kind: 'signups', signupIds: notice.audience.signupIds.slice() },
@@ -453,12 +455,20 @@ function visibleActivitiesFor(state, actor, perspective, openedIds, now) {
   })
 }
 
-// 「我的」页的位置授权撤回入口：本人或有效代报的、仍有有效位置上报、且本人可撤回的报名
+// 「我的」页的位置授权撤回入口：本人或有效代报的、仍有未撤回位置上报、且本人可撤回的报名。
+// D-05：授权随活动结束到期后**仍然列出**（用户要知道自己曾授权），但必须标 expired。
+// 边界与活动视图「有效位置」同源：consentExpiresAt 那一刻起不再有效（那边用严格 <）。
 function positionRowsFor(state, actor, activity, ownRows, now) {
+  const nowMs = Date.parse(now)
   return ownRows
-    .filter(s => s.status === 'confirmed' && state.positions.some(p => p.signupId === s.id && p.revokedAt === null))
-    .filter(s => canExecute(state, actor, { type: 'position.revoke', activityId: activity.id, signupId: s.id }, now).ok)
-    .map(s => ({ activityId: activity.id, activityTitle: activity.title, signupId: s.id, name: s.participant.name }))
+    .filter(s => s.status === 'confirmed')
+    .map(s => ({ s, position: state.positions.find(p => p.signupId === s.id && p.revokedAt === null) }))
+    .filter(x => x.position)
+    .filter(x => canExecute(state, actor, { type: 'position.revoke', activityId: activity.id, signupId: x.s.id }, now).ok)
+    .map(x => ({
+      activityId: activity.id, activityTitle: activity.title, signupId: x.s.id, name: x.s.participant.name,
+      expired: !(nowMs < Date.parse(x.position.consentExpiresAt)),
+    }))
 }
 
 // me 视图的活动口径（03-information-architecture.md §3.2 的服务端精确版）
@@ -572,7 +582,7 @@ function selectView(state, actor, request, now) {
       kind: 'notices',
       notices: state.notices
       .filter(n => (!request.activityId || n.activityId === request.activityId) && canReadNotice(state, actor, n, now))
-      .map(n => ({ id: n.id, activityId: n.activityId, content: n.content, publishedAt: n.publishedAt, read: hasOwn(n.readBy, actor.userId) })),
+      .map(n => ({ id: n.id, activityId: n.activityId, content: n.content, publishedAt: n.publishedAt, read: hasOwn(n.readBy, actor.userId), kind: n.kind || 'unknown' })),
     }
   }
   if (request.kind !== 'activity') return deniedView('FORBIDDEN', '不支持此读取请求。')
