@@ -1,0 +1,137 @@
+== §1 解析器与判据自证（判据不能空转；含审计实测数字的阳性对照） ==
+  ✓ P1.1 height:44px ⇒ 44
+  ✓ P1.2 只有纵向 padding 11px 0 + 继承行高 22 ⇒ 44（命中盒撑开的正规写法）
+  ✓ P1.3 box-sizing:border-box ⇒ min-height 已含 padding/border = 44
+  ✓ P1.4 content-box ⇒ 44 + border 2 = 46（盒模型算错就判错）
+  ✓ P1.5 阳性对照：审计量到的旧 .seg-btn（height/line-height 26px）被同一函数复算为 26
+  ✓ P1.6 阳性对照：审计量到的留宿开关「padding 补足」实为 28（注释谎称 44 的那一处）
+  ✓ P1.7 阳性对照：旧 .cond-why 的 padding 2px 0 ⇒ 26 <44
+  ✓ P1.8 阳性对照：全局 .chip（padding 6px 14px + 行高 18）⇒ 30 <44
+  ✓ P1.9 页样式表在 app.wxss 之后 ⇒ 同特异度时页面赢（.x color = #00ff00）
+  ✓ P1.10 特异度压书写次序：.y .x (0,2,0) 仍赢过页级 .x (0,1,0)
+  ✓ P1.10b 页样式表整体在 app.wxss 之后：app.wxss 末条同特异度规则不得压掉页首条（赢家必须是 p.wxss）
+  ✓ P1.11 未定义且无 fallback ⇒ 死 token 被点名且解析不出颜色（计算值失效 = transparent）
+  ✓ P1.12 死 token + fallback ⇒ 同时报「死引用」与「fallback 掩体」（B-09 第二种形态）
+  ✓ P1.13 活 token ⇒ 解析到实际值且无死引用
+  ✓ P1.14 --golden 对 #FFFFFF = 2.29:1（审计值复现）
+  ✓ P1.15 --golden 对 --forest-soft = 1.99:1（审计值复现）
+  ✓ P1.16 --golden 对 --paper = 2.10:1（审计值复现）
+  ✓ P1.17 同一函数判 --ink 对 #FFFFFF ≥7:1（换色方向真的过线，不是恒真）
+  ✓ P1.18 字面色识别：var(--muted) 不算、#5F6E66 算、rgba() 算
+  ✓ P1.19 var() fallback 里的字面量不计入「绕过 token」（那是 §2b 的死 token 掩体，不是复制）
+  ✓ P1.20 normColor 把 #163E35 与 rgb(22,62,53) 判为同色（影子比较不会因写法漏判）
+  ✓ P1.21 围栏成立：写入集与 app.wxss 都没有 !important/@media/@import（出现即要求先升级本解析器，不许静默误判）
+  ✓ P1.22 判据不是空转：app.wxss 解析出 ≥30 个 token，且 --touch-target = 44px
+  ✓ P1.23 继承行高取到 app.wxss 的 page line-height（22px），不是我自己编的数
+== §2 B-09：var() 引用必须有定义（未定义 token 命中 2→0） ==
+  ✓ T2.1 全仓 .wxss 的 var() 引用全部有定义（未定义 token 种类 = 0）
+  ✓ T2.2 --surface-alt / --text-2 两个死名字已从写入集消失
+  ✓ T2.3 我没有私自强占 token 名：--surface-alt/--text-2 在 app.wxss 里仍未定义（注册表归 SWX1）
+  ✓ T2.4 没有「死 token + fallback」的掩体写法（B-09 的第二真值源形态）
+== §3 B-10：字面色不得复制 token 的值（绕过 token 命中 6→0） ==
+  ✓ T3.1 写入集里没有「与既有 token 同值却写字面量」的复制（B-10 本体 = 0 处）
+  · 残留字面量（色板里没有同值 token，属"没有可用 token"而非绕过 ⇒ 如实登记不判红）：pages/weather/weather.wxss L219 .sky-look-label background:rgba(255, 255, 255, 0.7)
+  ✓ T3.2 残留仅限「token 表里根本没有的白色半透明合成色」这一类，逐条可追（需要它变 token 请走 requests，不在这里私加）
+  ✓ T3.3 「此刻处于云中」L3 读数色终值 = --warning 实际值（原为 #8C5A12 复制）
+  ✓ T3.4 首页活动卡信息行终值 = --muted（原为 #5F6E66 复制）
+  ✓ T3.5 首页 featured（森林底）信息行终值 = --on-forest-muted
+  ✓ T3.6 发现页同条规则同样改引用（两份拷贝都改了，不是只改一处）
+  ✓ T3.7 发现页 featured 分支同样改引用
+  ✓ T3.8 详情页 hero 指标单位终值 = --on-forest-muted
+  ✓ T3.9 影子改写三个 token ⇒ 天气/首页/详情页终值一起动（引用真的在承重，不是抄来的同值）
+  ✓ T3.10 还原对照：影子后重读原文件，天气页终值回到 --warning 基线
+  ✓ T3.11 假单源会被当场抓住：抄回字面量后影子改 --warning 追不上它
+  ✓ T3.12 首页与发现页这条规则现在逐值同源于同一批 token（终值相同 ⇒ 合并成一条全局规则不会改变任何一页的显示）
+== §4 B-13：星级的文字色必须过对比度（不把语义色当文字色） ==
+  ✓ T4.1 今日户外时间轴评级星（.ag-stars）的 color 解析成真实色值
+  ✓ T4.2 今日户外时间轴评级星 对天气页全部浅底逐一 ≥3:1（最差 #EBF0EE = 12.83:1）
+  ✓ T4.3 今日户外时间轴评级星 对最近邻两块底（--surface / --forest-soft）达到正文级 ≥4.5:1
+  ✓ T4.4 今日户外时间轴评级星 不再引用天相语义色（--golden/--blue-hour）⇒ 色相不承载评级，评级由紧邻的文字 tone 承载
+  ✓ T4.5 今日户外时间轴评级星 是纯配色改动：没有 content/background 声明（星级串仍只由 WXML 给出，样式没有造出 DOM 文本）
+  ✓ T4.1 户外条件卡评级星（.cond-stars）的 color 解析成真实色值
+  ✓ T4.2 户外条件卡评级星 对天气页全部浅底逐一 ≥3:1（最差 #EBF0EE = 12.83:1）
+  ✓ T4.3 户外条件卡评级星 对最近邻两块底（--surface / --forest-soft）达到正文级 ≥4.5:1
+  ✓ T4.4 户外条件卡评级星 不再引用天相语义色（--golden/--blue-hour）⇒ 色相不承载评级，评级由紧邻的文字 tone 承载
+  ✓ T4.5 户外条件卡评级星 是纯配色改动：没有 content/background 声明（星级串仍只由 WXML 给出，样式没有造出 DOM 文本）
+  ✓ T4.6 阳性对照：同一判据对旧值判红（--golden 对卡片底只有 2.29:1 < 3）
+  ✓ T4.7 承载语义的 tone 文字色 --success 对白底仍 ≥4.5:1（7.29）⇒ 星色改了没把评级文字一起糊掉
+  ✓ T4.7 承载语义的 tone 文字色 --warning 对白底仍 ≥4.5:1（5.86）⇒ 星色改了没把评级文字一起糊掉
+  ✓ T4.7 承载语义的 tone 文字色 --muted 对白底仍 ≥4.5:1（5.37）⇒ 星色改了没把评级文字一起糊掉
+  ✓ T4.7 承载语义的 tone 文字色 --info 对白底仍 ≥4.5:1（6.30）⇒ 星色改了没把评级文字一起糊掉
+  ✓ T4.8 星级的字号/字距等其余声明未被顺手改（letter-spacing 仍解析为 1px，星数可读性不靠颜色）
+== §5 B-16：字重回落到两档（≥700 声明命中 8→0） ==
+  ✓ T5.1 写入集里没有任何规则声明 font-weight ≥700（第三档字重清零）
+  ✓ T5.2 weather.wxss .chip-time 的字重终值 ∈ {400,500,600}（拿到 600）
+  ✓ T5.2 weather.wxss .nc-time 的字重终值 ∈ {400,500,600}（拿到 600）
+  ✓ T5.2 weather.wxss .section-title 的字重终值 ∈ {400,500,600}（拿到 600）
+  ✓ T5.2 weather.wxss .cond-label 的字重终值 ∈ {400,500,600}（拿到 600）
+  ✓ T5.2 weather.wxss .reason-title 的字重终值 ∈ {400,500,600}（拿到 600）
+  ✓ T5.2 weather.wxss .reason-mark 的字重终值 ∈ {400,500,600}（拿到 600）
+  ✓ T5.2 weather.wxss .sky-look-label 的字重终值 ∈ {400,500,600}（拿到 600）
+  ✓ T5.2 privacy.wxss .li .dot 的字重终值 ∈ {400,500,600}（拿到 600）
+  ✓ T5.3 天气页的 .section-title 覆盖规则仍然存在且仍然改变终值（字号与全局不同 ⇒ 不是死覆盖；M-20 的删除裁决本批未做）
+  ✓ T5.4 该终值的赢家确实是页样式表那条（不是靠 app.wxss 顺带）
+  ✓ T5.5 覆盖规则的字号仍引用 token（--text-body），没有为降字重顺手写死数值
+  ✓ T5.6 我没越界：app.wxss 的 .page-title 仍是 700（全仓唯一一档，那是 SWX1 的文件）
+  ✓ T5.7 同层级卡片主标题字重一致：.ag-title 与 .cond-label 终值相同（600 vs 600）—— 缺陷本体里那条「页内强调层级失去单一标尺」
+== §6 E-06：position:sticky 不带偏移 = 永不生效的死声明（命中 1→0） ==
+  ✓ T6.1 没有任何规则声明 position:sticky 却不带偏移（写了却不生效的死声明 = 0；偏移取 top/bottom/left/right 任一）
+  ✓ T6.2 .num-head 的 position 终值不再是 sticky（本批选 (a)：删误导性死声明；常驻表头属结构改动 ⇒ requests）
+  ✓ T6.3 但 .num-head 的底色声明没被顺手删（终值仍 = --forest-soft，表头行仍与数据行区分）
+  ✓ T6.4 表头列名的弱化文字色仍解析为 --muted（那条规则依赖表头有底色，底色还在 ⇒ 读法不变）
+  ✓ T6.5 阳性对照的反面：sticky + top:0 不被判死声明（门认的是「偏移是否存在」，不是「有没有 sticky」——下次真做常驻表头不会被自己拦）
+== §7 M-07：页面自建控件的命中高度收口到 --touch-target ==
+  ✓ T7.0 尺来自 token：--touch-target 解析为 44px（不是我写死的数）
+  ✓ T7.1 weather.wxss .seg-btn（24/48/72h 切窗（view bindtap=onSpanToggle））命中高度终值 ≥44px（实算 44px）
+  ✓ T7.2 .seg-btn 的达标是靠一条真实的尺寸声明（层叠终值里确有 height/min-height/padding/line-height 之一）
+  ✓ T7.1 weather.wxss .cond-why（证据展开开关（view bindtap=onToggleEvidence））命中高度终值 ≥44px（实算 44px）
+  ✓ T7.2 .cond-why 的达标是靠一条真实的尺寸声明（层叠终值里确有 height/min-height/padding/line-height 之一）
+  ✓ T7.1 weather.wxss .reason-link（看图 ↗（text catchtap=onEvidenceJump））命中高度终值 ≥44px（实算 44px）
+  ✓ T7.2 .reason-link 的达标是靠一条真实的尺寸声明（层叠终值里确有 height/min-height/padding/line-height 之一）
+  ✓ T7.1 weather.wxss .oi-link（OI 看图（text catchtap=onOiEvidence））命中高度终值 ≥44px（实算 44px）
+  ✓ T7.2 .oi-link 的达标是靠一条真实的尺寸声明（层叠终值里确有 height/min-height/padding/line-height 之一）
+  ✓ T7.1 editor.wxss .chip（快捷估算 chip（view bindtap=onQuickEnd/onQuickDeadline/onPickupQuickTime））命中高度终值 ≥44px（实算 44px）
+  ✓ T7.2 .chip 的达标是靠一条真实的尺寸声明（层叠终值里确有 height/min-height/padding/line-height 之一）
+  ✓ T7.3 切窗三键仍是横排（未把 flex 改成纵向 ⇒ 加高不会把三键叠成三行）
+  ✓ T7.4 没有「注释谎称达标」：紧邻某条规则、声称 ≥44px 的注释，那条规则的实算高度必须 ≥44（注释与实现不符本身就是缺陷）
+  · 判据边界（不硬算祖先链，跳过但逐条登记）：editor.wxss .step-group
+== §7b editor 可点 .cluster 行：作用域判据（本轮 DEFERRED；规则一旦出现就立刻开始 enforce） ==
+  · 现状读数：editor.wxml 里带 bindtap/catchtap 的 .cluster 行 5 条 [L215 L440 L506 L553 L598]，其命中高度由全局 .cluster 决定 = 22px（<44 ⇒ M-07 这一半确实未修）
+  ✓ T7.8 登记用读数：可点 .cluster 行确实存在且当前 <44px（这条 DEFERRED 有数可依，不是编出来的需求）
+  ✓ T7.9 已修状态的形状：抬升 .cluster 行的规则必须覆盖每一条可点行
+  ✓ T7.9b 且不得抬高任何「不可点且内部没有 ≥44 控件」的行
+  ✓ T7.10 放弃结构选择器是有数可依的：注入 .stack-gap3 > .cluster:first-child 后，判据当场报出「抬到了不含高控件的不可点行」（L98,L205,L374,L475）⇒ 它不是 faithful fix
+  ✓ T7.11 结构选择器连「覆盖可点行」也不完整（编辑器新增的路线摘要行不是首子节点）
+  · 未派给我、仅登记读数：weather.wxss .day-card = 40px（选哪一天的 7 日卡）
+  · 未派给我、仅登记读数：weather.wxss .oi-item = 36px（OI 列表行）
+  · 未派给我、仅登记读数：weather.wxss .oi-day = 36px（OI 多日行）
+  · 未派给我、仅登记读数：weather-chart.wxss .fc-modes .seg = 44px（横屏切窗（SWX1 已把全局 .segmented .seg 提到 token；此处读数只为确认本轮没碰它））
+== §8 B-14（重复规则两例）：同文件同选择器不得声明两次 ==
+  ✓ T8.1 写入集里没有「同选择器写两遍」（重复定义 2→0：.oi-ev×2、.nick-wrap×2 都收敛成一份）
+  ✓ T8.2 合并后的 .oi-ev 终值 = 旧两条「层叠赢家」的逐项值：margin-top = 3px（被覆盖的那条 4px 从来不是生效值，不能拿它当合并基准）
+  ✓ T8.2 合并后的 .oi-ev 终值 = 旧两条「层叠赢家」的逐项值：padding-left = 104px（被覆盖的那条 4px 从来不是生效值，不能拿它当合并基准）
+  ✓ T8.2 合并后的 .oi-ev 终值 = 旧两条「层叠赢家」的逐项值：display = flex（被覆盖的那条 4px 从来不是生效值，不能拿它当合并基准）
+  ✓ T8.2 合并后的 .oi-ev 终值 = 旧两条「层叠赢家」的逐项值：align-items = baseline（被覆盖的那条 4px 从来不是生效值，不能拿它当合并基准）
+  ✓ T8.2 合并后的 .oi-ev 终值 = 旧两条「层叠赢家」的逐项值：gap = 8px（被覆盖的那条 4px 从来不是生效值，不能拿它当合并基准）
+  ✓ T8.3 收敛后 .nick-wrap 的 flex 仍 = 1（两行逐字相同 ⇒ 是真重复，合并零风险）
+  ✓ T8.3 收敛后 .nick-wrap 的 min-width 仍 = 0（两行逐字相同 ⇒ 是真重复，合并零风险）
+  ✓ T8.3 收敛后 .nick-wrap 的 display 仍 = flex（两行逐字相同 ⇒ 是真重复，合并零风险）
+  ✓ T8.3 收敛后 .nick-wrap 的 flex-direction 仍 = column（两行逐字相同 ⇒ 是真重复，合并零风险）
+  ✓ T8.3 收敛后 .nick-wrap 的 gap 仍 = 4px（两行逐字相同 ⇒ 是真重复，合并零风险）
+  ✓ T8.4 且 .nick-wrap 只有一份声明出处（没有把重复换成「同值写两遍」的新形态）
+  ✓ T8.5 两条被合并的规则里没有出现「新加的属性」（合并是纯减法：属性集合与旧赢家一致）
+== §9 边界与越界自检 ==
+  ✓ T9.1 写入集就是我领到的 8 个文件（不多不少，且不含 app.wxss）
+  ✓ T9.2 我没碰 tabbar 与设计系统文档：写入集里没有 custom-tab-bar（E-12 属 SWX1）
+  · 写入集之外的同形态问题（未派给我 ⇒ 逐条进 requests/handoff，不在本门判红，也不去改别人的文件）：9 条：components/privacy-popup/privacy-popup.wxss .title 700 | components/privacy-popup/privacy-popup.wxss .btn 700 | components/privacy-popup/privacy-popup.wxss .btn-primary color | custom-tab-bar/index.wxss .tabbar background | custom-tab-bar/index.wxss .tabbar border-top | custom-tab-bar/index.wxss .tab color | custom-tab-bar/index.wxss .tab.on color | custom-tab-bar/index.wxss .tab.on background | pages/cloud-field-poc/cloud-field-poc.wxss .chip-on color
+  ✓ T9.3 登记用读数：写入集之外的问题被如实统计出来（不为凑绿扩大改动面）
+  ✓ T9.4 横屏页的 44px 就地补救未被本轮改动（M-06 若把全局 .seg 提到 44 它就变冗余，那是 SWX1 的裁决）
+== 计数读数 ==
+  未定义 token（种类）: 0
+  字面色（写入集声明内出现次数；含无同值 token 的残留）: 1 [pages/weather/weather.wxss .sky-look-label background（无同值 token）]
+  font-weight ≥700（声明条数）: 0
+  命名触控目标 <44px（条数）: 0
+  position:sticky 无偏移（条数）: 0
+  同文件重复选择器（条数）: 0
+
+passed=110 failed=0

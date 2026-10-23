@@ -1,0 +1,44 @@
+{
+  "required_files": {
+    "MORNING_REVIEW_REPORT.md": true,
+    "FOLLOWUP_TASK_LEDGER.md": true,
+    "FLASH_EXECUTION_PLAN.md": true,
+    "DECISION_LOG.md": true,
+    "FLASH_TASKS/FU-01.md": true,
+    "FLASH_TASKS/FD-01.md": true,
+    "FLASH_TASKS/FH-01.md": true,
+    "FLASH_TASKS/_DISPATCH_CONTEXT.md": true
+  },
+  "cards_13_sections": {
+    "FU-01": {
+      "complete": true
+    },
+    "FD-01": {
+      "complete": true
+    },
+    "FH-01": {
+      "complete": true
+    }
+  },
+  "plan_ids_missing_in_ledger": [],
+  "plan_decisions_missing_in_log": [],
+  "zero_width_files": [],
+  "main_worktree_tracked_changes": [],
+  "planning_tracked_changes": [],
+  "planning_head": "220a91c35df548517572b487b62f5c2f4936e4da",
+  "planning_commits_beyond_220a91c": 0,
+  "master": "c1a5aeb9a2e36a501307589de8be897429bb31b3",
+  "night": "220a91c35df548517572b487b62f5c2f4936e4da",
+  "pending_untracked": [
+    "?? docs/ui-ux-redesign/engineering-workflow/DECISION_LOG.md",
+    "?? docs/ui-ux-redesign/engineering-workflow/FLASH_EXECUTION_PLAN.md",
+    "?? docs/ui-ux-redesign/engineering-workflow/FLASH_TASKS/",
+    "?? docs/ui-ux-redesign/engineering-workflow/FOLLOWUP_TASK_LEDGER.md",
+    "?? docs/ui-ux-redesign/engineering-workflow/MORNING_REVIEW_REPORT.md",
+    "?? docs/ui-ux-redesign/evidence/morning-review-2026-10-23/"
+  ],
+  "summary": {
+    "failed": [],
+    "ok": true
+  }
+}
