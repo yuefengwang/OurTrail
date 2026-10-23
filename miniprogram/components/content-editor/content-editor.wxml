@@ -1,4 +1,16 @@
 <view class="ce">
+  <!-- 封面槽放在最前：读者先知道成品长什么样，再写正文。封面仍只从正文图片里选，
+       默认第一张；这里不给独立的封面上传（服务端只收正文内的 fileID）。 -->
+  <view class="ce-cover-row">
+    <image wx:if="{{effectiveCover}}" class="ce-cover-thumb" src="{{effectiveCover}}" mode="aspectFill" />
+    <view wx:else class="ce-cover-thumb ce-cover-empty"><text>封面</text></view>
+    <view class="ce-cover-copy">
+      <text class="field-label">封面</text>
+      <text class="small muted">{{coverFileId ? '已指定正文中的一张图片' : imageCount ? '默认用正文第一张图片' : '添加正文图片后自动使用第一张'}}</text>
+    </view>
+    <view wx:if="{{imageCount}}" class="button text" hover-class="button-hover" bindtap="{{uploading ? '' : 'openCover'}}">更换</view>
+  </view>
+
   <!-- 一个连续文字区：不再要求先建段落卡片。空行分段，图片组按段落位置插入。 -->
   <textarea
     class="textarea ce-body {{bodyFocused ? 'is-focused' : ''}}"
@@ -56,16 +68,6 @@
       <view wx:if="{{group.anchor < paragraphCount}}" class="chip" hover-class="button-hover" data-id="{{group.id}}" data-delta="1" bindtap="moveGroup">后移一段</view>
       <view class="button text" hover-class="button-hover" data-id="{{group.id}}" bindtap="{{uploading ? '' : 'removeGroup'}}">删除本组</view>
     </view>
-  </view>
-
-  <!-- 封面是可选操作：默认正文第一张；需要时再换，不需要逐张处理。 -->
-  <view wx:if="{{imageCount}}" class="ce-cover-row">
-    <image wx:if="{{effectiveCover}}" class="ce-cover-thumb" src="{{effectiveCover}}" mode="aspectFill" />
-    <view class="ce-cover-copy">
-      <text class="field-label">封面</text>
-      <text class="small muted">{{coverFileId ? '已指定正文中的一张图片' : '默认用正文第一张图片'}}</text>
-    </view>
-    <view class="button text" hover-class="button-hover" bindtap="{{uploading ? '' : 'openCover'}}">更换</view>
   </view>
 
   <view wx:if="{{message}}" class="callout success">{{message}}</view>

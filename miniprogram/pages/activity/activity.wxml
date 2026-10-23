@@ -247,6 +247,7 @@
           <route-profile track="{{track}}" points="{{points}}" />
         </view>
       </view>
+      <text wx:if="{{scheduleBasis}}" class="small muted" style="display:block;margin-top:12px;">{{scheduleBasis}}</text>
       <view class="timeline" style="margin-top:12px;">
         <view
           wx:for="{{points}}"
@@ -260,6 +261,7 @@
             <view style="min-width:0;">
               <text class="eyebrow">{{item.kindLabel}}</text>
               <text style="display:block;font-weight:600;margin-top:2px;">{{item.name}}</text>
+              <text wx:if="{{item.scheduleLabel}}" class="small tabular" style="display:block;margin-top:2px;">{{item.scheduleLabel}}</text>
             </view>
             <block wx:if="{{item.coordinates}}">
               <view

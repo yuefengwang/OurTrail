@@ -1,6 +1,7 @@
 // content-editor 组件纯逻辑测试：node tools/content-editor-test.js
 // 覆盖：连续正文、图片组锚点、2000 字文本块切分、上传/安全检查、封面、顺序往返。
 'use strict'
+const fs = require('fs')
 const path = require('path')
 const api = require('../miniprogram/utils/api')
 const CV = require('../miniprogram/utils/content-view')
@@ -248,6 +249,23 @@ async function main() {
     check('contentType 识别 png/jpg', inst.contentType('/tmp/a.PNG') === 'image/png' && inst.contentType('/tmp/a.jpg') === 'image/jpeg', '')
     check('reasonText 覆盖四种原因', /未通过/.test(inst.reasonText('unsafe')) && /1MB/.test(inst.reasonText('too_large'))
       && /读取失败/.test(inst.reasonText('read_failed')) && /暂不可用/.test(inst.reasonText('unavailable')), '')
+
+    // 14. 封面槽位置（EDI-01）：模板结构门——读者先看到成品封面，再写正文；
+    // 封面仍只从正文图片里选，所以没有独立上传入口，且旧的正文下方封面块不得回流。
+    const CE_WXML = fs.readFileSync(
+      path.resolve(__dirname, '../miniprogram/components/content-editor/content-editor.wxml'), 'utf8')
+    const coverAt = CE_WXML.indexOf('class="ce-cover-row"')
+    const bodyAt = CE_WXML.indexOf('<textarea')
+    check('封面槽在正文之前，且模板里只有一处',
+      coverAt !== -1 && bodyAt !== -1 && coverAt < bodyAt && CE_WXML.split('ce-cover-row').length - 1 === 1,
+      JSON.stringify({ coverAt, bodyAt, rows: CE_WXML.split('ce-cover-row').length - 1 }))
+    check('封面空态说明「加了正文图片会自动用第一张」',
+      CE_WXML.indexOf('添加正文图片后自动使用第一张') !== -1
+      && CE_WXML.indexOf('默认用正文第一张图片') !== -1)
+    check('封面只从正文图片里选（更换入口唯一，无独立上传）',
+      CE_WXML.split("'openCover'").length - 1 === 1
+      && CE_WXML.indexOf('ce-cover-thumb') !== -1
+      && CE_WXML.indexOf('ce-cover-empty') !== -1)
   } finally {
     api.call = oldCall
     global.wx = oldWx

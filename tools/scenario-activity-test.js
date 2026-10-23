@@ -459,6 +459,40 @@ async function scenario1b() {
   }
 }
 
+// 1c. 路线节点日程（EDI-02 A）：轨迹时间差 + 出发时刻 → 逐节点「第几天 几点」；
+// 没有时间戳就不摆日程说明、节点也不印时间（宁可不说，不把「没记录时间」印成日常提示）。
+async function scenario1c() {
+  section('1c. 路线节点日程预览（EDI-02 A）')
+  {
+    const env = bootActivity({ view: viewFixture() })
+    await settle(env.page)
+    check('默认路线没有时间戳 → 不摆日程说明、节点不印时间', env.page.data.scheduleBasis === ''
+      && env.page.data.points.every(p => p.scheduleLabel === ''),
+      JSON.stringify({ basis: env.page.data.scheduleBasis, labels: env.page.data.points.map(p => p.scheduleLabel) }))
+  }
+  {
+    const env = bootActivity({
+      view: viewFixture(v => {
+        const pts = v.activity.routeSnapshot.points
+        pts[0].time = '2026-09-01T00:00:00.000Z' // 锚点：只取相对耗时不取 GPX 日期
+        pts[1].time = '2026-09-01T02:30:00.000Z'
+      }),
+    })
+    await settle(env.page)
+    check('有时间戳 → 起点对齐出发时刻，后续按时间差推算，无时间节点留空',
+      env.page.data.points[0].scheduleLabel === '第1天 08:00'
+      && env.page.data.points[1].scheduleLabel === '第1天 10:30'
+      && env.page.data.points[2].scheduleLabel === '',
+      JSON.stringify(env.page.data.points.map(p => p.scheduleLabel)))
+    check('日程说明与编辑器/天气页同源（有出发时刻）',
+      env.page.data.scheduleBasis === '按轨迹记录的时间差与出发时刻推算抵达时间，日期已自动对齐。',
+      env.page.data.scheduleBasis)
+    check('wxml 有日程说明与逐节点时间的渲染位',
+      ACTIVITY_WXML.indexOf('wx:if="{{scheduleBasis}}"') !== -1
+      && ACTIVITY_WXML.indexOf('wx:if="{{item.scheduleLabel}}"') !== -1)
+  }
+}
+
 // 2. 历史雷回归——openSheet：canHome/canPosReport 读 this.view.primarySignupId（而非裸 v），不抛错
 async function scenario2() {
   section('2. openSheet 雷回归：published 弹层装配 / gathering 位置上报路径 / closing 到家路径（裸 v 必炸）')
@@ -1291,7 +1325,7 @@ async function scenario13() {
 }
 
 async function main() {
-  const scenarios = [scenario1, scenario1b, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7,
+  const scenarios = [scenario1, scenario1b, scenario1c, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7,
     scenario8, scenario9, scenario10, scenario11, scenario12, scenario13]
   for (const s of scenarios) {
     try { await s() } catch (e) {

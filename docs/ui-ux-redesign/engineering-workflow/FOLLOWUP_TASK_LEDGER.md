@@ -39,9 +39,9 @@
 
 | ID | 事项 | 证据 | 类型 | 影响 | 状态 | 挡合并 | 前置 | 决策责任 | 推荐行动 | 验收标准 | 执行模型 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| EDI-01 | 首步封面上传槽布局 | `content-editor.js:134-199,221-348`；`content-editor.wxml:61-90`；服务端拒绝独立封面 `activity.js:44` | 视觉/业务 | editor | BLOCKED | NO | D-07 | 设计+产品 | 先定“封面=正文首图”或独立封面（后者动 schema/部署） | 规格获批；上传/失败/空态齐 | 强模型 |
-| EDI-02 | Day 时间轴/人工行程 | `route-schedule.js:48-83` 只有推算；无人工计划模型 | 业务/产品 | editor/activity | BLOCKED | NO | D-07 | 产品 | 先定“推算预览”还是“可编辑计划” | 数据模型与天气共享边界定案 | 强模型 |
-| EDI-03 | 装备 chips 增删交互 | `editor.wxml:608-637` 已有两组 textarea+badge；`editor.js:397-400` | 交互 | editor | BLOCKED | NO | D-07 | 设计负责人 | 定交互稿后小步实现 | 增删/去重/保存往返无损 | 强模型→Flash |
+| EDI-01 | 首步封面上传槽布局 | `content-editor.wxml` 顶部 `ce-cover-row`；`content-editor.wxss` 的 `ce-cover-thumb/empty`；`tools/content-editor-test.js` 三条结构门 | 视觉/业务 | editor | **DONE**（2026-10-23，按 D-07 ①A；本批本地提交，未 push；真机 UNVERIFIED） | NO | D-07 | 设计+产品 | 已落地：封面槽上移到正文之前并补空态文案，仍只从正文图片里选、默认首张、可更换 | 结构门 3 条 + 组件套件 33/0；真机截图待授权重编译 | Flash |
+| EDI-02 | Day 时间轴/人工行程 | `editor.js` 的 `scheduleRowsOf/routeDerivedOf`；`activity.js` 的 `RS.schedule` 映射；复用 `route-schedule.js` | 业务/产品 | editor/activity | **DONE**（2026-10-23，按 D-07 ②A 推算预览；本批本地提交，未 push；真机 UNVERIFIED） | NO | D-07 | 产品 | 已落地：编辑器「节点日程」只读预览 + 详情页逐节点抵达时刻；无时间戳时不摆日程，不引入第二事实源 | `scenario-editor` 12 条 + `scenario-activity` 4 条覆盖三态 | 强模型 |
+| EDI-03 | 装备 chips 增删交互 | `editor.wxml` 两组 chips+输入行；`editor.js` 的 `onEquipmentDraft/addEquipment/removeEquipment` | 交互 | editor | **DONE**（2026-10-23，按 D-07 ③A；本批本地提交，未 push；真机 UNVERIFIED） | NO | D-07 | 设计负责人 | 已落地：chips 增删、空值/重复在录入端拦截，存储仍是换行文本（零 schema/零部署），`buildInput` 往返无损 | 组件/页面套件覆盖增删去重与 schema 严检 | 强模型→Flash |
 | EDI-04 | 活动公开/可见性开关 | `schema.js:159-205` 无 visibility；Route 的 private/shared 不可借用 | 业务/权限 | editor/discover | BLOCKED | NO | D-07 | 产品+技术 | 先定可见性与发现范围、存量默认 | 权限矩阵+发现范围测试 | 强模型 |
 | EDI-05 | “发布后开放报名”勾选与实际不一致 | `activity.js:193,215-217`：草稿强制 false、发布强制 true | 业务缺陷 | editor | OPEN | NO | 产品确认语义 | 产品+技术 | 先确认复选框是否应控制发布结果 | 勾选值可预测；有回归 | 强模型 |
 | EDI-06 | 路线缩略图/集合建议 | `editor.js:539-560,844-878` 已有轨迹与派生集合点 | 视觉 | editor | BACKLOG | NO | 设计规格 | 设计负责人 | 出缩略图规格后交 Flash；不造地点推荐 | 规格+三态截图 | 强模型→Flash |
