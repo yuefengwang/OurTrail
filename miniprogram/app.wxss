@@ -138,6 +138,10 @@ page {
    （工作台顶部已有总览，套上头反而多一层噪音——design-system.md §3 的边界）。 */
 .section-head { display: flex; flex-direction: column; gap: 2px; }
 .section-head .section-sub { color: var(--muted); font-size: var(--text-caption); line-height: 18px; }
+/* FH-01（2026-10-23）：列表页页头文字列，home/discover 曾各存一份逐字同形规则。
+   20px/28px/-0.3px 是既有计算值的搬运，不是新字阶 token；勿把 .section-head 当容器基类改。 */
+.list-head__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.list-head__title { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.3px; color: var(--ink); overflow-wrap: anywhere; }
 /* 事实行：标签—值。只读，不可点；要操作的行仍用 .list-row */
 .fact-row {
   display: flex;

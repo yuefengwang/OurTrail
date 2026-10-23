@@ -9,9 +9,9 @@
            拼板屏 1.1 的首屏把空间给列表；旧的第二行导语删除，其「安排放在一起」的语义
            由卡片正文（日期·倒计时·指标·人数）承担，不再单独占一行。 -->
       <view class="card-header">
-        <view class="home-head__text">
+        <view class="list-head__text">
           <text class="eyebrow">OURTRAIL · 一起走过</text>
-          <view class="home-title">{{profileName ? profileName + '，' : ''}}下一次同行</view>
+          <view class="list-head__title">{{profileName ? profileName + '，' : ''}}下一次同行</view>
         </view>
         <view class="cluster">
           <view class="button text" hover-class="button-hover" bindtap="onGoDiscover">

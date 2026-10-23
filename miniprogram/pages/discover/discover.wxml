@@ -8,9 +8,9 @@
          旧的第二行导语「只显示尚未出发的公开活动；筛选条件会一起生效。」删除，其语义由
          诚实 callout（个人发起/自行评估）与筛选 chip 行的计数承担，与 home N2 同款处理。 -->
     <view class="card-header">
-      <view class="discover-head__text">
+      <view class="list-head__text">
         <text class="eyebrow">发现活动</text>
-        <view class="discover-title">看看别人在约什么。</view>
+        <view class="list-head__title">看看别人在约什么。</view>
       </view>
       <view class="segmented discover-views" aria-label="发现视图">
         <view class="seg {{viewMode === 'list' ? 'on' : ''}}" data-mode="list" bindtap="onViewMode">列表</view>
