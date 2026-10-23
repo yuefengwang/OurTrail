@@ -305,8 +305,13 @@ const Delivery = specObj({
   id: specId, channel: DeliveryChannel, status: DeliveryStatus,
   at: specInstant, by: specId, detail: specText,
 })
+// D-03：通知类型是封闭词表，写入端赋值、读取端只搬运。
+// specOpt 保住历史通知（没有该键）仍然合法；那种通知投影为 'unknown'——
+// 类型丢了就说丢了，不许按文案反猜（D-03 选项 B 被否的原因就是这个）。
+const NoticeKind = specEnum(['manual', 'publish', 'itinerary', 'review', 'join', 'cancel', 'unknown'])
 const Notice = specObj({
   id: specId, activityId: specId, audience: Audience, sourceEventId: specNull(specId),
+  kind: specOpt(NoticeKind),
   content: specText, publishedAt: specInstant, readBy: specRec(specInstant), deliveries: specArr(Delivery),
 })
 // 协作任务：V1 是活动内 checklist，不是跨活动工作流。

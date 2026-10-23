@@ -25,7 +25,7 @@
       <status-panel wx:if="{{!items.length}}" kind="empty" title="还没有需要你查看的通知" detail="报名确认或集合安排更新后，会在这里显示。" />
 
       <view
-        wx:for="{{items}}"
+        wx:for="{{visibleItems}}"
         wx:key="id"
         class="notice-card {{item.read ? '' : 'unread'}}"
       >
@@ -44,6 +44,8 @@
           <text wx:for="{{item.deliveries}}" wx:for-item="d" wx:key="id" class="small muted">{{d.label}}</text>
         </view>
       </view>
+      <!-- D-02：首屏 20 条，之后每次再展开 20 条；总数仍以 items 为准 -->
+      <view wx:if="{{hiddenCount}}" class="button secondary block" hover-class="button-hover" bindtap="onLoadMore">加载更多（还有 {{hiddenCount}} 条）</view>
     </view>
 
     <text wx:if="{{message}}" class="small muted">{{message}}</text>

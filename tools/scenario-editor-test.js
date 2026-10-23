@@ -1032,8 +1032,73 @@ async function scenario13() {
   }
 }
 
+// 14. EDI-02/03：节点日程只读派生（轨迹时间差 + 出发时刻）+ 装备 chips（底层仍是换行文本）。
+async function scenario14() {
+  section('14. 节点日程预览（EDI-02 A）与装备 chips（EDI-03）')
+  {
+    const { page } = bootEditor({ seed: () => draft.setDraft('new', 'activity-editor', sampleInput()) })
+    await settle(page)
+    check('有轨迹时间 + 有出发 → 逐节点给出「第几天 几点」', page.data.scheduleRows.length === 2
+      && page.data.scheduleRows[0].indexText === '01' && page.data.scheduleRows[0].name === '起点'
+      && page.data.scheduleRows[0].known === true && page.data.scheduleRows[0].label === '第1天 08:00'
+      && page.data.scheduleRows[1].known === false && page.data.scheduleRows[1].label === '无时间信息',
+      JSON.stringify(page.data.scheduleRows))
+    check('日程说明与天气页同源（有出发时刻）',
+      page.data.scheduleBasis === '按轨迹记录的时间差与出发时刻推算抵达时间，日期已自动对齐。', page.data.scheduleBasis)
+    check('单日行程 spanDays=1', page.data.scheduleSpanDays === 1, page.data.scheduleSpanDays)
+    page.onDate(ev('dt_start', ''))
+    check('撤掉出发时刻 → 只剩「出发后多久」，说明改口为未定出发',
+      page.data.scheduleRows[0].label === '出发后 0 分钟' && page.data.scheduleRows[1].label === '无时间信息'
+      && page.data.scheduleBasis === '活动未定出发时刻，先看轨迹各点的耗时；定了出发时间就能定位到当天。'
+      && page.data.scheduleSpanDays === null,
+      JSON.stringify({ rows: page.data.scheduleRows, basis: page.data.scheduleBasis }))
+  }
+  {
+    const { page } = bootEditor({ seed: () => draft.setDraft('new', 'activity-editor', sampleInput()) })
+    await settle(page)
+    page.onRoutePoint({ currentTarget: { dataset: { index: 0, key: 'time' } }, detail: { value: '' } })
+    check('轨迹完全没有时间戳 → 说明「没有记录时间信息」，每个节点都标无时间',
+      page.data.scheduleBasis === '这条轨迹没有记录时间信息，无法推算抵达日程——下面是所选日期的天气。'
+      && page.data.scheduleRows.every(r => r.known === false && r.label === '无时间信息')
+      && page.data.scheduleSpanDays === null,
+      JSON.stringify({ basis: page.data.scheduleBasis, rows: page.data.scheduleRows }))
+  }
+  {
+    const { page } = bootEditor({ seed: () => draft.setDraft('new', 'activity-editor', sampleInput()) })
+    await settle(page)
+    page.onEquipmentDraft(ev('equipmentDraft', '  头灯  '))
+    check('装备输入草稿不写表单', page.data.equipmentDraft === '  头灯  ' && page.data.form.equipmentText === '徒步鞋\n雨具',
+      JSON.stringify({ draft: page.data.equipmentDraft, text: page.data.form.equipmentText }))
+    page.addEquipment({ currentTarget: { dataset: { group: 'equipment' } } })
+    check('添加一项 → 追加到换行文本并清空输入框',
+      page.data.form.equipmentText === '徒步鞋\n雨具\n头灯' && page.data.equipmentDraft === '',
+      JSON.stringify({ text: page.data.form.equipmentText, draft: page.data.equipmentDraft }))
+    page.onEquipmentDraft(ev('equipmentDraft', '雨具'))
+    page.addEquipment({ currentTarget: { dataset: { group: 'equipment' } } })
+    check('重复项不入清单，给出提示', page.data.form.equipmentText === '徒步鞋\n雨具\n头灯'
+      && /已在清单里/.test(page.data.message) && page.data.equipmentDraft === '',
+      JSON.stringify({ text: page.data.form.equipmentText, message: page.data.message }))
+    page.onEquipmentDraft(ev('equipmentDraft', '   '))
+    page.addEquipment({ currentTarget: { dataset: { group: 'equipment' } } })
+    check('空白不新增', page.data.form.equipmentText === '徒步鞋\n雨具\n头灯', page.data.form.equipmentText)
+    page.removeEquipment({ currentTarget: { dataset: { group: 'equipment', index: 0 } } })
+    check('点 chip 移除指定项', page.data.form.equipmentText === '雨具\n头灯', page.data.form.equipmentText)
+    page.onEquipmentDraft(ev('equipmentSuggestedDraft', '登山杖'))
+    page.addEquipment({ currentTarget: { dataset: { group: 'suggested' } } })
+    check('建议携带走独立字段，不混进必带', page.data.form.equipmentText === '雨具\n头灯'
+      && page.data.form.equipmentSuggestedText === '登山杖',
+      JSON.stringify({ must: page.data.form.equipmentText, suggested: page.data.form.equipmentSuggestedText }))
+    const input = page.buildInput()
+    check('buildInput 仍产出两份数组（零 schema 改动）',
+      JSON.stringify(input.equipment) === JSON.stringify(['雨具', '头灯'])
+      && JSON.stringify(input.equipmentSuggested) === JSON.stringify(['登山杖'])
+      && S.validate(S.ActivityInput, input) === true,
+      JSON.stringify({ equipment: input.equipment, suggested: input.equipmentSuggested }))
+  }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11, scenario12, scenario13]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11, scenario12, scenario13, scenario14]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

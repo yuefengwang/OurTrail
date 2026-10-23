@@ -506,6 +506,53 @@ section('6. detailState：参与者视角的 12 态与实际事实一致')
   check('归档链状态合法', w6.problems.length === 0, JSON.stringify(w6.problems.slice(0, 3)))
 }
 
+/* ================= 6b. 位置授权过期：行还在，但不得再称「仍然有效」 ================= */
+
+section('6b. 位置授权随活动结束到期：投影标 expired，撤回入口保留')
+{
+  const w = H.createWorld() // 默认 10-08：仍在报名窗口内，先按真实命令把名单建起来
+  w.profile(LIN, '林溪')
+  w.profile(U('陈屿'), '陈屿')
+  const a = w.createActivity(LIN, { capacity: 4 })
+  w.publish(LIN, a)
+  w.signup(U('陈屿'), a, '陈屿', { mode: 'self' }, { ownerId: LIN })
+  w.signup(LIN, a, '林溪', { mode: 'self' }, { ownerId: LIN })
+  w.tick('2026-10-11T08:30:00+08:00') // 活动当天、行程开始前：现场记录只能在集合/行程阶段
+  w.toGathering(LIN, a)
+  for (const n of ['林溪', '陈屿']) {
+    w.checkin(LIN, a, w.signupIdOf(n))
+    w.departure(LIN, a, w.signupIdOf(n), 'joined')
+  }
+  check('前置：进入行程阶段', w.phase(LIN, a, 'active', '出发').ok === true)
+  const chen = w.signupIdOf('陈屿')
+  const rep = w.dispatch(U('陈屿'), { type: 'position.report', activityId: a, signupId: chen, coordinates: { lat: 30.9, lng: 103.4 }, consent: true })
+  check('前置：行程中本人主动上报位置', rep.ok === true, JSON.stringify(rep))
+
+  const meRows = () => w.read(U('陈屿'), { kind: 'me' }).positionRows
+  const homeRows = () => w.read(U('陈屿'), { kind: 'home', perspective: 'participant' })
+    .activities.find(x => x.id === a).meta.positionRows
+
+  w.tick('2026-10-11T17:59:00+08:00')
+  check('到期前：行存在且 expired=false（阳性对照）', meRows().length === 1 && meRows()[0].expired === false, JSON.stringify(meRows()))
+  check('到期前：home 的同一行口径一致', homeRows().length === 1 && homeRows()[0].expired === false, JSON.stringify(homeRows()))
+
+  // 活动 endAt = 2026-10-11T18:00；有效位置判定用严格 <，故 18:00 整已经不在有效位置列表里。
+  w.tick('2026-10-11T18:00:00+08:00')
+  check('到期整点：行仍在（用户要知道曾授权）', meRows().length === 1, JSON.stringify(meRows()))
+  check('到期整点：expired=true（边界与有效位置同源）', meRows()[0].expired === true, JSON.stringify(meRows()[0]))
+  check('到期整点：活动视图的有效位置已经为空 ⇒「仍然有效」会是假话', w.readActivity(U('陈屿'), a, 'participant').positions.length === 0)
+  check('到期整点：home 的同一行也标 expired', homeRows()[0] && homeRows()[0].expired === true, JSON.stringify(homeRows()))
+  check('到期后仍允许撤回（域内没有阶段门）', w.allow(U('陈屿'), { type: 'position.revoke', activityId: a, signupId: chen }).ok === true)
+
+  w.tick('2026-10-11T18:30:00+08:00')
+  check('到期后半小时：行仍标 expired', meRows()[0] && meRows()[0].expired === true, JSON.stringify(meRows()))
+  const rev = w.dispatch(U('陈屿'), { type: 'position.revoke', activityId: a, signupId: chen })
+  check('到期后撤回成功', rev.ok === true, JSON.stringify(rev))
+  check('撤回后行从「我的」消失', meRows().length === 0, JSON.stringify(meRows()))
+  check('撤回是写 revokedAt，不是删坐标', w.state.positions.find(p => p.signupId === chen).revokedAt === '2026-10-11T18:30:00+08:00')
+  check('本节状态合法', w.problems.length === 0 && H.checkOracles(w.state).length === 0, JSON.stringify(w.problems.slice(0, 2)))
+}
+
 /* ================= 7. 客户端静态门：禁止用中文文案判业务状态 ================= */
 
 section('7. 客户端扫描：不得再用显示文案反推出行方式/上车状态')

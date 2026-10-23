@@ -18,6 +18,7 @@ function handleNotices(state, command, context) {
       const id = context.id('notice')
       state.notices.push({
         id, activityId: payload.activityId, audience: JSON.parse(JSON.stringify(payload.audience)), sourceEventId: null,
+        kind: 'manual',
         content: payload.content.trim(), publishedAt: context.now, readBy: {}, deliveries: [],
       })
       return { ok: true, value: [id] }

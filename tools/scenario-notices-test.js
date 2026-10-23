@@ -710,8 +710,106 @@ async function scenario7() {
   }
 }
 
+// 8. D-02：客户端分批渲染（首屏 20 + 每次再展开 20）。只改渲染面，读请求与下载量不变。
+async function scenario8() {
+  section('8. D-02 分批渲染：20 + 20 + …，加载更多不再发读请求')
+  const many = n => {
+    const out = []
+    for (let i = 1; i <= n; i++) {
+      out.push({
+        id: 'n' + i, activityId: 'a1', content: '通知 ' + i,
+        publishedAt: '2026-09-01T' + String(i % 24).padStart(2, '0') + ':00:00+08:00',
+        read: i % 2 === 0,
+      })
+    }
+    return out
+  }
+  {
+    const { page, reads } = bootNotices(NOTICES_PATH, { notices: many(45) })
+    await settleTab(page)
+    check('45 条：items 持全量、首屏只渲染前 20 条、剩余计数 25',
+      page.data.items.length === 45 && page.data.visibleItems.length === 20 && page.data.hiddenCount === 25,
+      JSON.stringify([page.data.items.length, page.data.visibleItems.length, page.data.hiddenCount]))
+    check('分批不打乱「最新在前」：倒序后第一条仍是服务端最后一条',
+      page.data.visibleItems[0].id === 'n45' && page.data.visibleItems[19].id === 'n26',
+      page.data.visibleItems[0].id + ' / ' + page.data.visibleItems[19].id)
+    const readsBefore = reads.length
+    page.onLoadMore()
+    check('加载更多 → 40 条可见、剩 5 条', page.data.visibleItems.length === 40 && page.data.hiddenCount === 5,
+      page.data.visibleItems.length + ' / ' + page.data.hiddenCount)
+    page.onLoadMore()
+    check('再加载 → 45 条全可见、加载更多收起', page.data.visibleItems.length === 45 && page.data.hiddenCount === 0,
+      page.data.visibleItems.length + ' / ' + page.data.hiddenCount)
+    page.onLoadMore()
+    check('已全部展开时再点不重复追加（幂等）',
+      page.data.visibleItems.length === 45 && page.data.hiddenCount === 0, String(page.data.visibleItems.length))
+    check('分批是纯客户端：三次加载更多一条读请求都没发',
+      reads.length === readsBefore, readsBefore + ' → ' + reads.length)
+    // 展开状态跨重读保留（标记已读/发布后会 reload；不应把用户刚展开的列表折回 20）
+    const { page: p2 } = bootNotices(NOTICES_PATH, { notices: many(45) })
+    await settleTab(p2)
+    p2.onLoadMore()
+    await p2.reload()
+    check('重读后保留已展开的 40 条（不把用户折回首屏）',
+      p2.data.visibleItems.length === 40 && p2.data.hiddenCount === 5,
+      p2.data.visibleItems.length + ' / ' + p2.data.hiddenCount)
+  }
+  {
+    const { page } = bootNotices(NOTICES_PATH, { notices: many(20) })
+    await settleTab(page)
+    check('边界 20 条：全可见、不出现加载更多（不是永远剩 0 条仍显示按钮）',
+      page.data.visibleItems.length === 20 && page.data.hiddenCount === 0,
+      page.data.visibleItems.length + ' / ' + page.data.hiddenCount)
+    const { page: p2 } = bootNotices(NOTICES_PATH, { notices: many(19) })
+    await settleTab(p2)
+    check('19 条（少一批）：全可见、hiddenCount=0', p2.data.visibleItems.length === 19 && p2.data.hiddenCount === 0,
+      p2.data.visibleItems.length + ' / ' + p2.data.hiddenCount)
+  }
+  {
+    // 活动内页：发布上下文的 owned/投递记录必须落到**可见子集**上（只更新 items 会让首屏不更新）
+    const notices = many(25)
+    const { page, reads } = bootNotices(ANOTICES_PATH, {
+      options: { id: 'a1' }, notices,
+      mgmt: { notices: [
+        { id: 'n25', deliveries: [{ id: 'd1', channel: 'copy', status: 'copied', at: NOW, by: 'p1', detail: '' }] },
+      ] },
+    })
+    await settleActivity(page, reads)
+    await waitFor(() => page.data.visibleItems[0] && page.data.visibleItems[0].owned === true)
+    check('anotices：25 条同样首屏 20 条',
+      page.data.visibleItems.length === 20 && page.data.hiddenCount === 5,
+      page.data.visibleItems.length + ' / ' + page.data.hiddenCount)
+    check('发布上下文写进可见子集（否则首屏卡片的复制按钮/投递记录永远不亮）',
+      page.data.visibleItems[0].id === 'n25' && page.data.visibleItems[0].owned === true
+      && page.data.visibleItems[0].deliveries.length === 1,
+      JSON.stringify(page.data.visibleItems[0] && [page.data.visibleItems[0].id, page.data.visibleItems[0].owned]))
+  }
+  {
+    const { page, reads } = bootNotices(ANOTICES_PATH, { options: { id: 'a1' }, mgmt: null, notices: many(25) })
+    await settleActivity(page, reads)
+    await waitFor(() => page.data.items.length === 25 && page.data.items.every(i => i.owned === false))
+    check('anotices 非所有者：分批与降级共存（visibleItems 也全部 owned=false）',
+      page.data.visibleItems.length === 20 && page.data.visibleItems.every(i => i.owned === false),
+      page.data.visibleItems.length)
+  }
+  {
+    // 接线：两页 WXML 渲染的必须是可见子集，加载更多要有真 handler
+    const wxmlNotices = fs.readFileSync(path.join(MP_DIR, 'pages/notices/notices.wxml'), 'utf8')
+    const wxmlAnotices = fs.readFileSync(path.join(MP_DIR, 'pages/anotices/anotices.wxml'), 'utf8')
+    const wired = w => /wx:for="\{\{visibleItems\}\}"/.test(w)
+      && !/wx:for="\{\{items\}\}"/.test(w)
+      && /bindtap="onLoadMore"/.test(w)
+      && /hiddenCount/.test(w)
+    check('两页 WXML 都渲染 visibleItems 且挂上 onLoadMore（不是只在 JS 里分批）',
+      wired(wxmlNotices) && wired(wxmlAnotices),
+      'notices=' + wired(wxmlNotices) + ' anotices=' + wired(wxmlAnotices))
+    check('两页仍以 items.length 报总数（分批不改「共 N 条」的口径）',
+      /共 \{\{items\.length\}\} 条/.test(wxmlNotices) && /共 \{\{items\.length\}\} 条/.test(wxmlAnotices), '')
+  }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

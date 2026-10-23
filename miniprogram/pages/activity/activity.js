@@ -9,6 +9,7 @@ const WB = require('../../utils/weather-brief')
 const covers = require('../../utils/covers')
 const CV = require('../../utils/content-view')
 const AS = require('../../utils/activity-summary')
+const RS = require('../../utils/route-schedule')
 
 // 报备类型文案只在 format.INCIDENT_LABELS 定义一次，这里只规定出现顺序（默认落在最稳的一项）。
 const KIND_OPTIONS = J.incidentOptions()
@@ -169,6 +170,7 @@ Page({
     times: [],
     points: [],
     pickups: [],
+    scheduleBasis: '',
     map: { visible: false },
     risks: [],
     equipment: [],
@@ -355,6 +357,10 @@ Page({
       { label: '预计结束', value: F.dtLabel(a.endAt) },
       { label: '报名截止', value: F.dtLabel(a.deadlineAt) },
     ]
+    const routeRows = RS.schedule(
+      a.routeSnapshot.points.map(p => ({ id: p.id, time: p.time })),
+      a.startAt
+    )
     const points = a.routeSnapshot.points.map((p, i) => ({
       id: p.id,
       name: p.name,
@@ -363,7 +369,11 @@ Page({
       coordinates: p.coordinates || null,
       // 剖面组件需要节点高程；没有就是 null，组件据此走「节点高程不足」的诚实空态。
       ele: Number.isFinite(p.ele) ? p.ele : null,
+      scheduleLabel: routeRows[i] && routeRows[i].known ? RS.nodeLabel(routeRows[i]) : '',
     }))
+    // 没有任何节点带轨迹时间时不摆日程区：宁可不说，也不把「没记录时间」印成一条日常提示。
+    const hasSchedule = routeRows.some(r => r.known)
+    const scheduleBasis = hasSchedule ? RS.basisText(routeRows, !!a.startAt) : ''
     const pickups = a.pickupPoints.map(p => ({ id: p.id, name: p.name, address: p.address, time: F.dtLabel(p.meetingAt), coordinates: p.coordinates || null }))
     const risks = a.routeSnapshot.risks.map(r => ({ id: r.id, title: r.title, advice: r.advice }))
     const contentView = CV.buildView(a.content || [])
@@ -492,6 +502,7 @@ Page({
       signupBrief,
       startDate: a.startAt ? F.cnParts(a.startAt).date : '',
       times, points, pickups, risks,
+      scheduleBasis,
       map: buildRouteMap(a),
       track: a.routeSnapshot.track || [],
       equipment: a.equipment,

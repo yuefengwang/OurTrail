@@ -109,8 +109,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
 }
 
 .ce-cover-thumb {
@@ -119,6 +119,18 @@
   border-radius: 8px;
   background: var(--stone);
   flex: 0 0 auto;
+}
+
+.ce-cover-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  background: var(--paper);
+  box-sizing: border-box;
 }
 
 .ce-cover-copy {

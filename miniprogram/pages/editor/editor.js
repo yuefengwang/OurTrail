@@ -6,6 +6,7 @@ const draft = require('../../utils/draft')
 const F = require('../../utils/format')
 const J = require('../../utils/journey')
 const gpx = require('../../utils/gpx')
+const RS = require('../../utils/route-schedule')
 
 const emptyInput = () => ({
   title: '', description: '', organizerIntro: '',
@@ -89,6 +90,10 @@ function coordsOrNull(lat, lng) {
   return valid ? { lat: la, lng: ln } : null
 }
 
+function lineList(text) {
+  return String(text || '').split('\n').map(s => s.trim()).filter(Boolean)
+}
+
 // ---- 时间快捷估算：以出发时刻为锚（中国无夏令时，固定 +08:00 安全）----
 // 平移 N 天/加 N 小时后返回北京墙上时间的 {date, time}
 function shiftDateTime(dateStr, timeStr, days, addHours) {
@@ -130,6 +135,34 @@ function routeAutoTextOf(form) {
   if (form.risks.length) bits.push(form.risks.length + ' 条风险')
   return bits.join(' · ')
 }
+// 节点日程只做推算预览（EDI-02 A）：时间来自轨迹元数据，页面不提供手工计划编辑。
+// 与天气页共用 route-schedule，避免同一份「第几天几点到」出现第二套算法。
+function scheduleRowsOf(form) {
+  const rows = RS.schedule(
+    (form.points || []).map(p => ({ id: p.id, time: p.time })),
+    composeDateTime(form.dt_start.date, form.dt_start.time)
+  )
+  return rows.map((row, i) => {
+    const point = form.points[i] || {}
+    return {
+      id: row.id || ('point-' + i),
+      name: point.name || ('节点 ' + (i + 1)),
+      indexText: String(i + 1).padStart(2, '0'),
+      known: !!row.known,
+      dayIndex: row.dayIndex,
+      label: RS.nodeLabel(row),
+    }
+  })
+}
+function routeDerivedOf(form) {
+  const scheduleRows = scheduleRowsOf(form)
+  return {
+    routeAutoText: routeAutoTextOf(form),
+    scheduleRows,
+    scheduleBasis: RS.basisText(scheduleRows, !!(form.dt_start.date && form.dt_start.time)),
+    scheduleSpanDays: RS.spanDays(scheduleRows),
+  }
+}
 function routePointsToForm(points) {
   return (points || []).map(p => ({
     id: p.id || freshId('point'),
@@ -166,6 +199,13 @@ Page({
     // 自动填充只发生在字段为空时；用户一改标题就清掉来源提示（不覆盖人的输入）。
     titleAutoSource: '',
     routeAutoText: '',
+    // 节点日程是只读派生（EDI-02 A）：轨迹时间差 + 出发时刻，不落库、不手工编辑。
+    scheduleRows: [],
+    scheduleBasis: '',
+    scheduleSpanDays: null,
+    // 装备录入草稿（只是输入框里的字，不入表单/草稿；清单本身就存在 equipmentText）
+    equipmentDraft: '',
+    equipmentSuggestedDraft: '',
     startSuggestions: [],
     // 路线详情/活动说明/风险默认收合：快速创建路径不需要先看完整表单。
     routeDetailsOpen: false,
@@ -318,7 +358,7 @@ Page({
       this.titleAutoValue = autoSeedTitle ? seedTitle : ''
       this.titleAutoSource = autoSeedTitle ? '已按路线名自动填写，可修改' : ''
       const routeLocked = phase === 'gathering' || phase === 'active'
-      this.setData({
+      this.setData(Object.assign({
         loading: false,
         denied,
         isNew: !this.activityId,
@@ -329,11 +369,10 @@ Page({
         form,
         fromRouteTitle,
         titleAutoSource: this.titleAutoSource,
-        routeAutoText: routeAutoTextOf(form),
         canChangeRoute: !routeLocked,
         contentFilled: (form.content || []).length > 0,
         contentResetKey: this.data.contentResetKey + 1,
-      }, () => this.updatePublishReadiness(form))
+      }, routeDerivedOf(form)), () => this.updatePublishReadiness(form))
       this.loadMyActivities()
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
   },
@@ -428,6 +467,36 @@ Page({
     const key = e.currentTarget.dataset.key
     this.setForm({ [key]: e.detail.value })
   },
+  // ---- 装备 chips（EDI-03）：底层仍是 equipmentText/equipmentSuggestedText 的换行文本，
+  // 零 schema、零服务端改动；空值与重复项只在录入端拦，旧数据照样原样往返。 ----
+  onEquipmentDraft(e) {
+    const key = e.currentTarget.dataset.key
+    this.setData({ [key]: e.detail.value })
+  },
+  addEquipment(e) {
+    const group = e.currentTarget.dataset.group
+    const textKey = group === 'suggested' ? 'equipmentSuggestedText' : 'equipmentText'
+    const draftKey = group === 'suggested' ? 'equipmentSuggestedDraft' : 'equipmentDraft'
+    const value = String(this.data[draftKey] || '').trim()
+    if (!value) return
+    const list = lineList(this.data.form[textKey])
+    this.setData({ [draftKey]: '' })
+    if (list.indexOf(value) !== -1) {
+      this.setData({ message: '「' + value + '」已在清单里。' })
+      return
+    }
+    list.push(value)
+    this.setForm({ [textKey]: list.join('\n') })
+  },
+  removeEquipment(e) {
+    const group = e.currentTarget.dataset.group
+    const index = Number(e.currentTarget.dataset.index)
+    const textKey = group === 'suggested' ? 'equipmentSuggestedText' : 'equipmentText'
+    const list = lineList(this.data.form[textKey])
+    if (!Number.isInteger(index) || index < 0 || index >= list.length) return
+    list.splice(index, 1)
+    this.setForm({ [textKey]: list.join('\n') })
+  },
   onApproval(e) {
     this.setForm({ approvalMode: ['manual', 'automatic'][Number(e.detail.value) || 0] })
   },
@@ -456,8 +525,7 @@ Page({
     this.setData(Object.assign({
       form,
       message: '',
-      routeAutoText: routeAutoTextOf(form),
-    }, this.checklistPatch(form)))
+    }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
   onContentChange(e) {
@@ -532,8 +600,7 @@ Page({
       form,
       editingPickups,
       message: auto.created ? '已用路线起点生成集合点，补一句集合位置说明就能发布。' : '',
-      routeAutoText: routeAutoTextOf(form),
-    }, this.checklistPatch(form)))
+    }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
   // 出发时间一旦确定，若已有路线起点且还没有上车点，就用起点生成一个待补地址的集合点。
@@ -651,7 +718,7 @@ Page({
     const { index, key } = e.currentTarget.dataset
     const form = JSON.parse(JSON.stringify(this.data.form))
     form.points[index][key] = e.detail.value
-    this.setData({ form })
+    this.setData(Object.assign({ form }, routeDerivedOf(form)))
     this.persistDraft()
   },
   onPointKind(e) {
@@ -667,14 +734,14 @@ Page({
     form.points.push({ id, name: '', kind: form.points.length ? 'checkpoint' : 'start', lat: '', lng: '' })
     const expandedPoints = Object.assign({}, this.data.expandedPoints)
     expandedPoints[id] = true
-    this.setData({ form, expandedPoints, routeAutoText: routeAutoTextOf(form) })
+    this.setData(Object.assign({ form, expandedPoints }, routeDerivedOf(form)))
     this.persistDraft()
   },
   removePoint(e) {
     const index = e.currentTarget.dataset.index
     const form = JSON.parse(JSON.stringify(this.data.form))
     form.points.splice(index, 1)
-    this.setData({ form, routeAutoText: routeAutoTextOf(form) })
+    this.setData(Object.assign({ form }, routeDerivedOf(form)))
     this.persistDraft()
   },
   togglePoint(e) {
@@ -731,7 +798,7 @@ Page({
       { id: freshId('point'), name: '示例终点', kind: 'finish', lat: '', lng: '' },
     ]
     form.track = [] // 换路线丢弃旧轨迹，避免与其他来源的节点错配
-    this.setData(Object.assign({ form, expandedPoints: {}, showPointCoords: {}, routeAutoText: routeAutoTextOf(form) }, this.checklistPatch(form)))
+    this.setData(Object.assign({ form, expandedPoints: {}, showPointCoords: {} }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
   toggleRouteDetails() {
@@ -884,12 +951,11 @@ Page({
     this.setData(Object.assign({
       form,
       titleAutoSource: this.titleAutoSource,
-      routeAutoText: routeAutoTextOf(form),
       fromRouteTitle: route.title || '',
       editingPickups,
       message: '已带入「' + (route.title || '路线') + '」' + prefilled
         + (auto.created ? '；并已用起点生成集合点，补一句集合位置说明即可。' : '。'),
-    }, this.checklistPatch(form)))
+    }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
 
@@ -1352,14 +1418,13 @@ Page({
       gpxOpen: false,
       form,
       titleAutoSource: this.titleAutoSource,
-      routeAutoText: routeAutoTextOf(form),
       expandedPoints: {},
       showPointCoords: {},
       editingPickups,
       showPickupCoords: {},
       message: '已导入 ' + points.length + ' 个路线节点' + prefilled
         + (auto.created ? '；并已用起点生成集合点，补一句集合位置说明即可。' : '，记得在后续步骤核对保存。'),
-    }, this.checklistPatch(form)))
+    }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
 

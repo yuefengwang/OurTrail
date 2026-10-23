@@ -57,6 +57,22 @@ function handle(state, command, context) {
   }
 }
 
+// D-03：自动通知的类型在写入端定死，读取端不按文案反猜。
+// 新增命令若没在这里登记，落 'unknown'——这是「类型未知」的显式事实，不是失败；
+// 取消只认真正转进 cancelled 的那一次流转，其余阶段流转都归行程变更。
+function noticeKindFor(p) {
+  switch (p.type) {
+    case 'activity.publish': return 'publish'
+    case 'signup.submit': return 'join'
+    case 'signup.review': case 'signup.promote': return 'review'
+    case 'signup.cancel': return 'cancel'
+    case 'activity.transition': return p.next === 'cancelled' ? 'cancel' : 'itinerary'
+    case 'activity.edit': case 'signup.edit': case 'group.setTogether': return 'itinerary'
+    default:
+      return p.type.indexOf('assignment.') === 0 ? 'itinerary' : 'unknown'
+  }
+}
+
 function recordChange(before, after, command, targetIds, context) {
   const p = command.payload
   const activityId = p.type === 'activity.create' || p.type === 'activity.copy' ? targetIds[0] : ('activityId' in p ? p.activityId : null)
@@ -87,6 +103,7 @@ function recordChange(before, after, command, targetIds, context) {
   if (audience) {
     after.notices.push({
       id: context.id('notice'), activityId, audience, sourceEventId: eventId,
+      kind: noticeKindFor(p),
       content: summaries[p.type] + '，请打开活动查看最新安排。', publishedAt: context.now, readBy: {}, deliveries: [],
     })
   }

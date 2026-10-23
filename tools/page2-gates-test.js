@@ -567,6 +567,27 @@ async function gateWeatherJs() {
   section('§2 A-07 接线：改日期 ⇒ 主图回到视口（真 weather.js + 真 handler）')
   api = require('../miniprogram/utils/api')
   chartStore = require('../miniprogram/utils/chart-store')
+  /* D-10：不再用固定 30ms 猜「页面跑完了没有」。两条真实信号：
+     setData 回调计数（applyWeather 的滚动就发生在回调里）+ 在途天气请求计数。
+     测试仍按原样给 api 赋值，setter 只负责计数，不改变返回值与异常语义。 */
+  let inflight = 0
+  function tracked(fn) {
+    return function () {
+      inflight++
+      let p
+      try { p = Promise.resolve(fn.apply(this, arguments)) } catch (e) { inflight--; throw e }
+      p.then(() => { inflight-- }, () => { inflight-- })
+      return p
+    }
+  }
+  ;['getWeather', 'getWeatherByPoint'].forEach(key => {
+    let impl = tracked(api[key])
+    Object.defineProperty(api, key, {
+      configurable: true,
+      get: () => impl,
+      set: fn => { impl = typeof fn === 'function' ? tracked(fn) : fn },
+    })
+  })
   const PAGE_PATH = require.resolve(WEATHER_JS)
   function pageConfig() {
     global.Page = cfg => { global.__P2_PAGE = cfg }
@@ -578,10 +599,15 @@ async function gateWeatherJs() {
     const page = Object.assign({}, cfg)
     page.data = JSON.parse(JSON.stringify(cfg.data || {}))
     page._patches = []
+    page._pendingCbs = 0
     page.setData = function (patch, cb) {
       this._patches.push(patch)
       Object.assign(this.data, patch)
-      if (cb) setImmediate(cb)
+      if (!cb) return
+      this._pendingCbs++
+      setImmediate(() => {
+        try { cb() } finally { this._pendingCbs-- }
+      })
     }
     return page
   }
@@ -646,7 +672,41 @@ async function gateWeatherJs() {
     // 测试就会在 1200ms 的重试间隔外读到半成品状态（本轮第一次就是这么假红的）。
     return { status: 'ready', series: series(from, 7), days: days(from, 7), updatedAt: from + 'T07:00:00+08:00', pointElevation: 3500 }
   }
-  const settle = () => new Promise(r => setTimeout(r, 30))
+  /* 等「页面自己排的回调 + 在途请求」全部归零，而不是猜一个 30ms：
+     applyWeather 的滚动发生在 setData 回调里，中间隔着一轮 Promise 与可能较重的同步装配；
+     负载高时固定 30ms 会先到点（历史读数 98/0 与 95/2 交替）。
+     判据是连续两轮 setImmediate 都无待跑回调且在途请求为 0；回调里再 setData/再请求都会把计数加回去。 */
+  async function settle(page) {
+    // 超时只防死锁，不是等待时长：计数器归零即返回；用墙钟是因为 setImmediate 空转几百轮
+    // 可能还不到一个 80ms 定时器（D-10 自证用例就是这么撞出来的）。
+    const deadline = Date.now() + 5000
+    while (Date.now() < deadline) {
+      await new Promise(r => setImmediate(r))
+      if (page._pendingCbs === 0 && inflight === 0) {
+        await new Promise(r => setImmediate(r))
+        if (page._pendingCbs === 0 && inflight === 0) return
+      }
+    }
+    throw new Error('settle 超时：pendingCbs=' + page._pendingCbs + ' inflight=' + inflight)
+  }
+
+  // —— 等待机制自身的牙齿（D-10）：80ms 迟到的响应，旧 30ms 读数读不到滚动，新信号必须读到
+  {
+    const rec = stubWx({ '.timeline-card': { top: 5000 } })
+    const page = freshPage(rec)
+    api.getWeather = () => new Promise(r => setTimeout(() => r(okResult(DAY0)), 80))
+    api.getWeatherByPoint = api.getWeather
+    chartStore.clear()
+    page.onDate({ detail: { value: DAY0 } })
+    await new Promise(r => setTimeout(r, 30))
+    const early = rec.scrolls.length
+    await settle(page)
+    check('等待信号有牙齿：响应迟到 80ms 时，固定 30ms 读不到滚动，回调+在途计数读到',
+      early === 0 && rec.scrolls.length === 1 && rec.scrolls[0].selector === '.timeline-card',
+      'early=' + early + ' settled=' + JSON.stringify(rec.scrolls))
+    check('等待结束后 setData 回调归零（信号不是一次性的假闩）', page._pendingCbs === 0,
+      'pendingCbs=' + page._pendingCbs)
+  }
 
   // —— 单元层：ensureMeteogramVisible 的分支选择与静默降级
   {
@@ -713,7 +773,7 @@ async function gateWeatherJs() {
     chartStore.clear()
     page.data.dayCards = []
     page.onDate({ detail: { value: addDays(DAY0, 3) } })
-    await settle()
+    await settle(page)
     check('onDate 之后取了一次天气（没被滚动打断）', called === 1, String(called))
     check('改日期 ⇒ 恰一次 pageScrollTo（不新造第二套滚动状态）',
       rec.scrolls.length === 1 && rec.scrolls[0].selector === '.timeline-card', JSON.stringify(rec.scrolls))
@@ -735,7 +795,7 @@ async function gateWeatherJs() {
     chartStore.clear()
     page.data.date = DAY0
     page.fetchWeather()
-    await settle()
+    await settle(page)
     check('阳性对照：不改日期的取数（首屏/重新查询）不滚 —— 红则说明改成无条件滚了',
       page.data.dayCards.length === 7 && rec.scrolls.length === 0, JSON.stringify(rec.scrolls))
   }
@@ -746,13 +806,13 @@ async function gateWeatherJs() {
     api.getWeather = (a, p, date) => { called++; return Promise.reject(new Error('服务挂了')) }
     chartStore.clear()
     page.onDate({ detail: { value: addDays(DAY0, 5) } })
-    await settle()
+    await settle(page)
     check('改日 + 取数失败 ⇒ 不滚（没有图可滚）', rec.scrolls.length === 0, JSON.stringify(rec.scrolls))
     check('失败即作废挂起的复位承诺（不漏到下一次无关刷新）',
       page._revealChartAfterApply === false, String(page._revealChartAfterApply))
     api.getWeather = (a, p, date) => Promise.resolve(okResult(date))
     page.fetchWeather()
-    await settle()
+    await settle(page)
     check('下一次非改日期的成功刷新仍然不滚（承诺不会迟到发作）',
       page.data.dayCards.length === 7 && rec.scrolls.length === 0, JSON.stringify(rec.scrolls))
     check('（旁证）这次刷新确实成功过', called >= 1, String(called))
@@ -766,11 +826,11 @@ async function gateWeatherJs() {
     page.data.dayCards = fixtureDayCards(7)
     page.data.dayCards[0].date = DAY0
     page.onDayTap({ currentTarget: { dataset: { date: DAY0 } } })
-    await settle()
+    await settle(page)
     check('点日条里已选中的那天 ⇒ 早退：不取数也不滚（没多出一条空操作）',
       called === 0 && rec.scrolls.length === 0, called + '/' + JSON.stringify(rec.scrolls))
     page.onDayTap({ currentTarget: { dataset: { date: addDays(DAY0, 2) } } })
-    await settle()
+    await settle(page)
     check('点日条换到另一天 ⇒ 恰一次复位滚动（与 picker 同一条承诺）',
       rec.scrolls.length === 1 && rec.scrolls[0].selector === '.timeline-card', JSON.stringify(rec.scrolls))
   }
@@ -795,7 +855,7 @@ async function gateWeatherJs() {
     chartStore.clear()
     page.data.dayCards = []
     page.onDate({ detail: { value: addDays(DAY0, 1) } })
-    await settle()
+    await settle(page)
     const gotUnified = !!page.data.unified
     check('云场夹具真的造出了 unified（否则这一支根本没跑，判据是空转）', gotUnified,
       'unified=' + JSON.stringify(!!page.data.unified) + ' emptyTitle=' + JSON.stringify(page.data.emptyTitle))

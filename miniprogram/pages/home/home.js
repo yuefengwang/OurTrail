@@ -151,7 +151,8 @@ Page({
     let emptyAction = '发起一场同行'
     if (search) {
       emptyTitle = '没有匹配的活动'
-      emptyDetail = '换个关键词，或切换活动范围。'
+      // D-06：搜索与活动范围是叠加关系，空态要说明搜索没有跳出当前范围。
+      emptyDetail = '搜索只在当前活动范围内查找；换个关键词，或切换活动范围。'
       emptyAction = '清除搜索'
     } else if (filter === 'recent') {
       emptyTitle = '还没有最近查看的活动'

@@ -183,6 +183,8 @@ Page({
       const positionRows = (res.view.positionRows || []).map(row => ({
         activityId: row.activityId, signupId: row.signupId,
         label: row.activityTitle + ' · ' + row.name,
+        // D-05：到期不等于消失——行还在（可撤回），但文案必须改口，不能再称「仍然有效」。
+        expired: !!row.expired,
       }))
       this.revision = res.revision
       this.setData({

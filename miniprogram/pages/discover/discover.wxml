@@ -36,7 +36,7 @@
       <view class="filter-chip {{filterCount ? 'on' : ''}}" hover-class="button-hover" bindtap="onOpenFilters">筛选{{filterCount ? ' · ' + filterCount : ''}}</view>
       <view class="filter-chip {{sort === 'start' ? '' : 'on'}}" hover-class="button-hover" data-sort="default" bindtap="onSort">最新发布</view>
       <view class="filter-chip {{sort === 'start' ? 'on' : ''}}" hover-class="button-hover" data-sort="start" bindtap="onSort">最近出发</view>
-      <text class="result-count tabular">{{cards.length}} 场</text>
+      <text class="result-count tabular">{{cards.length}} 场 · 均未出发</text>
     </view>
 
     <status-panel

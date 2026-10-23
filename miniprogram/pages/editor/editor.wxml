@@ -316,6 +316,26 @@
             <text>添加路线节点</text>
           </view>
           </view>
+
+          <view wx:if="{{form.points.length}}" class="step-group">
+            <view class="section-head">
+              <text class="kicker">节点日程</text>
+            </view>
+            <text class="small muted">{{scheduleBasis}}</text>
+            <view wx:if="{{scheduleRows.length}}" class="timeline">
+              <view wx:for="{{scheduleRows}}" wx:key="id" class="timeline-item">
+                <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
+                  <view style="min-width:0;">
+                    <text class="eyebrow">{{item.indexText}}</text>
+                    <text style="display:block;font-weight:600;margin-top:2px;">{{item.name}}</text>
+                  </view>
+                  <text class="{{item.known ? 'small tabular' : 'small muted'}}" style="flex:0 0 auto;">{{item.label}}</text>
+                </view>
+              </view>
+            </view>
+            <text wx:if="{{scheduleSpanDays > 1}}" class="small muted">全程跨越 {{scheduleSpanDays}} 天。</text>
+            <text wx:if="{{scheduleSpanDays}}" class="small muted">日程只按轨迹时间差推算，不能手工调整；要改时间请重新导入带时间的 GPX。</text>
+          </view>
         </block>
       </view>
 
@@ -630,12 +650,46 @@
         </block>
 
         <block wx:else>
-          <form-field label="必带装备" hint="每行一项。发布后参与者的行前检查以此为准">
-            <textarea class="textarea slim" value="{{form.equipmentText}}" data-key="equipmentText" bindinput="onField" placeholder="如：防滑徒步鞋&#10;头灯&#10;雨具" />
-          </form-field>
-          <form-field label="建议携带" hint="每行一项；可留空。仅作建议，不当作必带承诺">
-            <textarea class="textarea slim" value="{{form.equipmentSuggestedText}}" data-key="equipmentSuggestedText" bindinput="onField" placeholder="如：登山杖&#10;备用袜" />
-          </form-field>
+          <view class="stack-gap3">
+            <text class="field-label">必带装备</text>
+            <view wx:if="{{text.lines(form.equipmentText).length}}" class="cluster">
+              <view
+                wx:for="{{text.lines(form.equipmentText)}}"
+                wx:key="*this"
+                class="chip"
+                hover-class="button-hover"
+                data-group="equipment"
+                data-index="{{index}}"
+                bindtap="removeEquipment"
+              >{{item}} ×</view>
+            </view>
+            <text wx:else class="small muted">还没有必带装备。</text>
+            <view class="cluster" style="flex-wrap:nowrap;">
+              <input class="input" style="flex:1;" value="{{equipmentDraft}}" data-key="equipmentDraft" bindinput="onEquipmentDraft" placeholder="如：防滑徒步鞋" confirm-type="done" data-group="equipment" bindconfirm="addEquipment" />
+              <view class="button secondary" hover-class="button-hover" data-group="equipment" bindtap="addEquipment">添加</view>
+            </view>
+            <text class="small muted">发布后参与者的行前检查以「必带」为准；点一项可移除。</text>
+          </view>
+          <view class="stack-gap3">
+            <text class="field-label">建议携带</text>
+            <view wx:if="{{text.lines(form.equipmentSuggestedText).length}}" class="cluster">
+              <view
+                wx:for="{{text.lines(form.equipmentSuggestedText)}}"
+                wx:key="*this"
+                class="chip"
+                hover-class="button-hover"
+                data-group="suggested"
+                data-index="{{index}}"
+                bindtap="removeEquipment"
+              >{{item}} ×</view>
+            </view>
+            <text wx:else class="small muted">还没有建议携带清单。</text>
+            <view class="cluster" style="flex-wrap:nowrap;">
+              <input class="input" style="flex:1;" value="{{equipmentSuggestedDraft}}" data-key="equipmentSuggestedDraft" bindinput="onEquipmentDraft" placeholder="如：登山杖" confirm-type="done" data-group="suggested" bindconfirm="addEquipment" />
+              <view class="button secondary" hover-class="button-hover" data-group="suggested" bindtap="addEquipment">添加</view>
+            </view>
+            <text class="small muted">仅作建议，不当作必带承诺；可留空。</text>
+          </view>
           <form-field label="费用说明" hint="仅说明费用，线下结算；不收款。">
             <textarea class="textarea slim" value="{{form.feeNote}}" data-key="feeNote" bindinput="onField" />
           </form-field>

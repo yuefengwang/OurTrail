@@ -1,0 +1,127 @@
+{
+  "startedAt": "2026-10-23T04:32:45.473Z",
+  "port": 9426,
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12"
+  },
+  "markers": {
+    "meExpired": true,
+    "meValid": true,
+    "meConsequence": true,
+    "discoverScope": true,
+    "noticesGrew": true,
+    "noticesButtonGone": false,
+    "noticesDomMatches": true,
+    "anoticesGrew": true,
+    "anoticesButtonGone": false,
+    "anoticesDomMatches": true
+  },
+  "shots": [
+    {
+      "name": "me-position-rows.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 54313
+    },
+    {
+      "name": "discover-count.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 110722
+    },
+    {
+      "name": "notices-before.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 45558
+    },
+    {
+      "name": "notices-after.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 48754
+    },
+    {
+      "name": "anotices-before.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 50260
+    },
+    {
+      "name": "anotices-after.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 53354
+    }
+  ],
+  "notes": [],
+  "me": {
+    "rows": [
+      {
+        "subs": [
+          "已过期（活动已结束）",
+          "撤回后本次不再共享；如需恢复需重新上报。"
+        ]
+      },
+      {
+        "subs": [
+          "本次活动的位置授权仍然有效",
+          "撤回后本次不再共享；如需恢复需重新上报。"
+        ]
+      }
+    ],
+    "revokeCount": 2
+  },
+  "discover": {
+    "resultCount": "50 场 · 均未出发"
+  },
+  "notices": {
+    "dataSource": "real",
+    "real": {
+      "items": 669,
+      "hidden": 649
+    },
+    "before": {
+      "items": 669,
+      "visible": 20,
+      "hidden": 649,
+      "domCards": 20,
+      "btn": "加载更多（还有 649 条）"
+    },
+    "after": {
+      "items": 669,
+      "visible": 40,
+      "hidden": 629,
+      "domCards": 40,
+      "btn": "加载更多（还有 629 条）"
+    }
+  },
+  "anotices": {
+    "dataSource": "real",
+    "real": {
+      "items": 669,
+      "hidden": 649
+    },
+    "before": {
+      "items": 669,
+      "visible": 20,
+      "hidden": 649,
+      "domCards": 20,
+      "btn": "加载更多（还有 649 条）"
+    },
+    "after": {
+      "items": 669,
+      "visible": 40,
+      "hidden": 629,
+      "domCards": 40,
+      "btn": "加载更多（还有 629 条）"
+    }
+  },
+  "finishedAt": "2026-10-23T04:33:09.682Z",
+  "failure": "VALIDITY noticesButtonGone,anoticesButtonGone"
+}
