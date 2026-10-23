@@ -28,7 +28,8 @@
 }
 .filter-chip {
   flex: 0 0 auto;
-  min-height: 34px;
+  /* FD-01：命中高对齐 ourtrail-ui 规则 8 与 --touch-target（app.wxss:67）；原 34px 低于 44px 触控下限。 */
+  min-height: var(--touch-target);
   padding: 0 12px;
   border-radius: var(--radius-tag);
   background: var(--stone);
