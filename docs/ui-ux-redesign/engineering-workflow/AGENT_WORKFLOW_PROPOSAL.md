@@ -24,6 +24,8 @@
 
 ## 3. 本轮冻结清单（C 角色不得越界）
 
+（night-v2 轮次范围；后续批次边界以 [FLASH_EXECUTION_PLAN.md](FLASH_EXECUTION_PLAN.md) §6 为准）
+
 - `cloudfunctions/**`（零改动 ⇒ 不需重部署）
 - `tools/**` 既有套件（存量红只归因不擅修；新证据脚本只落 `docs/` 或临时目录）
 - `miniprogram/utils/**`（T011 仅允许页面 js 内纯展示派生字段）

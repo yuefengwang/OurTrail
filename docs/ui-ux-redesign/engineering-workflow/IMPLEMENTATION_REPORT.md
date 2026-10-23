@@ -22,14 +22,14 @@
 
 - 静态：`check.js` 0、`check-handlers.js` 0（两提交时点）。
 - 场景/样式：scenario-notices 91/0、scenario-me 143/0、swx1 45/0、swx2 110/0、t4-e08 41/0、b4-pad 32/0、b4-e05 49/0、ui-consistency 17/0、page2 98/0（clean 基线；带改动时偶发 2 红见下）。
-- 存量红归因：m02 65/1＝clean 基线同款（PRIVACY 章节标题计数，night-v1 登记）；trip2 66/10 未跑（冻结清单外，继承登记）。
-- **OPEN：page2-gates 时序竞态**（详见 VISUAL_QA_REPORT §3）：探针证 setImmediate 回调 vs settle(30ms) 窗口竞态；noop 注释亦红绿各一 ⇒ 非内容逻辑；tools/ 冻结未修，留门 owner 裁决。bisect 过程用独立 worktree（已清理），未污染主工作区。
+- 存量红归因：m02 65/1＝clean 基线同款（PRIVACY 章节标题计数，night-v1 登记；m02 的 clean 对拍为历史，本轮未重跑）；trip2 66/10 未跑（冻结清单外，继承登记）。
+- **OPEN：page2-gates 时序竞态**（详见 VISUAL_QA_REPORT §3）：探针证 setImmediate 回调 vs settle(30ms) 窗口竞态；noop 注释亦红绿各一 ⇒ 非内容逻辑；tools/ 冻结未修，留门 owner 裁决。bisect 过程用独立 worktree（已清理），未污染主工作区；98/0 为当晚单次读数，OPEN 不变，见 MORNING §5.1。
 - 门有牙齿的正面证据：首轮误加未定义类 `onboard-card` 被 G10/m02 S1/ui-consistency T4.1 三门同点抓红，删除后回基线。
 
 ## 4. 真机验收摘要
 
-通道：IDE 新起（机器原无会话）→ 9425；after 前 close+open 重编译（仅自起会话）；新鲜度门 `.stack-gap3` 三页全过。
-帧：before 6（真实数据）/ after 6（真实数据）/ states+gaps 13（注入逐帧标注）；清单与判读边界见证据包 README。
+通道：IDE 新起（机器原无会话）→ 9425；after 前 close+open 重编译（仅自起会话）；三页通过 `.stack-gap3` 检查（勘误：该判据在 master 已存在、不唯一，不能证明 bundle 新鲜）。
+帧：before 6（真实数据）/ after 6（真实数据）/ states+gaps 13（注入逐帧标注；其中 3 张为未拍到目标的滚屏过程帧，不构成独立通过样例；所有帧 306×660）；清单与判读边界见证据包 README。
 定向修正一轮：引导卡箭头（D1）复拍复验通过；独立 QA 无回归结论。
 
 ## 5. 遗留与下一步
@@ -45,4 +45,4 @@
 
 ## 6. 工作区结束状态
 
-分支 `agent/ourtrail-night-ui-v2`＝`5395f02`；未跟踪遗留 4 件原样未动；新增未跟踪＝`docs/ui-ux-redesign/engineering-workflow/`（8 文档）与证据包（随 docs 提交）；bisect worktree 已删除；IDE 会话保持开启（9425）供晨间复核。
+分支 `agent/ourtrail-night-ui-v2`＝`220a91c`（实现提交仍为 `a81e3b7`/`5395f02`，HEAD 已前移）；未跟踪遗留 4 件原样未动；新增未跟踪＝`docs/ui-ux-redesign/engineering-workflow/`（10 文档）与证据包（随 docs 提交）；bisect worktree 已删除；IDE 会话保持开启（9425）供晨间复核。

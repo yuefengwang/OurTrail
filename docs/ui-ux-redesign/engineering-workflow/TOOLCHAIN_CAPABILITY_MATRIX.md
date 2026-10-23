@@ -11,10 +11,10 @@
 | 4 | A 层服务链路 E2E（真信封打 exports.main） | `tools/e2e-test.js` 等 7 套 | 已实测 | 历轮 exit 0 | 夹具时间一律 `Date.now()` 偏移（铁律 35 教训） |
 | 5 | B 层真模拟器 UI E2E | `tools/e2e-ui-test.js` / `e2e-ui-state-test.js` / `e2e-golden-path-test.js`（固定 9420） | 部分支持需补强 | 历史 INCONCLUSIVE（exit 2，环境门）；GP-01 既有红已归因 | 本轮不改这三套；用自研驱动（#7）替代取证 |
 | 6 | 开发者工具 IDE 启动/登录/自动化端口绑定 | `cli open/islogin/auto --port 33278` | 已实测（本轮） | 2026-10-22 本会话：IDE 未运行→`open` 新起；`islogin={"login":true}`；`auto` 回 `{"autoPort":9425}` 且 AppID 回显 wx1227a277a3f2f7ea | 启动前确认无他人会话（tasklist 无 wechatdevtools 进程）；**不 quit、不 close 他人会话** |
-| 7 | 进入真实页面 + 真实云数据渲染 | automator `reLaunch` + `waitFor` | 已实测（本轮基线） | `shot-night-v2-baseline.js` 读数与截图落盘（before/） | 读数门槛链先断言再截图（铁律 32⑥） |
+| 7 | 进入真实页面 + 真实云数据渲染 | automator `reLaunch` + `waitFor` | 已实测（本轮基线） | `shot-night-v2-baseline.js` 读数与截图落盘（before/）；驱动在仓库外临时目录，未入库；复跑需先复制 | 读数门槛链先断言再截图（铁律 32⑥） |
 | 8 | 真实截图采集与归档 | `mp.screenshot()` base64→Buffer→PNG | 已实测 | 历轮 + 本轮 before/ 六张 | 直接 writeFileSync 会得"文本伪装 png"（坑 1） |
 | 9 | 滚动后取景 | `mp.pageScrollTo(px)` | 已实测 | 历轮 | 滚动后 `page.$` 可能失效，重取句柄 |
-| 10 | bundle 新鲜度 | 新起 IDE＝新编译；改码后须 `close`+`open` 重编译 | 部分支持需补强 | AGENTS.md 坑 2；night-v1 曾对旧 bundle 排查良久 | 本轮 after 截图前对**本会话自起会话**执行 close+open 并记录；新鲜度以新文案上屏自证 |
+| 10 | bundle 新鲜度 | 新起 IDE＝新编译；改码后须 `close`+`open` 重编译 | 部分支持需补强 | AGENTS.md 坑 2；night-v1 曾对旧 bundle 排查良久 | 本轮 after 截图前对**本会话自起会话**执行 close+open 并记录；新鲜度以新文案上屏自证；夜间实际用 `.stack-gap3` 自证，该判据不唯一（master 已存在），后续须用最终代码独有且可观测的差异做版本门 |
 | 11 | 注入合成数据取证（渲染路径验证） | `page.setData(生产形状全集)` | 已实测 | 铁律 32⑥ 三门槛；night-v1 六态对拍 | 注入只用于状态矩阵补拍；基线/验收主证据用真实云数据 |
 | 12 | 像素级自动比对 | 无 | 不支持 | ourtrail-ui §4：仓库内零像素比对工具 | 人眼 + 独立 QA Agent 读图；差异清单逐条指回截图区域 |
 | 13 | Playwright / chrome-devtools / browser-use 控小程序 | MCP | 不支持 | WXML 无浏览器宿主；任务书 6.5 明令不得冒充 | 仅用于 Web 产物（本轮无） |

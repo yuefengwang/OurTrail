@@ -1,5 +1,11 @@
 # VISUAL_QA_REPORT — T011 真实截图验收与复验（night-v2，2026-10-22）
 
+> **勘误（2026-10-23，FU-01）**：当前结论以 [MORNING_REVIEW_REPORT.md](MORNING_REVIEW_REPORT.md) 为准：
+> ① `.stack-gap3` 在 master 已存在，不具唯一性；历史“新鲜度全过”不成立，版本映射见 MORNING §4.1。
+> ② 独立 QA 未覆盖 onboarding 帧，箭头修正的复视为**主控单方**。
+> ③ 注入帧只证明渲染路径（E2），不证明命令执行或真实交互。
+> ④ 截图“330px”应为 306×660（实测 25 张 PNG 均为 306×660）。
+
 审查者：① 主控 M4 目视（before/after/states 全帧）；② **独立 QA 子 Agent**（只读截图+规格+总览图，不看实现 diff）。证据包 `docs/ui-ux-redesign/evidence/night-v2-2026-10-22/`（README 含环境/新鲜度/数据条件）。代码：before `c1a5aeb` → after `a81e3b7` → 修复 `5395f02`。
 
 ## 1. 第一轮差异清单（主控 M4，after@a81e3b7 对 PAGE_SPEC §10）
@@ -7,7 +13,7 @@
 | 问题 | 实际表现 | 目标表现 | 影响 | 修正方式 | 复验结果 |
 |---|---|---|---|---|---|
 | G1 导航bar 深绿 | before 三页 forest 底白字 | paper 底黑字（家族一致） | 中 | 三页 json 两键（a81e3b7） | **PASS**：after 三页 top 帧 + routes-family-nav 对照帧 |
-| G2 me 昵称字阶 | 17px | 18px（--text-title） | 低 | me.wxss（a81e3b7） | 文本级 PASS；像素级 UNVERIFIED（330px 截图量不出） |
+| G2 me 昵称字阶 | 17px | 18px（--text-title） | 低 | me.wxss（a81e3b7） | 文本级 PASS；像素级 UNVERIFIED（306×660 截图量不出） |
 | G3 撤回语义色 | 中性 forest | danger 语义色 | 低 | me.wxss `.revoke-text`（a81e3b7） | **PASS**：me-revoke-short-y2100 注入帧红字可见（真实 positionRows 空 ⇒ 注入标注） |
 | G4 行内 gap | `style="gap:12px"` ×6 | `.stack-gap3` 同值类 | 低 | wxml 类替换（a81e3b7） | PASS（无视觉变化，b4-e05 ratchet 通过） |
 | **D1 引导卡箭头换行左坠**（首轮新发现缺陷） | me-onboarding@a81e3b7：`.cluster` wrap 把 `›` 挤到独立行左端 | 箭头钉行右端 | 中 | `.onboard-row` nowrap + `.onboard-main` min-width:0（5395f02） | **PASS**：复拍 me-onboarding 帧箭头在行右端 |
@@ -38,4 +44,4 @@
 
 ## 5. 验收判定
 
-Gate D：**通过（带 UNVERIFIED 清单）**——规格 §10 六项中 4 项 PASS 有像素证据、2 项像素级 UNVERIFIED 已登记；一轮定向修正（D1）有复验；独立 QA 与主控结论一致且无回归。
+Gate D：有条件通过（主控复核覆盖；独立 QA 覆盖子集；UNVERIFIED 见 §4）；合并准入见 [MORNING_REVIEW_REPORT.md](MORNING_REVIEW_REPORT.md)。
