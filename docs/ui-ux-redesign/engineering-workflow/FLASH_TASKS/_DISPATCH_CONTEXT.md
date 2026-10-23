@@ -7,14 +7,14 @@
 | 项 | 值 |
 |---|---|
 | 用户主工作区（**禁止进入/修改/提交**） | `D:/OurTrail`，当前分支 `agent/ourtrail-night-ui-v2`，HEAD `220a91c`（**不是 master**）；有 4 个未跟踪遗留材料 |
-| 规划与执行工作树（**在这里工作**） | `D:/OurTrail-ui-followup-20261023`，分支 `win/ui-followup-plan-20261023`，HEAD `220a91c`，相对本地 master `c1a5aeb` 领先 3 个提交；**0 提交、无 upstream** |
+| 规划与执行工作树（**在这里工作**） | `D:/OurTrail-ui-followup-20261023`，分支 `win/ui-followup-plan-20261023`，基线提交 `64fca5c`（规划资产）与 `0d8dde7`（校验读数），二者均基于 night HEAD `220a91c`；相对本地 master `c1a5aeb` 领先 5 个提交；**无 upstream、未推送**；开工前工作树应为干净 |
 | 规划文档绝对前缀 | `D:/OurTrail-ui-followup-20261023/docs/ui-ux-redesign/engineering-workflow/` |
 | 证据绝对前缀 | `D:/OurTrail-ui-followup-20261023/docs/ui-ux-redesign/evidence/morning-review-2026-10-23/` |
 | 提交链 | `c1a5aeb`(master) → `a81e3b7` → `5395f02` → `220a91c`(night HEAD)。**未合并、未推送**；远端状态本轮未查询，不得替它下结论 |
 | 环境 | Windows 10 · Git Bash · Node **v24.19.0** · 仓库零 npm 依赖；测试一律 `node tools/x.js`，自打印 `passed=N failed=N` |
 | DevTools | **不在 Flash 职责内**：禁止启动/关闭/登录/切换账号；视觉验证由编排者在 D-01 授权后执行 |
 
-规划文档当前是**未跟踪文件**。不要为了让 `git status` 干净而提交它们；是否先做一次 planning 基线提交由编排者决定（P0，不属于任何任务卡）。
+规划文档已在基线提交 `64fca5c` 中跟踪，工作树应干净。不要为了让 `git status` “更干净”而提交或清理任何东西；若开工时 `git status` 非空，先报告。是否再做 planning 提交由编排者决定。
 
 ## B. 派发时的任务状态（以此为准，不得自行改写）
 

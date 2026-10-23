@@ -62,7 +62,7 @@ FD-01 独立于所有产品决策；FU-01 独立于代码。二者可并行（�
 
 ## 6. 通用执行与安全规则（每张卡都适用）
 
-1. **工作目录**：`D:/OurTrail-ui-followup-20261023`（本轮已建；从 `220a91c` 起）。禁止进入/修改 `D:/OurTrail` 主工作区。
+1. **工作目录**：`D:/OurTrail-ui-followup-20261023`（基线提交 `64fca5c` + `0d8dde7`，基于 `220a91c`；开工前应干净）。禁止进入/修改 `D:/OurTrail` 主工作区。
 2. **一次一写者**：同一文件同时只允许一个执行者；Card 内白名单之外零改动。
 3. **提交**：每卡一个本地提交，可单提交 revert；**不 push、不 merge、不 rebase**；提交信息含任务 ID。
 4. **禁止**：`git reset --hard`、`git clean`、覆盖式 checkout、改 `tools/**`、改 `cloudfunctions/**`、碰天气/privacy、启动或关闭微信开发者工具、任何云部署、任何真实账号写入。

@@ -9,7 +9,7 @@
 | 项 | 值 |
 |---|---|
 | ❌ 用户主工作区（禁止进入/修改/提交） | `D:/OurTrail`，分支 `agent/ourtrail-night-ui-v2`，HEAD `220a91c`（**不是 master**），含 4 件未跟踪材料 |
-| ✅ 你的工作树 | `D:/OurTrail-ui-followup-20261023`，分支 `win/ui-followup-plan-20261023`，基于 `220a91c`（本地 master 为 `c1a5aeb`） |
+| ✅ 你的工作树 | `D:/OurTrail-ui-followup-20261023`，分支 `win/ui-followup-plan-20261023`，基线提交 `64fca5c` + `0d8dde7`（均基于 `220a91c`；本地 master 为 `c1a5aeb`）；**无 upstream、未推送；开工前工作树应干净** |
 | 规划文档 | `D:/OurTrail-ui-followup-20261023/docs/ui-ux-redesign/engineering-workflow/` |
 | 本轮证据 | `D:/OurTrail-ui-followup-20261023/docs/ui-ux-redesign/evidence/morning-review-2026-10-23/` |
 
