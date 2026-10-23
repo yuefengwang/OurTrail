@@ -1,0 +1,275 @@
+{
+  "startedAt": "2026-10-23T05:29:38.404Z",
+  "checks": [
+    {
+      "name": "editor 已脱离 loading（页面真实载入）",
+      "ok": true,
+      "extra": {
+        "denied": ""
+      }
+    },
+    {
+      "name": "日程行数 = 3",
+      "ok": true,
+      "extra": [
+        "第1天 08:00",
+        "第1天 09:30",
+        "第1天 11:15"
+      ]
+    },
+    {
+      "name": "起点 = 第1天 08:00",
+      "ok": true,
+      "extra": "第1天 08:00"
+    },
+    {
+      "name": "垭口 = 第1天 09:30（+90min）",
+      "ok": true,
+      "extra": "第1天 09:30"
+    },
+    {
+      "name": "营地 = 第1天 11:15（+195min）",
+      "ok": true,
+      "extra": "第1天 11:15"
+    },
+    {
+      "name": "日程口径为已定出发时刻",
+      "ok": true,
+      "extra": "按轨迹记录的时间差与出发时刻推算抵达时间，日期已自动对齐。"
+    },
+    {
+      "name": "全程 1 天",
+      "ok": true,
+      "extra": 1
+    },
+    {
+      "name": "DOM 出现 3 条日程",
+      "ok": true,
+      "extra": 3
+    },
+    {
+      "name": "DOM 含 08:00 / 09:30 / 11:15",
+      "ok": true,
+      "extra": [
+        "01\n山口起点\n第1天 08:00",
+        "02\n云海垭口\n第1天 09:30",
+        "03\n终点营地\n第1天 11:15"
+      ]
+    },
+    {
+      "name": "编辑态出现 3 个装备 chip",
+      "ok": true,
+      "extra": [
+        "登山杖 ×",
+        "头灯 ×",
+        "雨衣 ×"
+      ]
+    },
+    {
+      "name": "chip 触控高度 ≥44px",
+      "ok": true,
+      "extra": {
+        "width": 76,
+        "height": 44
+      }
+    },
+    {
+      "name": "点「添加」后写入 form.equipmentText",
+      "ok": true,
+      "extra": "登山杖\n头灯\n防潮垫"
+    },
+    {
+      "name": "chip 数量 3→4",
+      "ok": true,
+      "extra": [
+        "登山杖 ×",
+        "头灯 ×",
+        "防潮垫 ×",
+        "雨衣 ×"
+      ]
+    },
+    {
+      "name": "点 chip 后从 form 移除",
+      "ok": true,
+      "extra": "登山杖\n头灯"
+    },
+    {
+      "name": "chip 数量 4→3",
+      "ok": true,
+      "extra": [
+        "登山杖 ×",
+        "头灯 ×",
+        "雨衣 ×"
+      ]
+    },
+    {
+      "name": "重复项不入清单",
+      "ok": true,
+      "extra": "登山杖\n头灯"
+    },
+    {
+      "name": "重复项给出提示",
+      "ok": true,
+      "extra": "「登山杖」已在清单里。"
+    },
+    {
+      "name": "content-editor 组件存在",
+      "ok": true,
+      "extra": null
+    },
+    {
+      "name": "封面行存在",
+      "ok": true,
+      "extra": null
+    },
+    {
+      "name": "正文输入区存在",
+      "ok": true,
+      "extra": null
+    },
+    {
+      "name": "封面行在正文之前（文档顺序）",
+      "ok": true,
+      "extra": {
+        "coverTop": 454.3984375,
+        "bodyTop": 525.3984375
+      }
+    },
+    {
+      "name": "空态占位「封面」",
+      "ok": true,
+      "extra": "封面"
+    },
+    {
+      "name": "空态文案：添加正文图片后自动使用第一张",
+      "ok": true,
+      "extra": null
+    },
+    {
+      "name": "无图时不出现「更换」",
+      "ok": true,
+      "extra": null
+    },
+    {
+      "name": "有图时显示真实缩略图（非空占位）",
+      "ok": true,
+      "extra": null
+    },
+    {
+      "name": "有图未指定封面时文案：默认用正文第一张图片",
+      "ok": true,
+      "extra": null
+    },
+    {
+      "name": "点「更换」打开封面选择层",
+      "ok": true,
+      "extra": true
+    },
+    {
+      "name": "activity 页面已退出 loading/denied",
+      "ok": true,
+      "extra": {
+        "loading": false,
+        "denied": ""
+      }
+    },
+    {
+      "name": "活动页出现 3 条日程",
+      "ok": true,
+      "extra": 3
+    },
+    {
+      "name": "活动页逐点时刻 08:00/09:30/11:15",
+      "ok": true,
+      "extra": [
+        "01 · 起点\n山口起点\n第1天 08:00",
+        "02 · 途中节点\n云海垭口\n第1天 09:30",
+        "03 · 终点\n终点营地\n第1天 11:15"
+      ]
+    },
+    {
+      "name": "活动页显示推算口径",
+      "ok": true,
+      "extra": null
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "edi02-editor-schedule.png",
+      "bytes": 47555
+    },
+    {
+      "name": "edi03-equipment-chips.png",
+      "bytes": 38571
+    },
+    {
+      "name": "edi01a-cover-empty.png",
+      "bytes": 40922
+    },
+    {
+      "name": "edi01b-cover-sheet.png",
+      "bytes": 46203
+    },
+    {
+      "name": "edi02-activity-schedule.png",
+      "bytes": 55109
+    }
+  ],
+  "data": {
+    "editorSchedule": {
+      "rows": [
+        {
+          "name": "山口起点",
+          "label": "第1天 08:00",
+          "known": true
+        },
+        {
+          "name": "云海垭口",
+          "label": "第1天 09:30",
+          "known": true
+        },
+        {
+          "name": "终点营地",
+          "label": "第1天 11:15",
+          "known": true
+        }
+      ],
+      "basis": "按轨迹记录的时间差与出发时刻推算抵达时间，日期已自动对齐。",
+      "span": 1
+    },
+    "editorTimelineTexts": [
+      "01\n山口起点\n第1天 08:00",
+      "02\n云海垭口\n第1天 09:30",
+      "03\n终点营地\n第1天 11:15"
+    ],
+    "chipsInitial": [
+      "登山杖 ×",
+      "头灯 ×",
+      "雨衣 ×"
+    ],
+    "chipsAfterAdd": [
+      "登山杖 ×",
+      "头灯 ×",
+      "防潮垫 ×",
+      "雨衣 ×"
+    ],
+    "chipsAfterRemove": [
+      "登山杖 ×",
+      "头灯 ×",
+      "雨衣 ×"
+    ],
+    "chipsAfterDedupe": [
+      "登山杖 ×",
+      "头灯 ×",
+      "雨衣 ×"
+    ],
+    "dedupeMessage": "「登山杖」已在清单里。",
+    "activityTimelineTexts": [
+      "01 · 起点\n山口起点\n第1天 08:00",
+      "02 · 途中节点\n云海垭口\n第1天 09:30",
+      "03 · 终点\n终点营地\n第1天 11:15"
+    ]
+  },
+  "failed": 0,
+  "finishedAt": "2026-10-23T05:30:04.234Z"
+}
