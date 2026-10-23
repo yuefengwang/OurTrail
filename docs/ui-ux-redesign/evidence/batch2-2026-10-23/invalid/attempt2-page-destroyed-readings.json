@@ -1,0 +1,130 @@
+{
+  "startedAt": "2026-10-23T04:33:25.714Z",
+  "port": 9426,
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12"
+  },
+  "markers": {
+    "meExpired": true,
+    "meValid": true,
+    "meConsequence": true,
+    "discoverScope": true,
+    "noticesGrew": true,
+    "noticesStep20": true,
+    "noticesHiddenShrunk": true,
+    "noticesDomMatches": true,
+    "noticesButtonAccurate": true,
+    "anoticesGrew": true,
+    "anoticesStep20": true,
+    "anoticesHiddenShrunk": true,
+    "anoticesDomMatches": true,
+    "anoticesButtonAccurate": true
+  },
+  "shots": [
+    {
+      "name": "me-position-rows.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 54313
+    },
+    {
+      "name": "discover-count.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 110722
+    },
+    {
+      "name": "notices-before.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 45554
+    },
+    {
+      "name": "notices-after.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 48754
+    },
+    {
+      "name": "anotices-before.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 50260
+    },
+    {
+      "name": "anotices-after.png",
+      "w": 306,
+      "h": 660,
+      "bytes": 53354
+    }
+  ],
+  "notes": [],
+  "me": {
+    "rows": [
+      {
+        "subs": [
+          "已过期（活动已结束）",
+          "撤回后本次不再共享；如需恢复需重新上报。"
+        ]
+      },
+      {
+        "subs": [
+          "本次活动的位置授权仍然有效",
+          "撤回后本次不再共享；如需恢复需重新上报。"
+        ]
+      }
+    ],
+    "revokeCount": 2
+  },
+  "discover": {
+    "resultCount": "50 场 · 均未出发"
+  },
+  "notices": {
+    "dataSource": "real",
+    "real": {
+      "items": 669,
+      "hidden": 649
+    },
+    "before": {
+      "items": 669,
+      "visible": 20,
+      "hidden": 649,
+      "domCards": 20,
+      "btn": "加载更多（还有 649 条）"
+    },
+    "after": {
+      "items": 669,
+      "visible": 40,
+      "hidden": 629,
+      "domCards": 40,
+      "btn": "加载更多（还有 629 条）"
+    }
+  },
+  "anotices": {
+    "dataSource": "real",
+    "real": {
+      "items": 669,
+      "hidden": 649
+    },
+    "before": {
+      "items": 669,
+      "visible": 20,
+      "hidden": 649,
+      "domCards": 20,
+      "btn": "加载更多（还有 649 条）"
+    },
+    "after": {
+      "items": 669,
+      "visible": 40,
+      "hidden": 629,
+      "domCards": 40,
+      "btn": "加载更多（还有 629 条）"
+    }
+  },
+  "failure": "Error: page destroyed\n    at Connection.onMessage (C:\\Users\\thinkbook\\AppData\\Local\\Temp\\opencode\\mp-auto\\node_modules\\miniprogram-automator\\out\\Connection.js:1:1077)\n    at Transport.emit (node:events:509:28)\n    at WebSocket.<anonymous> (C:\\Users\\thinkbook\\AppData\\Local\\Temp\\opencode\\mp-auto\\node_modules\\miniprogram-automator\\out\\Transport.js:1:354)\n    at WebSocket.onMessage (C:\\Users\\thinkbook\\AppData\\Local\\Temp\\opencode\\mp-auto\\node_modules\\ws\\lib\\event-target.js:120:16)\n    at WebSocket.emit (node:events:509:28)\n    at Receiver.receiverOnMessage (C:\\Users\\thinkbook\\AppData\\Local\\Temp\\opencode\\mp-auto\\node_modules\\ws\\lib\\websocket.js:807:20)\n    at Receiver.emit (node:events:509:28)\n    at Receiver.dataMessage (C:\\Users\\thinkbook\\AppData\\Local\\Temp\\opencode\\mp-auto\\node_modules\\ws\\lib\\receiver.js:448:14)\n    at Receiver.getData (C:\\Users\\thinkbook\\AppData\\Local\\Temp\\opencode\\mp-auto\\node_modules\\ws\\lib\\receiver.js:377:17)\n    at Receiver.startLoop (C:\\Users\\thinkbook\\AppData\\Local\\Temp\\opencode\\mp-auto\\node_modules\\ws\\lib\\receiver.js:158:22)"
+}
