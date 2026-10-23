@@ -527,7 +527,7 @@
             <text class="section-title">谁能看到这个活动</text>
             <text class="small muted">{{form.visibility === 'link' ? '仅链接可见' : '公开到发现页'}}</text>
           </view>
-          <picker range="{{['公开到发现页', '仅通过分享链接可见']}}" bindchange="onVisibility">
+          <picker range="{{['公开到发现页', '仅通过分享链接可见']}}" value="{{form.visibility === 'link' ? 1 : 0}}" bindchange="onVisibility">
             <view class="picker">
               <text class="picker-value">{{form.visibility === 'link' ? '仅通过分享链接可见' : '公开到发现页'}}</text>
               <text class="picker-arrow">▾</text>

@@ -1149,6 +1149,10 @@ async function scenario15() {
       && wxml.indexOf('公开到发现页') !== -1
       && wxml.indexOf('仅通过分享链接可见') !== -1
       && wxml.indexOf('form.visibility') !== -1)
+    // picker 缺 value 时缺省高亮第 0 项：当前是 link 却直接确认，会把值静默改回 discover。
+    const visLine = wxml.split('\n').find(l => l.indexOf('bindchange="onVisibility"') !== -1) || ''
+    check('可见范围 picker 的 value 指向当前项',
+      visLine.indexOf('value="{{form.visibility') !== -1, visLine.trim())
   }
 }
 
