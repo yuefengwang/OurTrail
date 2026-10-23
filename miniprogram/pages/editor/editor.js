@@ -229,6 +229,11 @@ Page({
     // 发布就绪：必填一清空就更新，底栏可在任意步骤直接发布。
     publishReady: false,
     requiredMissingText: '',
+    // 缺项的展示分组（title/time/pickup）：只服务「还差 N 项」与跳转，
+    // 发布门仍看 missingForPublish 的原始 5 条（标签/步骤/条数不变）。
+    requiredGroups: [],
+    // 自动生成（路线起点/出发时间推算）的集合点 id；仅内存态，用于折叠卡上的来源徽标。
+    autoPickupIds: {},
     publishSummaryText: '',
     canChangeRoute: true,
     contentBusy: false,
@@ -239,6 +244,7 @@ Page({
     templateCopyOpen: false,
     templateId: '',
     templateIndex: -1,
+    templateConfirmOpen: false,
     // 路线库预填（V2.0）：从路线库发起活动时带入的路线名（空 = 非路线预填入口）
     fromRouteTitle: '',
     // 发布
@@ -246,6 +252,8 @@ Page({
     // 可后补清单（2026-10-14 快速创建）：发布确认层逐项点名，不拦路
     deferred: [],
     deferredText: '',
+    deferredItems: [],
+    publishSummaryLines: [],
     deleteDraftOpen: false,
     participate: false,
     dataUse: false,
@@ -257,6 +265,9 @@ Page({
     profileGate: false,
     profileGateOpen: false,
     message: '',
+    // 成功提示里可带一个动作出口（如「去确认集合点」）；step 为落点，-1 = 不提供。
+    messageActionLabel: '',
+    messageActionStep: -1,
     busy: false,
     busyAt: 0,
     // GPX 导入
@@ -276,6 +287,8 @@ Page({
     editingRisks: {},
     editingExtras: false,
     draftSavedAt: '',
+    // 本机草稿覆盖了新建态（不是编辑态活动读回）：顶部如实说明表单来自哪里。
+    draftRestored: false,
   },
 
   onLoad(options) {
@@ -370,7 +383,9 @@ Page({
         isDraft: phase === 'draft',
         saveLabel: phase === 'draft' ? '保存草稿' : '保存修改',
         form,
-        fromRouteTitle,
+        // 本机草稿会覆盖路线预填（见上方 initial=saved）：此时横幅不能再宣称「已从路线库带入」。
+        fromRouteTitle: saved ? '' : fromRouteTitle,
+        draftRestored: !!saved && !this.activityId,
         titleAutoSource: this.titleAutoSource,
         canChangeRoute: !routeLocked,
         contentFilled: (form.content || []).length > 0,
@@ -487,7 +502,7 @@ Page({
     const list = lineList(this.data.form[textKey])
     this.setData({ [draftKey]: '' })
     if (list.indexOf(value) !== -1) {
-      this.setData({ message: '「' + value + '」已在清单里。' })
+      this.setData({ message: '「' + value + '」已在清单里。', messageActionLabel: '', messageActionStep: -1 })
       return
     }
     list.push(value)
@@ -607,7 +622,10 @@ Page({
     this.setData(Object.assign({
       form,
       editingPickups,
+      autoPickupIds: Object.assign({}, this._autoPickupIds || {}),
       message: auto.created ? '已用路线起点生成集合点，补一句集合位置说明就能发布。' : '',
+      messageActionLabel: auto.created ? '去确认集合点' : '',
+      messageActionStep: auto.created ? 1 : -1,
     }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
@@ -636,9 +654,13 @@ Page({
   },
   checklistPatch(form) {
     const missing = this.missingForPublish(form)
+    const groups = this.groupMissing(missing)
     return {
       publishReady: missing.length === 0,
-      requiredMissingText: missing.map(item => item.label).join('、'),
+      // 展示层把逐字段的缺项收成 3 组（同一个发布门，判据一条没动）；
+      // 底栏与失败提示引用这里，用户不会把「自动推算的结束/截止」当成要填三遍。
+      requiredMissingText: groups.map(item => item.label).join('、'),
+      requiredGroups: groups,
       // 步骤指示的完成态（T007，纯展示派生）：不新造「一步怎样算完成」的判据——
       // 与发布门同读这一份 missing。「哪些步骤有必填项」也问门本身：拿一份空白
       // 表单跑同一判据（答案恒为步骤 0/1；介绍与发布没有必填项，不印「完成」，
@@ -646,6 +668,20 @@ Page({
       stepDone: this.data.stepLabels.map((_, i) =>
         this.requiredSteps().indexOf(i) !== -1 && missing.every(m => m.step !== i)),
     }
+  },
+  // 只做分组展示，不改 missing 的条数、标签与步骤；顺序固定为 信息 → 集合。
+  groupMissing(missing) {
+    const defs = [
+      { key: 'title', label: '活动名称' },
+      { key: 'time', label: '出发与报名时间' },
+      { key: 'pickup', label: '集合上车点' },
+    ]
+    return defs.map(def => {
+      const items = missing.filter(item => item.key === def.key)
+      if (!items.length) return null
+      const step = items[0].step
+      return { key: def.key, label: def.label, step, stepText: this.data.stepLabels[step] || '' }
+    }).filter(Boolean)
   },
   requiredSteps() {
     if (!this._requiredSteps) {
@@ -691,7 +727,8 @@ Page({
     this.markPickupMeetingCustom(i)
     const form = JSON.parse(JSON.stringify(this.data.form))
     form.pickups[i].meeting.date = e.detail.value
-    this.setData(Object.assign({ form, message: '' }, this.checklistPatch(form)))
+    // 改过集合时间就不再是「自动生成」，徽标跟着内部标记一起撤掉，别让界面继续说自动。
+    this.setData(Object.assign({ form, autoPickupIds: Object.assign({}, this._autoPickupIds || {}), message: '' }, this.checklistPatch(form)))
     this.persistDraft()
   },
   onPickupTime(e) {
@@ -699,7 +736,7 @@ Page({
     this.markPickupMeetingCustom(i)
     const form = JSON.parse(JSON.stringify(this.data.form))
     form.pickups[i].meeting.time = e.detail.value
-    this.setData(Object.assign({ form, message: '' }, this.checklistPatch(form)))
+    this.setData(Object.assign({ form, autoPickupIds: Object.assign({}, this._autoPickupIds || {}), message: '' }, this.checklistPatch(form)))
     this.persistDraft()
   },
   markPickupMeetingCustom(index) {
@@ -878,6 +915,16 @@ Page({
     this._quickPickToken = (this._quickPickToken || 0) + 1
     this.setData({ quickRouteOpen: false, quickRouteBusyId: '' })
   },
+  // 路线层的空态说「可以先导入 GPX」——这句必须能点。两个 overlay 是兄弟节点，先关再开。
+  onQuickRouteGpx() {
+    if (!this.data.canChangeRoute) return
+    this.setData({ quickRouteOpen: false }, () => this.onImportGpx())
+  },
+  // 第 1 步只留一行路线捷径，完整路线面在第 2 步。
+  onGoRouteStep() {
+    if (this.data.step === 1) return
+    this.setData({ step: 1 }, () => this.scrollTop())
+  },
   onQuickRoutePick(e) {
     const id = e.currentTarget.dataset.id
     if (!id || this.data.quickRouteBusyId) return
@@ -961,8 +1008,11 @@ Page({
       titleAutoSource: this.titleAutoSource,
       fromRouteTitle: route.title || '',
       editingPickups,
+      autoPickupIds: Object.assign({}, this._autoPickupIds || {}),
       message: '已带入「' + (route.title || '路线') + '」' + prefilled
         + (auto.created ? '；并已用起点生成集合点，补一句集合位置说明即可。' : '。'),
+      messageActionLabel: auto.created ? '去确认集合点' : '',
+      messageActionStep: auto.created ? 1 : -1,
     }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
@@ -994,7 +1044,10 @@ Page({
     this.setData(Object.assign({
       form,
       editingPickups,
+      autoPickupIds: Object.assign({}, this._autoPickupIds || {}),
       message: '已用起点作为集合点，请补一句集合位置说明。',
+      messageActionLabel: '去确认集合点',
+      messageActionStep: 1,
       routeAutoText: routeAutoTextOf(form),
     }, this.checklistPatch(form)))
     this.persistDraft()
@@ -1026,7 +1079,7 @@ Page({
           lng: String(res.longitude),
           meeting,
         })
-        this.setData(Object.assign({ form, failure: '', message: '已用地图选点填好集合位置。' }, this.checklistPatch(form)))
+        this.setData(Object.assign({ form, failure: '', message: '已用地图选点填好集合位置。', messageActionLabel: '', messageActionStep: -1 }, this.checklistPatch(form)))
         this.persistDraft()
       },
       fail: err => {
@@ -1138,20 +1191,47 @@ Page({
   },
 
   // ---- 步骤 ----
+  // 切步后停在上一屏位置是最常见的「点了没反应」体感：每步都很长，滚动归位必须显式做。
+  // 守卫写法同 workspace.js:161：Node 套件的 wx 桩没有 pageScrollTo，不能裸调。
+  scrollTop() {
+    if (typeof wx !== 'undefined' && typeof wx.pageScrollTo === 'function') {
+      wx.pageScrollTo({ scrollTop: 0, duration: 0, fail: () => {} })
+    }
+  },
+  scrollToPickup() {
+    if (typeof wx !== 'undefined' && typeof wx.pageScrollTo === 'function') {
+      wx.pageScrollTo({ selector: '#pickup-section', duration: 300, fail: () => {} })
+    }
+  },
   setStep(e) {
+    const step = Number(e.currentTarget.dataset.step)
     if (this.data.contentBusy) {
       this.setData({ failure: '图片正在上传/检查，请稍候再切换步骤。' })
+      this.scrollTop()
       return
     }
-    this.setData({ step: Number(e.currentTarget.dataset.step) })
+    if (step === this.data.step) return
+    this.setData({ step }, () => this.scrollTop())
   },
   prevStep() {
-    if (this.data.contentBusy) return
-    this.setData({ step: Math.max(0, this.data.step - 1) })
+    const step = Math.max(0, this.data.step - 1)
+    if (this.data.contentBusy) {
+      this.setData({ failure: '图片正在上传/检查，请稍候再切换步骤。' })
+      this.scrollTop()
+      return
+    }
+    if (step === this.data.step) return
+    this.setData({ step }, () => this.scrollTop())
   },
   nextStep() {
-    if (this.data.contentBusy) return
-    this.setData({ step: Math.min(3, this.data.step + 1) })
+    const step = Math.min(3, this.data.step + 1)
+    if (this.data.contentBusy) {
+      this.setData({ failure: '图片正在上传/检查，请稍候再切换步骤。' })
+      this.scrollTop()
+      return
+    }
+    if (step === this.data.step) return
+    this.setData({ step }, () => this.scrollTop())
   },
 
   // ---- 保存 ----
@@ -1217,6 +1297,9 @@ Page({
           profileGateOpen: false,
           savedId: id,
           message: successMessage,
+          // 保存成功的话术不带动作出口：避免上一条「去确认集合点」继续挂着指向旧步骤。
+          messageActionLabel: '',
+          messageActionStep: -1,
         })
         return id
       })
@@ -1256,18 +1339,18 @@ Page({
   missingForPublish(form) {
     const f = form || this.data.form
     const missing = []
-    if (!f.title.trim()) missing.push({ step: 0, label: '活动名称' })
-    if (!f.dt_start.date || !f.dt_start.time) missing.push({ step: 0, label: '出发时间' })
-    if (!f.dt_end.date || !f.dt_end.time) missing.push({ step: 0, label: '预计结束时间' })
-    if (!f.dt_deadline.date || !f.dt_deadline.time) missing.push({ step: 0, label: '报名截止时间' })
+    if (!f.title.trim()) missing.push({ step: 0, key: 'title', label: '活动名称' })
+    if (!f.dt_start.date || !f.dt_start.time) missing.push({ step: 0, key: 'time', label: '出发时间' })
+    if (!f.dt_end.date || !f.dt_end.time) missing.push({ step: 0, key: 'time', label: '预计结束时间' })
+    if (!f.dt_deadline.date || !f.dt_deadline.time) missing.push({ step: 0, key: 'time', label: '报名截止时间' })
     if (f.dt_start.date && f.dt_start.time && f.dt_end.date && f.dt_end.time && f.dt_deadline.date && f.dt_deadline.time) {
       const s = Date.parse(composeDateTime(f.dt_start.date, f.dt_start.time))
       const e = Date.parse(composeDateTime(f.dt_end.date, f.dt_end.time))
       const d = Date.parse(composeDateTime(f.dt_deadline.date, f.dt_deadline.time))
-      if (!(d <= s && s < e)) missing.push({ step: 0, label: '时间顺序（截止 ≤ 出发，且早于结束）' })
+      if (!(d <= s && s < e)) missing.push({ step: 0, key: 'time', label: '时间顺序（截止 ≤ 出发，且早于结束）' })
     }
-    if (!f.pickups.length) missing.push({ step: 1, label: '至少 1 个集合上车点' })
-    else if (f.pickups.some(p => !p.name.trim() || !p.address.trim() || !p.meeting.date || !p.meeting.time)) missing.push({ step: 1, label: '集合上车点的名称、地址与集合时间' })
+    if (!f.pickups.length) missing.push({ step: 1, key: 'pickup', label: '至少 1 个集合上车点' })
+    else if (f.pickups.some(p => !p.name.trim() || !p.address.trim() || !p.meeting.date || !p.meeting.time)) missing.push({ step: 1, key: 'pickup', label: '集合上车点的名称、地址与集合时间' })
     return missing
   },
   // 可后补清单：与服务端口径一致——整体可为空，填了的条目必须完整（半成品条目也点名）。
@@ -1291,13 +1374,37 @@ Page({
     if (this.busyBlocks()) return
     const missing = this.missingForPublish()
     if (missing.length) {
-      this.setData({ step: missing[0].step, failure: '还差：' + missing.map(m => m.label).join('、') + '。补齐后再发布。' })
+      const groups = this.groupMissing(missing)
+      // 按组说话（3 组），跳转仍落到第一组的步骤；原始 5 条只留在门里。
+      this.setData({
+        step: groups[0].step,
+        failure: '还差：' + groups.map(g => g.label).join('、') + '。补齐后再发布。',
+      }, () => this.scrollTop())
       return
     }
     this._afterProfile = () => this.onPublishIntent()
     this.persistCurrent('内容已保存，确认后正式发布。')
       .then(() => this.onPublishOpen())
       .catch(() => {})
+  },
+  // 第 4 步「去补齐」：跳到第一组缺口所在步骤；集合点这一组再定位到集合区锚点。
+  onFixRequired() {
+    if (this.busyBlocks()) return
+    const group = (this.data.requiredGroups || [])[0]
+    if (!group) return
+    this.setData({ step: group.step }, () => {
+      if (group.key === 'pickup') this.scrollToPickup()
+      else this.scrollTop()
+    })
+  },
+  // 成功提示的动作出口（目前只由自动生成集合点产生）：跳到对应步骤并定位。
+  onMessageAction() {
+    const step = this.data.messageActionStep
+    if (step < 0) return
+    this.setData({ step }, () => {
+      if (step === 1) this.scrollToPickup()
+      else this.scrollTop()
+    })
   },
   onSave() { this.save(false) },
   onSavePreview() { this.save(true) },
@@ -1312,6 +1419,22 @@ Page({
     this.setData({ templateId: item ? item.id : '' })
   },
   onCopyTemplate() {
+    if (!this.data.templateId || this.busyBlocks()) return
+    // 复制模板会离开本页：当前填写非空时必须先确认，空表单不额外加摩擦。
+    const f = this.data.form
+    const dirty = !!(f.title.trim() || f.points.length || f.pickups.length || this.data.contentFilled)
+    if (dirty) {
+      this.setData({ templateConfirmOpen: true })
+      return
+    }
+    this.doCopyTemplate()
+  },
+  onTemplateConfirmClose() { this.setData({ templateConfirmOpen: false }) },
+  onTemplateConfirmGo() {
+    this.setData({ templateConfirmOpen: false })
+    this.doCopyTemplate()
+  },
+  doCopyTemplate() {
     if (!this.data.templateId || this.busyBlocks()) return
     this.setData({ busy: true, busyAt: Date.now(), failure: '' })
     api.dispatchAndSync({ type: 'activity.copy', sourceActivityId: this.data.templateId }, this.revision, this)
@@ -1430,8 +1553,11 @@ Page({
       showPointCoords: {},
       editingPickups,
       showPickupCoords: {},
+      autoPickupIds: Object.assign({}, this._autoPickupIds || {}),
       message: '已导入 ' + points.length + ' 个路线节点' + prefilled
         + (auto.created ? '；并已用起点生成集合点，补一句集合位置说明即可。' : '，记得在后续步骤核对保存。'),
+      messageActionLabel: auto.created ? '去确认集合点' : '',
+      messageActionStep: auto.created ? 1 : -1,
     }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
@@ -1476,6 +1602,12 @@ Page({
     this.setData({
       publishOpen: true, participate: false, dataUse: false, tripSelf: true, tripPickupIndex: -1, failure: '',
       deferred,
+      deferredItems: deferred,
+      publishSummaryLines: [
+        startText,
+        pickupText,
+        '上限 ' + f.capacity + ' 人' + (f.routeTitle ? ' · ' + f.routeTitle : ''),
+      ],
       publishSummaryText: startText + ' · ' + pickupText + ' · 上限 ' + f.capacity + ' 人'
         + (f.routeTitle ? ' · ' + f.routeTitle : ''),
       // WXML 表达式不保证支持箭头函数：拼接在 JS 里做（与 text.wxs 的分工同理）
@@ -1542,7 +1674,7 @@ Page({
         draft.clearDraft(this.draftKey(), 'activity-editor')
         this.setData({ busy: false, publishOpen: false })
         api.toast('活动已发布')
-        wx.redirectTo({ url: '/pages/activity/activity?id=' + this.savedId })
+        wx.redirectTo({ url: '/pages/activity/activity?id=' + this.savedId + '&published=1' })
       })
       .catch(e => this.setData({ busy: false, failure: api.errorText(e) }))
   },
