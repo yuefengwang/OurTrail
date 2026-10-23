@@ -202,6 +202,8 @@ const Activity = specObj({
   feeExcludes: specOpt(specArr(specStr(200), 0, 12)),
   signupNote: specOpt(specText),
   publishedAt: specOpt(specInstant),
+  // 可见范围（D-07 ④B）：缺省 discover 保持既有行为；link 不进发现页，凭 id/分享链接仍可打开。
+  visibility: specOpt(specEnum(['discover', 'link'])),
 })
 
 const Trip = specUnion('mode', {
