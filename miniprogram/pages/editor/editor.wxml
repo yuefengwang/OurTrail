@@ -520,6 +520,25 @@
 
       <view class="step-group">
         <view class="section-head">
+          <text class="kicker">可见范围</text>
+        </view>
+        <view class="card stack-gap3">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="section-title">谁能看到这个活动</text>
+            <text class="small muted">{{form.visibility === 'link' ? '仅链接可见' : '公开到发现页'}}</text>
+          </view>
+          <picker range="{{['公开到发现页', '仅通过分享链接可见']}}" value="{{form.visibility === 'link' ? 1 : 0}}" bindchange="onVisibility">
+            <view class="picker">
+              <text class="picker-value">{{form.visibility === 'link' ? '仅通过分享链接可见' : '公开到发现页'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+          <text class="small muted">{{form.visibility === 'link' ? '不出现在发现页；拿到分享链接的人仍可查看并报名。' : '发布后会出现在发现页，其他户外爱好者可以搜索到。'}}</text>
+        </view>
+      </view>
+
+      <view class="step-group">
+        <view class="section-head">
           <text class="kicker">费用文本</text>
         </view>
       <view class="card stack-gap3">

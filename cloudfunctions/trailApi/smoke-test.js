@@ -397,6 +397,75 @@ function run() {
   const noOpenedIds = selectView(sTrack, { userId: OWNER }, { kind: 'home', perspective: 'participant' }, '2026-09-26T07:00:00+08:00')
   check('home 未传 openedActivityIds 不再抛异常', noOpenedIds.kind === 'home')
 
+  console.log('== 14b. 活动可见性 visibility（D-07 ④B：缺省 discover / link 只走分享链接） ==')
+  {
+    const NOW = '2026-09-26T07:00:00+08:00'
+    // 缺省：不带键创建的记录不含该键（存量形状不变），读回按 discover
+    check('不带 visibility 创建 → 记录无该键',
+      sTrack.activities.find(a => a.id === draftForDiscover).visibility === undefined)
+    check('旧活动读回活动视图按 discover 兜底',
+      selectView(sTrack, { userId: LIN }, { kind: 'activity', activityId: draftForDiscover, perspective: 'organizer' }, NOW).activity.visibility === 'discover')
+
+    // 显式 link：可建可发，但不进任何人的发现页；凭 id 仍可打开
+    r = dispatch(sTrack, LIN, { type: 'activity.create', input: Object.assign(fullActivityInput(), { visibility: 'link' }) })
+    check('带 visibility:link 可创建', r.ok, r.error)
+    sTrack = r.value.state
+    const linkId = r.value.targetIds[0]
+    r = dispatch(sTrack, LIN, { type: 'activity.publish', activityId: linkId, participation: null })
+    check('link 活动可发布', r.ok, r.error)
+    sTrack = r.value.state
+    check('他人发现页看不到 link 活动',
+      !selectView(sTrack, { userId: OWNER }, { kind: 'discover' }, NOW).activities.some(a => a.id === linkId))
+    check('创建者自己的发现页也看不到 link 活动',
+      !selectView(sTrack, { userId: LIN }, { kind: 'discover' }, NOW).activities.some(a => a.id === linkId))
+    const linkDetail = selectView(sTrack, { userId: OWNER }, { kind: 'activity', activityId: linkId }, NOW)
+    check('他人凭 id/分享链接仍可打开 link 活动',
+      linkDetail.kind === 'activity' && linkDetail.activity.visibility === 'link' && linkDetail.activity.phase === 'published')
+    check('link 活动仍在组织者自己的首页',
+      selectView(sTrack, { userId: LIN }, { kind: 'home', perspective: 'organizer' }, NOW).activities.some(a => a.id === linkId))
+
+    // 改回 discover：activity.edit 用 Object.assign，键必须显式提交
+    const linkEdit = JSON.parse(JSON.stringify(sTrack.activities.find(a => a.id === linkId)))
+    delete linkEdit.id
+    delete linkEdit.ownerId
+    delete linkEdit.phase
+    delete linkEdit.publishedAt
+    linkEdit.visibility = 'discover'
+    r = dispatch(sTrack, LIN, { type: 'activity.edit', activityId: linkId, input: linkEdit })
+    check('已发布 link 可改回 discover', r.ok, r.error)
+    sTrack = r.value.state
+    check('改回 discover 后重新出现在他人发现页',
+      selectView(sTrack, { userId: OWNER }, { kind: 'discover' }, NOW).activities.some(a => a.id === linkId))
+
+    // link 不占发现页 50 条名额：5 条更新的 link + 50 条 discover ⇒ 仍返回 50 条且全非 link
+    const bulk = JSON.parse(JSON.stringify(sTrack))
+    const template = bulk.activities.find(a => a.id === linkId)
+    for (let i = 0; i < 50; i++) {
+      const a = JSON.parse(JSON.stringify(template))
+      a.id = 'bulk-discover-' + i
+      a.title = '公开活动 ' + i
+      a.visibility = 'discover'
+      a.publishedAt = '2026-09-20T00:00:00+08:00'
+      bulk.activities.push(a)
+    }
+    for (let i = 0; i < 5; i++) {
+      const a = JSON.parse(JSON.stringify(template))
+      a.id = 'bulk-link-' + i
+      a.title = '链接活动 ' + i
+      a.visibility = 'link'
+      a.publishedAt = '2026-09-25T00:00:00+08:00'
+      bulk.activities.push(a)
+    }
+    const bulkRes = selectView(bulk, { userId: OWNER }, { kind: 'discover' }, NOW)
+    check('发现页最多 50 条，更新的 link 不占名额',
+      bulkRes.activities.length === 50 && bulkRes.activities.every(a => a.id.indexOf('bulk-link-') !== 0),
+      JSON.stringify({ count: bulkRes.activities.length, linkHits: bulkRes.activities.filter(a => a.id.indexOf('bulk-link-') === 0).length }))
+
+    // 非法值必须被 schema 拒绝，不能静默落成未知可见性
+    r = dispatch(sTrack, LIN, { type: 'activity.create', input: Object.assign(fullActivityInput(), { visibility: 'public' }) })
+    check('非法 visibility 被拒', !r.ok && r.error.code === 'INVALID_INPUT', r.error)
+  }
+
   /* ================= 第 15 节：P3 独立天气 getWeatherByPoint 纯逻辑 =================
    * index.js 无法在本地 require（wx-server-sdk），所以校验/窗口/纠偏/投影全部沉到
    * lib/weather 的纯函数里（index.js 只做编排）。这里覆盖纯函数；缓存命中与免 OPENID

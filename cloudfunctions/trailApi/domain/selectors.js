@@ -120,6 +120,7 @@ function activityView(activity, opts) {
     feeIncludes: (activity.feeIncludes || []).slice(),
     feeExcludes: (activity.feeExcludes || []).slice(),
     signupNote: activity.signupNote || '',
+    visibility: activity.visibility || 'discover',
     completeness: routeCompleteness(activity),
   }
   if (opts && opts.includeContent) view.content = contentViewBlocks(activity)
@@ -555,6 +556,8 @@ function selectView(state, actor, request, now) {
     const activities = state.activities
       .filter(a => {
         if (['draft', 'cancelled', 'archived'].indexOf(a.phase) !== -1) return false
+        // 可见范围：link 只在发现页之外；放在 slice 之前，避免它占用 50 条名额。
+        if ((a.visibility || 'discover') === 'link') return false
         if (a.startAt && Date.parse(a.startAt) < nowMs) return false
         const startDate = cnDateOf(a.startAt)
         if (dateFrom && (!startDate || startDate < dateFrom)) return false

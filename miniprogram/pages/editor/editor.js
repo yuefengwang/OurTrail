@@ -12,6 +12,7 @@ const emptyInput = () => ({
   title: '', description: '', organizerIntro: '',
   startAt: null, endAt: null, deadlineAt: null,
   acceptingSignups: true, capacity: 24, approvalMode: 'manual', routeId: null,
+  visibility: 'discover',
   routeSnapshot: { title: '', distanceKm: 0, ascentM: 0, difficulty: '', points: [], risks: [] },
   pickupPoints: [], equipment: [], equipmentSuggested: [], feeNote: '', cancellationNote: '',
   content: [], coverFileId: '', highlights: [], leader: '', minParticipants: null,
@@ -32,6 +33,8 @@ function toForm(input) {
     capacity: String(input.capacity),
     approvalMode: input.approvalMode,
     acceptingSignups: input.acceptingSignups,
+    // 旧活动/旧草稿没有 visibility 键：按缺省 discover 读，保持它们原本就在发现页的行为。
+    visibility: input.visibility === 'link' ? 'link' : 'discover',
     routeTitle: input.routeSnapshot.title,
     distanceKm: input.routeSnapshot.distanceKm === 0 ? '' : String(input.routeSnapshot.distanceKm),
     ascentM: input.routeSnapshot.ascentM === 0 ? '' : String(input.routeSnapshot.ascentM),
@@ -410,6 +413,8 @@ Page({
       acceptingSignups: f.acceptingSignups,
       capacity: Math.max(1, Math.min(500, Math.round(Number(f.capacity) || 24))),
       approvalMode: f.approvalMode,
+      // 始终带键：activity.edit 是 Object.assign，缺键会把「改回公开」变成静默保留 link。
+      visibility: f.visibility === 'link' ? 'link' : 'discover',
       routeId: this.routeId || null,
       routeSnapshot: Object.assign({
         title: f.routeTitle,
@@ -499,6 +504,9 @@ Page({
   },
   onApproval(e) {
     this.setForm({ approvalMode: ['manual', 'automatic'][Number(e.detail.value) || 0] })
+  },
+  onVisibility(e) {
+    this.setForm({ visibility: ['discover', 'link'][Number(e.detail.value) || 0] })
   },
   onDifficulty(e) {
     const option = F.DIFFICULTY_OPTIONS[Number(e.detail.value)] || F.DIFFICULTY_OPTIONS[0]

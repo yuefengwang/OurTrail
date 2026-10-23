@@ -1097,8 +1097,67 @@ async function scenario14() {
   }
 }
 
+// 15. EDI-04：活动可见范围（缺省 discover；link 不进发现页但仍可凭链接打开）
+async function scenario15() {
+  section('15. 活动可见范围 visibility（discover / link）')
+  {
+    const { page } = bootEditor({ seed: () => draft.setDraft('new', 'activity-editor', sampleInput()) })
+    await settle(page)
+    check('旧草稿没有 visibility 键 → 表单兜底 discover', page.data.form.visibility === 'discover', page.data.form.visibility)
+    check('buildInput 始终带键，缺省 discover 可过 schema',
+      page.buildInput().visibility === 'discover' && S.validate(S.ActivityInput, page.buildInput()) === true)
+    page.onVisibility({ detail: { value: 1 } })
+    const stored = draft.getDraft('new', 'activity-editor') || {}
+    check('选「仅通过分享链接可见」→ link，并落进本地草稿',
+      page.data.form.visibility === 'link' && stored.visibility === 'link',
+      JSON.stringify({ form: page.data.form.visibility, draft: stored.visibility }))
+    const linkInput = page.buildInput()
+    check('link 提交形状通过 schema', linkInput.visibility === 'link' && S.validate(S.ActivityInput, linkInput) === true)
+    page.onVisibility({ detail: { value: 0 } })
+    check('切回公开 → discover（activity.edit 是 Object.assign，必须每次显式带键）',
+      page.data.form.visibility === 'discover' && page.buildInput().visibility === 'discover')
+    page.onVisibility({ detail: {} })
+    check('异常下标不写出未知可见性', page.data.form.visibility === 'discover', page.data.form.visibility)
+  }
+  {
+    const { page, cmds } = bootEditor({
+      options: { id: 'a1' },
+      views: {
+        activity: {
+          view: {
+            kind: 'activity',
+            permittedActions: ['activity.edit', 'activity.publish'],
+            activity: Object.assign(sampleInput(), { id: 'a1', ownerId: 'u-owner', phase: 'draft', visibility: 'link' }),
+          },
+          revision: 3,
+        },
+      },
+    })
+    await settle(page)
+    check('服务器 link 活动读回表单为 link', page.data.form.visibility === 'link', page.data.form.visibility)
+    page.onVisibility({ detail: { value: 0 } })
+    await page.persistCurrent('保存')
+    check('改回公开后保存命令显式带 visibility=discover',
+      cmds.length === 1 && cmds[0].payload.input.visibility === 'discover',
+      JSON.stringify(cmds.map(c => c.payload.input.visibility)))
+  }
+  {
+    // Node 渲染不了 WXML：这里只钉控件存在、绑定与两条选项文案，不钉布局（布局归真机）。
+    const wxml = require('fs').readFileSync(require.resolve('../miniprogram/pages/editor/editor.wxml'), 'utf8')
+    check('发布步有可见范围控件并绑定 onVisibility',
+      wxml.indexOf('bindchange="onVisibility"') !== -1
+      && wxml.indexOf('公开到发现页') !== -1
+      && wxml.indexOf('仅通过分享链接可见') !== -1
+      && wxml.indexOf('form.visibility') !== -1)
+    // picker 缺 value 时缺省高亮第 0 项：当前是 link 却直接确认，会把值静默改回 discover。
+    const visLine = wxml.split('\n').find(l => l.indexOf('bindchange="onVisibility"') !== -1) || ''
+    check('可见范围 picker 的 value 指向当前项',
+      visLine.indexOf('value="{{form.visibility') !== -1, visLine.trim())
+  }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11, scenario12, scenario13, scenario14]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11, scenario12, scenario13, scenario14, scenario15]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++
