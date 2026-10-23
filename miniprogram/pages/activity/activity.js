@@ -224,6 +224,8 @@ Page({
   onLoad(options) {
     this.activityId = options.id || ''
     this.selectedSignupId = options.signupId || ''
+    // 发布成功后编辑器带 &published=1 跳来：首帧庆祝一次（reload 回调里立即消费）。
+    this.justPublished = options.published === '1'
     this.revision = 0
     this.now = ''
   },
@@ -233,6 +235,8 @@ Page({
   },
 
   onShareAppMessage() {
+    // 草稿对他人是死链：即便从某个漏掉的入口触发转发，也带回首页而不是分享一个打不开的预览。
+    if (this.data.isDraft) return { title: '活动还在准备中', path: '/pages/home/home' }
     const share = {
       title: this.data.title ? this.data.title + ' · 一起同行' : 'OurTrail · 活动邀请',
       path: '/pages/activity/activity?id=' + this.activityId,
@@ -511,7 +515,16 @@ Page({
       cancellationNote: a.cancellationNote,
       canCancelRow: v.permittedActions.indexOf('signup.cancel') !== -1,
       canEditRow: v.permittedActions.indexOf('signup.edit') !== -1,
+      // 刚发布：只在发布者自己的首帧出现一次；参数是编辑器跳转带来的，非 owner 手改 URL 也不庆祝。
+      justPublished: !!(this.justPublished && isOwnerReal),
+    }, () => {
+      // 首帧后立即消费：页面再次 onShow / 同 URL 刷新不再重复庆祝。
+      this.justPublished = false
     })
+    // 草稿只有自己可见：关掉原生转发菜单，避免把对内死链发到群里。
+    if (a.phase === 'draft' && typeof wx !== 'undefined' && typeof wx.hideShareMenu === 'function') {
+      wx.hideShareMenu({ fail: () => {} })
+    }
     wx.setNavigationBarTitle({ title: this.data.title || '活动详情' })
     if (coverIsReal) this.prepareShareImage(cover)
     this.loadWeatherBrief(a)

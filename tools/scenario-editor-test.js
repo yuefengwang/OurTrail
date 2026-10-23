@@ -45,7 +45,7 @@ function ev(key, value) { return { currentTarget: { dataset: { key } }, detail: 
 // ---- wx 桩：内存 storage + toast/导航记录；按场景换新，互不串味 ----
 function makeWx(over) {
   const store = { 'ourtrail.openid': 'u-test' }
-  const rec = { toasts: [], nav: [] }
+  const rec = { toasts: [], nav: [], scrolls: [] }
   const wx = Object.assign({
     getStorageSync: k => (Object.prototype.hasOwnProperty.call(store, k) ? store[k] : ''),
     setStorageSync: (k, v) => { store[k] = v },
@@ -54,6 +54,7 @@ function makeWx(over) {
     navigateTo: o => rec.nav.push((o && o.url) || ''),
     redirectTo: o => rec.nav.push((o && o.url) || ''),
     switchTab: o => rec.nav.push((o && o.url) || ''),
+    pageScrollTo: o => rec.scrolls.push(o),
     chooseLocation: () => {},
     vibrateShort: () => {},
   }, over || {})
@@ -537,19 +538,52 @@ async function scenario5() {
 async function scenario6() {
   section('6. 发布预检双清单：必填拦路、可后补点名不拦路')
   {
-    const { page, cmds } = bootEditor({})
+    const { page, cmds, env } = bootEditor({})
     await settle(page)
-    // ① 空表单：必填清单 5 项，首项跳 step 0
+    const blankForm = JSON.parse(JSON.stringify(page.data.form))
     let m = page.missingForPublish()
     check('空表单必填点名 5 项', m.length === 5, JSON.stringify(m.map(x => x.label)))
     check('首项是活动名称（step 0）', m[0].label === '活动名称' && m[0].step === 0)
     check('必填只剩标题/时间/上车点（路线与风险不再拦路）',
       m.some(x => x.label === '至少 1 个集合上车点')
       && !m.some(x => /路线|风险/.test(x.label)), JSON.stringify(m.map(x => x.label)))
+    check('展示层收成 3 组且顺序固定（名称 → 时间 → 集合），步骤文案来自 stepLabels',
+      page.data.requiredGroups.map(g => g.key).join(',') === 'title,time,pickup'
+      && page.data.requiredGroups[0].stepText === '01 信息'
+      && page.data.requiredGroups[2].stepText === '02 路线',
+      JSON.stringify(page.data.requiredGroups))
     page.onPublishIntent()
+    await waitFor(() => env.rec.scrolls.length > 0)
     check('有缺失：跳到第一个缺失步骤', page.data.step === 0, String(page.data.step))
     check('有缺失：failure 逐项点名', /^还差：/.test(page.data.failure) && page.data.failure.indexOf('活动名称') !== -1, page.data.failure)
+    check('有缺失：failure 按组说，不把自动推算的结束/截止算成三项',
+      page.data.failure === '还差：活动名称、出发与报名时间、集合上车点。补齐后再发布。', page.data.failure)
+    check('有缺失：从上一屏位置回到顶部（否则跳了步也看不见提示）',
+      env.rec.scrolls[0] && env.rec.scrolls[0].scrollTop === 0, JSON.stringify(env.rec.scrolls))
     check('有缺失：不发命令', cmds.length === 0, String(cmds.length))
+
+    // ①b 只差集合点：跳到第 2 步；第 4 步的「去补齐」再按锚点滚到集合区
+    const onlyPickup = completeForm()
+    onlyPickup.pickups = [{ id: 'pk-1', name: '犀浦站', address: '', lat: '', lng: '', meeting: { date: '2026-10-03', time: '07:30' } }]
+    page.setData({ form: onlyPickup })
+    page.setData(page.checklistPatch(page.data.form))
+    check('只差集合点：分组只剩集合上车点', page.data.requiredGroups.length === 1
+      && page.data.requiredGroups[0].key === 'pickup', JSON.stringify(page.data.requiredGroups))
+    env.rec.scrolls.length = 0
+    page.onPublishIntent()
+    await waitFor(() => env.rec.scrolls.length > 0)
+    check('只差集合点：落到第 2 步并回到顶部（提示就在标签下面）',
+      page.data.step === 1 && env.rec.scrolls[0] && env.rec.scrolls[0].scrollTop === 0,
+      JSON.stringify({ step: page.data.step, scrolls: env.rec.scrolls }))
+    check('只差集合点：失败提示只说这一组', page.data.failure === '还差：集合上车点。补齐后再发布。', page.data.failure)
+    env.rec.scrolls.length = 0
+    page.onFixRequired()
+    await waitFor(() => env.rec.scrolls.length > 0)
+    check('「去补齐」按组定位：集合点这一组滚到 #pickup-section',
+      env.rec.scrolls[0] && env.rec.scrolls[0].selector === '#pickup-section', JSON.stringify(env.rec.scrolls))
+    // ①b 用的是完整表单；后面 ②③ 仍按空表单演，恢复现场，避免用例互相污染
+    page.setData({ form: JSON.parse(JSON.stringify(blankForm)), step: 0 })
+    page.setData(page.checklistPatch(page.data.form))
 
     // ② 空表单：可后补清单点名路线三项，各带步骤
     const d0 = page.deferredForPublish()
@@ -611,6 +645,43 @@ async function scenario6() {
       JSON.stringify(page.data.deferred))
     page.onPublishClose()
   }
+  {
+    // ⑦ 模板副本会离开本页：空表单直接走，已填写先确认（确认层挡住的是「替换」，不是弹个空对话框）
+    const { page, cmds } = bootEditor({})
+    await settle(page)
+    page.setData({ templateId: 'tpl-1' })
+    page.onCopyTemplate()
+    await waitFor(() => cmds.length === 1)
+    check('空表单复制模板：不拦路，直接发 activity.copy',
+      cmds.length === 1 && cmds[0].payload.type === 'activity.copy' && page.data.templateConfirmOpen === false,
+      JSON.stringify({ cmds: cmds.map(c => c.payload.type), open: page.data.templateConfirmOpen }))
+    await waitFor(() => page.data.busy === false)
+    page.setData({ templateId: 'tpl-1' })
+    page.onTitleInput({ detail: { value: '已写了一半' } })
+    page.onCopyTemplate()
+    check('已填写复制模板：先开确认层且不发命令',
+      page.data.templateConfirmOpen === true && cmds.length === 1,
+      JSON.stringify({ open: page.data.templateConfirmOpen, cmds: cmds.length }))
+    page.onTemplateConfirmClose()
+    check('确认层可退回：关闭后继续当前填写', page.data.templateConfirmOpen === false && page.data.form.title === '已写了一半')
+    page.onCopyTemplate()
+    page.onTemplateConfirmGo()
+    await waitFor(() => cmds.length === 2)
+    check('确认后才发 activity.copy，并关掉确认层',
+      cmds[1].payload.type === 'activity.copy' && page.data.templateConfirmOpen === false,
+      JSON.stringify({ cmds: cmds.map(c => c.payload.type), open: page.data.templateConfirmOpen }))
+  }
+  {
+    // ⑧ 路线层空态的「导入 GPX」：两个 overlay 是兄弟节点，必须先关路线层再开 GPX
+    const { page } = bootEditor({})
+    await settle(page)
+    page.setData({ quickRouteOpen: true })
+    page.onQuickRouteGpx()
+    await waitFor(() => page.data.gpxOpen === true)
+    check('空态导入 GPX：路线层关掉、GPX 层打开（不是两个弹层叠着）',
+      page.data.quickRouteOpen === false && page.data.gpxOpen === true,
+      JSON.stringify({ quickRouteOpen: page.data.quickRouteOpen, gpxOpen: page.data.gpxOpen }))
+  }
 }
 
 // 7. 发布链路：onPublishIntent 先静默保存再确认；确认后发 activity.publish
@@ -645,9 +716,9 @@ async function scenario7() {
     check('按上车点集合', pub.participation.trip.mode === 'shared' && pub.participation.trip.pickupPointId === 'pk-1',
       JSON.stringify(pub.participation.trip))
     check('资料使用授权随报名带上', pub.participation.consent.dataUse === true, JSON.stringify(pub.participation.consent))
-    check('发布后关弹层 + toast + 跳详情', page.data.publishOpen === false
+    check('发布后关弹层 + toast + 跳详情（带 published=1，详情页据此庆祝一次）', page.data.publishOpen === false
       && env.rec.toasts.indexOf('活动已发布') !== -1
-      && env.rec.nav.indexOf('/pages/activity/activity?id=act-new') !== -1,
+      && env.rec.nav.indexOf('/pages/activity/activity?id=act-new&published=1') !== -1,
       JSON.stringify({ toasts: env.rec.toasts, nav: env.rec.nav }))
   }
   {
@@ -934,12 +1005,39 @@ async function scenario13() {
       && autoPickup.lat === '30.9' && autoPickup.lng === '103.5', JSON.stringify(page.data.form.pickups))
     check('集合时间自动取出发前 30 分', autoPickup.meeting.date === '2026-10-03' && autoPickup.meeting.time === '07:30',
       JSON.stringify(autoPickup.meeting))
+    check('自动生成的集合点带标记（页面据此显示「自动生成」，不是靠名字猜）',
+      page.data.autoPickupIds[autoPickup.id] === true, JSON.stringify(page.data.autoPickupIds))
+    check('集合点已存在时再带路线：不重复生成，也不再弹「去确认集合点」',
+      page.data.form.pickups.length === 1 && page.data.messageActionLabel === '',
+      JSON.stringify({ n: page.data.form.pickups.length, label: page.data.messageActionLabel }))
+    page.onPickupTime({ currentTarget: { dataset: { index: 0 } }, detail: { value: '07:40' } })
+    check('改过集合时间：自动标记撤掉（界面不再说是系统生成的）',
+      page.data.autoPickupIds[autoPickup.id] !== true && page.data.form.pickups[0].meeting.time === '07:40',
+      JSON.stringify({ ids: page.data.autoPickupIds, time: page.data.form.pickups[0].meeting.time }))
     check('集合地址留空 → 还不能发布', page.data.publishReady === false && /集合上车点/.test(page.data.requiredMissingText),
       JSON.stringify({ ready: page.data.publishReady, missing: page.data.requiredMissingText }))
     page.onPickup({ currentTarget: { dataset: { index: 0, key: 'address' } }, detail: { value: '地铁 A 口' } })
     check('补一句集合地址 → 任意步骤都可直接发布', page.data.publishReady === true && page.data.requiredMissingText === '',
       JSON.stringify({ ready: page.data.publishReady, missing: page.data.requiredMissingText }))
     check('路线快照 buildInput 通过云端严检', S.validate(S.ActivityInput, page.buildInput()) === true)
+  }
+  {
+    // 先定出发、再带路线：自动生成那一刻给出「去确认集合点」出口，点了要真的落到集合区
+    const { page, env } = bootEditor({ routes: [listItem], routeDetail: detail })
+    await settle(page)
+    page.onDate(ev('dt_start', '2026-10-03'))
+    page.onTime(ev('dt_start', '08:00'))
+    page.applyRouteSnapshot(detail.route)
+    await waitFor(() => page.data.form.pickups.length === 1)
+    check('自动生成集合点后就地给出确认出口',
+      page.data.messageActionLabel === '去确认集合点' && page.data.messageActionStep === 1,
+      JSON.stringify({ label: page.data.messageActionLabel, step: page.data.messageActionStep }))
+    env.rec.scrolls.length = 0
+    page.onMessageAction()
+    await waitFor(() => env.rec.scrolls.length > 0)
+    check('点确认出口：跳到第 2 步并滚到 #pickup-section',
+      page.data.step === 1 && env.rec.scrolls[0] && env.rec.scrolls[0].selector === '#pickup-section',
+      JSON.stringify({ step: page.data.step, scrolls: env.rec.scrolls }))
   }
   {
     const { page } = bootEditor({ routes: [listItem], routeDetail: detail })

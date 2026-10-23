@@ -70,7 +70,7 @@ function makeWx(opts) {
   opts = opts || {}
   const rec = {
     toasts: [], nav: [], titles: [], vibrations: 0,
-    openLocations: [], clipboard: [], modals: [], locationOk: opts.locationOk !== false,
+    openLocations: [], clipboard: [], modals: [], shareHidden: 0, locationOk: opts.locationOk !== false,
   }
   const store = { 'ourtrail.openid': 'u-test' }
   global.wx = {
@@ -84,6 +84,7 @@ function makeWx(opts) {
     openLocation: o => rec.openLocations.push(o),
     setClipboardData: o => { rec.clipboard.push((o && o.data) || ''); if (o && o.success) o.success() },
     showModal: o => { rec.modals.push(o); if (o && o.success) o.success({ confirm: true }) },
+    hideShareMenu: () => { rec.shareHidden++ },
     getLocation: o => {
       if (rec.locationOk) o.success({ latitude: FAKE_COORDS.latitude, longitude: FAKE_COORDS.longitude })
       else o.fail({ errMsg: 'getLocation:fail auth deny' })
@@ -604,6 +605,13 @@ async function scenario3() {
       ACTIVITY_WXML.indexOf("{{isDraft ? '返回编辑与发布' : '进入工作台'}}") !== -1)
     check('wxml：草稿预览提示块存在',
       ACTIVITY_WXML.indexOf('未发布预览 · 仅你可见') !== -1)
+    check('草稿关掉原生转发菜单（对内死链不该被发到群里）', env.rec.shareHidden === 1, String(env.rec.shareHidden))
+    const share = env.page.onShareAppMessage()
+    check('草稿即便触发转发也不带活动路径（兜底回首页）',
+      share.path === '/pages/home/home' && share.title === '活动还在准备中', JSON.stringify(share))
+    check('wxml：草稿不显示底部分享按钮、发布庆祝卡也不出现',
+      ACTIVITY_WXML.indexOf('wx:if="{{!isDraft && !justPublished}}"') !== -1
+      && ACTIVITY_WXML.indexOf('wx:if="{{justPublished && isOwner}}"') !== -1)
   }
   {
     // 非 owner 读他人草稿：服务端 denied，无编辑/发布入口
@@ -1143,6 +1151,31 @@ async function scenario9() {
     check('分享路径 = /pages/activity/activity?id=a1',
       share.path === '/pages/activity/activity?id=a1', JSON.stringify(share))
     check('wxml：分享按钮 open-type="share"', ACTIVITY_WXML.indexOf('open-type="share"') !== -1)
+    check('已发布活动不关闭转发菜单', env.rec.shareHidden === 0, String(env.rec.shareHidden))
+  }
+  {
+    // 发布成功闭环：编辑器带 published=1 跳来 → 首帧庆祝一次，随后收回（同 URL 刷新不再庆祝）
+    const env = bootActivity({
+      view: viewFixture(v => { v.permittedActions = OWNER_DRAFT_ACTIONS }),
+      options: { id: 'a1', published: '1' },
+    })
+    await settle(env.page)
+    check('发布成功首帧：justPublished=true 且只在 owner 视角成立',
+      env.page.data.justPublished === true && env.page.data.isOwner === true,
+      JSON.stringify({ just: env.page.data.justPublished, owner: env.page.data.isOwner }))
+    check('wxml：庆祝卡带唯一主分享按钮（分享给同行的人）',
+      ACTIVITY_WXML.indexOf('活动已发布') !== -1 && ACTIVITY_WXML.indexOf('分享给同行的人') !== -1)
+    await waitFor(() => env.page.justPublished === false) // 等首帧 setData 回调把一次性参数消费掉
+    const before = env.reads.length
+    env.page.onShow()
+    await waitFor(() => env.reads.length > before && env.page.data.justPublished === false)
+    check('只庆祝一次：再次 onShow 后 justPublished 收回', env.page.data.justPublished === false,
+      String(env.page.data.justPublished))
+  }
+  {
+    const env = bootActivity({ view: viewFixture(v => { v.permittedActions = OWNER_DRAFT_ACTIONS }) })
+    await settle(env.page)
+    check('普通进入（无 published=1）不庆祝', env.page.data.justPublished === false)
   }
   {
     const env = bootActivity({ view: { kind: 'denied', message: '无权查看。' } })

@@ -10,6 +10,17 @@
       <text style="display:block;margin-top:4px;">此预览不会发布活动，也不会替你报名。</text>
     </view>
 
+    <!-- 发布成功只出现一次：从编辑器带 published=1 进来，读完这一条就收回，
+         把「现在最该做的事」（发到群里）提到首屏，而不是让发起人自己找分享入口。 -->
+    <view wx:if="{{justPublished && isOwner}}" class="callout success">
+      <text class="callout-title">活动已发布</text>
+      <text style="display:block;margin-top:4px;">把链接发到群里，同行的人就能报名。还没填的图文与风险，之后随时能补。</text>
+      <button class="button primary block" style="margin-top:12px;" hover-class="button-hover" open-type="share">
+        <icon name="copy" size="18" color="#FFFFFF" />
+        <text>分享给同行的人</text>
+      </button>
+    </view>
+
     <!-- 编辑式封面 hero：定高媒体盒 + 状态浮层 + 森林底信息区。
          有实拍封面时用它，否则用场景氛围图；实拍加载失败先回退氛围图并把脚注改口，
          氛围图也失败才 img-failed 隐藏照片，媒体盒高度仍在，退回纯色，不出破图。 -->
@@ -60,9 +71,10 @@
     </view>
 
     <view class="form-actions">
-      <view wx:if="{{isOwner}}" class="button primary" hover-class="button-hover" bindtap="onWorkspace" style="flex:1;">
+      <!-- 发布成功那一屏的唯一主操作是上方「分享给同行的人」，工作台退为次要入口 -->
+      <view wx:if="{{isOwner}}" class="button {{justPublished ? 'text' : 'primary'}}" hover-class="button-hover" bindtap="onWorkspace" style="flex:1;">
         <text>{{isDraft ? '返回编辑与发布' : '进入工作台'}}</text>
-        <icon name="arrow" size="18" color="#FFFFFF" />
+        <icon name="arrow" size="18" color="{{justPublished ? '#163E35' : '#FFFFFF'}}" />
       </view>
       <button
         wx:elif="{{canSubmit}}"
@@ -73,8 +85,9 @@
       >填写报名资料</button>
       <view wx:elif="{{canSelfSheet}}" class="button primary" hover-class="button-hover" bindtap="onSelfSheet" style="flex:1;">{{selfButton}}</view>
       <view wx:elif="{{nextActionTarget === 'meeting'}}" class="button primary" hover-class="button-hover" bindtap="onNextAction" style="flex:1;">{{nextActionLabel}}</view>
-      <!-- 分享是次要动作，给它 text 权重：一屏只留一个 primary，拇指落在哪个上一目了然 -->
-      <button class="button text" hover-class="button-hover" open-type="share">
+      <!-- 分享是次要动作，给它 text 权重：一屏只留一个 primary，拇指落在哪个上一目了然。
+           草稿只有自己可见、发布成功那屏已有主分享按钮，这两种情况都不重复挂第二个入口。 -->
+      <button wx:if="{{!isDraft && !justPublished}}" class="button text" hover-class="button-hover" open-type="share">
         <icon name="copy" size="18" color="#163E35" />
         <text>分享</text>
       </button>
