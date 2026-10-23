@@ -9,7 +9,7 @@
 | FU-01 | 夜间证据与台账勘误 | 附件 `morning-review-2026-10-23/repository-facts.json`；MORNING §4–6 | 文档/测试 | 全站规划依据 | READY | **YES** | NONE | 技术负责人 | 按任务卡 FU-01 定点订正，保留历史并加勘误指针 | 错误判据/计数不再被引用；JSON 合法；diff 仅文档 | Flash |
 | FU-02 | 最终代码定点补证（截图+DOM+样式+tap） | MORNING §4.1；`shot-night-v2-after.js:14-18` | 测试/工具链 | T011 三页 | BLOCKED | **YES** | D-01 | 技术负责人 | 授权会话后按 FU-02 清单复拍，隔离账号；产出版本映射与读数 | 版本可区分；18px/600 有样式读数；箭头不掉行；tap 开/关；零生产写入 | 强模型+人工 |
 | FU-14 | 昵称字阶与长值输入验证 | `me.wxss:75`；`me.wxml:19-31`（input 可编辑、blur 自动保存） | 视觉/交互 | me 身份卡 | BLOCKED | **YES**（C2 一部分） | FU-02、D-01 | 设计负责人 | 验证 computed 18px/600、80 字可编辑不侵占统计带；**不要求**省略号 | 样式读数与可编辑性双证；邻区无覆盖 | 强模型+人工 |
-| FU-03 | page2-gates 两条滚动断言时序竞态 | 源码 `tools/page2-gates-test.js:584,649,798-807`；本轮 98/0；临时日志分组不可证 | 测试 | 天气页门 | OPEN | NO | D-10 | 技术负责人 | 解冻 tools 后改事件完成信号；正反控制+变异自证 | 连续 N 跑稳定；变异注入能被抓 | 强模型 |
+| FU-03 | page2-gates 两条滚动断言时序竞态 | 源码 `tools/page2-gates-test.js:584,649,798-807`；本轮 98/0；临时日志分组不可证 | 测试 | 天气页门 | **DONE**（2026-10-23，已提交未 push） | NO | D-10 | 技术负责人 | 已改「setData 回调 + 在途请求」双信号；80ms 迟到响应牙齿；100/0 ×3 | 连续 N 跑稳定；变异注入能被抓 | 强模型 |
 | FU-04 | m02 PV5 privacy 章节计数 | 本轮 `m02-class-scope-test.stdout.txt:50`；tools/privacy 未改 | 测试 | 静态门 | OPEN | NO | 无 | privacy owner | privacy 解冻后核对章节数或放宽判据（不得删章节换绿） | m02 到 66/0 或判据有出处 | Flash（解冻后） |
 | FU-05 | trip2 66/10 存量红 | night-v1 preExistingRed；本轮回执未跑 | 测试 | 报名门 | OPEN | NO | 无 | 技术负责人 | 补 `wx.cloud` 桩，独立提交 | trip2 全绿且变异自证 | 强模型 |
 | FU-06 | B 层 E2E 环境门（9420） | night-v1 与 AGENTS 常驻记录 | 测试 | 三套 UI E2E | OPEN | NO | D-01 | 集成负责人 | 与本轮 9425 驱动分层登记 | 三类结果语义不混档 | 人工 |
@@ -18,11 +18,11 @@
 
 | ID | 事项 | 证据 | 类型 | 影响 | 状态 | 挡合并 | 前置 | 决策责任 | 推荐行动 | 验收标准 | 执行模型 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| FU-16 | 669 条通知的展示策略 | 仅历史截图；`store.js:109-175` 全量加载；`notices-page.js:64` | 业务/产品 | notices/anotices | BLOCKED | NO | D-02 | 产品 | 先决定策略再接实现；客户端分批不减 DB 读 | 策略落地且无漏/重、无额外外呼 | 产品→Flash（分批）/强模型（分页） |
-| FU-17 | 通知类型维度（Notice.kind） | `schema.js:308-311` 无 kind；`selectors.js` 普通投影裁掉关联 | 架构/业务 | 通知域 | BLOCKED | NO | D-03 | 产品+技术 | 先定封闭词表与历史兜底，再改 schema/写入/投影 | 跨角色投影一致；旧数据合法 | 强模型 |
+| FU-16 | 669 条通知的展示策略 | 仅历史截图；`store.js:109-175` 全量加载；`notices-page.js:64` | 业务/产品 | notices/anotices | **DONE**（2026-10-23，已提交未 push） | NO | D-02 | 产品 | 已按 B 落地：首屏 20 + 每次 20，只减渲染不减 DB 读 | 策略落地且无漏/重、无额外外呼 | 产品→Flash（分批）/强模型（分页） |
+| FU-17 | 通知类型维度（Notice.kind） | `schema.js:308-311` 无 kind；`selectors.js` 普通投影裁掉关联 | 架构/业务 | 通知域 | **DONE**（2026-10-23，已提交未 push；已部署） | NO | D-03 | 产品+技术 | 已按 A 落地：七值封闭词表 + 写端赋值 + 历史 unknown | 跨角色投影一致；旧数据合法 | 强模型 |
 | FU-18 | 通知排序与“未读在前”口径 | `notices-page.js:64` 仅 reverse；`PAGE_SPEC.md:13` 声称未读在前 | 业务 | notices | OPEN | NO | 无 | 技术负责人 | 核实 genId 排序假设；必要时改服务端显式排序 | 同秒/淘汰后排序稳定且有判据 | 强模型 |
-| FU-15 | 位置撤回是否二次确认 | `me.js:542-553` 直接撤回；`field.js:43-46` 只置 revokedAt | 交互/产品 | me | BLOCKED | NO | D-04 | 产品 | 二选一：立即撤回+后果说明 / 确认弹窗 | 取消零命令、确认一次、失败复位 | 产品→Flash |
-| FU-20 | 位置授权过期的文案/状态 | `selectors.js:457-461` 未检查 consentExpiresAt；行文案恒称“仍然有效” | 业务/视觉 | me | OPEN | NO | D-05、部署 | 技术负责人 | 先定“已过期”呈现，再改投影+页面；需部署 trailApi | 过期不印“有效”；到期边界有测试 | 强模型 |
+| FU-15 | 位置撤回是否二次确认 | `me.js:542-553` 直接撤回；`field.js:43-46` 只置 revokedAt | 交互/产品 | me | **DONE**（2026-10-23，已提交未 push） | NO | D-04 | 产品 | 已按 A 落地：一次点击 + 行内后果说明，无确认弹窗 | 取消零命令、确认一次、失败复位 | 产品→Flash |
+| FU-20 | 位置授权过期的文案/状态 | `selectors.js:457-461` 未检查 consentExpiresAt；行文案恒称“仍然有效” | 业务/视觉 | me | **DONE**（2026-10-23，已提交未 push；已部署） | NO | D-05、部署 | 技术负责人 | 已按 B 落地：保留行 + `expired` 标记 + 撤回；边界与有效位置同源 | 过期不印“有效”；到期边界有测试 | 强模型 |
 
 ## 3. 共享样式与列表
 
@@ -33,7 +33,7 @@
 | FH-02 | activity-card 信息行 4 行重复 | `home.wxss:11-12`、`discover.wxss:4-5`；全局 `app.wxss:313-315` | 视觉/架构 | home/discover+组件 | BACKLOG | NO | FH-01 | 设计负责人 | 单源化另立提交；不得与 FH-01 混包 | 影子改写两页同步；无视觉差 | Flash（后续） |
 | FU-09 | cardMetrics 双拷贝 | `home.js:16-22`、`discover.js:27-33` | 架构 | 2 页 | OPEN | NO | utils 解冻 | 技术负责人 | 先定适配接口与对拍再合并 | 双份对拍逐字段相同 | 强模型 |
 | FU-10 | article-images gap 与列宽 calc 两本账 | `activity.wxss:42-66` | 视觉/维护 | activity | OPEN（低） | NO | 无 | 设计负责人 | 单源化需设计确认；当前已注释登记 | 改 gap 时列宽同步有判据 | 强模型 |
-| FU-11 | home/discover 第二行导语删除 | `discover.wxml:7-9`、`home.wxml:8-10` | 文案/产品 | 2 页 | BLOCKED | NO | D-06 | 产品 | 决定恢复短句或保持删除 | 产品确认；空态覆盖 scope 语义 | 产品→Flash |
+| FU-11 | home/discover 第二行导语删除 | `discover.wxml:7-9`、`home.wxml:8-10` | 文案/产品 | 2 页 | **DONE**（2026-10-23，已提交未 push） | NO | D-06 | 产品 | 已按 B 落地：保持删除，空态与结果计数补 scope 说明 | 产品确认；空态覆盖 scope 语义 | 产品→Flash |
 
 ## 4. Editor 拼板缺口（不得按“无数据源”重做）
 
@@ -67,3 +67,4 @@
 - **OPEN**：已确认存在，但归因/方案/负责人未闭合；允许只读调查，不允许“顺手修”。
 - **BACKLOG**：方向成立但排在依赖之后；本轮不派发。
 - **DEFER**：暂不投入，保留触发条件。
+- **DONE**：实现与门禁已在 `win/ui-followup-batch2-20261023` 完成并登记 SYNC 2026-10-23；「已提交未 push」表示已落入该分支（`f9e24b5`；page2 为 `744d2f8`）但未推送；trailApi/trailApiLab 已于 2026-10-23 部署（线上包与工作树逐文件 diff 空）。
