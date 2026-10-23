@@ -78,7 +78,7 @@
 
 **决定（2026-10-23，用户选 A）**：① 保持「封面=正文图」，封面槽上移；② 只做推算预览（只读）；③ 装备改 chips，仍存换行文本。三项按一批实施并本地提交，**零部署**。④ 可见性按 B 另批立项，需另行授权（动 schema/投影/部署）。
 
-**追加（2026-10-23，用户「继续实施」授权 EDI-04）**：④ 按 B 落地为可选 `visibility: discover|link`，缺省 `discover` 对存量与旧客户端保持逐字节同行为；`link` 在服务端发现过滤里排除（含创建者本人），凭 id/分享链接仍可打开；编辑器发布步新增「可见范围」选择，`buildInput` 始终显式带键以支持改回公开。改动文件：`domain/schema.js`、`domain/selectors.js`、`pages/editor/editor.{js,wxml}` + `sync-lab.js`（17 文件）。**本地提交，未部署、未 push、真机 NOT_RUN**；部署顺序：先 `trailApi` + `trailApiLab` 再放客户端，否则旧 schema 会拒绝 `visibility`。
+**追加（2026-10-23，用户「继续实施」授权 EDI-04）**：④ 按 B 落地为可选 `visibility: discover|link`，缺省 `discover` 对存量与旧客户端保持逐字节同行为；`link` 在服务端发现过滤里排除（含创建者本人），凭 id/分享链接仍可打开；编辑器发布步新增「可见范围」选择，`buildInput` 始终显式带键以支持改回公开。改动文件：`domain/schema.js`、`domain/selectors.js`、`pages/editor/editor.{js,wxml}` + `sync-lab.js`（17 文件）。**已并入 master（`76bf027`）并推送；部署 `trailApi` + `trailApiLab` 与发布步真机核验由用户完成（2026-10-23 用户确认）**；部署顺序：先 `trailApi` + `trailApiLab` 再放客户端，否则旧 schema 会拒绝 `visibility`。
 
 责任：产品+设计；技术评估如上。所需时点：editor 批次立项前。
 
@@ -119,4 +119,4 @@
 | D-06 | B：保持删除导语，空态/计数补 scope 说明 | FU-11 |
 | D-10 | A：事件完成信号替代固定等待 + 牙齿用例 | FU-03 |
 
-D-01 已授权（2026-10-23 只读会话）；D-08 A 已批准且 FH-01 已合并；D-09 A 已合并并以 `7a44b8c` 合入 master（已 push）。**D-07 A 已批准并落地 EDI-01/02/03（本地提交 `7a254df`，真机 31/31 check，证据 `docs/ui-ux-redesign/evidence/edi-d07-2026-10-23/`）；④B 已获「继续实施」授权并落地 EDI-04（本地提交，未部署、未 push、真机 NOT_RUN；部署顺序见 D-07 追加段）。**
+D-01 已授权（2026-10-23 只读会话）；D-08 A 已批准且 FH-01 已合并；D-09 A 已合并并以 `7a44b8c` 合入 master（已 push）。**D-07 A 已批准并落地 EDI-01/02/03（本地提交 `7a254df`，真机 31/31 check，证据 `docs/ui-ux-redesign/evidence/edi-d07-2026-10-23/`）；④B 已获「继续实施」授权并落地 EDI-04（已部署、真机由用户核验，`76bf027` 并入 master 并推送；部署顺序见 D-07 追加段）。**
