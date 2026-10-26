@@ -2,12 +2,12 @@
 //
 // 这一套钉两轮垂直切片真正动过的结构：
 //   S1（首屏）：① hero 变成组件，且组件里不再印里程/爬升（指标移到路线区）；
-//   ② 信息卡是时间/集合/人数/强度的唯一出口，事实区（sec-facts）整块消失；
+//   ② 首屏是「hero + .sheet-top 纸面板」：事实格 / 封面说明 / 状态卡同处一块纸面（Slice 2）；
 //   ③ 封面来源说明全页只印一次，落在纸面背景上；
 //   ④ 路线指标条在剖面/地图之前；
 //   ⑤ 共享资产 .hero-cover 只允许被 .act-hero 作用域覆盖。
 //   S2（正文节奏）：⑥ 9 个正文区块统一由 chapter 承载，编号只给阅读顺序里的 8 个章节；
-//   ⑦ 外层 .stack-sections 统一 28px 章节间距；⑧ 节点时间轴从路线区迁入行程章节；
+//   ⑦ 外层 .stack-sections 统一 40px 章节间距；⑧ 节点时间轴从路线区迁入行程章节；
 //   ⑨ 装备改成四列图标格（文字始终可见）；⑩ 费用文案逐字不变、页尾两行同属一个 .stack。
 //
 // 为什么允许它读源码：①③④⑥⑦⑧ 本身就是「模板里出现几次、谁在谁前面」的事实，
@@ -21,6 +21,24 @@ const ROOT = path.join(__dirname, '..')
 const P = (...p) => path.join(ROOT, 'miniprogram', ...p)
 const read = file => fs.readFileSync(P(file), 'utf8')
 const stripComments = text => text.replace(/<!--[\s\S]*?-->/g, '')
+// 按 <view> 深度找某个开标签自己的闭合位置：用来证明「元素真的在这个容器里」，
+// 而不是只比较前后顺序（同级兄弟也能满足顺序）。
+function matchView(text, start) {
+  if (start < 0) return -1
+  const re = /<\/?view\b[^>]*>/g
+  re.lastIndex = start
+  let depth = 0
+  let m
+  while ((m = re.exec(text))) {
+    if (m[0].slice(0, 2) === '</') {
+      depth--
+      if (depth === 0) return m.index + m[0].length
+    } else if (m[0].slice(-2) !== '/>') {
+      depth++
+    }
+  }
+  return -1
+}
 
 const ACT_WXML_RAW = read('pages/activity/activity.wxml')
 const ACT_WXML = stripComments(ACT_WXML_RAW)
@@ -73,18 +91,32 @@ section('1. 组件注册与接线')
     { hero: (ACT_WXML.match(/<activity-hero\b/g) || []).length, grid: (ACT_WXML.match(/<fact-grid\b/g) || []).length })
 }
 
-section('2. 首屏顺序：hero → 信息卡 → 封面说明，且都在 .act-top')
+section('2. 首屏顺序：hero → 纸面板（事实格 → 封面说明 → 状态卡），且都在 .act-top')
 {
   const iTop = ACT_WXML.indexOf('class="act-top"')
   const iHero = ACT_WXML.indexOf('<activity-hero')
-  const iInfo = ACT_WXML.indexOf('class="card act-info"')
+  const iSheet = ACT_WXML.indexOf('class="sheet-top act-sheet"')
+  const iInfo = ACT_WXML.indexOf('<fact-grid wx:if="{{infoFacts.length}}"')
   const iNote = ACT_WXML.indexOf('act-photo-note')
   const iCallout = ACT_WXML.indexOf('class="callout {{stateTone}}"')
-  check('顺序为 act-top < hero < 信息卡 < 封面说明 < 状态 callout',
-    iTop !== -1 && iHero > iTop && iInfo > iHero && iNote > iInfo && iCallout > iNote,
-    { iTop, iHero, iInfo, iNote, iCallout })
-  check('信息卡仅在 infoFacts 非空时出现（缺项时不留空壳卡）',
-    /<view wx:if="\{\{infoFacts\.length\}\}" class="card act-info">/.test(ACT_WXML))
+  check('顺序为 act-top < hero < 纸面板 < 事实格 < 封面说明 < 状态 callout',
+    [iTop, iHero, iSheet, iInfo, iNote, iCallout]
+      .every((v, i, a) => v !== -1 && (i === 0 || v > a[i - 1])),
+    { iTop, iHero, iSheet, iInfo, iNote, iCallout })
+  // 容器关系不能只靠「谁在谁前面」：同级兄弟也能满足顺序。这里按 <view> 深度找到纸面板自己的闭合位置。
+  const iSheetOpen = ACT_WXML.lastIndexOf('<view', iSheet)
+  const sheetEnd = matchView(ACT_WXML, iSheetOpen)
+  const sheetBlock = sheetEnd === -1 ? '' : ACT_WXML.slice(iSheetOpen, sheetEnd)
+  check('三者都在纸面板自己的闭合块里（不是刚好排在其后）',
+    sheetEnd !== -1 && sheetBlock.indexOf('<fact-grid') !== -1
+    && sheetBlock.indexOf('act-photo-note') !== -1
+    && sheetBlock.indexOf('class="callout {{stateTone}}"') !== -1, { sheetEnd })
+  check('纸面板内不再嵌卡片：事实格直接落在纸面上，不形成卡中卡',
+    sheetBlock.indexOf('class="card') === -1)
+  check('纸面板在同行评分之前收口（评分不参与首屏两块信息）',
+    sheetEnd !== -1 && sheetEnd < ACT_WXML.indexOf('sceneryRating || funRating'))
+  check('事实格仅在 infoFacts 非空时出现（缺项时不留空壳）',
+    /<fact-grid wx:if="\{\{infoFacts\.length\}\}" items="\{\{infoFacts\}\}" variant="card" \/>/.test(ACT_WXML))
   check('封面说明由 photoNote 驱动，空串不占位',
     /<text wx:if="\{\{photoNote\}\}" class="photo-note act-photo-note">/.test(ACT_WXML))
 }
@@ -136,9 +168,15 @@ section('6. 共享资产 .hero-cover 只做作用域覆盖')
   check('activity-hero.wxss 里没有未作用域的 hero-cover 选择器', offenders.length === 0, offenders)
   check('标题上叠用三节选择器压过 app.wxss 的同名规则',
     /\.act-hero\.hero-cover \.hero-cover-body\s*\{/.test(HERO_WXSS))
-  check('页面只为出血与卡片上叠写页面级微调',
+  check('页面只为出血与纸面内部节奏写页面级微调',
     /\.activity-hero-bleed\s*\{[^}]*margin:\s*0\s+-20px/.test(ACT_WXSS)
-    && /\.act-info\s*\{[^}]*margin-top:\s*-24px/.test(ACT_WXSS))
+    && /\.act-sheet\s*\{[^}]*gap:\s*12px/.test(ACT_WXSS)
+    && /\.act-sheet\s*\{[^}]*padding-bottom:\s*20px/.test(ACT_WXSS))
+  check('纸面板复用全局 .sheet-top：负上边距与上圆角只有一份（页面不另写）',
+    /\.sheet-top\s*\{[^}]*margin:\s*-20px\s+-20px\s+0[^}]*border-radius:\s*var\(--radius-sheet\)/.test(APP_WXSS)
+    && ACT_WXSS.indexOf('margin-top: -20px') === -1 && ACT_WXSS.indexOf('margin: -20px') === -1)
+  check('首屏不再留「卡中卡」的旧信息卡类', ACT_WXML.indexOf('act-info') === -1
+    && ACT_WXSS.indexOf('.act-info') === -1)
   check('.act-top 用 flex column（负 margin 不会穿透父容器/被 stack gap 抵掉）',
     /\.act-top\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/.test(ACT_WXSS))
 }
@@ -251,9 +289,16 @@ section('10. 正文节奏：.stack-sections 统一章节间距，区块顺序固
     (ACT_WXML.match(/<view class="stack-sections">/g) || []).length === 1)
   const order = ['id="sec-intro"', 'id="sec-peers"', 'id="sec-itinerary"', 'id="sec-weather"',
     '<view id="meeting-block">', '<view id="sec-safety">', 'id="sec-equipment"', 'id="sec-fee"', 'id="sec-signup"']
+  const judgeOrder = text => {
+    const idx = order.map(k => text.indexOf(k))
+    return idx.every((v, i) => v !== -1 && (i === 0 || v > idx[i - 1]))
+  }
   const idx = order.map(k => ACT_WXML.indexOf(k))
   check('章节顺序：简介 → 同行人 → 行程 → 天气 → 路线 → 安全 → 装备 → 费用 → 报名后',
-    idx.every((v, i) => v !== -1 && (i === 0 || v > idx[i - 1])), idx)
+    judgeOrder(ACT_WXML), order.map(k => ACT_WXML.indexOf(k)))
+  // 牙齿：对调末两章必须判红。只断言「9 个关键词都在文件里」的话，顺序反了也全绿。
+  const reversed = order.slice(0, -2).concat([order[order.length - 1], order[order.length - 2]]).join('')
+  check('判据自证：章节顺序反了必须判红（不是恒真的存在性检查）', judgeOrder(reversed) === false)
   check('正文最后一个章节在页尾两行之前，页尾两行同属一个 .stack',
     idx[8] < ACT_WXML.indexOf('class="list-row" hover-class="button-hover" bindtap="onNotices"')
     && /<view wx:if="\{\{!isDraft\}\}" class="stack">/.test(ACT_WXML)

@@ -10,10 +10,11 @@
   background: var(--forest-deep);
   border-color: var(--forest-deep);
 }
-/* 媒体盒：featured 与普通卡共用（定高 px + 文档流 image，平台坑 §6 的稳绘制路径） */
+/* 媒体盒：featured 与普通卡共用（定高 px + 文档流 image，平台坑 §6 的稳绘制路径）。
+   featured 240（2026-10-26 style-B，148→240）：参考板首屏的活动卡是「照片占半屏」的形态。 */
 .activity-card__media {
   position: relative;
-  height: 148px;
+  height: 240px;
   overflow: hidden;
   background: var(--forest-deep);
 }
@@ -47,7 +48,8 @@
 
 /* ---- 普通卡：完整照片形态（未传 compact 的旧消费者） ---- */
 .activity-card.activity-card--plain { padding: 0; gap: 0; overflow: hidden; }
-.activity-card--plain .activity-card__media { height: 168px; background: var(--stone); }
+/* 普通卡媒体 200（2026-10-26 style-B，168→200）：与 featured 同一个「图占上半」的比例语言 */
+.activity-card--plain .activity-card__media { height: 200px; background: var(--stone); }
 .activity-card__plain { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 16px; }
 
 /* ---- 紧凑行（首页/发现页）：80px 缩略图 + 标题列 ----
@@ -89,6 +91,16 @@
 }
 .activity-card__titlebar .activity-card__title { flex: 1; min-width: 0; }
 .activity-card__status { flex: 0 0 auto; margin-top: 3px; }
+
+/* ---- 平铺行（发现页 2026-10-26）：去底色/边框/圆角，让结果读成一列行而不是一摞卡。
+   缩略图、内边距与所有排版仍由 compact 提供；flat 不覆盖 padding。
+   行底留一条发丝线——没有卡片边界后，行与行需要一个比 12px 空隙更硬的断点（参考板 01-2）。 */
+.activity-card.activity-card--flat {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
 
 /* ---- 三槽正文 ----
    chips 一行不折行（参考板的活动卡只有一行 chips）：溢出时由标题列整体的

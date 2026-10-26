@@ -29,6 +29,10 @@
 .discover-note__body { font-size: var(--text-caption); line-height: 18px; color: var(--muted); }
 .discover-note__meta { font-size: var(--text-caption); line-height: 18px; color: var(--muted); }
 
+/* 结果列表（2026-10-26 style-B）：行与行由卡片的发丝线断开，不再靠 12px 空隙——
+   空隙叠在线上会让分隔线悬在两行中间，读起来像一条孤立的横线。 */
+.discover-list { display: flex; flex-direction: column; gap: 0; }
+
 /* 筛选与结果计数：横向排一行，不把筛选控件铺满首屏。
    筛选按钮 + 两枚排序 chip；数量不在这里重复（已上移到工具组顶部）。 */
 .filter-row {
@@ -62,9 +66,10 @@
   color: var(--muted);
 }
 /* 页面级覆盖：发现页地图比活动详情高一点，便于看多点分布。
-   N3：圆角改引用 token，与全局 .map-card 的字面量 14px 终值同值（无视觉变化，单源化方向）；高度保持 340px。 */
+   N3：圆角改引用 token，与全局 .map-card 的字面量 14px 终值同值（无视觉变化，单源化方向）。
+   2026-10-26 style-B：340→260，把首屏让给列表行；地图是「换个视角看同一批结果」，不该独占一屏。 */
 .map-card {
-  height: 340px;
+  height: 260px;
   border-radius: var(--radius-card);
 }
 .discover-map {

@@ -74,7 +74,6 @@
 }
 .avatar-btn::after { border: none; }
 .avatar-img { width: 64px; height: 64px; border-radius: 50%; flex: 0 0 64px; }
-.avatar-img.sm { width: 36px; height: 36px; flex: 0 0 36px; }
 .avatar-fallback {
   display: flex;
   align-items: center;
@@ -87,12 +86,9 @@
   color: var(--forest, #163E35);
   border-radius: 50%;
 }
-.avatar-fallback.sm-text {
-  display: inline-flex;
-  width: 36px;
-  height: 36px;
-  font-size: 15px;
-}
+/* 5a（2026-10-26）：同行人行改用共享 <person-row>，这里原来那套 36px 私有小头像
+   （.avatar-img.sm / .avatar-fallback.sm-text，含 15px 无源字阶）随之一并删除——
+   全站的人行头像只剩组件里的 44px 一个出处。 */
 /* B-14：这一条原来被逐字节复制了两遍（两行完全相同 ⇒ 是真重复，不是两个语义）。
    留一份；「两条都改才不会漂移」的那种担心由 tools/swx2-style-gates-test.js §8 常驻守着。 */
 .nick-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }

@@ -23,9 +23,9 @@
     "pages/cloud-field-poc/cloud-field-poc"
   ],
   "window": {
-    "navigationBarBackgroundColor": "#163E35",
+    "navigationBarBackgroundColor": "#F5F5F0",
     "navigationBarTitleText": "OurTrail",
-    "navigationBarTextStyle": "white",
+    "navigationBarTextStyle": "black",
     "backgroundColor": "#F5F5F0",
     "backgroundTextStyle": "dark"
   },

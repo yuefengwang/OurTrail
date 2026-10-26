@@ -183,9 +183,11 @@ async function main() {
     const readOnly = bootTasks({ view: viewFixture({ canManage: false }) })
     await waitFor(() => readOnly.page.data.loading === false)
     check('参与者 canManage=false', readOnly.page.data.canManage === false)
+    // style-B 3c：新建按钮从页头搬进固定底栏。旧断言钉的是页头那颗 `wx:if="{{canManage}}" class="button primary`，
+    // 位置换了但判据不松：底栏与页内操作各自都要有 canManage 守卫（非管理者既不能建、也不能改）。
     check('模板以 canManage 隐藏新建与行内操作',
-      TASKS_WXML.indexOf('wx:if="{{canManage}}"') !== -1
-      && TASKS_WXML.indexOf('wx:if="{{canManage}}" class="button primary') !== -1)
+      TASKS_WXML.indexOf('wx:if="{{canManage && !denied && !loading}}" class="sticky-action"') !== -1
+      && TASKS_WXML.indexOf('wx:if="{{canManage}}" class="task-row__actions"') !== -1)
   }
   {
     const { page } = bootTasks({ view: { kind: 'denied', message: '没有此活动任务的访问权限。' } })

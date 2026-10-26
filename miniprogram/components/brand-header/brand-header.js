@@ -9,6 +9,9 @@ Component({
   properties: {
     // 可选页面名：与词标同一行，用中隔点分开（例如「活动」）。
     title: { type: String, value: '' },
+    // solid = 纸面固定条（默认，其余 tab 页）；overlay = 压在首屏照片上的透明条（home）。
+    // overlay 不留在文档流里（占位 0），也**不用 fixed**：照片只占首屏，滚走后条应随内容离开。
+    variant: { type: String, value: 'solid' },
   },
   data: {
     statusBarHeight: 20,

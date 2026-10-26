@@ -6,9 +6,9 @@ const ROOT = path.resolve(__dirname, '..')
 const read = rel => fs.readFileSync(path.join(ROOT, rel), 'utf8')
 const api = require('../miniprogram/utils/api')
 let passed = 0, failed = 0
-function check(name, ok) {
+function check(name, ok, extra) {
   if (ok) { passed++; console.log('  PASS ' + name) }
-  else { failed++; console.error('  FAIL ' + name) }
+  else { failed++; console.error('  FAIL ' + name + (extra ? ' — ' + extra : '')) }
 }
 const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 const tick = () => new Promise(resolve => setImmediate(resolve))
@@ -53,11 +53,38 @@ function structure() {
   }))
   check('共享只承诺查看，不承诺使用', /可查看/.test(routes.src) && !/可查看与使用/.test(routes.src))
   check('列表新建与打开导航接线保留', !!handler(routes, 'onNewRoute') && entries.every(n => n.attrs['data-id'] === '{{item.id}}'))
+  // style-B 批次二 b（2026-10-26）：原生导航已印「路线库」，页头不再自报同一个名字，
+  // 身份收敛成一句陈述；主行动按 notices / weather-hub 口径落到页头下一条全宽实底按钮
+  // （390 下陈述 + 右侧按钮实测换行，约 370 > 358，所以不留 inline 变体）。
+  const newBtn = handler(routes, 'onNewRoute')
+  const siblings = newBtn ? newBtn.parent.children : []
+  const head = newBtn ? siblings[siblings.indexOf(newBtn) - 1] : null
+  const headTitle = head && head.children.find(n => cls(n, 'list-head__title'))
+  const headText = headTitle ? (routes.src.slice(headTitle.at).match(/^<text[^>]*>([^<]*)<\/text>/) || [])[1] : ''
+  check('路线库页头：一句 20px 陈述独占一行，随后是全宽 block 主按钮，不再有同名标题层/眉题/副标题',
+    !!head && !!headTitle && cls(head, 'section-head')
+    && head.children.filter(n => cls(n, 'list-head__title')).length === 1
+    && !routes.nodes.some(n => ancestors(n).includes(head) && (cls(n, 'kicker') || cls(n, 'section-sub')))
+    && headText !== '路线库' && headText !== ''
+    && cls(newBtn, 'button') && cls(newBtn, 'primary') && cls(newBtn, 'block'))
+  check('路线行：保存时间并入标题下的元信息簇，行尾只剩风险/引用一行',
+    (routes.src.match(/\{\{item\.riskText\}\} · \{\{item\.refText\}\}<\/text>\s*<\/view>/g) || []).length === 2
+    && (routes.src.match(/<text class="small muted">\{\{item\.updatedText\}\}<\/text>\s*<\/view>/g) || []).length === 2)
   check('路线详情彻底移除假封面与脚注', !/hero-cover|photo-note|onCoverError|氛围图/.test(route.src))
   const ordered = ['海拔怎么走', '路线节点', '分段天气', '风险提示', '共享给协作者', '被这些活动使用', '管理这条路线'].map(title => chapter(route, title))
   const map = route.nodes.find(n => n.tag === 'map')
   check('主视觉地图在剖面→节点→天气→风险→共享→引用→管理之前', !!map && ordered.every((n, i) => n && n.at > (i ? ordered[i - 1].at : map.at)))
   check('无地图时有诚实空态与拥有者补坐标入口', route.nodes.some(n => n.tag === 'status-panel' && n.attrs.title === '暂时没有节点地图') && route.src.includes('补充节点坐标') && route.src.includes('联系路线拥有者'))
+  // F3：来源是眉题、标题领起；难度/权限/保存时间在标题下同一元信息簇，保存时间不再独立成行。
+  const overview = route.nodes.find(n => cls(n, 'route-overview'))
+  const oKicker = overview && route.nodes.find(n => cls(n, 'kicker') && ancestors(n).includes(overview))
+  const oTitle = overview && route.nodes.find(n => cls(n, 'list-head__title') && ancestors(n).includes(overview))
+  const oFacts = overview && route.nodes.find(n => cls(n, 'route-facts') && ancestors(n).includes(overview))
+  const updAt = route.src.indexOf('{{route.updatedText}}')
+  check('路线详情：眉题(来源) → 标题 → 元信息（含保存时间）→ 指标，保存时间不再独立成行',
+    !!overview && !!oKicker && !!oTitle && !!oFacts && oKicker.at < oTitle.at
+    && oTitle.at < updAt && updAt < oFacts.at
+    && !/<\/view>\s*<text class="small muted">\{\{route\.updatedText\}\}/.test(route.src))
   const sticky = route.nodes.find(n => cls(n, 'sticky-action'))
   check('底栏仅 owner；主发起、次编辑均在栏内', ownerOnly(sticky) && ['onCreateActivity', 'onEdit'].every(name => {
     const buttons = route.nodes.filter(n => n.attrs.bindtap === name && ancestors(n).includes(sticky))
@@ -81,10 +108,107 @@ function structure() {
   check('七个资料/危险操作弹层全部保留', me.nodes.filter(n => n.tag === 'overlay').length === 7)
   check('本机草稿与未激活入口全部保留', ['onSaveDraftNow', 'onAskDiscard', 'onOpenOnboarding'].every(name => !!handler(me, name)))
   check('tab 页底部 calc 不变', read('miniprogram/pages/me/me.wxss').includes('padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom))'))
+  /* 5a（2026-10-26 style-B）：全站「人行」只有一个出处——<person-row>（44px 头像 / 16·600 姓名 /
+     状态徽标 / 副行 / 操作插槽）。activity·vehicle·roster-panel·field-panel 都在用，常用同行人是
+     最后一个例外（私有 36px 小头像 + 15px 无源字阶）。下面三条钉的是「不该存在的依赖」
+     （AGENTS.md 铁律 30②：查依赖存在性的静态门不会因合法重构假红），不是某一种写法：
+     ① 组件在用且操作仍在其插槽内；② 个人页不再自己定义第二套头像尺寸；③ 行卡内边距只有 app.wxss 一处。 */
+  const compRow = me.nodes.find(n => n.tag === 'person-row')
+  check('常用同行人改用共享 <person-row>，编辑与移除仍在它的插槽内', !!compRow
+    && compRow.attrs['wx:for'] === '{{companions}}' && compRow.attrs['wx:key'] === 'id'
+    && compRow.attrs.name === '{{item.name}}' && compRow.attrs.avatar === '{{item.avatar}}'
+    && ['onEditCompanion', 'onRemoveAsk'].every(name => {
+      const b = me.nodes.find(n => n.attrs.bindtap === name)
+      return !!b && ancestors(b).includes(compRow)
+    }))
+  const stripCss = s => s.replace(/\/\*[\s\S]*?\*\//g, '')
+  const meCss = stripCss(read('miniprogram/pages/me/me.wxss'))
+  check('个人页不再自定义第二套人行头像尺寸（36px 的 .sm 变体与 15px 无源字阶已删）',
+    !/\.avatar-img\.sm|\.avatar-fallback\.sm-text/.test(meCss) && !/font-size:\s*15px/.test(meCss))
+  check('行卡内边距收进 app.wxss 的 .card.rows，me/editor 都不再抄内联 padding',
+    /\.card\.rows\s*\{\s*padding:\s*4px 16px/.test(read('miniprogram/app.wxss'))
+    && ['me', 'editor'].every(p => !/padding:\s*4px 16px/.test(read('miniprogram/pages/' + p + '/' + p + '.wxml'))))
+  // 棘轮（与 b4-e05 的 INLINE_STYLE_BASELINE 同族）：内联 style 只许变少，不许变大。14→11 是 5a 实测。
+  check('个人页内联 style 数不高于 5a 基线 11（只许变少）',
+    (me.src.match(/style="/g) || []).length <= 11)
+
+  /* 5b（2026-10-26 style-B）：路线四页（routes / route / route-edit / weather-chart）没有逐屏板，
+     口径与 5a 相同——只收"重复出处"，不改结构。三条真出处问题：
+     ① 紧凑指标（26px 大字在四列下会压邻列）曾在 routes 与 route **各存一份逐字相同**的规则，
+        与 `.card-label` 那个"唯一出处写在某页 wxss、别页同名类命不中"的事故同族 ⇒ 收进 app.wxss 的 `.metrics.compact`；
+     ② `.route-meta { gap: 8px }` 也在两页各存一份，而 `app.wxss:117` 的 `.cluster` 缺省 gap **就是 8px**
+        ⇒ 这两条是把同一句话抄了两遍的死覆盖，随使用点一起删；
+     ③ weather-chart 的 `.seg` 触点曾写死 44px，绕过了 `--touch-target`。 */
+  const app = read('miniprogram/app.wxss')
+  const routesCss = stripCss(read('miniprogram/pages/routes/routes.wxss'))
+  const routeCss = stripCss(read('miniprogram/pages/route/route.wxss'))
+  check('紧凑指标只有 app.wxss 一个出处；两页不得再各抄一份字号/行距/字距',
+    /\.metrics\.compact \.metric \.metric-value\s*\{[^}]*font-size:\s*var\(--text-title\)[^}]*line-height:\s*24px[^}]*letter-spacing:\s*0/.test(app)
+    && /class="[^"]*\bmetrics\b[^"]*\bcompact\b/.test(routes.src) && /class="[^"]*\bmetrics\b[^"]*\bcompact\b/.test(route.src)
+    && !/\.metric-value/.test(routesCss) && !/\.metric-value/.test(routeCss))
+  check('与 .cluster 缺省同值的空覆盖 .route-meta 已从两页的定义与模板里一起消失',
+    !/\.route-meta/.test(routesCss) && !/\.route-meta/.test(routeCss)
+    && !/route-meta/.test(routes.src) && !/route-meta/.test(route.src)
+    && /\.cluster\s*\{[^}]*gap:\s*8px/.test(app))
+  check('全图页的可点档位下限引用 --touch-target，不写死 44px',
+    /\.fc-modes \.seg\s*\{[^}]*min-height:\s*var\(--touch-target\)/.test(read('miniprogram/pages/weather-chart/weather-chart.wxss')))
+  // 内联 style 棘轮：routes 与 weather-chart 本来就没有，必须保持为 0；其余页只许变少。
+  // 基线是 5b 实测（routes 0 / chart 0 / route 10 / route-edit 17 / editor 99 / signup 17）。
+  check('六页内联 style 不高于 5b 基线（routes 0 / weather-chart 0 / route 10 / route-edit 17 / editor 99 / signup 17）',
+    (routes.src.match(/style="/g) || []).length === 0
+    && (read('miniprogram/pages/weather-chart/weather-chart.wxml').match(/style="/g) || []).length === 0
+    && (route.src.match(/style="/g) || []).length <= 10
+    && (read('miniprogram/pages/route-edit/route-edit.wxml').match(/style="/g) || []).length <= 17
+    && (read('miniprogram/pages/editor/editor.wxml').match(/style="/g) || []).length <= 99
+    && (read('miniprogram/pages/signup/signup.wxml').match(/style="/g) || []).length <= 17)
+  /* 5b 第二处真问题：`style="font-weight:600;"` 的行内主标题曾在 route / route-edit / editor 抄了 12 份，
+     而 M-16 的 overflow-wrap:anywhere 只写在 route 那一页的 `.route-node-name` 里——
+     同一行的名称在编辑器侧没有断词保护，一个 80 字的无空格拉丁串就会把整行撑破。
+     现在字重与断词一起收进 app.wxss 的 `.row-title`（它们本是同一个决定的两半），页面只写类名。 */
+  check('行内主标题走 app.wxss 的 .row-title（字重与 overflow-wrap 同处），四页不再内联抄字重',
+    /\.row-title\s*\{[^}]*font-weight:\s*600[^}]*overflow-wrap:\s*anywhere/.test(app)
+    && ['route', 'route-edit', 'editor', 'signup', 'lab'].every(p => !/style="font-weight:600;"/.test(read('miniprogram/pages/' + p + '/' + p + '.wxml')))
+    && ['route', 'route-edit', 'editor', 'signup', 'lab'].every(p => /class="row-title/.test(read('miniprogram/pages/' + p + '/' + p + '.wxml'))))
+  /* 5c：把这条判据从"我改过的页"升成**全仓**——独立的 `style="font-weight:600;"` 就是"行内主标题抄字重"
+     这一形态本身，任何页出现都该被看见。命中数按 wxml 全集算（43 个模板宿主，页面 + 组件），
+     并且**把剩下的两处内联字重逐条点名**：判据只咬独立形态，两处复合内联是有意保留的，
+     所以这里不是"0 命中所以全绿"，而是"独立形态 0 + 复合形态恰好这 2 处"。
+     · editor.wxml:638 是带语义色的**文字动作**（完成/编辑），不是行标题；
+     · activity.wxml:166 是同族行标题，但 activity 属已验收的 Slice 2/3 写集，登记为后续项不重开。
+     新增第三处复合内联字重 ⇒ 这条会红（名单是逐条比对的，不是数个数 ≤ 2）。 */
+  const INLINE_WEIGHT_COMPOUND = [
+    'miniprogram/pages/editor/editor.wxml',
+    'miniprogram/pages/activity/activity.wxml',
+  ]
+  const inlineWeightHits = []
+  const inlineWeightCompound = []
+  fs.readdirSync(path.join(ROOT, 'miniprogram/pages')).forEach(dir => {
+    const f = ['miniprogram','pages',dir,dir+'.wxml'].join('/')
+    if (!fs.existsSync(path.join(ROOT, f))) return
+    const src = read(f)
+    if (/style="font-weight:600;"/.test(src)) inlineWeightHits.push(f)
+    if (/font-weight:600/.test(src)) inlineWeightCompound.push(f)
+  })
+  fs.readdirSync(path.join(ROOT, 'miniprogram/components')).forEach(dir => {
+    const f = ['miniprogram','components',dir,dir+'.wxml'].join('/')
+    if (!fs.existsSync(path.join(ROOT, f))) return
+    const src = read(f)
+    if (/style="font-weight:600;"/.test(src)) inlineWeightHits.push(f)
+    if (/font-weight:600/.test(src)) inlineWeightCompound.push(f)
+  })
+  check('全仓独立的内联字重行标题为 0；复合内联字重只剩登记的这 2 处',
+    inlineWeightHits.length === 0 && eq(inlineWeightCompound.slice().sort(), INLINE_WEIGHT_COMPOUND.slice().sort()),
+    JSON.stringify({ standalone: inlineWeightHits, compound: inlineWeightCompound }))
+  check('route 详情的节点名只留排布差，字重与断词由共享类承担（两个类同写）',
+    /\.route-node-name\s*\{[^}]*\}/.test(routeCss)
+    && !/\.route-node-name\s*\{[^}]*(font-weight|overflow-wrap)/.test(routeCss)
+    && /class="row-title route-node-name"/.test(route.src))
   for (const name of ['route', 'me']) {
     const json = JSON.parse(read('miniprogram/pages/' + name + '/' + name + '.json'))
     check(name + ' 注册既有 chapter', json.usingComponents.chapter === '/components/chapter/chapter')
   }
+  check('个人页注册共享 <person-row>（模板用了就必须登记，否则标签静默不渲染）',
+    JSON.parse(read('miniprogram/pages/me/me.json')).usingComponents['person-row'] === '/components/person-row/person-row')
   const css = read('miniprogram/pages/routes/routes.wxss')
   check('路线标题允许长文本换行而非截断', /\.route-title\s*\{[^}]*overflow-wrap:\s*anywhere/.test(css) && !/text-overflow:\s*ellipsis|white-space:\s*nowrap/.test(css))
 }

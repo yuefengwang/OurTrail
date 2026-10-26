@@ -15,3 +15,23 @@
    --action-height 承重。没有未来活动时本行只剩「发现活动」（primary 在邀请卡里）。 */
 .home-actions { display: flex; align-items: center; gap: 8px; }
 .home-actions .button { flex: 1; }
+
+/* 首屏照片 hero（2026-10-26 style-B）：负边距抵掉 .page 的 24px 上留白与 20px 左右留白，
+   照片因此顶到屏幕边。高度由 next-up-card--photo 的 min-height 320 给，这里只负责出血与圆角：
+   全出血的照片再带 14px 圆角，四角会露出纸面小三角。 */
+.home-hero { margin: -24px -20px 0; }
+.home-hero--photo { min-height: 320px; }
+.home-hero--photo .next-up-card { min-height: 320px; border-radius: 0; }
+/* 邀请卡分支：没有照片，品牌栏回到纸面固定条，卡仍要在纸面内留 20px 边距。
+   此时 hero 不能有 -24 上边距——占位块会被拉进固定条底下，卡片顶到导航栏里。 */
+.home-hero--invite { margin-top: 0; padding: 0 20px; }
+
+/* sheet 里的竖排节奏：12px 是列表内的等距，区块头额外再让 8px（合计 20），
+   让「切换范围」与「列表」之间出现一次真正的呼吸。 */
+.home-body { display: flex; flex-direction: column; gap: 12px; }
+.home-section { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.home-section__title { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.3px; color: var(--ink); }
+.home-section__sub { font-size: var(--text-caption); line-height: 18px; color: var(--muted); }
+
+/* 没有照片时 .sheet-top 不该再假装是一张抬起的面：白面叠在白卡下只会多出一圈无从解释的圆角。 */
+.sheet-top--invite { margin: 8px 0 0; padding: 0; border-radius: 0; background: transparent; }

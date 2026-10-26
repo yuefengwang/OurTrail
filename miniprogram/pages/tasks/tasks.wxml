@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page {{canManage && !denied && !loading ? 'has-sticky' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="任务清单暂不可用" detail="{{denied}}" actionLabel="{{activityId ? '查看活动' : '回到我的活动'}}" bind:action="onDeniedAction" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取这场活动的分工。" />
@@ -11,10 +11,6 @@
       </view>
       <text class="tasks-identity__title">把分工说清楚。</text>
       <text class="section-sub">装备、采购、记录，逐项有人负责；改状态即刻生效。</text>
-      <view wx:if="{{canManage}}" class="button primary block" hover-class="button-hover" bindtap="onNew">
-        <icon name="plus" size="18" color="#FFFFFF" />
-        <text>新建任务</text>
-      </view>
     </view>
 
     <view class="segmented tabs-line" aria-label="任务筛选">
@@ -97,4 +93,13 @@
       <view class="button text block" hover-class="button-hover" bindtap="onDeleteClose">先留着</view>
     </view>
   </overlay>
+
+  <!-- 新建：固定底栏（板上它在列表下方整宽，不是页头）。受 canManage 保护，与 .page.has-sticky 同条件，
+       否则只读参与者会白多 88px 页尾留白。 -->
+  <view wx:if="{{canManage && !denied && !loading}}" class="sticky-action">
+    <view class="button primary" hover-class="button-hover" bindtap="onNew">
+      <icon name="plus" size="18" color="#FFFFFF" />
+      <text>新建任务</text>
+    </view>
+  </view>
 </view>

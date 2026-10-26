@@ -1,0 +1,71 @@
+{
+  "checks": [
+    {
+      "name": "D0 门槛链：routeDetailsOpen 生效后节点区在屏（.step-group 命中）",
+      "ok": true,
+      "detail": {
+        "stepGroup": {
+          "width": 316,
+          "height": 340,
+          "left": 37,
+          "top": 511.1953125
+        }
+      }
+    },
+    {
+      "name": "D1 长名那一行确实是 .row-title（按文本反查，不是数存在）",
+      "ok": true,
+      "detail": {
+        "rowCount": 5,
+        "matched": "MuztaghAttakuner"
+      }
+    },
+    {
+      "name": "D2 该元素计算值是 overflow-wrap:anywhere（5b 收进来的那半句在真机生效）",
+      "ok": true,
+      "detail": {
+        "overflowWrap": "anywhere"
+      }
+    },
+    {
+      "name": "D3 80 字无空格拉丁串没有越出卡沿（撑破=不合格）",
+      "ok": true,
+      "detail": {
+        "name": {
+          "width": 316,
+          "height": 44,
+          "left": 37,
+          "top": 1021.1953125
+        },
+        "card": {
+          "width": 350,
+          "height": 1160,
+          "left": 20,
+          "top": 294.1953125
+        }
+      }
+    },
+    {
+      "name": "D4 它真的折了（高度 > 单行 22px；单行就说明断词分支没被走到）",
+      "ok": true,
+      "detail": {
+        "height": 44
+      }
+    },
+    {
+      "name": "D5 阴性对照：短名单行（与长名高度不同，差异来自断词而不是选择器抖动）",
+      "ok": true,
+      "detail": {
+        "short": {
+          "width": 70,
+          "height": 22,
+          "left": 67.6640625,
+          "top": 991.1953125
+        },
+        "longHeight": 44,
+        "shortOverflowWrap": "anywhere"
+      }
+    }
+  ],
+  "notes": []
+}

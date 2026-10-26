@@ -9,7 +9,8 @@
     "overlay": "/components/overlay/overlay",
     "status-panel": "/components/status-panel/status-panel",
     "form-field": "/components/form-field/form-field",
-    "chapter": "/components/chapter/chapter"
+    "chapter": "/components/chapter/chapter",
+    "person-row": "/components/person-row/person-row"
   },
   "enablePullDownRefresh": true
 }

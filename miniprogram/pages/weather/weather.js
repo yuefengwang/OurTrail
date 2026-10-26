@@ -130,6 +130,7 @@ Page({
     dayCards: [],
     callouts: [],
     detailRows: [],
+    briefRows: [],
     showDetail: false,
     updatedAt: '',
     providerLabel: '',
@@ -155,6 +156,10 @@ Page({
     viewSpan: 24,
     viewHW: VIEW_HW,
     chartView: [],
+    // 图上方逐时摘要带（板 04-2）：与 chartView 同一时间窗、同一份小时对象，
+    // 只在窗口切换时随图表一起重建；popShown 决定图下降水概率行整行是否出现。
+    hourStrip: [],
+    popShown: false,
     chartSunBands: {},
     chartSunLines: {},
     chartNow: null,
@@ -689,6 +694,9 @@ Page({
     this._skyNight = skyOut ? skyOut.night : null
     const chartSeries = this.buildChartSeries(series, this.data.date)
     this._chartSeries = chartSeries
+    // 图表与摘要带必须同一窗口同一份小时对象（否则带上的温度与图上曲线说的是两件事）
+    const viewSeries = this.buildViewSeries(chartSeries, this.data.viewSpan)
+    const hourStrip = this.buildHourStrip(viewSeries)
     const skyLive = this._skyContext && this._skyContext.key === this.skyContextKey(point) ? this._skyContext : null
     const chartMarks = this.buildChartMarks(series, point.coordinates, elevation, elevOK, result.days || [], result.cloudLevels || null, skyLive)
     this._chartMarks = chartMarks
@@ -766,6 +774,7 @@ Page({
       dayCards: this.buildDayCards(result.days || [], point.coordinates),
       callouts: cond.buildCallouts(day, detail, elevation),
       detailRows: this.buildDetailRows(detail),
+      briefRows: this.buildBriefRows(detail),
       condOverall: skyOut ? cond.overallGrade(skyOut.items) : null,
       condSilent: this.buildCondSilent(skyOut),
       condCards: this.buildCondCards(skyOut, {
@@ -790,7 +799,9 @@ Page({
       chartSunLines,
       chartNow,
       chartElev: Number.isFinite(elevation) ? elevation : null,
-      chartView: this.buildViewSeries(chartSeries, this.data.viewSpan),
+      chartView: viewSeries,
+      hourStrip: hourStrip.items,
+      popShown: hourStrip.popShown,
       cloudFieldMissing: !!this._cloudFieldMissing,
       unified: unified,
       oiCard: oiCard,
@@ -1418,9 +1429,14 @@ Page({
   onSpanToggle(e) {
     const span = Number(e.currentTarget.dataset.span)
     if (span !== 24 && span !== 48 && span !== 72) return
+    // 带与图同窗同源：切窗时两处一起重建，不许一条走新窗口、一条留在旧窗口
+    const viewSeries = this.buildViewSeries(this._chartSeries || [], span)
+    const hourStrip = this.buildHourStrip(viewSeries)
     this.setData({
       viewSpan: span,
-      chartView: this.buildViewSeries(this._chartSeries || [], span),
+      chartView: viewSeries,
+      hourStrip: hourStrip.items,
+      popShown: hourStrip.popShown,
       chartPick: null,
       hourChip: null,
     })
@@ -1477,6 +1493,58 @@ Page({
       dewPoint: h.dewPoint == null ? '—' : Math.round(h.dewPoint),
       band: h.band && Number.isFinite(h.band.base) ? h.band.base + '–' + h.band.top : '—',
     }))
+  },
+
+  /* 图上方逐时摘要带（板 04-2）。固定 8 列，步长 = 窗长 / 8（3 / 6 / 9 小时），
+     所以带上印的是**真实采样时刻**（03:00、09:00…）——步长自己看得见，不另加一行说明。
+     列数固定而不是「≤9 列」：375 宽下内容区 335，9 列只有 37px，三字简字（毛毛雨）折行会把
+     温度行推歪；8 列 41.9px 留得出余量，且 3/6/9 与 24/48/72 刚好整除。
+     与 chartView 同源：天气与温度取的就是图上那条曲线的同一批小时对象。 */
+  buildHourStrip(view) {
+    const n = (view || []).length
+    if (!n) return { items: [], popShown: false }
+    const step = Math.max(1, Math.round(n / 8))
+    const items = []
+    let popShown = false
+    for (let i = 0; i < n; i += step) {
+      const h = view[i]
+      // 缺读数不得印成 0：Number(null) === 0，先认类型再取值
+      const hasPop = typeof h.pop === 'number' && Number.isFinite(h.pop)
+      if (hasPop) popShown = true
+      items.push({
+        // 48/72h 跨天，同一时刻（00:00）会出现多次 ⇒ 键必须带日期，否则 wx:key 重复
+        k: h.d + 'T' + h.t,
+        t: h.t,
+        phrase: F.weatherPhrase(h.code),
+        temp: typeof h.temp === 'number' && Number.isFinite(h.temp) ? Math.round(h.temp) + '°' : '—',
+        pop: hasPop ? h.pop + '%' : '—',
+      })
+    }
+    return { items, popShown }
+  },
+
+  /* 详细数据四行（板 04-4）：只印当日区间，逐小时值仍留在下方可展开的全表里。
+     每个量独立取值——一个可用数值都没有时印「—」，不拿 0 顶替（缺测 ≠ 无雨/无风/晴）。 */
+  buildBriefRows(detail) {
+    const nums = pick => (detail || []).map(pick).filter(v => typeof v === 'number' && Number.isFinite(v))
+    const range = (list, unit, digits) => {
+      if (!list.length) return '—'
+      const round = v => (digits ? Number(v.toFixed(digits)) : Math.round(v))
+      const lo = round(Math.min.apply(null, list))
+      const hi = round(Math.max.apply(null, list))
+      return lo === hi ? lo + unit : lo + ' – ' + hi + unit
+    }
+    // 降水 = 本小时「雨 + 阵雨」；旧返回体可能没有 showers，那就只加在的那一项，
+    // 不把缺失字段当 0 相加（那是给缺测编数）。
+    const precip = (detail || [])
+      .filter(h => typeof h.precip === 'number' || typeof h.showers === 'number')
+      .map(h => (typeof h.precip === 'number' ? h.precip : 0) + (typeof h.showers === 'number' ? h.showers : 0))
+    return [
+      { k: '温度', v: range(nums(h => h.temp), '°C') },
+      { k: '降水量', v: range(precip, ' mm/h', 1) },
+      { k: '风速', v: range(nums(h => h.wind), ' km/h') },
+      { k: '云量', v: range(nums(h => h.cloud && h.cloud.total), '%') },
+    ]
   },
 
   // 切换节点：若该节点能推算抵达日，日期自动跟到那一天（除非用户手动选过）

@@ -56,7 +56,7 @@
     />
 
     <block wx:elif="{{viewMode === 'list'}}">
-      <view class="stack-gap3" aria-label="已发布的活动">
+      <view class="discover-list" aria-label="已发布的活动">
         <activity-card
           wx:for="{{cards}}"
           wx:key="id"
@@ -71,6 +71,7 @@
           badge="{{item.badge}}"
           featured="{{false}}"
           compact="{{true}}"
+          flat="{{true}}"
           activity-id="{{item.id}}"
           data-id="{{item.id}}"
           bind:open="onOpenCard"
@@ -114,6 +115,7 @@
         badge="{{mapSelected.badge}}"
         featured="{{false}}"
         compact="{{true}}"
+        flat="{{true}}"
         activity-id="{{mapSelected.id}}"
         data-id="{{mapSelected.id}}"
         bind:open="onOpenCard"

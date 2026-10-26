@@ -33,7 +33,7 @@
           <text class="badge {{item.read ? 'neutral' : 'success'}}">{{item.read ? '已读' : '未读'}}</text>
           <text class="small muted tabular">{{item.time}}</text>
         </view>
-        <text user-select>{{item.content}}</text>
+        <text class="notice-body" user-select>{{item.content}}</text>
         <view class="form-actions">
           <view wx:if="{{!item.read}}" class="button text" hover-class="button-hover" data-id="{{item.id}}" data-activity-id="{{item.activityId}}" bindtap="onMarkRead">标记已读</view>
           <view class="button text" hover-class="button-hover" data-id="{{item.activityId}}" bindtap="onOpenActivity">查看活动安排</view>

@@ -1,4 +1,5 @@
-/* 「下一次同行」卡：森林底 + 白字，与 featured 活动卡同族（同一份 hero 语言）。
+/* 「下一次同行」卡：照片 hero + 压底文字（2026-10-26 style-B）。
+   照片是场景氛围图（utils/covers.js 按活动 id 稳定选取），非活动实拍。
    反向的空态卡退回白卡 + 细线：它邀请的是「还没有安排」这件事，不该抢列表卡片的焦点。
    全部色值走既有 token，零新增。 */
 .next-up-card {
@@ -11,6 +12,41 @@
   color: var(--white);
 }
 .next-up-card--pressed { opacity: 0.9; }
+
+/* 照片分支：定高 hero（320），文字压在下沿；图片与 scrim 绝对定位，正文 relative 叠在上面。
+   图片失败由模板整个摘掉（coverFailed），露出下面的森林底，文字仍然可读。 */
+.next-up-card--photo {
+  position: relative;
+  justify-content: flex-end;
+  min-height: 320px;
+  padding: 20px;
+  overflow: hidden;
+}
+.next-up-card__cover {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.next-up-card__scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--scrim-hero);
+  pointer-events: none;
+}
+.next-up-card__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .next-up-card__kicker {
   font-size: 11px;
   line-height: 16px;

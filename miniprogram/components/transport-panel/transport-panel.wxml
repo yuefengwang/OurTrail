@@ -6,10 +6,6 @@
   <view wx:else class="stack">
     <view class="card-header">
       <text class="section-title">先看容量，再安排同行</text>
-      <view wx:if="{{!lockHint}}" class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" data-id="" bindtap="{{busy ? '' : 'onEditorOpen'}}">
-        <icon name="plus" size="18" color="#163E35" />
-        <text>添加车辆</text>
-      </view>
     </view>
     <view class="metrics">
       <view class="metric"><text class="metric-value">{{metrics.vehicles}}</text><text class="metric-label">辆车</text></view>
@@ -99,6 +95,15 @@
         <view class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" data-id="{{vh.id}}" bindtap="{{busy ? '' : 'onEditorOpen'}}">编辑车辆与司机</view>
         <view class="button text" hover-class="button-hover" data-id="{{vh.id}}" bindtap="onRemoveAsk">删除车辆</view>
       </view>
+    </view>
+
+    <!-- 添加车辆是这一屏的收口动作（板上它在车辆列表下方的整宽按钮）。
+         无车时它是唯一可用的推进动作——上方「预览自动分车」此时是灰的——所以用实心主按钮；
+         有车后主位属于预览，它降为软底整宽，仍留在列表末尾而不是挤进标题行。
+         icon 取不到 var()：#163E35 = --forest、#FFFFFF = --white，均为既有 token 同值。 -->
+    <view wx:if="{{!lockHint}}" class="button block {{vehicles.length ? 'secondary' : 'primary'}} {{busy ? 'disabled' : ''}}" hover-class="button-hover" data-id="" bindtap="{{busy ? '' : 'onEditorOpen'}}">
+      <icon name="plus" size="18" color="{{vehicles.length ? '#163E35' : '#FFFFFF'}}" />
+      <text>添加车辆</text>
     </view>
 
     <view wx:if="{{groups.length}}" class="stack" style="gap:0;">

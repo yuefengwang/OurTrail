@@ -8,8 +8,8 @@
 /* 主状态 callout：编辑式"当前该做什么"——比其他提示重半格，但不换语义色体系 */
 .callout .callout-title { font-size: 15px; line-height: 22px; }
 
-/* ---------- 首屏纵深（S1） ----------
-   .act-top 必须是 flex 列而不是 block：信息卡的 margin-top:-24px 若发生外边距合并，
+/* ---------- 首屏纵深（S1 / Slice 2） ----------
+   .act-top 必须是 flex 列而不是 block：纸面板 .sheet-top 的 margin-top:-20px 若发生外边距合并，
    会把整个首屏（含封面）一起顶进上方提示里；flex 容器不与子项合并外边距。 */
 .act-top {
   display: flex;
@@ -18,14 +18,17 @@
 .activity-hero-bleed {
   margin: 0 -20px;
 }
-.act-info {
-  margin-top: -24px;
-  position: relative;
-  z-index: 1;
+/* 首屏纸面板（Slice 2）：盖住封面下沿 20px（负外边距来自全局 .sheet-top），
+   事实格 / 封面说明 / 状态卡同处一块纸面。下沿留白补在这里——全局 .sheet-top 的
+   padding-bottom 是 0，状态卡直接贴到底边会被裁掉半行。 */
+.act-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 20px;
 }
 .act-photo-note {
   display: block;
-  margin-top: 8px;
 }
 
 /* 同行评分：从事实区搬出的可选观感信息，不占信息卡格子 */

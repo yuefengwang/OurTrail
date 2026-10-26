@@ -1446,6 +1446,73 @@ section('13c. 跨夜日程与 OI 24h：今晚银河进日程，时间轴只画�
     JSON.stringify(raw.filter(e => e.l2).map(e => e.key + '@' + e.t)))
 }
 
+/* ============ 8. 逐时摘要带 / 降水概率行 / 详细数据四行（2026-10-26 style-B 4） ============
+   板 04-2 要的是"瞟一眼趋势"：带上每列 = 天气简字 + 温度 + 时刻，图下一行概率。
+   走页面自己的 buildHourStrip / buildBriefRows，不在测试里重写采样与区间规则。 */
+async function stripCases() {
+  section('8. 逐时摘要带与详细数据四行')
+  const page = pageConfig()
+  const hours = fakeSeries(DATE, 3)
+  const strip = span => page.buildHourStrip(page.buildViewSeries(hours, span))
+
+  const s24 = strip(24)
+  check('24h 窗：3 小时一格 × 8 列（步长从列里的时刻自己看得出来）',
+    s24.items.length === 8 &&
+      s24.items.map(x => x.t).join(',') === '00:00,03:00,06:00,09:00,12:00,15:00,18:00,21:00',
+    s24.items.map(x => x.t).join(','))
+  const s48 = strip(48)
+  const s72 = strip(72)
+  check('48h / 72h 窗换成 6 / 9 小时一格，列数恒为 8（步长 = 窗长 / 8）',
+    s48.items.length === 8 && s72.items.length === 8 &&
+      s48.items.map(x => x.t).join(',') === '00:00,06:00,12:00,18:00,00:00,06:00,12:00,18:00' &&
+      s72.items.map(x => x.t).join(',') === '00:00,09:00,18:00,03:00,12:00,21:00,06:00,15:00',
+    s48.items.length + '/' + s72.items.length + ' · ' + s72.items.map(x => x.t).join(','))
+  /* wx:key 必须唯一：48/72h 跨天，同一时刻会重复出现。
+     用 t 当键就是重复键（WXML 复用错节点），所以键要带日期。 */
+  check('三档窗口的列键全部唯一（跨天同一时刻不得撞键）',
+    [s24, s48, s72].every(s => {
+      const keys = s.items.map(x => x.k)
+      return keys.every(k => typeof k === 'string' && k) && new Set(keys).size === keys.length
+    }),
+    [s24, s48, s72].map(s => new Set(s.items.map(x => x.k)).size + '/' + s.items.length).join(' '))
+
+  /* 缺读数不得变成有利事实：Number(null) === 0，补 0 会把「没有概率」印成「降水 0%」。 */
+  const noPop = page.buildHourStrip(page.buildViewSeries(
+    hours.map(h => Object.assign({}, h, { pop: null })), 24))
+  check('概率全缺 ⇒ popShown=false（图下整行不印），列内印「—」而不是 0%',
+    noPop.popShown === false && noPop.items.every(x => x.pop === '—'),
+    noPop.popShown + ' / ' + noPop.items.map(x => x.pop).join(','))
+  const onePop = page.buildHourStrip(page.buildViewSeries(
+    hours.map((h, i) => Object.assign({}, h, i === 3 ? { pop: null } : {})), 24))
+  check('个别小时缺概率 ⇒ 行仍在，那一格印「—」（缺测 ≠ 不会下雨）',
+    onePop.popShown === true && onePop.items.filter(x => x.pop === '—').length === 1 &&
+      onePop.items.filter(x => x.t === '03:00')[0].pop === '—',
+    onePop.items.map(x => x.pop).join(','))
+  const noTemp = page.buildHourStrip(page.buildViewSeries(
+    hours.map(h => Object.assign({}, h, { temp: null })), 24))
+  check('温度缺测印「—」而不是 0°',
+    noTemp.items.every(x => x.temp === '—'), noTemp.items.map(x => x.temp).join(','))
+
+  const brief = page.buildBriefRows([
+    { temp: 6, precip: 0, showers: 0, wind: 2, cloud: { total: 30 } },
+    { temp: 16, precip: 2.4, showers: 0, wind: 6, cloud: { total: 80 } },
+  ])
+  check('详细数据四行 = 当日真实 min–max（温度 / 降水 / 风速 / 云量，顺序固定）',
+    brief.map(r => r.k).join(',') === '温度,降水量,风速,云量' &&
+      brief[0].v === '6 – 16°C' && brief[1].v === '0 – 2.4 mm/h' &&
+      brief[2].v === '2 – 6 km/h' && brief[3].v === '30 – 80%',
+    brief.map(r => r.k + '=' + r.v).join(' | '))
+  check('缺读数整行印「—」，不拿 0 顶替（缺测 ≠ 无雨 / 无风 / 晴）',
+    page.buildBriefRows([{ temp: null, wind: null, cloud: null }]).map(r => r.v).join('|') === '—|—|—|—',
+    page.buildBriefRows([{ temp: null, wind: null, cloud: null }]).map(r => r.v).join('|'))
+  check('旧返回体没有 precip 只有 showers 时只用 showers（缺失字段不当 0 相加）',
+    page.buildBriefRows([{ showers: 1.5 }])[1].v === '1.5 mm/h',
+    page.buildBriefRows([{ showers: 1.5 }])[1].v)
+  check('全天同一数值时不印假区间（「12°C」而不是「12 – 12°C」）',
+    page.buildBriefRows([{ temp: 12 }, { temp: 12 }])[0].v === '12°C',
+    page.buildBriefRows([{ temp: 12 }, { temp: 12 }])[0].v)
+}
+
 raceCases()
   .catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') })
   .then(windowCases)
@@ -1454,6 +1521,8 @@ raceCases()
   .catch(e => { failed++; console.error('  ✗ local 模式用例执行异常（' + e.message + '）') })
   .then(routeElevCases)
   .catch(e => { failed++; console.error('  ✗ 路线海拔用例执行异常（' + e.message + '）') })
+  .then(stripCases)
+  .catch(e => { failed++; console.error('  ✗ 摘要带用例执行异常（' + e.message + '）') })
   .then(() => {
     console.log('\npassed=' + passed + ' failed=' + failed)
   process.exit(failed ? 1 : 0)

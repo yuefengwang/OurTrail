@@ -5,15 +5,19 @@
   </block>
   <view wx:else class="stack-sections">
     <view class="route-overview">
-      <view class="cluster route-meta">
-        <text class="small muted">{{route.sourceText}}</text>
+      <!-- style-B（2026-10-26 批次二 b）：来源是眉题，标题领起；难度/权限/已共享/保存时间同属元信息，收在标题下同一簇。 -->
+      <view class="section-head">
+        <text class="kicker">{{route.sourceText}}</text>
+        <text class="list-head__title">{{route.title}}</text>
+      </view>
+      <view class="cluster">
         <text wx:if="{{route.difficultyLabel}}" class="badge neutral">{{route.difficultyLabel}}</text>
         <text wx:if="{{isOwner}}" class="small muted">我的路线</text>
         <text wx:else class="small muted">共享路线 · 仅可查看</text>
         <text wx:if="{{isOwner && route.visibility === 'shared'}}" class="badge info">已共享</text>
+        <text class="small muted">{{route.updatedText}}{{route.updatedAt ? '保存' : ''}}</text>
       </view>
-      <text class="list-head__title">{{route.title}}</text>
-      <view class="metrics route-facts">
+      <view class="metrics compact route-facts">
         <view class="metric">
           <text wx:if="{{route.distanceKm}}" class="metric-value">{{route.distanceKm}}<text class="metric-unit">km</text></text>
           <text wx:else class="metric-value route-fact-missing">待补</text>
@@ -29,7 +33,6 @@
           <text class="metric-label">路线节点</text>
         </view>
       </view>
-      <text class="small muted">{{route.updatedText}}{{route.updatedAt ? '保存' : ''}}</text>
     </view>
 
     <view wx:if="{{map.visible}}" class="map-card">
@@ -63,7 +66,7 @@
             <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
               <view style="min-width:0;">
                 <text class="eyebrow">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中'}}</text>
-                <text class="route-node-name">{{item.name}}</text>
+                <text class="row-title route-node-name">{{item.name}}</text>
               </view>
               <view class="cluster" style="gap:8px;flex:0 0 auto;">
                 <text wx:if="{{item.ele}}" class="small tabular muted">{{item.ele}} m</text>
@@ -111,7 +114,7 @@
         <view wx:for="{{nodeWeather}}" wx:key="id" class="list-row">
           <view class="list-main">
             <view class="cluster" style="gap:8px;">
-              <text style="font-weight:600;">{{item.name}}</text>
+              <text class="row-title">{{item.name}}</text>
               <text wx:if="{{item.arriveLabel && item.arriveLabel !== '无时间信息'}}" class="badge neutral tabular">{{item.arriveLabel}}</text>
             </view>
             <text class="list-sub">

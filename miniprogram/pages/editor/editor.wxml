@@ -169,7 +169,7 @@
       </view>
 
       <!-- 复制模板（仅新建且有过往活动时）：放在必填项之后、缺项提示之前，是"省事"而非"第一步"。 -->
-      <view wx:if="{{!savedId && myActivities.length}}" class="card" style="padding:4px 16px;">
+      <view wx:if="{{!savedId && myActivities.length}}" class="card rows">
         <view class="list-row" hover-class="button-hover" bindtap="toggleTemplateCopy">
           <view class="list-main">
             <text>从过往活动复制（可选）</text>
@@ -275,7 +275,7 @@
               <view class="cluster" style="justify-content:space-between;">
                 <view class="cluster" style="gap:8px;min-width:0;">
                   <text class="badge neutral tabular">{{index + 1}}</text>
-                  <text style="font-weight:600;">{{item.name || (item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '节点 ' + index)}}</text>
+                  <text class="row-title">{{item.name || (item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '节点 ' + index)}}</text>
                 </view>
                 <view class="cluster" style="gap:8px;flex:0 0 auto;">
                   <text class="badge {{item.kind === 'start' ? 'success' : item.kind === 'finish' ? 'info' : 'neutral'}}">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中'}}</text>
@@ -339,7 +339,7 @@
                 <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
                   <view style="min-width:0;">
                     <text class="eyebrow">{{item.indexText}}</text>
-                    <text style="display:block;font-weight:600;margin-top:2px;">{{item.name}}</text>
+                    <text class="row-title" style="display:block;margin-top:2px;">{{item.name}}</text>
                   </view>
                   <text class="{{item.known ? 'small tabular' : 'small muted'}}" style="flex:0 0 auto;">{{item.label}}</text>
                 </view>
@@ -373,7 +373,7 @@
           <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
             <view class="cluster" style="gap:8px;min-width:0;">
               <text class="badge neutral tabular">{{index + 1}}</text>
-              <text style="font-weight:600;">{{item.name || '上车点 ' + (index + 1)}}</text>
+              <text class="row-title">{{item.name || '上车点 ' + (index + 1)}}</text>
               <text wx:if="{{autoPickupIds[item.id]}}" class="badge neutral">自动生成</text>
             </view>
             <view class="button text" hover-class="button-hover" data-id="{{item.id}}" catchtap="togglePickup">编辑</view>
@@ -468,7 +468,7 @@
 
       <view class="card stack-gap3">
         <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleIntro">
-          <text style="font-weight:600;">简介与推荐理由（可选）</text>
+          <text class="row-title">简介与推荐理由（可选）</text>
           <view class="cluster" style="gap:8px;">
             <text wx:if="{{form.description || form.organizerIntro || form.highlightsText}}" class="badge success">已填写</text>
             <text class="muted">{{expandedIntro ? '▾' : '›'}}</text>
@@ -544,7 +544,7 @@
       <view class="step-group">
       <view class="card stack-gap3">
         <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleDetailExtras">
-          <text style="font-weight:600;">活动说明与费用（可选）</text>
+          <text class="row-title">活动说明与费用（可选）</text>
           <view class="cluster" style="gap:8px;">
             <text wx:if="{{form.leader || form.feeSummary || form.feeIncludesText || form.feeExcludesText || form.signupNote || form.minParticipants || form.sceneryRating || form.funRating}}" class="badge success">已填写</text>
             <text class="muted">{{detailExtrasOpen ? '▾' : '›'}}</text>
@@ -588,7 +588,7 @@
       <view class="step-group">
       <view class="card stack-gap3">
         <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleRisks">
-          <text style="font-weight:600;">风险提示（可选）</text>
+          <text class="row-title">风险提示（可选）</text>
           <view class="cluster" style="gap:8px;">
             <text class="badge {{form.risks.length ? 'warning' : 'neutral'}}">{{form.risks.length ? form.risks.length + ' 条' : '未填'}}</text>
             <text class="muted">{{risksOpen ? '▾' : '›'}}</text>
@@ -602,7 +602,7 @@
               <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
                 <view class="cluster" style="gap:8px;min-width:0;">
                   <text class="badge warning tabular">{{index + 1}}</text>
-                  <text style="font-weight:600;">{{item.title || '风险 ' + (index + 1)}}</text>
+                  <text class="row-title">{{item.title || '风险 ' + (index + 1)}}</text>
                 </view>
                 <view class="button text" hover-class="button-hover" data-id="{{item.id}}" catchtap="toggleRisk">编辑</view>
               </view>
@@ -632,7 +632,7 @@
       <view class="step-group">
       <view class="card stack-gap3">
         <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleExtras">
-          <text style="font-weight:600;">装备与费用说明（可选）</text>
+          <text class="row-title">装备与费用说明（可选）</text>
           <view class="cluster" style="gap:8px;">
             <text wx:if="{{form.equipmentText || form.equipmentSuggestedText || form.feeNote || form.cancellationNote}}" class="badge success">已填写</text>
             <text style="color:var(--forest);font-weight:600;">{{editingExtras ? '完成' : '编辑'}}</text>
@@ -840,11 +840,11 @@
         <text class="small muted">路线会作为活动快照带入；之后对路线库的修改不会影响这场活动。</text>
         <input class="input" value="{{quickRouteQuery}}" placeholder="搜索路线名称" bindinput="onQuickRouteSearch" />
         <text wx:if="{{quickRouteMatched > quickRouteShown}}" class="small muted">共 {{quickRouteMatched}} 条，只显示最近 {{quickRouteShown}} 条；输入名称可继续筛选。</text>
-        <view wx:if="{{quickRoutes.length}}" class="card" style="padding:4px 16px;">
+        <view wx:if="{{quickRoutes.length}}" class="card rows">
           <view wx:for="{{quickRoutes}}" wx:key="id" class="list-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="{{quickRouteBusyId ? '' : 'onQuickRoutePick'}}">
             <view class="list-main">
               <view class="cluster" style="gap:8px;">
-                <text style="font-weight:600;">{{item.title}}</text>
+                <text class="row-title">{{item.title}}</text>
                 <text class="badge {{item.badge === '我的' ? 'neutral' : 'info'}}">{{item.badge}}</text>
               </view>
               <text class="list-sub">{{item.statsText}}</text>

@@ -1,0 +1,295 @@
+{
+  "system": {
+    "width": 390,
+    "height": 844,
+    "statusBar": 47
+  },
+  "hub": {
+    "clientHeight": 844,
+    "brandData": {
+      "statusBarHeight": 47,
+      "navBar": 40,
+      "height": 87,
+      "contentRightInset": 102,
+      "title": ""
+    },
+    "bar": {
+      "top": 0,
+      "left": 0,
+      "width": 390,
+      "height": 87,
+      "bottom": 87
+    },
+    "primary": {
+      "top": 205,
+      "left": 20,
+      "width": 350,
+      "height": 48,
+      "bottom": 253
+    },
+    "kicker": "天气",
+    "title": "先看天，再上山。",
+    "sub": "查过的点与轨迹会存住，下次不用重传。",
+    "pageTitlePresent": false
+  },
+  "weather": {
+    "clientHeight": 753,
+    "skyInputsSettled": true,
+    "name": "四姑娘山大峰",
+    "date": "2026-10-26",
+    "callouts": 2,
+    "condOverall": {
+      "score": 32,
+      "tone": "neutral",
+      "label": "条件较差",
+      "stars": "★★☆☆☆",
+      "insufficient": false
+    },
+    "condCards": [
+      {
+        "key": "star",
+        "title": "星空",
+        "stars": "★★☆☆☆"
+      },
+      {
+        "key": "galaxy",
+        "title": "银河",
+        "stars": "★★☆☆☆"
+      }
+    ],
+    "condSilent": {
+      "count": 3,
+      "titles": "晨昏光染、云海、彩虹",
+      "text": "这些天相今天条件不成立，就不单独列出：晨昏光染、云海、彩虹。"
+    },
+    "skyInputLoading": false,
+    "skyInputNote": "",
+    "unifiedR1": "",
+    "preamble": {
+      "pageTitle": {
+        "top": 50,
+        "left": 20,
+        "width": 350,
+        "height": 31,
+        "bottom": 81
+      },
+      "disclaimer": {
+        "top": 97.1953125,
+        "left": 20,
+        "width": 350,
+        "height": 90,
+        "bottom": 187.1953125
+      },
+      "formFields": [
+        {
+          "label": "查看日期 2026-10",
+          "top": 203,
+          "bottom": 277
+        }
+      ],
+      "callouts": [
+        {
+          "top": 97,
+          "bottom": 187,
+          "text": "这是概率判断，不是出发许可。云层与云海为模型推算"
+        },
+        {
+          "top": 293,
+          "bottom": 339,
+          "text": "此点可能入云（雾），观景窗口有限"
+        },
+        {
+          "top": 355,
+          "bottom": 401,
+          "text": "午后阵雨概率高，建议早点出发"
+        }
+      ],
+      "strip": {
+        "top": 417.1953125,
+        "left": 20,
+        "width": 350,
+        "height": 94,
+        "bottom": 511.1953125
+      },
+      "silentCard": {
+        "top": 526.6953125,
+        "left": 20,
+        "width": 350,
+        "height": 78,
+        "bottom": 604.6953125
+      },
+      "firstSection": {
+        "top": 624.6953125,
+        "left": 20,
+        "width": 350,
+        "height": 70,
+        "bottom": 694.6953125
+      },
+      "pointMeta": {
+        "top": 991.6953125,
+        "left": 37,
+        "width": 316,
+        "height": 18,
+        "bottom": 1009.6953125
+      },
+      "sectionHeadTitle": {
+        "top": 636.6953125,
+        "left": 20,
+        "width": 56,
+        "height": 24,
+        "bottom": 660.6953125
+      },
+      "sectionHeadBtn": {
+        "top": 624.6953125,
+        "left": 296,
+        "width": 74,
+        "height": 48,
+        "bottom": 672.6953125
+      },
+      "sectionHeadSub": {
+        "top": 676.6953125,
+        "left": 20,
+        "width": 350,
+        "height": 18,
+        "bottom": 694.6953125
+      },
+      "sectionHeadSubText": "温度 · 降水 · 云层带 · 风 — Open-Meteo.com",
+      "sectionHeads": [
+        {
+          "text": "逐时天气 全图展示 温度",
+          "top": 625,
+          "height": 70
+        },
+        {
+          "text": "今日户外时间轴 天文与天",
+          "top": 1921,
+          "height": 50
+        },
+        {
+          "text": "天相详解 由云/月/地形",
+          "top": 3171,
+          "height": 50
+        }
+      ]
+    },
+    "firstSectionTitle": "逐时天气",
+    "calloutCount": 3,
+    "pillTexts": [
+      "星空\n★★☆☆☆",
+      "银河\n★★☆☆☆"
+    ],
+    "condGradeGap": {
+      "starsRight": 299,
+      "gradeLeft": 305,
+      "gap": 6
+    }
+  },
+  "injectedPills": {
+    "strip": {
+      "top": 417.1953125,
+      "left": 20,
+      "width": 350,
+      "height": 128,
+      "bottom": 545.1953125
+    },
+    "pillCount": 5,
+    "rows": 2,
+    "rightMost": 337,
+    "windowWidth": 390,
+    "stripFitsViewport": true
+  },
+  "exceptions": [],
+  "consoleErrors": [],
+  "checks": [
+    {
+      "name": "天气中心页挂上品牌栏（第 4 个 tab 页；自定义导航）",
+      "pass": true,
+      "extra": "{\"statusBarHeight\":47,\"navBar\":40,\"height\":87,\"contentRightInset\":102,\"title\":\"\"}"
+    },
+    {
+      "name": "页内不再有 .page-title（D8：身份由品牌栏 + kicker 承担）",
+      "pass": true,
+      "extra": ""
+    },
+    {
+      "name": "页面身份仍有字面：kicker=天气 + 20px 标题「先看天，再上山。」",
+      "pass": true,
+      "extra": "{\"kicker\":\"天气\",\"hubTitle\":\"先看天，再上山。\",\"hubSub\":\"查过的点与轨迹会存住，下次不用重传。\"}"
+    },
+    {
+      "name": "品牌栏之后紧接唯一实心主行动，且完整在可用区内",
+      "pass": true,
+      "extra": "{\"primary\":{\"top\":205,\"left\":20,\"width\":350,\"height\":48,\"bottom\":253},\"clientH\":844}"
+    },
+    {
+      "name": "天气页取到真实读数（点卡 + 逐时数据）",
+      "pass": true,
+      "extra": "{\"point\":\"四姑娘山大峰\",\"days\":7}"
+    },
+    {
+      "name": "首屏存在条件 strip（只在 D7 新结构里存在 ⇒ 同时证明 bundle 是新的）",
+      "pass": true,
+      "extra": "{\"top\":417.1953125,\"left\":20,\"width\":350,\"height\":94,\"bottom\":511.1953125}"
+    },
+    {
+      "name": "条件 strip 完整落在可用区内（bottom ≤ 视口高）",
+      "pass": true,
+      "extra": "{\"strip\":{\"top\":417.1953125,\"left\":20,\"width\":350,\"height\":94,\"bottom\":511.1953125},\"clientH\":753}"
+    },
+    {
+      "name": "沉默点名也完整在首屏（D7：判过不成立的项不能藏在折线以下）",
+      "pass": true,
+      "extra": "{\"silentCard\":{\"top\":526.6953125,\"left\":20,\"width\":350,\"height\":78,\"bottom\":604.6953125},\"hasSilent\":true,\"clientH\":753}"
+    },
+    {
+      "name": "「逐时天气」区块头整块在首屏内（strip + 沉默卡 + 图的入口一屏读完）",
+      "pass": true,
+      "extra": "{\"firstSectionTitle\":\"逐时天气\",\"firstSection\":{\"top\":624.6953125,\"left\":20,\"width\":350,\"height\":70,\"bottom\":694.6953125},\"clientH\":753}"
+    },
+    {
+      "name": "点卡已下移到 strip 之后（坐标/海拔贴着图，不再占首屏）",
+      "pass": true,
+      "extra": "{\"pointMeta\":{\"top\":991.6953125,\"left\":37,\"width\":316,\"height\":18,\"bottom\":1009.6953125},\"strip\":417.1953125}"
+    },
+    {
+      "name": "「逐时天气」区头是一行：标题在左、全图展示在右同一基线（不是竖排居中）",
+      "pass": true,
+      "extra": "{\"title\":{\"top\":636.6953125,\"left\":20,\"width\":56,\"height\":24,\"bottom\":660.6953125},\"btn\":{\"top\":624.6953125,\"left\":296,\"width\":74,\"height\":48,\"bottom\":672.6953125},\"head\":{\"top\":624.6953125,\"left\":20,\"width\":350,\"height\":70,\"bottom\":694.6953125}}"
+    },
+    {
+      "name": "来源说明独占一行、不把 Open-Meteo.com 拆成两行",
+      "pass": true,
+      "extra": "{\"sub\":{\"top\":676.6953125,\"left\":20,\"width\":350,\"height\":18,\"bottom\":694.6953125},\"text\":\"温度 · 降水 · 云层带 · 风 — Open-Meteo.com\"}"
+    },
+    {
+      "name": "另两个区头仍是「标题 + 说明」竖排（本批只改带行动的那一个）",
+      "pass": true,
+      "extra": "[{\"text\":\"逐时天气 全图展示 温度\",\"top\":625,\"height\":70},{\"text\":\"今日户外时间轴 天文与天\",\"top\":1921,\"height\":50},{\"text\":\"天相详解 由云/月/地形\",\"top\":3171,\"height\":50}]"
+    },
+    {
+      "name": "pill 与结论卡同源：标题+星串逐条对应（忽略渲染空白）",
+      "pass": true,
+      "extra": "[\"星空\\n★★☆☆☆\",\"银河\\n★★☆☆☆\"] vs [\"星空★★☆☆☆\",\"银河★★☆☆☆\"]"
+    },
+    {
+      "name": "总评在首屏只说一次（.cond-card 全页 1 张）",
+      "pass": true,
+      "extra": "1"
+    },
+    {
+      "name": "星串与评级之间有真实横向间隙（.cond-grade 是 view，gap 生效）",
+      "pass": true,
+      "extra": "{\"starsRight\":299,\"gradeLeft\":305,\"gap\":6}"
+    },
+    {
+      "name": "注入 5 颗 pill（含 5 字「晨昏光染」）：自动换行成 ≥2 行且不横向溢出",
+      "pass": true,
+      "extra": "{\"strip\":{\"top\":417.1953125,\"left\":20,\"width\":350,\"height\":128,\"bottom\":545.1953125},\"pillCount\":5,\"rows\":2,\"rightMost\":337,\"windowWidth\":390,\"stripFitsViewport\":true}"
+    },
+    {
+      "name": "注入 5 颗 pill（最宽情形）：strip 仍完整落在首屏可用区内",
+      "pass": true,
+      "extra": "{\"strip\":{\"top\":417.1953125,\"left\":20,\"width\":350,\"height\":128,\"bottom\":545.1953125},\"clientH\":753}"
+    }
+  ]
+}

@@ -441,8 +441,16 @@ async function scenario4() {
   await settleComp(comp)
   check('名单读取走 organizer 视角（面板自行拉取授权视图）',
     env.reads.length >= 1 && env.reads[0].perspective === 'organizer', JSON.stringify(env.reads))
-  check('pending 计数入列「已确认 4 · 待审核 1 · 候补 1」',
-    comp.data.countersLine === '已确认 4 · 待审核 1 · 候补 1。仅显示你有权查看的人员。', comp.data.countersLine)
+  // style-B 3b：那行「已确认 4 · 待审核 1 · 候补 1」从一句话改成三格指标带。
+  // 同一批数字换载体，判据跟着载体走，但更强：数字来源（counters 对象）+ 三格齐全 + 缺一格必红。
+  const metricCellCount = src => (src.match(/class="metric"/g) || []).length
+  check('名单汇总：三格指标带取 counters 同一出处（已确认 4 / 待审核 1 / 候补 1），缺一格必红',
+    !!comp.data.counters && comp.data.counters.confirmed === 4
+    && comp.data.counters.pending === 1 && comp.data.counters.waitlisted === 1
+    && ['confirmed', 'pending', 'waitlisted'].every(k => ROSTER_WXML.indexOf('{{counters.' + k + '}}') !== -1)
+    && metricCellCount(ROSTER_WXML) === 3
+    && metricCellCount(ROSTER_WXML.replace('<view class="metric">', '<view class="metric-slot">')) === 2,
+    JSON.stringify({ counters: comp.data.counters, cells: metricCellCount(ROSTER_WXML) }))
   check('wxml：批量动作条仅在有勾选时渲染，空选态只留一句引导（不留五颗死按钮）',
     ROSTER_WXML.indexOf('<view wx:if="{{selectedCount}}" class="stack"') !== -1
     && ROSTER_WXML.indexOf('勾选参与人后，可批量审核、递补、取消或导出。') !== -1

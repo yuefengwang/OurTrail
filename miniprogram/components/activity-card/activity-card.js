@@ -27,6 +27,9 @@ Component({
     routeName: { type: String, value: '' },
     // 紧凑行：80px 缩略图 + 标题列。
     compact: { type: Boolean, value: false },
+    // 平铺行（发现页）：同一张卡退成纸面上的行——去底色/边框/圆角，不像一张卡。
+    // 与 compact 正交：flat 只管外观，缩略图与内边距仍由 compact 给。
+    flat: { type: Boolean, value: false },
     // 三槽正文（2026-10-26）：chips 是 [{ key, text }]，次序即截断优先级
     //（日期 > 难度 > 距离 > 爬升），由 utils/card-view.chipsOf 统一给。
     chips: { type: Array, value: [] },

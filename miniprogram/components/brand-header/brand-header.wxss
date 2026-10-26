@@ -36,3 +36,31 @@
   font-weight: 600;
   color: var(--ink);
 }
+
+/* overlay（home）：压在首屏照片上，透明底、无分隔线。
+   刻意不用 fixed——照片只占首屏，滚走后这条应随内容一起离开，不能长期盖住列表。
+   z-index 3：宿主 hero 里的照片卡也是定位元素且排在后面，不抬高层级就会被照片盖住。
+   白字对比度由下面这条顶部压深保证（--scrim-top），不靠封面碰巧是深色。 */
+.brand-header--overlay { position: relative; z-index: 3; }
+/* 顶部压深属于品牌栏自己，不是宿主的责任：换一个带照片的 tab 页就不必再抄一遍。
+   高度 200 只压首屏上半段；z-index -1 让它留在本组件层叠上下文的最底层 ⇒ 词标永远不被自己压暗，
+   而整个组件（z 3）又在照片卡（z auto）之上。 */
+.brand-header--overlay::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 200px;
+  background: var(--scrim-top);
+  pointer-events: none;
+  z-index: -1;
+}
+.brand-header--overlay .brand-header__bar {
+  position: absolute;
+  background: transparent;
+  border-bottom: 0;
+}
+.brand-header--overlay .brand-header__word { color: var(--white); }
+.brand-header--overlay .brand-header__title { color: var(--white); }
+.brand-header--overlay .brand-header__dot { color: var(--on-forest-line); }

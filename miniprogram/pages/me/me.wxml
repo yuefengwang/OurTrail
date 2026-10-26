@@ -74,7 +74,7 @@
 
     <!-- C 最近活动：只放同行记录，不再兼职做工具入口 -->
     <chapter kicker="我的出行" title="最近活动" sub="打开最近一场，回到它的工作台。">
-      <view class="card" style="padding:4px 16px;">
+      <view class="card rows">
         <view
           wx:for="{{recent}}"
           wx:key="id"
@@ -116,7 +116,7 @@
         <text class="small muted">以下资料只用于活动联络与安全应急。</text>
         <text wx:if="{{draftPending}}" class="badge warning">待保存</text>
       </view>
-      <view class="card" style="padding:4px 16px;">
+      <view class="card rows">
         <view class="list-row" hover-class="button-hover" bindtap="onOpenPhone">
           <view class="list-main">
             <text>手机号{{person.phone ? '' : '（未绑定）'}}</text>
@@ -153,21 +153,19 @@
           <text>添加</text>
         </view>
       </view>
-      <view class="card" style="padding:4px 16px;">
-        <view wx:for="{{companions}}" wx:key="id" class="list-row">
-          <view class="list-main">
-            <view class="who">
-              <image wx:if="{{item.avatar}}" class="avatar-img sm" src="{{item.avatar}}" mode="aspectFill" />
-              <text wx:else class="avatar-fallback sm-text">{{item.name ? item.name[0] : '同'}}</text>
-              <text>{{item.name}}</text>
-            </view>
-          </view>
-          <view class="cluster">
+      <view class="card rows">
+        <view class="person-list">
+          <person-row
+            wx:for="{{companions}}"
+            wx:key="id"
+            name="{{item.name}}"
+            avatar="{{item.avatar}}"
+          >
             <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEditCompanion">编辑</view>
             <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRemoveAsk">移除</view>
-          </view>
+          </person-row>
+          <text wx:if="{{!companions.length}}" class="small muted" style="display:block;padding:8px 0;">报名时直接勾选，不用再填一遍。</text>
         </view>
-        <text wx:if="{{!companions.length}}" class="small muted" style="display:block;padding:8px 0;">报名时直接勾选，不用再填一遍。</text>
       </view>
       <text class="small muted">保存条目不等于代办授权；每次报名仍需逐人同意。</text>
     </chapter>

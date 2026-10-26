@@ -28,7 +28,11 @@ page {
   --stone-line: #D9DED7;    /* 冷表面上的分隔线（比 --line 淡一级） */
   /* hero 照片遮罩：自下而上压深，保证反白标题可读；顶部轻压融合状态栏 */
   --scrim-hero: linear-gradient(180deg, rgba(18, 46, 40, 0) 0%, rgba(18, 46, 40, 0.42) 55%, rgba(18, 46, 40, 0.9) 100%);
-  --scrim-top: linear-gradient(180deg, rgba(18, 46, 40, 0.3) 0%, rgba(18, 46, 40, 0) 40%);
+  /* 照片顶部压深：overlay 品牌栏的白字压在封面照片上，必须自带压深（素材里确实有亮天空，
+     见 assets/photos/cover-snow.jpg）。2026-10-26 改档：原来 0.3 在 40% 就归零，
+     只够压状态栏一条边；现在拉到 200px 波段、0.6→0.4→0，足以覆盖「状态栏 + 44 导航」整条词标，
+     到 200px 已完全透明，卡片标题所在的下半段不受影响。 */
+  --scrim-top: linear-gradient(180deg, rgba(18, 46, 40, 0.6) 0%, rgba(18, 46, 40, 0.4) 45%, rgba(18, 46, 40, 0) 100%);
 
   /* 天相窗口色 —— 从 components/meteogram/layout.js 的 MARK_STYLE 提升而来。
      此前这两个值只活在 meteogram 的 canvas 字面量色板里，canvas 拿不到 var()，
@@ -107,8 +111,9 @@ page {
 }
 .stack { display: flex; flex-direction: column; gap: 16px; }
 .stack-gap3 { display: flex; flex-direction: column; gap: 12px; }
-/* 编辑式呼吸：区块之间 28px（不是 16 的等距堆叠，长页因此有了"章节"） */
-.stack-sections { display: flex; flex-direction: column; gap: 28px; }
+/* 编辑式呼吸：区块之间 40px（不是 16 的等距堆叠，长页因此有了"章节"）
+   2026-10-26 style-B：28→40。参考板的长页区块之间有明显空行，28 在 390 宽下仍读成一坨。 */
+.stack-sections { display: flex; flex-direction: column; gap: 40px; }
 .cluster { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 /* 眉题：区块上的小标签。中文没有大写，用字距与字重做层级（不靠颜色） */
 .kicker {
@@ -136,6 +141,21 @@ page {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
+  background: var(--surface);
+}
+/* 行卡（2026-10-26 style-B 5a）：卡内装的是 .list-row / .person-row 这类**自带 18px 上下内边距与
+   发丝底边**的行，卡自己的 16px 上下padding 会再叠一层，行与卡沿就成 34px。这里只把竖向收到 4px，
+   左右保持 16px 让行的文字与卡外标题对齐。此前这一句是 5 处逐字重复的内联 style（me 3 / editor 2），
+   与 b4-e05 的「内联 style 只许减少」同族；写在这里是唯一出处，页面不得再抄第 6 份。 */
+.card.rows { padding: 4px 16px; }
+/* 卡片顶 sheet（2026-10-26 style-B）：照片在上、内容在下时，白面从照片下沿抬起。
+   上两角用 --radius-sheet，左右负边距抵掉 .page 的 20px 内边距做出血；position:relative
+   让白面压住媒体下沿（负 margin-top 只负责把媒体"吃"进去 20px）。 */
+.sheet-top {
+  position: relative;
+  margin: -20px -20px 0;
+  padding: 20px 20px 0;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   background: var(--surface);
 }
 .card-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
@@ -292,16 +312,25 @@ button.button { font-family: inherit; }
 .callout.success { border-color: var(--success); background: var(--success-soft); color: var(--success); }
 .callout-title { font-weight: 600; }
 .callout p { margin-top: 4px; }
+/* 2026-10-26 style-B 3c：通知从「白卡片堆叠」改为**消息流**（板 03-5：无卡片边界、逐条发丝分隔）。
+   类名仍叫 .notice-card：notices / anotices 两份 wxml 与 `page2-gates` 的 bodyAnchors 都以它做同构锚点，
+   改名的收益只有名字，代价是两处门与两个页面的锚点一起动。
+   未读不发新色：2px 左边**两条都占位**，读态只切颜色（transparent → --forest）。
+   只给未读加边会让未读行整体右移 2px，同一列表里读/未读两行的文字左缘对不齐。 */
 .notice-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  border-radius: var(--radius-card);
+  gap: 10px;
+  padding: 18px 0 18px 12px;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  border-radius: 0;
 }
-.notice-card.unread { border-left: 3px solid var(--forest); }
+.notice-card.unread { border-left-color: var(--forest); }
+/* 通知正文是这一屏的主信息，用输入档 16/24；与页内辅助行（14/22）拉开一级。
+   板上的消息正文也是这个比例，别降到 --text-body——那样每条通知都读成页脚注释。 */
+.notice-card .notice-body { font-size: var(--text-input); line-height: 24px; color: var(--ink); }
 
 /* ---------- 精选活动卡：森林底 + 等高线 ---------- */
 .hero {
@@ -489,6 +518,11 @@ button.button { font-family: inherit; }
    anywhere 只在真的放不下时才断，且会算进 min-content（break-word 不会，flex 子里等于不断）。
    列数/字号的取舍属视觉判读，见 out/SWX1/requests.md。 */
 .metric .metric-value { display: block; color: var(--forest); font-size: 26px; line-height: 1.3; letter-spacing: -0.6px; font-weight: 600; overflow-wrap: anywhere; }
+/* 紧凑指标（2026-10-26 style-B 5b）：四列及以上的横排指标用不了 26px 大字（route 详情四列每列约 67px，
+   四位爬升米数会压到邻格）。这一档原来在 pages/routes 与 pages/route 各存一份**逐字相同**的规则，
+   与 `.card-label` 那个"唯一出处写在某页 wxss、别页同名类命不中"的事故同族 ⇒ 收进这里做单源：
+   页面写 `class="metrics compact …"`，不得再抄第二份字号/行距/字距。 */
+.metrics.compact .metric .metric-value { font-size: var(--text-title); line-height: 24px; letter-spacing: 0; }
 .metric .metric-unit { font-size: var(--text-caption); letter-spacing: 0; font-weight: 400; margin-left: 4px; }
 .metric .metric-label { display: block; color: var(--muted); font-size: var(--text-caption); line-height: 18px; margin-top: 4px; }
 .hero .metric .metric-value { color: var(--white); }
@@ -558,8 +592,9 @@ button.button { font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 12px;
-  padding-top: 16px;
-  padding-bottom: 16px;
+  min-height: 84px;
+  padding-top: 18px;
+  padding-bottom: 18px;
   border-bottom: 1px solid var(--line);
 }
 .person-row:last-child { border-bottom: 0; }
@@ -567,9 +602,9 @@ button.button { font-family: inherit; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--forest-soft);
   color: var(--forest);
@@ -585,13 +620,21 @@ button.button { font-family: inherit; }
 .person-row__heading .person-name { font-weight: 600; margin-right: auto; overflow-wrap: anywhere; }
 .person-row__body .person-subtitle { margin-top: 4px; }
 .person-row__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+/* 行内主标题（2026-10-26 style-B 5b）：与徽标/说明挤在同一个 `.cluster` 里的那个名称文字。
+   它原来以 `style="font-weight:600;"` 的形式在 route / route-edit / editor 三页各抄了一份（共 12 处）。
+   抄出来的问题不只是重复：**M-16 的 `overflow-wrap: anywhere` 漏在了页面那一侧**——
+   路线节点名、风险标题、上车点名、模板活动标题都是用户自由输入（maxlength 80），
+   一个无空格的拉丁长串在 flex + `min-width:0` 里不会词内断，会把整行撑破；
+   而 route 详情把这件事做对了（`.route-node-name` 带 anywhere），编辑器同一行却是裸的内联字重。
+   这里一次给齐两条：字重与断词策略是同一个决定的两半，分开抄必然漏一半。 */
+.row-title { font-weight: 600; overflow-wrap: anywhere; }
 .list-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-top: 16px;
-  padding-bottom: 16px;
+  padding-top: 18px;
+  padding-bottom: 18px;
   min-height: var(--action-height);
   width: 100%;
   border-bottom: 1px solid var(--line);
@@ -722,14 +765,15 @@ button.button { font-family: inherit; }
    以及指标行 .metrics/.metric/.metric-value/.metric-unit/.metric-label（6 页在用，含 M-16 修复）
    均已存在 ⇒ 一律复用不重定义；这里只新增搜索条一组。取色一律 var()，
    登记见 docs/ui-ux-redesign/design-system.md §9。 */
-/* 搜索条：图标内嵌的圆角条（替代带 label 的表单字段形态；.field/.input 保留给真表单） */
+/* 搜索条：图标内嵌的圆角条（替代带 label 的表单字段形态；.field/.input 保留给真表单）
+   2026-10-26 style-B：36→44（读 --touch-target，与可点目标同高）、8px 圆角→药丸、左右 16px。 */
 .searchbar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 10px;
-  border-radius: var(--radius-button);
+  gap: 8px;
+  height: var(--touch-target);
+  padding: 0 16px;
+  border-radius: 999px;
   background: var(--stone);
 }
 .searchbar__input {

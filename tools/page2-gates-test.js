@@ -31,6 +31,7 @@ const MP = path.join(ROOT, 'miniprogram')
 const P = (...p) => path.join(MP, ...p)
 
 const WEATHER_WXML = P('pages', 'weather', 'weather.wxml')
+const WEATHER_WXSS = P('pages', 'weather', 'weather.wxss')
 const WEATHER_JS = P('pages', 'weather', 'weather.js')
 const HUB_WXML = P('pages', 'weather-hub', 'weather-hub.wxml')
 const HUB_WXSS = P('pages', 'weather-hub', 'weather-hub.wxss')
@@ -323,6 +324,25 @@ function insetOf(entry, sheets) {
   const R = pick(r, 'r')
   return { left: L ? L.v : NaN, right: R ? R.v : NaN, winnerLeft: L ? L.from + (L.sheet < 0 ? '' : '@sheet' + L.sheet) : null }
 }
+// 计算某个属性的「层叠终值」（同特异度按出现顺序；app.wxss 在前、页级 wxss 在后；内联最高）。
+// 只服务于「页级覆盖有没有把方向复位」这类判据——读的是终值，不是文件里出现过什么字样。
+function computedOf(entry, prop, sheets) {
+  const cls = entry.classes
+  const tag = entry.node.tag
+  const collected = []
+  sheets.forEach((rules, si) => rules.forEach((r, ri) => {
+    if (!selMatches(r.sel, cls, tag)) return
+    r.decls.forEach(d => {
+      if (d.prop === prop) collected.push({ value: d.value, spec: specOf(r.sel), order: si * 1e7 + ri, from: r.sel + '@sheet' + si })
+    })
+  }))
+  const inline = entry.node.attrs && entry.node.attrs.style ? parseDecls(entry.node.attrs.style) : []
+  inline.forEach((d, i) => {
+    if (d.prop === prop) collected.push({ value: d.value, spec: 1e9, order: i, from: 'inline style' })
+  })
+  collected.sort((a, b) => (a.spec - b.spec) || (a.order - b.order))
+  return collected.length ? collected[collected.length - 1] : null
+}
 function findCard(entries, labelInside) {
   const cards = entriesWithClass(entries, 'card')
   if (!labelInside) return cards
@@ -381,6 +401,10 @@ function baseWeatherData(over) {
     dayCards: [], viewSpan: 24, unified: null, oiCard: null, oiHorizon: null, oiMultiDay: [],
     chartView: [], chartMarks: {}, chartNight: {}, chartSelected: {}, chartElev: null, chartNow: null,
     chartPick: null, hourChip: null, agenda: [], callouts: [], detailRows: [], showDetail: false,
+    // 2026-10-26 style-B 4：图上方逐时摘要带 / 图下降水概率行 / 详细数据四行。
+    // 默认给空数组是**页面 data 的缺省值**（else 语法求值会因 undefined.length 抛错，
+    // 被「表达式求值得动」那条门判成假绿）；下面 data / dataClassic 两档再填真形状，让新块真的渲染。
+    hourStrip: [], popShown: false, briefRows: [],
     condOverall: null, condCards: [], condSilent: null, openEvidence: {},
   }, over || {})
 }
@@ -395,11 +419,30 @@ const WEATHER_STATES = {
     condOverall: { stars: '★★★★☆', label: '较好', tone: 'good' },
     agenda: [{ t: '06:40', title: '天文晨光始', l2: false, sub: '', window: '', gradeLabel: '', tone: '' }],
     callouts: [{ title: '午后有雷雨的可能', tone: 'warn' }],
+    // 24h 窗：3 小时一格 × 8 列（与 buildHourStrip 的步长一致），pop 全有值 ⇒ 概率行出现
+    hourStrip: [0, 3, 6, 9, 12, 15, 18, 21].map(hh => ({
+      k: '2026-10-20T' + (hh < 10 ? '0' : '') + hh + ':00',
+      t: (hh < 10 ? '0' : '') + hh + ':00',
+      phrase: { label: hh % 6 === 0 ? '多云' : '晴', tone: hh % 6 === 0 ? 'warning' : 'success' },
+      temp: (6 + hh) + '°',
+      pop: (hh * 2) + '%',
+    })),
+    popShown: true,
+    briefRows: [
+      { k: '温度', v: '6 – 16°C' }, { k: '降水量', v: '0 – 2.4 mm/h' },
+      { k: '风速', v: '2 – 6 km/h' }, { k: '云量', v: '30 – 80%' },
+    ],
     isOwner: true,
   }),
   dataClassic: baseWeatherData({
     dayCards: fixtureDayCards(7), unified: null, oiCard: null,
     condCards: fixtureCondCards(1), hourChip: { t: '08:00', phrase: { label: '晴' }, temp: 10, feels: 9, pop: 10, precip: 0, wind: 7, windDir: '北', rh: 60, pressure: '812', band: '2400–2600 m', tags: ['云海窗口'], inCloud: false },
+    // 经典分支也铺一份：48h 窗 6 小时一格 × 2 列，其中一格缺概率 ⇒ 印「—」，整行仍在
+    hourStrip: [
+      { k: '2026-10-20T00:00', t: '00:00', phrase: { label: '晴', tone: 'success' }, temp: '8°', pop: '10%' },
+      { k: '2026-10-20T06:00', t: '06:00', phrase: { label: '多云', tone: 'warning' }, temp: '7°', pop: '—' },
+    ],
+    popShown: true,
   }),
   empty: baseWeatherData({ emptyKind: 'error', emptyTitle: '气象服务暂时连不上', emptyDetail: '不是路线或坐标的问题。' }),
   // 阳性对照（P15 第一次漏网就是因为缺了这一档）：组织者 + 没有数据。
@@ -1035,6 +1078,184 @@ guarded('§5', () => {
       const inner = within(five, c)
       return ['pheno-window', 'pheno-text', 'sky-look', 'pheno-advice', 'cond-why'].every(cls => entriesWithClass(inner, cls).length === 1)
     })(), '')
+})
+
+/* ================= §5b D7（2026-10-26）：首屏条件 strip 与「条件 → 图 → 详解」次序 ================= */
+section('§5b D7：条件 strip 与页面次序（条件 → 图 → 详解）')
+guarded('§5b', () => {
+  const e = render(src(WEATHER_WXML), WEATHER_STATES.data)
+  const data = WEATHER_STATES.data
+  const strip = entriesWithClass(e, 'cond-strip')
+  check('5 张结论卡时首屏恰有 1 条条件 strip（不是每张卡各长一条）',
+    strip.length === 1, String(strip.length))
+
+  const pills = entriesWithClass(e, 'cond-pill')
+  check('pill 数与结论卡数一致（' + pills.length + ' vs ' + data.condCards.length + '）',
+    pills.length === data.condCards.length, String(pills.length))
+  /* pill 必须与明细卡同源：标题与星串逐字节取自同一批 condCards。
+     若哪天有人在 WXML 里另拼一份星级，这条会红——那正是「同一事实的两个实现」。 */
+  const pillText = p => within(e, p).filter(x => x.kind === 'text').map(x => renderedText(x)).join('')
+  check('每颗 pill = 该卡标题 + 该卡星串（与明细卡逐字节相同）',
+    pills.every((p, i) => pillText(p) === data.condCards[i].title + data.condCards[i].stars),
+    pills.map(pillText).join(' / '))
+
+  check('总评卡全页恰 1 张（明细区不再重复一张总评）',
+    entriesWithClass(e, 'cond-card').length === 1, String(entriesWithClass(e, 'cond-card').length))
+  /* 真机 390×844 抓到的缺陷（2026-10-26）：`.cond-grade` 原先是 <text>，
+     而微信的 text 不能当 flex 容器 ⇒ 写在它上面的 gap:6px 被静默丢弃，
+     屏幕上「★★☆☆☆条件较差」贴成一串（同页 .cond-pill 是 view，间隙正常）。
+     这条钉的是**容器类型 + 星串与评级是两个节点**：只要退回 text 或把两者拼成一个字符串，
+     任何按 gap/margin 分隔的写法就都不可能生效。像素级读数由
+     evidence/style-b-2a-2026-10-26 的 readings.condGradeGap 记录。 */
+  const grade = entriesWithClass(e, 'cond-grade')[0]
+  const gChildren = grade
+    ? within(e, grade).filter(x => x.kind === 'node' && x.node.tag === 'text' && !/^\s*$/.test(renderedText(x)))
+    : []
+  check('总评「星串 + 评级」的容器是 view（text 不能做 flex 容器，gap 会被静默丢弃）',
+    !!grade && grade.node.tag === 'view', grade ? grade.node.tag : 'missing')
+  check('星串与评级是两个独立节点（不是一个拼好的字符串，否则没有可分隔的边界）',
+    gChildren.length === 2 && gChildren[0].classes.indexOf('cond-stars') !== -1 &&
+      gChildren[1].classes.indexOf('ag-grade') !== -1,
+    gChildren.map(x => x.classes.join('.') + '=' + renderedText(x)).join(' | '))
+
+  /* 真机 390 抓到的第二个可见缺陷：页级 .section-head 只写了 display/align/justify，
+     没复位 app.wxss 的 flex-direction: column ⇒「全图展示」被排成居中独立一行（像副标题），
+     多吃 40px 首屏。但方向不能在本页一刀切成 row：「今日户外时间轴」「天相详解」两个区头
+     是「标题 + 说明」两行，竖排才是它们的设计。所以只给带行动的区头加 .has-action，
+     判据同时钉两边——带行动的必须是 row，不带行动的必须仍是 app.wxss 的 column。 */
+  const sheets = [parseSheet(src(APP_WXSS)), parseSheet(src(WEATHER_WXSS))]
+  const heads = entriesWithClass(e, 'section-head')
+  const actionHead = heads.filter(h => h.classes.indexOf('has-action') !== -1)[0]
+  const plainHeads = heads.filter(h => h.classes.indexOf('has-action') === -1)
+  const dir = actionHead ? computedOf(actionHead, 'flex-direction', sheets) : null
+  check('「逐时天气」区头在天气页是一行（带行动的区头由页级 .has-action 复位方向）',
+    !!dir && dir.value === 'row' && dir.from.indexOf('@sheet1') !== -1,
+    dir ? dir.value + ' ← ' + dir.from : 'missing')
+  check('不带行动的区头维持竖排（两条说明文案不许被一起拉成一行）',
+    plainHeads.length === 2 && plainHeads.every(h => {
+      const d = computedOf(h, 'flex-direction', sheets)
+      return d && d.value === 'column'
+    }), String(plainHeads.length))
+  check('标签「天相条件」全页出现 1 次；明细区标题改为「天相详解」',
+    textsWith(e, '天相条件').length === 1 && textsWith(e, '天相详解').length === 1,
+    textsWith(e, '天相条件').length + '/' + textsWith(e, '天相详解').length)
+
+  /* D7 的核心承诺是次序本身，所以钉次序而不是钉位置数值：
+     安全提示 → 条件 strip → 图 → 天相明细。 */
+  const orderOf = (entry) => entry ? entry.order : -1
+  const safety = entriesWithClass(e, 'callout').filter(x => textsWith(within(e, x), '午后有雷雨').length)[0]
+  const oSafety = orderOf(safety)
+  const oStrip = orderOf(strip[0])
+  const oChart = orderOf(entriesWithClass(e, 'cloud-field-card')[0] || entriesWithClass(e, 'timeline-card')[0])
+  const oDetail = orderOf(entriesWithClass(e, 'cond-pheno')[0])
+  check('次序：徒步提示 → 条件 strip → 图 → 天相明细',
+    oSafety >= 0 && oSafety < oStrip && oStrip < oChart && oChart < oDetail,
+    [oSafety, oStrip, oChart, oDetail].join(' < '))
+
+  /* D7 补完（2026-10-26，真机读数驱动）：点卡从页首下移到图正上方。
+     390×844 / clientH 753 上量到页首前导区吃掉 631px，strip 底边正压折线、图标题在折线以下 113px
+     ⇒「先看条件」名存实亡。点卡 226px 里，身份的**唯一真出处**是导航栏标题（weather.js:341
+     ctx.title = displayPointName），坐标/海拔则是**读图**的参照（图上那根虚线）。
+     钉三件事：① 不再排在 strip 之前；② 排在 7 日条之后、图之前；③ 四项事实与那个入口一个不少。 */
+  const ep = render(src(WEATHER_WXML), Object.assign({}, WEATHER_STATES.data, {
+    pointCard: { name: '四姑娘山大峰', coordText: '31.0632, 102.9085', eleText: '5025 m · 手动填写' },
+  }))
+  const saveBtn = nodesTagged(ep, 'view').filter(n => attrOf(n, 'bindtap') === 'onSavePoint')
+  const pointCard = entriesWithClass(ep, 'card')
+    .filter(c => within(ep, c).some(x => x.kind === 'node' && attrOf(x, 'bindtap') === 'onSavePoint'))[0]
+  const oPoint = orderOf(pointCard)
+  const oDayStrip = orderOf(entriesWithClass(ep, 'day-strip')[0])
+  const oChartP = orderOf(entriesWithClass(ep, 'cloud-field-card')[0] || entriesWithClass(ep, 'timeline-card')[0])
+  check('点卡不再排在条件 strip 之前（首屏前导区让给「日期 + 安全提示 + 条件」）',
+    !!pointCard && oPoint > orderOf(entriesWithClass(ep, 'cond-strip')[0]),
+    'point=' + oPoint + ' strip=' + orderOf(entriesWithClass(ep, 'cond-strip')[0]))
+  check('点卡紧贴图：排在 7 日条之后、图之前（坐标/海拔是在解释这张图）',
+    oDayStrip < oPoint && oPoint < oChartP, [oDayStrip, oPoint, oChartP].join(' < '))
+  check('点卡四项事实一个不少：点位名 / 坐标 / 海拔+出处 / 存入入口（入口全页仍恰 1 个）',
+    !!pointCard && saveBtn.length === 1 &&
+      textsWith(within(ep, pointCard), '四姑娘山大峰').length === 1 &&
+      textsWith(within(ep, pointCard), '坐标').length === 1 &&
+      textsWith(within(ep, pointCard), '海拔').length === 1 &&
+      textsWith(within(ep, pointCard), '5025 m · 手动填写').length === 1,
+    JSON.stringify({ save: saveBtn.length, hasCard: !!pointCard }))
+
+  const es = render(src(WEATHER_WXML), baseWeatherData({
+    dayCards: fixtureDayCards(3), condCards: fixtureCondCards(2),
+    condSilent: { count: 2, titles: '云海、彩虹', text: '这些天相今天条件不成立，就不单独列出：云海、彩虹。' },
+  }))
+  const sil = entriesWithClass(es, 'cond-silent')
+  check('沉默说明全页恰 1 处，且排在 strip 之后、图之前（首屏能读到，不是埋在明细区）',
+    sil.length === 1 && textsWith(es, '条件不成立').length === 1 &&
+      orderOf(sil[0]) > orderOf(entriesWithClass(es, 'cond-strip')[0]) &&
+      orderOf(sil[0]) < orderOf(entriesWithClass(es, 'timeline-card')[0]),
+    sil.length + '/' + textsWith(es, '条件不成立').length)
+
+  /* 全部被判不成立的日子：明细区没有正文，就不该留一个空标题（否则读起来像「工具坏了」）。 */
+  const eAll = render(src(WEATHER_WXML), baseWeatherData({
+    dayCards: fixtureDayCards(3), condCards: [],
+    condOverall: { stars: '', label: '不足', tone: 'neutral' },
+    condSilent: { count: 5, titles: '云海、彩虹', text: '这些天相今天条件不成立，就不单独列出：云海、彩虹。' },
+  }))
+  check('一张卡都没有时不出现空的「天相详解」标题（也不出现空卡）',
+    textsWith(eAll, '天相详解').length === 0 && entriesWithClass(eAll, 'cond-pheno').length === 0,
+    textsWith(eAll, '天相详解').length + '/' + entriesWithClass(eAll, 'cond-pheno').length)
+
+  /* 2026-10-26 style-B 4（板 04-2 / 04-4）：摘要带是图的表头、概率行是图的表尾，
+     详细数据四行默认可见而全表仍受 showDetail 控制。三条都按**次序与显隐**钉，
+     不看「页面上有没有这个类名」——恒渲染的空壳也能让后者变绿。 */
+  const hstrips = entriesWithClass(ep, 'hour-strip')
+  const hitems = entriesWithClass(ep, 'hour-strip__item')
+  const oHourStrip = orderOf(hstrips[0])
+  check('逐时摘要带排在点卡之后、图之前（与图同窗，是图的表头）',
+    hstrips.length === 1 && oHourStrip > oPoint && oHourStrip < oChartP,
+    hstrips.length + ' / ' + [oPoint, oHourStrip, oChartP].join(' < '))
+  /* 时刻列必须就是 3 小时序列：这是「24h 窗 3 小时一格」的唯一可读证据，
+     换步长（比如改成每 2 小时 12 列）这里会立刻红。 */
+  const stripTimes = hitems.map(it => within(ep, it)
+    .filter(x => x.kind === 'text' && !/^\s*$/.test(renderedText(x))).map(x => renderedText(x)).pop())
+  check('摘要带逐列给「天气简字 / 温度 / 时刻」三个读数（24h 窗 3 小时一格 ⇒ 8 列）',
+    hitems.length === 8 &&
+      hitems.every(it => within(ep, it).filter(x => x.kind === 'text' && !/^\s*$/.test(renderedText(x))).length === 3) &&
+      stripTimes.join(',') === '00:00,03:00,06:00,09:00,12:00,15:00,18:00,21:00',
+    hitems.length + ' 列 / ' + stripTimes.join(','))
+  /* 48/72h 跨天，同一时刻会重复出现 ⇒ 列表键必须带日期（`d + 'T' + t`）。
+     模板与数据两层都要钉：模板写回 wx:key="t" 是重复键（复用错节点），
+     数据里没有 k 则键恒为 undefined（同样等于没有键）。 */
+  check('摘要带与概率行的列表键是带日期的唯一键（跨天同一时刻不得撞键）',
+    hitems.length > 0 && hitems.every(it => attrOf(it, 'wx:key') === 'k') &&
+      entriesWithClass(render(src(WEATHER_WXML), WEATHER_STATES.data), 'pop-strip__v')
+        .every(it => attrOf(it, 'wx:key') === 'k') &&
+      WEATHER_STATES.data.hourStrip.every(it => typeof it.k === 'string' && it.k),
+    hitems.map(it => attrOf(it, 'wx:key')).join(',') + ' / ' +
+      WEATHER_STATES.data.hourStrip.map(it => it.k).join(','))
+
+  const popOn = entriesWithClass(render(src(WEATHER_WXML), WEATHER_STATES.data), 'pop-strip')
+  const popOff = entriesWithClass(render(src(WEATHER_WXML),
+    Object.assign({}, WEATHER_STATES.data, { popShown: false })), 'pop-strip')
+  const popVals = entriesWithClass(render(src(WEATHER_WXML), WEATHER_STATES.data), 'pop-strip__v')
+  const oPop = orderOf(popOn[0])
+  check('降水概率行按 data 显隐（全缺概率时整行不印，不是空壳常驻）',
+    popOn.length === 1 && popOff.length === 0 && popVals.length === hitems.length,
+    popOn.length + '/' + popOff.length + '/' + popVals.length)
+  check('降水概率行排在图之后（表尾）、OI 卡之前',
+    oPop > oChart && (orderOf(entriesWithClass(render(src(WEATHER_WXML), WEATHER_STATES.data), 'oi-card')[0]) < 0 ||
+      oPop < orderOf(entriesWithClass(render(src(WEATHER_WXML), WEATHER_STATES.data), 'oi-card')[0])),
+    [oChart, oPop].join(' < '))
+
+  const eBrief = render(src(WEATHER_WXML), WEATHER_STATES.data)
+  const eOpen = render(src(WEATHER_WXML), Object.assign({}, WEATHER_STATES.data, { showDetail: true }))
+  check('详细数据四行默认可见，逐小时全表仍由 showDetail 控制（默认收起）',
+    entriesWithClass(eBrief, 'fact-row').length === 4 && entriesWithClass(eBrief, 'num-sheet').length === 0 &&
+      entriesWithClass(eOpen, 'num-sheet').length === 1,
+    entriesWithClass(eBrief, 'fact-row').length + '/' +
+      entriesWithClass(eBrief, 'num-sheet').length + '/' + entriesWithClass(eOpen, 'num-sheet').length)
+  /* 只在这个四行块里数：同页还有「温度 · 降水 · 云层带 · 风」的来源说明与图例的「云量」「风速」，
+     按全页文本数会把它们一起数进来（那是另一个块的文案，不属这里）。 */
+  const briefBlock = entriesWithClass(eBrief, 'brief-rows')[0]
+  const briefText = briefBlock ? within(eBrief, briefBlock).filter(x => x.kind === 'text').map(x => renderedText(x)) : []
+  check('四个高频量按板 04-4 的四行给全：温度 / 降水量 / 风速 / 云量（各一行，不合并）',
+    !!briefBlock && ['温度', '降水量', '风速', '云量'].every(k => briefText.filter(t => t === k).length === 1),
+    briefText.join(' | '))
 })
 
 /* ================= §6 边界守卫：越界即整批退回的那几条 ================= */

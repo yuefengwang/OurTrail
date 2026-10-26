@@ -1,0 +1,19 @@
+  PASS E2r 同一行的指标格互不压叠（跨行不算对照，第一轮的门就是错在这里）
+       {"rows":6,"sample":[{"cells":3,"gap":11.66,"bad":null,"inside":true},{"cells":3,"gap":11.66,"bad":null,"inside":true},{"cells":3,"gap":11.66,"bad":null,"inside":true}]}
+  PASS E2r-b 指标格全在容器内（不越出 .metrics.compact 的左右沿）
+       [{"cells":3,"gap":11.66,"bad":null,"inside":true},{"cells":3,"gap":11.66,"bad":null,"inside":true}]
+  PASS E2r-c 紧凑档在真机解析成 18px（= --text-title，不是全局 26px）
+       {"fontSize":["18px","18px","18px","18px"],"note":"全 null 表示读数通道不可用，此项由第一轮 routeMetricFontSize=18px 支撑"}
+  · 截图 D:\OurTrail\docs\ui-ux-redesign\evidence\style-b-slice5b-2026-10-26\device\E2r-routes-metrics-compact-geometry.png (47155 bytes)
+  FAIL D2r 注入的长名**就是**被量到的那一个 .row-title（第一轮量错了对象）
+       {"rowCount":1,"matched":""}
+  FAIL D2r-b 80 字无空格拉丁串折行而不是撑破卡沿（.row-title 的 anywhere 在真机咬住）
+       {"name":null,"card":{"width":350,"height":222,"left":20,"top":294.1953125}}
+  FAIL D2r-c 它真的折了（多行高度 > 单行 22px；否则等于"没测到断词分支"）
+       {"height":null}
+  · 截图 D:\OurTrail\docs\ui-ux-redesign\evidence\style-b-slice5a-2026-10-26\device\D2r-editor-node-longname-wrap.png (42441 bytes)
+  FAIL D2r-d 阴性对照：短名同一行是单行高（长名>短名 ⇒ 差异来自断词，不来自选择器抖动）
+       {"short":null,"long":null}
+  · 截图 D:\OurTrail\docs\ui-ux-redesign\evidence\style-b-slice5a-2026-10-26\device\D2r-editor-node-shortname-control.png (42422 bytes)
+
+==== 修正重测 3 PASS / 4 FAIL ====

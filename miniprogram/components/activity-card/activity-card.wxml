@@ -1,4 +1,4 @@
-<article class="card activity-card {{featured ? 'hero activity-card--featured' : 'activity-card--plain'}} {{compact ? 'activity-card--compact' : ''}} {{coverFailed ? 'cover-failed' : ''}}" bindtap="onTap" hover-class="card-hover">
+<article class="card activity-card {{featured ? 'hero activity-card--featured' : 'activity-card--plain'}} {{compact ? 'activity-card--compact' : ''}} {{flat ? 'activity-card--flat' : ''}} {{coverFailed ? 'cover-failed' : ''}}" bindtap="onTap" hover-class="card-hover">
   <!-- 卡片形态（2026-10-26 style-B）：图在上 / featured 大封面；正文三槽——
        ① 标题（可断行，不截断：标题是必须读完的语义，M-16 的判据继续成立）
        ② chips 一行（日期 · 难度 · 距离 · 爬升，不折行，缺字段整项不出现）

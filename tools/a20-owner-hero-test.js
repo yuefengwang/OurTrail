@@ -60,6 +60,11 @@ function withoutKey(meta, key) {
   delete m[key]
   return m
 }
+// C16（2026-10-26 style-B）：首屏「下一次同行」会从「我的活动」列表里剔除自己。
+// 凡要断言列表本身的用例，都先铺一场更早的同行活动去占首屏；它不带协作角色、不参与这些用例的判据。
+function hero() {
+  return homeActivity('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+}
 
 // ---- 首页：四个并行 read 全走真 utils/api ----
 function bootHome(opts) {
@@ -152,6 +157,7 @@ async function main() {
   section('1. 首页 info 行：同一个数字，两种归属，两种产出')
   {
     const acts = [
+      hero(),
       homeActivity('own'),
       homeActivity('other', { meta: Object.assign(clone(homeActivity('x').meta), { owner: false }) }),
     ]
@@ -187,8 +193,8 @@ async function main() {
 
   section('1b. 同一场活动只换归属位：只有 info 与 status 变，hero/时间/日期一个字节都不动')
   {
-    const asOwner = (() => { const a = homeActivity('solo'); return [a] })()
-    const asGuest = (() => { const a = homeActivity('solo'); a.meta.owner = false; return [a] })()
+    const asOwner = (() => { const a = homeActivity('solo'); return [hero(), a] })()
+    const asGuest = (() => { const a = homeActivity('solo'); a.meta.owner = false; return [hero(), a] })()
     const po = bootHome({ activities: asOwner })
     await waitFor(() => po.page.data.loading === false)
     const pg = bootHome({ activities: asGuest })
@@ -197,6 +203,8 @@ async function main() {
     const cg = cardOf(pg.page, 'solo')
     check('有效性门：两次都装配出同一场活动（id/startAt 相同）',
       !!co && !!cg && co.date === cg.date, JSON.stringify([co, cg]))
+    check('C16 夹具自证：首屏是另一场更早的活动，solo 才留在列表里',
+      po.page.data.nextUp && po.page.data.nextUp.id === 'soon', JSON.stringify(po.page.data.nextUp))
     check('hero 判定与归属无关（featured 两次相同 = 本轮没有把 hero 逻辑牵扯进来）',
       co.featured === cg.featured, JSON.stringify([co.featured, cg.featured]))
     check('when（出发倒计时）两次逐字节相同——首页那条「还有多久」是设计决定，不许被动',
@@ -212,6 +220,7 @@ async function main() {
   section('2. 首页：待审核的 0 与缺位（0 是事实，缺位按非组织者）')
   {
     const acts = [
+      hero(),
       homeActivity('zero-own', { meta: Object.assign(clone(homeActivity('x').meta), { pending: 0 }) }),
       homeActivity('zero-other', { meta: Object.assign(clone(homeActivity('x').meta), { pending: 0, owner: false }) }),
     ]
@@ -228,7 +237,7 @@ async function main() {
       cardOf(page, 'zero-own').pending + ' / ' + cardOf(page, 'zero-other').pending)
   }
   {
-    const acts = [homeActivity('nokey', { meta: withoutKey(homeActivity('x').meta, 'owner') })]
+    const acts = [hero(), homeActivity('nokey', { meta: withoutKey(homeActivity('x').meta, 'owner') })]
     const { page } = bootHome({ activities: acts })
     await waitFor(() => page.data.loading === false)
     const c = cardOf(page, 'nokey')
@@ -244,8 +253,16 @@ async function main() {
     ]
     const { page } = bootHome({ activities: acts, opened: ['own-recent', 'guest-recent'] })
     await waitFor(() => page.data.loading === false)
+    // C16：own-recent 正是首屏那一场 ⇒ 默认「我的活动」里只剩空列表（guest-recent 本就不在这一档）。
+    check('C16：默认档里 hero 不在列表里重复，列表空态说明它已经在上面',
+      page.data.nextUp && page.data.nextUp.id === 'own-recent' && page.data.cards.length === 0
+      && page.data.emptyTitle === '其余活动会出现在这里',
+      JSON.stringify([page.data.nextUp, page.data.cards.map(c => c.id), page.data.emptyTitle]))
     page.onFilter({ currentTarget: { dataset: { value: 'recent' } } })
     await waitFor(() => page.data.cards.length === 2)
+    check('C16 的范围：剔除只发生在「我的活动」；「最近查看」里同一场必须还在（那一档的名字就是它）',
+      !!cardOf(page, 'own-recent'),
+      JSON.stringify(page.data.cards.map(c => c.id)))
     const own = cardOf(page, 'own-recent')
     const guest = cardOf(page, 'guest-recent')
     check('「最近查看」里的组织者活动仍含待审核（第二个入口没漏）',
@@ -283,6 +300,7 @@ async function main() {
   section('4a. 重点迁移的阳性对照：首页既有 featured 不可被一刀切关掉')
   {
     const { page } = bootHome({ activities: [
+      hero(),
       homeActivity('later', { startAt: '2026-11-03T08:00:00+08:00' }),
       homeActivity('first', { startAt: '2026-11-01T08:00:00+08:00' }),
     ] })
@@ -292,7 +310,7 @@ async function main() {
       && page.data.cards[0].featured === true && page.data.cards[1].featured === false)
   }
   {
-    const { page } = bootHome({ activities: [homeActivity('draft-first', { phase: 'draft' }), homeActivity('second')] })
+    const { page } = bootHome({ activities: [hero(), homeActivity('draft-first', { phase: 'draft' }), homeActivity('second')] })
     await waitFor(() => !page.data.loading)
     check('首页首张是草稿时仍不提升，不擅自越过它另猜重点', page.data.cards.length === 2 && page.data.cards.every(c => !c.featured))
   }

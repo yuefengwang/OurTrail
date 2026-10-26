@@ -97,8 +97,37 @@ Page({
       const hay = (a.title + ' ' + a.routeSnapshot.title + ' ' + a.description).toLowerCase()
       return hay.indexOf(search) !== -1
     }).sort((a, b) => (a.startAt ? Date.parse(a.startAt) : Infinity) - (b.startAt ? Date.parse(b.startAt) : Infinity))
-    const featuredId = filtered.length ? filtered[0].id : ''
-    const cards = filtered.map(a => {
+    // 「下一次同行」只做客户端派生：参与的、未终态、有出发时刻、**还没过点**的最近一场。
+    // 不额外发请求，也不新增域字段——排序口径与列表「我的活动」一致（出发时间升序）。
+    // 「还没过点」不能省：已发布但一直没归档的活动会留在非终态里，而升序取第一个
+    // ⇒ 最旧的那场过期活动会永久占住「下一次同行」，真正要去的下一场永远排不上；
+    // 卡片上的剩余时间还会印「已过时」。过没过去只问 journey.remaining，不在这里另写比较（铁律 30/31）。
+    const upcoming = all.filter(a => ['archived', 'cancelled', 'draft'].indexOf(a.phase) === -1 &&
+      (a.meta.owner || a.meta.joined) && a.startAt && !J.remaining(this.now, a.startAt).overdue)
+      .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt))
+    const next = upcoming[0] || null
+    let nextUp = null
+    if (next) {
+      const nextPeople = CV.peopleOf(next.meta)
+      nextUp = {
+        id: next.id,
+        title: next.title || '未命名活动',
+        // 剩余时间只从 journey 取词，不在页面另写「距出发 N 天」。
+        facts: [
+          F.dateLabel(next.startAt),
+          J.remaining(this.now, next.startAt).text,
+          nextPeople.text,
+          nextPeople.pending,
+        ].filter(Boolean),
+      }
+    }
+    // C16（2026-10-26 style-B）：下一次同行已经占着首屏大图，列表第一张再印同一场就是重复。
+    // 只在「我的活动」这一档剔除：协作档的条数必须与筛选段上的计数一致（见 isCollab 处），
+    // 最近查看档是用户点过的那几场、剔掉会与该档的名字自相矛盾，已结束档不可能命中（nextUp 是非终态）。
+    const dedupeId = filter === 'mine' && next ? next.id : ''
+    const listed = dedupeId ? filtered.filter(a => a.id !== dedupeId) : filtered
+    const featuredId = listed.length ? listed[0].id : ''
+    const cards = listed.map(a => {
       // 协作按钮与「需要协作」那一档共用同一个判据；终态活动不再给入口（车长页对已结束的活动只是回看）。
       const roles = isCollab(a) ? J.collabRoles(a.meta) : []
       // 归属前缀按事实排：既不是组织者也不是报名者时，「最近查看」只是当时唯一可能的来由；
@@ -161,30 +190,10 @@ Page({
     } else if (filter === 'recent') {
       emptyTitle = '还没有最近查看的活动'
       emptyDetail = '打开过一场活动之后，它会回到这里；也可以从「发现活动」开始。'
-    }
-    // 「下一次同行」只做客户端派生：参与的、未终态、有出发时刻、**还没过点**的最近一场。
-    // 不额外发请求，也不新增域字段——排序口径与列表「我的活动」一致（出发时间升序）。
-    // 「还没过点」不能省：已发布但一直没归档的活动会留在非终态里，而升序取第一个
-    // ⇒ 最旧的那场过期活动会永久占住「下一次同行」，真正要去的下一场永远排不上；
-    // 卡片上的剩余时间还会印「已过时」。过没过去只问 journey.remaining，不在这里另写比较（铁律 30/31）。
-    const upcoming = all.filter(a => ['archived', 'cancelled', 'draft'].indexOf(a.phase) === -1 &&
-      (a.meta.owner || a.meta.joined) && a.startAt && !J.remaining(this.now, a.startAt).overdue)
-      .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt))
-    const next = upcoming[0] || null
-    let nextUp = null
-    if (next) {
-      const nextPeople = CV.peopleOf(next.meta)
-      nextUp = {
-        id: next.id,
-        title: next.title || '未命名活动',
-        // 剩余时间只从 journey 取词，不在页面另写「距出发 N 天」。
-        facts: [
-          F.dateLabel(next.startAt),
-          J.remaining(this.now, next.startAt).text,
-          nextPeople.text,
-          nextPeople.pending,
-        ].filter(Boolean),
-      }
+    } else if (filter === 'mine' && nextUp) {
+      // 唯一一场活动就是首屏那场时，列表空着不是「什么都没有」——如实说它已经在上面。
+      emptyTitle = '其余活动会出现在这里'
+      emptyDetail = '「下一次同行」已经在上面；再组织或报名一场，就会列在这里。'
     }
     this.setData({ filter, collabCount, cards, nextUp, emptyTitle, emptyDetail, emptyAction, hasAny: all.length > 0 })
   },

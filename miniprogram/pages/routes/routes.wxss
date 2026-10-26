@@ -27,10 +27,4 @@
   font-weight: 600;
   overflow-wrap: anywhere;
 }
-.route-meta { gap: 8px; }
-.route-metrics .metric .metric-value {
-  font-size: var(--text-title);
-  line-height: 24px;
-  letter-spacing: 0;
-}
 .route-metrics .metric .metric-label { margin-top: 0; }

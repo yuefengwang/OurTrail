@@ -84,29 +84,53 @@ function main() {
     else { failed++; console.error('FAIL ' + label) }
   }
   const read = (page, ext) => fs.readFileSync(path.join(__dirname, '../miniprogram/pages', page, page + '.' + ext), 'utf8')
-  const w = parseTemplate(read('workspace', 'wxml'))
+  const wxml = read('workspace', 'wxml')
+  const w = parseTemplate(wxml)
   const wb = bodyOf(w)
-  const overview = one(wb, attr('wx:if', '{{tab === 0}}'))
-  const tabs = one(wb, attr('aria-label', '工作台分区'))
-  const identity = one(wb, hasClass('workspace-identity'))
+  // Slice 3a：首屏拆成「森林底身份块 + 纸面板」两块，纸面板里才是 tabs/指标/面板/总览。
+  const hero = one(wb, hasClass('workspace-hero'))
+  const identity = one(hero, hasClass('workspace-identity'))
+  const sheet = one(wb, hasClass('ws-sheet'))
+  const overview = one(sheet, attr('wx:if', '{{tab === 0}}'))
+  const tabs = one(sheet, attr('aria-label', '工作台分区'))
   const queue = one(overview, hasClass('workspace-queue'))
   // 事实带是**跨分区入口**，挂在 tabs 与分区面板之间，不随 tab 切换消失；
   // 早期版本把它放在总览内部（queue 之后），会让人在名单/车辆区失去跳区入口。
-  const facts = one(wb, hasClass('workspace-band'))
+  const facts = one(sheet, hasClass('workspace-band'))
   const milestone = one(overview, attr('wx:if', '{{milestone}}'))
   const tools = one(overview, hasClass('workspace-tools'))
   const phase = one(overview, hasClass('workspace-phase'))
   const before = (a, b) => !!a && !!b && a.end <= b.start
-  check('工作台：身份头后紧接 tabs，不夹指标', !!identity && !!tabs && before(identity, tabs)
-    && identity.parent === tabs.parent && identity.parent.children.indexOf(tabs) === identity.parent.children.indexOf(identity) + 1)
-  check('工作台：三格事实带常驻在 tabs 与分区面板之间（跨分区入口）', !!facts && !within(facts, overview)
-    && before(tabs, facts) && before(facts, one(wb, n => n.tag === 'roster-panel')))
+  check('工作台：首屏只有「森林底身份块 + 纸面板」两块，身份块在 hero 内、纸面板紧随其后',
+    !!hero && !!identity && !!sheet && hero.parent === wb && sheet.parent === wb
+    && hero.parent.children.indexOf(sheet) === hero.parent.children.indexOf(hero) + 1 && before(hero, sheet))
+  check('工作台：分段器、三格事实带、三个常驻面板与总览同处纸面板，且 tabs → 指标 → 面板',
+    !!tabs && !!facts && within(tabs, sheet) && within(facts, sheet) && !within(facts, hero)
+    && !within(facts, overview) && before(tabs, facts)
+    && before(facts, one(sheet, n => n.tag === 'roster-panel')) && before(facts, overview))
+  // C17：指标带保留（删了会失去一眼可见的总量）。这条计数必须真的咬得住——
+  // 夹具把其中一格改名，计数必须掉到 2，否则「保留」只是注释。
+  const metricCount = source => {
+    const band = one(bodyOf(parseTemplate(source)), hasClass('workspace-band'))
+    return band ? all(band, hasClass('metric')).length : -1
+  }
+  const metricFixture = wxml.replace('<view class="metric" hover-class="button-hover" bindtap="goRoster">',
+    '<view class="metric-slot" hover-class="button-hover" bindtap="goRoster">')
+  check('工作台：指标格恰 3 个（C17 保留），删掉一格必须红', metricCount(wxml) === 3
+    && metricCount(metricFixture) === 2, 'now=' + metricCount(wxml) + ' fixture=' + metricCount(metricFixture))
   check('工作台：总览内 待办 → 里程碑 → 独立工具 → 阶段', before(queue, milestone)
     && before(milestone, tools) && before(tools, phase))
   check('工作台：四个工具不混入待办，编辑仍受权限保护', ['goNotices', 'goTasks', 'goDetail', 'goEdit'].every(name => {
     const n = one(wb, tap(name))
     return n && within(n, tools) && !within(n, queue) && (name !== 'goEdit' || ancestor(n, attr('wx:if', '{{canEdit}}')))
   }))
+  // style-B 批次二 b：工具是**导航**不是主行动。四个 leaf 实底会变成整页最响的色块，
+  // 把强调色从待办手里抢走；白面细线才与页面其余卡片同族。
+  const toolNodes = tools ? all(tools, hasClass('workspace-tool')) : []
+  check('工作台：四个工具用白面细线（button 基类，无 leaf 实底）', toolNodes.length === 4
+    && toolNodes.every(n => hasClass('button')(n) && !hasClass('leaf')(n)), 'tools=' + toolNodes.length)
+  check('工作台：工具说明文字降为 muted（标题 forest / 说明 muted 二三级关系）',
+    /\.workspace-tool__sub\s*\{[^}]*color:\s*var\(--muted\)/.test(read('workspace', 'wxss')))
   const primary = one(queue, attr('data-target', '{{queuePrimary.target}}'))
   check('工作台：主待办来自 journey.primary，idle 不伪装成待办', primary && hasClass('primary')(primary)
     && ancestor(primary, attr('wx:if', "{{queuePrimary && queuePrimary.id !== 'idle'}}")))
@@ -123,7 +147,8 @@ function main() {
     && n.attrs['wx:if'] === '{{canCancel}}' && hasClass('text')(n)))
   for (const [index, tag] of ['roster-panel', 'transport-panel', 'field-panel'].entries()) {
     const panel = one(wb, n => n.tag === tag)
-    check('工作台：' + tag + ' 常驻且同步链完整', !!panel && panel.parent === wb
+    // 面板仍在纸面板内（不随分区切换卸载），但不再是 body 的直接子节点：tabs/指标带与它们同处 .ws-sheet。
+    check('工作台：' + tag + ' 常驻且同步链完整', !!panel && panel.parent === sheet
       && panel.attrs.class === "{{tab === " + (index + 1) + " ? '' : 'hide'}}"
       && !('wx:if' in panel.attrs) && panel.attrs['sync-key'] === '{{syncKey}}' && panel.attrs['bind:written'] === 'onPanelSync')
   }
@@ -137,6 +162,58 @@ function main() {
   const wcss = read('workspace', 'wxss')
   check('工作台：小事实带字号用现有 token，工具为双列', /font-size:\s*var\(--text-input\)/.test(wcss)
     && /\.workspace-tools\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(wcss))
+  // 首屏是 hero + 纸面板两块；两者之间的 -20px 必须真的成立。放在 .stack（gap 16）里只剩 4px，
+  // 所以承载列必须是无 gap 的 flex（与活动详情 .act-top 同一条教训）。
+  check('工作台：首屏列无 gap，纸面板才真的盖上 hero 下沿 20px',
+    /\.ws-top\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/.test(wcss)
+    && !/\.ws-top\s*\{[^}]*\bgap:/.test(wcss))
+  check('工作台：hero 吃掉页面内边距铺到导航下沿，且是森林底白字',
+    /\.workspace-hero\s*\{[^}]*margin:\s*-24px -20px 0[^}]*background:\s*var\(--forest\)/.test(wcss)
+    && /\.workspace-hero\s*\{[^}]*color:\s*var\(--white\)/.test(wcss))
+  check('工作台：纸面板内部分区同用 20px 节奏', /\.ws-sheet\s*\{[^}]*gap:\s*20px/.test(wcss))
+  // C17 只要求「保留」，不要求保卡片：去底、去圆角、去内边距，数值交回全局 26px。
+  check('工作台：指标带去卡片化，数值不再被 24px 覆盖',
+    !/\.workspace-band\s*\{[^}]*background:/.test(wcss)
+    && !/\.workspace-band\s*\{[^}]*border-radius/.test(wcss)
+    && !/\.workspace-band[^{]*metric-value[^{]*\{[^}]*font-size:\s*24px/.test(wcss)
+    && /\.workspace-band \.metric \+ \.metric\s*\{[^}]*border-left:\s*1px solid var\(--line\)/.test(wcss))
+  check('工作台：待办不再套 .card（纸面本身就是同一层表面）', !/<view class="card queue-card"/.test(wxml))
+
+  // ---- Slice 3b：名单 / 交通面板（组件层） ----
+  const readComp = (name, ext) => fs.readFileSync(path.join(__dirname, '../miniprogram/components', name, name + '.' + ext), 'utf8')
+  const rosterW = parseTemplate(readComp('roster-panel', 'wxml'))
+  const rosterCss = readComp('roster-panel', 'wxss')
+  const summary = one(rosterW, hasClass('metrics'))
+  const searchBar = one(rosterW, hasClass('searchbar'))
+  check('名单：汇总从一句话改成三格指标带，数字取 counters 同一出处',
+    !!summary && all(summary, hasClass('metric')).length === 3
+    && ['confirmed', 'pending', 'waitlisted'].every(k => rosterW.source.slice(summary.start, summary.end).includes('{{counters.' + k + '}}')))
+  check('名单：搜索是 44 高 pill（.searchbar），状态筛选与它同行、按内容收窄',
+    !!searchBar && !!one(searchBar, hasClass('searchbar__input'))
+    && within(searchBar, one(rosterW, hasClass('roster-filter')))
+    && /\.roster-filter \.searchbar\s*\{[^}]*flex:\s*1[^}]*min-width:\s*0/.test(rosterCss)
+    && !/\.roster-filter \.input\s*\{/.test(rosterCss))
+  // 头像有两种形态：真实头像 .avatar-img 与首字占位 .avatar（全局 44）。两者不同尺寸时同一列表行高会差 4px。
+  const personCss = readComp('person-row', 'wxss')
+  check('人员行：头像 44 与姓名 16/600（行名是这一屏的主信息，不能与副行只差一级）',
+    /\.avatar-img\s*\{[^}]*width:\s*44px[^}]*height:\s*44px/.test(personCss)
+    && /\.person-row__body \.person-row__heading \.person-name\s*\{[^}]*font-size:\s*var\(--text-input\)/.test(personCss))
+  const tpSrc = readComp('transport-panel', 'wxml')
+  const tpTree = parseTemplate(tpSrc)
+  const ADD_VEHICLE_CLASS = "{{vehicles.length ? 'secondary' : 'primary'}}"
+  const addVehicle = one(tpTree, n => n.tag === 'view' && String(n.attrs.class || '').includes(ADD_VEHICLE_CLASS))
+  const addVehiclePrimary = source => !!one(parseTemplate(source),
+    n => n.tag === 'view' && String(n.attrs.class || '').includes(ADD_VEHICLE_CLASS))
+  const vehicleCards = one(tpTree, attr('wx:for', '{{vehicles}}'))
+  // 板上这颗是车辆列表下方的整宽按钮。无车时「预览自动分车」是禁用的，它才是唯一可用的推进动作 ⇒ 实心；
+  // 有车后主位必须交回预览 ⇒ 降为软底。恒 primary 就是同屏两个实心主按钮（规则 #7）。
+  check('交通：添加车辆在车辆列表末尾整宽，无车时实心、有车时软底（改回恒 primary 必红）',
+    !!addVehicle && hasClass('block')(addVehicle) && !!vehicleCards && before(vehicleCards, addVehicle)
+    && !within(addVehicle, one(tpTree, hasClass('card-header')))
+    && addVehiclePrimary(tpSrc) && !addVehiclePrimary(tpSrc.replace(ADD_VEHICLE_CLASS, 'primary')))
+  check('交通：容量带保持 3 格（C15：不减也不加），座位图原样', !!one(tpTree, hasClass('metrics'))
+    && all(one(tpTree, hasClass('metrics')), hasClass('metric')).length === 3
+    && tpSrc.includes('seat-grid'))
 
   const vs = read('vehicle', 'wxml')
   const v = parseTemplate(vs)
@@ -177,8 +254,14 @@ function main() {
   const header = one(tb, hasClass('tasks-identity'))
   const filters = one(tb, attr('aria-label', '任务筛选'))
   const record = one(tb, attr('wx:for', '{{filtered}}'))
-  check('任务：紧凑身份头与新建同行，新建仍受 canManage 保护', before(header, filters)
-    && !!one(header, n => tap('onNew')(n) && n.attrs['wx:if'] === '{{canManage}}') && !one(header, hasClass('page-title')))
+  const newBtn = one(t, n => tap('onNew')(n) && ancestor(n, hasClass('sticky-action')))
+  // style-B 3c：新建从页头搬到固定底栏（板上它在列表下方整宽）。位置换了，权限与「页头不再有实心按钮」两条更强：
+  // 底栏必须真的在 .sticky-action 内、页头不能再出现 onNew，且 .page 的 has-sticky 与 canManage 同条件。
+  check('任务：新建在固定底栏且受 canManage 保护，页头不再有实心按钮',
+    before(header, filters) && !!newBtn && newBtn.attrs['bindtap'] === 'onNew'
+    && !!ancestor(newBtn, attr('wx:if', '{{canManage && !denied && !loading}}'))
+    && !one(header, tap('onNew')) && !one(header, hasClass('page-title'))
+    && /<view class="page \{\{canManage && !denied && !loading \? 'has-sticky' : ''\}\}">/.test(t.source))
   check('任务：计数就在筛选里，没有独立 metrics 带', !!filters && t.source.slice(filters.start, filters.end).includes('{{item.count}}')
     && !one(tb, hasClass('metrics')))
   check('任务：逐条紧凑状态边栏，不折叠记录', !!record && hasClass('task-row')(record)
@@ -194,9 +277,59 @@ function main() {
       && ancestor(n, attr('wx:if', '{{canManage}}')) && /编辑|删除/.test(t.source.slice(n.start, n.end))
   }))
   const tcss = read('tasks', 'wxss')
+  check('任务：身份头标题 20/28（与首页分区标题同一档）', /\.tasks-identity__title\s*\{[^}]*font-size:\s*20px[^}]*line-height:\s*28px/.test(tcss))
   check('任务：次级按钮仍至少 44px token 触区，状态边栏可见', /\.task-secondary\s*\{[^}]*min-height:\s*var\(--touch-target\)/.test(tcss)
     && /\.task-row\s*\{[^}]*border-left:/.test(tcss))
-  for (const page of ['workspace', 'vehicle', 'staff', 'tasks']) {
+  // ---- style-B 3c：通知从「白卡片堆叠」改成消息流（板 03-5）----
+  // 判据落在共用层 app.wxss：两份通知页都只靠 .notice-card 成形，页面 wxss 里没有一条行样式，
+  // 所以行形态只有这一个真值源，改回卡片式必须在这里红。
+  const appCss = fs.readFileSync(path.join(__dirname, '../miniprogram/app.wxss'), 'utf8')
+  const noticeRow = css => {
+    const block = (/\.notice-card\s*\{([^}]*)\}/.exec(css) || ['', ''])[1]
+    const unread = (/\.notice-card\.unread\s*\{([^}]*)\}/.exec(css) || ['', ''])[1]
+    const get = (src, key) => (new RegExp('(?:^|[;\\s])' + key + '\\s*:\\s*([^;]+)').exec(src) || ['', ''])[1].trim()
+    return {
+      bg: get(block, 'background'), radius: get(block, 'border-radius'),
+      left: get(block, 'border-left'), bottom: get(block, 'border-bottom'),
+      unreadLeft: get(unread, 'border-left-color'),
+    }
+  }
+  const noticeRowOk = css => {
+    const r = noticeRow(css)
+    // 左侧 2px 在两种读态下都占位（透明→森林）：只给未读加边会把该行右移 2px，文字左缘对不齐。
+    return r.left === '2px solid transparent' && r.unreadLeft === 'var(--forest)'
+      && /^1px solid var\(--line\)/.test(r.bottom) && r.bg === 'transparent' && r.radius === '0'
+  }
+  check('通知：行是发丝分隔的消息流（无圆角、无底色、只留底边），未读只切左边颜色不位移',
+    noticeRowOk(appCss)
+    && /\.notice-card \.notice-body\s*\{[^}]*font-size:\s*var\(--text-input\)[^}]*line-height:\s*24px/.test(appCss),
+    JSON.stringify(noticeRow(appCss)))
+  const teeth = [
+    appCss.replace('border-left: 2px solid transparent', 'border-left: 0'),
+    appCss.replace('border-left-color: var(--forest)', 'border-left: 3px solid var(--forest)'),
+    appCss.replace(/\.notice-card \{[^}]*background: transparent/, m => m.replace('background: transparent', 'background: var(--surface)')),
+    appCss.replace(/\.notice-card \{[^}]*border-radius: 0/, m => m.replace('border-radius: 0', 'border-radius: var(--radius-card)')),
+  ]
+  check('通知：行形态有牙齿（回卡片 / 未读加粗边 / 恢复白底 / 恢复圆角，四种都必红）',
+    teeth.every(src => src !== appCss) && teeth.every(src => !noticeRowOk(src)),
+    teeth.map(src => noticeRowOk(src)).join(','))
+  const nw = parseTemplate(read('notices', 'wxml'))
+  const aw = parseTemplate(read('anotices', 'wxml'))
+  const bodyText = tree => one(bodyOf(tree), hasClass('notice-body'))
+  check('通知：两份页面的正文都走 16/24 主信息档（页脚小字读不成通知）',
+    !!bodyText(nw) && !!bodyText(aw)
+    && !!one(nw, n => n.attrs['wx:for'] === '{{visibleItems}}' && hasClass('notice-card')(n))
+    && !!one(aw, n => n.attrs['wx:for'] === '{{visibleItems}}' && hasClass('notice-card')(n)))
+  // style-B 3c：anotices 原来有两个分区头（「同行消息」大标题 + 又一个「通知」），同一屏连出两次页面身份。
+  // 并成一处后与 tab 版正文同构；列表读数（条数 / 排序 / 未读标记）降为一行细字，事实一条不少。
+  check('公告：单分区头 + 一行读数，与 tab 版正文同构（差异只留页头）',
+    (aw.source.match(/class="section-head"/g) || []).length === 1
+    && aw.source.includes('<text class="kicker">通知</text>') && aw.source.includes('class="list-head__title"')
+    && !one(bodyOf(aw), hasClass('page-title')) && aw.source.indexOf('同行消息') === -1
+    && ['共 {{items.length}} 条', '最新的在最上面', '左侧深色边线的是还没读的'].every(s => aw.source.includes(s) && nw.source.includes(s)),
+    '')
+
+  for (const page of ['workspace', 'vehicle', 'staff', 'tasks', 'notices', 'anotices']) {
     const css = read(page, 'wxss')
     check(page + '：页面样式不新造颜色或 token', !/#[\da-f]{3,8}\b|rgba?\(|hsla?\(|--[\w-]+\s*:/i.test(css))
   }

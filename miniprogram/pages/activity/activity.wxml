@@ -27,9 +27,9 @@
       </button>
     </view>
 
-    <!-- 首屏：全出血封面 + 抬进照片下沿的标题 + 浮起的信息卡。
-         信息卡是页面唯一的「时间/集合/人数/强度」出口；事实区（sec-facts）已并入这里，
-         首屏读数不再重复印第二份。 -->
+    <!-- 首屏：全出血封面（媒体 320）+ 抬进照片下沿的纸面板。
+         事实格与状态卡同处一块 .sheet-top：它们是「值不值得去 / 现在该做什么」的唯一出口，
+         事实区（sec-facts）已并入这里，首屏读数不再重复印第二份。 -->
     <view class="act-top">
       <view class="activity-hero-bleed">
         <activity-hero
@@ -45,19 +45,19 @@
           bind:fallbackerror="onFallbackCoverError"
         />
       </view>
-      <view wx:if="{{infoFacts.length}}" class="card act-info">
-        <fact-grid items="{{infoFacts}}" variant="card" />
+      <!-- 负上边距由全局 .sheet-top 给；.act-top 是 flex 列，不会被外边距合并吃掉 -->
+      <view class="sheet-top act-sheet">
+        <fact-grid wx:if="{{infoFacts.length}}" items="{{infoFacts}}" variant="card" />
+        <text wx:if="{{photoNote}}" class="photo-note act-photo-note">{{photoNote}}</text>
+        <view wx:if="{{!isDraft}}" class="callout {{stateTone}}">
+          <text class="callout-title">{{stateTitle}}</text>
+          <text style="display:block;margin-top:4px;">{{stateDetail}}</text>
+          <!-- 时间锚点单独一行、前面带形状标记：户外强光下不能只靠颜色区分「现在该做的那件事」 -->
+          <text wx:if="{{milestone}}" class="small tabular" style="display:block;margin-top:6px;">● {{milestone}}</text>
+          <text wx:if="{{countersLine}}" class="small" style="display:block;margin-top:4px;">{{countersLine}}</text>
+          <text wx:if="{{howLine}}" class="small" style="display:block;margin-top:4px;">{{howLine}}</text>
+        </view>
       </view>
-      <text wx:if="{{photoNote}}" class="photo-note act-photo-note">{{photoNote}}</text>
-    </view>
-
-    <view wx:if="{{!isDraft}}" class="callout {{stateTone}}">
-      <text class="callout-title">{{stateTitle}}</text>
-      <text style="display:block;margin-top:4px;">{{stateDetail}}</text>
-      <!-- 时间锚点单独一行、前面带形状标记：户外强光下不能只靠颜色区分「现在该做的那件事」 -->
-      <text wx:if="{{milestone}}" class="small tabular" style="display:block;margin-top:6px;">● {{milestone}}</text>
-      <text wx:if="{{countersLine}}" class="small" style="display:block;margin-top:4px;">{{countersLine}}</text>
-      <text wx:if="{{howLine}}" class="small" style="display:block;margin-top:4px;">{{howLine}}</text>
     </view>
 
     <!-- 同行评分：从事实区搬出来的可选观感信息，不参与章节编号，也不占主信息卡的格子 -->
@@ -91,7 +91,7 @@
       </view>
     </view>
 
-    <!-- 正文：章节之间 28px（.stack-sections），章节标题到内容 12px（chapter 默认 gap），
+    <!-- 正文：章节之间 40px（.stack-sections），章节标题到内容 12px（chapter 默认 gap），
          章节内部用自己的 .stack / .stack-gap3。id 留在页面外层，section-nav 与 pageScrollTo 的锚点不变。 -->
     <view class="stack-sections">
 

@@ -4,6 +4,12 @@
   border-radius: 0;
 }
 
+/* 详情首屏媒体 320（2026-10-26 style-B，全局 .hero-cover-media 240 不动）：
+   参考板的活动详情是「照片占首屏上半」；只在本组件作用域加高，路线库等其它 hero 不受影响。 */
+.act-hero.hero-cover .hero-cover-media {
+  height: 320px;
+}
+
 /* 标题块向上叠 72px：照片 240px 定高，下沿露出信息区森林底。
    选择器带 .act-hero.hero-cover 三节是为了稳定压过 app.wxss 的 .hero-cover-body（同属性同名规则）。 */
 .act-hero.hero-cover .hero-cover-body {

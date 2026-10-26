@@ -110,16 +110,25 @@ async function main() {
   {
     // owner ∧ staff ∧ vehicle —— 这正是截图里那三条的形状（组织者给自己授了车辆联络）
     const dual = act('dual', { meta: meta({ owner: true, staff: true, vehicle: true }) })
-    const { page } = boot([dual], [])
+    // C16（2026-10-26 style-B）：首屏「下一次同行」会从「我的活动」列表里剔除自己。
+    // 要测列表本身，夹具就得先有一场更早的同行活动去占首屏；它不带 staff/vehicle，不影响协作计数。
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page } = boot([soon, dual], [])
     await settle(page, () => page.data.loading === false, 'loading 没收')
     await settle(page, () => page.data.cards.length === 1, 'cards=' + ids(page))
     check('有效性门：双角色活动在「我的活动」里恰好一张卡', ids(page) === 'dual', ids(page))
+    check('C16：首屏那一场不在列表里重复（hero 与列表互斥）',
+      page.data.nextUp && page.data.nextUp.id === 'soon' && ids(page).indexOf('soon') === -1,
+      JSON.stringify([page.data.nextUp && page.data.nextUp.id, ids(page)]))
     check('页面 data 里不再存在第二个活动数组（原来那个 tasks 已被物理删除，不是留空不用）',
       page.data.tasks === undefined, JSON.stringify(Object.keys(page.data)))
     check('双角色卡上两枚入口独立存在（旧实现一个 goStaff 布尔吃掉车辆那一半，§8.6）',
       keysOf(cardOf(page, 'dual')) === 'staff,vehicle', JSON.stringify(cardOf(page, 'dual').collab))
     await applyFilter(page, 'collab')
     check('切到「需要协作」仍是同一张卡，不是两处各一份', ids(page) === 'dual', ids(page))
+    check('C16 只在「我的活动」剔除：协作档列表条数仍与筛选段计数一致',
+      page.data.collabCount === page.data.cards.length,
+      page.data.collabCount + ' / ' + page.data.cards.length)
   }
 
   // ============ 2. 两档筛出的同一场活动，卡片字段逐字节同构 ============
@@ -127,7 +136,9 @@ async function main() {
   {
     const a = act('a', { meta: meta({ owner: true, joined: true, vehicle: true }) })
     const b = act('b', { meta: meta({ owner: false, joined: false, staff: true }) })
-    const { page } = boot([a, b], ['a'])
+    // C16：占住首屏的那一场必须是另一场，否则 a 会从「我的活动」里被剔除、这一节无从比较。
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page } = boot([soon, a, b], ['a'])
     await settle(page, () => ids(page) === 'a', 'mine cards=' + ids(page))
     const mine = clone(page.data.cards)
     await applyFilter(page, 'collab')
@@ -147,7 +158,8 @@ async function main() {
   {
     const a = act('a', { meta: meta({ owner: true, joined: true, staff: true }) })
     const b = act('b', { meta: meta({ owner: true, joined: true }) })
-    const { page } = boot([a, b], [])
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page } = boot([soon, a, b], [])
     await settle(page, () => page.data.cards.length === 2, 'cards=' + ids(page))
     check('有效性门：两场里只有一场带协作授权', page.data.collabCount === 1, String(page.data.collabCount))
     const base = page.data.collabCount
@@ -181,7 +193,8 @@ async function main() {
   section('4. 缺位按无授权处理，有授权时入口必须出')
   {
     const noKeys = act('nokeys', { meta: { owner: true, joined: true, confirmed: 1, pending: 0, capacity: 4, positionRows: [] } })
-    const { page } = boot([noKeys], [])
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page } = boot([soon, noKeys], [])
     await settle(page, () => page.data.cards.length === 1, 'cards=' + ids(page))
     check('meta 里没有 staff/vehicle 键 ⇒ 计数为 0、卡片不带入口（越权入口宁可不出）',
       page.data.collabCount === 0 && cardOf(page, 'nokeys').collab.length === 0,
@@ -217,7 +230,8 @@ async function main() {
   section('5. 跳转：staff 与 vehicle 分别落页，不互相吞')
   {
     const dual = act('dual', { meta: meta({ owner: true, staff: true, vehicle: true }) })
-    const { page, env } = boot([dual], [])
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page, env } = boot([soon, dual], [])
     await settle(page, () => page.data.cards.length === 1, 'cards=' + ids(page))
     const card = cardOf(page, 'dual')
     page.onCardCollab({ currentTarget: { dataset: { id: card.id } }, detail: { key: 'staff' } })
@@ -272,9 +286,13 @@ async function main() {
       meta: meta({ owner: true, staff: true }) })
     const later = act('later', { startAt: '2026-11-03T08:00:00+08:00' })
     const third = act('third', { startAt: '2026-11-04T08:00:00+08:00', meta: meta({ owner: true, vehicle: true }) })
-    const { page, env } = boot([], [], { participant: [later, first], staff: [first], vehicle: [first, third] })
+    // C16：首屏由另一场更早的同行活动占住；三视角合并、去重、排序的判据本身不变。
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page, env } = boot([], [], { participant: [soon, later, first], staff: [first], vehicle: [first, third] })
     await waitFor(() => !page.data.loading)
     check('真实三视角回包去重后仍按 startAt 排序', ids(page) === 'first,later,third', ids(page))
+    check('C16：首屏取合并后最早的那一场，列表按原顺序继续（派生不改排序）',
+      page.data.nextUp && page.data.nextUp.id === 'soon', JSON.stringify(page.data.nextUp))
     check('只读原有三次 home 与 profile，不加活动详情探测', env.reads.length === 4
       && env.reads.filter(r => r.kind === 'home').map(r => r.perspective).join(',') === 'participant,staff,vehicle'
       && env.reads.filter(r => r.kind === 'profile').length === 1)
@@ -299,7 +317,8 @@ async function main() {
     check('原发起/发现/卡片导航契约不变', env.nav.join('|') === '/pages/editor/editor|/pages/discover/discover|/pages/activity/activity?id=first')
   }
   {
-    const { page } = boot([act('empty-route', { routeSnapshot: { title: '', distanceKm: 0, ascentM: 0 } })], [])
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page } = boot([soon, act('empty-route', { routeSnapshot: { title: '', distanceKm: 0, ascentM: 0 } })], [])
     await waitFor(() => !page.data.loading)
     check('缺路线不编造 0km/0m，保留待完善与人数事实', page.data.cards[0].metrics.length === 0
       && page.data.cards[0].routeName === '路线待完善' && page.data.cards[0].info.indexOf('已确认 3 人') !== -1)
@@ -351,6 +370,8 @@ async function main() {
     check('过期但未归档的活动不许占住「下一次同行」：取真正还没出发的那一场',
       page.data.nextUp && page.data.nextUp.id === 'future', JSON.stringify(page.data.nextUp))
     check('它仍留在列表里（派生不许反过来裁活动）', ids(page).indexOf('past') !== -1, ids(page))
+    check('C16：首屏那一场（future）不在列表里重复，其余活动一个不少',
+      ids(page) === 'past', ids(page))
   }
   {
     const { page } = boot([act('past-only', { startAt: '2026-10-02T08:00:00+08:00' })], [])

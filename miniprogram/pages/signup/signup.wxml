@@ -126,7 +126,7 @@
         <view class="cluster" style="justify-content:space-between;" hover-class="button-hover" data-key="{{p.key}}" bindtap="togglePart">
           <view class="cluster" style="gap:8px;min-width:0;">
             <text class="badge neutral tabular">{{pi + 1}}</text>
-            <text style="font-weight:600;">{{p.person.name || '未命名参与人'}}</text>
+            <text class="row-title">{{p.person.name || '未命名参与人'}}</text>
             <text class="small muted">{{p.kindLabel}} · {{p.tripSummary}}</text>
             <!-- 必勾授权徽标（T006）：分母只算 validate() 会拦的项，proxyHome 可选不计 -->
             <text class="badge neutral">授权 {{consentBadge[p.key]}}</text>

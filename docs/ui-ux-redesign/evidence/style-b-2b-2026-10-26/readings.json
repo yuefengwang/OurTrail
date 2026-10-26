@@ -1,0 +1,632 @@
+{
+  "system": {
+    "width": 390,
+    "height": 844,
+    "statusBar": 47
+  },
+  "pages": {
+    "routes": {
+      "path": "pages/routes/routes",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": "OURTRAIL · 路线",
+      "eyebrow": null,
+      "title": "路线库",
+      "navTitle": "路线库",
+      "titleRect": {
+        "top": 42,
+        "left": 20,
+        "width": 228,
+        "height": 28,
+        "bottom": 70
+      },
+      "sub": "整理自己的路线，查看协作者共享的路线。",
+      "sectionHeads": [
+        {
+          "text": "OURTRAIL · 路线 路线库 整理自己的路线，查看协作者共享的路线。",
+          "top": 24,
+          "left": 20,
+          "width": 228,
+          "height": 66,
+          "bottom": 90
+        },
+        {
+          "text": "我的路线 299 条 · 可发起活动、编辑与共享",
+          "top": 174,
+          "left": 20,
+          "width": 350,
+          "height": 44,
+          "bottom": 218
+        }
+      ],
+      "primaryButtons": [
+        {
+          "text": "新建路线",
+          "top": 98,
+          "left": 20,
+          "width": 116,
+          "height": 48,
+          "bottom": 146
+        }
+      ],
+      "firstCard": null,
+      "chapters": [],
+      "counts": {
+        "mine": 299,
+        "shared": 0,
+        "rows": 299
+      },
+      "rowNoise": {
+        "mutedLines": 3,
+        "badges": 0
+      }
+    },
+    "route": {
+      "path": "pages/route/route",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": true,
+      "kicker": null,
+      "eyebrow": null,
+      "title": null,
+      "navTitle": "路线详情",
+      "titleRect": null,
+      "sub": null,
+      "sectionHeads": [],
+      "primaryButtons": [],
+      "firstCard": null,
+      "chapters": [],
+      "routeId": null
+    },
+    "routeEdit": {
+      "path": "pages/route-edit/route-edit",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": "OURTRAIL · 编辑路线",
+      "eyebrow": null,
+      "title": "改这条路。",
+      "navTitle": "编辑路线",
+      "titleRect": {
+        "top": 46,
+        "left": 20,
+        "width": 350,
+        "height": 31,
+        "bottom": 77
+      },
+      "sub": "节点、风险与轨迹会存进路线库；之后发起活动可以直接复用。",
+      "sectionHeads": [
+        {
+          "text": "OURTRAIL · 编辑路线 改这条路。 节点、风险与轨迹会存进路线库；之后发",
+          "top": 24,
+          "left": 20,
+          "width": 350,
+          "height": 73,
+          "bottom": 97
+        },
+        {
+          "text": "基本信息 认得出的名字与量级",
+          "top": 125,
+          "left": 20,
+          "width": 350,
+          "height": 42,
+          "bottom": 167
+        },
+        {
+          "text": "快捷开始 有 GPX 轨迹？一键生成 自动解析航点为路线节点，并按轨迹算好里程与",
+          "top": 512,
+          "left": 37,
+          "width": 316,
+          "height": 62,
+          "bottom": 574
+        },
+        {
+          "text": "路线 路线节点",
+          "top": 727,
+          "left": 20,
+          "width": 64,
+          "height": 42,
+          "bottom": 769
+        },
+        {
+          "text": "安全 风险提示 选填。写清楚问题与应对方式，从这条路线发起活动时会带给大家。",
+          "top": 1889,
+          "left": 20,
+          "width": 350,
+          "height": 80,
+          "bottom": 1969
+        }
+      ],
+      "primaryButtons": [
+        {
+          "text": "导入 GPX 轨迹",
+          "top": 586,
+          "left": 37,
+          "width": 316,
+          "height": 48,
+          "bottom": 634
+        },
+        {
+          "text": "保存修改",
+          "top": 659,
+          "left": 20,
+          "width": 350,
+          "height": 48,
+          "bottom": 707
+        }
+      ],
+      "firstCard": {
+        "top": 495,
+        "left": 20,
+        "width": 350,
+        "height": 204,
+        "bottom": 699
+      },
+      "chapters": []
+    },
+    "signup": {
+      "path": "pages/signup/signup",
+      "clientHeight": 753,
+      "denied": true,
+      "loading": false,
+      "kicker": null,
+      "eyebrow": null,
+      "title": null,
+      "navTitle": "报名同行",
+      "titleRect": null,
+      "sub": null,
+      "sectionHeads": [],
+      "primaryButtons": [],
+      "firstCard": null,
+      "chapters": []
+    },
+    "editor": {
+      "path": "pages/editor/editor",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": "基本信息",
+      "eyebrow": "发起一次同行",
+      "title": "把出发，安排妥当。",
+      "navTitle": "发起活动",
+      "titleRect": {
+        "top": 48,
+        "left": 20,
+        "width": 264,
+        "height": 31,
+        "bottom": 79
+      },
+      "sub": "必填项齐了就能发；路线与图文可以稍后补。",
+      "sectionHeads": [
+        {
+          "text": "发起一次同行 把出发，安排妥当。 必填项齐了就能发；路线与图文可以稍后补。",
+          "top": 24,
+          "left": 20,
+          "width": 264,
+          "height": 75,
+          "bottom": 99
+        },
+        {
+          "text": "基本信息 名称与出发时间 结束时间与报名截止会按出发时间自动推算；集合位置在第 ",
+          "top": 220,
+          "left": 20,
+          "width": 350,
+          "height": 80,
+          "bottom": 300
+        }
+      ],
+      "primaryButtons": [
+        {
+          "text": "发布活动",
+          "top": 659,
+          "left": 20,
+          "width": 264,
+          "height": 48,
+          "bottom": 707
+        }
+      ],
+      "firstCard": {
+        "top": 496,
+        "left": 20,
+        "width": 350,
+        "height": 286,
+        "bottom": 782
+      },
+      "chapters": []
+    },
+    "workspace": {
+      "path": "pages/workspace/workspace",
+      "clientHeight": 753,
+      "denied": true,
+      "loading": false,
+      "kicker": null,
+      "eyebrow": null,
+      "title": null,
+      "navTitle": "活动工作台",
+      "titleRect": null,
+      "sub": null,
+      "sectionHeads": [],
+      "primaryButtons": [],
+      "firstCard": null,
+      "chapters": []
+    },
+    "tasks": {
+      "path": "pages/tasks/tasks",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": null,
+      "eyebrow": "协作 · 任务清单",
+      "title": null,
+      "navTitle": "任务清单",
+      "titleRect": null,
+      "sub": "装备、采购、记录，逐项有人负责；改状态即刻生效。",
+      "sectionHeads": [],
+      "primaryButtons": [],
+      "firstCard": null,
+      "chapters": []
+    },
+    "staff": {
+      "path": "pages/staff/staff",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": null,
+      "eyebrow": "现场协作",
+      "title": null,
+      "navTitle": "协作任务",
+      "titleRect": null,
+      "sub": "这里只展示当前仍授权给你的人员与任务；授权变更后立即生效。",
+      "sectionHeads": [],
+      "primaryButtons": [],
+      "firstCard": null,
+      "chapters": []
+    },
+    "vehicle": {
+      "path": "pages/vehicle/vehicle",
+      "clientHeight": 753,
+      "denied": true,
+      "loading": false,
+      "kicker": null,
+      "eyebrow": null,
+      "title": null,
+      "navTitle": "本车任务",
+      "titleRect": null,
+      "sub": null,
+      "sectionHeads": [],
+      "primaryButtons": [],
+      "firstCard": null,
+      "chapters": []
+    },
+    "anotices": {
+      "path": "pages/anotices/anotices",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": "同行消息",
+      "eyebrow": null,
+      "title": "重要安排，不错过。",
+      "navTitle": "活动通知",
+      "titleRect": {
+        "top": 46,
+        "left": 20,
+        "width": 350,
+        "height": 31,
+        "bottom": 77
+      },
+      "sub": "站内发布、你已阅读与外部发送，是不同的记录。",
+      "sectionHeads": [
+        {
+          "text": "同行消息 重要安排，不错过。 站内发布、你已阅读与外部发送，是不同的记录。",
+          "top": 24,
+          "left": 20,
+          "width": 350,
+          "height": 73,
+          "bottom": 97
+        }
+      ],
+      "primaryButtons": [],
+      "firstCard": null,
+      "chapters": []
+    },
+    "weatherChart": {
+      "path": "pages/weather-chart/weather-chart",
+      "clientHeight": 346,
+      "denied": false,
+      "loading": false,
+      "kicker": null,
+      "eyebrow": null,
+      "title": null,
+      "navTitle": "全图展示",
+      "titleRect": null,
+      "sub": null,
+      "sectionHeads": [],
+      "primaryButtons": [],
+      "firstCard": null,
+      "chapters": []
+    },
+    "lab": {
+      "path": "pages/lab/lab",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": "开发工具 · 仅白名单账号",
+      "eyebrow": null,
+      "title": "单人全流程预演",
+      "navTitle": "预演面板",
+      "titleRect": {
+        "top": 46,
+        "left": 20,
+        "width": 350,
+        "height": 31,
+        "bottom": 77
+      },
+      "sub": "演员由预演工具注入。审核、分车、阶段推进等组织者动作，请到各业务页亲手完成——预演走的就是真实数据链路。",
+      "sectionHeads": [
+        {
+          "text": "开发工具 · 仅白名单账号 单人全流程预演 演员由预演工具注入。审核、分车、阶段",
+          "top": 24,
+          "left": 20,
+          "width": 350,
+          "height": 91,
+          "bottom": 115
+        },
+        {
+          "text": "预演 预演活动",
+          "top": 160,
+          "left": 37,
+          "width": 316,
+          "height": 42,
+          "bottom": 202
+        },
+        {
+          "text": "演员 演员名册",
+          "top": 926,
+          "left": 37,
+          "width": 316,
+          "height": 42,
+          "bottom": 968
+        },
+        {
+          "text": "权限 开发者白名单",
+          "top": 1200,
+          "left": 37,
+          "width": 316,
+          "height": 42,
+          "bottom": 1242
+        }
+      ],
+      "primaryButtons": [
+        {
+          "text": "执行本阶段",
+          "top": 472,
+          "left": 37,
+          "width": 316,
+          "height": 48,
+          "bottom": 520
+        }
+      ],
+      "firstCard": {
+        "top": 143,
+        "left": 20,
+        "width": 350,
+        "height": 140,
+        "bottom": 283
+      },
+      "chapters": []
+    },
+    "privacy": {
+      "path": "pages/privacy/privacy",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": "OURTRAIL · 隐私",
+      "eyebrow": null,
+      "title": "隐私保护指引",
+      "navTitle": "隐私保护指引",
+      "titleRect": {
+        "top": 46,
+        "left": 20,
+        "width": 350,
+        "height": 31,
+        "bottom": 77
+      },
+      "sub": "更新日期：2026-10-21",
+      "sectionHeads": [
+        {
+          "text": "OURTRAIL · 隐私 隐私保护指引 更新日期：2026-10-21",
+          "top": 24,
+          "left": 20,
+          "width": 350,
+          "height": 73,
+          "bottom": 97
+        }
+      ],
+      "primaryButtons": [],
+      "firstCard": null,
+      "chapters": []
+    },
+    "cloudFieldPoc": {
+      "path": "pages/cloud-field-poc/cloud-field-poc",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": null,
+      "eyebrow": null,
+      "title": null,
+      "navTitle": "Cloud Field POC",
+      "titleRect": null,
+      "sub": null,
+      "sectionHeads": [],
+      "primaryButtons": [],
+      "firstCard": {
+        "top": 16,
+        "left": 12,
+        "width": 366,
+        "height": 378,
+        "bottom": 394
+      },
+      "chapters": []
+    }
+  },
+  "exceptions": [],
+  "consoleErrors": [],
+  "checks": [
+    {
+      "name": "routes：页面真的加载出了内容（不是 denied / loading 兜底）",
+      "pass": true,
+      "extra": "{\"denied\":false,\"loading\":false}"
+    },
+    {
+      "name": "routes：正文标题不与原生导航标题重复",
+      "pass": false,
+      "extra": "{\"title\":\"路线库\",\"navTitle\":\"路线库\"}"
+    },
+    {
+      "name": "routes：首屏最多一个实心主行动",
+      "pass": true,
+      "extra": "[\"新建路线\"]"
+    },
+    {
+      "name": "route：页面真的加载出了内容（不是 denied / loading 兜底）",
+      "pass": false,
+      "extra": "{\"denied\":false,\"loading\":true}"
+    },
+    {
+      "name": "route：正文标题不与原生导航标题重复",
+      "pass": true,
+      "extra": "{\"title\":null,\"navTitle\":\"路线详情\"}"
+    },
+    {
+      "name": "route：首屏最多一个实心主行动",
+      "pass": true,
+      "extra": "[]"
+    },
+    {
+      "name": "routeEdit：页面真的加载出了内容（不是 denied / loading 兜底）",
+      "pass": true,
+      "extra": "{\"denied\":false,\"loading\":false}"
+    },
+    {
+      "name": "routeEdit：正文标题不与原生导航标题重复",
+      "pass": true,
+      "extra": "{\"title\":\"改这条路。\",\"navTitle\":\"编辑路线\"}"
+    },
+    {
+      "name": "routeEdit：首屏最多一个实心主行动",
+      "pass": false,
+      "extra": "[\"导入 GPX 轨迹\",\"保存修改\"]"
+    },
+    {
+      "name": "signup：页面真的加载出了内容（不是 denied / loading 兜底）",
+      "pass": false,
+      "extra": "{\"denied\":true,\"loading\":false}"
+    },
+    {
+      "name": "signup：正文标题不与原生导航标题重复",
+      "pass": true,
+      "extra": "{\"title\":null,\"navTitle\":\"报名同行\"}"
+    },
+    {
+      "name": "signup：首屏最多一个实心主行动",
+      "pass": true,
+      "extra": "[]"
+    },
+    {
+      "name": "editor：页面真的加载出了内容（不是 denied / loading 兜底）",
+      "pass": true,
+      "extra": "{\"denied\":false,\"loading\":false}"
+    },
+    {
+      "name": "editor：正文标题不与原生导航标题重复",
+      "pass": true,
+      "extra": "{\"title\":\"把出发，安排妥当。\",\"navTitle\":\"发起活动\"}"
+    },
+    {
+      "name": "editor：首屏最多一个实心主行动",
+      "pass": true,
+      "extra": "[\"发布活动\"]"
+    },
+    {
+      "name": "workspace：页面真的加载出了内容（不是 denied / loading 兜底）",
+      "pass": false,
+      "extra": "{\"denied\":true,\"loading\":false}"
+    },
+    {
+      "name": "workspace：正文标题不与原生导航标题重复",
+      "pass": true,
+      "extra": "{\"title\":null,\"navTitle\":\"活动工作台\"}"
+    },
+    {
+      "name": "workspace：首屏最多一个实心主行动",
+      "pass": true,
+      "extra": "[]"
+    },
+    {
+      "name": "tasks：页面真的加载出了内容（不是 denied / loading 兜底）",
+      "pass": true,
+      "extra": "{\"denied\":false,\"loading\":false}"
+    },
+    {
+      "name": "tasks：正文标题不与原生导航标题重复",
+      "pass": true,
+      "extra": "{\"title\":null,\"navTitle\":\"任务清单\"}"
+    },
+    {
+      "name": "tasks：首屏最多一个实心主行动",
+      "pass": true,
+      "extra": "[]"
+    },
+    {
+      "name": "staff：页面真的加载出了内容（不是 denied / loading 兜底）",
+      "pass": true,
+      "extra": "{\"denied\":false,\"loading\":false}"
+    },
+    {
+      "name": "staff：正文标题不与原生导航标题重复",
+      "pass": true,
+      "extra": "{\"title\":null,\"navTitle\":\"协作任务\"}"
+    },
+    {
+      "name": "staff：首屏最多一个实心主行动",
+      "pass": true,
+      "extra": "[]"
+    },
+    {
+      "name": "vehicle：页面真的加载出了内容（不是 denied / loading 兜底）",
+      "pass": false,
+      "extra": "{\"denied\":true,\"loading\":false}"
+    },
+    {
+      "name": "vehicle：正文标题不与原生导航标题重复",
+      "pass": true,
+      "extra": "{\"title\":null,\"navTitle\":\"本车任务\"}"
+    },
+    {
+      "name": "vehicle：首屏最多一个实心主行动",
+      "pass": true,
+      "extra": "[]"
+    },
+    {
+      "name": "anotices：页面真的加载出了内容（不是 denied / loading 兜底）",
+      "pass": true,
+      "extra": "{\"denied\":false,\"loading\":false}"
+    },
+    {
+      "name": "anotices：正文标题不与原生导航标题重复",
+      "pass": true,
+      "extra": "{\"title\":\"重要安排，不错过。\",\"navTitle\":\"活动通知\"}"
+    },
+    {
+      "name": "anotices：首屏最多一个实心主行动",
+      "pass": true,
+      "extra": "[]"
+    },
+    {
+      "name": "routes：列表行的小号灰字行数（目标 ≤2；超了就是 D9 说的「同一个灰字堆几行」）",
+      "pass": false,
+      "extra": "{\"mutedLines\":3,\"badges\":0}"
+    }
+  ]
+}

@@ -1,7 +1,11 @@
 {
+  "navigationStyle": "custom",
   "navigationBarTitleText": "天气",
+  "navigationBarBackgroundColor": "#F5F5F0",
+  "navigationBarTextStyle": "black",
   "usingComponents": {
     "icon": "/components/icon/icon",
+    "brand-header": "/components/brand-header/brand-header",
     "form-field": "/components/form-field/form-field",
     "overlay": "/components/overlay/overlay"
   }

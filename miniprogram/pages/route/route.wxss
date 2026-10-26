@@ -3,21 +3,15 @@
   flex-direction: column;
   gap: 12px;
 }
-.route-meta { gap: 8px; }
-.route-facts .metric .metric-value {
-  font-size: var(--text-title);
-  line-height: 24px;
-  letter-spacing: 0;
-}
 .route-facts .metric .route-fact-missing {
   color: var(--muted);
   font-weight: 400;
 }
+/* 5b：字重与 overflow-wrap 已收进 app.wxss 的 `.row-title`（模板上两个类同写），
+   这里只留这一行相对眉题的排布差（块级 + 与眉题的 2px 间距）。 */
 .route-node-name {
   display: block;
-  font-weight: 600;
   margin-top: 2px;
-  overflow-wrap: anywhere;
 }
 .button.route-delete {
   align-self: flex-start;
