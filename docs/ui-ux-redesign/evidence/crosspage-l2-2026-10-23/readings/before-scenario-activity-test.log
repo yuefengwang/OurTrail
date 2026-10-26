@@ -1,0 +1,210 @@
+== 1. 首屏装配（primary 雷回归）：participant read → hero/状态/安排/路线/风险/装备/费用 全装配，不进 denied ==
+  ✓ activity.json 注册 icon/overlay/status-panel/form-field/person-row/activity-hero/fact-grid
+  ✓ 进入时处于 loading 态（denied 为空）
+  ✓ 读取请求 = activity / a1 / participant 视角（无 selectedSignupId）
+  ✓ revision/now 取自读取（后续命令做 CAS 基准）
+  ✓ 装配完成不进 denied（primary 雷回归）
+  ✓ hero：标题/徽标=真实状态（不再是常量口号）/出发时间/路线名/领队
+  ✓ S1 信息卡：时间/集合/人数/强度 四格由结构化字段生成
+  ✓ S1 路线指标：里程/爬升/最高海拔/预计用时（用时 10 小时）
+  ✓ 状态区块：ready → 「行前安排已就绪」；参与者该格不再重印时间锚点（A-02）
+  ✓ 我与同行人：两行装配（主报名 isPrimary、副标题以出行方式打头；无车行标「车辆待安排」）
+  ✓ 安排区块：介绍/组织者说明；时间锚点只由信息卡承载，页面不再另造 times 行
+  ✓ 路线区块：节点序号 kindLabel（01 起点/02 途中节点/03 终点）+ 上车点时间 + 地图已装配
+  ✓ 风险/装备/费用区块已装配
+  ✓ 难度/建议装备/剖面数据已装配
+  ✓ wxml：分区锚点 + route-profile 已接线
+  ✓ 操作位：已确认参与者不显示报名/自助入口，行级改/取消开放
+  ✓ 导航栏标题设置为活动标题
+  ✓ 最近查看已记录（draft.rememberActivity）
+  ✓ wxml：denied/loading 分支走 status-panel，地图卡仅在 map.visible 时渲染
+  ✓ 切换查看同行人：重读请求带 selectedSignupId
+  ✓ 切回主报名：selectedSignupId 清除（不带该键）
+  ✓ 行切换后仍不进 denied
+  ✓ 不足 1 小时 → 40 分钟
+  ✓ 跨日 ≥1 天 → 1 天 · 另 1 小时 · 至 10/4 09:00
+  ✓ 无任何高程 → 不出最高海拔格并说明缺什么；无结束时间 → 不出预计用时
+  ✓ 轨迹缺高程但节点有高程 → 最高海拔标注「节点高程」
+  ✓ 自行前往的行不标「车辆待安排」
+  ✓ 无手写介绍 → 介绍区不出现（不再用事实摘要冒充介绍）
+  ✓ 首屏信息不因介绍缺失而消失（infoFacts 仍有四格）
+  ✓ 无报名后须知 → 分区锚点不指向不存在的区块
+  ✓ 有手写介绍 → 介绍区出现且不再叠加事实摘要
+  ✓ 真实封面：coverIsReal=true
+  ✓ 实拍封面失败 → 回退氛围图（不直接判死）
+  ✓ 氛围图也失败 → 纯色 hero
+  ✓ wxml：实拍/氛围两条错误路径分开绑定，页面把两个事件分别接到 handler
+== 1b. 出发日天气摘要 ==
+  ✓ 只查起点节点（第一个有坐标的路线节点）
+  ✓ 查询日期 = 出发日（北京时间）
+  ✓ 摘要装配出发日读数
+  ✓ 分区锚点含天气；wxml 有天气段与重试入口
+  ✓ 重试强制再查一次（读操作才允许重试）
+  ✓ 没有出发时间：不外呼、说明不能按出发日查
+== 1c. 路线节点日程预览（EDI-02 A） ==
+  ✓ 默认路线没有时间戳 → 不摆日程说明、节点不印时间
+  ✓ 有时间戳 → 起点对齐出发时刻，后续按时间差推算，无时间节点留空
+  ✓ 日程说明与编辑器/天气页同源（有出发时刻）
+  ✓ wxml 有日程说明与逐节点时间的渲染位
+== 2. openSheet 雷回归：published 弹层装配 / gathering 位置上报路径 / closing 到家路径（裸 v 必炸） ==
+  ✓ openSheet 不抛错（v 雷回归）且弹层打开
+  ✓ selRow 装配：状态徽标 + 出行行（s2 无车无座：line 只剩上车点）
+  ✓ selRow.line = 上车点 · 车辆 · 座号（s1 有车有座）
+  ✓ 弹层初态：说明/节点/敏感资料清空，节点选项来自路线
+  ✓ published + confirmed：修改/取消此人报名开放
+  ✓ published 阶段不开现场动作（签到/节点/到家/位置上报/报备全关）
+  ✓ 未知行 id：弹层不打开（不炸）
+  ✓ closeSheet 收起弹层
+  ✓ onSelfSheet 以 primaryId 打开弹层（我已到达 · 去签到）
+  ✓ gathering 主报名：签到 + 报备 + 位置上报/撤回开放（canPosReport 路径不抛错）
+  ✓ closing 主报名已随队未到家：确认到家开放（canHome 路径不抛错）
+  ✓ 无权限时弹层零可发动作
+== 3. 权限门控：owner 判定 = permittedActions（视角 or isOwner）/ 非 owner 被拒 / 终态徽标 ==
+  ✓ owner 草稿：读取仍是 participant 视角
+  ✓ owner 草稿不进 denied（09-28 发布入口回归）
+  ✓ owner 判定成立（permittedActions 含 activity.edit）
+  ✓ 草稿展示：徽标「草稿」+ 未发布预览提示 + 关闭状态说明
+  ✓ 草稿不开报名入口（canSubmit=false），状态 callout 不渲染（isDraft）
+  ✓ wxml：owner 按钮文案 = isDraft ? 返回编辑与发布 : 进入工作台
+  ✓ wxml：草稿预览提示块存在
+  ✓ 草稿关掉原生转发菜单（对内死链不该被发到群里）
+  ✓ 草稿即便触发转发也不带活动路径（兜底回首页）
+  ✓ wxml：草稿不显示底部分享按钮、发布庆祝卡也不出现
+  ✓ 非 owner 读他人草稿：denied 透出原文
+  ✓ 无编辑/发布入口（isOwner=false、无导航、无命令）
+  ✓ wxml：denied 分支优先于 loading（wx:if / wx:elif 顺序）
+  ✓ 未报名看 published 活动：new 状态 → 报名入口开放
+  ✓ 报名入口 → 跳报名页带活动编号
+  ✓ wxml：报名按钮绑定 onSignup
+  ✓ 已取消：徽标说实话「活动已取消」+ 警示语气 + 状态文案
+  ✓ 已归档：徽标「已结束」+ 正常语气
+== 4. 发布入口：草稿 → 编辑器（发布在编辑器内，详情页不发 activity.publish） ==
+  ✓ 草稿「返回编辑与发布」→ 跳编辑器带活动编号
+  ✓ 详情页无发布确认路径：不发任何命令
+  ✓ wxml：owner 按钮绑定 onWorkspace
+  ✓ owner 已发布「进入工作台」→ 跳工作台带活动编号
+== 5. 签到：定位签到 payload / 无定位降级人工（需说明）/ 重复签到守卫 / busy 防抖 ==
+  ✓ 发出 attendance.checkin（payload.type 正确标注）
+  ✓ payload 顶层 = activityId/signupId/checkIn（无多余键）
+  ✓ 签到 method=simulation：evidence 只带 note（at/by 空串待服务端覆写，不伪造）+ 定位坐标
+  ✓ 签到 payload 按服务端覆写规则补齐后过 schema
+  ✓ 以读取时的 revision 做 CAS
+  ✓ 签到成功反馈：toast「签到已保存。」+ 弹层内成功 callout + 震动
+  ✓ 成功后自动重读（reload）
+  ✓ 定位不可用且未填说明：不发命令、给出指引文案
+  ✓ 降级签到发 attendance.checkin（payload.type 正确标注）
+  ✓ 降级 manual 签到：note 取本次说明，不带坐标（CheckIn union manual 分支无 coordinates 键）
+  ✓ 已签到行：canCheckin=false（重复签到守卫=渲染门槛，以代码实际为准），自助按钮切「更新我的同行状态」
+  ✓ 重复签到无运行时守卫：handler 本身不查 checkedIn，唯一防线是 wxml wx:if={{canCheckin}} 不渲染按钮
+  ✓ wxml：签到按钮仅在 canCheckin 时渲染且 busy 时禁点
+  ✓ 未选节点被静默拦下：不发命令
+  ✓ 节点确认发 attendance.node（payload.type 正确标注）
+  ✓ 节点确认 payload {pointId,note} 与所选节点一致
+  ✓ 报备未填说明被拦：不发命令、点名填写
+  ✓ 报备发 incident.report {signupIds,kind:withdrawal,description}，类型取自 picker 序号
+  ✓ busy 期间操作被防抖：不发命令
+  ✓ 取消未填原因被拦：不发命令
+  ✓ 取消发 signup.cancel {signupIds,reason}，payload 过 schema
+  ✓ 取消反馈：toast 与弹层 callout 是同一条完整话术（M-11 后不再被截断）
+== 6. 位置上报：未勾授权不发 / payload + schema / 拒绝定位 / position.revoke ==
+  ✓ active 主报名已随队：位置上报开放
+  ✓ 未勾授权：不取定位、不发命令（consent 是硬门槛）
+  ✓ 展开位置上报说明区（仅本次、不后台追踪）
+  ✓ 展开了但没勾授权同样不发
+  ✓ 发出 position.report，payload = type/activityId/signupId/coordinates/consent（无多余键）
+  ✓ coordinates 来自 wx.getLocation 桩（GCJ-02），consent=true
+  ✓ 上报反馈 toast「本次位置已上报。」
+  ✓ 撤回发 position.revoke {activityId,signupId}，payload 过 schema
+  ✓ 撤回反馈 toast「位置共享已撤回。」
+  ✓ 拒绝定位授权：透出指引文案、不发命令、busy 复位
+  ✓ 同行人（非本人）不开放自助位置上报
+== 7. 路线地图：include-points 非空（fitBounds 雷回归）/ 实线·虚线·不渲染 / NaN 过滤 / 节点联动 ==
+  ✓ 有 track：地图卡渲染，实线 polyline（forest 色 + arrowLine）
+  ✓ markers：3 个路线节点（start/checkpoint/finish 图标）+ 1 个上车点（id 1000+i 避让）
+  ✓ include-points = 外扩 8% 的两个角点（永远非空数组——fitBounds 崩溃雷回归）
+  ✓ 外扩留白 8%（bbox 各方向：lat 30.88~30.94 → 角点 30.8752/30.9448）
+  ✓ 视野中心 = bbox 中点，scale 13
+  ✓ wxml：include-points 绑定存在（崩溃入口）
+  ✓ 无 track 降级虚线：located 节点连线（control-line 色 + dottedLine）
+  ✓ 虚线分支 include-points 仍非空
+  ✓ 全无坐标：routeMap 为空对象（visible=false，不产出 markers）
+  ✓ 无坐标节点行不可点击定位（onPointLocate 早退，不产生新 setData）
+  ✓ track 中非有限坐标被过滤：polyline 只含有效点
+  ✓ NaN 上车点不进 bbox：include-points 仍为两个有限角点
+  ✓ 全部坐标非法：整卡不渲染（不给空 include-points）
+  ✓ 节点联动：scale 15 + 选中放大该 marker
+  ✓ 联动定位 = 以节点为中心 ±0.006° 的小 bbox（两点、非空、有限）
+  ✓ 联动是字段级 setData：同一轮补丁不重传整份 map
+  ✓ marker 点击：selectedId 更新 + 该 marker 放大 + include-points 不动（不重传）
+  ✓ 点击起点 marker（id 0）选中放大（修复后转真实校验）
+  ✓ 无坐标节点行联动早退（hover-class 也为 none）
+== 8. 导航与天气入口：openLocation 带坐标 / 非法坐标守卫 / checkpoint 行跳天气页 ==
+  ✓ 起点行「导航」→ wx.openLocation 带该点坐标/名称/地址 + scale 16
+  ✓ 上车点行「导航」同款 handler（wxml data-lat/lng 直接传坐标）
+  ✓ 非法/缺失坐标守卫：不拉起地图
+  ✓ 途中节点「天气」→ 跳天气页带 point 与活动出发日期
+  ✓ wxml：checkpoint 行是天气、start/finish 行是导航（catchtap 防冒泡）
+  ✓ 无出发时间：时间格值为空（由 fact-grid 过滤）、startDate 为空
+  ✓ 无日期时天气 URL 不带 date 参数
+  ✓ 天气卡「查看路线天气」入口 → 天气页（不带 point）
+  ✓ 「活动通知」入口 → 活动通知页
+== 9. 分享：标题 + 活动路径；未装配时兜底文案 ==
+  ✓ 分享标题 = 活动标题 · 一起同行
+  ✓ 分享路径 = /pages/activity/activity?id=a1
+  ✓ wxml：分享按钮 open-type="share"
+  ✓ 已发布活动不关闭转发菜单
+  ✓ 发布成功首帧：justPublished=true 且只在 owner 视角成立
+  ✓ wxml：庆祝卡带唯一主分享按钮（分享给同行的人）
+  ✓ 只庆祝一次：再次 onShow 后 justPublished 收回
+  ✓ 普通进入（无 published=1）不庆祝
+  ✓ 无标题时兜底「OurTrail · 活动邀请」
+== 10. 敏感资料：空用途拦截 / readSensitive 带 purpose / Result 透传呈现 ==
+  ✓ 空用途：不发读取（不发命令）
+  ✓ readSensitive 带 activityId/signupId/去空格后的用途
+  ✓ 读取成功：selSensitive 装配紧急联络与健康备注（弹层 callout 展示）
+  ✓ wxml：用途输入框与「按用途查看」按钮绑定
+  ✓ 读取被拒：selSensitive 清空 + 透出原因（不展示任何资料）
+  ✓ 用途变更即清空旧读取结果
+  ✓ 重开弹层：敏感资料/错误/成功提示复位
+== 11. CONFLICT 自愈：自动重读 + 提示 + 新 revision 重试成功 ==
+  ✓ 第一次提交基于旧 revision（1）
+  ✓ 到家确认发 attendance.home（payload.type 正确标注）
+  ✓ 到家 payload：{activityId,signupId,note}，note 取本次说明
+  ✓ CONFLICT 后自动重读页面（dispatchAndSync 回归）
+  ✓ CONFLICT 提示「安排已被他人更新，已刷新，请重试」
+  ✓ 失败原因透出到弹层、busy 复位、无成功 callout
+  ✓ 重读后 revision 刷新为 2（下次提交的 CAS 基准）
+  ✓ 重试基于重读后的 revision（2）——不再一直冲突
+  ✓ 重试成功：toast「安全到家已记录。」+ 弹层成功 callout + 震动
+== 12. denied 视角：透出原因不装配 / 缺少编号 / 读取失败兜底 ==
+  ✓ denied 视图：透出原文、loading 收起、标题不装配
+  ✓ 只发了一次 read，无任何命令与导航
+  ✓ 缺少活动编号：直接 denied 且不外呼
+  ✓ 读取失败：错误文案兜底进 denied（catch 不吞成空白）
+  ✓ 失败后无命令、无导航
+== 13. 图文正文/活动说明/费用/封面三态 ==
+  ✓ contentView 两段 + 双图布局
+  ✓ highlights 两项
+  ✓ S1 信息卡承接时间/集合/人数（minParticipants 进副标题）
+  ✓ 领队/评分/费用/报名后
+  ✓ 封面用实拍 + 正文图集合
+  ✓ 实拍封面失败回退氛围图并改口
+  ✓ 正文单图失败置 error（走占位不塌布局）
+== 14. 底栏状态矩阵（S3）：互斥分支的数据来源 + 庆祝帧/草稿/denied 的例外 ==
+  ✓ participant ready：底栏在；无自助/报名分支，journey 给 meeting 主操作
+  ✓ 已发布参与者：分享层满足（非草稿、非庆祝帧）
+  ✓ owner published：isOwner 分支优先，底栏在、可分享
+  ✓ owner published：组织者自己也有 journey 主操作，但它低于 isOwner 分支（模板只渲染一条）
+  ✓ owner draft：底栏在，但分享被双重关闭（模板 !isDraft + 原生 hideShareMenu）
+  ✓ participant new：canSubmit 唯一成立（journey 的 signup 分支不落 meeting）
+  ✓ participant gathering：canSelfSheet 唯一成立，文案=我已到达 · 去签到
+  ✓ participant closing：同一自助分支改口为确认返程与到家
+  ✓ owner justPublished：底栏不出现（成功卡里的分享是唯一主操作）
+  ✓ 非 owner 带 published=1：justPublished 不成立，底栏照常
+  ✓ denied：底栏保持不出现（showSticky=false）
+  ✓ 6 个状态里 canSubmit/canSelfSheet/meeting 三支至多一支成立（互斥链的数据前提）
+
+passed=189 failed=0 skipped=0
+[activity] 实拍封面加载失败，回退氛围图： cloud://env/activity-media/cover.jpg
+[activity] 氛围封面加载失败，回退纯色 hero： /assets/photos/cover-dawn.jpg
+[activity] 实拍封面加载失败，回退氛围图： cloud://env.abc/activity-media/b.jpg

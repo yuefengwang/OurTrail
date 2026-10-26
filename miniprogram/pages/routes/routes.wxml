@@ -4,72 +4,68 @@
     <status-panel kind="loading" title="正在载入" detail="正在读取你的路线。" />
   </block>
   <view wx:else class="stack-sections">
-    <!-- 编辑式头部：眉题 + 大标题 + 一句定位 + 主操作（design-system.md §2.3/§6-A） -->
-    <view class="stack" style="gap:12px;">
+    <view class="card-header">
       <view class="section-head">
-        <text class="kicker">OURTRAIL · 路线库</text>
-        <text class="page-title" style="display:block;margin-top:4px;">走过的路，下次直接复用。</text>
-        <text class="section-sub">节点、风险、轨迹都在这里；下次发起活动直接带着走。</text>
+        <text class="kicker">OURTRAIL · 路线</text>
+        <text class="list-head__title">路线库</text>
+        <text class="section-sub">整理自己的路线，查看协作者共享的路线。</text>
       </view>
-      <view class="button primary block" hover-class="button-hover" bindtap="onNewRoute">
+      <view class="button primary" hover-class="button-hover" bindtap="onNewRoute">
         <icon name="plus" size="18" color="#FFFFFF" />
         <text>新建路线</text>
       </view>
     </view>
 
-    <!-- 路线卡（T008）：每条一卡＝封面位（路线模型没有图片字段，--stone 空槽不假图）
-         + 标题行 + 指标行（.metrics 存量）+ 摘要行；分组标题用 .section-head -->
-    <view wx:if="{{mineRoutes.length}}" class="stack" style="gap:0;">
+    <view wx:if="{{mineRoutes.length}}" class="stack-gap3">
       <view class="section-head">
-        <text class="kicker">我的</text>
         <text class="section-title">我的路线</text>
-        <text class="section-sub">{{mineRoutes.length}} 条 · 可编辑、可共享、可删除</text>
+        <text class="section-sub">{{mineRoutes.length}} 条 · 可发起活动、编辑与共享</text>
       </view>
-      <view class="stack" style="gap:12px;">
-        <view wx:for="{{mineRoutes}}" wx:key="id" class="route-card" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
-          <view class="route-card__media" />
-          <view class="route-card__body">
-            <view class="cluster" style="gap:8px;">
-              <text style="font-weight:600;">{{item.title}}</text>
+      <view class="route-list">
+        <view wx:for="{{mineRoutes}}" wx:key="id" class="route-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
+          <text class="route-index tabular">{{item.indexText}}</text>
+          <view class="route-body">
+            <text class="route-title">{{item.title}}</text>
+            <view class="cluster route-meta">
+              <text class="small muted">{{item.sourceText}}</text>
               <text wx:if="{{item.difficultyText}}" class="badge neutral">{{item.difficultyText}}</text>
               <text wx:if="{{item.shared}}" class="badge info">已共享</text>
             </view>
-            <view class="metrics">
+            <view class="metrics route-metrics">
               <view wx:for="{{item.metrics}}" wx:key="label" class="metric">
                 <text class="metric-value">{{item.value}}<text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text></text>
                 <text class="metric-label">{{item.label}}</text>
               </view>
             </view>
-            <text class="small muted">{{item.statsText}}</text>
-            <text class="small muted">{{item.sourceText}} · {{item.updatedText}} · {{item.refText}}</text>
+            <text class="small muted">{{item.riskText}} · {{item.refText}}</text>
+            <text class="small muted">{{item.updatedText}}</text>
           </view>
         </view>
       </view>
     </view>
 
-    <!-- 共享给我：协作者视角，只读；与「我的」分区呈现，不再靠行内徽标猜归属 -->
-    <view wx:if="{{sharedRoutes.length}}" class="stack" style="gap:0;">
+    <view wx:if="{{sharedRoutes.length}}" class="stack-gap3">
       <view class="section-head">
-        <text class="kicker">协作</text>
         <text class="section-title">共享给我</text>
-        <text class="section-sub">同行领队共享的路线，可查看与使用，不能修改</text>
+        <text class="section-sub">{{sharedRoutes.length}} 条 · 可查看，不能修改或用它发起活动</text>
       </view>
-      <view class="stack" style="gap:12px;">
-        <view wx:for="{{sharedRoutes}}" wx:key="id" class="route-card" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
-          <view class="route-card__media" />
-          <view class="route-card__body">
-            <view class="cluster" style="gap:8px;">
-              <text style="font-weight:600;">{{item.title}}</text>
+      <view class="route-list">
+        <view wx:for="{{sharedRoutes}}" wx:key="id" class="route-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
+          <text class="route-index tabular">{{item.indexText}}</text>
+          <view class="route-body">
+            <text class="route-title">{{item.title}}</text>
+            <view class="cluster route-meta">
+              <text class="small muted">{{item.sourceText}}</text>
               <text wx:if="{{item.difficultyText}}" class="badge neutral">{{item.difficultyText}}</text>
             </view>
-            <view class="metrics">
+            <view class="metrics route-metrics">
               <view wx:for="{{item.metrics}}" wx:key="label" class="metric">
                 <text class="metric-value">{{item.value}}<text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text></text>
                 <text class="metric-label">{{item.label}}</text>
               </view>
             </view>
-            <text class="small muted">{{item.statsText}}</text>
-            <text class="small muted">{{item.sourceText}} · {{item.updatedText}} · {{item.refText}}</text>
+            <text class="small muted">{{item.riskText}} · {{item.refText}}</text>
+            <text class="small muted">{{item.updatedText}}</text>
           </view>
         </view>
       </view>

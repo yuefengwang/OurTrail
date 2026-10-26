@@ -41,17 +41,17 @@
 | `--forest` | `#163E35` | 主品牌：主按钮、导航栏、强调文字 | 既有，未动 |
 | `--forest-deep` | `#122E28` | hero 照片的深色压底、页头沉浸区 | 新增：比 forest 更深，照片上更稳 |
 | `--leaf` | `#D6EA8A` | 嫩叶强调（徽标/hero 上的亮点） | 既有，未动 |
-| `--paper` | `#F6F3EC` | 页面底（暖纸面） | **由 `#F5F5F0` 微调暖**：编辑式基调 |
+| `--paper` | `#F5F5F0` | 页面底（冷白纸面） | **2026-10-23 视觉收敛**：暖纸 `#F6F3EC` → 冷近白；与 `app.json` `window.backgroundColor` 同值，改一处必须改两处 |
 | `--surface` / `--white` | `#FFFFFF` | 卡片/弹层底 | 既有，未动 |
-| `--stone` | `#EDE9DE` | 次表面：分区带、chip 底、灰底表面 | 新增：石色，替代部分 `--forest-soft` 的中性场景 |
-| `--stone-line` | `#DCD5C4` | 暖表面上的分隔线 | 新增 |
+| `--stone` | `#EDEFEA` | 次表面：搜索条、筛选 chip、分区带、灰底表面 | 2026-10-23 由暖米 `#EDE9DE` 改为冷中性，与冷白纸面同族 |
+| `--stone-line` | `#D9DED7` | 冷表面上的分隔线（比 `--line` 淡一级） | 2026-10-23 由 `#DCD5C4` 改为冷中性 |
 | `--ink` | `#202A26` | 正文 | 既有 |
-| `--muted` | `#5F6E66` | 次要文字（`--paper` 上 4.6:1，勿再调淡） | 既有 |
+| `--muted` | `#5F6E66` | 次要文字（`--paper` 上 4.91:1，勿再调淡） | 既有；纸面换冷后复算通过 4.5:1 |
 | `--line` | `#DEE3DB` | 冷调分隔线（白卡上的边框） | 既有 |
 | `--danger/--warning/--info/--success` | `#B43D3B / #8C5A12 / #346583 / #276145` | 语义色 + 既有 `-soft` 浅底 | 既有 |
 | 天相/图表色（`--golden` `--blue-hour` `--chart-*` 等） | 见 design-system.md 既有表 | 天气可视化专用 | 既有，**本轮不动**（天气算法与配色不因视觉重构改变） |
 
-**为什么不是「全局换绿」**：绿是品牌锚不是背景墙。纸面暖白 + 石色承担 80% 的表面，
+**为什么不是「全局换绿」**：绿是品牌锚不是背景墙。冷白纸面 + 石色承担 80% 的表面，
 森林绿只出现在品牌动作（主按钮/导航/hero 压底）与强调文字上——克制才像成熟产品。
 
 ### 2.2 照片与遮罩（编辑式核心）
@@ -85,7 +85,8 @@
 - 纵向节奏：`.stack` 16px / `.stack-gap3` 12px；**区块间距 28px**（编辑式呼吸感，新增 `.stack-sections`）。
 - 页面内边距 24/20（既有）；hero 照片区内边距 20px。
 - 圆角：tag 5 / button 8 / card 14 / sheet 20（既有，**不新增圆角档**）。
-- 边框：卡片 1px `--line`；暖表面 1px `--stone-line`；分隔一律 1px 发丝线（`.hairline`），不用阴影分组。
+- 边框：卡片 1px `--line`；冷表面 1px `--stone-line`；分隔一律 1px 发丝线（`.hairline`），不用阴影分组。
+- **白卡靠 1px 发丝边 + 底色差立住**（2026-10-23）：冷白纸面上卡片不加阴影，`.card`/`.notice-card` 均带 1px `--line` 边框。
 - **阴影只留给浮层**（overlay/sticky-action），内容表面零阴影。
 
 ### 2.5 触控与操作
@@ -184,7 +185,7 @@
 
 | 文件 | 改动 |
 |---|---|
-| `miniprogram/app.wxss` | 新增 token（`--forest-deep/--stone/--stone-line/--scrim-*`）+ 编辑式类（`.display/.lede/.kicker/.section-head/.fact-row/.hero-cover*/.hairline/.stack-sections`）+ `--paper` 暖调 |
+| `miniprogram/app.wxss` | 新增 token（`--forest-deep/--stone/--stone-line/--scrim-*`）+ 编辑式类（`.display/.lede/.kicker/.section-head/.fact-row/.hero-cover*/.hairline/.stack-sections`）+ `--paper`（2026-10-16 暖调，**2026-10-23 已回归冷白，见 §10**） |
 | `miniprogram/utils/covers.js`（新） | 封面散列选择（纯函数、零依赖、可测） |
 | `miniprogram/assets/photos/*` + `README.md`（新） | 9 张授权实景 + 来源登记 |
 | `pages/activity/activity.{js,wxml,wxss}` | hero-cover 首屏、分区头、事实行、诚实性脚注 |
@@ -215,3 +216,22 @@
 
 明确**不新增**（盘点实测已存在）：`.segmented/.seg`、`.field/.input`、`.filter-chip`、`.hero-cover*`、
 activity-card 媒体形态。浅色导航栏由页面 json 承担（`app.json` 冻结），不进 WXSS。
+
+## 10. 全局视觉收敛 A（2026-10-23，用户选 A）
+
+依据用户提供的 `OurTrail_UI_交付包/01_全局视觉参考.png`，只取**结构规则**，不抄参考图的品牌与具体色号：
+冷白纸面、白色表面靠细线立住、森林绿只做唯一主操作、leaf 退回点缀、内容分区用下划线页签、列表密度提高。
+4 个 tab、页面 IA、详情页 hero 均不变。
+
+| 项 | 收敛后 | 说明 |
+|---|---|---|
+| 纸面 `--paper` | `#F5F5F0` | 冷近白；`--muted` 在其上 4.91:1；`app.json` `window.backgroundColor` 同值，12 个页面 json 的浅色导航同步 |
+| 石色 `--stone` / `--stone-line` | `#EDEFEA` / `#D9DED7` | 冷中性族；搜索条、筛选 chip、分区带使用 |
+| `.card` / `.notice-card` | 白底 + 1px `--line` | 零阴影；卡片靠边框与底色差立住 |
+| `.segmented.tabs-line` | 文字 + 2px 森林绿下划线（`.on::after`） | 内容分区切换的形态变体；沿用 `.segmented/.seg/.on` 类名，E2E 选择器契约不变。分段控件默认形态（白底药丸）保留给筛选/步骤条 |
+| `custom-tab-bar` 选中态 | `#163E35` 字 + 600 字重 + 透明底 | 去掉 `#ECF0EF` 药丸底；触控高度与圆角仍归 `.tab` |
+| `activity-card` | 卡片本体可点，不再重复印「查看活动安排」实心/leaf 入口 | 协作入口保留为 leaf chip 行（`collab` 非空时才出现）；leaf 只做点缀，不承载列表里的重复主操作 |
+| 列表密度 | 活动列表容器 `.stack` → `.stack-gap3`（12px） | home / discover；卡片内部 padding 不变 |
+
+判据变更：`tools/swx1-style-gates-test.js` T2.6 的选中 tab 终值由「白/浅底药丸」改为「透明底」，其余色阶/对比度门保持原值。
+

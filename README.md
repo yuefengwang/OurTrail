@@ -18,9 +18,12 @@
 | 我的 Tab | `pages/me` | 常用资料（微信头像/昵称/一键手机号同步，无验证码）、常用同行人、协作身份码、位置授权撤回 |
 | 活动详情 | `pages/activity` | 状态视图、我与同行人、路线/集合/风险/装备（必带+建议）/费用、难度、分区锚点、海拔剖面、出发日天气摘要、自助操作弹层、分享 |
 | 报名 | `pages/signup` | 多人整组报名、同行人授权、满员整组候补；档案未补时页面内自动弹出微信资料门（头像/昵称/手机号，可手填）；编辑模式按用途读取 |
-| 编辑器 | `pages/editor` | 三步编辑（内容时间/路线集合/招募风险）、**GPX 轨迹导入**（自动解析节点/里程/爬升）、从我组织的活动复制、发布 |
+| 编辑器 | `pages/editor` | 四步编辑（信息/路线/介绍/发布）、**GPX 轨迹导入**（自动解析节点/里程/爬升）、从我组织的活动复制、发布 |
 | 工作台 | `pages/workspace` | 总览待办、名单、分车、现场四分区；阶段推进（带门槛校验） |
 | 任务清单 | `pages/tasks` | 活动内协作 checklist：装备/采购/记录分工、负责人、截止日、待办/进行中/已完成；组织者写、参与者只读 |
+| 路线库 | `pages/routes` | 我的路线/协作路线分组；难度、距离爬升、节点、风险与引用计数；新建与打开 |
+| 路线详情 | `pages/route` | 概览与事实指标、地图、海拔剖面、节点、分段天气、风险提示、共享与引用活动；创建者管理入口 |
+| 路线编辑 | `pages/route-edit` | 路线资产的新建/编辑；可从编辑器带 `?routeId=` 预填发起活动 |
 | 名单面板 | `components/roster-panel` | 筛选、批量审核/递补/取消、导出（复制+审计）、协作授权管理 |
 | 分车面板 | `components/transport-panel` | 车辆档案、自动分车预览/提交、手动指派/交换、座位示意 |
 | 现场面板 | `components/field-panel` | 签到/出发核实/节点/到家/返程/异常/位置，组织者与协作共用 |
@@ -33,6 +36,10 @@
 | 海拔剖面 | `components/route-profile` | 活动/路线详情：连续轨迹高程 / 节点高程 / 无数据三态；无连续高程时明确标「节点高程，非连续剖面」，不插值伪造地形 |
 | 按需资料门 | `components/profile-gate` | 报名/发布前自动弹出；微信头像、昵称、手机号授权 + 手填兜底；保存后自动继续原动作 |
 | 图文编辑器 | `components/content-editor` | 活动发布的段落/图片块、封面选择、并发 3 上传与 `imgSecCheck`；块数据交给页面保存 |
+| 活动头图 | `components/activity-hero` | 活动详情首屏：实拍封面 + 标题压进照片下沿；只报封面错误，回退决策留在页面 |
+| 章节 | `components/chapter` | 编号 + 眉题 + 标题 + 说明 + slot；活动/路线/我的三页复用 |
+| 事实指标 | `components/fact-grid` | 两列事实网格，信息卡与路线指标共用；空值不占格、奇数末项通栏 |
+| 装备清单 | `components/equipment-grid` | 必带/建议分组与图标；只去首尾空白与空项，不去重、不排序、不改写原文 |
 | 合规 | `pages/privacy` | 隐私指引（公众平台登记路径）。**全局授权弹窗已下线**：`components/privacy-popup` 组件文件按 2026-09-27 决策保留，但已从 `app.json` 注销、不再挂载 |
 
 ## 目录结构
@@ -43,7 +50,8 @@ miniprogram/
   app.json / app.js / app.wxss   设计系统（tokens + 组件样式全局化）在这里
   custom-tab-bar/                自定义底部导航（活动/天气/通知/我的）
   components/                    icon(SVG data URI)/overlay/status-panel/person-row/
-                                 form-field/activity-card/field-panel/roster-panel/
+                                 form-field/activity-card/activity-hero/chapter/
+                                 fact-grid/equipment-grid/field-panel/roster-panel/
                                  transport-panel/meteogram/route-profile/
                                  profile-gate/content-editor/privacy-popup(已注销，保留文件)
   utils/
@@ -58,15 +66,18 @@ miniprogram/
     watch-points.js  观察点/轨迹点组（纯 util，storage 注入；P3 独立天气）
     util.js          脱敏/距离/名单导出等纯函数
   pages/               home discover notices anotices me activity signup editor
-                       workspace staff vehicle weather weather-chart weather-hub privacy
+                       routes route route-edit workspace tasks staff vehicle
+                       weather weather-chart weather-hub privacy
                        lab（开发者预演面板，仅白名单账号可用，无入口——用编译模式直达）
+                       cloud-field-poc（等值带渲染核对页，无入口）
 cloudfunctions/trailApi/
-  index.js             13 个 action 路由（read/readForm/.../dispatch/getWeather/getWeatherByPoint/getPhoneNumber）
+  index.js             16 个 action 路由（read*/previewAssignments/dispatch/getWeather/
+                       getWeatherByPoint/getSkyContext/getPhoneNumber/readRoutes/checkImage）
   store.js             持久层：按集合存文档（ot_*），事务内 revision CAS
   domain/              由原型 domain 层逐段移植：
                        schema(校验器)/permissions/invariants/commands/
                        activity/signup/transport/field/profile/notices/
-                       allocation/selectors/contracts
+                       routes/tasks/files/allocation/selectors/contracts
   lib/weather.js       Open-Meteo 代理（沿用）
   smoke-test.js        领域层冒烟测试（node smoke-test.js，173 项）
 tools/                 零依赖 node 脚本，无 root package.json、无 npm test：
@@ -120,7 +131,11 @@ docs/prototypes/ourtrail-app/   v1 高仿真原型（React，设计基准；已�
 ## 测试
 
 无 root `package.json`、无 `node_modules/`、无 lint/format/typecheck。全部是零依赖 node 脚本，
-从仓库根目录裸跑，每个自报 `passed=N failed=N` 并以退出码表态：
+从仓库根目录裸跑，每个自报 `passed=N failed=N` 并以退出码表态。
+**当前清单与读数以 `AGENTS.md` 的 Gate recount 与 `SYNC.md` 为准**：2026-10-23 全量 sweep 实测
+110 套 / `passed=7002` / `failed=14` / 4 条已在干净 HEAD 复现的既有红；`tools/*-test.js` 共 112 个，
+其中 3 套需要开发者工具。下面这份命令清单与逐套数字是 2026-10-08 的历史快照，保留作演进参照，
+**不要据此判断当前覆盖率**：
 
 ```bash
 node tools/check.js && node tools/check-handlers.js && \

@@ -9,15 +9,14 @@ const draft = require('../../utils/draft')
 const F = require('../../utils/format')
 const J = require('../../utils/journey')
 
-// 指标行（N2 2026-10-22 照片在上卡）：距离 / 爬升 / 人数三件「扫一眼的事实」。
+// 指标行（N2 2026-10-22 照片在上卡；2026-10-23 跨页 L2 收窄为路线事实）：
+// 距离 / 爬升两件「扫一眼的事实」。人数只在 info 行出现一次——同一事实不在卡片上印两遍。
 // 每一项只在投影**确有**该字段时出现——缺字段整项不出现，不许印「0 km / 0 m」：
 // 把「没填」印成零事实是凭空造事实（路线可整体后补，与 meta 行距离同款口径）。
-// 人数取服务端 home 投影的 meta.confirmed/capacity，不从 info 行文案反解（铁律 19 单向）。
 function cardMetrics(a) {
   const metrics = []
   if (a.routeSnapshot.distanceKm) metrics.push({ key: 'distance', label: '距离', value: String(a.routeSnapshot.distanceKm), unit: 'km' })
   if (a.routeSnapshot.ascentM) metrics.push({ key: 'ascent', label: '爬升', value: String(a.routeSnapshot.ascentM), unit: 'm' })
-  if (a.meta.capacity) metrics.push({ key: 'people', label: '人数', value: a.meta.confirmed + '/' + a.meta.capacity, unit: '' })
   return metrics
 }
 
@@ -117,11 +116,11 @@ Page({
         cover: a.coverFileId || '',
         title: a.title || '未命名草稿',
         date: F.dateLabel(a.startAt),
-        // 路线可整体后补（2026-10-14 快速创建）：缺里程就不印「· 0 km」——
-        // 那会把「没填」印成「一场 0 公里的活动」，是凭空造事实。
-        meta: (a.routeSnapshot.title || '路线待完善') + (a.routeSnapshot.distanceKm ? ' · ' + a.routeSnapshot.distanceKm + ' km' : ''),
-        // N2（2026-10-22）照片在上卡的两个纯展示派生字段：sub 行用路线名（meta 行里的 km
-        // 已由指标行承担，同一个数不印两遍），指标行见 cardMetrics。都不进投影契约的既有字段。
+        // 路线事实分槽后 meta 只留难度（2026-10-23 跨页 L2）：路线名走 routeName、
+        // 距离/爬升走 metrics，同一事实不在 meta 再印一遍。
+        meta: F.difficultyLabel(a.routeSnapshot && a.routeSnapshot.difficulty),
+        // N2（2026-10-22）照片在上卡的纯展示派生字段：sub 行用路线名，指标行见 cardMetrics。
+        // 都不进投影契约的既有字段。
         routeName: a.routeSnapshot.title || '路线待完善',
         metrics: cardMetrics(a),
         // 状态词只在 journey 一处定义；卡片再补一句「还有多久」，

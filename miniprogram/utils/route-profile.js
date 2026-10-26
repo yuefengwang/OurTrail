@@ -74,9 +74,22 @@ function nodeSamples(points) {
   return { runs: [out], total: d }
 }
 
-function renderRuns(runs, mode, fullDistance) {
+function collectSamples(runs) {
   const all = []
   for (const run of runs) for (const s of run) all.push(s)
+  return all
+}
+
+function rangeOf(all) {
+  return {
+    minEle: Math.round(Math.min.apply(null, all.map(s => s.ele))),
+    maxEle: Math.round(Math.max.apply(null, all.map(s => s.ele))),
+    pointCount: all.length,
+  }
+}
+
+function renderRuns(runs, mode, fullDistance) {
+  const all = collectSamples(runs)
   if (!all.length) return null
   const actualMin = Math.min.apply(null, all.map(s => s.ele))
   const actualMax = Math.max.apply(null, all.map(s => s.ele))
@@ -168,4 +181,26 @@ function buildProfile(input) {
   }
 }
 
-module.exports = { buildProfile, W, H }
+/**
+ * 只要真实高程范围，不画图：与 buildProfile 同一优先级（轨迹 → 节点），
+ * 因此数字与剖面图同源，不会出现「图上 4,660 / 卡片 4,655」。
+ * @param {object} input { track, points }
+ * @returns {{ source: 'track'|'nodes'|'none', minEle: number|null, maxEle: number|null, pointCount: number }}
+ */
+function elevationRange(input) {
+  const track = (input && input.track) || []
+  const points = (input && input.points) || []
+  const trackData = trackSamples(track)
+  if (trackData.runs.length) {
+    return Object.assign({ source: 'track' }, rangeOf(collectSamples(trackData.runs)))
+  }
+  const nodeData = nodeSamples(points)
+  if (nodeData.runs.length) {
+    const all = collectSamples(nodeData.runs)
+    // 节点剖面只要 ≥2 个带高程的节点就成立（nodeSamples 已保证），与 buildProfile 同判。
+    return Object.assign({ source: 'nodes' }, rangeOf(all))
+  }
+  return { source: 'none', minEle: null, maxEle: null, pointCount: 0 }
+}
+
+module.exports = { buildProfile, elevationRange, W, H }

@@ -1,0 +1,88 @@
+{
+  "side": "s3",
+  "scenario": "owner-bottom",
+  "capturedAt": "2026-10-23T10:54:06.841Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "fixture": {
+    "file": "fixtures-s3\\owner-bottom.json",
+    "title": "青城后山 · 组织者视角"
+  },
+  "gates": {
+    "loadingFalse": true,
+    "titleIntact": true,
+    "stateMatch": true,
+    "stylesReady": true,
+    "styleWaitMs": 53
+  },
+  "markers": {},
+  "geometry": {
+    "mode": "document",
+    "pageBox": {
+      "left": 0,
+      "top": 0,
+      "width": 390,
+      "height": 3805,
+      "bottom": 3805
+    },
+    "stickyBox": {
+      "left": 0,
+      "top": 3697.5,
+      "width": 390,
+      "height": 107,
+      "bottom": 3804.5
+    },
+    "lastContentBottom": 3685,
+    "expectedStickyTop": 3698,
+    "dockedToBottom": true,
+    "reservedBottom": 120,
+    "gapAboveBar": 12.5,
+    "notOccluded": true,
+    "viewportHeight": 753
+  },
+  "screenshots": [
+    {
+      "file": "owner-bottom-top.png",
+      "bytes": 243145,
+      "width": 500,
+      "height": 1082
+    },
+    {
+      "file": "owner-bottom-bottom.png",
+      "bytes": 81186,
+      "width": 500,
+      "height": 1082
+    }
+  ],
+  "status": "VALID",
+  "problems": [],
+  "dom": {
+    "rootClass": "page has-sticky",
+    "hasStickyClass": true,
+    "stickyCount": 1,
+    "primaryCount": 1,
+    "primaryText": "进入工作台",
+    "sharePresent": true,
+    "shareText": "分享",
+    "shareWidth": 88,
+    "primaryWidth": 250,
+    "successCardShare": false,
+    "successCardShareText": "",
+    "successCardWorkspace": false,
+    "successCardWorkspaceText": ""
+  },
+  "injected": {
+    "title": "青城后山 · 组织者视角",
+    "showSticky": true,
+    "isOwner": true,
+    "isDraft": false,
+    "justPublished": false
+  }
+}

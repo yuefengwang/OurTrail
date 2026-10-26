@@ -1,0 +1,10 @@
+/* 章节容器：标题三行（编号+栏目 / 章节名 / 说明）与正文的间距由 gap 控制。
+   排版类全部来自 app.wxss 的 .section-head/.kicker/.list-head__title/.section-sub，
+   这里只做正文上边距，避免每个页面各写一遍。 */
+.chapter {
+  display: flex;
+  flex-direction: column;
+}
+.chapter__body {
+  display: block;
+}

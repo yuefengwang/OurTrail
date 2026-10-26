@@ -1,8 +1,8 @@
-/* 首页：卡片信息区留白
+/* 首页：入口区与卡片信息区留白
    Tab 页底部留白：规则与理由唯一登记在 design-system.md「Tab 页底部留白（唯一规则）」；本页在
-   app.json 的 tabBar.list 内 ⇒ 必须留，且**根节点每个可达 class 分支都要留够**（home.wxml:1 的
-   条件类 with-tabbar 全仓无定义 ⇒ 不产生任何样式，本页的留白一直由下面这一行无条件给；
-   那个假开关该删，动作归页面 owner，见 out/B4-PAD/requests.md。判据：tools/b4-pad-final-value-test.js §2/§4）。 */
+   app.json 的 tabBar.list 内 ⇒ 必须留，且根节点每个可达 class 分支都要留够。
+   2026-10-23：原来挂在根节点上的 with-tabbar 开关已删除——它全仓无定义，不产生任何样式，
+   这页的留白一直由下面这一行无条件给。判据：tools/b4-pad-final-value-test.js §2/§4。 */
 .page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }
 /* B-10：这两个色值原来写的是字面量 #5F6E66 / #D0D8D7，与 app.wxss 的 --muted / --on-forest-muted
    逐字节同值却是两份真值（token 调整时这里不会跟着动）。改引用后值完全不变 ⇒ 无视觉变化。
@@ -10,7 +10,8 @@
    需要动 app.wxss（不属本批写入集），已写进 out/SWX2/requests.md。12px 这一支同理待收（--text-caption）。 */
 .activity-card .activity-card__info { font-size: 12px; color: var(--muted); }
 .activity-card--featured .activity-card__info { color: var(--on-forest-muted); }
-/* N2（2026-10-22）页头压缩：主标题从 .page-title 的 28px/700 编辑式大标题降为一行 20px/600，
-   首屏把空间让给列表（交付包拼板屏 1.1）。左列 min-width:0 保证窄屏上右侧两个入口不被挤掉；
-   长昵称 + 标题用断行兜底（与 .activity-card__title 同款策略，不截断语义）。 */
-/* 页头文字列规则已上收 app.wxss 的 .list-head__*（FH-01）；此处不再保留第二份。 */
+/* 入口区（2026-10-23）：标题独立成段、动作单独一行；主按钮只留给「发起活动」，
+   发现是次级。两个动作等宽，44px 以上触控高度由全局 .button 的 --action-height 承重。 */
+.home-entry { display: flex; flex-direction: column; gap: 12px; }
+.home-entry__actions { display: flex; align-items: center; gap: 8px; }
+.home-entry__actions .button { flex: 1; }

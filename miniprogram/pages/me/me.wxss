@@ -3,6 +3,37 @@
    本页在 app.json 的 tabBar.list 内 ⇒ 必须留（判据 tools/b4-pad-final-value-test.js §2 逐页解终值）。 */
 .page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }
 
+/* 身份区与统计带：身份可编辑，统计只读；两者是同级事实，不再套进同一张卡。 */
+.profile-identity { display: flex; flex-direction: column; gap: 10px; }
+.profile-stats {
+  background: var(--stone);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+}
+.profile-stats .metric + .metric {
+  border-left: 1px solid var(--stone-line);
+  padding-left: 12px;
+}
+.profile-stats .metric .metric-value { font-size: 24px; }
+
+/* 路线库：独立工具入口，服务「下一次发起」，不与最近活动混成一张卡。 */
+.tool-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  background: var(--forest-soft);
+  border-radius: var(--radius-card);
+}
+.tool-entry__main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tool-entry__title {
+  font-size: var(--text-title);
+  line-height: 26px;
+  font-weight: 600;
+  color: var(--forest);
+}
+
 /* .card-label 已提升为 app.wxss 的全局单源（M-02 / E-15：本页那份私有定义是它**唯一**的出处，
    结果另外四页同一个类名命不中任何选择器）。这里不再留第二份基础定义——
    本页那 7 处使用的终值仍由 app.wxss 给出，判据 tools/m02-class-scope-test.js §2 逐页解一次并验出处唯一。 */
@@ -15,7 +46,7 @@
   width: 44px;
   height: 44px;
   border-radius: var(--radius-button, 8px);
-  background: var(--stone, #EDE9DE);
+  background: var(--stone, #EDEFEA);
 }
 .recent-cover.cover-failed { visibility: hidden; }
 

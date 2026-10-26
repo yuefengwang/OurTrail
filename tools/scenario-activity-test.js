@@ -31,6 +31,8 @@ const ACTIVITY_WXML = fs.readFileSync(
   path.join(__dirname, '..', 'miniprogram', 'pages', 'activity', 'activity.wxml'), 'utf8')
 const ACTIVITY_JSON = JSON.parse(fs.readFileSync(
   path.join(__dirname, '..', 'miniprogram', 'pages', 'activity', 'activity.json'), 'utf8'))
+const HERO_WXML = fs.readFileSync(
+  path.join(__dirname, '..', 'miniprogram', 'components', 'activity-hero', 'activity-hero.wxml'), 'utf8')
 
 let passed = 0
 let failed = 0
@@ -269,12 +271,14 @@ const OWNER_DRAFT_ACTIONS = ['activity.copy', 'export.record', 'activity.edit', 
 // 1. 历史雷回归——首屏装配：participant 视角 read → 各区块状态位装配，全程不进 denied
 async function scenario1() {
   section('1. 首屏装配（primary 雷回归）：participant read → hero/状态/安排/路线/风险/装备/费用 全装配，不进 denied')
-  check('activity.json 注册 icon/overlay/status-panel/form-field/person-row',
+  check('activity.json 注册 icon/overlay/status-panel/form-field/person-row/activity-hero/fact-grid',
     ACTIVITY_JSON.usingComponents.icon === '/components/icon/icon'
     && ACTIVITY_JSON.usingComponents.overlay === '/components/overlay/overlay'
     && ACTIVITY_JSON.usingComponents['status-panel'] === '/components/status-panel/status-panel'
     && ACTIVITY_JSON.usingComponents['form-field'] === '/components/form-field/form-field'
-    && ACTIVITY_JSON.usingComponents['person-row'] === '/components/person-row/person-row',
+    && ACTIVITY_JSON.usingComponents['person-row'] === '/components/person-row/person-row'
+    && ACTIVITY_JSON.usingComponents['activity-hero'] === '/components/activity-hero/activity-hero'
+    && ACTIVITY_JSON.usingComponents['fact-grid'] === '/components/fact-grid/fact-grid',
     JSON.stringify(ACTIVITY_JSON.usingComponents))
   {
     const env = bootActivity({ view: viewFixture() })
@@ -289,12 +293,33 @@ async function scenario1() {
     check('装配完成不进 denied（primary 雷回归）', env.page.data.denied === '' && env.page.data.loading === false,
       env.page.data.denied)
     // 徽标位曾经是常量「一起同行」——最贵的一格没有回答「我现在是什么状态」。现在它承载真实状态。
-    check('hero：标题/徽标=真实状态（不再是常量口号）/出发时间/路线名/里程爬升人数',
+    // S1：里程/爬升从 hero 移到路线区指标条，hero 只留标题/状态徽标/出发时间/路线名/领队。
+    check('hero：标题/徽标=真实状态（不再是常量口号）/出发时间/路线名/领队',
       env.page.data.title === '青城后山 · 周末轻徒步' && env.page.data.badgeText === '行前安排就绪'
       && env.page.data.startAtLabel === '10/3 08:00' && env.page.data.routeTitle === '青城后山穿越'
-      && env.page.data.distance === 12.5 && env.page.data.ascent === 860
+      && env.page.data.leader === ''
       && env.page.data.confirmed === 2 && env.page.data.capacity === 20,
       JSON.stringify({ t: env.page.data.title, b: env.page.data.badgeText, s: env.page.data.startAtLabel }))
+    check('S1 信息卡：时间/集合/人数/强度 四格由结构化字段生成',
+      env.page.data.infoFacts.length === 4
+      && env.page.data.infoFacts[0].key === 'time' && env.page.data.infoFacts[0].label === '活动时间'
+      && env.page.data.infoFacts[0].value === '10/3 08:00'
+      && env.page.data.infoFacts[0].sub === '至 10/3 18:00 · 截止 10/2 08:00'
+      && env.page.data.infoFacts[1].key === 'pickup' && env.page.data.infoFacts[1].value === '东门集合点'
+      && env.page.data.infoFacts[1].sub === '10/3 07:30'
+      && env.page.data.infoFacts[2].key === 'people' && env.page.data.infoFacts[2].value === '2 / 20'
+      && env.page.data.infoFacts[2].unit === '人' && env.page.data.infoFacts[2].sub === ''
+      && env.page.data.infoFacts[3].key === 'intensity' && env.page.data.infoFacts[3].value === '中等',
+      JSON.stringify(env.page.data.infoFacts))
+    check('S1 路线指标：里程/爬升/最高海拔/预计用时（用时 10 小时）',
+      env.page.data.routeStats.length === 4
+      && env.page.data.routeStats[0].value === '12.5' && env.page.data.routeStats[0].unit === 'km'
+      && env.page.data.routeStats[1].value === '860' && env.page.data.routeStats[1].unit === 'm'
+      && env.page.data.routeStats[2].value === '900' && env.page.data.routeStats[2].unit === 'm'
+      && env.page.data.routeStats[2].sub === '轨迹高程'
+      && env.page.data.routeStats[3].value === '10' && env.page.data.routeStats[3].unit === '小时'
+      && env.page.data.routeStats[3].label === '预计用时',
+      JSON.stringify(env.page.data.routeStats))
     check('状态区块：ready → 「行前安排已就绪」；参与者该格不再重印时间锚点（A-02）',
       env.page.data.stateKey === 'ready' && env.page.data.stateTitle === '行前安排已就绪'
       && env.page.data.stateDetail === '检查集合时间、出行方式与装备，出发当天见。'
@@ -310,13 +335,15 @@ async function scenario1() {
       && env.page.data.rows[1].isPrimary === false && env.page.data.rows[1].subtitle === '搭乘车辆 · 东门集合点 · 车辆待安排'
       && env.page.data.primaryId === 's1',
       JSON.stringify(env.page.data.rows))
-    check('安排区块：介绍/组织者说明/三个时间行',
+    // S2：行程章节不再自造「出发/结束/截止」三行——时间锚点由首屏信息卡的 time 格承载一次。
+    check('安排区块：介绍/组织者说明；时间锚点只由信息卡承载，页面不再另造 times 行',
       env.page.data.description === '当天往返的轻装徒步，适合新手。'
       && env.page.data.organizerIntro === '老驴带队，十年后山经验。'
-      && env.page.data.times.length === 3
-      && env.page.data.times[0].label === '出发时间' && env.page.data.times[0].value === '10/3 08:00'
-      && env.page.data.times[1].value === '10/3 18:00' && env.page.data.times[2].value === '10/2 08:00',
-      JSON.stringify(env.page.data.times))
+      && env.page.data.times === undefined
+      && env.page.data.infoFacts[0].key === 'time'
+      && env.page.data.infoFacts[0].value === '10/3 08:00'
+      && env.page.data.infoFacts[0].sub === '至 10/3 18:00 · 截止 10/2 08:00',
+      JSON.stringify({ d: env.page.data.description, t: env.page.data.infoFacts[0] }))
     check('路线区块：节点序号 kindLabel（01 起点/02 途中节点/03 终点）+ 上车点时间 + 地图已装配',
       env.page.data.points.length === 3
       && env.page.data.points[0].kindLabel === '01 · 起点' && env.page.data.points[1].kindLabel === '02 · 途中节点'
@@ -362,6 +389,47 @@ async function scenario1() {
       JSON.stringify(env.reads[2]))
     check('行切换后仍不进 denied', env.page.data.denied === '')
   }
+  // 用时三分支（COMPONENTS §7.2）：<1h / <1 天 / ≥1 天，不折算成小数小时。
+  // 注意：这些用例各自 bootActivity（会替换 global.wx），必须放在上面那次
+  // 「切换同行人 → 重读」之后，否则后 boot 的桩会截走 env 的重读请求。
+  {
+    const short = bootActivity({ view: viewFixture(v => { v.activity.endAt = '2026-10-03T08:40:00+08:00' }) })
+    await settle(short.page)
+    const d1 = short.page.data.routeStats.find(x => x.key === 'duration')
+    check('不足 1 小时 → 40 分钟',
+      d1 && d1.value === '40' && d1.unit === '分钟' && d1.sub === '', JSON.stringify(d1))
+    const multi = bootActivity({ view: viewFixture(v => { v.activity.endAt = '2026-10-04T09:00:00+08:00' }) })
+    await settle(multi.page)
+    const d2 = multi.page.data.routeStats.find(x => x.key === 'duration')
+    check('跨日 ≥1 天 → 1 天 · 另 1 小时 · 至 10/4 09:00',
+      d2 && d2.value === '1' && d2.unit === '天' && d2.sub === '另 1 小时 · 至 10/4 09:00', JSON.stringify(d2))
+  }
+  // 指标条「值缺失即不占格」：没有高程不印 0 m，没有结束时间不编时长。
+  {
+    const env2 = bootActivity({ view: viewFixture(v => {
+      v.activity.endAt = ''
+      v.activity.routeSnapshot.track = []
+      v.activity.routeSnapshot.points = v.activity.routeSnapshot.points.map(p => ({
+        id: p.id, name: p.name, kind: p.kind, coordinates: p.coordinates,
+      }))
+    }) })
+    await settle(env2.page)
+    check('无任何高程 → 不出最高海拔格并说明缺什么；无结束时间 → 不出预计用时',
+      env2.page.data.routeStats.map(x => x.key).join(',') === 'distance,ascent'
+      && env2.page.data.routeStatsNote === '路线没有可用高程，暂不显示最高海拔。',
+      JSON.stringify({ s: env2.page.data.routeStats, n: env2.page.data.routeStatsNote }))
+  }
+  {
+    // 轨迹有坐标但没高程、节点有高程：降级到节点并标注来源，不冒充轨迹高程。
+    const env3 = bootActivity({ view: viewFixture(v => {
+      v.activity.routeSnapshot.track = v.activity.routeSnapshot.track.map(t => ({ lat: t.lat, lng: t.lng }))
+    }) })
+    await settle(env3.page)
+    const max = env3.page.data.routeStats.find(x => x.key === 'maxEle')
+    check('轨迹缺高程但节点有高程 → 最高海拔标注「节点高程」',
+      max && max.value === '900' && max.sub === '节点高程' && env3.page.data.routeStatsNote === '',
+      JSON.stringify(env3.page.data.routeStats))
+  }
   {
     // 自行前往（trip.mode=self）的同行者：副标题不该掺任何车辆/上车点字样。
     // 注意这里必须显式给 tripMode——旧写法只改 pickup 文案，正是「用文案当业务状态」的那类 bug。
@@ -371,7 +439,8 @@ async function scenario1() {
       env.page.data.rows[0].subtitle)
   }
   {
-    // 领队没写介绍：详情页用结构化字段生成事实摘要，并明确标注来源；不把空模块印成缺口。
+    // S1（SPEC §3.1）：删掉「用事实摘要冒充介绍」。没有手写介绍时，介绍区整体不出现，
+    // 首屏信息由 infoFacts 承担；不许把结构化字段再印一遍冒充作者的话。
     const env = bootActivity({ view: viewFixture(v => {
       v.activity.description = ''
       delete v.activity.content
@@ -379,23 +448,22 @@ async function scenario1() {
       v.activity.signupNote = ''
     }) })
     await settle(env.page)
-    const summary = env.page.data.autoSummary
-    check('无手写介绍 → 用时间/路线/集合生成事实摘要',
-      summary.indexOf('10/03 周六 08:00 出发') !== -1
-        && summary.indexOf('路线「青城后山穿越」') !== -1
-        && summary.indexOf('12.5 km') !== -1 && summary.indexOf('860 m') !== -1
-        && summary.indexOf('集合在「东门集合点」') !== -1 && summary.indexOf('07:30') !== -1,
-      summary)
-    check('事实摘要出现在介绍区，分区锚点同步保留',
-      env.page.data.description === '' && env.page.data.sectionNav.some(x => x.id === 'sec-intro'),
-      JSON.stringify({ desc: env.page.data.description, nav: env.page.data.sectionNav }))
+    check('无手写介绍 → 介绍区不出现（不再用事实摘要冒充介绍）',
+      env.page.data.description === '' && !env.page.data.sectionNav.some(x => x.id === 'sec-intro')
+      && env.page.data.autoSummary === undefined,
+      JSON.stringify({ desc: env.page.data.description, nav: env.page.data.sectionNav, a: env.page.data.autoSummary }))
+    check('首屏信息不因介绍缺失而消失（infoFacts 仍有四格）',
+      env.page.data.infoFacts.length === 4, JSON.stringify(env.page.data.infoFacts))
     check('无报名后须知 → 分区锚点不指向不存在的区块',
       !env.page.data.sectionNav.some(x => x.id === 'sec-signup'), JSON.stringify(env.page.data.sectionNav))
   }
   {
     const env = bootActivity({ view: viewFixture() })
     await settle(env.page)
-    check('有手写介绍 → 不再叠加事实摘要', env.page.data.description !== '' && env.page.data.autoSummary === '',
+    check('有手写介绍 → 介绍区出现且不再叠加事实摘要',
+      env.page.data.description === '当天往返的轻装徒步，适合新手。'
+      && env.page.data.sectionNav.some(x => x.id === 'sec-intro')
+      && env.page.data.autoSummary === undefined,
       JSON.stringify({ d: env.page.data.description, a: env.page.data.autoSummary }))
   }
   {
@@ -411,9 +479,11 @@ async function scenario1() {
       JSON.stringify({ real: env.page.data.coverIsReal, failed: env.page.data.coverFailed, cover: env.page.data.cover }))
     env.page.onFallbackCoverError()
     check('氛围图也失败 → 纯色 hero', env.page.data.coverFailed === true, env.page.data.coverFailed)
-    check('wxml：实拍/氛围两条错误路径分开绑定',
-      ACTIVITY_WXML.indexOf('binderror="onCoverError"') !== -1
-      && ACTIVITY_WXML.indexOf('binderror="onFallbackCoverError"') !== -1)
+    check('wxml：实拍/氛围两条错误路径分开绑定，页面把两个事件分别接到 handler',
+      HERO_WXML.indexOf('binderror="onCoverError"') !== -1
+      && HERO_WXML.indexOf('binderror="onFallbackError"') !== -1
+      && ACTIVITY_WXML.indexOf('bind:covererror="onCoverError"') !== -1
+      && ACTIVITY_WXML.indexOf('bind:fallbackerror="onFallbackCoverError"') !== -1)
   }
 }
 
@@ -1125,8 +1195,11 @@ async function scenario8() {
       }),
     })
     await settle(env.page)
-    check('无出发时间：时间行显示待确定、startDate 为空',
-      env.page.data.times[0].value === '待确定' && env.page.data.startDate === '')
+    // 值缺失时留空：fact-grid 会过滤空值格，不印「待确定」占位。
+    check('无出发时间：时间格值为空（由 fact-grid 过滤）、startDate 为空',
+      env.page.data.infoFacts[0].key === 'time' && env.page.data.infoFacts[0].value === ''
+      && env.page.data.infoFacts[0].sub === '' && env.page.data.startDate === '',
+      JSON.stringify({ i: env.page.data.infoFacts[0], d: env.page.data.startDate }))
     env.page.onPointWeather({ currentTarget: { dataset: { index: '0' } } })
     check('无日期时天气 URL 不带 date 参数',
       env.rec.nav.indexOf('/pages/weather/weather?id=a1&point=0') !== -1, JSON.stringify(env.rec.nav))
@@ -1338,13 +1411,17 @@ async function scenario13() {
     && env.page.data.contentView[0].paragraphs.length === 2
     && env.page.data.contentView[1].layout === 'double', JSON.stringify(env.page.data.contentView))
   check('highlights 两项', env.page.data.highlights.length === 2, env.page.data.highlights)
-  check('factTime/factPickup/factPeople', env.page.data.factTime === '10/3 08:00 – 10/3 18:00'
-    && env.page.data.factPickup === '东门集合点 · 10/3 07:30' && env.page.data.factPeople === '3–20 人',
-    JSON.stringify([env.page.data.factTime, env.page.data.factPickup, env.page.data.factPeople]))
+  check('S1 信息卡承接时间/集合/人数（minParticipants 进副标题）',
+    env.page.data.infoFacts[0].value === '10/3 08:00'
+    && env.page.data.infoFacts[0].sub === '至 10/3 18:00 · 截止 10/2 08:00'
+    && env.page.data.infoFacts[1].value === '东门集合点' && env.page.data.infoFacts[1].sub === '10/3 07:30'
+    && env.page.data.infoFacts[2].value === '2 / 20' && env.page.data.infoFacts[2].sub === '成行 3 人',
+    JSON.stringify(env.page.data.infoFacts))
   check('领队/评分/费用/报名后', env.page.data.leader === '陈屿' && env.page.data.sceneryRating === 5
     && env.page.data.funRating === 3 && env.page.data.feeSummary === '498 元/人'
     && env.page.data.feeIncludes.length === 2 && env.page.data.feeExcludes.length === 1
-    && env.page.data.signupNote === '报名后拉群\n行前检查装备' && env.page.data.signupBrief === '报名后拉群', '')
+    && env.page.data.signupNote === '报名后拉群\n行前检查装备'
+    && env.page.data.signupBrief === undefined, '')
   check('封面用实拍 + 正文图集合', env.page.data.coverIsReal === true
     && env.page.data.cover === 'cloud://env.abc/activity-media/b.jpg'
     && env.page.data.hasContentImages === true && env.page.data.contentImages.length === 2, '')
@@ -1357,9 +1434,132 @@ async function scenario13() {
     JSON.stringify(env.page.data.contentView[1].images))
 }
 
+async function scenario14() {
+  section('14. 底栏状态矩阵（S3）：互斥分支的数据来源 + 庆祝帧/草稿/denied 的例外')
+  // 每态都读页面真实装配结果；primary 的「渲染哪一个」由模板 if/elif 决定（结构门 §13 钉住），
+  // 这里不复制模板优先级，而是逐态断言各分支的数据来源与互斥性。
+  const branches = d => [d.canSubmit, d.canSelfSheet, d.nextActionTarget === 'meeting']
+
+  // 参与者 · 行前就绪：分享 + journey 的 meeting 分支
+  {
+    const env = bootActivity({ view: viewFixture() })
+    await settle(env.page)
+    const d = env.page.data
+    check('participant ready：底栏在；无自助/报名分支，journey 给 meeting 主操作',
+      d.showSticky === true && d.isOwner === false && d.canSubmit === false && d.canSelfSheet === false
+      && d.nextActionTarget === 'meeting' && d.nextActionLabel === '查看集合与出行安排'
+      && branches(d).filter(Boolean).length === 1,
+      JSON.stringify({ s: d.showSticky, t: d.nextActionTarget, l: d.nextActionLabel }))
+    check('已发布参与者：分享层满足（非草稿、非庆祝帧）', d.isDraft === false && d.justPublished === false
+      && env.rec.shareHidden === 0, String(env.rec.shareHidden))
+  }
+  // 组织者 · 已发布 / 草稿
+  {
+    const env = bootActivity({ view: viewFixture(v => {
+      v.perspective = 'owner'
+      v.permittedActions = OWNER_DRAFT_ACTIONS
+    }) })
+    await settle(env.page)
+    const d = env.page.data
+    check('owner published：isOwner 分支优先，底栏在、可分享',
+      d.showSticky === true && d.isOwner === true && d.isDraft === false
+      && d.canSubmit === false && env.rec.shareHidden === 0,
+      JSON.stringify({ s: d.showSticky, o: d.isOwner, d: d.isDraft }))
+    check('owner published：组织者自己也有 journey 主操作，但它低于 isOwner 分支（模板只渲染一条）',
+      d.nextActionTarget === 'meeting' && d.isOwner === true,
+      JSON.stringify({ t: d.nextActionTarget, o: d.isOwner }))
+  }
+  {
+    const env = bootActivity({ view: viewFixture(v => {
+      v.perspective = 'owner'
+      v.permittedActions = OWNER_DRAFT_ACTIONS
+      v.activity.phase = 'draft'
+    }) })
+    await settle(env.page)
+    const d = env.page.data
+    check('owner draft：底栏在，但分享被双重关闭（模板 !isDraft + 原生 hideShareMenu）',
+      d.showSticky === true && d.isOwner === true && d.isDraft === true && env.rec.shareHidden === 1,
+      JSON.stringify({ s: d.showSticky, d: d.isDraft, h: env.rec.shareHidden }))
+  }
+  // 未报名 · new：signup 分支
+  {
+    const env = bootActivity({ view: viewFixture(v => {
+      v.primarySignupId = ''
+      v.permittedActions = ['signup.submit']
+      v.rows = []
+      v.detailState = 'new'
+      v.counters = Object.assign({}, v.counters, { confirmed: 0, occupied: 0, unchecked: 0, pendingHome: 0 })
+    }) })
+    await settle(env.page)
+    const d = env.page.data
+    check('participant new：canSubmit 唯一成立（journey 的 signup 分支不落 meeting）',
+      d.showSticky === true && d.canSubmit === true && d.canSelfSheet === false
+      && d.nextActionTarget === 'signup' && branches(d).filter(Boolean).length === 1,
+      JSON.stringify({ c: d.canSubmit, t: d.nextActionTarget }))
+  }
+  // 已确认 · gathering / closing：自助入口（打开同行状态弹层）
+  {
+    const env = bootActivity({ view: viewFixture(v => { v.detailState = 'gathering' }) })
+    await settle(env.page)
+    const d = env.page.data
+    check('participant gathering：canSelfSheet 唯一成立，文案=我已到达 · 去签到',
+      d.showSticky === true && d.canSelfSheet === true && d.canSubmit === false
+      && d.nextActionTarget === 'sheet' && d.selfButton === '我已到达 · 去签到'
+      && branches(d).filter(Boolean).length === 1,
+      JSON.stringify({ s: d.canSelfSheet, b: d.selfButton, t: d.nextActionTarget }))
+  }
+  {
+    const env = bootActivity({ view: viewFixture(v => { v.detailState = 'closing' }) })
+    await settle(env.page)
+    const d = env.page.data
+    check('participant closing：同一自助分支改口为确认返程与到家',
+      d.canSelfSheet === true && d.selfButton === '确认返程与到家'
+      && branches(d).filter(Boolean).length === 1, d.selfButton)
+  }
+  // 庆祝帧：owner 从发布流进来 → 底栏与留白一起消失
+  {
+    const env = bootActivity({
+      options: { id: 'a1', published: '1' },
+      view: viewFixture(v => { v.perspective = 'owner'; v.permittedActions = OWNER_DRAFT_ACTIONS }),
+    })
+    await settle(env.page)
+    check('owner justPublished：底栏不出现（成功卡里的分享是唯一主操作）',
+      env.page.data.justPublished === true && env.page.data.showSticky === false)
+  }
+  // 手工改 URL：非 owner 带 published=1 既不庆祝也不吞底栏
+  {
+    const env = bootActivity({ options: { id: 'a1', published: '1' }, view: viewFixture() })
+    await settle(env.page)
+    check('非 owner 带 published=1：justPublished 不成立，底栏照常',
+      env.page.data.justPublished === false && env.page.data.showSticky === true)
+  }
+  // denied / loading：没有可操作对象时不出底栏
+  {
+    const env = bootActivity({ view: { kind: 'denied', message: '你不在此活动的名单中。' } })
+    await settle(env.page)
+    check('denied：底栏保持不出现（showSticky=false）',
+      env.page.data.denied !== '' && env.page.data.showSticky === false)
+  }
+  // 状态互斥：new / gathering+trip 三支由状态机互斥，不会同时成立的组合
+  {
+    const seen = []
+    for (const state of ['new', 'gathering', 'active', 'closing', 'ready', 'finished']) {
+      const env = bootActivity({ view: viewFixture(v => {
+        v.detailState = state
+        if (state === 'new') { v.permittedActions = ['signup.submit']; v.primarySignupId = ''; v.rows = [] }
+      }) })
+      await settle(env.page)
+      const d = env.page.data
+      seen.push({ state, n: branches(d).filter(Boolean).length, t: d.nextActionTarget })
+    }
+    check('6 个状态里 canSubmit/canSelfSheet/meeting 三支至多一支成立（互斥链的数据前提）',
+      seen.every(x => x.n <= 1), JSON.stringify(seen))
+  }
+}
+
 async function main() {
   const scenarios = [scenario1, scenario1b, scenario1c, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7,
-    scenario8, scenario9, scenario10, scenario11, scenario12, scenario13]
+    scenario8, scenario9, scenario10, scenario11, scenario12, scenario13, scenario14]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

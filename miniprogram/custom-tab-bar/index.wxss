@@ -28,8 +28,10 @@
   line-height: 18px;
   border-radius: 8px;
 }
+/* 选中态只靠字色与字重（2026-10-23 视觉收敛）：去掉 #ECF0EF 药丸底，
+   与参考图「白底导航 + 森林绿当前项」一致；触控高度/圆角仍归 .tab。 */
 .tab.on {
   color: #163E35;
   font-weight: 600;
-  background: #ECF0EF;
+  background: transparent;
 }

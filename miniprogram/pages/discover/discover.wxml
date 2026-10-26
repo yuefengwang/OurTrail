@@ -4,24 +4,13 @@
     <status-panel kind="loading" title="正在载入" detail="正在整理已发布的活动。" />
   </block>
   <view wx:else class="stack">
-    <!-- N3（2026-10-22）页头压缩为一行：眉题+主标题在左、视图分段在右（交付包拼板屏 1.2）。
-         旧的第二行导语「只显示尚未出发的公开活动；筛选条件会一起生效。」删除，其语义由
-         诚实 callout（个人发起/自行评估）与筛选 chip 行的计数承担，与 home N2 同款处理。 -->
-    <view class="card-header">
+    <!-- N3（2026-10-22）页头压缩为一行：眉题+主标题在左。N4（2026-10-23）把视图分段
+         从页头搬进结果工具组：它是「这批结果怎么看」，不是页面身份。 -->
+    <view class="discover-head">
       <view class="list-head__text">
         <text class="eyebrow">发现活动</text>
         <view class="list-head__title">看看别人在约什么。</view>
       </view>
-      <view class="segmented discover-views" aria-label="发现视图">
-        <view class="seg {{viewMode === 'list' ? 'on' : ''}}" data-mode="list" bindtap="onViewMode">列表</view>
-        <view class="seg {{viewMode === 'map' ? 'on' : ''}}" data-mode="map" bindtap="onViewMode">地图</view>
-      </view>
-    </view>
-
-    <!-- 诚实 callout：文案一字不改（铁律），只压到 caption 级（.discover-note 在页 wxss）。 -->
-    <view class="callout discover-note">
-      <text class="callout-title">这些活动由个人发起</text>
-      <text style="display:block;margin-top:2px;">平台尚未做领队资质认证。路线强度、风险与装备要求以活动说明为准，报名前请自行评估是否适合自己。</text>
     </view>
 
     <!-- N3：搜索从带 label 的表单字段改为图标内嵌搜索条（.searchbar，T001 交付）；
@@ -32,11 +21,29 @@
       <input class="searchbar__input" type="text" confirm-type="search" placeholder="搜索活动名、路线或描述" aria-label="查找已发布的活动" value="{{search}}" bindinput="onSearch" />
     </view>
 
-    <view class="filter-row">
-      <view class="filter-chip {{filterCount ? 'on' : ''}}" hover-class="button-hover" bindtap="onOpenFilters">筛选{{filterCount ? ' · ' + filterCount : ''}}</view>
-      <view class="filter-chip {{sort === 'start' ? '' : 'on'}}" hover-class="button-hover" data-sort="default" bindtap="onSort">最新发布</view>
-      <view class="filter-chip {{sort === 'start' ? 'on' : ''}}" hover-class="button-hover" data-sort="start" bindtap="onSort">最近出发</view>
-      <text class="result-count tabular">{{cards.length}} 场 · 均未出发</text>
+    <!-- L3（2026-10-23）：排序/筛选、视图切换、结果计数收进同一个结果工具组。
+         工具组只说「结果怎么排/怎么看/有多少」，不再占页头身份区。 -->
+    <view class="discover-toolbar">
+      <view class="discover-toolbar__top">
+        <view class="segmented discover-views" aria-label="发现视图">
+          <view class="seg {{viewMode === 'list' ? 'on' : ''}}" data-mode="list" bindtap="onViewMode">列表</view>
+          <view class="seg {{viewMode === 'map' ? 'on' : ''}}" data-mode="map" bindtap="onViewMode">地图</view>
+        </view>
+        <text class="result-count tabular">本次结果 {{cards.length}} 场 · 均未出发</text>
+      </view>
+      <view class="filter-row">
+        <view class="filter-chip {{filterCount ? 'on' : ''}}" hover-class="button-hover" bindtap="onOpenFilters">筛选{{filterCount ? ' · ' + filterCount : ''}}</view>
+        <view class="filter-chip {{sort === 'start' ? '' : 'on'}}" hover-class="button-hover" data-sort="default" bindtap="onSort">最新发布</view>
+        <view class="filter-chip {{sort === 'start' ? 'on' : ''}}" hover-class="button-hover" data-sort="start" bindtap="onSort">最近出发</view>
+      </view>
+    </view>
+
+    <!-- 诚实提示：文案一字不改（铁律），从 callout 降为低权重说明条；
+         常驻可见（不折叠、不按状态隐藏），并在末尾说明「可定位」与列表范围。 -->
+    <view class="discover-note">
+      <text class="discover-note__title">这些活动由个人发起</text>
+      <text class="discover-note__body">平台尚未做领队资质认证。路线强度、风险与装备要求以活动说明为准，报名前请自行评估是否适合自己。</text>
+      <text class="discover-note__meta">本次结果中 {{map.markers.length}} 场可定位 · 列表只含尚未出发的活动</text>
     </view>
 
     <status-panel
@@ -49,7 +56,7 @@
     />
 
     <block wx:elif="{{viewMode === 'list'}}">
-      <view class="stack" aria-label="已发布的活动">
+      <view class="stack-gap3" aria-label="已发布的活动">
         <activity-card
           wx:for="{{cards}}"
           wx:key="id"
@@ -60,8 +67,10 @@
           date="{{item.date}}"
           meta="{{item.meta}}"
           status="{{item.status}}"
-          featured="{{item.featured}}"
+          featured="{{false}}"
+          compact="{{true}}"
           info="{{item.info}}"
+          activity-id="{{item.id}}"
           data-id="{{item.id}}"
           bind:open="onOpenCard"
         />
@@ -101,7 +110,9 @@
         meta="{{mapSelected.meta}}"
         status="{{mapSelected.status}}"
         featured="{{false}}"
+        compact="{{true}}"
         info="{{mapSelected.info}}"
+        activity-id="{{mapSelected.id}}"
         data-id="{{mapSelected.id}}"
         bind:open="onOpenCard"
       />
@@ -111,31 +122,32 @@
   <overlay open="{{filtersOpen}}" kind="sheet" title="筛选活动" bind:close="onCloseFilters">
     <view class="stack">
       <form-field label="出发日期从">
-        <picker mode="date" value="{{filters.dateFrom}}" start="{{today}}" bindchange="onDateFrom">
-          <view class="picker {{filters.dateFrom ? '' : 'placeholder'}}">
-            <text class="picker-value">{{filters.dateFrom || '不限'}}</text>
+        <picker mode="date" value="{{draftFilters.dateFrom}}" start="{{today}}" bindchange="onDateFrom">
+          <view class="picker {{draftFilters.dateFrom ? '' : 'placeholder'}}">
+            <text class="picker-value">{{draftFilters.dateFrom || '不限'}}</text>
             <text class="picker-arrow">▾</text>
           </view>
         </picker>
       </form-field>
       <form-field label="出发日期到">
-        <picker mode="date" value="{{filters.dateTo}}" start="{{filters.dateFrom || today}}" bindchange="onDateTo">
-          <view class="picker {{filters.dateTo ? '' : 'placeholder'}}">
-            <text class="picker-value">{{filters.dateTo || '不限'}}</text>
+        <picker mode="date" value="{{draftFilters.dateTo}}" start="{{draftFilters.dateFrom || today}}" bindchange="onDateTo">
+          <view class="picker {{draftFilters.dateTo ? '' : 'placeholder'}}">
+            <text class="picker-value">{{draftFilters.dateTo || '不限'}}</text>
             <text class="picker-arrow">▾</text>
           </view>
         </picker>
       </form-field>
       <form-field label="难度" hint="只筛选组织者已标注难度的活动">
-        <picker range="{{difficultyFilters}}" range-key="label" value="{{filters.difficulty === 'easy' ? 1 : filters.difficulty === 'moderate' ? 2 : filters.difficulty === 'hard' ? 3 : 0}}" bindchange="onDifficultyFilter">
+        <picker range="{{difficultyFilters}}" range-key="label" value="{{draftFilters.difficulty === 'easy' ? 1 : draftFilters.difficulty === 'moderate' ? 2 : draftFilters.difficulty === 'hard' ? 3 : 0}}" bindchange="onDifficultyFilter">
           <view class="picker">
-            <text class="picker-value">{{filters.difficulty === 'easy' ? '轻松' : filters.difficulty === 'moderate' ? '中等' : filters.difficulty === 'hard' ? '挑战' : '不限难度'}}</text>
+            <text class="picker-value">{{draftFilters.difficulty === 'easy' ? '轻松' : draftFilters.difficulty === 'moderate' ? '中等' : draftFilters.difficulty === 'hard' ? '挑战' : '不限难度'}}</text>
             <text class="picker-arrow">▾</text>
           </view>
         </picker>
       </form-field>
       <view wx:if="{{filterError}}" class="callout danger">{{filterError}}</view>
       <view class="form-actions">
+        <view class="button text" hover-class="button-hover" bindtap="onCloseFilters">取消</view>
         <view class="button text" hover-class="button-hover" bindtap="onResetFilters">清除筛选</view>
         <view class="button primary" hover-class="button-hover" bindtap="onApplyFilters" style="flex:1;">应用筛选</view>
       </view>

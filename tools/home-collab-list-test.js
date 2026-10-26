@@ -54,7 +54,7 @@ function act(id, over) {
   }, over || {})
 }
 
-function boot(activities, opened) {
+function boot(activities, opened, byPerspective) {
   const env = { reads: [], nav: [] }
   global.wx = {
     cloud: { callFunction(req) {
@@ -64,7 +64,8 @@ function boot(activities, opened) {
         if (r.kind === 'profile') {
           return Promise.resolve({ result: { ok: true, data: { view: { kind: 'profile', profile: { person: { name: '测试者' } } }, revision: 5, now: NOW } } })
         }
-        return Promise.resolve({ result: { ok: true, data: { view: { kind: 'home', activities: clone(activities) }, revision: 5, now: NOW } } })
+        const rows = byPerspective && byPerspective[r.perspective] || activities
+        return Promise.resolve({ result: { ok: true, data: { view: { kind: 'home', activities: clone(rows) }, revision: 5, now: NOW } } })
       }
       return Promise.resolve({ result: { ok: true, data: {} } })
     } },
@@ -262,6 +263,46 @@ async function main() {
     const homeJs = fs.readFileSync(path.join(pagesDir, 'home', 'home.js'), 'utf8')
     check('两条入口 URL 仍留在页面 JS（否则 staff / vehicle 两页在全仓就没有入口了）',
       /\/pages\/staff\/staff\?id=/.test(homeJs) && /\/pages\/vehicle\/vehicle\?id=/.test(homeJs), '页面里找不到')
+  }
+
+  section('7. L2/L3：真 reload 三视角去重/排序保留，路线事实与人数不重复')
+  {
+    const first = act('first', { title: '长标题'.repeat(30), startAt: '2026-11-01T08:00:00+08:00',
+      routeSnapshot: { title: '独立路线名', distanceKm: 18, ascentM: 900, difficulty: 'hard' },
+      meta: meta({ owner: true, staff: true }) })
+    const later = act('later', { startAt: '2026-11-03T08:00:00+08:00' })
+    const third = act('third', { startAt: '2026-11-04T08:00:00+08:00', meta: meta({ owner: true, vehicle: true }) })
+    const { page, env } = boot([], [], { participant: [later, first], staff: [first], vehicle: [first, third] })
+    await waitFor(() => !page.data.loading)
+    check('真实三视角回包去重后仍按 startAt 排序', ids(page) === 'first,later,third', ids(page))
+    check('只读原有三次 home 与 profile，不加活动详情探测', env.reads.length === 4
+      && env.reads.filter(r => r.kind === 'home').map(r => r.perspective).join(',') === 'participant,staff,vehicle'
+      && env.reads.filter(r => r.kind === 'profile').length === 1)
+    const c = cardOf(page, 'first')
+    check('长标题不在页面层截断', c.title === first.title)
+    check('路线名与难度分别传递（不在 meta 再重复路线/里程）', c.routeName === '独立路线名'
+      && c.meta === require('../miniprogram/utils/format').difficultyLabel('hard'))
+    check('指标仅含路线事实；人数/待审核仍完整保留在 info 一处',
+      JSON.stringify(c.metrics) === JSON.stringify([
+        { key: 'distance', label: '距离', value: '18', unit: 'km' },
+        { key: 'ascent', label: '爬升', value: '900', unit: 'm' },
+      ]) && c.info === '已确认 3 人 · 待审核 7 人 · 名额 10 人')
+    page.onSearch({ detail: { value: '独立路线名' } })
+    await waitFor(() => page.data.cards.length === 1)
+    check('输入路线名后真实 render 筛出唯一活动与原协作入口', ids(page) === 'first' && keysOf(page.data.cards[0]) === 'staff')
+    page.onClearSearch()
+    await waitFor(() => page.data.cards.length === 3)
+    check('清除搜索恢复原顺序', ids(page) === 'first,later,third')
+    page.onNew()
+    page.onGoDiscover()
+    page.onOpenCard({ currentTarget: { dataset: { id: 'first' } } })
+    check('原发起/发现/卡片导航契约不变', env.nav.join('|') === '/pages/editor/editor|/pages/discover/discover|/pages/activity/activity?id=first')
+  }
+  {
+    const { page } = boot([act('empty-route', { routeSnapshot: { title: '', distanceKm: 0, ascentM: 0 } })], [])
+    await waitFor(() => !page.data.loading)
+    check('缺路线不编造 0km/0m，保留待完善与人数事实', page.data.cards[0].metrics.length === 0
+      && page.data.cards[0].routeName === '路线待完善' && page.data.cards[0].info.indexOf('已确认 3 人') !== -1)
   }
 
   console.log('\npassed=' + passed + ' failed=' + failed)

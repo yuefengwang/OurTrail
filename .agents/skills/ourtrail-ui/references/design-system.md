@@ -13,14 +13,14 @@
 |---|---|---|
 | `--forest` | #163E35 | 主色：主按钮底、导航栏、hero 卡底、强调文字 |
 | `--leaf` | #D6EA8A | 嫩叶：hero 上的徽标/强调（`.badge.on-forest` 底为 --leaf-on-forest #2D533F） |
-| `--paper` | #F5F5F0 | 页面底色 |
+| `--paper` | #F5F5F0 | 页面底色（冷近白；2026-10-23 由 `#F6F3EC` 暖纸收敛回来，`--muted` 其上 4.91:1） |
 | `--surface` / `--white` | #FFFFFF | 卡片/弹层底（`--white` 供画布色板引用） |
 | `--ink` | #202A26 | 正文 |
-| `--muted` | #5F6E66 | 次要文字（对比度 4.6:1，勿再调淡） |
+| `--muted` | #5F6E66 | 次要文字（`--paper` 上 4.91:1、白卡上 5.37:1，勿再调淡） |
 | `--line` | #DEE3DB | 边框/分隔线 |
 | `--control-line` | #8C9791 | 输入框边框；亦为「入云」天相色 |
 | `--danger/--warning/--info/--success` | #B43D3B / #8C5A12 / #346583 / #276145 | 语义色，配套 `-soft` 浅底 |
-| `--forest-soft` | #ECF0EF | 主色浅底（次按钮、头像底、选中 tab） |
+| `--forest-soft` | #ECF0EF | 主色浅底（次按钮、头像底）；**选中 tab 不再用它**（2026-10-23 改为透明底 + 森林绿字） |
 | `--success-soft` / `--warning-soft` / `--danger-soft` / `--info-soft` | #EBF0EE / #F4F0E9 / #FAF1F1 / #F0F3F6 | 语义色浅底 |
 | `--golden` | #D6A33C | **天相**：黄金/晚霞窗口。由 `MARK_STYLE.golden` 提升而来，改色须同步 |
 | `--blue-hour` | #6C7C93 | **天相**：蓝调时刻。同上，须同步 `MARK_STYLE.blueHour` |
@@ -30,14 +30,17 @@
 | `--on-forest-muted` / `--on-forest-line` | #D0D8D7 / #4E6C65 | 森林底上的次要文字/线 |
 | `--leaf-on-forest` | #2D533F | 森林底上的嫩叶底；亦为「星空」天相色 |
 | `--forest-deep` | #122E28 | 编辑式 hero 照片压底 / 页头沉浸区（2026-10-16 重构新增） |
-| `--stone` | #EDE9DE | 石色次表面：分区带、chip 底（新增） |
-| `--stone-line` | #DCD5C4 | 暖表面分隔线（新增；冷调用 `--line`） |
+| `--stone` | #EDEFEA | 冷中性次表面：搜索条、筛选 chip、分区带（2026-10-23 由暖米 #EDE9DE 收敛） |
+| `--stone-line` | #D9DED7 | 冷表面分隔线（2026-10-23 由 #DCD5C4 收敛；冷调用 `--line`） |
 | `--scrim-hero` | linear-gradient(…forest-deep 0→0.9) | hero 照片自下而上压底（新增） |
 | `--scrim-top` | linear-gradient(…forest-deep 0.3→0) | 照片顶部轻压（新增） |
 
 **2026-10-16 编辑式重构**：`--paper` 由 `#F5F5F0` 暖调为 `#F6F3EC`；新增编辑式类
 `.display/.lede/.kicker/.hairline/.stack-sections/.section-head/.fact-row/.hero-cover*/.photo-note`，
 封面照片在 `assets/photos/`（Unsplash 授权，选择逻辑 `utils/covers.js`）。
+**2026-10-23 视觉收敛 A 已推翻暖调**：`--paper` 回到 `#F5F5F0`、石色改冷中性、卡片加 1px `--line`、
+内容分区改下划线页签（`.segmented.tabs-line`）、tabBar 选中态改透明底、活动卡去掉重复「查看活动安排」入口。
+现行完整登记见 `docs/ui-ux-redesign/design-system.md` §10（上句 10-16 描述仅作历史沿革）。
 设计规范全文：`docs/ui-ux-redesign/design-system.md`。
 
 > **`--focus` 已删除**（B-14，2026-10-14）：全仓 `var(--focus)` 引用实测 0 次，小程序里没有 `:focus-visible` 宿主吃它；
@@ -139,23 +142,23 @@
 | 组件/类 | 用法要点 |
 |---|---|
 | `.button` + `primary/secondary/danger/text/leaf` | view 或 button 均可；必须 `hover-class="button-hover"`；禁用态加 `.disabled`（或原生 `disabled`）并把 bindtap 置空串 |
-| `.card` / `.card-header` | 内容卡；header 用于"标题 + 右侧动作" |
+| `.card` / `.card-header` | 内容卡；header 用于"标题 + 右侧动作"。**2026-10-23 起白底 + 1px `--line` 发丝边、零阴影**；`.notice-card` 同 |
 | `.badge` + `success/warning/danger/info/neutral/on-forest` | 状态徽标，文字承载语义 |
 | `.callout` + 同上变体 | 提示块（左边线 3px 语义色），`callout-title` 加粗 |
 | `<status-panel>` | denied/loading(skeleton)/empty/error/offline + 可选 actionLabel；**empty 必带"为什么空 + 下一步"** |
 | `<person-row>` | 头像（无头像回退首字）+ 姓名 + 徽标 + 副标题 + 操作插槽 |
 | `<form-field>` | label + slot + hint + error；错误时外层 `.field.invalid`。`options` 只能写一次（该组件 wxss 是空的，全靠全局 `.field` 体系） |
 | `<overlay kind="sheet|dialog">` | 底部弹层/居中确认；内容放 `.stack`；危险操作用 dialog + danger 按钮。实测声明为 `multipleSlots: false`（不用具名 slot），改造成具名 slot 时必须同时改这个值 |
-| `<activity-card>` | 活动卡；`featured` 森林底 + 等高线装饰；`info` 属性传指标行 |
+| `<activity-card>` | 活动卡；`featured` 森林底 + 等高线装饰；`info` 属性传指标行。**卡片本体即入口**：2026-10-23 起不再印「查看活动安排」重复主入口；`collab` 非空时只出 leaf chip 协作行（leaf 只做点缀，不承载列表里的重复主操作） |
 | `<route-profile>` | 活动/路线海拔剖面；输入 `track`（带可选 `ele`）与 `points`，输出连续/节点/无数据三态；SVG 由 `utils/route-profile.js` 生成并编码为 data-URI。**无连续高程时明确标「节点高程，非连续剖面」，不插值伪造地形**；组件用 `apply-shared` 读取 `.small/.muted/.tabular` |
 | `<profile-gate>` | 按需补资料 sheet：报名/发布前自动弹出；微信头像 `chooseAvatar`、昵称 `input type=nickname`、手机号 `getPhoneNumber` + 手填兜底；保存 `profile.save` 后由宿主重读或续跑原动作。**不要在浏览链路加门**；`getUserProfile` 已不保证返回真实头像昵称，不要用它冒充静默授权 |
-| `.segmented > .seg(.on)` | 分段切换（工作台四分区、首页筛选、编辑器步骤条、车辆页去/返程）。**可点高度取 `--touch-target`（44px），不许写死字面量**（M-06：这里曾是全站唯一硬编码 36px 的尺寸规则，补救只落在 weather-chart 一页）；未选中态文字是 `--ink` 压在 `--line` 轨道上（11.3:1，原 `--muted` 只有 4.12:1 未过自家 4.5:1 门），**选中与否由 `.seg.on` 的白底药丸 + `--forest` + 600 字重承担，不靠把未选中印淡** |
+| `.segmented > .seg(.on)` | 分段切换（工作台四分区、首页筛选、编辑器步骤条、车辆页去/返程）。**可点高度取 `--touch-target`（44px），不许写死字面量**（M-06：这里曾是全站唯一硬编码 36px 的尺寸规则，补救只落在 weather-chart 一页）；未选中态文字是 `--ink` 压在 `--line` 轨道上（11.3:1，原 `--muted` 只有 4.12:1 未过自家 4.5:1 门），**选中与否由 `.seg.on` 的白底药丸 + `--forest` + 600 字重承担，不靠把未选中印淡**。**内容分区变体 `.segmented.tabs-line`**（2026-10-23）：去轨道/白底，文字 + 2px 森林绿下划线（`.on::after`），未选中 `--muted`、选中 `--forest` 600；类名仍是 `.segmented/.seg/.on`，E2E 选择器契约不变 |
 | `.list-row` + `.list-main/.list-sub` | 行列表（图标或箭头收尾） |
 | `.timeline/.timeline-item` | 路线节点时间轴（::before 圆点） |
 | `.seat-grid/.seat(.occupied/.aisle/.selected)` | 座位示意：**4 座 + 1 过道 = 每行 5 列**，座位宽 `calc((100% - 48px) / 4)`、过道固定 16px，勿改回 25%（过道占位会错行）。定义在 `app.wxss` 的座位栅格段（**刻意不写行号**：`app.wxss` 从 502 行长到 670 行就把这类引用变成谎话，要定位请用 `grep -n "^\.seat"`） |
 | `.metrics/.metric` | 指标行，**默认三列**（activity/transport-panel/me/workspace 都是三列）；`pages/route` 详情头部是**四列**（公里/爬升米/节点/风险）——以实现为准登记（M-16）。hero 内自动反白；四列时每列约 67px，数字溢出由 `.metric-value` 的 `overflow-wrap: anywhere` 兜住（见下「长文本与数字的溢出策略」） |
 | `.hero` | 森林底精选卡，子元素加 `.hero-body` 保证叠在装饰层上 |
-| `.tabbar/.tab(.on)` | **唯一真值源是 `custom-tab-bar/index.wxss`，全部字面量**（platform-pitfalls §1 的例外条款）。`app.wxss` 里那份同名 var() 版已删（E-12）：`index.js` 声明 `apply-shared`，全局那份会以 (0,2,0) 压过组件的 (0,1,0)，等于让「导航控件的规格由谁决定」倒过来。**不要**在 `app.wxss` 或任何页面/组件 wxss 再写裸 `.tab`/`.tabbar`，也不要把这边改成 `var()` |
+| `.tabbar/.tab(.on)` | **唯一真值源是 `custom-tab-bar/index.wxss`，全部字面量**（platform-pitfalls §1 的例外条款）。`app.wxss` 里那份同名 var() 版已删（E-12）：`index.js` 声明 `apply-shared`，全局那份会以 (0,2,0) 压过组件的 (0,1,0)，等于让「导航控件的规格由谁决定」倒过来。**不要**在 `app.wxss` 或任何页面/组件 wxss 再写裸 `.tab`/`.tabbar`，也不要把这边改成 `var()`。**选中态（2026-10-23）**：`#163E35` 字 + 600 字重 + 透明底，已去掉 `#ECF0EF` 药丸底；`tools/swx1-style-gates-test.js` T2.6 钉这三个终值 |
 | `.code-text` | 身份码等等宽强调 |
 | `.tabular` | 数字对齐（时间/里程/人数），`app.wxss:95` |
 | `.map-card/.map-canvas` | 原生 `map` 组件外框（260px、14px 圆角、`overflow:hidden`）。低版本基础库非同层渲染时圆角会失效，接受降级、**不在 map 上叠普通 view**。marker 图标用 `assets/markers/*.png`（`tools/gen-map-markers.js` 生成；iconPath 不支持 base64），序号用 marker `label`，信息用原生 callout，白底 forest 字。地图元素配色：轨迹线 `#163E35AA` 宽 4 `arrowLine`、降级虚线 `#8C9791AA` 宽 2 `dottedLine`；marker=起点 forest/途中白底 forest 描边/终点 leaf+forest 描边/上车点 info 蓝，均为圆点造型（选中态放大到 30 即可，无需单独图）。 |

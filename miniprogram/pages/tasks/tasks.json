@@ -1,6 +1,6 @@
 {
   "navigationBarTitleText": "任务清单",
-  "navigationBarBackgroundColor": "#F6F3EC",
+  "navigationBarBackgroundColor": "#F5F5F0",
   "navigationBarTextStyle": "black",
   "enablePullDownRefresh": true,
   "usingComponents": {

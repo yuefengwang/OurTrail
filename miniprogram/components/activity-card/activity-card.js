@@ -23,6 +23,9 @@ Component({
     activityId: { type: String, value: '' },
     // N2（2026-10-22）照片在上形态的 sub 行主语：路线名。没传的使用方（发现页）回落 meta 串。
     routeName: { type: String, value: '' },
+    // 紧凑行：80px 缩略图 + 标题/日期/状态列（2026-10-23 跨页 L2）。
+    // 默认 false，旧消费者仍拿照片在上的完整卡；首页/发现页显式传 true。
+    compact: { type: Boolean, value: false },
     // 指标行：[{ key, label, value, unit }]，纯展示派生（页面从投影字段算好；缺字段整项不给）。
     // 组件不自己算指标——投影契约与「缺则不印」的口径都归页面，组件只画。
     metrics: { type: Array, value: [] },

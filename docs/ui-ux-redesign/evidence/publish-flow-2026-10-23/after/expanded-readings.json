@@ -1,0 +1,43 @@
+{
+  "tapped1": "3 个节点 · 2 条风险\n查看/调整 ›",
+  "tapped2": "风险提示（可选）\n2 条\n›",
+  "routeRows": [
+    {
+      "text": "1\n泰安古镇\n起点\n›",
+      "size": {
+        "width": 316,
+        "height": 46
+      }
+    },
+    {
+      "text": "2\n白云寺\n途中\n›",
+      "size": {
+        "width": 316,
+        "height": 47
+      }
+    },
+    {
+      "text": "3\n五龙沟\n终点\n›",
+      "size": {
+        "width": 316,
+        "height": 47
+      }
+    }
+  ],
+  "riskRows": [
+    {
+      "text": "1\n石阶湿滑\n编辑\n雨后改走公路",
+      "size": {
+        "width": 316,
+        "height": 102
+      }
+    },
+    {
+      "text": "2\n午后降温\n编辑\n全员带防风层",
+      "size": {
+        "width": 316,
+        "height": 103
+      }
+    }
+  ]
+}

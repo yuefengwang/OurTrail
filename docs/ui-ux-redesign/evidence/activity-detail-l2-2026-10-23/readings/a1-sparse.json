@@ -1,0 +1,150 @@
+{
+  "side": "a1",
+  "scenario": "sparse",
+  "capturedAt": "2026-10-23T09:52:41.923Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "fixture": {
+    "file": "fixtures\\baseline\\sparse.json",
+    "title": "城区周边 · 傍晚散步"
+  },
+  "gates": {
+    "loadingFalse": true,
+    "titleIntact": true,
+    "selectorFound": true
+  },
+  "markers": {
+    "secFactsPresent": true,
+    "infoCardGone": true,
+    "heroSelectable": true,
+    "coverFailedClass": false
+  },
+  "geometry": {
+    "viewport": {
+      "windowWidth": 390,
+      "windowHeight": 753,
+      "pixelRatio": 3,
+      "SDKVersion": "3.8.12",
+      "platform": "devtools",
+      "model": "iPhone 12/13 (Pro)",
+      "system": "iOS 10.0.1"
+    },
+    "page": {
+      "left": 0,
+      "top": 0,
+      "width": 390,
+      "height": 2180
+    },
+    "hero": {
+      "left": 20,
+      "top": 24,
+      "width": 350,
+      "height": 431
+    },
+    "media": {
+      "left": 20,
+      "top": 24,
+      "width": 350,
+      "height": 240
+    },
+    "heroBody": {
+      "left": 20,
+      "top": 264,
+      "width": 350,
+      "height": 191
+    },
+    "titleBlockDeltaFromMediaBottom": 0,
+    "factRows": [
+      {
+        "box": {
+          "left": 20,
+          "top": 873.7,
+          "width": 350,
+          "height": 47
+        },
+        "label": "活动时间",
+        "value": "10/3 08:00 – 待确定"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 920.7,
+          "width": 350,
+          "height": 46
+        },
+        "label": "人数",
+        "value": "上限 6 人"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1024.7,
+          "width": 350,
+          "height": 47
+        },
+        "label": "出发时间",
+        "value": "10/3 08:00"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1071.7,
+          "width": 350,
+          "height": 47
+        },
+        "label": "预计结束",
+        "value": "待确定"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1118.7,
+          "width": 350,
+          "height": 46
+        },
+        "label": "报名截止",
+        "value": "待确定"
+      }
+    ],
+    "overflow": {
+      "viewportWidth": 390,
+      "maxRight": 390,
+      "minLeft": 0,
+      "overflowRight": 0
+    }
+  },
+  "screenshot": {
+    "file": "a1-sparse-top.png",
+    "bytes": 124037,
+    "width": 306,
+    "height": 660
+  },
+  "status": "VALID",
+  "data": {
+    "title": "城区周边 · 傍晚散步",
+    "infoFacts": 0,
+    "routeStats": 0,
+    "coverFailed": false,
+    "coverIsReal": false,
+    "factTime": "10/3 08:00 – 待确定",
+    "factPickup": "",
+    "factPeople": "上限 6 人",
+    "secNo": {
+      "intro": "01",
+      "facts": "02",
+      "itinerary": "03",
+      "weather": "04",
+      "route": "05",
+      "safety": "06",
+      "equipment": "07",
+      "fee": "08"
+    }
+  }
+}

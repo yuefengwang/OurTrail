@@ -91,6 +91,11 @@ Page({
       })
       const counts = { todo: 0, doing: 0, done: 0 }
       for (const t of tasks) if (counts[t.status] !== undefined) counts[t.status]++
+      const filterOptions = FILTERS.map(f => ({
+        value: f.value,
+        label: f.label,
+        count: f.value === 'all' ? tasks.length : counts[f.value],
+      }))
       this.setData({
         loading: false,
         denied: '',
@@ -98,6 +103,7 @@ Page({
         canManage: !!v.canManage,
         tasks,
         counts,
+        filterOptions,
         sheetOpen: false,
         error: '',
       })

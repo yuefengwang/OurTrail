@@ -1,0 +1,623 @@
+{
+  "side": "s2",
+  "scenario": "rich",
+  "capturedAt": "2026-10-23T10:28:01.757Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "fixture": {
+    "file": "fixtures-s2\\rich.json",
+    "title": "青城后山 · 周末轻徒步"
+  },
+  "gates": {
+    "loadingFalse": true,
+    "titleIntact": true,
+    "selectorFound": true,
+    "stylesReady": true,
+    "styleWaitMs": 44
+  },
+  "markers": {
+    "chapterCount": 9,
+    "numberedKickers": [
+      "01 活动简介",
+      "02 行程安排",
+      "03 天气",
+      "04 路线与集合",
+      "05 安全",
+      "06 装备",
+      "07 费用与约定",
+      "08 报名后"
+    ],
+    "timelineInItinerary": true,
+    "timelineInRoute": false,
+    "timelineItems": 3,
+    "equipmentLists": 2,
+    "equipmentRows": [
+      "3",
+      "2"
+    ],
+    "peersNumbered": false,
+    "feeGuardCount": 1
+  },
+  "geometry": {
+    "title": "青城后山 · 周末轻徒步",
+    "scheduleLabels": [
+      "",
+      "",
+      ""
+    ],
+    "scheduleBasis": "",
+    "equipment": [
+      "登山杖",
+      "饮用水 2L",
+      "防风外套"
+    ],
+    "equipmentSuggested": [
+      "备用袜",
+      "防晒"
+    ],
+    "secNo": {
+      "intro": "01",
+      "itinerary": "02",
+      "weather": "03",
+      "route": "04",
+      "safety": "05",
+      "equipment": "06",
+      "fee": "07",
+      "signup": "08"
+    },
+    "chapters": [
+      {
+        "box": {
+          "left": 20,
+          "top": 786.9,
+          "width": 350,
+          "height": 106
+        },
+        "head": {
+          "left": 20,
+          "top": 786.9,
+          "width": 350,
+          "height": 46
+        },
+        "body": {
+          "left": 20,
+          "top": 844.9,
+          "width": 350,
+          "height": 48
+        },
+        "kicker": "01 活动简介",
+        "title": "这一次，去哪里",
+        "bodyStyle": "margin-top:12px;"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 920.9,
+          "width": 350,
+          "height": 474
+        },
+        "head": {
+          "left": 20,
+          "top": 920.9,
+          "width": 350,
+          "height": 66
+        },
+        "body": {
+          "left": 20,
+          "top": 998.9,
+          "width": 350,
+          "height": 396
+        },
+        "kicker": "同行人",
+        "title": "我与同行人",
+        "bodyStyle": "margin-top:12px;"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1422.9,
+          "width": 350,
+          "height": 276
+        },
+        "head": {
+          "left": 20,
+          "top": 1422.9,
+          "width": 350,
+          "height": 46
+        },
+        "body": {
+          "left": 20,
+          "top": 1480.9,
+          "width": 350,
+          "height": 218
+        },
+        "kicker": "02 行程安排",
+        "title": "这一次的安排",
+        "bodyStyle": "margin-top:12px;"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1726.9,
+          "width": 350,
+          "height": 126
+        },
+        "head": {
+          "left": 20,
+          "top": 1726.9,
+          "width": 350,
+          "height": 66
+        },
+        "body": {
+          "left": 20,
+          "top": 1800.9,
+          "width": 350,
+          "height": 52
+        },
+        "kicker": "03 天气",
+        "title": "出发日天气",
+        "bodyStyle": "margin-top:8px;"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1880.9,
+          "width": 350,
+          "height": 946
+        },
+        "head": {
+          "left": 20,
+          "top": 1880.9,
+          "width": 350,
+          "height": 46
+        },
+        "body": {
+          "left": 20,
+          "top": 1938.9,
+          "width": 350,
+          "height": 888
+        },
+        "kicker": "04 路线与集合",
+        "title": "怎么去 · 在哪集合",
+        "bodyStyle": "margin-top:12px;"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 2855.06,
+          "width": 350,
+          "height": 131
+        },
+        "head": {
+          "left": 20,
+          "top": 2855.06,
+          "width": 350,
+          "height": 46
+        },
+        "body": {
+          "left": 20,
+          "top": 2913.06,
+          "width": 350,
+          "height": 73
+        },
+        "kicker": "05 安全",
+        "title": "风险提示",
+        "bodyStyle": "margin-top:12px;"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 3013.56,
+          "width": 350,
+          "height": 232
+        },
+        "head": {
+          "left": 20,
+          "top": 3013.56,
+          "width": 350,
+          "height": 46
+        },
+        "body": {
+          "left": 20,
+          "top": 3071.56,
+          "width": 350,
+          "height": 174
+        },
+        "kicker": "06 装备",
+        "title": "出发前，检查装备",
+        "bodyStyle": "margin-top:12px;"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 3273.56,
+          "width": 350,
+          "height": 152
+        },
+        "head": {
+          "left": 20,
+          "top": 3273.56,
+          "width": 350,
+          "height": 46
+        },
+        "body": {
+          "left": 20,
+          "top": 3331.56,
+          "width": 350,
+          "height": 94
+        },
+        "kicker": "07 费用与约定",
+        "title": "费用与退出约定",
+        "bodyStyle": "margin-top:12px;"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 3453.56,
+          "width": 350,
+          "height": 106
+        },
+        "head": {
+          "left": 20,
+          "top": 3453.56,
+          "width": 350,
+          "height": 46
+        },
+        "body": {
+          "left": 20,
+          "top": 3511.56,
+          "width": 350,
+          "height": 48
+        },
+        "kicker": "08 报名后",
+        "title": "进群与行前准备",
+        "bodyStyle": "margin-top:12px;"
+      }
+    ],
+    "chapterGaps": [
+      28,
+      28,
+      28,
+      28,
+      28.16,
+      27.5,
+      28,
+      28
+    ],
+    "titleBodyGaps": [
+      12,
+      12,
+      12,
+      8,
+      12,
+      12,
+      12,
+      12,
+      12
+    ],
+    "sections": [
+      {
+        "id": "sec-intro",
+        "present": true,
+        "box": {
+          "left": 20,
+          "top": 786.9,
+          "width": 350,
+          "height": 106
+        }
+      },
+      {
+        "id": "sec-peers",
+        "present": true,
+        "box": {
+          "left": 20,
+          "top": 920.9,
+          "width": 350,
+          "height": 474
+        }
+      },
+      {
+        "id": "sec-itinerary",
+        "present": true,
+        "box": {
+          "left": 20,
+          "top": 1422.9,
+          "width": 350,
+          "height": 276
+        }
+      },
+      {
+        "id": "sec-weather",
+        "present": true,
+        "box": {
+          "left": 20,
+          "top": 1726.9,
+          "width": 350,
+          "height": 126
+        }
+      },
+      {
+        "id": "meeting-block",
+        "present": true,
+        "box": {
+          "left": 20,
+          "top": 1880.9,
+          "width": 350,
+          "height": 946
+        }
+      },
+      {
+        "id": "sec-safety",
+        "present": true,
+        "box": {
+          "left": 20,
+          "top": 2855.06,
+          "width": 350,
+          "height": 131
+        }
+      },
+      {
+        "id": "sec-equipment",
+        "present": true,
+        "box": {
+          "left": 20,
+          "top": 3013.56,
+          "width": 350,
+          "height": 232
+        }
+      },
+      {
+        "id": "sec-fee",
+        "present": true,
+        "box": {
+          "left": 20,
+          "top": 3273.56,
+          "width": 350,
+          "height": 152
+        }
+      },
+      {
+        "id": "sec-signup",
+        "present": true,
+        "box": {
+          "left": 20,
+          "top": 3453.56,
+          "width": 350,
+          "height": 106
+        }
+      }
+    ],
+    "sectionGaps": [
+      28,
+      28,
+      28,
+      28,
+      28.16,
+      27.5,
+      28,
+      28
+    ],
+    "timeline": {
+      "inItinerary": true,
+      "inRoute": false
+    },
+    "timelineItems": [
+      {
+        "text": "01 · 起点 泰安古镇 导航",
+        "kindLabel": "01 · 起点",
+        "scheduleLabel": "",
+        "box": {
+          "left": 41,
+          "top": 1480.9,
+          "width": 329,
+          "height": 68
+        }
+      },
+      {
+        "text": "02 · 途中节点 又一村 天气",
+        "kindLabel": "02 · 途中节点",
+        "scheduleLabel": "",
+        "box": {
+          "left": 41,
+          "top": 1548.9,
+          "width": 329,
+          "height": 68
+        }
+      },
+      {
+        "text": "03 · 终点 白云寺 导航",
+        "kindLabel": "03 · 终点",
+        "scheduleLabel": "",
+        "box": {
+          "left": 41,
+          "top": 1616.9,
+          "width": 329,
+          "height": 48
+        }
+      }
+    ],
+    "equipmentLists": [
+      {
+        "box": {
+          "left": 20,
+          "top": 3099.56,
+          "width": 350,
+          "height": 54
+        },
+        "count": 3,
+        "rows": [
+          3
+        ],
+        "rowWidths": [
+          [
+            82,
+            82,
+            82
+          ]
+        ],
+        "cells": [
+          {
+            "box": {
+              "left": 20,
+              "top": 3099.56,
+              "width": 82,
+              "height": 54
+            },
+            "tile": {
+              "left": 44.75,
+              "top": 3099.56,
+              "width": 32,
+              "height": 32
+            },
+            "text": "登山杖",
+            "textBox": {
+              "left": 42.75,
+              "top": 3137.56,
+              "width": 36,
+              "height": 16
+            }
+          },
+          {
+            "box": {
+              "left": 109.5,
+              "top": 3099.56,
+              "width": 82,
+              "height": 54
+            },
+            "tile": {
+              "left": 134.25,
+              "top": 3099.56,
+              "width": 32,
+              "height": 32
+            },
+            "text": "饮用水 2L",
+            "textBox": {
+              "left": 124.55,
+              "top": 3137.56,
+              "width": 51,
+              "height": 16
+            }
+          },
+          {
+            "box": {
+              "left": 199,
+              "top": 3099.56,
+              "width": 82,
+              "height": 54
+            },
+            "tile": {
+              "left": 223.75,
+              "top": 3099.56,
+              "width": 32,
+              "height": 32
+            },
+            "text": "防风外套",
+            "textBox": {
+              "left": 215.75,
+              "top": 3137.56,
+              "width": 48,
+              "height": 16
+            }
+          }
+        ]
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 3191.56,
+          "width": 350,
+          "height": 54
+        },
+        "count": 2,
+        "rows": [
+          2
+        ],
+        "rowWidths": [
+          [
+            82,
+            82
+          ]
+        ],
+        "cells": [
+          {
+            "box": {
+              "left": 20,
+              "top": 3191.56,
+              "width": 82,
+              "height": 54
+            },
+            "tile": {
+              "left": 44.75,
+              "top": 3191.56,
+              "width": 32,
+              "height": 32
+            },
+            "text": "备用袜",
+            "textBox": {
+              "left": 42.75,
+              "top": 3229.56,
+              "width": 36,
+              "height": 16
+            }
+          },
+          {
+            "box": {
+              "left": 109.5,
+              "top": 3191.56,
+              "width": 82,
+              "height": 54
+            },
+            "tile": {
+              "left": 134.25,
+              "top": 3191.56,
+              "width": 32,
+              "height": 32
+            },
+            "text": "防晒",
+            "textBox": {
+              "left": 138.25,
+              "top": 3229.56,
+              "width": 24,
+              "height": 16
+            }
+          }
+        ]
+      }
+    ],
+    "equipmentSectionText": "06 装备 出发前，检查装备 必带 登山杖 饮用水 2L 防风外套 建议 备用袜 防晒",
+    "fee": {
+      "text": "07 费用与约定 费用与退出约定 费用 AA，含车费约 80 元。 出发前 24 小时可免费退出。 OurTrail 不收款，不处理支付或退款。",
+      "guardCount": 1,
+      "includesLabel": false,
+      "excludesLabel": false,
+      "feeNoteBeforeCancel": true
+    },
+    "peers": {
+      "kicker": "同行人",
+      "numbered": false
+    },
+    "overflow": {
+      "viewportWidth": 390,
+      "maxRight": 390,
+      "minLeft": 0,
+      "overflowRight": 0
+    },
+    "viewportWidth": 390
+  },
+  "screenshots": [
+    {
+      "file": "rich-top.png",
+      "bytes": 110908,
+      "width": 306,
+      "height": 660
+    }
+  ],
+  "status": "VALID"
+}

@@ -1,0 +1,13 @@
+{
+  "denied": "",
+  "loading": false,
+  "activityId": "activity-mvkm7ge4esw8a1",
+  "phaseLabel": "行前准备",
+  "nextPhaseLabel": "开始集合",
+  "canTransition": true,
+  "canEdit": true,
+  "canCancel": true,
+  "transitionHint": "",
+  "busy": false,
+  "tab": 0
+}

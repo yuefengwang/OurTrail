@@ -1,0 +1,123 @@
+{
+  "generatedAt": "2026-10-23T10:03:08.834Z",
+  "method": "git rev-parse <commit>:<path> / git hash-object <worktree path>",
+  "head": "e05e5591e66387de72a2b08c823403c0df14f4df",
+  "master": "46fd7c54f2d01d2fe17293d76a66769e6d5eb41d",
+  "note": "A1 = HEAD(e05e559) + 未提交 style-A；活动页四文件在 A1 取 HEAD blob，其余文件取拍摄时工作树（S1 未触碰）。A0 = master 46fd7c5 blob。",
+  "files": {
+    "miniprogram/app.wxss": {
+      "a0": "6f9c705e031bd3f77d89c9c652a3937b509c3af7",
+      "a1": "2dd8c868580c0ef69f28715fec18534af99bdb4b",
+      "s1": "2dd8c868580c0ef69f28715fec18534af99bdb4b",
+      "headBlob": "6f9c705e031bd3f77d89c9c652a3937b509c3af7"
+    },
+    "miniprogram/pages/activity/activity.js": {
+      "a0": "e1a662ad32dcb57ec43d473c694465737a684b54",
+      "a1": "e1a662ad32dcb57ec43d473c694465737a684b54",
+      "s1": "27d154fac45bf27f5a74de65901e6746e4b797c9",
+      "headBlob": "e1a662ad32dcb57ec43d473c694465737a684b54"
+    },
+    "miniprogram/pages/activity/activity.json": {
+      "a0": "23d9f4063e6c6666adf36602763228578117c542",
+      "a1": "23d9f4063e6c6666adf36602763228578117c542",
+      "s1": "e8f21d754dc3e102341378e2a8807a0ac358d3bf",
+      "headBlob": "23d9f4063e6c6666adf36602763228578117c542"
+    },
+    "miniprogram/pages/activity/activity.wxml": {
+      "a0": "8430529ad794fcee93f05c7aa962b9d0f88ebbce",
+      "a1": "8430529ad794fcee93f05c7aa962b9d0f88ebbce",
+      "s1": "fd81e851805394e4fd3f22651913e0ae064a74a2",
+      "headBlob": "8430529ad794fcee93f05c7aa962b9d0f88ebbce"
+    },
+    "miniprogram/pages/activity/activity.wxss": {
+      "a0": "d6fe243d573149b64b4b238ad65c0f1a8e35bca5",
+      "a1": "d6fe243d573149b64b4b238ad65c0f1a8e35bca5",
+      "s1": "5c1038a6c730d8a339316ae78c4236b8c514351b",
+      "headBlob": "d6fe243d573149b64b4b238ad65c0f1a8e35bca5"
+    },
+    "miniprogram/pages/route/route.js": {
+      "a0": "bdaae364dca1ae33402a8534f6eef11e872eac9d",
+      "a1": "bdaae364dca1ae33402a8534f6eef11e872eac9d",
+      "s1": "bdaae364dca1ae33402a8534f6eef11e872eac9d",
+      "headBlob": "bdaae364dca1ae33402a8534f6eef11e872eac9d"
+    },
+    "miniprogram/pages/route/route.json": {
+      "a0": "83fa526ce547ade3524f828adce6895c8400cc68",
+      "a1": "5215c5076cc674acc231a86b995e6d584089fd5a",
+      "s1": "5215c5076cc674acc231a86b995e6d584089fd5a",
+      "headBlob": "83fa526ce547ade3524f828adce6895c8400cc68"
+    },
+    "miniprogram/pages/route/route.wxml": {
+      "a0": "7fc72fd0041b47c3ab0af1595b513c850007eb14",
+      "a1": "7fc72fd0041b47c3ab0af1595b513c850007eb14",
+      "s1": "7fc72fd0041b47c3ab0af1595b513c850007eb14",
+      "headBlob": "7fc72fd0041b47c3ab0af1595b513c850007eb14"
+    },
+    "miniprogram/pages/route/route.wxss": {
+      "a0": "54b1cd2e31d354a990a0da0d3027b6849d5d2d2e",
+      "a1": "54b1cd2e31d354a990a0da0d3027b6849d5d2d2e",
+      "s1": "54b1cd2e31d354a990a0da0d3027b6849d5d2d2e",
+      "headBlob": "54b1cd2e31d354a990a0da0d3027b6849d5d2d2e"
+    },
+    "miniprogram/pages/routes/routes.js": {
+      "a0": "f75717e9fda89c098f38d426b62f16abe3d08586",
+      "a1": "f75717e9fda89c098f38d426b62f16abe3d08586",
+      "s1": "f75717e9fda89c098f38d426b62f16abe3d08586",
+      "headBlob": "f75717e9fda89c098f38d426b62f16abe3d08586"
+    },
+    "miniprogram/pages/routes/routes.json": {
+      "a0": "519019ba12595c1101baa73ee897cf665ea163b8",
+      "a1": "e5ab31ff8816250f35620fbc8c89742714083626",
+      "s1": "e5ab31ff8816250f35620fbc8c89742714083626",
+      "headBlob": "519019ba12595c1101baa73ee897cf665ea163b8"
+    },
+    "miniprogram/pages/routes/routes.wxml": {
+      "a0": "a880227cacb3d5a2cd830a6ec3207911fd892b7a",
+      "a1": "a880227cacb3d5a2cd830a6ec3207911fd892b7a",
+      "s1": "a880227cacb3d5a2cd830a6ec3207911fd892b7a",
+      "headBlob": "a880227cacb3d5a2cd830a6ec3207911fd892b7a"
+    },
+    "miniprogram/pages/routes/routes.wxss": {
+      "a0": "1b86f3c2ed9df1046dc08f4c7fe74f5fdb5646bf",
+      "a1": "1b86f3c2ed9df1046dc08f4c7fe74f5fdb5646bf",
+      "s1": "1b86f3c2ed9df1046dc08f4c7fe74f5fdb5646bf",
+      "headBlob": "1b86f3c2ed9df1046dc08f4c7fe74f5fdb5646bf"
+    },
+    "miniprogram/utils/route-profile.js": {
+      "a0": "0117f0395aec7fe30d3bf64dff4c08e2ca31da00",
+      "a1": "f1ac4c6339515c31270834381303f25ec9567f85",
+      "s1": "f1ac4c6339515c31270834381303f25ec9567f85",
+      "headBlob": "0117f0395aec7fe30d3bf64dff4c08e2ca31da00"
+    },
+    "miniprogram/utils/route-schedule.js": {
+      "a0": "30a4cedd2b9f226ad8f265989a9959ac3c84df63",
+      "a1": "bd322974c406fafe46c63a6bcfcab8c40b147ca8",
+      "s1": "bd322974c406fafe46c63a6bcfcab8c40b147ca8",
+      "headBlob": "30a4cedd2b9f226ad8f265989a9959ac3c84df63"
+    },
+    "miniprogram/components/icon/icon.js": {
+      "a0": "2a389b5a208f8c212d809c1b1d21de476bd05ba2",
+      "a1": "2a389b5a208f8c212d809c1b1d21de476bd05ba2",
+      "s1": "2a389b5a208f8c212d809c1b1d21de476bd05ba2",
+      "headBlob": "2a389b5a208f8c212d809c1b1d21de476bd05ba2"
+    },
+    "miniprogram/components/icon/icon.json": {
+      "a0": "a89ef4dbeefa01f5cd7971973aa4db6498d139f7",
+      "a1": "a89ef4dbeefa01f5cd7971973aa4db6498d139f7",
+      "s1": "a89ef4dbeefa01f5cd7971973aa4db6498d139f7",
+      "headBlob": "a89ef4dbeefa01f5cd7971973aa4db6498d139f7"
+    },
+    "miniprogram/components/icon/icon.wxml": {
+      "a0": "805d3ba1222e871fc9cf510a043b07dcbe558c8a",
+      "a1": "805d3ba1222e871fc9cf510a043b07dcbe558c8a",
+      "s1": "805d3ba1222e871fc9cf510a043b07dcbe558c8a",
+      "headBlob": "805d3ba1222e871fc9cf510a043b07dcbe558c8a"
+    },
+    "miniprogram/components/icon/icon.wxss": {
+      "a0": "8e299b01bdeaf788c9ff5094a2b1af33aae783b1",
+      "a1": "8e299b01bdeaf788c9ff5094a2b1af33aae783b1",
+      "s1": "8e299b01bdeaf788c9ff5094a2b1af33aae783b1",
+      "headBlob": "8e299b01bdeaf788c9ff5094a2b1af33aae783b1"
+    }
+  }
+}

@@ -14,6 +14,8 @@
 
 **Gate recount 27:** 2026-10-21 沿线时空天相下线 + 统一图 gutter 可读性 + 云层剖面缺失状态。**已删除** `components/space-time`、`components/roam-scrubber`、`utils/weather-model.js`（删除前已无 require）与 4 套测试（space-time 109 / space-time-draw 55 / roam-scrubber 33 / weather-model 82）；工具数 110→**106**，组件目录 16→**14**（13 在用 + privacy-popup），utils 27。天气页：左 gutter 行标题拆两行 + `L=44`（「降水 mm/h」「云量 · 高度 m」不再与刻度叠字）、无成层云带文案改为「没有 ≥80% 成层云带」、`cloudFieldMissing` 缺失 callout + `onRetryWeather` 绕过 `_lastResult` 复用（陈旧横幅同用）。**逐套实测**：`weather-page 192/0`、`meteogram-readability 86/0`（新增 §9 gutter 门；回旧布局变异 9 红）、`page2 98/0`、`meteogram-svg 25/0`、`meteogram-multiday 48/0`、`weather-v2-visual-audit 43/0`、`weather-v2 71/0`、`cloud-field-svg 29/0`、`cloud-position 62/0`、`weather-cloud-field 31/0`、`t4-e08 41/0`（R3 真实具名 slot 样本归零，判据由合成夹具自证）、`journey-graph 15/0`、`oi-claim-gate 26/0`；`check.js`/`check-handlers` 全过。**既有红（非本轮）**：`swx2 109/1`（`pages/activity/activity.wxss:90 .highlight-dot` font-weight 700，先前已登记）、`weather-resilience 43/2`（工作区天气线在途改动；干净 HEAD 45/0）；`swx2-style-gates-mutate` 因这条既存红以前置门 exit 2（INVALID，不是通过）。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。真机 **NOT_RUN**（无运行中的开发者工具自动化会话）；标签与云缺失态待重编译/上传后确认。详见 SYNC.md 2026-10-21 对应条目。
 
+**Gate recount 28:** 2026-10-23 跨页 L2/L3 重构（把活动详情试点方法推到 11 个页面 + 4 个 L2 组件）。组件目录 14→**18**（17 在用 + privacy-popup），utils 27→**28**（新增 `equipment-icons.js`），`tools/*-test.js` 106→**112**。**全量 sweep：110 套 / passed=7002 / failed=14 / redSuites=4**（109 个 tools 套件 + smoke；3 套需开发者工具的 `e2e-ui*` 未纳入）。四个红套件已用 `git archive HEAD`（`e05e559`）干净副本复现同读数：`cold-start-work 8/2`、`g2-platform-gate 14/1`、`t1-r01 28/1`（T25）、`trip2-gates 66/10`。本轮新增/对齐结构套件：`activity-l2-structure 83`、`operations-layout 37`、`entry-layout 39`、`personal-route-layout 57`、`equipment-icons 24`。`check.js` ALL CHECKS PASSED（G10 类作用域 40 单元 / 3133 token / 134 类名，命中 0）；`check-handlers` 仅存量 `editor#onNumber`。`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。真机：IDE 模拟器 390×753（截图 306×660），before/after 各 13 帧，11 页 gates 失败 0 / residual 0 / exceptions 0；证据 `docs/ui-ux-redesign/evidence/crosspage-l2-2026-10-23/`，方法与执行记录 `docs/ui-ux-redesign/refactor-methodology-2026-10-23.md` §9。边界：地图底图 UNVERIFIED、原生 picker/相册/分享未驱动、`staff` 仅 denied、`vehicle` 仅极端数据、`tasks` 为注入夹具；B 层三套 **NOT_RUN**。未 commit/push/deploy，用户未跟踪文件未动。
+
 ---
 
 ## OVERVIEW
@@ -24,7 +26,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 
 | Layer | Reality |
 |---|---|
-| Client | WeChat mini program, **native WXML/WXSS/CommonJS JS**. **21 pages**（`app.json` 实测，2026-10-20 新增 `pages/tasks`——协作任务清单）, **14 个组件目录**（13 在用 + `privacy-popup` 死代码；2026-10-21 新增 `profile-gate`、`content-editor`；`space-time`/`roam-scrubber` 随时空天相功能下线）+ 位于 `miniprogram/custom-tab-bar/`（不在 components/ 下）, **zero npm dependencies** (no `miniprogram/package.json`, no `miniprogram_npm/`). `libVersion 3.8.12`, appid `wx1227a277a3f2f7ea` |
+| Client | WeChat mini program, **native WXML/WXSS/CommonJS JS**. **21 pages**（`app.json` 实测，2026-10-20 新增 `pages/tasks`——协作任务清单）, **18 个组件目录**（17 在用 + `privacy-popup` 死代码；2026-10-23 跨页 L2/L3 新增 `activity-hero`、`chapter`、`fact-grid`、`equipment-grid`；`space-time`/`roam-scrubber` 随时空天相功能下线）+ 位于 `miniprogram/custom-tab-bar/`（不在 components/ 下）, **zero npm dependencies** (no `miniprogram/package.json`, no `miniprogram_npm/`). `libVersion 3.8.12`, appid `wx1227a277a3f2f7ea` |
 | Backend | **ONE production** cloud function `trailApi` — 16 `action` values multiplexed through one `ROUTES` map (`index.js:259`), fanning out to **46 command types**（2026-10-20 新增 `task.*` 4 条）. Sole dependency `wx-server-sdk ~3.0.1`. 另有 **`trailApiLab`**：私有预演工具云函数（只给 `pages/lab` 造 `[预演]` 沙盒），与生产**共用同一套 `ot_*` 集合**，不是第二条服务链路 |
 | Store | Document-per-record across **17** `ot_*` collections (15 in the `COLLECTIONS` map, plus `ot_meta` and `weather_cache`). `ot_meta/main` = `{revision, savedAt}`. Writes diff records inside one transaction with a **revision CAS** |
 | Domain | 15 pure JS modules in `cloudfunctions/trailApi/domain/` — all authorization, business rules, and response shapes live here and **the client cannot bypass any of it**（`routes.js` 路线资产；`tasks.js` 协作任务） |
@@ -68,7 +70,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── pages/         # 21 dirs, 1:1 with app.json `pages`
 │   ├── components/    # 14 dirs（13 在用 + privacy-popup 死代码）
 │   ├── custom-tab-bar/  # 与 components/ 同级，样式必须自包含
-│   ├── utils/         # 27 files — see miniprogram/utils/AGENTS.md
+│   ├── utils/         # 28 files — see miniprogram/utils/AGENTS.md
 │   ├── wxs/           # text.wxs
 │   └── assets/markers/  # generated PNGs (map markers reject base64)
 ├── cloudfunctions/trailApi/   # BACKEND — see cloudfunctions/trailApi/AGENTS.md
@@ -81,7 +83,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 │   ├── lib/atmosphere.js       # 7Timer! seeing/transparency + CAMS AOD/PM
 │   ├── lib/light-pollution.js  # DarkSkySites SQM/Bortle（环境变量 key）
 │   └── smoke-test.js   # 214 cases (measured 2026-10-21), needs no wx-server-sdk
-├── tools/             # 106 个 `*-test.js`（2026-10-21 实测；其中 3 个需开发者工具：
+├── tools/             # 112 个 `*-test.js`（2026-10-23 实测；其中 3 个需开发者工具：
 │                      #   `e2e-ui-test` / `e2e-ui-state-test` / `e2e-golden-path-test`）
 │                      #   + 2 个静态检查 + `e2e-result.js`（结果账本）+ `lifecycle-harness.js`
 │                      #   （6 套 lifecycle-* 共用的世界驱动器）+ 桩/生成器

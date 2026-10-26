@@ -184,6 +184,13 @@ async function main() {
     return last && last.data
   }
   const revNow = async () => (await orgView()).revision
+  // 建档阶段沙盒还没 id，orgView 无行可读：与 e2e-ui-test.js:160-168 同因同解——
+  // 服务端 076bf11 起对缺失 expectedRevision 失败关闭，故这里取全局 revision 再发。
+  const globalRev = async () => {
+    const p = await cloudCall('read', { request: { kind: 'profile' } })
+    return p && p.data ? p.data.revision : undefined
+  }
+  const dispatchGlobal = async payload => cloudCall('dispatch', { payload, expectedRevision: await globalRev() })
   const dispatch = async payload => cloudCall('dispatch', { payload, expectedRevision: await revNow() })
   const settle = async (read, pred, tries) => {
     let waited = -1
@@ -218,12 +225,12 @@ async function main() {
   let sandboxId = ''
   section('沙盒建档（trailApi 命令直建；不依赖 trailApiLab——其超时配置是既知环境问题）')
   await L.block('沙盒建档与发布', 2, async () => {
-    const created = await cloudCall('dispatch', { payload: { type: 'activity.create', input: SANDBOX } })
+    const created = await dispatchGlobal({ type: 'activity.create', input: SANDBOX })
     L.b('建 [预演] 活动草稿', !!created && created.ok === true, JSON.stringify((created && (created.error || created.err)) || 'ok').slice(0, 200))
     sandboxId = created && created.ok ? created.data.targetIds[0] : ''
     const prof = await cloudCall('read', { request: { kind: 'profile' } })
     const me = prof && prof.ok ? prof.data.view.profile : null
-    const published = me ? await cloudCall('dispatch', { payload: { type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me.id }, participant: me.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } } }) : { ok: false, err: '没有档案' }
+    const published = me ? await dispatchGlobal({ type: 'activity.publish', activityId: sandboxId, participation: { personRef: { kind: 'user', userId: me.id }, participant: me.person, trip: { mode: 'shared', pickupPointId: 'pk-1' }, consent: { dataUse: true, proxyAuthority: false, proxyHome: false } } }) : { ok: false, err: '没有档案' }
     L.b('发布（发布即报名本人，自动确认）', published.ok === true, JSON.stringify(published.error || published.err || 'ok').slice(0, 200))
   }, () => ({ ok: true }))
 

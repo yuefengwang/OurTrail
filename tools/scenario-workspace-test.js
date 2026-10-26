@@ -70,8 +70,9 @@ const keysOf = o => Object.keys(o).sort().join(',')
 
 // ---- global.wx 桩：toast/震动/导航栏标题/导航记录；每场景换新，互不串味 ----
 function makeWx() {
-  const rec = { toasts: [], nav: [], titles: [], vibrations: 0, clipboard: [] }
+  const rec = { toasts: [], nav: [], titles: [], vibrations: 0, clipboard: [], scrolls: [] }
   global.wx = {
+    pageScrollTo: o => rec.scrolls.push(o),
     showToast: o => rec.toasts.push((o && o.title) || ''),
     vibrateShort: () => { rec.vibrations++ },
     setNavigationBarTitle: o => rec.titles.push((o && o.title) || ''),
@@ -943,8 +944,53 @@ async function scenario8() {
   }
 }
 
+async function scenarioOperations() {
+  section('9. L3 编排行为：journey 主待办 / 空态 / 工具导航 / 面板同步')
+  const J = require('../miniprogram/utils/journey')
+  const leaderQueue = J.leaderQueue
+  let produced
+  J.leaderQueue = ctx => { produced = leaderQueue(ctx); return produced }
+  try {
+    const rec = makeWx()
+    const view = organizerView()
+    const env = installApi({ view, revision: 11 })
+    const page = makePage(pageConfig())
+    page.onLoad({ id: 'a1' }); page.onShow()
+    await settlePage(page)
+    check('主待办原样取 journey.primary，未重算优先级或丢弃队列', page.data.queuePrimary === produced.primary
+      && page.data.queue === produced.items)
+    check('有门槛仍保留权限允许的阶段确认入口', page.data.canTransition && !!page.data.transitionHint)
+    for (const [target, tab] of [['roster', 1], ['transport', 2], ['field', 3]]) {
+      page.goQueueItem({ currentTarget: { dataset: { target } } })
+      check('待办去 ' + target + ' 切区并滚顶', page.data.tab === tab && rec.scrolls[rec.scrolls.length - 1].scrollTop === 0)
+    }
+    page.goTasks(); page.goNotices(); page.goDetail(); page.goEdit()
+    check('独立工具四入口保留活动 id', rec.nav.join('|') === ['/pages/tasks/tasks?id=a1', '/pages/anotices/anotices?id=a1',
+      '/pages/activity/activity?id=a1', '/pages/editor/editor?id=a1'].join('|'))
+    page.goQueueItem({ currentTarget: { dataset: { target: 'edit' } } })
+    check('旅程完善活动入口仍去同一编辑器', rec.nav[4] === '/pages/editor/editor?id=a1')
+    const key = page.data.syncKey
+    env.state.revision = 12
+    page.onPanelSync()
+    await waitFor(() => page.data.syncKey !== key)
+    check('written → 重读 → phase@revision，切区不丢失', page.data.syncKey === 'published@12'
+      && page.revision === 12 && page.data.tab === 3 && env.reads.length === 2)
+    Object.keys(view.counters).forEach(k => { view.counters[k] = 0 })
+    await page.reload()
+    check('无待办保留 journey 的 idle 说明与真实下一步', page.data.queuePrimary === produced.primary
+      && !!page.data.queuePrimary && page.data.queuePrimary.id === 'idle' && page.data.nextPhaseLabel === '开始集合')
+    view.activity.phase = 'archived'
+    view.permittedActions = []
+    await page.reload()
+    check('只读阶段不新增推进/编辑/取消权限', !page.data.canTransition && !page.data.canEdit && !page.data.canCancel)
+    J.leaderQueue = () => ({ items: [], primary: null, milestone: '' })
+    await page.reload()
+    check('真正空队列仍有阶段说明，不伪造待办', page.data.queue.length === 0 && page.data.queuePrimary === null && !!page.data.subtitle)
+  } finally { J.leaderQueue = leaderQueue }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenarioOperations]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

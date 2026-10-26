@@ -1,0 +1,8 @@
+<view class="chapter">
+  <view class="section-head">
+    <text wx:if="{{kicker}}" class="kicker">{{no}}{{no && kicker ? ' ' : ''}}{{kicker}}</text>
+    <text wx:if="{{title}}" class="list-head__title">{{title}}</text>
+    <text wx:if="{{sub}}" class="section-sub">{{sub}}</text>
+  </view>
+  <view class="chapter__body" style="margin-top:{{gap}}px;"><slot /></view>
+</view>

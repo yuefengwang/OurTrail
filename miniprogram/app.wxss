@@ -4,10 +4,12 @@
 page {
   --forest: #163E35;
   --leaf: #D6EA8A;
-  /* 纸面暖调（2026-10-16 编辑式重构）：#F5F5F0 → #F6F3EC。
-     仍是近白的中性底，但偏暖——与石色、森林绿同族，像户外杂志的纸。
-     muted 在其上对比度 ≈4.6:1，勿再把 --paper 调深或把 --muted 调淡。 */
-  --paper: #F6F3EC;
+  /* 冷白纸面（2026-10-23 视觉收敛）：暖纸 #F6F3EC → 冷近白 #F5F5F0。
+     方向来自交付包 01_全局视觉参考：白卡 + 细线 + 冷近白底，让白色表面自己站住；
+     替回 2026-10-16 的编辑式暖调（那一版的暖纸面与石色一并退场）。
+     muted 在其上对比度 ≈4.9:1，勿再把 --paper 调深或把 --muted 调淡。
+     app.json 的 window.backgroundColor 与这里同值，改一处必须改两处。 */
+  --paper: #F5F5F0;
   --white: #FFFFFF;
   --ink: #202A26;
   --muted: #5F6E66;
@@ -17,11 +19,13 @@ page {
   --info: #346583;
   --success: #276145;
 
-  /* 编辑式表层（新增，登记于 docs/ui-ux-redesign/design-system.md §2.1）：
-     石色系承担中性表面，森林绿只做品牌动作与 hero 压底——克制才像成熟产品。 */
+  /* 编辑式表层（登记于 docs/ui-ux-redesign/design-system.md §2.1）：
+     石色系承担中性表面，森林绿只做品牌动作与 hero 压底——克制才像成熟产品。
+     2026-10-23 视觉收敛：石色由暖米（#EDE9DE/#DCD5C4）改为冷中性，与冷白纸面同族；
+     森林绿仍是唯一主操作色，嫩叶只留徽标 / hero / 协作入口。 */
   --forest-deep: #122E28;   /* hero 照片压底 / 页头沉浸区（比 forest 更深，照片上更稳） */
-  --stone: #EDE9DE;         /* 次表面：分区带、chip、灰底表面 */
-  --stone-line: #DCD5C4;    /* 暖表面上的分隔线（cold --line 的暖色对应） */
+  --stone: #EDEFEA;         /* 次表面：搜索条、筛选 chip、分区带（冷中性） */
+  --stone-line: #D9DED7;    /* 冷表面上的分隔线（比 --line 淡一级） */
   /* hero 照片遮罩：自下而上压深，保证反白标题可读；顶部轻压融合状态栏 */
   --scrim-hero: linear-gradient(180deg, rgba(18, 46, 40, 0) 0%, rgba(18, 46, 40, 0.42) 55%, rgba(18, 46, 40, 0.9) 100%);
   --scrim-top: linear-gradient(180deg, rgba(18, 46, 40, 0.3) 0%, rgba(18, 46, 40, 0) 40%);
@@ -127,8 +131,10 @@ page {
 /* 发丝线：分组一律用 1px 线，不用阴影 */
 .hairline { border: 0; border-top: 1px solid var(--line); margin: 0; width: 100%; }
 .hairline.warm { border-color: var(--stone-line); }
+/* 白卡 + 1px 发丝边（2026-10-23 视觉收敛）：冷白纸面上靠边框与底色差把卡片立住，不加阴影。 */
 .card {
   padding: 16px;
+  border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--surface);
 }
@@ -291,6 +297,7 @@ button.button { font-family: inherit; }
   flex-direction: column;
   gap: 12px;
   padding: 16px;
+  border: 1px solid var(--line);
   background: var(--surface);
   border-radius: var(--radius-card);
 }
@@ -438,6 +445,42 @@ button.button { font-family: inherit; }
   text-align: center;
 }
 .segmented .seg.on { background: var(--surface); color: var(--forest); font-weight: 600; }
+/* 下划线页签（2026-10-23 视觉收敛）：内容分区切换的形态变体。
+   沿用 .segmented/.seg/.on 三个类名——E2E 与既有门按 .seg 定位，换类名等于拆掉驱动契约；
+   这里只换表面：去掉轨道底色与白底药丸，改为文字 + 2px 指示条。
+   未选中字色用 --muted（压在 --paper 上 ≈4.9:1），44px 触控高度仍由上面的 .seg 规则承重。 */
+.segmented.tabs-line {
+  gap: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border-bottom: 1px solid var(--line);
+}
+.segmented.tabs-line .seg {
+  position: relative;
+  padding: 0 4px 10px;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.segmented.tabs-line .seg.on {
+  background: transparent;
+  color: var(--forest);
+  font-weight: 600;
+}
+.segmented.tabs-line .seg.on::after {
+  content: "";
+  position: absolute;
+  left: 25%;
+  right: 25%;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--forest);
+}
 .metrics { display: flex; gap: 12px; }
 .metric { flex: 1; min-width: 0; }
 /* M-16：26px 大数字 + letter-spacing -0.6px，在 route 详情的四列布局下每列只有约 67px，

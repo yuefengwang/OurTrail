@@ -11,6 +11,7 @@ Page({
     leg: 'outbound',
     label: '',
     plate: '',
+    driverLine: '',
     capacityLine: '',
     phase: '',
     expectedCount: 0,
@@ -81,6 +82,15 @@ Page({
     // 不在页面里重述「谁该上车」这条域内规则（铁律 19），也不引入第三种判据。
     const pending = expected.filter(p => boarded.indexOf(p) === -1)
     const legInfo = vehicle.legs[leg]
+    // 司机身份取投影：服务司机带姓名；参与者司机只有 signupId 时回退到同车名单里的姓名，
+    // 名单里也没有（未投影）就如实说「参与者司机」，不另读私有资料、不虚构姓名。
+    const drivers = vehicle.drivers || []
+    const namedDriver = drivers.find(d => d.name)
+    const participantDriver = drivers.find(d => d.kind === 'participant')
+    const participantName = participantDriver && (participantDriver.name
+      || ((vt.passengers || []).find(p => p.signupId === participantDriver.signupId) || {}).name)
+    const driverLine = namedDriver ? '司机 · ' + namedDriver.name
+      : participantName ? '司机 · ' + participantName : '司机 · 参与者司机'
     const canOperate = leg === 'outbound'
       ? ['gathering', 'active'].indexOf(phase) !== -1
       : ['active', 'closing'].indexOf(phase) !== -1
@@ -111,6 +121,7 @@ Page({
       phase,
       label: vehicle.label,
       plate: vehicle.plate,
+      driverLine,
       capacityLine: '核载 ' + vehicle.legalCapacity + ' − 司机 ' + vehicle.drivers.length + ' − 不可用 ' + vehicle.blockedSeats
         + ' = ' + (vehicle.legalCapacity - vehicle.drivers.length - vehicle.blockedSeats) + ' 个乘客位',
       expectedCount: expected.length,

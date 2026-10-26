@@ -1,13 +1,14 @@
 {
   "navigationBarTitleText": "路线详情",
-  "navigationBarBackgroundColor": "#F6F3EC",
+  "navigationBarBackgroundColor": "#F5F5F0",
   "navigationBarTextStyle": "black",
   "usingComponents": {
     "icon": "/components/icon/icon",
     "overlay": "/components/overlay/overlay",
     "status-panel": "/components/status-panel/status-panel",
     "form-field": "/components/form-field/form-field",
-    "route-profile": "/components/route-profile/route-profile"
+    "route-profile": "/components/route-profile/route-profile",
+    "chapter": "/components/chapter/chapter"
   },
   "enablePullDownRefresh": true
 }

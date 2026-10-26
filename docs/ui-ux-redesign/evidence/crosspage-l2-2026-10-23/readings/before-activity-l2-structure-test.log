@@ -1,0 +1,98 @@
+== 1. 组件注册与接线 ==
+  ✓ activity.json 注册 activity-hero / fact-grid
+  ✓ 两个组件的 json 都是 component:true
+  ✓ WXML 实用了 activity-hero 与两次 fact-grid（信息卡 + 路线指标）
+== 2. 首屏顺序：hero → 信息卡 → 封面说明，且都在 .act-top ==
+  ✓ 顺序为 act-top < hero < 信息卡 < 封面说明 < 状态 callout
+  ✓ 信息卡仅在 infoFacts 非空时出现（缺项时不留空壳卡）
+  ✓ 封面说明由 photoNote 驱动，空串不占位
+== 3. 事实区退场：sec-facts 不再出现在模板与分区数据里 ==
+  ✓ 模板没有 id="sec-facts"
+  ✓ activity.js 没有 sec-facts 锚点
+  ✓ secNo 序列不再含 facts 项
+  ✓ 页面不再产 factTime/factPickup/factPeople/signupBrief/autoSummary
+== 4. 封面来源说明：全页唯一 ==
+  ✓ activity.wxml 里 photo-note 只出现一次
+  ✓ 费用区不再自带第二/第三份封面脚注
+== 5. 路线指标条：四格来自 routeStats，位于剖面/地图之前 ==
+  ✓ 指标条在说明/地图/剖面之前
+  ✓ 指标条复用 fact-grid 的 stats 变体
+  ✓ hero 组件不再承载 distance/ascent 指标
+  ✓ 页面 WXML 不再直接插值 distance/ascent
+== 6. 共享资产 .hero-cover 只做作用域覆盖 ==
+  ✓ activity-hero.wxss 里没有未作用域的 hero-cover 选择器
+  ✓ 标题上叠用三节选择器压过 app.wxss 的同名规则
+  ✓ 页面只为出血与卡片上叠写页面级微调
+  ✓ .act-top 用 flex column（负 margin 不会穿透父容器/被 stack gap 抵掉）
+== 7. fact-grid 行为：空值不占格、奇数末项通栏 ==
+  ✓ 声明 apply-shared（要读全局 .card/.stack 的排版上下文）
+  ✓ 空串/null/undefined 不占格，数值 0 保留
+  ✓ 值/单位/副标题原样透传，不做格式化
+  ✓ 奇数个时仅末项通栏
+  ✓ 偶数个时没有通栏项
+  ✓ 模板按 wide 加类，variant 只做样式分档
+  ✓ 两列宽度用 calc（仓库无 display:grid 约定）
+== 8. activity-hero 行为：两个错误事件分开 ==
+  ✓ 声明 apply-shared（hero-cover 全局类靠选择器匹配）
+  ✓ 实拍失败发 covererror、氛围图失败发 fallbackerror
+  ✓ 模板两条 image 分别绑到两个 handler
+  ✓ hero 组件只暴露展示所需属性（不含业务状态机字段）
+== 9. chapter：9 个正文区块共用一套标题骨架，编号只给 8 个阅读章节 ==
+  ✓ activity.json 注册 chapter / equipment-grid
+  ✓ chapter.json 是纯展示组件（component:true、无子组件）
+  ✓ chapter 声明 apply-shared（标题类全部来自 app.wxss）
+  ✓ 属性只有 no/kicker/title/sub/gap，gap 默认 12
+  ✓ 编号与 kicker 同行：仅两者都有时插一个空格
+  ✓ 标题块复用全局 .section-head/.kicker/.list-head__title/.section-sub
+  ✓ 正文间距由 gap 绑定（margin-top），章节自身不写死间距
+  ✓ chapter__body 有本地样式定义（G10：模板类必须在生效样式表里解得出）
+  ✓ 正文共 9 个 chapter，其中 8 个带 secNo 编号（同行人不编号）
+  ✓ 8 个编号章节与 secNo 的 8 个键一一对应
+  ✓ 同行人章节只有 kicker/title/sub，没有编号
+  ✓ 天气章节 gap=8（卡内行距比默认更紧），其余章节用默认 12
+  ✓ 页面不再给简介写死 gap:0（间距交给 .stack/chapter）
+== 10. 正文节奏：.stack-sections 统一章节间距，区块顺序固定 ==
+  ✓ .stack-sections 作为正文唯一外层，出现一次
+  ✓ 章节顺序：简介 → 同行人 → 行程 → 天气 → 路线 → 安全 → 装备 → 费用 → 报名后
+  ✓ 正文最后一个章节在页尾两行之前，页尾两行同属一个 .stack
+  ✓ 章节实心标题复用 .list-head__title（20/28/600），不再自造标题字号
+== 11. 行程合并：时间轴只属于行程章节，路线区只留指标/地图/剖面/上车点 ==
+  ✓ 时间轴与日程说明都在行程章节内（itinerary < timeline/basis < weather < route）
+  ✓ 路线区不再残留时间轴或日程说明
+  ✓ 行程章节内顺序：时间轴 → 日程说明 → 组织者说明（都在天气章节之前）
+  ✓ 路线区顺序：指标条 → 指标说明 → 地图 → 剖面 → 上车点
+  ✓ 路线区仍在同一章节内（指标/地图/剖面/上车点都在 meeting-block 到 safety 之间）
+  ✓ 页面不再产 times 数组（时间锚点只由信息卡承载）
+  ✓ 点击节点定位后会滚到路线章节（时间轴与地图不在同一屏）
+== 12. 装备四列格与费用语义：文字始终可见，费用文案逐字不变 ==
+  ✓ 页面用 equipment-grid 承接 equipment/equipmentSuggested，且不再印 badge 列表
+  ✓ equipment-grid 声明 apply-shared，属性只有 required/suggested
+  ✓ 规范化：去空白、丢空项/非字符串；不去重、不排序、不改写原文
+  ✓ 每项带图标 key；「登山杖」认 poles、「饮用水」认 water
+  ✓ 四列排布：item 宽 calc(25% - 6px)，list gap 10px 8px（4×宽 + 3×8 = 100%）
+  ✓ 文字是常显节点：没有 display:none / 只留图标的写法，且允许长词断行
+  ✓ 图标底座走 token（--radius-tag/--stone），不另造色值
+  ✓ 费用五个字段逐字沿用（summary/includes/excludes/note/cancellation）
+  ✓ 「不收款」说明全页只印一次
+  ✓ 退出约定在费用说明之后（先讲含不含，再讲能不能退）
+== 13. 底部操作条（S3）：唯一出口、互斥链、留白同源 ==
+  ✓ 根节点按 showSticky 条件挂 .has-sticky
+  ✓ 全页只有一个 .sticky-action，且由 showSticky 控制
+  ✓ 顶部操作区已整块退场（overlay 之前的正文里没有 .form-actions）
+  ✓ 底栏在正文末尾（通知/协作任务之后）、overlay 之前
+  ✓ 分享是 .button.secondary，原生 open-type=share，只在已发布的常态帧出现
+  ✓ 主操作链 isOwner → canSubmit → canSelfSheet → meeting 顺序固定且互斥
+  ✓ 只有第一支是 wx:if，后三支都是 wx:elif
+  ✓ 底栏沿用原文案与 handler（返回编辑与发布/进入工作台/填写报名资料/selfButton/nextActionLabel）
+  ✓ 底栏没有写操作 → 不做 busy 禁用（避免留下「点了没反应」的死按钮）
+  ✓ showSticky 初值 false（首帧渲染不发散）
+  ✓ showSticky 与 justPublished 同源：!(this.justPublished && isOwnerReal)
+  ✓ 庆祝帧的数据口径同样要求 owner
+  ✓ 庆祝帧保留「进入工作台」文字次操作，分享仍是唯一 primary
+  ✓ .act-sticky 覆盖全局 wrap，主按钮允许收缩（窄屏不让底栏长成两行）
+  ✓ 分享收回内容宽（flex 与原生 width:184 都要收）
+  ✓ 底栏自造色值数为 0（只用全局类与 token）
+  ✓ overlay（z 200）高于底栏（z 50）：弹层不被底栏穿透
+  ✓ 未启用自定义导航（activity.json / app.json 都没有 navigationStyle: custom）
+
+passed=83 failed=0

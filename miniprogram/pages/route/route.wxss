@@ -1,7 +1,27 @@
-/* 路线详情：样式全部复用 app.wxss 存量类（page/stack/card/metrics/map-card/timeline/
-   list-row/overlay/callout）；这里只放行内样式收敛后的节点名类（T008）。 */
-
-/* 节点时间轴名称：原为行内 style（display:block;font-weight:700;margin-top:2px），
-   T008 收进类——b4-e05 D2 是单向门（route.wxml 的 style= 只许变少，基线 15）；
-   字重随 B-16 两档回落 600（与活动详情时间轴同形同值，700 只许 app.wxss 的 .page-title）。 */
-.route-node-name { display: block; font-weight: 600; margin-top: 2px; }
+.route-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.route-meta { gap: 8px; }
+.route-facts .metric .metric-value {
+  font-size: var(--text-title);
+  line-height: 24px;
+  letter-spacing: 0;
+}
+.route-facts .metric .route-fact-missing {
+  color: var(--muted);
+  font-weight: 400;
+}
+.route-node-name {
+  display: block;
+  font-weight: 600;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.button.route-delete {
+  align-self: flex-start;
+  color: var(--danger);
+}
+.route-actions .button { min-width: 0; padding: 12px; }
+.route-actions .button.primary { flex: 2; }

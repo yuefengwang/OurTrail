@@ -2,14 +2,50 @@
 /* 面板分区显隐：hidden 属性在自定义组件宿主上不生效，必须用类名（page 作用域命中组件宿主） */
 .hide { display: none; }
 
-/* 指标带（2026-10-16 编辑式对齐）：把三个"即入口"的数字收进一条石色带里，
-   分组但不做成三张卡片——工作台不是仪表盘（design-system.md §3 C 域）。
-   分隔用发丝线，不用阴影。 */
+/* 身份头：标题回答「哪一场」，阶段徽标回答「走到哪」；与分段器紧邻，中间不夹指标 */
+.workspace-identity { display: flex; flex-direction: column; gap: 6px; }
+
+/* ① 现在这一步：主待办一块浅叶底，其余待办退为普通行 */
+.workspace-queue { display: flex; flex-direction: column; gap: 10px; }
+.queue-card { padding: 0 16px; }
+.queue-card .list-row.primary {
+  background: var(--forest-soft);
+  border-bottom: 0;
+  border-radius: var(--radius-button);
+  margin: 8px 0;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.queue-card .list-row.primary text { color: var(--forest); font-weight: 600; }
+.queue-card .list-row.primary .list-sub { color: var(--forest); font-weight: 400; }
+.queue-card .idle-row { border-bottom: 0; }
+
+/* ② 三个事实格：石色带分组，分隔用发丝线，不用阴影（design-system.md §3 C 域） */
 .workspace-band {
   background: var(--stone);
   border-radius: var(--radius-card);
   padding: 14px 16px;
+  font-size: var(--text-input);
 }
 .workspace-band .metrics { border-top: 1px solid var(--stone-line); padding-top: 12px; }
 .workspace-band .metric + .metric { border-left: 1px solid var(--stone-line); padding-left: 12px; }
 .workspace-band .metric .metric-value { font-size: 24px; }
+.trip-summary { display: block; margin-top: 10px; }
+
+/* ④ 独立工具：处理完待办之后的去处，双列而非横排小字 */
+.workspace-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.workspace-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: var(--action-height);
+  padding: 12px 14px;
+  text-align: left;
+}
+.workspace-tool__title { font-size: var(--text-body); font-weight: 600; line-height: 20px; }
+.workspace-tool__sub { font-size: var(--text-caption); font-weight: 400; line-height: 18px; color: var(--forest); }
+
+/* ⑤ 阶段区块 */
+.workspace-phase { display: flex; flex-direction: column; gap: 10px; }

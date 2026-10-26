@@ -4,11 +4,9 @@
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取常用资料。" />
   </block>
-  <view wx:else class="stack">
-    <!-- A 身份头卡：头像 + 昵称 + 统计（编辑同位，样式沿用原「我的资料」身份行） -->
-    <view class="card">
-      <text class="eyebrow">OURTRAIL · 我的</text>
-      <text class="page-title" style="display:block;margin-top:4px;">同行资料与身份。</text>
+  <view wx:else class="stack-sections">
+    <!-- A 身份：头像 + 昵称可直接改，统计带紧随其后只读 -->
+    <view class="profile-identity">
       <view class="wx-row">
         <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" hover-class="button-hover">
           <image wx:if="{{person.avatar}}" class="avatar-img" src="{{person.avatar}}" mode="aspectFill" />
@@ -29,21 +27,24 @@
             bindblur="onBlurSave"
           />
           <text wx:if="{{!activated}}" class="badge warning" style="align-self:flex-start;">同行资料待完善</text>
+          <text wx:else class="small muted">同行资料已完善</text>
         </view>
       </view>
-      <view wx:if="{{stats}}" class="metrics">
-        <view class="metric">
-          <text class="metric-value">{{stats.ongoing}}</text>
-          <text class="metric-label">进行中</text>
-        </view>
-        <view class="metric">
-          <text class="metric-value">{{stats.finished}}</text>
-          <text class="metric-label">已完成</text>
-        </view>
-        <view class="metric">
-          <text class="metric-value">{{stats.organized}}</text>
-          <text class="metric-label">发起</text>
-        </view>
+      <text class="small muted">{{saving ? '正在保存…' : draftPending ? '有修改待保存，请查看下方提示' : activated ? '点击头像或昵称修改，修改后自动保存' : '点击头像或昵称修改，完善资料后自动保存'}}</text>
+    </view>
+
+    <view wx:if="{{stats}}" class="metrics profile-stats">
+      <view class="metric">
+        <text class="metric-value">{{stats.ongoing}}</text>
+        <text class="metric-label">进行中</text>
+      </view>
+      <view class="metric">
+        <text class="metric-value">{{stats.finished}}</text>
+        <text class="metric-label">已完成</text>
+      </view>
+      <view class="metric">
+        <text class="metric-value">{{stats.organized}}</text>
+        <text class="metric-label">发起</text>
       </view>
     </view>
 
@@ -70,13 +71,8 @@
       </view>
     </view>
 
-    <!-- C 最近活动 + 路线库入口（二阶段合并成一组）：
-         两者都是「和我有关的出行资产」，拆成两张卡只会让页面变成功能墙。 -->
-    <view class="stack-gap3">
-      <view class="section-head">
-        <text class="kicker">我的出行</text>
-        <text class="section-title">最近活动</text>
-      </view>
+    <!-- C 最近活动：只放同行记录，不再兼职做工具入口 -->
+    <chapter kicker="我的出行" title="最近活动" sub="打开最近一场，回到它的工作台。">
       <view class="card" style="padding:4px 16px;">
         <view
           wx:for="{{recent}}"
@@ -100,24 +96,23 @@
             detail="从首页的「发现活动」开始，或自己发起一场。"
           />
         </view>
-        <!-- 路线库入口（V2.0）：走过的路线攒成资产，发起活动时复用 -->
-        <view class="list-row" hover-class="button-hover" bindtap="onOpenRoutes">
-          <view class="list-main">
-            <text>路线库</text>
-            <text class="list-sub">走过的路线攒在这里，节点、风险、轨迹都在，下次发起活动直接复用</text>
-          </view>
-          <icon name="arrow" size="20" color="#5F6E66" />
-        </view>
       </view>
+    </chapter>
+
+    <!-- 路线库是独立工具：它服务「下一次发起」，不是最近活动的一部分 -->
+    <view class="tool-entry" hover-class="button-hover" bindtap="onOpenRoutes">
+      <view class="tool-entry__main">
+        <text class="eyebrow">工具</text>
+        <text class="tool-entry__title">路线库</text>
+        <text class="small muted">走过的路线攒在这里，节点、风险、轨迹都在，下次发起活动直接复用</text>
+      </view>
+      <icon name="arrow" size="20" color="#163E35" />
     </view>
 
     <!-- D 同行与安全：摘要行只读，编辑进 sheet（09 §3） -->
-    <view class="stack-gap3">
+    <chapter kicker="安全档案" title="同行与安全" sub="把应急联系留在需要时用得上。">
       <view class="card-header">
-        <view class="section-head">
-          <text class="kicker">安全档案</text>
-          <text class="section-title">同行与安全</text>
-        </view>
+        <text class="small muted">以下资料只用于活动联络与安全应急。</text>
         <text wx:if="{{draftPending}}" class="badge warning">待保存</text>
       </view>
       <view class="card" style="padding:4px 16px;">
@@ -146,15 +141,12 @@
           <text class="muted">›</text>
         </view>
       </view>
-    </view>
+    </chapter>
 
     <!-- E 常用同行人 -->
-    <view class="stack-gap3">
+    <chapter kicker="同行人" title="常用同行人" sub="常一起走的，下次报名直接勾选。">
       <view class="card-header">
-        <view class="section-head">
-          <text class="kicker">同行人</text>
-          <text class="section-title">常用同行人</text>
-        </view>
+        <text class="small muted">{{companions.length ? '共 ' + companions.length + ' 位' : '还没有保存常用同行人'}}</text>
         <view class="button text" hover-class="button-hover" bindtap="onAddCompanion">
           <icon name="plus" size="16" color="#163E35" />
           <text>添加</text>
@@ -177,15 +169,10 @@
         <text wx:if="{{!companions.length}}" class="small muted" style="display:block;padding:8px 0;">报名时直接勾选，不用再填一遍。</text>
       </view>
       <text class="small muted">保存条目不等于代办授权；每次报名仍需逐人同意。</text>
-    </view>
+    </chapter>
 
-    <!-- F+G+H 协作与权限（二阶段合并）：协作码 / 位置授权 / 隐私指引本来就是同一类
-         「谁能看到我、我授权了什么」，拆三张卡让低频项占满首屏。 -->
-    <view class="stack-gap3">
-      <view class="section-head">
-        <text class="kicker">协作与权限</text>
-        <text class="section-title">谁能看到我</text>
-      </view>
+    <!-- F+G+H 协作与权限：协作码 / 位置授权 / 隐私指引同属「谁能看到我、我授权了什么」 -->
+    <chapter kicker="权限" title="协作与权限" sub="谁能看到我、我授权了什么，都在这里撤回。">
       <view class="card stack-gap3">
         <view>
           <text class="card-label">我的协作码</text>
@@ -225,7 +212,7 @@
           <icon name="arrow" size="20" color="#5F6E66" />
         </view>
       </view>
-    </view>
+    </chapter>
   </view>
 
   <!-- 激活 sheet（04 §4）：头像 + 昵称 + 手机号，完成 = 首次 profile.save -->

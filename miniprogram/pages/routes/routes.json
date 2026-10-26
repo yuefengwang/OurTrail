@@ -1,6 +1,6 @@
 {
   "navigationBarTitleText": "路线库",
-  "navigationBarBackgroundColor": "#F6F3EC",
+  "navigationBarBackgroundColor": "#F5F5F0",
   "navigationBarTextStyle": "black",
   "usingComponents": {
     "icon": "/components/icon/icon",

@@ -224,6 +224,12 @@ async function scenarioRefresh() {
   check('反向对照：信号没再变化就不重读（判据不是「每次返回都必读」的一刀切，承重的是 key 真的换了）',
     notified2 === false && env.reads.length === again,
     'notified=' + notified2 + ' reads=' + again + '→' + env.reads.length)
+  let stopped = 0
+  global.wx.stopPullDownRefresh = () => { stopped++ }
+  page.onPullDownRefresh()
+  const pullNotified = hostSyncToPanel(page, panel)
+  await waitFor(() => env.reads.length === again + 1 && !panel.data.loading)
+  check('压缩壳后下拉仍只刷新一次原面板并停止刷新动画', pullNotified && env.reads.length === again + 1 && stopped === 1)
 }
 
 // 2. onLoad 参数装配：activityId 来源 options.id；缺失参数守卫为空串（不外呼、不崩）
@@ -265,8 +271,8 @@ function scenario3() {
     && (!cfg.properties.syncKey || cfg.properties.syncKey.type === String)
     && ['activityId', 'perspective'].every(k => Object.keys(cfg.properties || {}).indexOf(k) !== -1),
     JSON.stringify(Object.keys(cfg.properties || {})))
-  check('头部说明承诺「授权变更后立即生效」的作用域文案在场',
-    STAFF_WXML.indexOf('现场协作') !== -1 && STAFF_WXML.indexOf('照顾好这一小队。') !== -1
+  check('头部呈现角色与实际活动身份，保留授权范围说明',
+    STAFF_WXML.indexOf('现场协作') !== -1 && /<text[^>]*>活动编号 · \{\{activityId\}\}<\/text>/.test(STAFF_WXML)
     && STAFF_WXML.indexOf('这里只展示当前仍授权给你的人员与任务；授权变更后立即生效。') !== -1)
 }
 

@@ -1,25 +1,24 @@
-<view class="page {{cards.length ? 'with-tabbar' : ''}}">
+<view class="page">
   <status-panel wx:if="{{denied}}" kind="denied" title="暂时无法读取活动" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在核对与你有关的活动。" />
   </block>
   <block wx:else>
     <view class="stack">
-      <!-- N2（2026-10-22）页头压缩：品牌眉题 + 一行主标题在左、两个入口在右，
-           拼板屏 1.1 的首屏把空间给列表；旧的第二行导语删除，其「安排放在一起」的语义
-           由卡片正文（日期·倒计时·指标·人数）承担，不再单独占一行。 -->
-      <view class="card-header">
+      <!-- N3（2026-10-23）入口区不再把两个动作挤进标题行：标题独立成段，
+           下方一行「发现（次级）+ 发起（唯一主按钮）」。这是本页唯一推进动作的视觉预算，
+           与详情页 sticky 主按钮同一套判据（ourtrail-ui §3 #7）。 -->
+      <view class="home-entry">
         <view class="list-head__text">
           <text class="eyebrow">OURTRAIL · 一起走过</text>
-          <view class="list-head__title">{{profileName ? profileName + '，' : ''}}下一次同行</view>
+          <view class="list-head__title">我的活动</view>
+          <text class="small muted">{{profileName ? profileName + '，' : ''}}下一次同行</text>
         </view>
-        <view class="cluster">
-          <view class="button text" hover-class="button-hover" bindtap="onGoDiscover">
-            <icon name="search" size="16" color="#163E35" />
+        <view class="home-entry__actions">
+          <view class="button secondary" hover-class="button-hover" bindtap="onGoDiscover">
             <text>发现活动</text>
           </view>
-          <view class="button text" hover-class="button-hover" bindtap="onNew">
-            <icon name="plus" size="16" color="#163E35" />
+          <view class="button primary" hover-class="button-hover" bindtap="onNew">
             <text>发起活动</text>
           </view>
         </view>
@@ -37,7 +36,7 @@
           <icon name="search" size="16" color="#5F6E66" />
           <input class="searchbar__input" type="text" confirm-type="search" placeholder="搜索活动或路线" aria-label="查找活动" value="{{search}}" bindinput="onSearch" />
         </view>
-        <view class="segmented" aria-label="活动范围">
+        <view class="segmented tabs-line" aria-label="活动范围">
           <view class="seg {{filter === 'mine' ? 'on' : ''}}" data-value="mine" bindtap="onFilter">我的活动</view>
           <view class="seg {{filter === 'recent' ? 'on' : ''}}" data-value="recent" bindtap="onFilter">最近查看</view>
           <view class="seg {{filter === 'finished' ? 'on' : ''}}" data-value="finished" bindtap="onFilter">已结束</view>
@@ -53,7 +52,7 @@
         actionLabel="{{emptyAction}}"
         bind:action="onEmptyAction"
       />
-      <view wx:else class="stack" aria-label="活动列表">
+      <view wx:else class="stack-gap3" aria-label="活动列表">
         <activity-card
           wx:for="{{cards}}"
           wx:key="id"
@@ -66,6 +65,7 @@
           status="{{item.status}}"
           when="{{item.when}}"
           featured="{{item.featured}}"
+          compact="{{!item.featured}}"
           info="{{item.info}}"
           collab="{{item.collab}}"
           activity-id="{{item.id}}"

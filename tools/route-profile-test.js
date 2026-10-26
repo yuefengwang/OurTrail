@@ -95,6 +95,55 @@ section('5. 连续优先 + 全平线 + 输入不被改写')
   check('纯函数：输入不被改写', JSON.stringify(input) === before)
 }
 
+section('6. elevationRange：只给真实高程范围，与剖面同优先级、同数字')
+{
+  const cont = RP.elevationRange({ track: track([1000, 1250.4, 1100.6]), points: nodes([500, 600]) })
+  check('有连续轨迹 → source=track，不用节点覆盖',
+    cont.source === 'track' && cont.minEle === 1000 && cont.maxEle === 1250, JSON.stringify(cont))
+  check('连续轨迹三点全计入（min 1000 / max 1250）', cont.pointCount === 3,
+    JSON.stringify(cont))
+
+  const rounded = RP.elevationRange({ track: track([1000, 1250.6]), points: [] })
+  check('最大值的四舍五入按真实值判（1250.6→1251）', rounded.maxEle === 1251, JSON.stringify(rounded))
+
+  const nodeOnly = RP.elevationRange({ track: [], points: nodes([800, 901.4, 850]) })
+  check('无连续轨迹 → 降级节点高程', nodeOnly.source === 'nodes' && nodeOnly.minEle === 800 && nodeOnly.maxEle === 901,
+    JSON.stringify(nodeOnly))
+
+  const gap = RP.elevationRange({ track: track([1000, null, 1200]), points: nodes([800, 900]) })
+  check('轨迹高程不连续 → 与剖面一样降级为节点，不跨缺口取极值',
+    gap.source === 'nodes' && gap.maxEle === 900, JSON.stringify(gap))
+
+  const none = RP.elevationRange({ track: track([null, null]), points: nodes([null, null]) })
+  check('没有任何高程 → source=none，不返回 0 冒充海拔',
+    none.source === 'none' && none.minEle === null && none.maxEle === null && none.pointCount === 0,
+    JSON.stringify(none))
+
+  const onePoint = RP.elevationRange({ track: [], points: nodes([900]) })
+  check('只有一个节点高程 → none（不足成线）', onePoint.source === 'none', JSON.stringify(onePoint))
+
+  // 同源承诺：卡片数字与剖面图必须逐字相同，任何一边改口径这里就会红。
+  const cases = [
+    { track: track([1000, 1200, 1100]), points: [] },
+    { track: [], points: nodes([800, 900, 850]) },
+    { track: track([1000, null, 1100]), points: nodes([700, 950]) },
+    { track: track([1000.4, 1000.6]), points: [] },
+  ]
+  const mismatched = cases.map(c => {
+    const p = RP.buildProfile(c)
+    const e = RP.elevationRange(c)
+    return { p: p.mode, s: e.source, pm: [p.minEle, p.maxEle], em: [e.minEle, e.maxEle] }
+  }).filter(x => x.pm[0] !== x.em[0] || x.pm[1] !== x.em[1])
+  check('elevationRange 与 buildProfile 的四组输入逐项同值', mismatched.length === 0,
+    mismatched)
+
+  const input = { track: track([1000, 1100]), points: nodes([900, 950]) }
+  const before = JSON.stringify(input)
+  RP.elevationRange(input)
+  check('纯函数：输入不被改写', JSON.stringify(input) === before)
+  check('不产出 SVG（只是数字，不是第二份图）', RP.elevationRange(input).svg === undefined)
+}
+
 console.log('')
 console.log('passed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)

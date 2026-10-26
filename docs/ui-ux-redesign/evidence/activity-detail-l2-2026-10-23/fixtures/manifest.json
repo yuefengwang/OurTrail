@@ -1,0 +1,67 @@
+{
+  "generatedAt": "2026-10-23T09:48:27.594Z",
+  "label": "worktree",
+  "fixtureNow": "2026-09-29T09:00:00+08:00",
+  "gitHead": "e05e5591e66387de72a2b08c823403c0df14f4df",
+  "source": "miniprogram/pages/activity/activity.js#renderView",
+  "sourceSha256": "f83a9563ec570cc3ad17a8606e356f1dba54c707ee39d4184782b170a3a212d3",
+  "coverFileIdStandIn": "/assets/photos/cover-ridge.jpg",
+  "note": "页面 data 全部由真实 renderView 产出；视图夹具只填服务端投影字段。coverFileId 用本地实拍图代替 cloud:// fileID（渲染路径等价，非线上数据形状）。",
+  "scenarios": {
+    "rich": {
+      "title": "青城后山 · 周末轻徒步",
+      "coverFailed": false,
+      "coverIsReal": true,
+      "infoFacts": 4,
+      "routeStats": [
+        "distance",
+        "ascent",
+        "maxEle",
+        "duration"
+      ],
+      "rows": 3,
+      "photoNote": "封面与正文图片由组织者提供。",
+      "dataSha256": "b1b10d0095739ddc536ed5cea07a9824d729d53a4eab8d3a2d5d5875279ce02e"
+    },
+    "sparse": {
+      "title": "城区周边 · 傍晚散步",
+      "coverFailed": false,
+      "coverIsReal": false,
+      "infoFacts": 4,
+      "routeStats": [],
+      "rows": 0,
+      "photoNote": "封面为场景氛围图，非本次活动实拍；路线与天气信息以组织者填写与实测数据为准。",
+      "dataSha256": "634cda28ec4eadf3073e98be31fcc4942bc37fd2ccba2a2d064320928d12c585"
+    },
+    "long-title": {
+      "title": "青城后山泰安古镇经又一村至白云寺环线轻装徒步暨秋季山脊云海观测与同行者集合出发安排说明会（含备用路线与雨天改线方案，请务必阅读集合时间、装备清单与退出规则后再报名）这是一个用于验证极值换行与不截断的超长标题样例，长度已超过一百个汉字，不应出现省略号或横向溢出。",
+      "coverFailed": false,
+      "coverIsReal": true,
+      "infoFacts": 4,
+      "routeStats": [
+        "distance",
+        "ascent",
+        "maxEle",
+        "duration"
+      ],
+      "rows": 3,
+      "photoNote": "封面与正文图片由组织者提供。",
+      "dataSha256": "61903dd0e3889206e25df422232c4d3cf020fb61451fd56a438c2009a921dca5"
+    },
+    "cover-failed": {
+      "title": "青城后山 · 雨天备案",
+      "coverFailed": true,
+      "coverIsReal": true,
+      "infoFacts": 4,
+      "routeStats": [
+        "distance",
+        "ascent",
+        "maxEle",
+        "duration"
+      ],
+      "rows": 3,
+      "photoNote": "封面与正文图片由组织者提供。",
+      "dataSha256": "a1e0493e7b1f2993ce70101f6a0f990a7d8c4b4efa4f9289895d7687b14554db"
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "side": "s3",
+  "scenario": "justPublished-bottom",
+  "capturedAt": "2026-10-23T10:54:44.294Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "fixture": {
+    "file": "fixtures-s3\\justPublished-bottom.json",
+    "title": "青城后山 · 发布成功"
+  },
+  "gates": {
+    "loadingFalse": true,
+    "titleIntact": true,
+    "stateMatch": true,
+    "stylesReady": true,
+    "styleWaitMs": 28
+  },
+  "markers": {},
+  "geometry": {
+    "mode": "document",
+    "pageBox": {
+      "left": 0,
+      "top": 0,
+      "width": 390,
+      "height": 3943,
+      "bottom": 3943
+    },
+    "stickyBox": null,
+    "lastContentBottom": 3911.4,
+    "viewportHeight": 753
+  },
+  "screenshots": [
+    {
+      "file": "justPublished-bottom-top.png",
+      "bytes": 238824,
+      "width": 500,
+      "height": 1082
+    },
+    {
+      "file": "justPublished-bottom-bottom.png",
+      "bytes": 89362,
+      "width": 500,
+      "height": 1082
+    }
+  ],
+  "status": "VALID",
+  "problems": [],
+  "dom": {
+    "rootClass": "page",
+    "hasStickyClass": false,
+    "stickyCount": 0,
+    "primaryCount": 0,
+    "primaryText": "",
+    "sharePresent": false,
+    "shareText": "",
+    "shareWidth": null,
+    "primaryWidth": null,
+    "successCardShare": true,
+    "successCardShareText": "分享给同行的人",
+    "successCardWorkspace": true,
+    "successCardWorkspaceText": "进入工作台"
+  },
+  "injected": {
+    "title": "青城后山 · 发布成功",
+    "showSticky": false,
+    "isOwner": true,
+    "isDraft": false,
+    "justPublished": true
+  }
+}

@@ -264,9 +264,11 @@ section('§4 privacy：容器与两级标题由全局类承载，段距由本页
   // 层级由 app.wxss 的全局类承载、本页不重印字号字重、间距不得由内联决定。
   const secs = pv.nodes.filter(n => n.classes.indexOf('section-title') !== -1)
   const secRead = secs.map(n => [fin(pv, n, 'font-size'), fin(pv, n, 'font-weight')])
-  const secOk = secs.length === 4 && secRead.every(r => r[0].value === '16px' && r[0].source === 'app.wxss' &&
+  // 章节条数不是不变量：privacy 于 2026-10-22 新增「第三方数据服务与许可」一节（5 节），
+  // 本判据要守的是「每个章节标题的字号/字重终值都来自 app.wxss」，不是「恰好 4 节」。
+  const secOk = secs.length >= 4 && secRead.every(r => r[0].value === '16px' && r[0].source === 'app.wxss' &&
     r[1].value === '600' && r[1].source === 'app.wxss')
-  check('PV5 四个章节标题：字号/字重终值来自 app.wxss（16px/600），段距不钉出处（容器节奏合法）',
+  check('PV5 章节标题（≥4 节）：字号/字重终值来自 app.wxss（16px/600），段距不钉出处（容器节奏合法）',
     secOk, secs.length + ' 个节点；' + secRead.map(r => r.map(describe).join(' ')).join(' ｜ '))
   if (!secOk) viol('PRIVACY', pv.file, '章节标题终值/出处不对：' + secRead.map(r => r.map(describe).join(' ')).join(' ｜ '))
   // 更新日期那行：认类名不认具体文件名（section-sub 是上游那版用的，doc-meta 是本地那版用的，都合法）。

@@ -107,4 +107,16 @@ function spanDays(sched) {
   return Math.max.apply(null, known.map(s => s.dayIndex))
 }
 
-module.exports = { schedule, nodeLabel, basisText, spanDays, durationText, minutesOfDay, clockOf }
+/**
+ * 活动起止之间的时长（分钟）。两个时刻都必须是可解析的 ISO；
+ * 结束不晚于开始（或任一缺失）返回 null——宁可不显示，也不印一个负时长。
+ */
+function durationBetween(startAt, endAt) {
+  const a = Date.parse(startAt)
+  const b = Date.parse(endAt)
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return null
+  const min = Math.round((b - a) / 60000)
+  return min > 0 ? min : null
+}
+
+module.exports = { schedule, nodeLabel, basisText, spanDays, durationText, durationBetween, minutesOfDay, clockOf }

@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-23",
+  "devtoolsVersion": "2.02.2609231",
+  "libVersion": "3.8.12",
+  "appid": "wx1227a277a3f2f7ea",
+  "windowWidth": 390,
+  "windowHeight": 753,
+  "pixelRatio": 3,
+  "device": {
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1",
+    "platform": "devtools"
+  },
+  "screenshotRaster": {
+    "width": 306,
+    "height": 660,
+    "note": "mp.screenshot() 返回的整屏栅格；设备整屏 390×844 等比缩放到 306×660。"
+  },
+  "branch": "agent/ourtrail-style-a-20261023",
+  "head": "e05e559",
+  "master": "46fd7c5",
+  "baseline": "A1",
+  "ports": {
+    "service": 33278,
+    "auto": 9421
+  },
+  "viewportCompliance": "BASELINE §3.1 要求 306 CSS px 视口；本机共享模拟器为 iPhone 12/13 Pro（390×844 屏，windowWidth=390/windowHeight=753 CSS px），无法在不改共享设备的情况下切到 306。两列/四列判据在 390 CSS px 下实测，并在 306×660 栅格内目视复核。306 CSS px 视口本身 NOT_RUN（按 §8.7 显式声明，不冒充通过）。",
+  "measuredAt": "2026-10-23T09:50Z(首轮) / 2026-10-23T10:00Z 左右复测"
+}

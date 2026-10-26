@@ -1,0 +1,105 @@
+// 活动入口 L2/L3：结构只作 E1；真实组件方法不等于像素/真机验证。
+// 不模拟 WXML 渲染；解析标签仅核对接线、祖先关系、信息槽位。
+'use strict'
+const fs = require('fs')
+const path = require('path')
+const ROOT = path.resolve(__dirname, '..')
+const read = rel => fs.readFileSync(path.join(ROOT, 'miniprogram', rel), 'utf8')
+let passed = 0, failed = 0
+function check(name, ok) {
+  if (ok) { passed++; console.log('  PASS ' + name) }
+  else { failed++; console.error('  FAIL ' + name) }
+}
+function tree(source) {
+  const root = { tag: 'root', attrs: {}, children: [] }
+  const stack = [root]
+  const tags = source.replace(/<!--[\s\S]*?-->/g, '').match(/<\/?[\w-]+\b(?:[^>"']|"[^"]*"|'[^']*')*>/g) || []
+  for (const raw of tags) {
+    if (/^<\//.test(raw)) { stack.pop(); continue }
+    const attrs = {}
+    raw.replace(/([\w:-]+)="([^"]*)"/g, (_, k, v) => { attrs[k] = v; return _ })
+    const n = { tag: raw.match(/^<([\w-]+)/)[1], attrs, children: [] }
+    stack[stack.length - 1].children.push(n)
+    if (!/\/>$/.test(raw)) stack.push(n)
+  }
+  return root
+}
+function nodes(n) { return [n].concat(...n.children.map(nodes)) }
+const hasClass = (n, c) => (n.attrs.class || '').split(/\s+/).includes(c)
+const cls = (n, c) => nodes(n).find(x => hasClass(x, c))
+const card = tree(read('components/activity-card/activity-card.wxml'))
+const home = tree(read('pages/home/home.wxml'))
+const discover = tree(read('pages/discover/discover.wxml'))
+const cardCss = read('components/activity-card/activity-card.wxss')
+const homeCss = read('pages/home/home.wxss')
+const discoverCss = read('pages/discover/discover.wxss')
+const cardSource = read('components/activity-card/activity-card.wxml').replace(/<!--[\s\S]*?-->/g, '')
+const discoverSource = read('pages/discover/discover.wxml').replace(/<!--[\s\S]*?-->/g, '')
+const homeSource = read('pages/home/home.wxml').replace(/<!--[\s\S]*?-->/g, '')
+
+console.log('== E1 结构、接线与 token（不是 UI PASS） ==')
+check('保留 article 根与原 open 入口', card.children.length === 1 && card.children[0].tag === 'article' && card.children[0].attrs.bindtap === 'onTap')
+const thumb = cls(card, 'activity-card__thumb')
+const heading = cls(card, 'activity-card__heading')
+const head = cls(card, 'activity-card__head')
+check('compact 缩略图与标题列在同一个横向头部', !!head && !!thumb && !!heading && head.children.includes(thumb) && head.children.includes(heading))
+check('compact 才挂缩略图；featured 优先保持场景封面', !!thumb && thumb.attrs['wx:if'] === '{{compact && !featured}}')
+check('右侧列包含完整标题、日期和状态槽', !!heading && !!cls(heading, 'activity-card__title') && nodes(heading).some(n => n.attrs.id === 'date') && nodes(heading).some(n => n.attrs.id === 'status'))
+check('状态不在任何图片容器内，图片失败不吞状态', nodes(card).some(n => n.attrs.id === 'status') && nodes(card).filter(n => hasClass(n, 'activity-card__media') || hasClass(n, 'activity-card__thumb')).every(n => !nodes(n).some(x => x.attrs.id === 'status')))
+check('routeName/meta 分别插值，不再互相 fallback 吞字段', /\{\{routeName\}\}/.test(cardSource) && /\{\{meta\}\}/.test(cardSource) && !/routeName\s*\|\|\s*meta/.test(cardSource))
+check('日期倒计时、指标、info 均保留', /\bwhen\b/.test(cardSource) && /wx:for="\{\{metrics\}\}"/.test(cardSource) && /\{\{info\}\}/.test(cardSource))
+const collabs = nodes(card).filter(n => n.attrs.catchtap === 'onCollab')
+check('协作独立 catchtap，携带角色键且不冒泡为 open', collabs.length > 0 && collabs.every(n => n.attrs['data-key'] === '{{item.key}}' && !n.attrs.bindtap && n.attrs['hover-class'] === 'button-hover'))
+check('80px 缩略图与可换行 flex 结构有明确源码声明', /\.activity-card__thumb\s*\{[^}]*width:\s*80px/.test(cardCss) && /\.activity-card__head\s*\{[^}]*display:\s*flex/.test(cardCss) && /\.activity-card__heading\s*\{[^}]*min-width:\s*0/.test(cardCss))
+check('标题不截断；新增布局不引入 line-clamp/ellipsis', !/line-clamp|text-overflow:\s*ellipsis/.test(cardCss + homeCss + discoverCss))
+check('协作触控目标读 token，非硬编码 44', /\.collab-leaf\s*\{[^}]*min-height:\s*var\(--touch-target\)/.test(cardCss))
+const homeCards = nodes(home).filter(n => n.tag === 'activity-card')
+check('首页一个 cards 列表，只有非 featured 紧凑化', homeCards.length === 1 && homeCards[0].attrs['wx:for'] === '{{cards}}' && homeCards[0].attrs.compact === '{{!item.featured}}')
+check('首页原 open/collab 事件仍在', homeCards[0].attrs['bind:open'] === 'onOpenCard' && homeCards[0].attrs['bind:collab'] === 'onCardCollab')
+const header = cls(home, 'home-entry')
+check('首页个人活动标题与独立操作行，不把全部动作挤进标题行', !!header && !!cls(header, 'home-entry__actions') && homeSource.includes('我的活动'))
+const actions = header ? nodes(header).filter(n => hasClass(n, 'button')) : []
+check('发起为唯一主按钮，发现次级；原 handler 与文字契约保持', actions.filter(n => hasClass(n, 'primary')).length === 1 && actions.some(n => n.attrs.bindtap === 'onNew' && hasClass(n, 'primary')) && actions.some(n => n.attrs.bindtap === 'onGoDiscover' && !hasClass(n, 'primary')) && homeSource.includes('发起活动') && homeSource.includes('发现活动'))
+check('四档筛选保持，移除无效 with-tabbar 开关', ['mine', 'recent', 'finished', 'collab'].every(v => homeSource.includes('data-value="' + v + '"')) && !homeSource.includes('with-tabbar'))
+const dc = nodes(discover).filter(n => n.tag === 'activity-card')
+check('发现列表和地图选中卡同为 compact', dc.length === 2 && dc.every(n => n.attrs.compact === '{{true}}' && n.attrs.featured === '{{false}}'))
+const toolbar = cls(discover, 'discover-toolbar')
+check('结果工具组包含排序/筛选、视图切换和结果计数', !!toolbar && !!cls(toolbar, 'filter-row') && !!cls(toolbar, 'discover-views') && !!cls(toolbar, 'result-count'))
+check('搜索紧随头部，其后工具组与完整低权重提示，再到结果', discoverSource.indexOf('class="searchbar"') < discoverSource.indexOf('discover-toolbar') && discoverSource.indexOf('discover-toolbar') < discoverSource.indexOf('discover-note') && discoverSource.indexOf('discover-note') < discoverSource.indexOf('<activity-card'))
+const note = cls(discover, 'discover-note')
+check('提示不再是 callout，保留完整原话与可见分支', !!note && !hasClass(note, 'callout') && !note.attrs['wx:if'] && discoverSource.includes('这些活动由个人发起') && discoverSource.includes('平台尚未做领队资质认证。路线强度、风险与装备要求以活动说明为准，报名前请自行评估是否适合自己。'))
+check('显示可定位数/本次结果，不称附近', discoverSource.includes('{{map.markers.length}}') && discoverSource.includes('可定位') && discoverSource.includes('本次结果') && !discoverSource.includes('附近'))
+const sheet = nodes(discover).find(n => n.tag === 'overlay')
+check('筛选 sheet 所有选择值只绑定 draftFilters', !!sheet && nodes(sheet).filter(n => n.tag === 'picker').length === 3 && !/\bfilters\./.test(JSON.stringify(sheet)) && /draftFilters/.test(JSON.stringify(sheet)))
+const tokens = new Set((read('app.wxss').match(/--[\w-]+(?=\s*:)/g) || []))
+for (const [name, css] of [['card', cardCss], ['home', homeCss], ['discover', discoverCss]]) {
+  const clean = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  const references = Array.from(clean.matchAll(/var\(\s*(--[\w-]+)/g), m => m[1])
+  check(name + ' 样式只引用既有色 token，零字面量副本', !/#[\da-f]{3,8}\b|rgba?\(|linear-gradient\(/i.test(clean) && references.every(t => tokens.has(t)))
+}
+
+console.log('== 真实 Component 方法：失败兜底、事件与兼容默认值 ==')
+let config
+global.Component = c => { config = c }
+require(path.join(ROOT, 'miniprogram/components/activity-card/activity-card.js'))
+check('compact 默认 false，不改变旧消费者的选择', config.properties.compact && config.properties.compact.type === Boolean && config.properties.compact.value === false)
+check('全局类 opt-in 保留', config.options.styleIsolation === 'apply-shared')
+for (const variant of [{ featured: true, compact: false }, { featured: false, compact: false }, { featured: false, compact: true }]) {
+  const events = []
+  const c = { data: Object.assign({}, config.data, variant, { title: '完整标题'.repeat(30), date: '11月1日', status: '状态事实', when: '3天', routeName: '路线名', meta: '补充事实', info: '待审核 7 人', metrics: [{ key: 'ascent', value: '900' }], collab: [{ key: 'staff', label: '协作' }] }),
+    setData(patch) { Object.assign(this.data, patch) }, triggerEvent(type, detail) { events.push({ type, detail }) } }
+  Object.assign(c, config.methods)
+  config.observers['cover, activityId'].call(c, 'broken-cover', 'a1')
+  const textBefore = JSON.stringify(['title', 'date', 'status', 'when', 'routeName', 'meta', 'info', 'metrics', 'collab'].map(k => c.data[k]))
+  c.onCoverError()
+  check(JSON.stringify(variant) + ' 实拍失败先回退氛围图', !c.data.coverFailed && c.data.coverSrc === c.data.coverFallback)
+  c.onCoverError()
+  check(JSON.stringify(variant) + ' 图片全失败仍保留所有文字/指标/协作属性', c.data.coverFailed && JSON.stringify(['title', 'date', 'status', 'when', 'routeName', 'meta', 'info', 'metrics', 'collab'].map(k => c.data[k])) === textBefore)
+  c.onCollab({ currentTarget: { dataset: { key: 'staff' } } })
+  c.onTap()
+  check(JSON.stringify(variant) + ' 原 collab/open 事件不变', JSON.stringify(events) === JSON.stringify([{ type: 'collab', detail: { key: 'staff' } }, { type: 'open' }]))
+  config.observers['cover, activityId'].call(c, 'new-cover', 'a2')
+  check(JSON.stringify(variant) + ' 换活动/封面复位失败态', !c.data.coverFailed && c.data.coverSrc === 'new-cover')
+}
+console.log('\npassed=' + passed + ' failed=' + failed + ' (structure=E1, UI=NOT_RUN)')
+process.exit(failed ? 1 : 0)

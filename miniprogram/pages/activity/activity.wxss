@@ -8,6 +8,41 @@
 /* 主状态 callout：编辑式"当前该做什么"——比其他提示重半格，但不换语义色体系 */
 .callout .callout-title { font-size: 15px; line-height: 22px; }
 
+/* ---------- 首屏纵深（S1） ----------
+   .act-top 必须是 flex 列而不是 block：信息卡的 margin-top:-24px 若发生外边距合并，
+   会把整个首屏（含封面）一起顶进上方提示里；flex 容器不与子项合并外边距。 */
+.act-top {
+  display: flex;
+  flex-direction: column;
+}
+.activity-hero-bleed {
+  margin: 0 -20px;
+}
+.act-info {
+  margin-top: -24px;
+  position: relative;
+  z-index: 1;
+}
+.act-photo-note {
+  display: block;
+  margin-top: 8px;
+}
+
+/* 同行评分：从事实区搬出的可选观感信息，不占信息卡格子 */
+.act-rating__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.act-rating__item { gap: 4px; }
+
+/* 路线四指标：位于章节标题与地图之间，间距由外层 .stack 统一给 */
+.act-route-stats { margin-top: 0; }
+.act-route-stats-note {
+  display: block;
+}
+
 /* 分区锚点：横向滚动，不换行；只做阅读跳转 */
 .section-nav {
   white-space: nowrap;
@@ -120,3 +155,14 @@
   line-height: 24px;
   color: var(--ink);
 }
+
+/* 底栏只占一行：全局 .sticky-action 允许 wrap，长主按钮会把分享挤到第二行。
+   分享固定内容宽，主按钮吃掉剩余空间；窄屏时让主按钮内部换行（min-width:0），
+   而不是整条底栏长高成两行按钮。 */
+.act-sticky { flex-wrap: nowrap; }
+.sticky-action.act-sticky .button { min-width: 0; }
+/* 分享是次级动作：全局 .sticky-action .button { flex:1 }（0,2,0）会把它撑满。
+   原生 <button> 自带 width:184px（类选择器盖得住元素默认值，但 width 不写就一直是 184），
+   390px 屏上实测它吃掉 184、主按钮只剩 154 ⇒「查看集合与出行安排」折成两行、按钮高 70px。
+   3 类选择器同时收 flex 与 width，主按钮才拿得回整行。 */
+.sticky-action .button.act-sticky__share { flex: 0 0 auto; width: auto; }
