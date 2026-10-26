@@ -37,9 +37,7 @@ Page({
         difficultyText: F.difficultyLabel(r.difficulty),
         shared: r.visibility === 'shared',
         mine: r.isOwner,
-        statsText: routeStats(r),
-        // 列表卡指标行（T008，纯展示派生）：与 routeStats 同源读同一批投影字段；
-        // 只放有数据的项——0 km 不印「0 公里」，缺的项不硬凑。
+        riskText: r.riskCount > 0 ? r.riskCount + ' 条风险提示' : '暂无风险提示',
         metrics: routeMetrics(r),
         refText: r.referencedCount > 0 ? '被 ' + r.referencedCount + ' 个活动使用' : '还没有活动使用',
         updatedText: r.updatedAt ? '保存于 ' + F.dateLabel(r.updatedAt) : '早期路线',
@@ -48,8 +46,8 @@ Page({
         loading: false,
         denied: '',
         routes,
-        mineRoutes: routes.filter(r => r.mine),
-        sharedRoutes: routes.filter(r => !r.mine),
+        mineRoutes: withIndexText(routes.filter(r => r.mine)),
+        sharedRoutes: withIndexText(routes.filter(r => !r.mine)),
       })
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
   },
@@ -65,18 +63,12 @@ Page({
   },
 })
 
-// 里程/爬升/节点/风险一行读完；缺的项不硬凑（0 km 不显示「0 公里」这种噪音）
-function routeStats(r) {
-  const parts = []
-  if (r.distanceKm > 0) parts.push(r.distanceKm + ' km')
-  if (r.ascentM > 0) parts.push('爬升 ' + r.ascentM + ' m')
-  parts.push(r.pointCount + ' 节点')
-  if (r.riskCount > 0) parts.push(r.riskCount + ' 风险')
-  return parts.join(' · ')
+// WXML 表达式里不能出现 HTML 实体（`&lt;` 会被当成 unexpected token），序号在 JS 里算好。
+function withIndexText(list) {
+  return list.map((r, i) => Object.assign({}, r, { indexText: (i + 1 < 10 ? '0' : '') + (i + 1) }))
 }
 
-// 列表卡指标行（T008）：与 routeStats 同一批字段、同一条「缺则不印」的规矩，
-// 只是换成 .metrics 的结构化形状（value/unit/label）供模板渲染。
+// 距离与爬升缺则不印，节点保留零值。
 function routeMetrics(r) {
   const list = []
   if (r.distanceKm > 0) list.push({ value: r.distanceKm, unit: 'km', label: '路线里程' })

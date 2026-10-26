@@ -1,58 +1,45 @@
-<view class="page">
+<view class="page {{canManage && !denied && !loading ? 'has-sticky' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="任务清单暂不可用" detail="{{denied}}" actionLabel="{{activityId ? '查看活动' : '回到我的活动'}}" bind:action="onDeniedAction" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取这场活动的分工。" />
   </block>
   <view wx:else class="stack-sections">
-    <view class="stack" style="gap:8px;">
-      <view class="section-head">
-        <text class="kicker">协作 · 任务清单</text>
-        <text class="page-title" style="display:block;margin-top:4px;">把分工说清楚。</text>
-        <text class="section-sub">{{activityTitle || '这场活动'}} · 装备、采购、记录，逐项有人负责</text>
+    <view class="tasks-identity">
+      <view class="cluster" style="justify-content:space-between;align-items:center;">
+        <text class="eyebrow">协作 · 任务清单</text>
+        <text class="small muted">{{activityTitle || '这场活动'}}</text>
       </view>
-      <view wx:if="{{canManage}}" class="button primary block" hover-class="button-hover" bindtap="onNew">
-        <icon name="plus" size="18" color="#FFFFFF" />
-        <text>新建任务</text>
-      </view>
+      <text class="tasks-identity__title">把分工说清楚。</text>
+      <text class="section-sub">装备、采购、记录，逐项有人负责；改状态即刻生效。</text>
     </view>
 
-    <view class="card">
-      <view class="metrics">
-        <view class="metric"><text class="metric-value">{{counts.todo}}</text><text class="metric-label">待办</text></view>
-        <view class="metric"><text class="metric-value">{{counts.doing}}</text><text class="metric-label">进行中</text></view>
-        <view class="metric"><text class="metric-value">{{counts.done}}</text><text class="metric-label">已完成</text></view>
-      </view>
-    </view>
-
-    <view class="segmented" aria-label="任务筛选">
+    <view class="segmented tabs-line" aria-label="任务筛选">
       <view
         wx:for="{{filterOptions}}"
         wx:key="value"
         class="seg {{filter === item.value ? 'on' : ''}}"
         data-value="{{item.value}}"
         bindtap="onFilter"
-      >{{item.label}}</view>
+      ><text>{{item.label}}</text><text class="seg-count">{{item.count}}</text></view>
     </view>
 
     <block wx:if="{{filtered.length}}">
-      <view class="stack-gap3">
-        <view wx:for="{{filtered}}" wx:key="id" class="card stack-gap3">
-          <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
-            <view style="min-width:0;flex:1;">
-              <text class="task-title">{{item.title}}</text>
-              <view class="cluster" style="gap:6px;margin-top:6px;">
-                <text class="badge neutral">{{item.categoryLabel}}</text>
-                <text wx:if="{{item.assigneeName}}" class="small muted">负责人 · {{item.assigneeName}}</text>
-                <text wx:if="{{item.dueText}}" class="small muted tabular">截止 {{item.dueText}}</text>
-              </view>
-            </view>
+      <view class="task-list">
+        <view wx:for="{{filtered}}" wx:key="id" class="task-row tone-{{item.statusTone}}">
+          <view class="task-row__head">
+            <text class="task-title">{{item.title}}</text>
             <text class="badge {{item.statusTone}}">{{item.statusLabel}}</text>
           </view>
+          <view class="cluster" style="gap:6px;">
+            <text class="badge neutral">{{item.categoryLabel}}</text>
+            <text wx:if="{{item.assigneeName}}" class="small muted">负责人 · {{item.assigneeName}}</text>
+            <text wx:if="{{item.dueText}}" class="small muted tabular">截止 {{item.dueText}}</text>
+          </view>
           <text wx:if="{{item.note}}" class="small muted task-note">{{item.note}}</text>
-          <view wx:if="{{canManage}}" class="cluster task-actions">
-            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" data-next="{{item.actionNext}}" bindtap="onStatus">{{item.actionLabel}}</view>
-            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEdit">编辑</view>
-            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onDeleteOpen">删除</view>
+          <view wx:if="{{canManage}}" class="task-row__actions">
+            <view class="task-secondary task-status-action" hover-class="button-hover" data-id="{{item.id}}" data-next="{{item.actionNext}}" bindtap="onStatus">{{item.actionLabel}}</view>
+            <view class="task-secondary" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEdit">编辑</view>
+            <view class="task-secondary" hover-class="button-hover" data-id="{{item.id}}" bindtap="onDeleteOpen">删除</view>
           </view>
         </view>
       </view>
@@ -106,4 +93,13 @@
       <view class="button text block" hover-class="button-hover" bindtap="onDeleteClose">先留着</view>
     </view>
   </overlay>
+
+  <!-- 新建：固定底栏（板上它在列表下方整宽，不是页头）。受 canManage 保护，与 .page.has-sticky 同条件，
+       否则只读参与者会白多 88px 页尾留白。 -->
+  <view wx:if="{{canManage && !denied && !loading}}" class="sticky-action">
+    <view class="button primary" hover-class="button-hover" bindtap="onNew">
+      <icon name="plus" size="18" color="#FFFFFF" />
+      <text>新建任务</text>
+    </view>
+  </view>
 </view>

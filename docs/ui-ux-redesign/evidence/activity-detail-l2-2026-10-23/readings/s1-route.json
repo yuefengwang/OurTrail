@@ -1,0 +1,71 @@
+{
+  "side": "s1",
+  "scenario": "route-shared-hero",
+  "capturedAt": "2026-10-23T10:01:27.204Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "status": "VALID",
+  "gates": {
+    "loadingFalse": true,
+    "titleIntact": true,
+    "stylesReady": true,
+    "styleWaitMs": 17
+  },
+  "markers": {
+    "heroSelectable": true,
+    "actHeroScoped": true
+  },
+  "screenshot": {
+    "file": "s1-route-top.png",
+    "bytes": 134315,
+    "width": 306,
+    "height": 660
+  },
+  "geometry": {
+    "viewport": {
+      "windowWidth": 390,
+      "windowHeight": 753,
+      "pixelRatio": 3,
+      "SDKVersion": "3.8.12",
+      "platform": "devtools",
+      "model": "iPhone 12/13 (Pro)",
+      "system": "iOS 10.0.1"
+    },
+    "hero": {
+      "left": 20,
+      "top": 24,
+      "width": 350,
+      "height": 431
+    },
+    "media": {
+      "left": 20,
+      "top": 24,
+      "width": 350,
+      "height": 240
+    },
+    "heroBody": {
+      "left": 20,
+      "top": 264,
+      "width": 350,
+      "height": 191
+    },
+    "titleBlockDeltaFromMediaBottom": 0,
+    "overflow": {
+      "viewportWidth": 390,
+      "maxRight": 390,
+      "minLeft": 0,
+      "overflowRight": 0
+    }
+  },
+  "data": {
+    "title": "青城后山穿越",
+    "coverFailed": false
+  }
+}

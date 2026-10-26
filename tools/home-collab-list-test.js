@@ -54,7 +54,7 @@ function act(id, over) {
   }, over || {})
 }
 
-function boot(activities, opened) {
+function boot(activities, opened, byPerspective) {
   const env = { reads: [], nav: [] }
   global.wx = {
     cloud: { callFunction(req) {
@@ -64,7 +64,8 @@ function boot(activities, opened) {
         if (r.kind === 'profile') {
           return Promise.resolve({ result: { ok: true, data: { view: { kind: 'profile', profile: { person: { name: '测试者' } } }, revision: 5, now: NOW } } })
         }
-        return Promise.resolve({ result: { ok: true, data: { view: { kind: 'home', activities: clone(activities) }, revision: 5, now: NOW } } })
+        const rows = byPerspective && byPerspective[r.perspective] || activities
+        return Promise.resolve({ result: { ok: true, data: { view: { kind: 'home', activities: clone(rows) }, revision: 5, now: NOW } } })
       }
       return Promise.resolve({ result: { ok: true, data: {} } })
     } },
@@ -109,16 +110,25 @@ async function main() {
   {
     // owner ∧ staff ∧ vehicle —— 这正是截图里那三条的形状（组织者给自己授了车辆联络）
     const dual = act('dual', { meta: meta({ owner: true, staff: true, vehicle: true }) })
-    const { page } = boot([dual], [])
+    // C16（2026-10-26 style-B）：首屏「下一次同行」会从「我的活动」列表里剔除自己。
+    // 要测列表本身，夹具就得先有一场更早的同行活动去占首屏；它不带 staff/vehicle，不影响协作计数。
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page } = boot([soon, dual], [])
     await settle(page, () => page.data.loading === false, 'loading 没收')
     await settle(page, () => page.data.cards.length === 1, 'cards=' + ids(page))
     check('有效性门：双角色活动在「我的活动」里恰好一张卡', ids(page) === 'dual', ids(page))
+    check('C16：首屏那一场不在列表里重复（hero 与列表互斥）',
+      page.data.nextUp && page.data.nextUp.id === 'soon' && ids(page).indexOf('soon') === -1,
+      JSON.stringify([page.data.nextUp && page.data.nextUp.id, ids(page)]))
     check('页面 data 里不再存在第二个活动数组（原来那个 tasks 已被物理删除，不是留空不用）',
       page.data.tasks === undefined, JSON.stringify(Object.keys(page.data)))
     check('双角色卡上两枚入口独立存在（旧实现一个 goStaff 布尔吃掉车辆那一半，§8.6）',
       keysOf(cardOf(page, 'dual')) === 'staff,vehicle', JSON.stringify(cardOf(page, 'dual').collab))
     await applyFilter(page, 'collab')
     check('切到「需要协作」仍是同一张卡，不是两处各一份', ids(page) === 'dual', ids(page))
+    check('C16 只在「我的活动」剔除：协作档列表条数仍与筛选段计数一致',
+      page.data.collabCount === page.data.cards.length,
+      page.data.collabCount + ' / ' + page.data.cards.length)
   }
 
   // ============ 2. 两档筛出的同一场活动，卡片字段逐字节同构 ============
@@ -126,7 +136,9 @@ async function main() {
   {
     const a = act('a', { meta: meta({ owner: true, joined: true, vehicle: true }) })
     const b = act('b', { meta: meta({ owner: false, joined: false, staff: true }) })
-    const { page } = boot([a, b], ['a'])
+    // C16：占住首屏的那一场必须是另一场，否则 a 会从「我的活动」里被剔除、这一节无从比较。
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page } = boot([soon, a, b], ['a'])
     await settle(page, () => ids(page) === 'a', 'mine cards=' + ids(page))
     const mine = clone(page.data.cards)
     await applyFilter(page, 'collab')
@@ -146,7 +158,8 @@ async function main() {
   {
     const a = act('a', { meta: meta({ owner: true, joined: true, staff: true }) })
     const b = act('b', { meta: meta({ owner: true, joined: true }) })
-    const { page } = boot([a, b], [])
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page } = boot([soon, a, b], [])
     await settle(page, () => page.data.cards.length === 2, 'cards=' + ids(page))
     check('有效性门：两场里只有一场带协作授权', page.data.collabCount === 1, String(page.data.collabCount))
     const base = page.data.collabCount
@@ -180,7 +193,8 @@ async function main() {
   section('4. 缺位按无授权处理，有授权时入口必须出')
   {
     const noKeys = act('nokeys', { meta: { owner: true, joined: true, confirmed: 1, pending: 0, capacity: 4, positionRows: [] } })
-    const { page } = boot([noKeys], [])
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page } = boot([soon, noKeys], [])
     await settle(page, () => page.data.cards.length === 1, 'cards=' + ids(page))
     check('meta 里没有 staff/vehicle 键 ⇒ 计数为 0、卡片不带入口（越权入口宁可不出）',
       page.data.collabCount === 0 && cardOf(page, 'nokeys').collab.length === 0,
@@ -216,7 +230,8 @@ async function main() {
   section('5. 跳转：staff 与 vehicle 分别落页，不互相吞')
   {
     const dual = act('dual', { meta: meta({ owner: true, staff: true, vehicle: true }) })
-    const { page, env } = boot([dual], [])
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page, env } = boot([soon, dual], [])
     await settle(page, () => page.data.cards.length === 1, 'cards=' + ids(page))
     const card = cardOf(page, 'dual')
     page.onCardCollab({ currentTarget: { dataset: { id: card.id } }, detail: { key: 'staff' } })
@@ -262,6 +277,114 @@ async function main() {
     const homeJs = fs.readFileSync(path.join(pagesDir, 'home', 'home.js'), 'utf8')
     check('两条入口 URL 仍留在页面 JS（否则 staff / vehicle 两页在全仓就没有入口了）',
       /\/pages\/staff\/staff\?id=/.test(homeJs) && /\/pages\/vehicle\/vehicle\?id=/.test(homeJs), '页面里找不到')
+  }
+
+  section('7. L2/L3：真 reload 三视角去重/排序保留，路线事实与人数不重复')
+  {
+    const first = act('first', { title: '长标题'.repeat(30), startAt: '2026-11-01T08:00:00+08:00',
+      routeSnapshot: { title: '独立路线名', distanceKm: 18, ascentM: 900, difficulty: 'hard' },
+      meta: meta({ owner: true, staff: true }) })
+    const later = act('later', { startAt: '2026-11-03T08:00:00+08:00' })
+    const third = act('third', { startAt: '2026-11-04T08:00:00+08:00', meta: meta({ owner: true, vehicle: true }) })
+    // C16：首屏由另一场更早的同行活动占住；三视角合并、去重、排序的判据本身不变。
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page, env } = boot([], [], { participant: [soon, later, first], staff: [first], vehicle: [first, third] })
+    await waitFor(() => !page.data.loading)
+    check('真实三视角回包去重后仍按 startAt 排序', ids(page) === 'first,later,third', ids(page))
+    check('C16：首屏取合并后最早的那一场，列表按原顺序继续（派生不改排序）',
+      page.data.nextUp && page.data.nextUp.id === 'soon', JSON.stringify(page.data.nextUp))
+    check('只读原有三次 home 与 profile，不加活动详情探测', env.reads.length === 4
+      && env.reads.filter(r => r.kind === 'home').map(r => r.perspective).join(',') === 'participant,staff,vehicle'
+      && env.reads.filter(r => r.kind === 'profile').length === 1)
+    const c = cardOf(page, 'first')
+    check('长标题不在页面层截断', c.title === first.title)
+    check('路线名与难度分别传递（不在 meta 再重复路线/里程）', c.routeName === '独立路线名'
+      && c.meta === require('../miniprogram/utils/format').difficultyLabel('hard'))
+    check('指标仅含路线事实；人数/待审核仍完整保留在 info 一处',
+      JSON.stringify(c.metrics) === JSON.stringify([
+        { key: 'distance', label: '距离', value: '18', unit: 'km' },
+        { key: 'ascent', label: '爬升', value: '900', unit: 'm' },
+      ]) && c.info === '已确认 3 人 · 待审核 7 人 · 名额 10 人')
+    page.onSearch({ detail: { value: '独立路线名' } })
+    await waitFor(() => page.data.cards.length === 1)
+    check('输入路线名后真实 render 筛出唯一活动与原协作入口', ids(page) === 'first' && keysOf(page.data.cards[0]) === 'staff')
+    page.onClearSearch()
+    await waitFor(() => page.data.cards.length === 3)
+    check('清除搜索恢复原顺序', ids(page) === 'first,later,third')
+    page.onNew()
+    page.onGoDiscover()
+    page.onOpenCard({ currentTarget: { dataset: { id: 'first' } } })
+    check('原发起/发现/卡片导航契约不变', env.nav.join('|') === '/pages/editor/editor|/pages/discover/discover|/pages/activity/activity?id=first')
+  }
+  {
+    const soon = act('soon', { startAt: '2026-10-15T08:00:00+08:00' })
+    const { page } = boot([soon, act('empty-route', { routeSnapshot: { title: '', distanceKm: 0, ascentM: 0 } })], [])
+    await waitFor(() => !page.data.loading)
+    check('缺路线不编造 0km/0m，保留待完善与人数事实', page.data.cards[0].metrics.length === 0
+      && page.data.cards[0].routeName === '路线待完善' && page.data.cards[0].info.indexOf('已确认 3 人') !== -1)
+  }
+
+  // ============ 8. 「下一次同行」卡：只做客户端派生，不改投影 ============
+  section('8. 「下一次同行」：参与的、未终态的最近一场；空态交给邀请卡')
+  {
+    const F = require('../miniprogram/utils/format')
+    const J = require('../miniprogram/utils/journey')
+    const rows = [
+      act('late', { startAt: '2026-11-02T08:00:00+08:00' }),
+      act('soon', { startAt: '2026-10-16T08:00:00+08:00' }),
+      act('draft', { phase: 'draft', startAt: '2026-10-15T08:00:00+08:00' }),
+      act('ended', { phase: 'archived', startAt: '2026-10-15T08:00:00+08:00' }),
+      act('cancelled', { phase: 'cancelled', startAt: '2026-10-15T08:00:00+08:00' }),
+      // 只为协作被授进来的人不是「同行者」：他不在这趟行程里，不能拿去当首屏的下一场
+      act('staff-only', { meta: meta({ staff: true }) }),
+      act('guest', { meta: meta({}) }),
+    ]
+    const { page } = boot(rows, [])
+    await settle(page, () => !page.data.loading && page.data.cards.length > 0, 'cards=' + ids(page))
+    const next = page.data.nextUp
+    check('有效性门：草稿/终态/纯协作/未参与都不算，最近一场是 soon', next && next.id === 'soon', JSON.stringify(next))
+    check('事实行与卡片同源：日期 + 剩余时间 + 人数 + 组织者待审核',
+      next && next.facts.join('|') === [
+        F.dateLabel('2026-10-16T08:00:00+08:00'),
+        J.remaining(NOW, '2026-10-16T08:00:00+08:00').text,
+        '已确认 3/10',
+        '待审核 7 人',
+      ].join('|'), JSON.stringify(next && next.facts))
+  }
+  {
+    const { page } = boot([act('joined', { meta: meta({ joined: true }) })], [])
+    await settle(page, () => page.data.nextUp !== null, 'nextUp=' + JSON.stringify(page.data.nextUp))
+    check('参与者（非组织者）也看到下一场；待审核一格不出现（失败关闭，不从别人的字段反推）',
+      page.data.nextUp.facts.indexOf('已确认 3/10') !== -1 && page.data.nextUp.facts.every(f => f.indexOf('待审核') === -1),
+      JSON.stringify(page.data.nextUp.facts))
+  }
+  {
+    // 2026-10-26 真机抓到的缺陷：已发布但一直没归档的活动留在非终态里，而候选按出发时间**升序**
+    // ⇒ 最旧的那场过期活动永久占住首屏，真正的下一场永远排不上，卡上还印「已过时」。
+    const rows = [
+      act('past', { startAt: '2026-10-02T08:00:00+08:00' }),
+      act('future', { startAt: '2026-10-20T08:00:00+08:00' }),
+    ]
+    const { page } = boot(rows, [])
+    await settle(page, () => !page.data.loading && page.data.cards.length > 0, 'cards=' + ids(page))
+    check('过期但未归档的活动不许占住「下一次同行」：取真正还没出发的那一场',
+      page.data.nextUp && page.data.nextUp.id === 'future', JSON.stringify(page.data.nextUp))
+    check('它仍留在列表里（派生不许反过来裁活动）', ids(page).indexOf('past') !== -1, ids(page))
+    check('C16：首屏那一场（future）不在列表里重复，其余活动一个不少',
+      ids(page) === 'past', ids(page))
+  }
+  {
+    const { page } = boot([act('past-only', { startAt: '2026-10-02T08:00:00+08:00' })], [])
+    await settle(page, () => page.data.loading === false && page.data.cards.length > 0, 'cards=' + ids(page))
+    check('只有过期未归档的活动 ⇒ 首屏走邀请卡（不把「已过时」冒充成下一场）',
+      page.data.nextUp === null && page.data.hasAny === true,
+      JSON.stringify([page.data.nextUp, page.data.hasAny]))
+  }
+  {
+    const { page } = boot([act('ended-only', { phase: 'archived' })], [])
+    await settle(page, () => page.data.loading === false && page.data.hasAny === true, 'hasAny=false')
+    check('只有已结束的活动 ⇒ 没有「下一场」，模板走邀请卡分支（empty 由页面派生，不由组件猜）',
+      page.data.nextUp === null && page.data.cards.length === 0, JSON.stringify([page.data.nextUp, page.data.cards.length]))
   }
 
   console.log('\npassed=' + passed + ' failed=' + failed)

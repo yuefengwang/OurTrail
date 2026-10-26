@@ -1,0 +1,144 @@
+== P0 夹具（真信封：建档 → 建活动 → 发布并报名 → 第二人报名并确认） ==
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"dispatch","c":"profile.save","rid":"","u":"cbad34ca","ok":1,"code":"","ms":2,"rp":0,"rev":1,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":1,"det":""}
+{"ev":"api","a":"dispatch","c":"activity.create","rid":"","u":"cbad34ca","ok":1,"code":"","ms":4,"rp":0,"rev":2,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":2,"det":""}
+{"ev":"api","a":"dispatch","c":"activity.publish","rid":"","u":"cbad34ca","ok":1,"code":"","ms":2,"rp":0,"rev":3,"det":""}
+  ✓ P0 发布 ok（发起者本人报名，shared 出行需要座位 ⇒ 分车面板有活干）
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":2,"rp":0,"rev":3,"det":""}
+  ✓ P0 名单里有 1 名已确认参与者
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":3,"det":""}
+== P1 初挂同步：宿主 syncKey 与三个面板的 this.revision 成对 ==
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":3,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":3,"rp":0,"rev":3,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":3,"rp":0,"rev":3,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":3,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":3,"rp":0,"rev":3,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+  ✓ P1 宿主页面读成功（denied 为空、syncKey 已下发）
+  ✓ P1 roster-panel 初始 revision = 服务端 R0（不是 undefined）
+  ✓ P1 roster-panel 的 _readKey 与宿主 syncKey 一致（否则 observer 会漏跳一次重读）
+  ✓ P1 transport-panel 初始 revision = 服务端 R0（不是 undefined）
+  ✓ P1 transport-panel 的 _readKey 与宿主 syncKey 一致（否则 observer 会漏跳一次重读）
+  ✓ P1 field-panel 初始 revision = 服务端 R0（不是 undefined）
+  ✓ P1 field-panel 的 _readKey 与宿主 syncKey 一致（否则 observer 会漏跳一次重读）
+== P2 roster 写完一枪，transport/field 下一次命令必须带新 revision ==
+{"ev":"api","a":"dispatch","c":"export.record","rid":"req-mvkvmceh99m9becp","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":4,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":4,"det":""}
+{"ev":"api","a":"readExport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":4,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":4,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":4,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+  ✓ P2 roster 的导出命令确实发出
+  ✓ P2 roster 命令带整数 expectedRevision=R0
+  ✓ P2 roster 命令被服务端接受
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":4,"det":""}
+  ✓ P2 服务端 revision 推进 R0→R0+1
+  ✓ P2 written 事件把宿主重读拉起来，syncKey 已更新
+  ✓ P2 roster-panel 跟着重读拿到 R1（兄弟面板不再拿旧 revision 发命令）
+  ✓ P2 transport-panel 跟着重读拿到 R1（兄弟面板不再拿旧 revision 发命令）
+  ✓ P2 field-panel 跟着重读拿到 R1（兄弟面板不再拿旧 revision 发命令）
+== P3 同一面板连点两下（Phase 8 的 R2 结论转正为常驻断言） ==
+{"ev":"api","a":"dispatch","c":"export.record","rid":"req-mvkvmcg9a9a42gqz","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"readExport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"dispatch","c":"export.record","rid":"req-mvkvmch44a2v6jwb","u":"cbad34ca","ok":0,"code":"CONFLICT","ms":1,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+  ✓ P3 两条命令携带同一个 expectedRevision（同面板连点的必然形状）
+  ✓ P3 第一条落库成功
+  ✓ P3 第二条被 CONFLICT 拦住（不是静默覆盖，也不是双写）
+  ✓ P3 冲突后面板 toast 提示重试（用户不会看到"成功"）
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":5,"det":""}
+  ✓ P3 revision 只推进一次（败者没写进去）
+== P4 宿主 reload 失败被 api.js 的 .catch(()=>{}) 吞掉 ⇒ 面板只能拿旧 revision（判 fail closed） ==
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":5,"det":""}
+{"ev":"api","a":"dispatch","c":"export.record","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":6,"det":""}
+  ✓ P4 外部写入 ok
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":6,"det":""}
+  ✓ P4 外部写入把 revision 推进（面板对此毫不知情）
+  ✓ P4 宿主 reload 失败后 syncKey 没更新（这就是被吞掉的后果）
+{"ev":"api","a":"dispatch","c":"vehicle.save","rid":"req-mvkvmckl2n8sijab","u":"cbad34ca","ok":0,"code":"CONFLICT","ms":0,"rp":0,"rev":0,"det":""}
+  ✓ P4 陈旧基线的写被 CONFLICT 拦住 ⇒ fail closed（关键：不是 lost update）
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":6,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":6,"det":""}
+  ✓ P4 陈旧写没推进 revision、也没建出车辆（零副作用）
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+  ✓ P4 被拒的车辆确实不存在（否则就是静默双写）
+  ✓ P4 冲突提示仍然会弹（用户被告知要重试，不是静默失败）
+{"ev":"api","a":"dispatch","c":"vehicle.save","rid":"req-mvkvmckmb8srfxwn","u":"cbad34ca","ok":1,"code":"","ms":2,"rp":0,"rev":7,"det":""}
+  ✓ P4 重试（带新基线）成功 ⇒ 被吞掉的 reload 只多花一次冲突往返，不造成数据损失
+== P5 重开工作台（page re-entry）：syncKey 与三个面板全部跟到最新 ==
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":2,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+  ✓ P5 重开后宿主 syncKey = published@最新 revision
+  ✓ P5 roster-panel 重开后 revision = 最新
+  ✓ P5 transport-panel 重开后 revision = 最新
+  ✓ P5 field-panel 重开后 revision = 最新
+  ✓ P5 三个面板的 _readKey 全部与 syncKey 相等（漏跳重读的那条形变已被钉住）
+== P6 编辑器与工作台的 revision 互不共享：各自成对抓取、各自 CAS ==
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":7,"det":""}
+  ✓ P6 编辑器与工作台各自抓到同一个当前 revision
+{"ev":"api","a":"dispatch","c":"export.record","rid":"req-mvkvmco2qzyg1yii","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":8,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":8,"det":""}
+{"ev":"api","a":"readExport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":8,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":8,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":8,"det":""}
+{"ev":"api","a":"readTransport","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+  ✓ P6 工作台面板的写成功并推进
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":1,"rp":0,"rev":8,"det":""}
+{"ev":"api","a":"dispatch","c":"activity.edit","rid":"req-mvkvmcoysv7v1xl7","u":"cbad34ca","ok":0,"code":"CONFLICT","ms":0,"rp":0,"rev":0,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":8,"det":""}
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":8,"det":""}
+  ✓ P6 编辑器的命令携带它自己那次读的 revision（不是写前现读）
+  ✓ P6 因此被 CONFLICT 拒绝，工作台的写入存活
+{"ev":"api","a":"read","c":"","rid":"","u":"cbad34ca","ok":1,"code":"","ms":0,"rp":0,"rev":8,"det":""}
+  ✓ P6 revision 只因工作台那一枪推进一次
+== §14 判定与遗留 ==
+  ▶ [PASS · PANEL-SYNC] 常驻面板的 revision 来源唯一（各自 reload 里 res.revision），宿主写成功后经 written→reload→syncKey 广播，兄弟面板由 observer 跟着重读；连点/跨面板/重开三种交错下，陈旧基线的写一律 CONFLICT。
+  ▶ [P3 · SWALLOWED-RELOAD] api.js:121 的 `Promise.resolve(page.reload()).catch(()=>{})` 确实会把"重读失败"完全吞掉：面板继续持旧 revision。但后果被 CAS 兜住——下一次写是 CONFLICT（fail closed），不是 stale 覆盖，代价是用户多走一次"刷新重试"。建议（不在本轮改）：把这条吞法换成一次可见的重试提示或埋点。
+  ▶ [P3 · GLOBAL-REVISION] revision 是全局单计数器（ot_meta/main），任何一处写入都会让它推进 ⇒ 面板/编辑器会因**别的活动**的写入而撞 CONFLICT（伪冲突）。V1 规模下可接受，但这是"一直冲突"类投诉的机制解释，也是 loadState 每请求全表读 15 集合的同一处规模墙。
+
+判定汇总：
+  [PASS · PANEL-SYNC] 常驻面板的 revision 来源唯一（各自 reload 里 res.revision），宿主写成功后经 written→reload→syncKey 广播，兄弟面板由 observer 跟着重读；连点/跨面板/重开三种交错下，陈旧基线的写一律 CONFLICT。
+  [P3 · SWALLOWED-RELOAD] api.js:121 的 `Promise.resolve(page.reload()).catch(()=>{})` 确实会把"重读失败"完全吞掉：面板继续持旧 revision。但后果被 CAS 兜住——下一次写是 CONFLICT（fail closed），不是 stale 覆盖，代价是用户多走一次"刷新重试"。建议（不在本轮改）：把这条吞法换成一次可见的重试提示或埋点。
+  [P3 · GLOBAL-REVISION] revision 是全局单计数器（ot_meta/main），任何一处写入都会让它推进 ⇒ 面板/编辑器会因**别的活动**的写入而撞 CONFLICT（伪冲突）。V1 规模下可接受，但这是"一直冲突"类投诉的机制解释，也是 loadState 每请求全表读 15 集合的同一处规模墙。
+
+passed=40 failed=0 bugs=0
+[api] 云函数调用失败： 注入的读失败：network down

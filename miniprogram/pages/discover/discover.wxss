@@ -4,19 +4,37 @@
 .activity-card .activity-card__info { font-size: 12px; color: var(--muted); }
 .activity-card--featured .activity-card__info { color: var(--on-forest-muted); }
 
-/* N3（2026-10-22）页头一行化：左列与 home 页头文字列同形（已上收 app.wxss 的 .list-head__*，FH-01）；
-   主标题从 .page-title 的 28px/700 编辑式大标题降为一行 20px/600，首屏把空间让给列表与筛选行
-   （交付包拼板屏 1.2）。min-width:0 保证窄屏上右侧视图分段不被挤掉；长标题断行兜底不截断语义。 */
-/* 页头右槽的视图分段：不跟左列抢宽（card-header 是 space-between + wrap），
-   给最小宽让「列表/地图」两键的命中宽度不被压到文字宽以下；高度仍由全局 .seg 的 --touch-target 给。 */
+/* N3（2026-10-22）页头一行化：左列与 home 页头文字列同形（已上收 app.wxss 的 .list-head__*，FH-01）。
+   N4（2026-10-23）视图分段搬进结果工具组，页头只剩身份文案。 */
+.discover-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+/* L3（2026-10-23）结果工具组：上排视图切换 + 结果计数，下排筛选/排序。
+   工具组只回答「这批结果怎么排、怎么看、有多少」，不再挤占页头。 */
+.discover-toolbar { display: flex; flex-direction: column; gap: 8px; }
+.discover-toolbar__top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .discover-views { flex: 0 0 auto; min-width: 132px; }
-/* 诚实 callout 压到 caption 级：文案一字不改（铁律），只收字号/行高/内边距，不让它抢首屏；
-   底色/边线/字色全部继承全局 .callout，这里不引入任何新色值。 */
-.discover-note { font-size: var(--text-caption); line-height: 18px; padding: 10px 12px; }
+
+/* 诚实提示：文案一字不改（铁律），从 callout 降为低权重说明条；
+   结构是「标题 + 正文 + 结果范围」，不靠色彩抢首屏。 */
+.discover-note {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-button);
+  background: var(--surface);
+}
+.discover-note__title { font-size: var(--text-caption); line-height: 18px; font-weight: 600; color: var(--ink); }
+.discover-note__body { font-size: var(--text-caption); line-height: 18px; color: var(--muted); }
+.discover-note__meta { font-size: var(--text-caption); line-height: 18px; color: var(--muted); }
+
+/* 结果列表（2026-10-26 style-B）：行与行由卡片的发丝线断开，不再靠 12px 空隙——
+   空隙叠在线上会让分隔线悬在两行中间，读起来像一条孤立的横线。 */
+.discover-list { display: flex; flex-direction: column; gap: 0; }
 
 /* 筛选与结果计数：横向排一行，不把筛选控件铺满首屏。
-   N3 只整理间距/对齐（横向滚动 + 基线对齐 + 计数右靠均为原语义），控件与数量一个不增不减：
-   筛选按钮 + 两枚排序 chip + 结果计数。 */
+   筛选按钮 + 两枚排序 chip；数量不在这里重复（已上移到工具组顶部）。 */
 .filter-row {
   display: flex;
   align-items: center;
@@ -48,9 +66,10 @@
   color: var(--muted);
 }
 /* 页面级覆盖：发现页地图比活动详情高一点，便于看多点分布。
-   N3：圆角改引用 token，与全局 .map-card 的字面量 14px 终值同值（无视觉变化，单源化方向）；高度保持 340px。 */
+   N3：圆角改引用 token，与全局 .map-card 的字面量 14px 终值同值（无视觉变化，单源化方向）。
+   2026-10-26 style-B：340→260，把首屏让给列表行；地图是「换个视角看同一批结果」，不该独占一屏。 */
 .map-card {
-  height: 340px;
+  height: 260px;
   border-radius: var(--radius-card);
 }
 .discover-map {

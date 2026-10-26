@@ -1,5 +1,15 @@
 /* 本车任务页 */
 
+/* 身份头：车牌与司机都在 hero 反白底上；司机行降一级用 on-forest 次级色，
+   避免「谁在负责」和活动标题抢同一档对比度。 */
+.vehicle-identity .small { color: var(--on-forest-muted); }
+
+/* 本程行动区：清点进度 → 缺口 → 发车/完成 → 安全提醒，纵向一条线 */
+.vehicle-operations { display: flex; flex-direction: column; gap: 10px; }
+
+/* 容量行退到名单之后：核载算式是解释，不是行动前的判断依据 */
+.vehicle-capacity { padding-top: 2px; }
+
 /* 长名单折行不截断（T010）：pendingNames 是人名串起来的现场事实——发车前「还差谁」
    全靠这句话核对去向。与 app.wxss 的 .person-name 同口径用 overflow-wrap:anywhere：
    窄屏下宁可折行，不许把名单藏进省略号（现场强光 + 单手，省略号等于没写）。 */

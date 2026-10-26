@@ -1,0 +1,127 @@
+{
+  "at": "2026-10-26T06:45:36.071Z",
+  "system": {
+    "brand": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1",
+    "platform": "devtools",
+    "benchmarkLevel": -1,
+    "pixelRatio": 3,
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "windowWidth": 390,
+    "windowHeight": 844,
+    "statusBarHeight": 47,
+    "safeArea": {
+      "top": 47,
+      "left": 0,
+      "right": 390,
+      "bottom": 810,
+      "width": 390,
+      "height": 763
+    },
+    "language": "zh_CN",
+    "version": "8.0.5",
+    "fontSizeSetting": 16,
+    "SDKVersion": "3.8.12",
+    "host": {
+      "env": "WeChat"
+    },
+    "enableDebug": false,
+    "mode": "default",
+    "deviceOrientation": "portrait",
+    "bluetoothEnabled": true,
+    "locationEnabled": true,
+    "wifiEnabled": true,
+    "albumAuthorized": true,
+    "cameraAuthorized": true,
+    "locationAuthorized": true,
+    "microphoneAuthorized": true,
+    "notificationAuthorized": true,
+    "notificationAlertAuthorized": true,
+    "notificationBadgeAuthorized": true,
+    "notificationSoundAuthorized": true,
+    "phoneCalendarAuthorized": true,
+    "bluetoothAuthorized": true,
+    "locationReducedAccuracy": true,
+    "devicePixelRatio": 3
+  },
+  "rows": [
+    {
+      "name": "F2 路线库：页头不再有 kicker（原生导航已印「路线库」）",
+      "pass": true,
+      "extra": "kickers="
+    },
+    {
+      "name": "F2 路线库：身份由一句陈述承担，≠「路线库」",
+      "pass": true,
+      "extra": "自己整理的，别人共享的。"
+    },
+    {
+      "name": "F2 路线库：主按钮在陈述下方独占一行（block 全宽），不再被挤成第二行小按钮",
+      "pass": true,
+      "extra": "title 24-52 / btn 80-128 w=350"
+    },
+    {
+      "name": "F2 路线行：保存时间并入元信息簇",
+      "pass": true,
+      "extra": "活动沉淀 早期路线 || 活动沉淀 早期路线 || 活动沉淀 早期路线 || 活动沉淀 早期路线"
+    },
+    {
+      "name": "F2 路线行：保存时间在标题之下、风险行之上（不再挂在行尾）",
+      "pass": true,
+      "extra": "title@229 updated@289,479,668"
+    },
+    {
+      "name": "F2 路线行：风险/引用仍是行内最后一条灰字（保留，不删事实）",
+      "pass": true,
+      "extra": "riskLines=299"
+    },
+    {
+      "name": "取到一条真实路线用于详情核对",
+      "pass": true,
+      "extra": "route-muky6o3kl53fhv"
+    },
+    {
+      "name": "F3 详情：来源是眉题且位于标题之前",
+      "pass": true,
+      "extra": "活动沉淀"
+    },
+    {
+      "name": "F3 详情：保存时间在标题下方、不再独立成行（与元信息同簇）",
+      "pass": true,
+      "extra": "updated@110 title@42-98"
+    },
+    {
+      "name": "F4 编辑器：页头不再有「OURTRAIL · 编辑路线」眉题",
+      "pass": true,
+      "extra": "基本信息/快捷开始/路线/安全"
+    },
+    {
+      "name": "F4 编辑器：首屏唯一实底主操作是底栏保存",
+      "pass": true,
+      "extra": "保存修改@659"
+    },
+    {
+      "name": "F4 编辑器：导入 GPX 轨迹降为 secondary",
+      "pass": true,
+      "extra": "button secondary block"
+    },
+    {
+      "name": "F5 工作台：四个工具入口仍是四个（能力未减）",
+      "pass": true,
+      "extra": "tiles=4 denied="
+    },
+    {
+      "name": "F5 工作台：工具入口不再用 leaf 实底",
+      "pass": true,
+      "extra": "button workspace-tool | button workspace-tool | button workspace-tool | button workspace-tool"
+    }
+  ],
+  "passed": 14,
+  "failed": 0,
+  "routes": {
+    "mine": 299,
+    "shared": 0
+  }
+}

@@ -1,9 +1,12 @@
 <view class="page">
+  <brand-header />
   <view class="stack-sections">
-    <!-- 编辑式头部（二阶段）：眉题 + 大标题 + 一句定位（与 activity/route/routes 同源） -->
+    <!-- D8（2026-10-26）：tab 页删除 28px 页标题，改用分区头三件套；
+         kicker 里的「天气」是删页标题的代价条款——原生标题栏不再出现，页面身份必须仍有字面。
+         （与 notices / home / me 同一处理，本页是第 4 个 tab 页。） -->
     <view class="section-head">
       <text class="kicker">天气</text>
-      <text class="page-title" style="display:block;margin-top:4px;">先看天，再上山。</text>
+      <text class="list-head__title">先看天，再上山。</text>
       <text class="section-sub">查过的点与轨迹会存住，下次不用重传。</text>
     </view>
 

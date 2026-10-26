@@ -1,78 +1,101 @@
-<view class="page {{cards.length ? 'with-tabbar' : ''}}">
+<view class="page">
+  <!-- denied / loading：内容只是文字面板，照片还无从谈起 ⇒ 品牌栏走默认的纸面固定条。
+       首屏照片那一支在下面 hero 里自带一条 overlay 词标。 -->
+  <brand-header wx:if="{{denied || loading}}" />
   <status-panel wx:if="{{denied}}" kind="denied" title="暂时无法读取活动" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在核对与你有关的活动。" />
   </block>
   <block wx:else>
-    <view class="stack">
-      <!-- N2（2026-10-22）页头压缩：品牌眉题 + 一行主标题在左、两个入口在右，
-           拼板屏 1.1 的首屏把空间给列表；旧的第二行导语删除，其「安排放在一起」的语义
-           由卡片正文（日期·倒计时·指标·人数）承担，不再单独占一行。 -->
-      <view class="card-header">
-        <view class="list-head__text">
-          <text class="eyebrow">OURTRAIL · 一起走过</text>
-          <view class="list-head__title">{{profileName ? profileName + '，' : ''}}下一次同行</view>
-        </view>
-        <view class="cluster">
-          <view class="button text" hover-class="button-hover" bindtap="onGoDiscover">
-            <icon name="search" size="16" color="#163E35" />
-            <text>发现活动</text>
-          </view>
-          <view class="button text" hover-class="button-hover" bindtap="onNew">
-            <icon name="plus" size="16" color="#163E35" />
-            <text>发起活动</text>
-          </view>
-        </view>
-      </view>
+    <!-- 2026-10-26 style-B：首屏是一支照片 hero —— 照片顶到屏幕边（负边距抵掉 .page 的内边距），
+         词标压在上面。页标题让位给品牌栏，首屏先回答「下一次同行是哪场」。
+         没有下一场时退回邀请卡，品牌栏同步改回纸面固定条（白字在纸面上读不出来）。 -->
+    <view class="home-hero {{nextUp ? 'home-hero--photo' : 'home-hero--invite'}}">
+      <brand-header variant="{{nextUp ? 'overlay' : 'solid'}}" />
+      <next-up-card
+        empty="{{!nextUp}}"
+        activity-id="{{nextUp.id}}"
+        title="{{nextUp.title}}"
+        facts="{{nextUp.facts}}"
+        data-id="{{nextUp.id}}"
+        bind:open="onOpenCard"
+        bind:create="onNew"
+      />
+    </view>
 
-      <!-- 「需要我协作」原来是列表上方的第二个列表（裸 .list-row）：与下面的活动卡是两种形态，
-           且同一场活动可以同时进两个区。2026-10-20 起它变成第四档筛选 + 卡片上的协作入口，
-           首页只剩一个列表。判据 docs/superpowers/specs/2026-10-20-home-dual-list-dedup.md，
-           门 tools/home-collab-list-test.js。计数为 0 时整档不出现（不是灰掉、不是空列表）。
-           N2：搜索从带 label 的表单字段改为图标内嵌搜索条（.searchbar，T001 交付）；
-           原 field-label「查找活动」的语义由 input 的 aria-label 承接，onSearch/onClearSearch 能力不删。 -->
-      <view wx:if="{{hasAny}}" class="stack-gap3">
-        <view class="searchbar">
+    <!-- 卡片顶 sheet：白面从照片下沿抬起（.sheet-top 的 -20 上边距吃掉照片最后 20px，照片下沿只剩留白）。
+         搜索、动作、范围切换、列表都在这张面里。没有照片时这块退回纸面——邀请卡是纸面上的白卡，
+         再叠一张白 sheet 只会多出一条无处解释的圆角。 -->
+    <view class="sheet-top {{nextUp ? '' : 'sheet-top--invite'}}">
+      <view class="home-body">
+        <!-- 「需要我协作」原来是列表上方的第二个列表：与下面的活动卡是两种形态，且同一场活动可以同时进两个区。
+             2026-10-20 起它变成第四档筛选 + 卡片上的协作入口，首页只剩一个列表。
+             判据 docs/superpowers/specs/2026-10-20-home-dual-list-dedup.md，门 tools/home-collab-list-test.js。
+             计数为 0 时整档不出现（不是灰掉、不是空列表）。 -->
+        <view wx:if="{{hasAny}}" class="searchbar">
           <!-- icon 的 color 属性拿不到 var()：#5F6E66 与 --muted 逐字节同值（既有 token，不是新色） -->
           <icon name="search" size="16" color="#5F6E66" />
           <input class="searchbar__input" type="text" confirm-type="search" placeholder="搜索活动或路线" aria-label="查找活动" value="{{search}}" bindinput="onSearch" />
         </view>
-        <view class="segmented" aria-label="活动范围">
+
+        <!-- 本页唯一的 primary 是「发起活动」——有未来活动时它在动作行，没有时它在邀请卡里
+             （动作行只剩次级「发现活动」，同屏不会出现两个主按钮）。 -->
+        <view class="home-actions">
+          <view class="button secondary" hover-class="button-hover" bindtap="onGoDiscover">
+            <text>发现活动</text>
+          </view>
+          <view wx:if="{{nextUp}}" class="button primary" hover-class="button-hover" bindtap="onNew">
+            <text>发起活动</text>
+          </view>
+        </view>
+
+        <view wx:if="{{hasAny}}" class="segmented tabs-line" aria-label="活动范围">
           <view class="seg {{filter === 'mine' ? 'on' : ''}}" data-value="mine" bindtap="onFilter">我的活动</view>
           <view class="seg {{filter === 'recent' ? 'on' : ''}}" data-value="recent" bindtap="onFilter">最近查看</view>
           <view class="seg {{filter === 'finished' ? 'on' : ''}}" data-value="finished" bindtap="onFilter">已结束</view>
           <view wx:if="{{collabCount}}" class="seg {{filter === 'collab' ? 'on' : ''}}" data-value="collab" bindtap="onFilter">需要协作 {{collabCount}}</view>
         </view>
-      </view>
 
-      <status-panel
-        wx:if="{{!cards.length}}"
-        kind="empty"
-        title="{{emptyTitle}}"
-        detail="{{emptyDetail}}"
-        actionLabel="{{emptyAction}}"
-        bind:action="onEmptyAction"
-      />
-      <view wx:else class="stack" aria-label="活动列表">
-        <activity-card
-          wx:for="{{cards}}"
-          wx:key="id"
-          title="{{item.title}}"
-          cover="{{item.cover}}"
-          route-name="{{item.routeName}}"
-          metrics="{{item.metrics}}"
-          date="{{item.date}}"
-          meta="{{item.meta}}"
-          status="{{item.status}}"
-          when="{{item.when}}"
-          featured="{{item.featured}}"
-          info="{{item.info}}"
-          collab="{{item.collab}}"
-          activity-id="{{item.id}}"
-          data-id="{{item.id}}"
-          bind:open="onOpenCard"
-          bind:collab="onCardCollab"
+        <!-- 区块头（板上「推荐活动」的位置）：眉题承担视觉分区，副行说明排序口径。
+             这里不叫「推荐」——列表是同一个人自己的活动，按出发时间排，没有任何推荐算法。 -->
+        <view wx:if="{{hasAny}}" class="home-section">
+          <text class="home-section__title">更多活动</text>
+          <text class="home-section__sub">按出发时间排序</text>
+        </view>
+
+        <!-- 一条活动都没有时，邀请卡已经是完整的空态（说明 + primary 都在里面），
+             这里不再叠一个空状态面板；筛选/搜索导致的空列表仍然要解释。 -->
+        <status-panel
+          wx:if="{{hasAny && !cards.length}}"
+          kind="empty"
+          title="{{emptyTitle}}"
+          detail="{{emptyDetail}}"
+          actionLabel="{{emptyAction}}"
+          bind:action="onEmptyAction"
         />
+        <view wx:elif="{{cards.length}}" class="stack-gap3" aria-label="活动列表">
+          <activity-card
+            wx:for="{{cards}}"
+            wx:key="id"
+            title="{{item.title}}"
+            cover="{{item.cover}}"
+            route-name="{{item.routeName}}"
+            chips="{{item.chips}}"
+            date="{{item.date}}"
+            when="{{item.when}}"
+            featured="{{item.featured}}"
+            compact="{{!item.featured}}"
+            people="{{item.people}}"
+            pending="{{item.pending}}"
+            role-note="{{item.roleNote}}"
+            badge="{{item.badge}}"
+            collab="{{item.collab}}"
+            activity-id="{{item.id}}"
+            data-id="{{item.id}}"
+            bind:open="onOpenCard"
+            bind:collab="onCardCollab"
+          />
+        </view>
       </view>
     </view>
   </block>

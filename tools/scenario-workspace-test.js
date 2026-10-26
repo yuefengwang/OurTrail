@@ -70,8 +70,9 @@ const keysOf = o => Object.keys(o).sort().join(',')
 
 // ---- global.wx 桩：toast/震动/导航栏标题/导航记录；每场景换新，互不串味 ----
 function makeWx() {
-  const rec = { toasts: [], nav: [], titles: [], vibrations: 0, clipboard: [] }
+  const rec = { toasts: [], nav: [], titles: [], vibrations: 0, clipboard: [], scrolls: [] }
   global.wx = {
+    pageScrollTo: o => rec.scrolls.push(o),
     showToast: o => rec.toasts.push((o && o.title) || ''),
     vibrateShort: () => { rec.vibrations++ },
     setNavigationBarTitle: o => rec.titles.push((o && o.title) || ''),
@@ -440,8 +441,16 @@ async function scenario4() {
   await settleComp(comp)
   check('名单读取走 organizer 视角（面板自行拉取授权视图）',
     env.reads.length >= 1 && env.reads[0].perspective === 'organizer', JSON.stringify(env.reads))
-  check('pending 计数入列「已确认 4 · 待审核 1 · 候补 1」',
-    comp.data.countersLine === '已确认 4 · 待审核 1 · 候补 1。仅显示你有权查看的人员。', comp.data.countersLine)
+  // style-B 3b：那行「已确认 4 · 待审核 1 · 候补 1」从一句话改成三格指标带。
+  // 同一批数字换载体，判据跟着载体走，但更强：数字来源（counters 对象）+ 三格齐全 + 缺一格必红。
+  const metricCellCount = src => (src.match(/class="metric"/g) || []).length
+  check('名单汇总：三格指标带取 counters 同一出处（已确认 4 / 待审核 1 / 候补 1），缺一格必红',
+    !!comp.data.counters && comp.data.counters.confirmed === 4
+    && comp.data.counters.pending === 1 && comp.data.counters.waitlisted === 1
+    && ['confirmed', 'pending', 'waitlisted'].every(k => ROSTER_WXML.indexOf('{{counters.' + k + '}}') !== -1)
+    && metricCellCount(ROSTER_WXML) === 3
+    && metricCellCount(ROSTER_WXML.replace('<view class="metric">', '<view class="metric-slot">')) === 2,
+    JSON.stringify({ counters: comp.data.counters, cells: metricCellCount(ROSTER_WXML) }))
   check('wxml：批量动作条仅在有勾选时渲染，空选态只留一句引导（不留五颗死按钮）',
     ROSTER_WXML.indexOf('<view wx:if="{{selectedCount}}" class="stack"') !== -1
     && ROSTER_WXML.indexOf('勾选参与人后，可批量审核、递补、取消或导出。') !== -1
@@ -943,8 +952,53 @@ async function scenario8() {
   }
 }
 
+async function scenarioOperations() {
+  section('9. L3 编排行为：journey 主待办 / 空态 / 工具导航 / 面板同步')
+  const J = require('../miniprogram/utils/journey')
+  const leaderQueue = J.leaderQueue
+  let produced
+  J.leaderQueue = ctx => { produced = leaderQueue(ctx); return produced }
+  try {
+    const rec = makeWx()
+    const view = organizerView()
+    const env = installApi({ view, revision: 11 })
+    const page = makePage(pageConfig())
+    page.onLoad({ id: 'a1' }); page.onShow()
+    await settlePage(page)
+    check('主待办原样取 journey.primary，未重算优先级或丢弃队列', page.data.queuePrimary === produced.primary
+      && page.data.queue === produced.items)
+    check('有门槛仍保留权限允许的阶段确认入口', page.data.canTransition && !!page.data.transitionHint)
+    for (const [target, tab] of [['roster', 1], ['transport', 2], ['field', 3]]) {
+      page.goQueueItem({ currentTarget: { dataset: { target } } })
+      check('待办去 ' + target + ' 切区并滚顶', page.data.tab === tab && rec.scrolls[rec.scrolls.length - 1].scrollTop === 0)
+    }
+    page.goTasks(); page.goNotices(); page.goDetail(); page.goEdit()
+    check('独立工具四入口保留活动 id', rec.nav.join('|') === ['/pages/tasks/tasks?id=a1', '/pages/anotices/anotices?id=a1',
+      '/pages/activity/activity?id=a1', '/pages/editor/editor?id=a1'].join('|'))
+    page.goQueueItem({ currentTarget: { dataset: { target: 'edit' } } })
+    check('旅程完善活动入口仍去同一编辑器', rec.nav[4] === '/pages/editor/editor?id=a1')
+    const key = page.data.syncKey
+    env.state.revision = 12
+    page.onPanelSync()
+    await waitFor(() => page.data.syncKey !== key)
+    check('written → 重读 → phase@revision，切区不丢失', page.data.syncKey === 'published@12'
+      && page.revision === 12 && page.data.tab === 3 && env.reads.length === 2)
+    Object.keys(view.counters).forEach(k => { view.counters[k] = 0 })
+    await page.reload()
+    check('无待办保留 journey 的 idle 说明与真实下一步', page.data.queuePrimary === produced.primary
+      && !!page.data.queuePrimary && page.data.queuePrimary.id === 'idle' && page.data.nextPhaseLabel === '开始集合')
+    view.activity.phase = 'archived'
+    view.permittedActions = []
+    await page.reload()
+    check('只读阶段不新增推进/编辑/取消权限', !page.data.canTransition && !page.data.canEdit && !page.data.canCancel)
+    J.leaderQueue = () => ({ items: [], primary: null, milestone: '' })
+    await page.reload()
+    check('真正空队列仍有阶段说明，不伪造待办', page.data.queue.length === 0 && page.data.queuePrimary === null && !!page.data.subtitle)
+  } finally { J.leaderQueue = leaderQueue }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenarioOperations]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

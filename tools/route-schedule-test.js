@@ -103,5 +103,27 @@ section('7. 工具函数')
   check('非法 time 视为无时间戳', R.schedule([{ id: 'a', time: '不是时间' }], START)[0].known === false)
 }
 
+section('8. durationBetween：只用起止时刻算，缺/倒置/相等一律 null')
+{
+  check('同日 08:00→18:00 = 600 分', R.durationBetween('2026-10-03T08:00:00+08:00', '2026-10-03T18:00:00+08:00') === 600)
+  check('跨日 08:00→次日 08:00 = 1440 分',
+    R.durationBetween('2026-10-03T08:00:00+08:00', '2026-10-04T08:00:00+08:00') === 1440)
+  check('跨日带零头 = 1560 分',
+    R.durationBetween('2026-10-03T08:00:00+08:00', '2026-10-04T10:00:00+08:00') === 1560)
+  check('起止相同 → null（不是「0 分钟活动」）',
+    R.durationBetween('2026-10-03T08:00:00+08:00', '2026-10-03T08:00:00+08:00') === null)
+  check('结束早于开始 → null（不产负数时长）',
+    R.durationBetween('2026-10-03T18:00:00+08:00', '2026-10-03T08:00:00+08:00') === null)
+  check('非法/缺失 → null', R.durationBetween('', null) === null
+    && R.durationBetween('不是时间', '2026-10-03T18:00:00+08:00') === null
+    && R.durationBetween(undefined, undefined) === null)
+  check('30 秒向上取整为 1 分',
+    R.durationBetween('2026-10-03T08:00:00+08:00', '2026-10-03T08:00:30+08:00') === 1)
+  check('20 秒四舍五入为 0 → null（不足一分钟不冒充时长）',
+    R.durationBetween('2026-10-03T08:00:00+08:00', '2026-10-03T08:00:20+08:00') === null)
+  check('时区不同但同一时刻 → null（按绝对时刻判，不按字面钟点）',
+    R.durationBetween('2026-10-03T08:00:00+08:00', '2026-10-03T00:00:00Z') === null)
+}
+
 console.log('\npassed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)

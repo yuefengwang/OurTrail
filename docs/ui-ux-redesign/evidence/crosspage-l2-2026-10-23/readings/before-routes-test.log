@@ -1,0 +1,83 @@
+== 1. route.create：落库、缺省值与校验 ==
+  ✓ route.create ok
+  ✓ ownerId = actor
+  ✓ updatedAt = 服务端时间
+  ✓ source 缺省 manual
+  ✓ visibility 缺省 private
+  ✓ sharedWith 缺省空数组
+  ✓ 不变量通过
+  ✓ revision = 3 档案 + 1 路线
+  ✓ 空标题被拒
+  ✓ 节点 id 重复被拒
+  ✓ schema 严格：多余键被拒
+  ✓ source 枚举外取值被拒
+  ✓ 负距离被拒
+  ✓ 伪造 updatedAt 被拒（服务端时间客户端不可提交）
+== 2. 共享：名单归一、派生 visibility、越权拒读 ==
+  ✓ 带名单创建 ok
+  ✓ sharedWith 去重且剔除自己
+  ✓ visibility 派生为 shared
+  ✓ 共享给不存在的账号被不变量拒
+  ✓ 未登录 canExecute → AUTH_REQUIRED
+== 3. route.update：归属、全量替换、幂等 ==
+  ✓ 他人编辑被拒 FORBIDDEN
+  ✓ 编辑不存在的路线 NOT_FOUND
+  ✓ 被拒命令零副作用
+  ✓ owner 编辑 ok
+  ✓ 标题已更新
+  ✓ source 可改
+  ✓ updatedAt 刷新
+  ✓ 全量替换清空名单
+  ✓ visibility 同步回落 private
+  ✓ 难度写入 ok
+  ✓ 存储层带 difficulty
+  ✓ 单条投影带 difficulty
+  ✓ 列表投影带 difficulty
+  ✓ 不带 difficulty 的更新会清空旧值（不是保留）
+  ✓ 清空后单条投影不再带 difficulty
+  ✓ 非法难度被 schema 拒收
+  ✓ 首次更新 ok
+  ✓ 同 requestId 重放 replayed
+  ✓ 重放后状态逐字节相同
+  ✓ 同 requestId 不同内容 → REQUEST_REUSED
+  ✓ 错误 revision → CONFLICT
+== 4. route.delete：归属与引用保护 ==
+  ✓ 他人删除被拒
+  ✓ 删除不存在 NOT_FOUND
+  ✓ owner 删除 ok
+  ✓ 路线已移除
+  ✓ 带 routeId 建活动 ok
+  ✓ 活动快照取入参里的副本（域不代抄路线）
+  ✓ 被引用的路线删除 → CONFLICT
+  ✓ CONFLICT 文案含活动数
+  ✓ 改路线不动活动快照
+== 5. readRoutes：列表 / 单条 / 权限 / 旧路线缺省 ==
+  ✓ A 的列表 ok
+  ✓ A 看到 2 条（1 条已删）
+  ✓ 列表项是Owner视角
+  ✓ 列表按 updatedAt 倒序
+  ✓ 列表含引用计数
+  ✓ B 只看到共享的那条
+  ✓ B 视角 isOwner=false
+  ✓ C 看不到任何路线
+  ✓ B 可读共享路线
+  ✓ B 读不到 sharedWith 名单
+  ✓ B 视角 isOwner=false
+  ✓ owner 视角 isOwner=true
+  ✓ C 读共享路线 FORBIDDEN
+  ✓ 单条不存在 NOT_FOUND
+  ✓ 未登录读取 AUTH_REQUIRED
+  ✓ 单条含引用活动 id
+  ✓ 单条投影 points 带 ele/不带 time
+== 6. 旧路线：persistPrivateRoute 产物无资产级字段 ==
+  ✓ 旧路线存在且无新字段
+  ✓ 含旧路线的状态仍过不变量
+  ✓ 旧路线可读
+  ✓ 旧路线 source 读作 copy
+  ✓ 旧路线 visibility 读作 private
+  ✓ 旧路线 updatedAt 读作 null
+  ✓ 旧路线对 owner 也给 sharedWith 空数组
+  ✓ 旧路线可编辑
+  ✓ 编辑后补齐资产级字段
+
+routes-test: passed=75 failed=0

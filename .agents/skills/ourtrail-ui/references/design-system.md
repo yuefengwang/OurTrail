@@ -13,14 +13,14 @@
 |---|---|---|
 | `--forest` | #163E35 | 主色：主按钮底、导航栏、hero 卡底、强调文字 |
 | `--leaf` | #D6EA8A | 嫩叶：hero 上的徽标/强调（`.badge.on-forest` 底为 --leaf-on-forest #2D533F） |
-| `--paper` | #F5F5F0 | 页面底色 |
+| `--paper` | #F5F5F0 | 页面底色（冷近白；2026-10-23 由 `#F6F3EC` 暖纸收敛回来，`--muted` 其上 4.91:1） |
 | `--surface` / `--white` | #FFFFFF | 卡片/弹层底（`--white` 供画布色板引用） |
 | `--ink` | #202A26 | 正文 |
-| `--muted` | #5F6E66 | 次要文字（对比度 4.6:1，勿再调淡） |
+| `--muted` | #5F6E66 | 次要文字（`--paper` 上 4.91:1、白卡上 5.37:1，勿再调淡） |
 | `--line` | #DEE3DB | 边框/分隔线 |
 | `--control-line` | #8C9791 | 输入框边框；亦为「入云」天相色 |
 | `--danger/--warning/--info/--success` | #B43D3B / #8C5A12 / #346583 / #276145 | 语义色，配套 `-soft` 浅底 |
-| `--forest-soft` | #ECF0EF | 主色浅底（次按钮、头像底、选中 tab） |
+| `--forest-soft` | #ECF0EF | 主色浅底（次按钮、头像底）；**选中 tab 不再用它**（2026-10-23 改为透明底 + 森林绿字） |
 | `--success-soft` / `--warning-soft` / `--danger-soft` / `--info-soft` | #EBF0EE / #F4F0E9 / #FAF1F1 / #F0F3F6 | 语义色浅底 |
 | `--golden` | #D6A33C | **天相**：黄金/晚霞窗口。由 `MARK_STYLE.golden` 提升而来，改色须同步 |
 | `--blue-hour` | #6C7C93 | **天相**：蓝调时刻。同上，须同步 `MARK_STYLE.blueHour` |
@@ -30,14 +30,17 @@
 | `--on-forest-muted` / `--on-forest-line` | #D0D8D7 / #4E6C65 | 森林底上的次要文字/线 |
 | `--leaf-on-forest` | #2D533F | 森林底上的嫩叶底；亦为「星空」天相色 |
 | `--forest-deep` | #122E28 | 编辑式 hero 照片压底 / 页头沉浸区（2026-10-16 重构新增） |
-| `--stone` | #EDE9DE | 石色次表面：分区带、chip 底（新增） |
-| `--stone-line` | #DCD5C4 | 暖表面分隔线（新增；冷调用 `--line`） |
+| `--stone` | #EDEFEA | 冷中性次表面：搜索条、筛选 chip、分区带（2026-10-23 由暖米 #EDE9DE 收敛） |
+| `--stone-line` | #D9DED7 | 冷表面分隔线（2026-10-23 由 #DCD5C4 收敛；冷调用 `--line`） |
 | `--scrim-hero` | linear-gradient(…forest-deep 0→0.9) | hero 照片自下而上压底（新增） |
-| `--scrim-top` | linear-gradient(…forest-deep 0.3→0) | 照片顶部轻压（新增） |
+| `--scrim-top` | linear-gradient(…forest-deep 0.6→0.4（45%）→0) | overlay 品牌栏顶部压深，200px 波段（2026-10-26 改档，原 0.3→0/40% 只够压状态栏一条边） |
 
 **2026-10-16 编辑式重构**：`--paper` 由 `#F5F5F0` 暖调为 `#F6F3EC`；新增编辑式类
 `.display/.lede/.kicker/.hairline/.stack-sections/.section-head/.fact-row/.hero-cover*/.photo-note`，
 封面照片在 `assets/photos/`（Unsplash 授权，选择逻辑 `utils/covers.js`）。
+**2026-10-23 视觉收敛 A 已推翻暖调**：`--paper` 回到 `#F5F5F0`、石色改冷中性、卡片加 1px `--line`、
+内容分区改下划线页签（`.segmented.tabs-line`）、tabBar 选中态改透明底、活动卡去掉重复「查看活动安排」入口。
+现行完整登记见 `docs/ui-ux-redesign/design-system.md` §10（上句 10-16 描述仅作历史沿革）。
 设计规范全文：`docs/ui-ux-redesign/design-system.md`。
 
 > **`--focus` 已删除**（B-14，2026-10-14）：全仓 `var(--focus)` 引用实测 0 次，小程序里没有 `:focus-visible` 宿主吃它；
@@ -108,7 +111,7 @@
 
 | 类 | 值 | 用途 |
 |---|---|---|
-| `.page-title` | 28px/1.3 字重700 字距-0.6px | 页面大标题（仅 root 页与重要节点） |
+| `.page-title` | 24px/1.3 字重700 字距-0.6px（2026-10-26 由 28 收一档：tab 页不再印页标题，降档避免与品牌栏抢层级） | 页面大标题（下钻页与重要节点） |
 | `.section-title` | 16px/24 700 | 区块标题 |
 | `.eyebrow` | 12px/18 600 字距0.72px muted | 眉题（OURTRAIL · 一起走过） |
 | `.card-label` | 15px 600，`display: block`，`margin-bottom: 12px`（行高继承正文 22px） | **卡内小标题**：卡片里说「这一段是什么」的那一行（「活动时间」「节点 1」「上车点 1」「风险 1」「我的观察点」「导入 GPX 轨迹」…）。5 页 17 处在用（me 7 / editor 4 / route-edit 2 / weather 2 / weather-hub 2），唯一出处 `app.wxss` |
@@ -139,28 +142,33 @@
 | 组件/类 | 用法要点 |
 |---|---|
 | `.button` + `primary/secondary/danger/text/leaf` | view 或 button 均可；必须 `hover-class="button-hover"`；禁用态加 `.disabled`（或原生 `disabled`）并把 bindtap 置空串 |
-| `.card` / `.card-header` | 内容卡；header 用于"标题 + 右侧动作" |
+| `.card` / `.card-header` | 内容卡；header 用于"标题 + 右侧动作"。**2026-10-23 起白底 + 1px `--line` 发丝边、零阴影**。`.notice-card` 自 2026-10-26 反过来：不是卡片，是消息流的一行（透明底 / 无圆角 / 只留底边发丝线，未读只切左侧 2px 边线颜色；正文 `.notice-body` 16/24） |
+| `.card.rows` | **行卡的唯一出处**（2026-10-26 style-B 5a）：卡内装 `.list-row` / `.person-row` 这类自带 18px 上下边距与发丝底边的行时，用 `class="card rows"` 把卡的竖向内边距收到 4px（左右仍 16px，行文字与卡外标题对齐）。此前它是 5 处逐字重复的内联 `style="padding:4px 16px;"`（me 3 / editor 2）；**页面不得再抄第 6 份内联变体**（判据 `tools/personal-route-layout-test.js`，含「个人页内联 style 数 ≤ 11」的棘轮，与 `b4-e05` 的 `INLINE_STYLE_BASELINE` 同族）。 |
 | `.badge` + `success/warning/danger/info/neutral/on-forest` | 状态徽标，文字承载语义 |
 | `.callout` + 同上变体 | 提示块（左边线 3px 语义色），`callout-title` 加粗 |
 | `<status-panel>` | denied/loading(skeleton)/empty/error/offline + 可选 actionLabel；**empty 必带"为什么空 + 下一步"** |
-| `<person-row>` | 头像（无头像回退首字）+ 姓名 + 徽标 + 副标题 + 操作插槽 |
+| `<person-row>` | 头像（无头像回退首字）+ 姓名 + 徽标 + 副标题 + 操作插槽。**全站「人行」只有一个出处**（2026-10-26 style-B 5a）：activity / vehicle / roster-panel / field-panel 之外，`pages/me` 的常用同行人也从私有 `.list-row` + 36px `.avatar-img.sm` 换成它——组件内头像恒 44px（`person-row.wxss:4`），页面里不得再出现第二套人行头像尺寸或配套的无源字阶（判据 `personal-route-layout-test`） |
 | `<form-field>` | label + slot + hint + error；错误时外层 `.field.invalid`。`options` 只能写一次（该组件 wxss 是空的，全靠全局 `.field` 体系） |
 | `<overlay kind="sheet|dialog">` | 底部弹层/居中确认；内容放 `.stack`；危险操作用 dialog + danger 按钮。实测声明为 `multipleSlots: false`（不用具名 slot），改造成具名 slot 时必须同时改这个值 |
-| `<activity-card>` | 活动卡；`featured` 森林底 + 等高线装饰；`info` 属性传指标行 |
+| `<activity-card>` | 活动卡；`featured` 森林底/照片压底 + 等高线装饰。**卡片本体即入口**：2026-10-23 起不再印「查看活动安排」重复主入口；`collab` 非空时只出 leaf chip 协作行（leaf 只做点缀，不承载列表里的重复主操作）。**正文三槽（2026-10-26）**：`chips`（`utils/card-view.chipsOf` 派生，一行不折行，次序即截断优先级 日期 > 难度 > 距离 > 爬升）/ `people` + `pending`（人数只印一处，`pending` 只给组织者）/ `roleNote`（归属短词）+ `badge`（相位短词）。组件**不自己算**投影口径；`info`/`metrics`/`status` 三个旧属性已删除，调用方必须改传新槽位 |
+| `<brand-header>` | 一级 tab 页的品牌栏（2026-10-26）：宿主页 JSON 设 `navigationStyle: custom` 并注册本组件。**两层结构**：文档流占位块 + `position: fixed` 的条（占位让宿主页保留「唯一根节点」，不要为挂它改页骨架）。高度与右侧胶囊避让来自 `utils/header-layout.js`（实测 `getMenuButtonBoundingClientRect`，读不到走兜底），字符串 `OurTrail` + 可选 `title` 跟在词标右侧；`z-index: 90`（低于 overlay 200，高于详情页吸顶分段条 20）。**下钻页保留原生返回栏，不挂本组件** |
+| `<next-up-card>` | 首页「下一次同行」卡（2026-10-26）：输入是页面已派生的 `empty/activityId/title/facts`，整卡 `bind:open`；`empty` 时变邀请卡并在**卡内**给唯一 primary `bind:create`（此时页面的动作行只留次级按钮，同屏不许两个 primary）。不新增域字段、不额外发请求 |
 | `<route-profile>` | 活动/路线海拔剖面；输入 `track`（带可选 `ele`）与 `points`，输出连续/节点/无数据三态；SVG 由 `utils/route-profile.js` 生成并编码为 data-URI。**无连续高程时明确标「节点高程，非连续剖面」，不插值伪造地形**；组件用 `apply-shared` 读取 `.small/.muted/.tabular` |
 | `<profile-gate>` | 按需补资料 sheet：报名/发布前自动弹出；微信头像 `chooseAvatar`、昵称 `input type=nickname`、手机号 `getPhoneNumber` + 手填兜底；保存 `profile.save` 后由宿主重读或续跑原动作。**不要在浏览链路加门**；`getUserProfile` 已不保证返回真实头像昵称，不要用它冒充静默授权 |
-| `.segmented > .seg(.on)` | 分段切换（工作台四分区、首页筛选、编辑器步骤条、车辆页去/返程）。**可点高度取 `--touch-target`（44px），不许写死字面量**（M-06：这里曾是全站唯一硬编码 36px 的尺寸规则，补救只落在 weather-chart 一页）；未选中态文字是 `--ink` 压在 `--line` 轨道上（11.3:1，原 `--muted` 只有 4.12:1 未过自家 4.5:1 门），**选中与否由 `.seg.on` 的白底药丸 + `--forest` + 600 字重承担，不靠把未选中印淡** |
+| `.segmented > .seg(.on)` | 分段切换（工作台四分区、首页筛选、编辑器步骤条、车辆页去/返程）。**可点高度取 `--touch-target`（44px），不许写死字面量**（M-06：这里曾是全站唯一硬编码 36px 的尺寸规则，补救只落在 weather-chart 一页）；未选中态文字是 `--ink` 压在 `--line` 轨道上（11.3:1，原 `--muted` 只有 4.12:1 未过自家 4.5:1 门），**选中与否由 `.seg.on` 的白底药丸 + `--forest` + 600 字重承担，不靠把未选中印淡**。**内容分区变体 `.segmented.tabs-line`**（2026-10-23）：去轨道/白底，文字 + 2px 森林绿下划线（`.on::after`），未选中 `--muted`、选中 `--forest` 600；类名仍是 `.segmented/.seg/.on`，E2E 选择器契约不变 |
 | `.list-row` + `.list-main/.list-sub` | 行列表（图标或箭头收尾） |
+| `.row-title` | **行内主标题**（与徽标/说明挤在同一个 `.cluster` 里的那个名称或分区标题文字）：`font-weight:600` + `overflow-wrap:anywhere` **必须在同一处**（2026-10-26 style-B 5b）。它来自一个真实缺口：`style="font-weight:600;"` 曾在 route / route-edit / editor / signup 内联抄了 13 份，而 M-16 的断词保护只写在 route 那一页的 `.route-node-name` 里 ⇒ 同一个"节点名/风险名/上车点名/参与人名"（都是 maxlength 80 的自由输入）在编辑器与报名页**没有**断词保护，一个无空格拉丁长串就会撑破行。需要块级或与眉题的间距时**再加页面类**（例：`class="row-title route-node-name"`，`.route-node-name` 只留 `display:block; margin-top:2px`）。**全仓判据**（2026-10-26 style-B 5c，`tools/personal-route-layout-test.js`）：独立的 `style="font-weight:600;"` 在**全部页面 + 全部组件的 wxml** 里必须为 0（14 处已收干）；复合内联字重只允许登记的那 2 处，逐条比对不是数个数 —— `editor.wxml:638`（带语义色的**文字动作**，不是行标题）与 `activity.wxml:166`（同族行标题，属已验收写集，登记后续项）。另有 `--text-title` + 26px + 600 这个三元组在 me / routes / staff 三页各抄一份，**判读为同值不同义（铁律 31②）未合并**，见到第四份要先判语义再谈收 |
 | `.timeline/.timeline-item` | 路线节点时间轴（::before 圆点） |
 | `.seat-grid/.seat(.occupied/.aisle/.selected)` | 座位示意：**4 座 + 1 过道 = 每行 5 列**，座位宽 `calc((100% - 48px) / 4)`、过道固定 16px，勿改回 25%（过道占位会错行）。定义在 `app.wxss` 的座位栅格段（**刻意不写行号**：`app.wxss` 从 502 行长到 670 行就把这类引用变成谎话，要定位请用 `grep -n "^\.seat"`） |
-| `.metrics/.metric` | 指标行，**默认三列**（activity/transport-panel/me/workspace 都是三列）；`pages/route` 详情头部是**四列**（公里/爬升米/节点/风险）——以实现为准登记（M-16）。hero 内自动反白；四列时每列约 67px，数字溢出由 `.metric-value` 的 `overflow-wrap: anywhere` 兜住（见下「长文本与数字的溢出策略」） |
+| `.metrics/.metric` | 指标行，**默认三列**（activity/transport-panel/me/workspace 都是三列）；`pages/route` 详情头部是**四列**（公里/爬升米/节点/风险）——以实现为准登记（M-16）。hero 内自动反白；四列时每列约 67px，数字溢出由 `.metric-value` 的 `overflow-wrap: anywhere` 兜住（见下「长文本与数字的溢出策略」）。**紧凑档 `class="metrics compact …"`**（2026-10-26 style-B 5b，`app.wxss`）：`--text-title`(18) / 行距 24 / `letter-spacing:0`，专供四列横排；这一档曾在 `routes.wxss` 与 `route.wxss` 各存一份逐字相同的规则（`.card-label` 事故的同族），页面不得再抄第二份字号/行距/字距。`pages/me` 的 `.profile-stats` 另有一档只改字号（24px），**理由未登记、待裁决**，不要照抄 |
 | `.hero` | 森林底精选卡，子元素加 `.hero-body` 保证叠在装饰层上 |
-| `.tabbar/.tab(.on)` | **唯一真值源是 `custom-tab-bar/index.wxss`，全部字面量**（platform-pitfalls §1 的例外条款）。`app.wxss` 里那份同名 var() 版已删（E-12）：`index.js` 声明 `apply-shared`，全局那份会以 (0,2,0) 压过组件的 (0,1,0)，等于让「导航控件的规格由谁决定」倒过来。**不要**在 `app.wxss` 或任何页面/组件 wxss 再写裸 `.tab`/`.tabbar`，也不要把这边改成 `var()` |
+| `.tabbar/.tab(.on)` | **唯一真值源是 `custom-tab-bar/index.wxss`，全部字面量**（platform-pitfalls §1 的例外条款）。`app.wxss` 里那份同名 var() 版已删（E-12）：`index.js` 声明 `apply-shared`，全局那份会以 (0,2,0) 压过组件的 (0,1,0)，等于让「导航控件的规格由谁决定」倒过来。**不要**在 `app.wxss` 或任何页面/组件 wxss 再写裸 `.tab`/`.tabbar`，也不要把这边改成 `var()`。**选中态（2026-10-23）**：`#163E35` 字 + 600 字重 + 透明底，已去掉 `#ECF0EF` 药丸底；`tools/swx1-style-gates-test.js` T2.6 钉这三个终值 |
 | `.code-text` | 身份码等等宽强调 |
 | `.tabular` | 数字对齐（时间/里程/人数），`app.wxss:95` |
 | `.map-card/.map-canvas` | 原生 `map` 组件外框（260px、14px 圆角、`overflow:hidden`）。低版本基础库非同层渲染时圆角会失效，接受降级、**不在 map 上叠普通 view**。marker 图标用 `assets/markers/*.png`（`tools/gen-map-markers.js` 生成；iconPath 不支持 base64），序号用 marker `label`，信息用原生 callout，白底 forest 字。地图元素配色：轨迹线 `#163E35AA` 宽 4 `arrowLine`、降级虚线 `#8C9791AA` 宽 2 `dottedLine`；marker=起点 forest/途中白底 forest 描边/终点 leaf+forest 描边/上车点 info 蓝，均为圆点造型（选中态放大到 30 即可，无需单独图）。 |
 | `.section-head/.section-title/.section-sub` | 页面内分区标题（把长页分成几段，如天气页的"客观指标 / 结论"）。标题 700 正文号，右侧 `.section-sub` 12px muted。**实测定义在 `pages/weather/weather.wxss:136/:139`，不是 `app.wxss`** ⇒ 跨页复用要先决定是否提升进全局（提升即新规范动作，需登记） |
-| `.cond-card` / `.cond-pheno` / `.cond-silent` / `.cond-label` / `.cond-grade` / `.cond-stars` / `.cond-why` / `.cond-main` / `.sky-look` / `.sky-look-label` / `.sky-look-text` / `.ag-grade` / `.reason-note` | **天气结论卡实际类名**，全部定义在 `pages/weather/weather.wxss`（`:142` 起，`.sky-look*` 在 :180/:188/:197）。`.sky-look` 为 forest-soft 底的方向/时段条，左侧 `.sky-look-label` 是白底 forest 药丸标签，正文在 `.sky-look-text`；`.cond-silent` 是被沉默项的点名行，左边条降为分隔线色以免与 `.cond-card` 抢注意力 |
+| `.cond-card` / `.cond-pheno` / `.cond-silent` / `.cond-label` / `.cond-grade` / `.cond-stars` / `.cond-why` / `.cond-main` / `.cond-strip` / `.cond-strip__pills` / `.cond-pill` / `.cond-pill__title` / `.cond-pill__stars` / `.point-meta` / `.sky-look` / `.sky-look-label` / `.sky-look-text` / `.ag-grade` / `.reason-note` | **天气结论卡实际类名**，全部定义在 `pages/weather/weather.wxss`（`:142` 起，`.sky-look*` 在 :180/:188/:197）。`.sky-look` 为 forest-soft 底的方向/时段条，左侧 `.sky-look-label` 是白底 forest 药丸标签，正文在 `.sky-look-text`；`.cond-silent` 是被沉默项的点名行，左边条降为分隔线色以免与 `.cond-card` 抢注意力。`.cond-strip*` / `.cond-pill*` 是首屏条件 strip（D7，2026-10-26）：卡本体 = `.card.cond-card.cond-strip`，pill = forest-soft 底圆角标签，**零新色值、不可点**（与明细卡同一批 `condCards` 字段，星串逐字节相同，由 `tools/page2-gates-test.js §5b` 钉）。`.point-meta` 是点卡的「坐标 · 海拔」caption 行（D7 补完同日：点卡从页首下移到图上方，226px → 两行，四项事实一个不少，由同套件 §5b 钉次序与事实） |
+| `.hour-strip` / `.hour-strip__item` / `.hour-strip__temp` / `.hour-strip__t` / `.pop-strip` / `.pop-strip__label` / `.pop-strip__row` / `.pop-strip__v` / `.brief-rows` | **天气页图前后两条读带**（Slice 4，2026-10-26，定义在 `pages/weather/weather.wxss`）。`.hour-strip` 是图**上方**的逐时摘要带：固定 **8 列**、步长 = 窗长 / 8（3 / 6 / 9 小时），每列「WMO 简字 / 温度 / 时刻」三级；简字复用 `.day-phrase` 的 tone（文字承载语义，**零新色值**），温度 `--ink`、时刻 `--muted`。`.pop-strip` 是图**下方**的降水概率行，用同一套 `flex:1 0 0` 等分 ⇒ 与摘要带按列对齐；整行由 `popShown` 控制（全缺不印），个别缺印「—」（缺测 ≠ 不会下雨）。**列表键必须带日期**（`d + 'T' + t`，模板 `wx:key="k"`）：48/72h 跨天，同一时刻会重复。`.brief-rows` 只是收掉 `.card` 与 `.fact-row` 叠出来的双份上下留白，行形态仍来自 `app.wxss` 的 `.fact-row`。判据 `tools/page2-gates-test.js §5b`、`tools/weather-page-test.js §8` |
 | `.lg` | 云场图例类，定义在 `components/meteogram/meteogram.wxss:22`（组件本地，不在全局） |
 
 > 旧版本本节曾登记 `.sky-card` / `.sky-title` / `.sky-text` 三个类 —— 2026-10-14 全库检索 **NOT_FOUND**，属文档 STALE，已按上表真实类名替换（原文的语义由 `.cond-*` 系列承接）。
@@ -266,7 +274,7 @@
 
 ## 页面模板
 
-- **root 页**（tabBar 页，名单见上节；实测 4 页）：`.eyebrow` + `.page-title` + 一句 `.muted` 副标题开头；底部留白按上节「Tab 页底部留白」那条公式，四条 tab 页各写一份且由判据钉成同构。
+- **root 页**（tabBar 页，名单见上节；实测 4 页）：`.eyebrow` + `.page-title` + 一句 `.muted` 副标题开头；底部留白按上节「Tab 页底部留白」那条公式，四条 tab 页各写一份且由判据钉成同构。**2026-10-26 起 3 页例外（首页 / 通知 / 我的）**：页内不再有 `.page-title`，身份由 `<brand-header>` 承担、分区由 `.section-head`（kicker + 20px `.list-head__title` + `.section-sub`）承担；天气中心页批次二再跟，别照抄这三页的形态到还没迁移的页。
 - **子页**：原生导航栏（深绿底白字），内容区从 `eyebrow + page-title` 或直接正文开始；底部留白**不写任何覆盖**，吃 `app.wxss` 的 `.page` 基线；操作区用 `.sticky-action`（固定底栏）或 `.form-actions`，用了固定底栏才挂 `.page.has-sticky`（120px）。
 - **工作台类**（workspace/staff）：顶部指标 `.metrics` + `.segmented` 分区 + 面板组件。；面板间写入失效靠 `sync-key` 与 `bind:written`（见 `miniprogram/AGENTS.md`）。
 - 新建页面的 5 步注册清单（目录四件套 → `app.json` `pages` → 页面 json 的 `usingComponents`（根绝对路径）→ 需要全局类时加 `styleIsolation` → `node tools/check.js`）**以 `miniprogram/AGENTS.md` 的「A new page requires 5 steps」为准**，本文件不重复维护。

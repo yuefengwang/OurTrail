@@ -2,14 +2,83 @@
 /* 面板分区显隐：hidden 属性在自定义组件宿主上不生效，必须用类名（page 作用域命中组件宿主） */
 .hide { display: none; }
 
-/* 指标带（2026-10-16 编辑式对齐）：把三个"即入口"的数字收进一条石色带里，
-   分组但不做成三张卡片——工作台不是仪表盘（design-system.md §3 C 域）。
-   分隔用发丝线，不用阴影。 */
-.workspace-band {
-  background: var(--stone);
-  border-radius: var(--radius-card);
-  padding: 14px 16px;
+/* 首屏骨架（Slice 3a）：身份块与纸面板必须是同一个**零 gap** 的 flex 列。
+   .sheet-top 的 margin-top:-20px 就是「盖住身份块下沿 20px」的全部来源；
+   若这层再套 .stack（gap 16），负外边距会被 gap 抵掉，实际只剩 4px 重叠——
+   首页 2026-10-26 那次就是这么把 20 读成 4 的。flex 也不会让子项外边距合并。 */
+.ws-top { display: flex; flex-direction: column; }
+
+/* 身份块：满宽森林底，从导航下开始（-24 抵掉 .page 的顶内边距，本页顶部没有其它前置提示）；
+   下沿留 56px，其中 20px 会被纸面板盖住，露出的是标题与阶段徽标之间的一段呼吸。 */
+.workspace-hero {
+  margin: -24px -20px 0;
+  padding: 20px 20px 56px;
+  background: var(--forest);
+  color: var(--white);
 }
-.workspace-band .metrics { border-top: 1px solid var(--stone-line); padding-top: 12px; }
-.workspace-band .metric + .metric { border-left: 1px solid var(--stone-line); padding-left: 12px; }
-.workspace-band .metric .metric-value { font-size: 24px; }
+/* 身份头：标题回答「哪一场」，阶段徽标回答「走到哪」 */
+.workspace-identity { display: flex; flex-direction: column; gap: 6px; }
+.workspace-hero .eyebrow { color: var(--on-forest-muted); }
+/* 20/28：参考板的工作台标题比详情页标题小一档——这一屏的主句是下面的待办，不是活动名 */
+.workspace-hero__title {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  overflow-wrap: anywhere;
+}
+.workspace-hero__sub {
+  font-size: var(--text-caption);
+  line-height: 18px;
+  color: var(--on-forest-muted);
+}
+
+/* 纸面板承担其余全部内容：圆角与上沿 20px 重叠来自全局 .sheet-top；
+   分区之间 20px，下沿补 24px——全局 .sheet-top 的 padding-bottom 是 0。 */
+.ws-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 24px;
+}
+
+/* ① 现在这一步：主待办一块浅叶底，其余待办退为普通行。
+   队列不再包 .card：纸面板本身就是它的表面，行间只靠 .list-row 自带的发丝线。 */
+.workspace-queue { display: flex; flex-direction: column; gap: 10px; }
+.queue-card { padding: 0; }
+.queue-card .list-row.primary {
+  background: var(--forest-soft);
+  border-bottom: 0;
+  border-radius: var(--radius-button);
+  margin: 4px 0;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.queue-card .list-row.primary text { color: var(--forest); font-weight: 600; }
+.queue-card .list-row.primary .list-sub { color: var(--forest); font-weight: 400; }
+.queue-card .idle-row { border-bottom: 0; }
+
+/* ② 三个事实格：C17 保留，但去卡片化——纸面已经是白面，再叠石色卡片会变成第二层表面。
+   改成一条紧凑指标带：格间发丝线，字号回落到全局 26px，把视觉主块让给检查队列。 */
+.workspace-band { font-size: var(--text-input); }
+.workspace-band .metrics { padding: 2px 0 0; }
+.workspace-band .metric + .metric { border-left: 1px solid var(--line); padding-left: 14px; }
+.trip-summary { display: block; margin-top: 8px; }
+
+/* ④ 独立工具：处理完待办之后的去处，双列而非横排小字 */
+.workspace-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.workspace-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: var(--action-height);
+  padding: 12px 14px;
+  text-align: left;
+}
+.workspace-tool__title { font-size: var(--text-body); font-weight: 600; line-height: 20px; }
+.workspace-tool__sub { font-size: var(--text-caption); font-weight: 400; line-height: 18px; color: var(--muted); }
+
+/* ⑤ 阶段区块 */
+.workspace-phase { display: flex; flex-direction: column; gap: 10px; }

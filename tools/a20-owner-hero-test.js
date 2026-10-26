@@ -6,7 +6,8 @@
 //       测试里不重写页面的拼装逻辑（镜像页面逻辑=给过期契约背书，见 SYNC.md:162 / 铁律 11）。
 // 双向要求（本仓库第十/十一轮的教训：减话类改动只测「被藏起来」会放过「永远不说」）：
 //   · 非组织者看不到待审核 = 一条断言；组织者仍看得到 = 另一条断言；
-//   · 搜索结果不升 hero = 一条断言；无搜索的全量列表仍升 hero = 另一条断言。
+//   · 搜索结果不升 hero；L2/L3 已批准发现页全量改紧凑卡，重点阳性对照迁至首页。
+//     保留搜索清空/空白词/原列表顺序/字段完整性覆盖，不把旧 hero 门直接删除。
 // 判据是行为级的：同一个 pending 数字换归属位（meta.owner）分别产出什么；
 // 不数节点、不钉源码文本（铁律 30/21）。
 'use strict'
@@ -58,6 +59,11 @@ function withoutKey(meta, key) {
   const m = clone(meta)
   delete m[key]
   return m
+}
+// C16（2026-10-26 style-B）：首屏「下一次同行」会从「我的活动」列表里剔除自己。
+// 凡要断言列表本身的用例，都先铺一场更早的同行活动去占首屏；它不带协作角色、不参与这些用例的判据。
+function hero() {
+  return homeActivity('soon', { startAt: '2026-10-15T08:00:00+08:00' })
 }
 
 // ---- 首页：四个并行 read 全走真 utils/api ----
@@ -151,6 +157,7 @@ async function main() {
   section('1. 首页 info 行：同一个数字，两种归属，两种产出')
   {
     const acts = [
+      hero(),
       homeActivity('own'),
       homeActivity('other', { meta: Object.assign(clone(homeActivity('x').meta), { owner: false }) }),
     ]
@@ -170,18 +177,24 @@ async function main() {
       theirs.info === '已确认 3 人 · 名额 10 人', theirs.info)
     check('两行唯一差异就是那一段（去掉它，非组织者行与组织者行逐字节相同）',
       mine.info.replace(' · 待审核 7 人', '') === theirs.info, mine.info + ' / ' + theirs.info)
-    check('除归属相关的三个字段（info/status/featured）外卡片逐字节相同：收口没顺手改名、减卡、动 hero',
-      JSON.stringify(exceptCard(mine, ['id', 'info', 'status', 'featured'])) === JSON.stringify(exceptCard(theirs, ['id', 'info', 'status', 'featured'])),
-      JSON.stringify([exceptCard(mine, ['id', 'info', 'status', 'featured']), exceptCard(theirs, ['id', 'info', 'status', 'featured'])]))
+    check('除归属相关的字段（info/status/featured + 新槽位 roleNote/pending）外卡片逐字节相同：收口没顺手改名、减卡、动 hero',
+      JSON.stringify(exceptCard(mine, ['id', 'info', 'status', 'featured', 'roleNote', 'pending'])) === JSON.stringify(exceptCard(theirs, ['id', 'info', 'status', 'featured', 'roleNote', 'pending'])),
+      JSON.stringify([exceptCard(mine, ['id', 'info', 'status', 'featured', 'roleNote', 'pending']), exceptCard(theirs, ['id', 'info', 'status', 'featured', 'roleNote', 'pending'])]))
     check('归属前缀「我组织的」照旧（本页原有的归属表达没被动过）',
       mine.status.indexOf('我组织的 · ') === 0 && theirs.status.indexOf('我组织的') === -1,
       mine.status + ' / ' + theirs.status)
+    // 2026-10-26 style-B：归属从 status 一长串拆成 roleNote（左）与 pending（右）两个槽位。
+    // 这是同一事实的新表达，必须与 info/status 同源：组织者两处都在，非组织者两处都空。
+    check('新槽位与旧行同源：roleNote/pending 只在归属侧出现，非组织者一格都不漏',
+      mine.roleNote === '我组织的' && theirs.roleNote === ''
+      && mine.pending === '待审核 7 人' && theirs.pending === '',
+      [mine.roleNote, theirs.roleNote, mine.pending, theirs.pending].join(' / '))
   }
 
   section('1b. 同一场活动只换归属位：只有 info 与 status 变，hero/时间/日期一个字节都不动')
   {
-    const asOwner = (() => { const a = homeActivity('solo'); return [a] })()
-    const asGuest = (() => { const a = homeActivity('solo'); a.meta.owner = false; return [a] })()
+    const asOwner = (() => { const a = homeActivity('solo'); return [hero(), a] })()
+    const asGuest = (() => { const a = homeActivity('solo'); a.meta.owner = false; return [hero(), a] })()
     const po = bootHome({ activities: asOwner })
     await waitFor(() => po.page.data.loading === false)
     const pg = bootHome({ activities: asGuest })
@@ -190,12 +203,14 @@ async function main() {
     const cg = cardOf(pg.page, 'solo')
     check('有效性门：两次都装配出同一场活动（id/startAt 相同）',
       !!co && !!cg && co.date === cg.date, JSON.stringify([co, cg]))
+    check('C16 夹具自证：首屏是另一场更早的活动，solo 才留在列表里',
+      po.page.data.nextUp && po.page.data.nextUp.id === 'soon', JSON.stringify(po.page.data.nextUp))
     check('hero 判定与归属无关（featured 两次相同 = 本轮没有把 hero 逻辑牵扯进来）',
       co.featured === cg.featured, JSON.stringify([co.featured, cg.featured]))
     check('when（出发倒计时）两次逐字节相同——首页那条「还有多久」是设计决定，不许被动',
       co.when === cg.when && co.when !== '', co.when + ' / ' + cg.when)
-    check('除 info/status 外全部字段逐字节相同（越界 0）',
-      JSON.stringify(exceptCard(co, ['info', 'status'])) === JSON.stringify(exceptCard(cg, ['info', 'status'])),
+    check('除 info/status/roleNote/pending 外全部字段逐字节相同（越界 0）',
+      JSON.stringify(exceptCard(co, ['info', 'status', 'roleNote', 'pending'])) === JSON.stringify(exceptCard(cg, ['info', 'status', 'roleNote', 'pending'])),
       JSON.stringify([co, cg]))
     check('info 的差异恰好是那一段（不多不少，不留分隔符孤尾）',
       co.info === cg.info.slice(0, '已确认 3 人'.length) + ' · 待审核 7 人' + cg.info.slice('已确认 3 人'.length),
@@ -205,6 +220,7 @@ async function main() {
   section('2. 首页：待审核的 0 与缺位（0 是事实，缺位按非组织者）')
   {
     const acts = [
+      hero(),
       homeActivity('zero-own', { meta: Object.assign(clone(homeActivity('x').meta), { pending: 0 }) }),
       homeActivity('zero-other', { meta: Object.assign(clone(homeActivity('x').meta), { pending: 0, owner: false }) }),
     ]
@@ -216,9 +232,12 @@ async function main() {
     check('非组织者 + pending=0 也不因数字为 0 而多出一段空文本（分隔符没留孤尾）',
       cardOf(page, 'zero-other').info === '已确认 3 人 · 名额 10 人',
       cardOf(page, 'zero-other').info)
+    check('新槽位同源：组织者 pending 槽照印 0，非组织者整格为空',
+      cardOf(page, 'zero-own').pending === '待审核 0 人' && cardOf(page, 'zero-other').pending === '',
+      cardOf(page, 'zero-own').pending + ' / ' + cardOf(page, 'zero-other').pending)
   }
   {
-    const acts = [homeActivity('nokey', { meta: withoutKey(homeActivity('x').meta, 'owner') })]
+    const acts = [hero(), homeActivity('nokey', { meta: withoutKey(homeActivity('x').meta, 'owner') })]
     const { page } = bootHome({ activities: acts })
     await waitFor(() => page.data.loading === false)
     const c = cardOf(page, 'nokey')
@@ -234,8 +253,16 @@ async function main() {
     ]
     const { page } = bootHome({ activities: acts, opened: ['own-recent', 'guest-recent'] })
     await waitFor(() => page.data.loading === false)
+    // C16：own-recent 正是首屏那一场 ⇒ 默认「我的活动」里只剩空列表（guest-recent 本就不在这一档）。
+    check('C16：默认档里 hero 不在列表里重复，列表空态说明它已经在上面',
+      page.data.nextUp && page.data.nextUp.id === 'own-recent' && page.data.cards.length === 0
+      && page.data.emptyTitle === '其余活动会出现在这里',
+      JSON.stringify([page.data.nextUp, page.data.cards.map(c => c.id), page.data.emptyTitle]))
     page.onFilter({ currentTarget: { dataset: { value: 'recent' } } })
     await waitFor(() => page.data.cards.length === 2)
+    check('C16 的范围：剔除只发生在「我的活动」；「最近查看」里同一场必须还在（那一档的名字就是它）',
+      !!cardOf(page, 'own-recent'),
+      JSON.stringify(page.data.cards.map(c => c.id)))
     const own = cardOf(page, 'own-recent')
     const guest = cardOf(page, 'guest-recent')
     check('「最近查看」里的组织者活动仍含待审核（第二个入口没漏）',
@@ -270,19 +297,34 @@ async function main() {
       cardOf(page, 'staff-only').info + ' / ' + cardOf(page, 'veh-own').info)
   }
 
-  // ============ 4. 发现页：hero 的依据是列表自己的声明（第二半） ============
-  section('4. 发现页：全量列表仍升 hero，搜索结果不升')
+  section('4a. 重点迁移的阳性对照：首页既有 featured 不可被一刀切关掉')
+  {
+    const { page } = bootHome({ activities: [
+      hero(),
+      homeActivity('later', { startAt: '2026-11-03T08:00:00+08:00' }),
+      homeActivity('first', { startAt: '2026-11-01T08:00:00+08:00' }),
+    ] })
+    await waitFor(() => !page.data.loading)
+    check('首页按出发时间排序，只有首张非草稿是重点',
+      page.data.cards.map(c => c.id).join(',') === 'first,later'
+      && page.data.cards[0].featured === true && page.data.cards[1].featured === false)
+  }
+  {
+    const { page } = bootHome({ activities: [hero(), homeActivity('draft-first', { phase: 'draft' }), homeActivity('second')] })
+    await waitFor(() => !page.data.loading)
+    check('首页首张是草稿时仍不提升，不擅自越过它另猜重点', page.data.cards.length === 2 && page.data.cards.every(c => !c.featured))
+  }
+  section('4. 发现页：全量/搜索/清空都不制造重点，卡片事实与顺序完整保留')
   {
     const acts = [discoverActivity('d1'), discoverActivity('d2', { owner: true }), discoverActivity('d3')]
     const { page, env } = bootDiscover({ activities: acts })
     await waitFor(() => page.data.loading === false)
     check('有效性门：不带搜索词时装配出 3 张卡',
       page.data.cards.length === 3, JSON.stringify(page.data.cards.map(c => c.id)))
-    check('全量列表第一条是 hero（不是一刀切把功能关掉）',
-      page.data.cards.filter(c => c.featured).length === 1 && page.data.cards[0].featured === true,
-      JSON.stringify(page.data.cards.map(c => c.featured)))
-    check('其余条目不是 hero（hero 只有一个，且与列表第一条同一个对象）',
-      page.data.cards.slice(1).every(c => c.featured === false), JSON.stringify(page.data.cards.map(c => c.featured)))
+    check('全量发现列表不升 hero（已批准的新边界，首页阳性对照见 4a）',
+      page.data.cards.every(c => c.featured === false), JSON.stringify(page.data.cards.map(c => c.featured)))
+    check('不提升也不改服务端给出的列表顺序',
+      page.data.cards.map(c => c.id).join(',') === 'd1,d2,d3', JSON.stringify(page.data.cards.map(c => c.id)))
     check('read 请求确实不带搜索词（hero 判定与发出去的 search 同口径）',
       env.reads[0].search === '', JSON.stringify(env.reads[0]))
 
@@ -294,20 +336,21 @@ async function main() {
       searched.length === 3 && searched.every(c => !!c.id), JSON.stringify(searched.map(c => c.id)))
     check('搜索结果一条都不升 hero（第一条只是「关键词恰好命中」，没有编辑依据）',
       searched.every(c => c.featured === false), JSON.stringify(searched.map(c => c.featured)))
-    check('搜索与全量两次的差异只有 featured 一个字段（其余字段逐字节相同 = 越界 0）',
-      JSON.stringify(searched.map(c => exceptCard(c, ['featured']))) === JSON.stringify(browse.map(c => exceptCard(c, ['featured']))),
-      JSON.stringify([browse.map(c => c.featured), searched.map(c => c.featured)]))
+    check('搜索与全量同一结果全部字段逐字节相同（不再豁免 featured）',
+      JSON.stringify(searched) === JSON.stringify(browse), JSON.stringify([browse, searched]))
 
+    const beforeClear = env.reads.length
     page.onClearSearch()
-    await waitFor(() => page.data.cards.some(c => c.featured === true))
-    check('清空搜索后 hero 回来（双向：判据不是「永远不说」）',
-      page.data.cards.filter(c => c.featured).length === 1 && page.data.cards[0].featured === true,
+    await waitFor(() => env.reads.length > beforeClear)
+    check('清空搜索真实重查，并恢复全部卡片事实而不提升 hero',
+      env.reads[env.reads.length - 1].search === '' && JSON.stringify(page.data.cards) === JSON.stringify(browse),
       JSON.stringify(page.data.cards.map(c => c.featured)))
 
     page.data.search = '   '
     await page.reload()
-    check('只有空格的搜索词按空处理（口径是 trim 后的词，与发往服务端的 search 一致）',
-      page.data.cards[0].featured === true, JSON.stringify(page.data.cards.map(c => c.featured)))
+    check('只有空格按空请求处理，卡片与全量逐字相同',
+      env.reads[env.reads.length - 1].search === '' && JSON.stringify(page.data.cards) === JSON.stringify(browse),
+      JSON.stringify(page.data.cards.map(c => c.featured)))
     page.onUnload()
   }
 

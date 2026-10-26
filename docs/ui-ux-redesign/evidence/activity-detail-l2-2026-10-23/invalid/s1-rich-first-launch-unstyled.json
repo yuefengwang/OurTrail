@@ -1,0 +1,237 @@
+{
+  "side": "s1",
+  "scenario": "rich",
+  "capturedAt": "2026-10-23T09:55:37.673Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "fixture": {
+    "file": "fixtures\\rich.json",
+    "title": "青城后山 · 周末轻徒步"
+  },
+  "gates": {
+    "loadingFalse": true,
+    "titleIntact": true,
+    "selectorFound": true
+  },
+  "markers": {
+    "heroSelectable": true,
+    "factGridStats": true,
+    "secFactsGone": true,
+    "infoCard": true,
+    "coverFailedClass": false
+  },
+  "geometry": {
+    "viewport": {
+      "windowWidth": 390,
+      "windowHeight": 753,
+      "pixelRatio": 3,
+      "SDKVersion": "3.8.12",
+      "platform": "devtools",
+      "model": "iPhone 12/13 (Pro)",
+      "system": "iOS 10.0.1"
+    },
+    "page": {
+      "left": 0,
+      "top": 0,
+      "width": 390,
+      "height": 3071
+    },
+    "hero": {
+      "left": 0,
+      "top": 0,
+      "width": 390,
+      "height": 337
+    },
+    "media": {
+      "left": 0,
+      "top": 0,
+      "width": 390,
+      "height": 291
+    },
+    "heroBody": {
+      "left": 0,
+      "top": 290.5,
+      "width": 390,
+      "height": 46
+    },
+    "infoCard": {
+      "left": 0,
+      "top": 336.5,
+      "width": 390,
+      "height": 253
+    },
+    "titleBlockDeltaFromMediaBottom": -0.5,
+    "cardDeltaFromHeroBottom": -0.5,
+    "infoCells": [
+      {
+        "box": {
+          "left": 0,
+          "top": 336.5,
+          "width": 390,
+          "height": 69
+        },
+        "label": "活动时间",
+        "value": "10/3 08:00",
+        "unit": "",
+        "sub": "至 10/3 18:00 · 截止 10/2 08:00"
+      },
+      {
+        "box": {
+          "left": 0,
+          "top": 405.5,
+          "width": 390,
+          "height": 69
+        },
+        "label": "集合",
+        "value": "东门集合点",
+        "unit": "",
+        "sub": "10/3 07:30"
+      },
+      {
+        "box": {
+          "left": 0,
+          "top": 474.5,
+          "width": 390,
+          "height": 69
+        },
+        "label": "人数",
+        "value": "2 / 20",
+        "unit": "人",
+        "sub": "成行 3 人"
+      },
+      {
+        "box": {
+          "left": 0,
+          "top": 543.5,
+          "width": 390,
+          "height": 46
+        },
+        "label": "强度",
+        "value": "中等",
+        "unit": "",
+        "sub": ""
+      }
+    ],
+    "statCells": [
+      {
+        "box": {
+          "left": 0,
+          "top": 1644.5,
+          "width": 390,
+          "height": 46
+        },
+        "label": "路线里程",
+        "value": "12.5",
+        "unit": "km",
+        "sub": ""
+      },
+      {
+        "box": {
+          "left": 0,
+          "top": 1690.5,
+          "width": 390,
+          "height": 46
+        },
+        "label": "累计爬升",
+        "value": "860",
+        "unit": "m",
+        "sub": ""
+      },
+      {
+        "box": {
+          "left": 0,
+          "top": 1736.5,
+          "width": 390,
+          "height": 69
+        },
+        "label": "最高海拔",
+        "value": "900",
+        "unit": "m",
+        "sub": "轨迹高程"
+      },
+      {
+        "box": {
+          "left": 0,
+          "top": 1805.5,
+          "width": 390,
+          "height": 46
+        },
+        "label": "预计用时",
+        "value": "10",
+        "unit": "小时",
+        "sub": ""
+      }
+    ],
+    "photoNote": {
+      "left": 0,
+      "top": 589.5,
+      "width": 224,
+      "height": 23
+    },
+    "infoColumns": {
+      "rowCount": 4,
+      "maxInRow": 1,
+      "widthDiffs": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "statColumns": {
+      "rowCount": 4,
+      "maxInRow": 1,
+      "widthDiffs": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "overflow": {
+      "viewportWidth": 390,
+      "maxRight": 390,
+      "minLeft": 0,
+      "overflowRight": 0
+    }
+  },
+  "screenshot": {
+    "file": "s1-rich-top.png",
+    "bytes": 122201,
+    "width": 306,
+    "height": 660
+  },
+  "status": "VALID",
+  "data": {
+    "title": "青城后山 · 周末轻徒步",
+    "infoFacts": 4,
+    "routeStats": 4,
+    "coverFailed": false,
+    "coverIsReal": true,
+    "photoNote": "封面与正文图片由组织者提供。",
+    "secNo": {
+      "intro": "01",
+      "peers": "02",
+      "itinerary": "03",
+      "weather": "04",
+      "route": "05",
+      "safety": "06",
+      "equipment": "07",
+      "fee": "08",
+      "signup": "09"
+    }
+  },
+  "screenshotInfo": {
+    "file": "s1-rich-info.png",
+    "bytes": 69268,
+    "width": 306,
+    "height": 660
+  }
+}

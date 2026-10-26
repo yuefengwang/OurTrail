@@ -1,0 +1,185 @@
+{
+  "system": {
+    "brand": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1",
+    "platform": "devtools",
+    "benchmarkLevel": -1,
+    "pixelRatio": 3,
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "windowWidth": 390,
+    "windowHeight": 844,
+    "statusBarHeight": 47,
+    "safeArea": {
+      "top": 47,
+      "left": 0,
+      "right": 390,
+      "bottom": 810,
+      "width": 390,
+      "height": 763
+    },
+    "language": "zh_CN",
+    "version": "8.0.5",
+    "fontSizeSetting": 16,
+    "SDKVersion": "3.8.12",
+    "host": {
+      "env": "WeChat"
+    },
+    "enableDebug": false,
+    "mode": "default",
+    "deviceOrientation": "portrait",
+    "bluetoothEnabled": true,
+    "locationEnabled": true,
+    "wifiEnabled": true,
+    "albumAuthorized": true,
+    "cameraAuthorized": true,
+    "locationAuthorized": true,
+    "microphoneAuthorized": true,
+    "notificationAuthorized": true,
+    "notificationAlertAuthorized": true,
+    "notificationBadgeAuthorized": true,
+    "notificationSoundAuthorized": true,
+    "phoneCalendarAuthorized": true,
+    "bluetoothAuthorized": true,
+    "locationReducedAccuracy": true,
+    "devicePixelRatio": 3
+  },
+  "clientHeight": 753,
+  "blocks": {
+    "eyebrow": {
+      "top": 28,
+      "left": 20,
+      "w": 51,
+      "h": 16,
+      "bottom": 44,
+      "text": "行前参考"
+    },
+    "pageTitle": {
+      "top": 50,
+      "left": 20,
+      "w": 350,
+      "h": 31,
+      "bottom": 81,
+      "text": "留意天气，也留意天相。"
+    },
+    "disclaimer": {
+      "top": 97,
+      "left": 20,
+      "w": 350,
+      "h": 90,
+      "bottom": 187,
+      "text": "这是概率判断，不是出发许可。云层与云海为模型推算，具体山谷的云海与光染任何产品都"
+    },
+    "pointCard": {
+      "top": 417,
+      "left": 20,
+      "w": 350,
+      "h": 94,
+      "bottom": 511,
+      "text": "天相条件 ★★☆☆☆条件较差 星空 ★★☆☆☆ 银河 ★★☆☆☆"
+    },
+    "formFields": [
+      {
+        "top": 203,
+        "left": 20,
+        "w": 350,
+        "h": 74,
+        "bottom": 277,
+        "text": "查看日期 2026-10-26 ▾"
+      }
+    ],
+    "ownerBtn": null,
+    "callouts": [
+      {
+        "top": 97,
+        "left": 20,
+        "w": 350,
+        "h": 90,
+        "bottom": 187,
+        "text": "这是概率判断，不是出发许可。云层与云海为模型推算，具体山谷的云海与光染任何产品都"
+      },
+      {
+        "top": 293,
+        "left": 20,
+        "w": 350,
+        "h": 46,
+        "bottom": 339,
+        "text": "此点可能入云（雾），观景窗口有限"
+      },
+      {
+        "top": 355,
+        "left": 20,
+        "w": 350,
+        "h": 46,
+        "bottom": 401,
+        "text": "午后阵雨概率高，建议早点出发"
+      }
+    ],
+    "strip": {
+      "top": 417,
+      "left": 20,
+      "w": 350,
+      "h": 94,
+      "bottom": 511,
+      "text": "天相条件 ★★☆☆☆条件较差 星空 ★★☆☆☆ 银河 ★★☆☆☆"
+    },
+    "silent": {
+      "top": 527,
+      "left": 20,
+      "w": 350,
+      "h": 78,
+      "bottom": 605,
+      "text": "这些天相今天条件不成立，就不单独列出：晨昏光染、云海、彩虹。"
+    },
+    "sectionHeads": [
+      {
+        "top": 625,
+        "left": 20,
+        "w": 350,
+        "h": 80,
+        "bottom": 705,
+        "text": "逐时天气 温度 · 降水 · 云层带 · 风 — Open-Meteo.com "
+      },
+      {
+        "top": 1931,
+        "left": 20,
+        "w": 350,
+        "h": 50,
+        "bottom": 1981,
+        "text": "今日户外时间轴 天文与天气变化 + OurTrail 窗口，按时间排"
+      },
+      {
+        "top": 3181,
+        "left": 20,
+        "w": 350,
+        "h": 50,
+        "bottom": 3231,
+        "text": "天相详解 由云/月/地形/光害推算；只汇总天相，不是徒步安全评级"
+      }
+    ]
+  },
+  "data": {
+    "isOwner": false,
+    "callouts": [
+      {
+        "tone": "warning",
+        "title": "此点可能入云（雾），观景窗口有限"
+      },
+      {
+        "tone": "warning",
+        "title": "午后阵雨概率高，建议早点出发"
+      }
+    ],
+    "condSilent": {
+      "count": 3,
+      "titles": "晨昏光染、云海、彩虹",
+      "text": "这些天相今天条件不成立，就不单独列出：晨昏光染、云海、彩虹。"
+    },
+    "cards": [
+      "star",
+      "galaxy"
+    ]
+  },
+  "_note": "这份是探针原始输出（driver 之前的只读测量），保留作为「区头修复前」的读数：sectionHeads[0]（逐时天气）在修复前高 80（竖排：标题块 + 全图展示 + 来源行），修复后 70（标题|按钮一行 + 来源独占第二行）。另一个区头当时就是 50，修复后仍 50 —— 即「只改带行动的那一个」有对照。已知标注错误：pointCard 这个键取的是 document.querySelector(\".card\") 的第一个匹配，而页首点卡已下移，所以它实际是**条件 strip**（读数与 strip 键逐项相同）。不要把它当点卡读数用；点卡的新位置在 readings.json 的 preamble.pointMeta（top 991.7）。"
+}

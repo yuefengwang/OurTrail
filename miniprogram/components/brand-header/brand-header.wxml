@@ -1,0 +1,15 @@
+<!-- 两层：占位块留在文档流里给固定条让出高度，固定条自己贴顶。
+     这样宿主页仍可只有 .page 一个根节点（tools/m02-class-scope-test.js PV1/PV2 与
+     tools/b4-pad-final-value-test.js 的根节点判据都按「页面唯一根」读），不用为了挂品牌栏改页骨架。 -->
+<view class="brand-header {{variant === 'overlay' ? 'brand-header--overlay' : ''}}">
+  <view class="brand-header__spacer" style="height:{{variant === 'overlay' ? 0 : height}}px"></view>
+  <view class="brand-header__bar {{variant === 'overlay' ? 'brand-header__bar--overlay' : ''}}" style="height:{{height}}px;padding-top:{{statusBarHeight}}px;padding-right:{{contentRightInset}}px;">
+    <!-- icon 不吃 CSS 变量，颜色只能写字面量：--forest #163E35 / --white #FFFFFF（app.wxss:6-7） -->
+    <icon name="trailMark" size="20" color="{{variant === 'overlay' ? '#FFFFFF' : '#163E35'}}" />
+    <text class="brand-header__word">OurTrail</text>
+    <block wx:if="{{title}}">
+      <text class="brand-header__dot">·</text>
+      <text class="brand-header__title">{{title}}</text>
+    </block>
+  </view>
+</view>

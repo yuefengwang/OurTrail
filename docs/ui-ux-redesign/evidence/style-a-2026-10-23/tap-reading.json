@@ -1,0 +1,23 @@
+{
+  "wsEndpoint": "ws://127.0.0.1:9428",
+  "action": "tap .seg[1] (最近查看)",
+  "segTexts": [
+    "我的活动",
+    "最近查看",
+    "已结束",
+    "需要协作 18"
+  ],
+  "before": {
+    "filter": "mine",
+    "cards": 156
+  },
+  "after": {
+    "filter": "recent",
+    "cards": 41,
+    "emptyTitle": "还没有最近查看的活动"
+  },
+  "activeTexts": [
+    "最近查看"
+  ],
+  "pass": true
+}

@@ -1,50 +1,40 @@
-<view class="page">
+<view class="page {{!denied && !loading && isOwner ? 'has-sticky' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="路线暂不可用" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取这条路线。" />
   </block>
   <view wx:else class="stack-sections">
-    <!-- 编辑式封面 hero：与活动详情同机制（design-system.md §3：hero-cover 用于
-         「一个活动/一条路线」的详情首屏）。定高媒体盒 + 文档流 image（微信最稳绘制路径），
-         照片是场景氛围图而非路线实拍（路线模型没有图片字段），页尾脚注说明；
-         加载失败 img-failed 隐藏照片，媒体盒高度不变，退回森林绿纯色。 -->
-    <view class="hero-cover {{coverFailed ? 'img-failed' : ''}}">
-      <view class="hero-cover-media">
-        <image class="hero-cover-img" src="{{cover}}" mode="aspectFill" binderror="onCoverError" />
-        <view class="hero-cover-scrim" />
-        <view class="hero-cover-top">
-          <text class="badge on-forest">{{route.sourceText}}</text>
-          <text class="small tabular hero-date">{{route.updatedText}}保存</text>
-        </view>
+    <view class="route-overview">
+      <!-- style-B（2026-10-26 批次二 b）：来源是眉题，标题领起；难度/权限/已共享/保存时间同属元信息，收在标题下同一簇。 -->
+      <view class="section-head">
+        <text class="kicker">{{route.sourceText}}</text>
+        <text class="list-head__title">{{route.title}}</text>
       </view>
-      <view class="hero-cover-body">
-        <text class="display hero-body">{{route.title}}</text>
-        <view class="cluster" style="gap:8px;">
-          <text wx:if="{{route.difficultyLabel}}" class="badge on-forest">{{route.difficultyLabel}}</text>
-          <text wx:if="{{route.visibility === 'shared'}}" class="badge on-forest">已共享</text>
-          <text wx:if="{{!isOwner}}" class="badge on-forest">协作者视角</text>
-          <text wx:if="{{route.track && route.track.length}}" class="small hero-sub">含轨迹</text>
+      <view class="cluster">
+        <text wx:if="{{route.difficultyLabel}}" class="badge neutral">{{route.difficultyLabel}}</text>
+        <text wx:if="{{isOwner}}" class="small muted">我的路线</text>
+        <text wx:else class="small muted">共享路线 · 仅可查看</text>
+        <text wx:if="{{isOwner && route.visibility === 'shared'}}" class="badge info">已共享</text>
+        <text class="small muted">{{route.updatedText}}{{route.updatedAt ? '保存' : ''}}</text>
+      </view>
+      <view class="metrics compact route-facts">
+        <view class="metric">
+          <text wx:if="{{route.distanceKm}}" class="metric-value">{{route.distanceKm}}<text class="metric-unit">km</text></text>
+          <text wx:else class="metric-value route-fact-missing">待补</text>
+          <text class="metric-label">路线里程</text>
         </view>
-        <view class="metrics hero-body">
-          <view class="metric">
-            <text wx:if="{{route.distanceKm}}" class="metric-value">{{route.distanceKm}}<text class="metric-unit">km</text></text>
-            <text wx:else class="metric-value" style="color:var(--on-forest-muted);font-size:18px;font-weight:400;">待补</text>
-            <text class="metric-label">路线里程</text>
-          </view>
-          <view class="metric">
-            <text wx:if="{{route.ascentM}}" class="metric-value">{{route.ascentM}}<text class="metric-unit">m</text></text>
-            <text wx:else class="metric-value" style="color:var(--on-forest-muted);font-size:18px;font-weight:400;">待补</text>
-            <text class="metric-label">累计爬升</text>
-          </view>
-          <view class="metric">
-            <text class="metric-value">{{route.points.length}}</text>
-            <text class="metric-label">路线节点</text>
-          </view>
+        <view class="metric">
+          <text wx:if="{{route.ascentM}}" class="metric-value">{{route.ascentM}}<text class="metric-unit">m</text></text>
+          <text wx:else class="metric-value route-fact-missing">待补</text>
+          <text class="metric-label">累计爬升</text>
+        </view>
+        <view class="metric">
+          <text class="metric-value">{{route.points.length}}</text>
+          <text class="metric-label">路线节点</text>
         </view>
       </view>
     </view>
 
-    <!-- 地图（无坐标节点不渲染，与活动详情同口径） -->
     <view wx:if="{{map.visible}}" class="map-card">
       <map
         class="map-canvas"
@@ -58,28 +48,38 @@
         show-scale="{{false}}"
       />
     </view>
+    <block wx:else>
+      <status-panel wx:if="{{isOwner}}" kind="empty" title="暂时没有节点地图" detail="路线节点尚无坐标，不能展示位置。编辑路线，补充起点与终点坐标后再查看。" actionLabel="补充节点坐标" bind:action="onEdit" />
+      <status-panel wx:else kind="empty" title="暂时没有节点地图" detail="路线节点尚无坐标，不能展示位置。请联系路线拥有者补充节点坐标。" />
+    </block>
 
-    <!-- 章节节奏统一：本页所有章节都是 stack-gap3（剖面原先 gap:8 是唯一例外） -->
-    <view class="stack-gap3">
-      <view class="section-head">
-        <text class="kicker">剖面</text>
-        <text class="section-title">海拔怎么走</text>
-        <text class="section-sub">高程来自 GPX 或路线节点；节点剖面不是连续地形。</text>
-      </view>
+    <chapter no="01" kicker="剖面" title="海拔怎么走" sub="高程来自 GPX 或路线节点；节点剖面不是连续地形。">
       <view class="card">
         <route-profile track="{{route.track}}" points="{{route.points}}" />
       </view>
-    </view>
+    </chapter>
 
-    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
-
-    <!-- 分段天气（V2.0 §6）：逐节点看天气；可按所选出发时刻推算各节点抵达日 -->
-    <view class="stack-gap3">
-      <view class="section-head">
-        <text class="kicker">天气</text>
-        <text class="section-title">分段天气</text>
-        <text class="section-sub">逐节点看天气；可按所选出发时刻推算各节点抵达日</text>
+    <chapter no="02" kicker="路线" title="路线节点" sub="途中清点与进度确认的位置">
+      <view wx:if="{{route.points.length}}" class="card">
+        <view class="timeline">
+          <view wx:for="{{route.points}}" wx:key="id" class="timeline-item">
+            <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
+              <view style="min-width:0;">
+                <text class="eyebrow">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中'}}</text>
+                <text class="row-title route-node-name">{{item.name}}</text>
+              </view>
+              <view class="cluster" style="gap:8px;flex:0 0 auto;">
+                <text wx:if="{{item.ele}}" class="small tabular muted">{{item.ele}} m</text>
+                <text wx:if="{{!item.coordinates}}" class="small muted">无坐标</text>
+              </view>
+            </view>
+          </view>
+        </view>
       </view>
+      <text wx:else class="muted">这条路线还没有节点，需由路线拥有者补上起点与终点。</text>
+    </chapter>
+
+    <chapter no="03" kicker="天气" title="分段天气" sub="逐节点看天气；可按所选出发时刻推算各节点抵达日">
       <view class="card stack-gap3">
         <view class="cluster" style="justify-content:space-between;">
           <picker mode="date" value="{{wxDate}}" start="{{wxDate}}" end="{{wxDateMax}}" bindchange="onWeatherDate">
@@ -88,9 +88,6 @@
               <text class="picker-arrow">▾</text>
             </view>
           </picker>
-          <!-- 触点：整行可点由 app.wxss 的 .check-label 体系承载（label 包住 checkbox + text），
-               现成同形写法见 signup.wxml:85 与 roster-panel.wxml:49，flex 规则见 app.wxss:357-360；
-               change 事件仍由 checkbox-group 承载，归属不许挪 —— 挪到 label 上取值语义会变（platform-pitfalls 的「checkbox-group / picker 的取值」条：group 的 detail.value 是全部选中值数组；此处刻意不写 §编号，该文档 2026-10-14 从 14 条扩到 17 条时编号整体后移，写编号的引用第二天就指错东西） -->
           <checkbox-group bindchange="onScheduleMode">
             <label class="check-label">
               <checkbox value="schedule" checked="{{scheduleMode}}" />
@@ -117,7 +114,7 @@
         <view wx:for="{{nodeWeather}}" wx:key="id" class="list-row">
           <view class="list-main">
             <view class="cluster" style="gap:8px;">
-              <text style="font-weight:600;">{{item.name}}</text>
+              <text class="row-title">{{item.name}}</text>
               <text wx:if="{{item.arriveLabel && item.arriveLabel !== '无时间信息'}}" class="badge neutral tabular">{{item.arriveLabel}}</text>
             </view>
             <text class="list-sub">
@@ -131,44 +128,10 @@
         </view>
         <text wx:if="{{weatherBusy}}" class="small muted">正在逐个节点查询…</text>
       </view>
-    </view>
+    </chapter>
 
-    <!-- 节点时间轴 -->
-    <view class="stack-gap3">
-      <view class="section-head">
-        <text class="kicker">路线</text>
-        <text class="section-title">路线节点</text>
-        <text class="section-sub">途中清点与进度确认的位置</text>
-      </view>
-      <!-- 节点时间轴入卡（T008）：与分段天气/风险同一卡语言，章节间距统一 -->
-      <view wx:if="{{route.points.length}}" class="card">
-        <view class="timeline">
-          <view wx:for="{{route.points}}" wx:key="id" class="timeline-item">
-            <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
-              <view style="min-width:0;">
-                <text class="eyebrow">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中'}}</text>
-                <text class="route-node-name">{{item.name}}</text>
-              </view>
-              <view class="cluster" style="gap:8px;flex:0 0 auto;">
-                <text wx:if="{{item.ele}}" class="small tabular muted">{{item.ele}} m</text>
-                <text wx:if="{{!item.coordinates}}" class="small muted">无坐标</text>
-              </view>
-            </view>
-          </view>
-        </view>
-      </view>
-      <text wx:else class="muted">这条路线还没有节点。从它发起活动前，建议至少补上起点与终点。</text>
-    </view>
-
-    <!-- 风险 -->
-    <view class="stack-gap3">
-      <view class="section-head">
-        <text class="kicker">安全</text>
-        <text class="section-title">风险提示</text>
-        <text class="section-sub">{{route.risks.length ? route.risks.length + ' 条 · 从这条路线发起活动时会带给大家' : '还没有风险提示'}}</text>
-      </view>
-      <!-- 风险段用 .callout.warning 存量语义（与活动详情同形）：每条风险一张警示卡 -->
-      <block wx:if="{{route.risks.length}}">
+    <chapter no="04" kicker="安全" title="风险提示" sub="{{route.risks.length ? route.risks.length + ' 条风险记录' : '还没有风险提示'}}">
+      <view wx:if="{{route.risks.length}}" class="stack-gap3">
         <view wx:for="{{route.risks}}" wx:key="id" class="callout warning">
           <view class="cluster" style="justify-content:space-between;">
             <text class="callout-title">{{item.title}}</text>
@@ -176,40 +139,33 @@
           </view>
           <text class="small" style="display:block;margin-top:4px;">{{item.advice}}</text>
         </view>
-      </block>
-      <text wx:else class="muted">风险提示会在从这条路线发起活动时带给大家；建议尽早补上。</text>
-    </view>
-
-    <!-- 共享协作（仅 owner）：身份码授权，同 membership 模式 -->
-    <view wx:if="{{isOwner}}" class="stack-gap3">
-      <view class="card-header">
-        <view class="section-head">
-          <text class="kicker">协作</text>
-          <text class="section-title">共享给协作者</text>
-        </view>
-        <view class="button text" hover-class="button-hover" bindtap="onShareOpen">
-          <icon name="plus" size="16" color="#163E35" />
-          <text>添加</text>
-        </view>
       </view>
-      <view wx:if="{{route.sharedWith.length}}" class="card">
-        <view wx:for="{{route.sharedWith}}" wx:key="*this" class="list-row">
-          <view class="list-main">
-            <text class="code-text" user-select>{{item}}</text>
-            <text class="list-sub">可查看这条路线</text>
+      <text wx:else class="muted">尚未记录风险提示，不代表没有风险；出行前请核实。</text>
+    </chapter>
+
+    <chapter wx:if="{{isOwner}}" kicker="协作" title="共享给协作者">
+      <view class="stack-gap3">
+        <view class="card-header">
+          <text class="small muted">协作者仅可查看，不能修改、发起活动或转共享。</text>
+          <view class="button text" hover-class="button-hover" bindtap="onShareOpen">
+            <icon name="plus" size="16" color="#163E35" />
+            <text>添加</text>
           </view>
-          <view class="button text" hover-class="button-hover" data-id="{{item}}" bindtap="onRemoveAsk">取消</view>
         </view>
+        <view wx:if="{{route.sharedWith.length}}" class="card">
+          <view wx:for="{{route.sharedWith}}" wx:key="*this" class="list-row">
+            <view class="list-main">
+              <text class="code-text" user-select>{{item}}</text>
+              <text class="list-sub">可查看这条路线</text>
+            </view>
+            <view class="button text" hover-class="button-hover" data-id="{{item}}" bindtap="onRemoveAsk">取消</view>
+          </view>
+        </view>
+        <text wx:else class="muted">把对方的协作码填进来，对方就能在路线库里看到这条路线。协作者不能修改或删除。</text>
       </view>
-      <text wx:else class="muted">把对方的协作码填进来，对方就能在路线库里看到这条路线。协作者不能修改或删除。</text>
-    </view>
+    </chapter>
 
-    <!-- 被哪些活动使用 -->
-    <view class="stack-gap3">
-      <view class="section-head">
-        <text class="kicker">使用</text>
-        <text class="section-title">被这些活动使用</text>
-      </view>
+    <chapter kicker="使用" title="被这些活动使用">
       <view wx:if="{{referenced.length}}" class="card">
         <view wx:for="{{referenced}}" wx:key="id" class="list-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpenActivity">
           <view class="list-main">
@@ -219,29 +175,21 @@
           <icon name="arrow" size="20" color="#5F6E66" />
         </view>
       </view>
-      <text wx:else class="muted">还没有活动使用这条路线。从路线一键发起活动后会出现在这里。</text>
-    </view>
+      <text wx:else class="muted">还没有活动使用这条路线。</text>
+    </chapter>
 
-    <!-- 管理区（仅 owner）：发起活动 + 编辑 + 删除 -->
-    <view wx:if="{{isOwner}}" class="stack-gap3">
-      <view class="section-head">
-        <text class="kicker">管理</text>
-        <text class="section-title">管理这条路线</text>
+    <chapter wx:if="{{isOwner}}" kicker="管理" title="管理这条路线">
+      <view class="stack-gap3">
+        <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+        <text class="small muted">删除只移除路线库里的这一条；已经用了它的活动不受影响。被活动使用时需要先解除关联。</text>
+        <view class="button text route-delete" hover-class="button-hover" bindtap="onDeleteAsk">删除这条路线</view>
       </view>
-      <view class="button primary block" hover-class="button-hover" bindtap="onCreateActivity">
-        <icon name="route" size="18" color="#FFFFFF" />
-        <text>用这条路发起活动</text>
-      </view>
-      <view class="button secondary block" hover-class="button-hover" bindtap="onEdit">
-        <icon name="route" size="18" color="#163E35" />
-        <text>编辑路线</text>
-      </view>
-      <text class="small muted">删除只移除路线库里的这一条；已经用了它的活动不受影响。被活动使用时需要先解除关联。</text>
-      <view class="button danger block" hover-class="button-hover" bindtap="onDeleteAsk">删除这条路线</view>
-    </view>
+    </chapter>
 
-    <!-- 封面诚实性：氛围图不是路线实拍（路线模型没有图片字段） -->
-    <text class="photo-note">封面为场景氛围图，非本条路线实拍；节点、里程与天气信息以实际数据为准。</text>
+    <view wx:if="{{isOwner}}" class="sticky-action route-actions">
+      <view class="button primary" hover-class="button-hover" bindtap="onCreateActivity">用这条路线发起活动</view>
+      <view class="button secondary" hover-class="button-hover" bindtap="onEdit">编辑路线</view>
+    </view>
   </view>
 
   <!-- 添加协作者 sheet -->

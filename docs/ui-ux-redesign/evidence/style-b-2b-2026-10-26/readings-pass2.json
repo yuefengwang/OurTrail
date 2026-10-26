@@ -1,0 +1,285 @@
+{
+  "owned": "activity-mvb1pkbov4td54",
+  "at": "2026-10-26T06:22:30.022Z",
+  "pages": {
+    "workspace-owned": {
+      "path": "pages/workspace/workspace",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": "现在这一步",
+      "eyebrow": "组织者工作台",
+      "title": "[UI] 赵公山 · 东线穿越",
+      "sub": null,
+      "pageTitle": {
+        "top": 52,
+        "left": 20,
+        "width": 350,
+        "height": 31,
+        "bottom": 83
+      },
+      "listTitle": null,
+      "sectionHeads": [
+        {
+          "text": "现在这一步 当前待办",
+          "top": 336,
+          "left": 20,
+          "width": 350,
+          "height": 42,
+          "bottom": 378
+        },
+        {
+          "text": "阶段 活动进程",
+          "top": 852,
+          "left": 20,
+          "width": 350,
+          "height": 42,
+          "bottom": 894
+        }
+      ],
+      "primaryButtons": [
+        {
+          "text": "预览自动分车方案",
+          "top": 0,
+          "left": 0,
+          "width": 0,
+          "height": 0,
+          "bottom": 0
+        }
+      ],
+      "solidButtonsAll": 1,
+      "chapters": [],
+      "texts": {
+        "title": "[UI] 赵公山 · 东线穿越",
+        "vehicleIds": [],
+        "vehicles": [],
+        "bands": [
+          {
+            "text": "0人 待审核 ›",
+            "top": 225,
+            "left": 36,
+            "width": 89,
+            "height": 53,
+            "bottom": 278
+          },
+          {
+            "text": "0人 待安排车辆 ›",
+            "top": 225,
+            "left": 137,
+            "width": 102,
+            "height": 53,
+            "bottom": 278
+          },
+          {
+            "text": "2人 待签到 ›",
+            "top": 225,
+            "left": 252,
+            "width": 102,
+            "height": 53,
+            "bottom": 278
+          }
+        ]
+      }
+    },
+    "tasks-owned": {
+      "path": "pages/tasks/tasks",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": null,
+      "eyebrow": "协作 · 任务清单",
+      "title": null,
+      "sub": "装备、采购、记录，逐项有人负责；改状态即刻生效。",
+      "pageTitle": null,
+      "listTitle": null,
+      "sectionHeads": [],
+      "primaryButtons": [
+        {
+          "text": "新建任务",
+          "top": 108,
+          "left": 20,
+          "width": 350,
+          "height": 48,
+          "bottom": 156
+        }
+      ],
+      "solidButtonsAll": 1,
+      "chapters": [],
+      "texts": {
+        "taskCount": 0,
+        "filter": "all",
+        "identityTitle": "把分工说清楚。",
+        "primary": [
+          {
+            "text": "新建任务",
+            "top": 108,
+            "left": 20,
+            "width": 350,
+            "height": 48,
+            "bottom": 156
+          }
+        ]
+      }
+    },
+    "staff-owned": {
+      "path": "pages/staff/staff",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": null,
+      "eyebrow": "现场协作",
+      "title": null,
+      "sub": "这里只展示当前仍授权给你的人员与任务；授权变更后立即生效。",
+      "pageTitle": null,
+      "listTitle": null,
+      "sectionHeads": [],
+      "primaryButtons": [],
+      "solidButtonsAll": 0,
+      "chapters": [],
+      "texts": {}
+    },
+    "vehicle-owned": {
+      "error": "no vehicle on owned activity"
+    },
+    "route-loaded": {
+      "path": "pages/route/route",
+      "clientHeight": 753,
+      "denied": false,
+      "loading": false,
+      "kicker": "01 剖面",
+      "eyebrow": "起点",
+      "title": "月亮湖穿越伍须海-1790560849819.gpx.bin_tmp",
+      "sub": "高程来自 GPX 或路线节点；节点剖面不是连续地形。",
+      "pageTitle": null,
+      "listTitle": {
+        "top": 54,
+        "left": 20,
+        "width": 350,
+        "height": 56,
+        "bottom": 110
+      },
+      "sectionHeads": [
+        {
+          "text": "01 剖面 海拔怎么走 高程来自 GPX 或路线节点；节点剖面不是连续地形。",
+          "top": 517,
+          "left": 20,
+          "width": 350,
+          "height": 66,
+          "bottom": 583
+        },
+        {
+          "text": "02 路线 路线节点 途中清点与进度确认的位置",
+          "top": 725,
+          "left": 20,
+          "width": 350,
+          "height": 66,
+          "bottom": 791
+        },
+        {
+          "text": "03 天气 分段天气 逐节点看天气；可按所选出发时刻推算各节点抵达日",
+          "top": 1637,
+          "left": 20,
+          "width": 350,
+          "height": 66,
+          "bottom": 1703
+        },
+        {
+          "text": "04 安全 风险提示 还没有风险提示",
+          "top": 2912,
+          "left": 20,
+          "width": 350,
+          "height": 66,
+          "bottom": 2978
+        },
+        {
+          "text": "协作 共享给协作者",
+          "top": 3040,
+          "left": 20,
+          "width": 350,
+          "height": 46,
+          "bottom": 3086
+        },
+        {
+          "text": "使用 被这些活动使用",
+          "top": 3230,
+          "left": 20,
+          "width": 350,
+          "height": 46,
+          "bottom": 3276
+        },
+        {
+          "text": "管理 管理这条路线",
+          "top": 3338,
+          "left": 20,
+          "width": 350,
+          "height": 46,
+          "bottom": 3384
+        }
+      ],
+      "primaryButtons": [
+        {
+          "text": "用这条路线发起活动",
+          "top": 659,
+          "left": 20,
+          "width": 217,
+          "height": 48,
+          "bottom": 707
+        }
+      ],
+      "solidButtonsAll": 1,
+      "chapters": [
+        {
+          "no": "01",
+          "kicker": "剖面",
+          "title": "海拔怎么走",
+          "top": 517,
+          "height": 180
+        },
+        {
+          "no": "02",
+          "kicker": "路线",
+          "title": "路线节点",
+          "top": 725,
+          "height": 884
+        },
+        {
+          "no": "03",
+          "kicker": "天气",
+          "title": "分段天气",
+          "top": 1637,
+          "height": 1247
+        },
+        {
+          "no": "04",
+          "kicker": "安全",
+          "title": "风险提示",
+          "top": 2912,
+          "height": 100
+        },
+        {
+          "no": "",
+          "kicker": "协作",
+          "title": "共享给协作者",
+          "top": 3040,
+          "height": 162
+        },
+        {
+          "no": "",
+          "kicker": "使用",
+          "title": "被这些活动使用",
+          "top": 3230,
+          "height": 80
+        },
+        {
+          "no": "",
+          "kicker": "管理",
+          "title": "管理这条路线",
+          "top": 3338,
+          "height": 154
+        }
+      ],
+      "texts": {}
+    }
+  },
+  "exceptions": []
+}

@@ -31,7 +31,7 @@ Component({
   data: {
     loading: true,
     denied: '',
-    countersLine: '',
+    counters: { confirmed: 0, pending: 0, waitlisted: 0 },
     search: '',
     statusOptions: STATUS_FILTERS,
     // 协作授权弹层的两个 picker 数据源：常量此前只存在模块作用域、从未挂进 data，
@@ -164,7 +164,7 @@ Component({
         canReview: allPending && phase === 'published',
         canPromote: allWaitlisted && phase === 'published',
         canCancel: allCurrentUntravelled && ['published', 'gathering'].indexOf(phase) !== -1,
-        countersLine: '已确认 ' + v.counters.confirmed + ' · 待审核 ' + v.counters.pending + ' · 候补 ' + v.counters.waitlisted + '。仅显示你有权查看的人员。',
+        counters: v.counters,
       })
     },
 

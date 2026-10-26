@@ -3,7 +3,7 @@
        默认第一张；这里不给独立的封面上传（服务端只收正文内的 fileID）。 -->
   <view class="ce-cover-row">
     <image wx:if="{{effectiveCover}}" class="ce-cover-thumb" src="{{effectiveCover}}" mode="aspectFill" />
-    <view wx:else class="ce-cover-thumb ce-cover-empty"><text>封面</text></view>
+    <view wx:else class="ce-cover-thumb ce-cover-empty"><text>待选</text></view>
     <view class="ce-cover-copy">
       <text class="field-label">封面</text>
       <text class="small muted">{{coverFileId ? '已指定正文中的一张图片' : imageCount ? '默认用正文第一张图片' : '添加正文图片后自动使用第一张'}}</text>

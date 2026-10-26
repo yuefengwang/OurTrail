@@ -1,0 +1,36 @@
+/* 装备四列图标格：图标只是分类线索，文字始终可见（不能出现「看图猜装备」）。
+   列宽减数必须与 gap 同账：4 × (25% - 6px) + 3 × 8px = 100%。 */
+.eq-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.eq-grid__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 8px;
+}
+.eq-grid__item {
+  flex: 0 0 calc(25% - 6px);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.eq-grid__tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-tag);
+  background: var(--stone);
+}
+.eq-grid__text {
+  font-size: var(--text-caption);
+  line-height: 16px;
+  color: var(--ink);
+  text-align: center;
+  overflow-wrap: anywhere;
+}

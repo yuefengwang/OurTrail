@@ -11,11 +11,22 @@
         <text>协作授权</text>
       </view>
     </view>
-    <text class="small muted">{{countersLine}}</text>
+    <!-- 汇总先给这一屏要处理的三类人：批量动作的对象就是它们，数字必须与筛选器同一出处。
+         候补单列一格（板上只有两格）：它是第三类可批量操作对象，删掉就只能靠逐条筛选去数。 -->
+    <view class="metrics">
+      <view class="metric"><text class="metric-value">{{counters.confirmed}}</text><text class="metric-label">已确认</text></view>
+      <view class="metric"><text class="metric-value">{{counters.pending}}</text><text class="metric-label">待审核</text></view>
+      <view class="metric"><text class="metric-value">{{counters.waitlisted}}</text><text class="metric-label">候补</text></view>
+    </view>
+    <text class="small muted">仅显示你有权查看的人员。</text>
 
-    <!-- 搜索 + 状态筛选一行放下，少占两行标签 -->
+    <!-- 搜索 + 状态筛选一行放下：搜索是 pill（44 高），筛选按内容收窄 -->
     <view class="roster-filter">
-      <input class="input" placeholder="搜索姓名、上车点或车辆" value="{{search}}" bindinput="onSearch" />
+      <view class="searchbar">
+        <!-- icon 的 color 拿不到 var()：#5F6E66 与 --muted 逐字节同值（既有 token，不是新色） -->
+        <icon name="search" size="16" color="#5F6E66" />
+        <input class="searchbar__input" placeholder="搜索姓名、上车点或车辆" value="{{search}}" bindinput="onSearch" />
+      </view>
       <picker range="{{statusOptions}}" range-key="label" value="{{statusIndex}}" bindchange="onStatus">
         <view class="picker">
           <text class="picker-value">{{statusOptions[statusIndex].label}}</text>

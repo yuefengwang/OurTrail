@@ -136,6 +136,12 @@ Page({
         thirdValue: v.counters[metric.key],
         thirdLabel: metric.label,
         queue: queue.items,
+        // 主待办原样来自 journey.primary，页面不再重排优先级；模板只决定它占不占主位。
+        queuePrimary: queue.primary,
+        // 主待办已单独占主位，其余行在 JS 里先摘掉主项与 idle 再下发：
+        // 模板不做「排除谁」的集合运算，只读一份给定顺序的行（铁律 22）。
+        queueRest: queue.items.filter(it => it.id !== 'idle'
+          && (!queue.primary || it.id !== queue.primary.id)),
         milestone: queue.milestone,
         notVerified,
         phaseTimeline: J.timeline(res.now, phase),

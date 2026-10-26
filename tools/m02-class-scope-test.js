@@ -254,19 +254,21 @@ section('§4 privacy：容器与两级标题由全局类承载，段距由本页
   const titles = pv.nodes.filter(n => n.classes.indexOf('page-title') !== -1)
   const t = titles[0]
   const tf = t ? [fin(pv, t, 'font-size'), fin(pv, t, 'font-weight')] : []
-  check('PV4 主标题由全局 .page-title 承载（终值 28px/700，赢家出处 = app.wxss；本页不重印层级）',
-    titles.length === 1 && tf[0].value === '28px' && tf[0].source === 'app.wxss' && tf[1].value === '700' && tf[1].source === 'app.wxss',
+  check('PV4 主标题由全局 .page-title 承载（终值 24px/700，赢家出处 = app.wxss；本页不重印层级）',
+    titles.length === 1 && tf[0].value === '24px' && tf[0].source === 'app.wxss' && tf[1].value === '700' && tf[1].source === 'app.wxss',
     titles.length + ' 个 page-title：' + tf.map(describe).join(' '))
-  if (!(titles.length === 1 && tf[0].value === '28px' && tf[1].value === '700')) viol('PRIVACY', pv.file, '主标题层级没由全局类承载')
+  if (!(titles.length === 1 && tf[0].value === '24px' && tf[1].value === '700')) viol('PRIVACY', pv.file, '主标题层级没由全局类承载')
   // 合并修正（2026-10-17，并入上游二阶段视觉重构后）：这两条原先把「privacy.wxss 的 .doc-meta/.doc-section」
   // 当成 privacy 屏的唯一合法形状钉死了 ⇒ 上游用 section-head/kicker/section-sub + 容器节奏重排同一屏时必然假红。
   // 钉"某页某个类名出自哪个文件"就是断言依赖工作树的偶然状态（铁律 30 的反面）。判据改回它本来要守的不变量：
   // 层级由 app.wxss 的全局类承载、本页不重印字号字重、间距不得由内联决定。
   const secs = pv.nodes.filter(n => n.classes.indexOf('section-title') !== -1)
   const secRead = secs.map(n => [fin(pv, n, 'font-size'), fin(pv, n, 'font-weight')])
-  const secOk = secs.length === 4 && secRead.every(r => r[0].value === '16px' && r[0].source === 'app.wxss' &&
+  // 章节条数不是不变量：privacy 于 2026-10-22 新增「第三方数据服务与许可」一节（5 节），
+  // 本判据要守的是「每个章节标题的字号/字重终值都来自 app.wxss」，不是「恰好 4 节」。
+  const secOk = secs.length >= 4 && secRead.every(r => r[0].value === '16px' && r[0].source === 'app.wxss' &&
     r[1].value === '600' && r[1].source === 'app.wxss')
-  check('PV5 四个章节标题：字号/字重终值来自 app.wxss（16px/600），段距不钉出处（容器节奏合法）',
+  check('PV5 章节标题（≥4 节）：字号/字重终值来自 app.wxss（16px/600），段距不钉出处（容器节奏合法）',
     secOk, secs.length + ' 个节点；' + secRead.map(r => r.map(describe).join(' ')).join(' ｜ '))
   if (!secOk) viol('PRIVACY', pv.file, '章节标题终值/出处不对：' + secRead.map(r => r.map(describe).join(' ')).join(' ｜ '))
   // 更新日期那行：认类名不认具体文件名（section-sub 是上游那版用的，doc-meta 是本地那版用的，都合法）。

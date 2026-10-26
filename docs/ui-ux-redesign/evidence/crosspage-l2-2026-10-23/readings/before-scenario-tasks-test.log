@@ -1,0 +1,30 @@
+== 1. owner 装配、计数与标签 ==
+  ✓ read 请求为 tasks / a1
+  ✓ 任务数/计数正确
+  ✓ 状态/分类/截止标签归口 format
+  ✓ owner canManage=true
+  ✓ 任务页已注册并按模板渲染
+== 2. 筛选与空态 ==
+  ✓ 筛选待办只剩 todo
+  ✓ 筛选已完成只剩 done
+  ✓ 非法筛选值不改变当前筛选
+  ✓ 空清单有解释与新建入口
+== 3. 新建/编辑/状态/删除命令 ==
+  ✓ 打开新建任务弹层
+  ✓ 分类表单显示中文
+  ✓ 新建发 task.create
+  ✓ 标题/负责人 trim，分类与截止正确
+  ✓ 以读取 revision 做 CAS
+  ✓ 编辑预填标题/分类/截止
+  ✓ 编辑发 task.update
+  ✓ 状态发 task.status
+  ✓ 删除先开确认层
+  ✓ 删除发 task.remove
+  ✓ 成功后关闭删除层
+== 4. 空标题拦截 / 参与者只读 / denied ==
+  ✓ 空标题不发命令并点名
+  ✓ 参与者 canManage=false
+  ✓ 模板以 canManage 隐藏新建与行内操作
+  ✓ denied 原文透出且不装配任务
+
+passed=24 failed=0 skipped=0

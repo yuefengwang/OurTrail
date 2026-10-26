@@ -1,0 +1,45 @@
+{
+  "shots": [
+    {
+      "file": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\style-b-slice5a-2026-10-26\\device\\V1-me-personrow-scrolled.png",
+      "bytes": 50861
+    },
+    {
+      "file": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\style-b-slice5b-2026-10-26\\device\\V2-routes-row-scrolled.png",
+      "bytes": 73624
+    },
+    {
+      "file": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\style-b-slice5a-2026-10-26\\device\\V3-editor-node-scrolled.png",
+      "bytes": 48227
+    }
+  ],
+  "notes": [
+    "V1：element.screenshot 不可用 — el.screenshot is not a function",
+    {
+      "V1personRow": {
+        "width": 316,
+        "height": 158,
+        "left": 37,
+        "top": 1446.1953125
+      }
+    },
+    "V2：element.screenshot 不可用 — el.screenshot is not a function",
+    {
+      "V2metrics": {
+        "width": 314,
+        "height": 45,
+        "left": 56,
+        "top": 339
+      }
+    },
+    "V3：element.screenshot 不可用 — el.screenshot is not a function",
+    {
+      "V3rowTitle": {
+        "width": 316,
+        "height": 44,
+        "left": 37,
+        "top": 1021.1953125
+      }
+    }
+  ]
+}

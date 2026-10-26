@@ -1,0 +1,1336 @@
+{
+  "label": "before",
+  "capturedAt": "2026-10-23T12:03:18.542Z",
+  "system": {
+    "brand": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1",
+    "platform": "devtools",
+    "benchmarkLevel": -1,
+    "pixelRatio": 3,
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "statusBarHeight": 47,
+    "safeArea": {
+      "top": 47,
+      "left": 0,
+      "right": 390,
+      "bottom": 810,
+      "width": 390,
+      "height": 763
+    },
+    "language": "zh_CN",
+    "version": "8.0.5",
+    "fontSizeSetting": 16,
+    "SDKVersion": "3.8.12",
+    "host": {
+      "env": "WeChat"
+    },
+    "enableDebug": false,
+    "mode": "default",
+    "deviceOrientation": "portrait",
+    "bluetoothEnabled": true,
+    "locationEnabled": true,
+    "wifiEnabled": true,
+    "albumAuthorized": true,
+    "cameraAuthorized": true,
+    "locationAuthorized": true,
+    "microphoneAuthorized": true,
+    "notificationAuthorized": true,
+    "notificationAlertAuthorized": true,
+    "notificationBadgeAuthorized": true,
+    "notificationSoundAuthorized": true,
+    "phoneCalendarAuthorized": true,
+    "bluetoothAuthorized": true,
+    "locationReducedAccuracy": true,
+    "devicePixelRatio": 3
+  },
+  "pages": [
+    {
+      "key": "home",
+      "label": "活动首页",
+      "route": "/pages/home/home",
+      "sanitized": {
+        "patchKeys": [
+          "profileName"
+        ],
+        "masked": 1,
+        "hash": "439e640e84be",
+        "originalsCount": 1
+      },
+      "fieldPanelSanitized": null,
+      "residual": [],
+      "gates": [
+        {
+          "name": "denied 为空",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "loading=false",
+          "ok": true,
+          "extra": "false"
+        },
+        {
+          "name": "cards 非空",
+          "ok": true,
+          "extra": "158"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 0
+        },
+        ".section-head": {
+          "count": 0
+        },
+        ".hero-cover": {
+          "count": 0
+        },
+        ".card": {
+          "count": 158,
+          "first": {
+            "x": 20,
+            "y": 263,
+            "w": null,
+            "h": null
+          }
+        },
+        ".metric": {
+          "count": 459,
+          "first": {
+            "x": 37,
+            "y": 848,
+            "w": null,
+            "h": null
+          }
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 0
+        },
+        ".segmented": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 192,
+            "w": null,
+            "h": null
+          }
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 0
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "",
+      "shots": [
+        {
+          "file": "home.png",
+          "w": 306,
+          "h": 660,
+          "kb": 95,
+          "scroll": 0
+        }
+      ]
+    },
+    {
+      "key": "discover",
+      "label": "发现活动",
+      "route": "/pages/discover/discover",
+      "sanitized": {
+        "patchKeys": [],
+        "masked": 0,
+        "hash": "57c3e9e07d02",
+        "originalsCount": 0
+      },
+      "fieldPanelSanitized": null,
+      "residual": [],
+      "gates": [
+        {
+          "name": "denied 为空",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "loading=false",
+          "ok": true,
+          "extra": "false"
+        },
+        {
+          "name": "cards 非空",
+          "ok": true,
+          "extra": "50"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 0
+        },
+        ".section-head": {
+          "count": 0
+        },
+        ".hero-cover": {
+          "count": 0
+        },
+        ".card": {
+          "count": 50,
+          "first": {
+            "x": 20,
+            "y": 312,
+            "w": null,
+            "h": null
+          }
+        },
+        ".metric": {
+          "count": 145,
+          "first": {
+            "x": 37,
+            "y": 897,
+            "w": null,
+            "h": null
+          }
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 0
+        },
+        ".segmented": {
+          "count": 1,
+          "first": {
+            "x": 230,
+            "y": 24,
+            "w": null,
+            "h": null
+          }
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 0
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "",
+      "shots": [
+        {
+          "file": "discover.png",
+          "w": 306,
+          "h": 660,
+          "kb": 131,
+          "scroll": 0
+        }
+      ]
+    },
+    {
+      "key": "activity",
+      "label": "活动详情（对照页，本轮未改）",
+      "route": "/pages/activity/activity?id=activity-mvb1pkbov4td54",
+      "sanitized": {
+        "patchKeys": [
+          "rows",
+          "organizerIntro",
+          "title"
+        ],
+        "masked": 3,
+        "hash": "3f676db903b5",
+        "originalsCount": 3
+      },
+      "fieldPanelSanitized": null,
+      "residual": [],
+      "gates": [
+        {
+          "name": "denied 为空",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "loading=false",
+          "ok": true,
+          "extra": "false"
+        },
+        {
+          "name": "详情已装配",
+          "ok": true,
+          "extra": "[UI] 赵公山 · 东线穿越"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 8,
+          "first": {
+            "x": 20,
+            "y": 715,
+            "w": null,
+            "h": null
+          }
+        },
+        ".section-head": {
+          "count": 9,
+          "first": {
+            "x": 20,
+            "y": 715,
+            "w": null,
+            "h": null
+          }
+        },
+        ".hero-cover": {
+          "count": 1,
+          "first": {
+            "x": 0,
+            "y": 24,
+            "w": null,
+            "h": null
+          }
+        },
+        ".card": {
+          "count": 3,
+          "first": {
+            "x": 20,
+            "y": 282,
+            "w": null,
+            "h": null
+          }
+        },
+        ".metric": {
+          "count": 0
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 0
+        },
+        ".segmented": {
+          "count": 0
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 1301,
+            "w": null,
+            "h": null
+          }
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "",
+      "shots": [
+        {
+          "file": "activity.png",
+          "w": 306,
+          "h": 660,
+          "kb": 112,
+          "scroll": 0
+        },
+        {
+          "file": "activity-scroll.png",
+          "w": 306,
+          "h": 660,
+          "kb": 55,
+          "scroll": 720
+        }
+      ]
+    },
+    {
+      "key": "workspace",
+      "label": "组织者工作台",
+      "route": "/pages/workspace/workspace?id=activity-mvb1pkbov4td54",
+      "sanitized": {
+        "patchKeys": [
+          "title"
+        ],
+        "masked": 0,
+        "hash": "58476ad75f60",
+        "originalsCount": 0
+      },
+      "fieldPanelSanitized": {
+        "patchKeys": [
+          "rows",
+          "positions",
+          "incidents"
+        ],
+        "masked": 0
+      },
+      "residual": [],
+      "gates": [
+        {
+          "name": "denied 为空",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "loading=false",
+          "ok": true,
+          "extra": "false"
+        },
+        {
+          "name": "工作台已装配",
+          "ok": true,
+          "extra": "[UI] 赵公山 · 东线穿越"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 0
+        },
+        ".section-head": {
+          "count": 2,
+          "first": {
+            "x": 20,
+            "y": 408,
+            "w": null,
+            "h": null
+          }
+        },
+        ".hero-cover": {
+          "count": 0
+        },
+        ".card": {
+          "count": 3,
+          "first": {
+            "x": 0,
+            "y": 0,
+            "w": null,
+            "h": null
+          }
+        },
+        ".metric": {
+          "count": 6,
+          "first": {
+            "x": 36,
+            "y": 163,
+            "w": null,
+            "h": null
+          }
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 136,
+            "w": null,
+            "h": null
+          }
+        },
+        ".segmented": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 275,
+            "w": null,
+            "h": null
+          }
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 1,
+          "first": {
+            "x": 37,
+            "y": 777,
+            "w": null,
+            "h": null
+          }
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "",
+      "shots": [
+        {
+          "file": "workspace.png",
+          "w": 306,
+          "h": 660,
+          "kb": 38,
+          "scroll": 0
+        }
+      ]
+    },
+    {
+      "key": "workspace-field",
+      "label": "工作台 · 现场分区（真 tap）",
+      "route": "/pages/workspace/workspace?id=activity-mvb1pkbov4td54",
+      "sanitized": {
+        "patchKeys": [],
+        "masked": 0,
+        "hash": "57c3e9e07d02",
+        "originalsCount": 0
+      },
+      "fieldPanelSanitized": {
+        "patchKeys": [
+          "rows",
+          "positions",
+          "incidents"
+        ],
+        "masked": 2
+      },
+      "residual": [],
+      "gates": [
+        {
+          "name": "denied 为空",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "loading=false",
+          "ok": true,
+          "extra": "false"
+        },
+        {
+          "name": "工作台已装配",
+          "ok": true,
+          "extra": "[UI] 赵公山 · 东线穿越"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 0
+        },
+        ".section-head": {
+          "count": 0
+        },
+        ".hero-cover": {
+          "count": 0
+        },
+        ".card": {
+          "count": 1,
+          "first": {
+            "x": 0,
+            "y": 0,
+            "w": null,
+            "h": null
+          }
+        },
+        ".metric": {
+          "count": 6,
+          "first": {
+            "x": 36,
+            "y": 163,
+            "w": null,
+            "h": null
+          }
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 136,
+            "w": null,
+            "h": null
+          }
+        },
+        ".segmented": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 275,
+            "w": null,
+            "h": null
+          }
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 0
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "2 行现场名单",
+      "shots": [
+        {
+          "file": "workspace-field.png",
+          "w": 306,
+          "h": 660,
+          "kb": 38,
+          "scroll": 0
+        }
+      ]
+    },
+    {
+      "key": "vehicle",
+      "label": "车辆联络",
+      "route": "/pages/vehicle/vehicle?id=activity-mutw5e6lnsllvt",
+      "sanitized": {
+        "patchKeys": [
+          "plate"
+        ],
+        "masked": 1,
+        "hash": "007b32c1cd9f",
+        "originalsCount": 1
+      },
+      "fieldPanelSanitized": null,
+      "residual": [],
+      "gates": [
+        {
+          "name": "denied 为空",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "loading=false",
+          "ok": true,
+          "extra": "false"
+        },
+        {
+          "name": "车辆已装配",
+          "ok": true,
+          "extra": "1号车"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 0
+        },
+        ".section-head": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 284,
+            "w": null,
+            "h": null
+          }
+        },
+        ".hero-cover": {
+          "count": 0
+        },
+        ".card": {
+          "count": 0
+        },
+        ".metric": {
+          "count": 0
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 0
+        },
+        ".segmented": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 200,
+            "w": null,
+            "h": null
+          }
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 0
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "",
+      "shots": [
+        {
+          "file": "vehicle.png",
+          "w": 306,
+          "h": 660,
+          "kb": 23,
+          "scroll": 0
+        }
+      ]
+    },
+    {
+      "key": "staff",
+      "label": "领队现场（本账号无该活动领队授权）",
+      "route": "/pages/staff/staff?id=activity-mvb1pkbov4td54",
+      "sanitized": {
+        "patchKeys": [],
+        "masked": 0,
+        "hash": "57c3e9e07d02",
+        "originalsCount": 0
+      },
+      "fieldPanelSanitized": {
+        "patchKeys": [
+          "rows",
+          "positions",
+          "incidents"
+        ],
+        "masked": 0
+      },
+      "residual": [],
+      "gates": [
+        {
+          "name": "field-panel 已挂载",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "field-panel loading=false",
+          "ok": true,
+          "extra": "denied"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 0
+        },
+        ".section-head": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 24,
+            "w": null,
+            "h": null
+          }
+        },
+        ".hero-cover": {
+          "count": 0
+        },
+        ".card": {
+          "count": 0
+        },
+        ".metric": {
+          "count": 0
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 0
+        },
+        ".segmented": {
+          "count": 0
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 0
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "field-panel denied: 此活动的协作授权不存在或已过期。",
+      "shots": [
+        {
+          "file": "staff.png",
+          "w": 306,
+          "h": 660,
+          "kb": 23,
+          "scroll": 0
+        }
+      ]
+    },
+    {
+      "key": "tasks",
+      "label": "协作任务清单（注入合成任务，展示列表形态）",
+      "route": "/pages/tasks/tasks?id=activity-mvb1pkbov4td54",
+      "sanitized": {
+        "patchKeys": [
+          "tasks",
+          "filtered",
+          "counts",
+          "filter",
+          "canManage",
+          "loading",
+          "denied",
+          "activityTitle",
+          "filterOptions"
+        ],
+        "masked": 0,
+        "hash": "3e47a983e247",
+        "originalsCount": 0
+      },
+      "fieldPanelSanitized": null,
+      "residual": [],
+      "gates": [
+        {
+          "name": "denied 为空",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "loading=false",
+          "ok": true,
+          "extra": "false"
+        },
+        {
+          "name": "任务列表已注入",
+          "ok": true,
+          "extra": "4"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 0
+        },
+        ".section-head": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 24,
+            "w": null,
+            "h": null
+          }
+        },
+        ".hero-cover": {
+          "count": 0
+        },
+        ".card": {
+          "count": 5,
+          "first": {
+            "x": 20,
+            "y": 186,
+            "w": null,
+            "h": null
+          }
+        },
+        ".metric": {
+          "count": 3,
+          "first": {
+            "x": 37,
+            "y": 203,
+            "w": null,
+            "h": null
+          }
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 0
+        },
+        ".segmented": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 304,
+            "w": null,
+            "h": null
+          }
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 0
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "",
+      "shots": [
+        {
+          "file": "tasks.png",
+          "w": 306,
+          "h": 660,
+          "kb": 37,
+          "scroll": 0
+        }
+      ]
+    },
+    {
+      "key": "routes",
+      "label": "路线库",
+      "route": "/pages/routes/routes",
+      "sanitized": {
+        "patchKeys": [],
+        "masked": 0,
+        "hash": "57c3e9e07d02",
+        "originalsCount": 0
+      },
+      "fieldPanelSanitized": null,
+      "residual": [],
+      "gates": [
+        {
+          "name": "denied 为空",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "loading=false",
+          "ok": true,
+          "extra": "false"
+        },
+        {
+          "name": "路线非空",
+          "ok": true,
+          "extra": "299"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 0
+        },
+        ".section-head": {
+          "count": 2,
+          "first": {
+            "x": 20,
+            "y": 24,
+            "w": null,
+            "h": null
+          }
+        },
+        ".hero-cover": {
+          "count": 0
+        },
+        ".card": {
+          "count": 0
+        },
+        ".metric": {
+          "count": 897,
+          "first": {
+            "x": 36,
+            "y": 370,
+            "w": null,
+            "h": null
+          }
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 0
+        },
+        ".segmented": {
+          "count": 0
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 0
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "",
+      "shots": [
+        {
+          "file": "routes.png",
+          "w": 306,
+          "h": 660,
+          "kb": 45,
+          "scroll": 0
+        }
+      ]
+    },
+    {
+      "key": "route",
+      "label": "路线详情",
+      "route": "/pages/route/route?id=route-muky9hnjzbhg1t",
+      "sanitized": {
+        "patchKeys": [
+          "route"
+        ],
+        "masked": 0,
+        "hash": "095a4860b368",
+        "originalsCount": 1
+      },
+      "fieldPanelSanitized": null,
+      "residual": [],
+      "gates": [
+        {
+          "name": "denied 为空",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "loading=false",
+          "ok": true,
+          "extra": "false"
+        },
+        {
+          "name": "路线详情已装配",
+          "ok": true,
+          "extra": "月亮湖穿越伍须海-1790560849819.gpx.bin_tmp"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 0
+        },
+        ".section-head": {
+          "count": 7,
+          "first": {
+            "x": 20,
+            "y": 844,
+            "w": null,
+            "h": null
+          }
+        },
+        ".hero-cover": {
+          "count": 1,
+          "first": {
+            "x": 20,
+            "y": 24,
+            "w": null,
+            "h": null
+          }
+        },
+        ".card": {
+          "count": 3,
+          "first": {
+            "x": 20,
+            "y": 918,
+            "w": null,
+            "h": null
+          }
+        },
+        ".metric": {
+          "count": 3,
+          "first": {
+            "x": 40,
+            "y": 452,
+            "w": null,
+            "h": null
+          }
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 0
+        },
+        ".segmented": {
+          "count": 0
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 1,
+          "first": {
+            "x": 37,
+            "y": 2482,
+            "w": null,
+            "h": null
+          }
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "",
+      "shots": [
+        {
+          "file": "route.png",
+          "w": 306,
+          "h": 660,
+          "kb": 134,
+          "scroll": 0
+        }
+      ]
+    },
+    {
+      "key": "me",
+      "label": "我的",
+      "route": "/pages/me/me",
+      "sanitized": {
+        "patchKeys": [
+          "identity",
+          "displayIdentity",
+          "person",
+          "companions",
+          "companionPerson"
+        ],
+        "masked": 89,
+        "hash": "790f7742536d",
+        "originalsCount": 81
+      },
+      "fieldPanelSanitized": null,
+      "residual": [],
+      "gates": [
+        {
+          "name": "denied 为空",
+          "ok": true,
+          "extra": ""
+        },
+        {
+          "name": "loading=false",
+          "ok": true,
+          "extra": "false"
+        },
+        {
+          "name": "个人资料已装配",
+          "ok": true,
+          "extra": "沈青"
+        }
+      ],
+      "geometry": {
+        ".chapter": {
+          "count": 0
+        },
+        ".section-head": {
+          "count": 4,
+          "first": {
+            "x": 20,
+            "y": 289,
+            "w": null,
+            "h": null
+          }
+        },
+        ".hero-cover": {
+          "count": 0
+        },
+        ".card": {
+          "count": 5,
+          "first": {
+            "x": 20,
+            "y": 24,
+            "w": null,
+            "h": null
+          }
+        },
+        ".metric": {
+          "count": 3,
+          "first": {
+            "x": 37,
+            "y": 200,
+            "w": null,
+            "h": null
+          }
+        },
+        ".task-row": {
+          "count": 0
+        },
+        ".profile-identity": {
+          "count": 0
+        },
+        ".staff-identity": {
+          "count": 0
+        },
+        ".vehicle-identity": {
+          "count": 0
+        },
+        ".tasks-identity": {
+          "count": 0
+        },
+        ".workspace-band": {
+          "count": 0
+        },
+        ".segmented": {
+          "count": 0
+        },
+        ".route-hero": {
+          "count": 0
+        },
+        ".route-map": {
+          "count": 0
+        },
+        ".timeline": {
+          "count": 0
+        },
+        ".discover-card": {
+          "count": 0
+        }
+      },
+      "note": "",
+      "shots": [
+        {
+          "file": "me.png",
+          "w": 306,
+          "h": 660,
+          "kb": 47,
+          "scroll": 0
+        },
+        {
+          "file": "me-scroll.png",
+          "w": 306,
+          "h": 660,
+          "kb": 30,
+          "scroll": 700
+        }
+      ]
+    }
+  ],
+  "exceptions": [],
+  "guard": {
+    "mutations": [
+      "ourtrail.opened.v1",
+      "ourtrail.openid"
+    ],
+    "blocked": []
+  }
+}

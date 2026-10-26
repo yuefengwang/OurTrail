@@ -1,6 +1,6 @@
 {
   "navigationBarTitleText": "协作任务",
-  "navigationBarBackgroundColor": "#F6F3EC",
+  "navigationBarBackgroundColor": "#F5F5F0",
   "navigationBarTextStyle": "black",
   "usingComponents": {
     "field-panel": "/components/field-panel/field-panel"

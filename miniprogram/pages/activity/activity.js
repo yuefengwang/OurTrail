@@ -8,11 +8,25 @@ const J = require('../../utils/journey')
 const WB = require('../../utils/weather-brief')
 const covers = require('../../utils/covers')
 const CV = require('../../utils/content-view')
-const AS = require('../../utils/activity-summary')
+const RP = require('../../utils/route-profile')
 const RS = require('../../utils/route-schedule')
 
 // 报备类型文案只在 format.INCIDENT_LABELS 定义一次，这里只规定出现顺序（默认落在最稳的一项）。
 const KIND_OPTIONS = J.incidentOptions()
+
+// 吸顶分段条自身的高度 = `.seg` 的 44（--touch-target，content-box 的内容高）
+// + `.segmented.tabs-line .seg` 的 10（下内边距）+ 1（tabs-line 的发丝线）＝ 55。
+// 2026-10-26 真机读数（390 宽）：`.section-nav` 实测 55px，此前按 45 算，条底那 10px 里的章节
+// 仍算「在视口里」⇒ 高亮慢一屏。这个数同时是两个用途的唯一来源：观测窗上沿、点段跳转的落点偏移。
+const STICKY_NAV_OFFSET = 55
+
+// 千分位读数：4660 → '4,660'；12.4 → '12.4'；1234.56 → '1,234.6'。
+function numberText(value) {
+  if (!Number.isFinite(value)) return ''
+  const rounded = Math.round(value * 10) / 10
+  const parts = String(rounded).split('.')
+  return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (parts.length > 1 ? '.' + parts[1] : '')
+}
 
 // ---- 路线地图（设计文档 docs/product/路线地图可视化-活动详情页设计.md）----
 // 坐标全站 GCJ-02，map/openLocation 直接消费。marker 图标由 tools/gen-map-markers.js 生成。
@@ -131,8 +145,11 @@ Page({
     cover: '',
     coverFailed: false,
     coverIsReal: false,
-    distance: 0,
-    ascent: 0,
+    // 首屏信息卡（事实区并进来）与路线四指标；都由 renderView 按可用字段组装
+    infoFacts: [],
+    routeStats: [],
+    routeStatsNote: '',
+    photoNote: '',
     confirmed: 0,
     capacity: 0,
     stateKey: '',
@@ -142,6 +159,7 @@ Page({
     countersLine: '',
     // 操作
     isOwner: false,
+    showSticky: false,
     canSubmit: false,
     canSelfSheet: false,
     selfButton: '',
@@ -152,13 +170,9 @@ Page({
     organizerIntro: '',
     contentView: [],
     contentImages: [],
-    autoSummary: '',
     hasContentImages: false,
     highlights: [],
     leader: '',
-    factTime: '',
-    factPickup: '',
-    factPeople: '',
     sceneryRating: 0,
     funRating: 0,
     ratingOptions: [1, 2, 3, 4, 5],
@@ -166,8 +180,6 @@ Page({
     feeIncludes: [],
     feeExcludes: [],
     signupNote: '',
-    signupBrief: '',
-    times: [],
     points: [],
     pickups: [],
     scheduleBasis: '',
@@ -183,7 +195,6 @@ Page({
     weatherLoading: false,
     sectionNav: [
       { id: 'sec-intro', label: '介绍' },
-      { id: 'sec-facts', label: '说明' },
       { id: 'sec-itinerary', label: '行程' },
       { id: 'sec-weather', label: '天气' },
       { id: 'meeting-block', label: '路线' },
@@ -193,6 +204,9 @@ Page({
       { id: 'sec-signup', label: '报名后' },
       { id: 'sec-peers', label: '同行人' },
     ],
+    // 吸顶分段条（S5）：6 段，每段一串文档顺序的锚点；渲染只用这一份，sectionNav 仍给既有断言与跳转留底。
+    anchorGroups: [],
+    anchorActive: '',
     feeNote: '',
     cancellationNote: '',
     // 弹层
@@ -232,6 +246,10 @@ Page({
 
   onShow() {
     this.reload()
+  },
+
+  onUnload() {
+    this.teardownAnchorObserver()
   },
 
   onShareAppMessage() {
@@ -356,11 +374,6 @@ Page({
       isPrimary: r.signupId === v.primarySignupId,
     }))
     const primary = v.rows.find(r => r.signupId === v.primarySignupId) || null
-    const times = [
-      { label: '出发时间', value: F.dtLabel(a.startAt) },
-      { label: '预计结束', value: F.dtLabel(a.endAt) },
-      { label: '报名截止', value: F.dtLabel(a.deadlineAt) },
-    ]
     const routeRows = RS.schedule(
       a.routeSnapshot.points.map(p => ({ id: p.id, time: p.time })),
       a.startAt
@@ -383,15 +396,11 @@ Page({
     const contentView = CV.buildView(a.content || [])
     const contentImages = CV.allImages(contentView)
     const hasContentImages = contentImages.length > 0
-    // 领队没写介绍时，用结构化字段拼一句事实摘要；有手写内容就不叠加，避免重复。
-    const factSummary = AS.buildFactSummary(a)
     const hasUserIntro = !!String(a.description || '').trim()
       || contentView.length > 0
       || (a.highlights || []).some(item => !!String(item || '').trim())
-    const introVisible = hasUserIntro || !!factSummary.text
     const sectionNav = [
-      { id: 'sec-intro', label: '介绍', show: introVisible },
-      { id: 'sec-facts', label: '说明', show: a.phase !== 'draft' },
+      { id: 'sec-intro', label: '介绍', show: hasUserIntro },
       { id: 'sec-itinerary', label: '行程', show: true },
       { id: 'sec-weather', label: '天气', show: a.phase !== 'draft' },
       { id: 'meeting-block', label: '路线', show: true },
@@ -401,15 +410,34 @@ Page({
       { id: 'sec-signup', label: '报名后', show: !!String(a.signupNote || '').trim() },
       { id: 'sec-peers', label: '同行人', show: rows.length > 0 },
     ].filter(item => item.show).map(item => ({ id: item.id, label: item.label }))
+    // 吸顶分段条（S5）：把 9 个既有锚点收成 6 段，13px 下每段 55.8px @375（335 / 6）。
+    // 不照抄参考板的 5 段：「安全」并入「路线」会让人以为风险是路线的一部分；
+    // 也不拆成 7 段：每段压到 47px 以下、2 字标签开始贴边。
+    // sec-peers（同行人）在正文里排在行程之前 ⇒ 归「介绍」；组内 ids 保持文档顺序，
+    // observer 取「进入观测窗的最上一个」，顺序错一位高亮就会跳段。
+    // 段存在与否只由**首个**锚点决定：没有手写介绍时「介绍」整段消失（哪怕 sec-peers 还在），
+    // 否则点它会跳到一个没有标题的区块。
+    const sectionIds = {}
+    sectionNav.forEach(item => { sectionIds[item.id] = true })
+    const anchorGroups = [
+      { key: 'intro', label: '介绍', ids: ['sec-intro', 'sec-peers'] },
+      { key: 'itinerary', label: '行程', ids: ['sec-itinerary', 'sec-weather'] },
+      { key: 'route', label: '路线', ids: ['meeting-block'] },
+      { key: 'safety', label: '安全', ids: ['sec-safety'] },
+      { key: 'equipment', label: '装备', ids: ['sec-equipment'] },
+      { key: 'terms', label: '约定', ids: ['sec-fee', 'sec-signup'] },
+    ].map(function (g) {
+      if (!sectionIds[g.ids[0]]) return null
+      const ids = g.ids.filter(function (id) { return sectionIds[id] })
+      return { key: g.key, label: g.label, target: ids[0], ids: ids }
+    }).filter(Boolean)
     // 章节编号（纯展示派生）：长图文按阅读顺序给章节编号；只发给可见章节——
-    // 草稿没有 sec-facts/sec-weather，写死静态序号会跳号，看起来像页面坏了。
+    // 草稿没有 sec-weather，写死静态序号会跳号，看起来像页面坏了。
     // 这里的可见条件必须与模板各处 wx:if 逐条同源（改一处要同时改另一处）。
     const secNo = {}
     let chapterSeq = 0
     ;[
-      ['intro', introVisible],
-      ['facts', a.phase !== 'draft'],
-      ['peers', rows.length > 0],
+      ['intro', hasUserIntro],
       ['itinerary', true],
       ['weather', a.phase !== 'draft'],
       ['route', true],
@@ -424,13 +452,77 @@ Page({
     })
     const coverIsReal = !!a.coverFileId
     const cover = a.coverFileId || covers.coverFor(a.id)
-    const factTime = times[0].value + ' – ' + times[1].value
-    const firstPickup = pickups[0]
-    const factPickup = firstPickup
-      ? firstPickup.name + (firstPickup.time ? ' · ' + firstPickup.time : '') + (pickups.length > 1 ? ' 等 ' + pickups.length + ' 个上车点' : '')
+    const difficultyLabel = F.difficultyLabel(a.routeSnapshot.difficulty)
+    // 信息卡：事实区并入首屏后，这里成为时间/集合/人数/强度的唯一出口。
+    // 缺项各自省略（空串由 fact-grid 过滤），不再印「待确定」占位。
+    const firstPickup = a.pickupPoints[0]
+    const pickupSub = firstPickup
+      ? [
+        firstPickup.meetingAt ? F.dtLabel(firstPickup.meetingAt) : '',
+        a.pickupPoints.length > 1 ? '等 ' + a.pickupPoints.length + ' 个上车点' : '',
+      ].filter(Boolean).join(' · ')
       : ''
-    const factPeople = a.minParticipants ? (a.minParticipants + '–' + a.capacity + ' 人') : ('上限 ' + a.capacity + ' 人')
-    const signupBrief = String(a.signupNote || '').split('\n')[0].slice(0, 60)
+    const timeSub = [
+      a.endAt ? '至 ' + F.dtLabel(a.endAt) : '',
+      a.deadlineAt ? '截止 ' + F.dtLabel(a.deadlineAt) : '',
+    ].filter(Boolean).join(' · ')
+    const infoFacts = [
+      { key: 'time', label: '活动时间', value: a.startAt ? F.dtLabel(a.startAt) : '', sub: timeSub },
+      { key: 'pickup', label: '集合', value: firstPickup ? firstPickup.name : '', sub: pickupSub },
+      { key: 'people', label: '人数', value: v.counters.confirmed + ' / ' + a.capacity, unit: '人', sub: a.minParticipants ? '成行 ' + a.minParticipants + ' 人' : '' },
+      { key: 'intensity', label: '强度', value: difficultyLabel },
+    ]
+    // 路线四指标：值缺失即不加入数组（不占格子），所以「0 km」「待补」不会出现。
+    const elev = RP.elevationRange({ track: a.routeSnapshot.track || [], points: a.routeSnapshot.points || [] })
+    const durationMin = RS.durationBetween(a.startAt, a.endAt)
+    const routeStats = []
+    if (a.routeSnapshot.distanceKm > 0) {
+      routeStats.push({ key: 'distance', label: '路线里程', value: numberText(a.routeSnapshot.distanceKm), unit: 'km' })
+    }
+    if (a.routeSnapshot.ascentM > 0) {
+      routeStats.push({ key: 'ascent', label: '累计爬升', value: numberText(a.routeSnapshot.ascentM), unit: 'm' })
+    }
+    if (elev.maxEle != null) {
+      routeStats.push({
+        key: 'maxEle',
+        label: '最高海拔',
+        value: numberText(elev.maxEle),
+        unit: 'm',
+        sub: elev.source === 'track' ? '轨迹高程' : '节点高程',
+      })
+    }
+    if (durationMin != null) {
+      let dv
+      let du
+      let dsub = ''
+      if (durationMin < 60) {
+        dv = durationMin
+        du = '分钟'
+      } else if (durationMin < 1440) {
+        dv = Math.floor(durationMin / 60)
+        du = '小时'
+        const rest = durationMin % 60
+        if (rest) dsub = '另 ' + rest + ' 分'
+      } else {
+        dv = Math.floor(durationMin / 1440)
+        du = '天'
+        const restH = Math.floor((durationMin % 1440) / 60)
+        if (restH) dsub = '另 ' + restH + ' 小时'
+      }
+      const crossDay = F.cnParts(a.startAt).date !== F.cnParts(a.endAt).date
+      if (a.endAt && (durationMin >= 1440 || crossDay)) {
+        dsub = [dsub, '至 ' + F.dtLabel(a.endAt)].filter(Boolean).join(' · ')
+      }
+      routeStats.push({ key: 'duration', label: '预计用时', value: String(dv), unit: du, sub: dsub })
+    }
+    const hasGeometry = (a.routeSnapshot.track || []).length > 0 || (a.routeSnapshot.points || []).length > 0
+    const routeStatsNote = elev.source === 'none' && hasGeometry ? '路线没有可用高程，暂不显示最高海拔。' : ''
+    // 封面诚实说明：全页只印一次，落在信息卡之后（纸面背景），不再塞进费用区。
+    const photoNote = coverIsReal
+      ? '封面与正文图片由组织者提供。'
+      : hasContentImages
+        ? '封面为场景氛围图，非本次活动实拍；正文图片由组织者提供。'
+        : '封面为场景氛围图，非本次活动实拍；路线与天气信息以组织者填写与实测数据为准。'
     this._shareImageUrl = ''
     // 状态可解释性层：把投影翻译成「我在哪 / 什么状态 / 我能做什么 / 下一步」。
     // 集合时刻要取这个人自己那个上车点的集合时间——共享活动里不同人可能在不同点集合。
@@ -459,13 +551,16 @@ Page({
       startAtLabel: F.dtLabel(a.startAt),
       title: a.title || '未命名活动',
       sectionNav,
+      anchorGroups,
       routeTitle: a.routeSnapshot.title || '路线待完善',
       cover,
       coverFailed: false,
       coverIsReal,
-      distance: a.routeSnapshot.distanceKm,
-      ascent: a.routeSnapshot.ascentM,
-      difficultyLabel: F.difficultyLabel(a.routeSnapshot.difficulty),
+      infoFacts,
+      routeStats,
+      routeStatsNote,
+      photoNote,
+      difficultyLabel,
       secNo,
       confirmed: v.counters.confirmed,
       capacity: a.capacity,
@@ -481,31 +576,28 @@ Page({
         ? '待审核 ' + v.counters.pending + ' 人 · 候补 ' + v.counters.waitlisted + ' 人 · 剩余 ' + v.counters.remaining + ' 个名额'
         : '',
       isOwner: isOwnerReal,
+      // 底栏与页尾留白同一个开关：justPublished 那一帧不挂底栏，也不多留 120px。
+      showSticky: !(this.justPublished && isOwnerReal),
       canSubmit: !a.phase || (v.permittedActions.indexOf('signup.submit') !== -1 && stateKey === 'new'),
       canSelfSheet: !!(primary && primary.status === 'confirmed' && ['gathering', 'checked', 'active', 'closing'].indexOf(stateKey) !== -1),
       selfButton: journey.cta && journey.cta.target === 'sheet' ? journey.cta.label : selfButton,
       rows,
       primaryId: v.primarySignupId || '',
       description: a.description || '',
-      autoSummary: hasUserIntro ? '' : factSummary.text,
       organizerIntro: a.organizerIntro,
       contentView,
       contentImages,
       hasContentImages,
       highlights: a.highlights || [],
       leader: a.leader || '',
-      factTime,
-      factPickup,
-      factPeople,
       sceneryRating: a.sceneryRating || 0,
       funRating: a.funRating || 0,
       feeSummary: a.feeSummary || '',
       feeIncludes: a.feeIncludes || [],
       feeExcludes: a.feeExcludes || [],
       signupNote: a.signupNote || '',
-      signupBrief,
       startDate: a.startAt ? F.cnParts(a.startAt).date : '',
-      times, points, pickups, risks,
+      points, pickups, risks,
       scheduleBasis,
       map: buildRouteMap(a),
       track: a.routeSnapshot.track || [],
@@ -520,6 +612,8 @@ Page({
     }, () => {
       // 首帧后立即消费：页面再次 onShow / 同 URL 刷新不再重复庆祝。
       this.justPublished = false
+      // 观测要等这一轮渲染落地：对尚未存在的选择器 observe 会静默失效（不报错、永远不回调）。
+      this.scheduleAnchorObserver()
     })
     // 草稿只有自己可见：关掉原生转发菜单，避免把对内死链发到群里。
     if (a.phase === 'draft' && typeof wx !== 'undefined' && typeof wx.hideShareMenu === 'function') {
@@ -575,7 +669,97 @@ Page({
   onSectionNav(e) {
     const id = e.currentTarget.dataset.id
     if (!id || typeof wx.pageScrollTo !== 'function') return
-    wx.pageScrollTo({ selector: '#' + id, duration: 300, fail: () => {} })
+    // 落点要让开吸顶条：否则跳过去的章节标题正好压在条底下（看起来像「点了没动」）。
+    wx.pageScrollTo({ selector: '#' + id, offsetTop: -STICKY_NAV_OFFSET, duration: 300, fail: () => {} })
+  },
+
+  // ---- 吸顶分段条的当前项 ----
+  // 用 IntersectionObserver 而不是 onPageScroll：后者每帧都要读全部锚点位置，长图文页会掉帧；
+  // observer 只在跨过观测窗上沿时回调。观测窗上沿让开 STICKY_NAV_OFFSET，
+  // 被吸顶条盖住的章节就不算「可见」，高亮与眼睛看到的一致。
+  scheduleAnchorObserver() {
+    if (typeof wx !== 'undefined' && typeof wx.nextTick === 'function') {
+      wx.nextTick(() => this.setupAnchorObserver())
+      return
+    }
+    this.setupAnchorObserver()
+  },
+
+  setupAnchorObserver() {
+    this.teardownAnchorObserver()
+    const groups = this.data.anchorGroups || []
+    if (!groups.length) {
+      if (this.data.anchorActive) this.setData({ anchorActive: '' })
+      return
+    }
+    // 观测能力缺失（测试桩 / 旧基础库）时保持无高亮：宁可少一个装饰，也不逐帧硬算。
+    if (typeof this.createIntersectionObserver !== 'function') return
+    const map = {}
+    const order = []
+    const seen = {}
+    groups.forEach(g => {
+      ;(g.ids || []).forEach(id => {
+        map[id] = g.key
+        order.push(id)
+        seen[id] = false
+      })
+    })
+    // 一个实例只能 observe 一个节点：微信的 IntersectionObserver 第二次 observe 直接抛
+    // 「"observe" call can be only called once in IntersectionObserver」，整条高亮当场死掉。
+    // 所以每个锚点各建一个实例，账本（order/seen/map）仍共一份。2026-10-26 真机由
+    // exceptions 通道抓到；此前测试桩允许复用实例，把这个平台限制挡掉了。
+    const observers = []
+    this._anchorOrder = order
+    this._anchorSeen = seen
+    this._anchorMap = map
+    this._anchorObservers = observers
+    order.forEach(id => {
+      const observer = this.createIntersectionObserver({ thresholds: [0] })
+      observer.relativeToViewport({ top: -STICKY_NAV_OFFSET, bottom: 0 })
+      observers.push(observer)
+      observer.observe('#' + id, res => {
+        // 迟到的回调可能落在一次 teardown 之后：账本已被清掉就当这次观测不存在。
+        const seen = this._anchorSeen
+        if (!seen) return
+        const on = !!(res && res.intersectionRatio > 0)
+        if (seen[id] === on) return
+        seen[id] = on
+        this.scheduleAnchorSync()
+      })
+    })
+  },
+
+  teardownAnchorObserver() {
+    ;(this._anchorObservers || []).forEach(observer => {
+      if (observer && typeof observer.disconnect === 'function') observer.disconnect()
+    })
+    this._anchorObservers = []
+    this._anchorOrder = []
+    this._anchorSeen = null
+    this._anchorMap = null
+  },
+
+  // 首屏会为每个锚点各回调一次：攒进一个微任务再算，避免 N 次 setData。
+  scheduleAnchorSync() {
+    if (this._anchorSyncQueued) return
+    this._anchorSyncQueued = true
+    Promise.resolve().then(() => {
+      this._anchorSyncQueued = false
+      this.syncAnchorActive()
+    })
+  },
+
+  // 取「进入观测窗的最上一个锚点」所属的分段；一个都没进来时保持现状——
+  // 段落之间有空隙，清空高亮会让条看起来在抖。
+  syncAnchorActive() {
+    const order = this._anchorOrder || []
+    const seen = this._anchorSeen || {}
+    const map = this._anchorMap || {}
+    let active = ''
+    for (let i = 0; i < order.length; i++) {
+      if (seen[order[i]]) { active = map[order[i]]; break }
+    }
+    if (active && active !== this.data.anchorActive) this.setData({ anchorActive: active })
   },
 
   onToggleRow(e) {
@@ -607,6 +791,11 @@ Page({
         { latitude: p.coordinates.lat - d, longitude: p.coordinates.lng - d },
         { latitude: p.coordinates.lat + d, longitude: p.coordinates.lng + d },
       ],
+    }, () => {
+      // 时间轴在「行程」章节、地图在下一章：定位结果必须滚进视野，否则点了看不出变化。
+      if (typeof wx.pageScrollTo === 'function') {
+        wx.pageScrollTo({ selector: '#meeting-block', duration: 240, fail: () => {} })
+      }
     })
   },
   // marker 点击 → 选中放大（callout 由原生 BYTAP 展示）。字段级 setData：不重传 include-points。

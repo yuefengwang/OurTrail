@@ -97,6 +97,9 @@ async function main() {
     check('状态/分类/截止标签归口 format', t.statusLabel === '待办' && t.categoryLabel === '食物采购' && t.dueText.indexOf('1/30') !== -1,
       JSON.stringify({ s: t.statusLabel, c: t.categoryLabel, d: t.dueText }))
     check('owner canManage=true', page.data.canManage === true)
+    check('筛选装配全量计数（全部/待办/进行中/完成）', page.data.filterOptions.map(f => f.count).join(',') === '3,1,1,1')
+    check('列表保留说明和负责人，状态推进取原枚举', t.note === '6 箱' && t.assigneeName === '王五'
+      && page.data.tasks.map(x => x.actionNext).join(',') === 'doing,done,todo')
     check('任务页已注册并按模板渲染', TASKS_JSON.usingComponents.overlay === '/components/overlay/overlay'
       && TASKS_WXML.indexOf('bindtap="onNew"') !== -1)
   }
@@ -113,10 +116,15 @@ async function main() {
     check('筛选已完成只剩 done', page.data.filtered.length === 1 && page.data.filtered[0].id === 't3')
     page.onFilter({ currentTarget: { dataset: { value: 'bogus' } } })
     check('非法筛选值不改变当前筛选', page.data.filter === 'done')
+    check('切换筛选不改变全量计数', page.data.filterOptions.map(f => f.count).join(',') === '3,1,1,1')
+    page.onFilter({ currentTarget: { dataset: { value: 'all' } } })
+    await waitFor(() => page.data.filtered.length === 3)
+    check('回到全部不折叠任何记录', page.data.filtered.map(t => t.id).join(',') === 't1,t2,t3')
     const empty = bootTasks({ view: viewFixture({ tasks: [] }) })
     await waitFor(() => empty.page.data.loading === false)
     check('空清单有解释与新建入口', empty.page.data.emptyTitle === '还没有任务'
       && empty.page.data.emptyDetail.indexOf('组织者') !== -1)
+    check('空清单四个筛选计数真实为零', empty.page.data.filterOptions.every(f => f.count === 0))
   }
 
   section('3. 新建/编辑/状态/删除命令')
@@ -175,9 +183,11 @@ async function main() {
     const readOnly = bootTasks({ view: viewFixture({ canManage: false }) })
     await waitFor(() => readOnly.page.data.loading === false)
     check('参与者 canManage=false', readOnly.page.data.canManage === false)
+    // style-B 3c：新建按钮从页头搬进固定底栏。旧断言钉的是页头那颗 `wx:if="{{canManage}}" class="button primary`，
+    // 位置换了但判据不松：底栏与页内操作各自都要有 canManage 守卫（非管理者既不能建、也不能改）。
     check('模板以 canManage 隐藏新建与行内操作',
-      TASKS_WXML.indexOf('wx:if="{{canManage}}"') !== -1
-      && TASKS_WXML.indexOf('wx:if="{{canManage}}" class="button primary') !== -1)
+      TASKS_WXML.indexOf('wx:if="{{canManage && !denied && !loading}}" class="sticky-action"') !== -1
+      && TASKS_WXML.indexOf('wx:if="{{canManage}}" class="task-row__actions"') !== -1)
   }
   {
     const { page } = bootTasks({ view: { kind: 'denied', message: '没有此活动任务的访问权限。' } })
@@ -186,6 +196,26 @@ async function main() {
       page.data.denied)
   }
 
+  section('5. 紧凑列表的真实状态循环与重复点击守卫')
+  {
+    const { page, env } = bootTasks()
+    await waitFor(() => !page.data.loading)
+    for (const [id, next] of [['t1', 'doing'], ['t2', 'done'], ['t3', 'todo']]) {
+      const before = env.cmds.length
+      const event = { currentTarget: { dataset: { id, next } } }
+      page.onStatus(event); page.onStatus(event)
+      await waitFor(() => env.cmds.length === before + 1 && !page.data.busy)
+      check(id + ' 状态按钮沿用 task.status 且双击只写一次', env.cmds.length === before + 1
+        && env.cmds[before].payload.taskId === id && env.cmds[before].payload.status === next
+        && env.cmds[before].expectedRevision === 2)
+    }
+    page.onEdit({ currentTarget: { dataset: { id: 't1' } } })
+    check('次级编辑入口保留说明、负责人和截止原值', page.data.form.note === '6 箱'
+      && page.data.form.assigneeName === '王五' && page.data.form.dueDate === '2027-01-30')
+    page.onDeleteOpen({ currentTarget: { dataset: { id: 't1' } } })
+    page.onDeleteClose()
+    check('次级删除仍可取消且不写入', !page.data.deleteOpen && env.cmds.length === 3)
+  }
   console.log('\npassed=' + passed + ' failed=' + failed + ' skipped=' + skipped)
   process.exit(failed > 0 ? 1 : 0)
 }

@@ -350,9 +350,9 @@ check('T2.5 tab 终值：min-height 44px、color #5F6E66、font-size 12px、bord
   specOf(tabFinal, 'min-height') === '44px' && asHex(specOf(tabFinal, 'color')) === '#5f6e66' &&
   specOf(tabFinal, 'font-size') === '12px' && specOf(tabFinal, 'border-radius') === '8px',
   [specOf(tabFinal, 'min-height'), specOf(tabFinal, 'color'), specOf(tabFinal, 'font-size'), specOf(tabFinal, 'border-radius')].join(' | '))
-check('T2.6 选中 tab 终值：#163E35 字 + 600 字重 + #ECF0EF 底',
+check('T2.6 选中 tab 终值：#163E35 字 + 600 字重 + 透明底（2026-10-23 视觉收敛去掉药丸底）',
   asHex(specOf(onFinal, 'color')) === '#163e35' && specOf(onFinal, 'font-weight') === '600' &&
-  asHex(specOf(onFinal, 'background')) === '#ecf0ef',
+  String(specOf(onFinal, 'background')).toLowerCase() === 'transparent',
   [specOf(onFinal, 'color'), specOf(onFinal, 'font-weight'), specOf(onFinal, 'background')].join(' | '))
 const tabVar = ['min-height', 'color', 'font-size', 'border-radius'].filter(p => {
   const d = tabFinal[p]
@@ -461,8 +461,8 @@ check('T4.5 .page.has-sticky 的 padding-bottom 终值仍是 120px（审计说�
   stickyPad === '120px', String(stickyPad))
 check('T4.6 收回旧账的实测证据：has-sticky 在 wxml 里的引用数 ≥ 1（命中 ' + uses('has-sticky') + '）',
   uses('has-sticky') >= 1, String(uses('has-sticky')))
-check('T4.7 收回旧账的实测证据：with-tabbar 在 wxml 里的引用数 ≥ 1 且 app.wxss 从未定义它（是「用了没定义」，不是死工具，无可删项）',
-  uses('with-tabbar') >= 1 && !finalMap([app], chainOf(['page', 'with-tabbar']))['padding-bottom'],
+check('T4.7 with-tabbar 空开关已删除（2026-10-23）：wxml 引用 0 且 app.wxss 从未定义它 ⇒ 不再留「用了没定义」的假开关',
+  uses('with-tabbar') === 0 && !finalMap([app], chainOf(['page', 'with-tabbar']))['padding-bottom'],
   'uses=' + uses('with-tabbar'))
 const pageBase = finalMap(BOTH, chainOf(['page']))
 check('T4.8 .page 基础内边距未被改动（with-tabbar 没有定义这件事留 requests，不许靠改 .page 蒙混）',

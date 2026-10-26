@@ -8,25 +8,54 @@
 /* 主状态 callout：编辑式"当前该做什么"——比其他提示重半格，但不换语义色体系 */
 .callout .callout-title { font-size: 15px; line-height: 22px; }
 
-/* 分区锚点：横向滚动，不换行；只做阅读跳转 */
-.section-nav {
-  white-space: nowrap;
-  width: 100%;
+/* ---------- 首屏纵深（S1 / Slice 2） ----------
+   .act-top 必须是 flex 列而不是 block：纸面板 .sheet-top 的 margin-top:-20px 若发生外边距合并，
+   会把整个首屏（含封面）一起顶进上方提示里；flex 容器不与子项合并外边距。 */
+.act-top {
+  display: flex;
+  flex-direction: column;
 }
-.section-nav__chip {
-  display: inline-flex;
+.activity-hero-bleed {
+  margin: 0 -20px;
+}
+/* 首屏纸面板（Slice 2）：盖住封面下沿 20px（负外边距来自全局 .sheet-top），
+   事实格 / 封面说明 / 状态卡同处一块纸面。下沿留白补在这里——全局 .sheet-top 的
+   padding-bottom 是 0，状态卡直接贴到底边会被裁掉半行。 */
+.act-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 20px;
+}
+.act-photo-note {
+  display: block;
+}
+
+/* 同行评分：从事实区搬出的可选观感信息，不占信息卡格子 */
+.act-rating__row {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 12px;
-  margin-right: 8px;
-  border-radius: var(--radius-tag);
-  background: var(--stone);
-  color: var(--forest);
-  font-size: 13px;
-  font-weight: 600;
+  gap: 16px;
 }
-.section-nav__chip:last-child { margin-right: 0; }
+.act-rating__item { gap: 4px; }
+
+/* 路线四指标：位于章节标题与地图之间，间距由外层 .stack 统一给 */
+.act-route-stats { margin-top: 0; }
+.act-route-stats-note {
+  display: block;
+}
+
+/* 分区锚点（S5）：吸顶下划线分段条。外观全在全局 .segmented.tabs-line（2026-10-23 登记），
+   本层只管吸顶与底色：内容滚到条下面时不许透出来；top:0 与原生导航栏下沿相接。
+   底栏 .act-sticky 是 fixed，与这条分居上下，互不重叠。
+   z-index 20 低于 fixed 底栏（.sticky-action 50）与弹层（overlay 200），只压正文。 */
+.section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--paper);
+}
 
 /* 活动图文正文（2026-10-21）：段落按空行拆开；图片 1 张通栏、2 张两列、3+ 张三列 */
 .article-p {
@@ -120,3 +149,14 @@
   line-height: 24px;
   color: var(--ink);
 }
+
+/* 底栏只占一行：全局 .sticky-action 允许 wrap，长主按钮会把分享挤到第二行。
+   分享固定内容宽，主按钮吃掉剩余空间；窄屏时让主按钮内部换行（min-width:0），
+   而不是整条底栏长高成两行按钮。 */
+.act-sticky { flex-wrap: nowrap; }
+.sticky-action.act-sticky .button { min-width: 0; }
+/* 分享是次级动作：全局 .sticky-action .button { flex:1 }（0,2,0）会把它撑满。
+   原生 <button> 自带 width:184px（类选择器盖得住元素默认值，但 width 不写就一直是 184），
+   390px 屏上实测它吃掉 184、主按钮只剩 154 ⇒「查看集合与出行安排」折成两行、按钮高 70px。
+   3 类选择器同时收 flex 与 width，主按钮才拿得回整行。 */
+.sticky-action .button.act-sticky__share { flex: 0 0 auto; width: auto; }

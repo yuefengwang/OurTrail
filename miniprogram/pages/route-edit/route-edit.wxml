@@ -6,10 +6,10 @@
     <status-panel kind="loading" title="正在载入" detail="正在读取路线。" />
   </block>
   <view wx:else class="stack-sections">
-    <!-- 编辑式头部：眉题 + 大标题。表单字段本身不藏进卡里——一屏一个输入，层级更清楚 -->
+    <!-- 编辑式头部：大标题领起。style-B（2026-10-26）：眉题「OURTRAIL · 新建/编辑路线」删掉——
+         route-edit.js 已按新建/编辑动态设置原生导航标题，页内再自报一次是同一身份印两遍。 -->
     <view class="section-head">
-      <text class="kicker">OURTRAIL · {{isNew ? '新建路线' : '编辑路线'}}</text>
-      <text class="page-title" style="display:block;margin-top:4px;">{{isNew ? '把一条路记下来。' : '改这条路。'}}</text>
+      <text class="page-title" style="display:block;">{{isNew ? '把一条路记下来。' : '改这条路。'}}</text>
       <text class="section-sub">节点、风险与轨迹会存进路线库；之后发起活动可以直接复用。</text>
     </view>
 
@@ -51,7 +51,9 @@
         <text class="section-title">有 GPX 轨迹？一键生成</text>
         <text class="section-sub">自动解析航点为路线节点，并按轨迹算好里程与爬升</text>
       </view>
-      <view class="button primary block" hover-class="button-hover" bindtap="onImportGpx">
+      <!-- style-B（2026-10-26）：导入是旁路起点，本页唯一主行动是底栏「保存修改」——
+           与天气 Hub 同一口径（GPX 导入用 secondary，见 tools/page2-gates-mutate.js P6）。 -->
+      <view class="button secondary block" hover-class="button-hover" bindtap="onImportGpx">
         <icon name="route" size="18" color="#FFFFFF" />
         <text>导入 GPX 轨迹</text>
       </view>
@@ -80,7 +82,7 @@
           <view class="cluster" style="justify-content:space-between;">
             <view class="cluster" style="gap:8px;min-width:0;">
               <text class="badge neutral tabular">{{index + 1}}</text>
-              <text style="font-weight:600;">{{item.name || (item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '节点 ' + index)}}</text>
+              <text class="row-title">{{item.name || (item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '节点 ' + index)}}</text>
             </view>
             <view class="cluster" style="gap:8px;flex:0 0 auto;">
               <text class="badge {{item.kind === 'start' ? 'success' : item.kind === 'finish' ? 'info' : 'neutral'}}">{{item.kind === 'start' ? '起点' : item.kind === 'finish' ? '终点' : '途中'}}</text>
@@ -145,7 +147,7 @@
       <block wx:for="{{form.risks}}" wx:key="id">
         <view wx:if="{{!editingRisks[item.id]}}" class="card row-tap" hover-class="button-hover" data-id="{{item.id}}" bindtap="toggleRisk">
           <view class="cluster" style="justify-content:space-between;">
-            <text style="font-weight:600;">{{item.title || '未命名风险'}}</text>
+            <text class="row-title">{{item.title || '未命名风险'}}</text>
             <text class="muted">›</text>
           </view>
         </view>

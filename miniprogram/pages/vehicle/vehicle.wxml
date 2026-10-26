@@ -3,39 +3,62 @@
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取本车名单。" />
   </block>
-  <!-- 根容器保持 class="stack"（不是 stack-sections）：scenario-vehicle-test 场景 6 把这个
-       字面量钉住，用途是保证 denied/loading 的 wx:else 分支存在。现场任务页节奏偏紧也合适，
-       分组靠下面的 section-head，不靠容器间距。 -->
+  <!-- 根容器保持 class="stack"：scenario-vehicle-test 场景 6 把这个字面量钉住，用途是保证
+       denied/loading 的兜底分支存在。现场任务页节奏偏紧也合适，分组靠下面的 section-head。 -->
   <view wx:else class="stack">
-    <!-- 户外强光场景：深底反白的车头块（行内标签 .eyebrow 在 hero 上取反白色，
-         不能换成纸面用的 .kicker——那条是 --muted，压在森林绿上读不清） -->
-    <view class="hero stack" style="gap:8px;">
+    <!-- 身份头：车名与车牌回答「哪一辆」，司机行回答「谁在负责」。
+         户外强光场景用深底反白（行内标签 .eyebrow 在 hero 上取反白色）。 -->
+    <view class="vehicle-identity hero stack" style="gap:8px;">
       <view class="hero-body stack" style="gap:8px;">
         <text class="eyebrow">本车联络任务</text>
         <text class="page-title">{{label}}</text>
         <text class="muted">{{plate}}</text>
-        <text class="small">{{capacityLine}}</text>
+        <text class="small">{{driverLine}}</text>
       </view>
     </view>
 
-    <view class="segmented" aria-label="行车方向">
+    <view class="segmented" aria-label="本程方向">
       <view class="seg {{leg === 'outbound' ? 'on' : ''}}" data-leg="outbound" bindtap="onLeg">去程</view>
       <view class="seg {{leg === 'return' ? 'on' : ''}}" data-leg="return" bindtap="onLeg">返程</view>
     </view>
 
-    <!-- 清点：分区头把「应到/已上车」这两个数和下面的名单绑成一组（原先只是两行文字，
-         名单像另一件事）。 -->
-    <view class="section-head">
-      <text class="kicker">清点</text>
-      <view class="cluster" style="justify-content:space-between;align-items:center;">
-        <text class="section-title">应到 {{expectedCount}} 人 · 已上车 {{boardedCount}} 人</text>
-        <!-- legState 三态改用语义色徽标（T010，文案零改动）：已完成=success / 已发车=info /
-             逐人清点=warning。色调由本页已有的 departed/completed 两个布尔决定，
-             不在模板里新造判据（铁律 19）；三种状态在强光下靠形状+颜色双通道可辨。 -->
-        <text class="badge {{completed ? 'success' : (departed ? 'info' : 'warning')}}">{{legState}}</text>
+    <!-- 本程行动区：清点进度、缺口、发车/完成与安全提醒都在名单之前——
+         现场负责人先决定「这车能不能走」，再回头逐人核对。 -->
+    <view class="vehicle-operations">
+      <view class="section-head">
+        <text class="kicker">本程行动</text>
+        <view class="cluster" style="justify-content:space-between;align-items:center;">
+          <text class="section-title">应到 {{expectedCount}} 人 · 已上车 {{boardedCount}} 人</text>
+          <!-- legState 三态改用语义色徽标（T010，文案零改动）：已完成=success / 已发车=info /
+               逐人清点=warning。色调由本页已有的 departed/completed 两个布尔决定，
+               不在模板里新造判据（铁律 19）；三种状态在强光下靠形状+颜色双通道可辨。 -->
+          <text class="badge {{completed ? 'success' : (departed ? 'info' : 'warning')}}">{{legState}}</text>
+        </view>
       </view>
+
+      <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+
+      <!-- 清点没点完时先把代价说在旁边，再让人按按钮（照 transport-panel lockHint 的立场：
+           不留一颗点了才撞红字的主按钮）。名单取本页同屏那两个数背后的同一对集合，不另推一遍规则。 -->
+      <view wx:if="{{showPendingNotice}}" class="callout warning stack-gap3">
+        <text class="callout-title">还差 {{pendingCount}} 人没有上车记录</text>
+        <text class="pending-names">{{pendingNames}}。请先逐人点「确认上车」，或请现场负责人核实其去向。</text>
+      </view>
+
+      <view wx:if="{{canOperate}}" class="form-actions">
+        <view class="button primary {{busy || departed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || departed ? '' : 'onDepartAsk'}}">确认本程发车</view>
+        <view class="button secondary {{busy || !departed || completed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !departed || completed ? '' : 'onComplete'}}">完成本程行驶</view>
+      </view>
+
+      <text class="small muted">行驶完成不等于参与者安全到家；如有人未上车，请由现场负责人核实去向。</text>
+      <text wx:if="{{message}}" class="small muted">{{message}}</text>
     </view>
 
+    <!-- 乘车人：逐个清点；本程不载的人也留在名单里说明去向，不让清点看起来欠了他一笔 -->
+    <view class="section-head">
+      <text class="kicker">同车人</text>
+      <text class="section-title">乘车人名单</text>
+    </view>
     <view class="person-list">
       <person-row
         wx:for="{{passengers}}"
@@ -51,22 +74,9 @@
       </person-row>
     </view>
 
-    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
-
-    <!-- 清点没点完时先把代价说在旁边，再让人按按钮（照 transport-panel lockHint 的立场：
-         不留一颗点了才撞红字的主按钮）。名单取本页同屏那两个数背后的同一对集合，不另推一遍规则。 -->
-    <view wx:if="{{showPendingNotice}}" class="callout warning stack-gap3">
-      <text class="callout-title">还差 {{pendingCount}} 人没有上车记录</text>
-      <text class="pending-names">{{pendingNames}}。请先逐人点「确认上车」，或请现场负责人核实其去向。</text>
+    <view class="vehicle-capacity">
+      <text class="small muted">{{capacityLine}}</text>
     </view>
-
-    <view wx:if="{{canOperate}}" class="form-actions">
-      <view class="button primary {{busy || departed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || departed ? '' : 'onDepartAsk'}}">确认本程发车</view>
-      <view class="button secondary {{busy || !departed || completed ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !departed || completed ? '' : 'onComplete'}}">完成本程行驶</view>
-    </view>
-
-    <text class="small muted">行驶完成不等于参与者安全到家；如有人未上车，请由现场负责人核实去向。</text>
-    <text wx:if="{{message}}" class="small muted">{{message}}</text>
   </view>
 
   <!-- 发车是不可回退的现场事实（field.js：已发车后不能抹去或改写上车事实），

@@ -1,0 +1,16 @@
+  PASS D0 门槛链：routeDetailsOpen 生效后节点区在屏（.step-group 命中）
+       {"stepGroup":{"width":316,"height":340,"left":37,"top":511.1953125}}
+  PASS D1 长名那一行确实是 .row-title（按文本反查，不是数存在）
+       {"rowCount":5,"matched":"MuztaghAttakuner"}
+  PASS D2 该元素计算值是 overflow-wrap:anywhere（5b 收进来的那半句在真机生效）
+       {"overflowWrap":"anywhere"}
+  PASS D3 80 字无空格拉丁串没有越出卡沿（撑破=不合格）
+       {"name":{"width":316,"height":44,"left":37,"top":1021.1953125},"card":{"width":350,"height":1160,"left":20,"top":294.1953125}}
+  PASS D4 它真的折了（高度 > 单行 22px；单行就说明断词分支没被走到）
+       {"height":44}
+  · 截图 D:\OurTrail\docs\ui-ux-redesign\evidence\style-b-slice5a-2026-10-26\device\D2r2-editor-node-longname-wrap.png (41954 bytes)
+  PASS D5 阴性对照：短名单行（与长名高度不同，差异来自断词而不是选择器抖动）
+       {"short":{"width":70,"height":22,"left":67.6640625,"top":991.1953125},"longHeight":44,"shortOverflowWrap":"anywhere"}
+  · 截图 D:\OurTrail\docs\ui-ux-redesign\evidence\style-b-slice5a-2026-10-26\device\D2r2-editor-node-shortname-control.png (41954 bytes)
+
+==== 节点行断词回读 6 PASS / 0 FAIL ====

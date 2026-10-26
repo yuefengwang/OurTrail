@@ -1,0 +1,179 @@
+{
+  "tag": "after",
+  "port": "9421",
+  "extras": {
+    "publishDialog": {
+      "openBefore": true,
+      "participate": true,
+      "dataUse": true,
+      "checks": [
+        "我本人也参加（发布后自动为我报名）"
+      ],
+      "mutedBeforeDataUse": [
+        "2026-10-31 08:00 · 成都东站 · 上限 24 人 · 青城后山环线",
+        "图文详情（封面、正文或图片）。报名的人在发布前看不到这些信息；补上后立即对所有人可见。",
+        "发布后以你的常用资料报名。请先在「我的」检查本人及紧急联络信息。",
+        "我会自己到集合点",
+        "需要活动安排车辆",
+        "勾选上面的资料授权后，「确认发布」才可用；这份授权只用于本次活动。"
+      ],
+      "checksAfter": [
+        "我本人也参加（发布后自动为我报名）",
+        "独立同意本次活动使用我的报名与安全联络资料"
+      ],
+      "confirmBeforeDataUse": "button primary block disabled",
+      "mutedAfterDataUse": [
+        "2026-10-31 08:00 · 成都东站 · 上限 24 人 · 青城后山环线",
+        "图文详情（封面、正文或图片）。报名的人在发布前看不到这些信息；补上后立即对所有人可见。",
+        "发布后以你的常用资料报名。请先在「我的」检查本人及紧急联络信息。",
+        "我会自己到集合点",
+        "需要活动安排车辆"
+      ],
+      "confirmClass": "button primary block"
+    }
+  },
+  "state": [
+    {
+      "step": 0,
+      "steps": 4,
+      "publishReady": true,
+      "requiredMissingText": "",
+      "stickyButtons": [
+        {
+          "text": "发布活动",
+          "cls": "button primary block"
+        },
+        {
+          "text": "继续完善",
+          "cls": "button text"
+        }
+      ],
+      "segMode": "segmented tabs-line",
+      "activeSeg": {
+        "text": "01 信息",
+        "color": "rgb(22, 62, 53)",
+        "weight": "600",
+        "bg": "rgba(0, 0, 0, 0)"
+      },
+      "counts": {
+        ".section-head": 3,
+        ".step-group": 2,
+        ".card": 3,
+        ".form-actions": 1,
+        ".ce-cover-row": 0,
+        ".ce-group": 0
+      }
+    },
+    {
+      "step": 1,
+      "steps": 4,
+      "publishReady": true,
+      "requiredMissingText": "",
+      "stickyButtons": [
+        {
+          "text": "上一步",
+          "cls": "button text"
+        },
+        {
+          "text": "发布活动",
+          "cls": "button primary block"
+        },
+        {
+          "text": "继续完善",
+          "cls": "button text"
+        }
+      ],
+      "segMode": "segmented tabs-line",
+      "activeSeg": {
+        "text": "02 路线",
+        "color": "rgb(22, 62, 53)",
+        "weight": "600",
+        "bg": "rgba(0, 0, 0, 0)"
+      },
+      "counts": {
+        ".section-head": 3,
+        ".step-group": 1,
+        ".card": 2,
+        ".form-actions": 1,
+        ".ce-cover-row": 0,
+        ".ce-group": 0
+      }
+    },
+    {
+      "step": 2,
+      "steps": 4,
+      "publishReady": true,
+      "requiredMissingText": "",
+      "stickyButtons": [
+        {
+          "text": "上一步",
+          "cls": "button text"
+        },
+        {
+          "text": "发布活动",
+          "cls": "button primary block"
+        },
+        {
+          "text": "继续完善",
+          "cls": "button text"
+        }
+      ],
+      "segMode": "segmented tabs-line",
+      "activeSeg": {
+        "text": "03 介绍",
+        "color": "rgb(22, 62, 53)",
+        "weight": "600",
+        "bg": "rgba(0, 0, 0, 0)"
+      },
+      "counts": {
+        ".section-head": 2,
+        ".step-group": 0,
+        ".card": 1,
+        ".form-actions": 1,
+        ".ce-cover-row": 1,
+        ".ce-group": 0
+      }
+    },
+    {
+      "step": 3,
+      "steps": 4,
+      "publishReady": true,
+      "requiredMissingText": "",
+      "stickyButtons": [
+        {
+          "text": "上一步",
+          "cls": "button text"
+        },
+        {
+          "text": "发布活动",
+          "cls": "button primary block"
+        }
+      ],
+      "segMode": "segmented tabs-line",
+      "activeSeg": {
+        "text": "04 发布",
+        "color": "rgb(22, 62, 53)",
+        "weight": "600",
+        "bg": "rgba(0, 0, 0, 0)"
+      },
+      "counts": {
+        ".section-head": 2,
+        ".step-group": 5,
+        ".card": 5,
+        ".form-actions": 1,
+        ".ce-cover-row": 0,
+        ".ce-group": 0
+      }
+    }
+  ],
+  "data": {
+    "publishReady": true,
+    "requiredMissingText": "",
+    "stepLabels": [
+      "01 信息",
+      "02 路线",
+      "03 介绍",
+      "04 发布"
+    ]
+  }
+}

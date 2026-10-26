@@ -1,0 +1,22 @@
+<view class="hero-cover act-hero {{coverFailed ? 'img-failed' : ''}}">
+  <view class="hero-cover-media">
+    <!-- 实拍与氛围图分开挂错误：同一个 image 切 src 时旧请求的 error 可能迟到，
+         会把刚换上的氛围图也判死（分元素后两条错误路径互不串味）。 -->
+    <image wx:if="{{coverIsReal}}" class="hero-cover-img" src="{{cover}}" mode="aspectFill" binderror="onCoverError" />
+    <image wx:else class="hero-cover-img" src="{{cover}}" mode="aspectFill" binderror="onFallbackError" />
+    <view class="hero-cover-scrim" />
+    <view class="hero-cover-top">
+      <view class="cluster" style="gap:8px;min-width:0;">
+        <text class="badge on-forest">{{badgeText}}</text>
+      </view>
+      <text class="small tabular hero-date">{{startAtLabel}}</text>
+    </view>
+  </view>
+  <view class="hero-cover-body">
+    <text class="display">{{title}}</text>
+    <view wx:if="{{routeTitle || leader}}" class="act-hero__meta">
+      <text wx:if="{{routeTitle}}" class="act-hero__route">{{routeTitle}}</text>
+      <text wx:if="{{leader}}" class="act-hero__route">领队 · {{leader}}</text>
+    </view>
+  </view>
+</view>

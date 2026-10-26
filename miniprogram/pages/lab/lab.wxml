@@ -21,7 +21,7 @@
       </view>
       <block wx:if="{{activity}}">
         <view class="cluster" style="justify-content:space-between;">
-          <text style="font-weight:600;min-width:0;word-break:break-all;">{{activity.title}}</text>
+          <text class="row-title" style="min-width:0;word-break:break-all;">{{activity.title}}</text>
           <text class="badge neutral">{{activity.phaseText}}</text>
         </view>
         <text class="small muted">容量 {{activity.capacity}} · 报名 {{activity.signups}} 行 · 未结异常 {{activity.openIncidents}}</text>
@@ -35,7 +35,7 @@
         <view class="cluster" style="justify-content:space-between;">
           <view class="cluster" style="gap:8px;min-width:0;">
             <text class="badge neutral tabular">{{item.stage}}</text>
-            <text style="font-weight:600;">{{item.title}}</text>
+            <text class="row-title">{{item.title}}</text>
           </view>
           <text class="badge {{item.status === 'done' ? 'success' : item.status === 'ready' ? 'warning' : 'neutral'}}">{{item.status === 'done' ? '已完成' : item.status === 'ready' ? '可执行' : '被挡住'}}</text>
         </view>

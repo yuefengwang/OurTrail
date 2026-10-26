@@ -43,6 +43,31 @@
 .timeline-card { display: block; }
 .chart-caption { display: block; margin-top: 6px; }
 
+/* 2026-10-26 style-B 4：图上方逐时摘要带（板 04-2）。等分列，图下的 .pop-strip 用同一套
+   flex 分配 ⇒ 两行按列对齐。简字复用 .day-phrase 的 tone（同一套语义色，不另造色值）；
+   温度一档、时刻一档，三级读数各有自己的字号。 */
+.hour-strip { display: flex; align-items: flex-start; margin: 2px 0 8px; }
+.hour-strip__item {
+  flex: 1 0 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.hour-strip__temp { font-size: var(--text-caption); line-height: 18px; font-weight: 600; color: var(--ink); }
+.hour-strip__t { font-size: 10px; line-height: 14px; color: var(--muted); }
+
+/* 图下降水概率行：标签独占一行（板 04-2 的「降水概率」），数值行与摘要带同列数、同分配方式，
+   所以两行读起来是同一批小时。降水色沿用 .day-rain 的 --info。 */
+.pop-strip { display: block; margin: 6px 0 2px; }
+.pop-strip__label { display: block; font-size: var(--text-caption); color: var(--muted); margin-bottom: 2px; }
+.pop-strip__row { display: flex; align-items: baseline; }
+.pop-strip__v {
+  flex: 1 0 0; min-width: 0; text-align: center;
+  font-size: var(--text-caption); line-height: 18px; color: var(--info);
+}
+
+/* 详细数据四行（板 04-4）：行形态复用 app.wxss 的 .fact-row（标签—值，只读、不可点），
+   这里只收掉卡片内边距与行内边距叠出来的双份上下留白。 */
+.brief-rows { padding-top: 2px; padding-bottom: 2px; }
+
 /* 统一 Meteogram 图例（对齐 HTML 原型 renderLegend 两行：行1 图形变量 / 行2 约定解释）。
    swatch 颜色全部走 app.wxss 的 --chart-* token；token 值 = utils/meteogram-svg.js C 色板
    与 utils/cloud-field-svg.js BANDS 的运行时字面量，改色必须三处同步（同 --golden 先例）。 */
@@ -151,8 +176,20 @@
 .ag-grade.neutral { color: var(--muted); }
 .ag-empty { padding: 4px 0 8px; }
 
+/* 页级覆盖只补横向排布，方向仍沿用 app.wxss 的 column：
+   「今日户外时间轴」「天相详解」两个区头是「标题 + 说明」两行，它们的正确形状就是竖排。
+   需要「标题 | 行动」一行的是带按钮的那个区头，另见 .section-head.has-action。 */
 .section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
-.section-id { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; min-width: 0; }
+/* 带行动的区头（逐时天气）：第一行「标题 | 全图展示」，来源说明整行落到第二行。
+   竖排会让「全图展示」变成一条居中文字看着像副标题；挤在标题右列又会让
+   「Open-Meteo.com」断在连字符处（真机 390 实测「Open-」/「Meteo.com」两行）。 */
+.section-head.has-action { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.section-head.has-action .section-sub { flex-basis: 100%; }
+/* 平台默认：<button> 的 UA 样式给的是固定宽 184px + 左右 auto 外边距。
+   在 flex 行里 auto 外边距先吸掉剩余空间 ⇒ 按钮在「标题右侧的空白」里居中漂浮
+   （真机 390 读数：left 135 / width 184，右边缘落在 319 而不是容器右缘 370）。
+   这里收回成内容宽度 + 无外边距，让 space-between 真正把它贴到右边。 */
+.section-head.has-action .button { width: auto; margin: 0; }
 /* 区块标题：把页面分成"客观指标"与"结论"两段（用户需求 2 的信息架构）
    B-16：字重从 700 降到 600（与 app.wxss 的 .section-title 同档）。
    ⚠ 这条页级覆盖没有删掉——它仍把字号从全局 --text-input(16px) 收到 --text-body(14px)，
@@ -172,6 +209,21 @@
 .cond-grade { display: inline-flex; align-items: baseline; gap: 6px; }
 /* B-13：与 .ag-stars 同修——星形是文字节点，用 --ink；评级语义由 .cond-grade/.ag-grade 的文字色承载 */
 .cond-stars { color: var(--ink); font-size: 13px; letter-spacing: 1px; }
+/* D7（2026-10-26）：首屏条件 strip = 总评一行 + 逐项 pill。卡片本体复用 .cond-card 的左边条，
+   这里只补两行之间的节奏与 pill 形态；色值全部来自既有 token（--forest-soft / --ink）。 */
+.cond-strip { display: flex; flex-direction: column; gap: 8px; }
+.cond-strip__pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.cond-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--forest-soft);
+}
+.cond-pill__title { font-size: var(--text-caption); font-weight: 600; color: var(--ink); }
+/* 星串是文字节点，与 .cond-stars 同一处理（墨色，不靠色相承担信息） */
+.cond-pill__stars { font-size: 11px; letter-spacing: 0.5px; color: var(--ink); }
 .pheno-window { font-size: var(--text-body); font-weight: 600; color: var(--ink); }
 .pheno-text { font-size: var(--text-caption); line-height: 19px; color: var(--muted); }
 .pheno-disclaimer { line-height: 17px; }
@@ -303,3 +355,8 @@
 .oi-daygroup { margin-top: 8px; }
 .oi-dayhdr { padding: 2px 8px 4px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
 .oi-dayhdr-text { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; }
+
+/* D7 补完（2026-10-26）：点卡下移到图上方，坐标与海拔并成一行 caption。
+   原来这两项是两条 .list-row（各 26px）+ 一条块级按钮，合计 226px，把首屏让给了身份重复；
+   标签仍写出来（「坐标」「海拔」），不靠位置猜。色值/字号全部取既有 token。 */
+.point-meta { display: block; margin-top: 2px; font-size: var(--text-caption); line-height: 18px; color: var(--muted); }

@@ -1,0 +1,10 @@
+<view class="fact-grid {{variant === 'stats' ? 'fact-grid--stats' : 'fact-grid--card'}}">
+  <view wx:for="{{cells}}" wx:key="key" class="fact-cell {{item.wide ? 'fact-cell--wide' : ''}}">
+    <text class="fact-cell__label">{{item.label}}</text>
+    <view class="fact-cell__value-row">
+      <text class="fact-cell__value">{{item.value}}</text>
+      <text wx:if="{{item.unit}}" class="fact-cell__unit">{{item.unit}}</text>
+    </view>
+    <text wx:if="{{item.sub}}" class="fact-cell__sub">{{item.sub}}</text>
+  </view>
+</view>

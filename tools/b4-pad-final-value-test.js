@@ -364,10 +364,17 @@ check('T1.4 tabBar 是 position:fixed（不计入文档流）⇒ 这份高度必
 const BASE = measure(cascade([M.app], { classes: ['page'], tag: 'view' }), 'padding-bottom', M.tokens)
 check('T1.5 app.wxss 的 .page 基线读得出（padding 简写已展开成长方值，不是把整条 padding 当字符串比）',
   !BASE.missing && !BASE.unmodeled && !BASE.unresolved && BASE.px > 0 && BASE.source === 'app.wxss', fmt(BASE))
-const descendantPageRules = M.pages.filter(p => p.ownRules.some(r => r.prop === 'padding-bottom' && r.compounds.length > 1))
+// 只有「最后一个 compound 含 page」的后代规则才可能与根节点抢 padding-bottom；
+// 页面内任意后代控件的 padding 简写（如 .route-actions .button）与根节点无关，不得误报。
+const descPageRule = r => r.prop === 'padding-bottom' && r.compounds.length > 1 &&
+  r.compounds[r.compounds.length - 1].classes.indexOf('page') !== -1
+const descendantPageRules = M.pages.filter(p => p.ownRules.some(descPageRule))
   .map(p => p.dir)
 check('T1.6 没有 `.x .page` 这类后代形态来抢这份留白（有的话本判据的祖先模型要升级，不许静默误判）',
   descendantPageRules.length === 0, descendantPageRules.join(','))
+check('T1.6a 判据自身有效：`.x .page` 会被抓、页面内 `.foo .button` 的 padding 不误报',
+  descPageRule({ prop: 'padding-bottom', compounds: [{ classes: ['x'], tag: null }, { classes: ['page'], tag: null }] }) === true &&
+  descPageRule({ prop: 'padding-bottom', compounds: [{ classes: ['route-actions'], tag: null }, { classes: ['button'], tag: null }] }) === false, '')
 const noPageClass = M.pages.filter(p => !p.hasPageClass).map(p => p.dir)
 note('根节点不带 .page 的页面（不参与本判据，如实登记）：' + (noPageClass.join('/') || '无'))
 
@@ -388,8 +395,8 @@ const t2b = badOf(G, 'T2b')
 check('T2.3 tab 页之间同构：四页的底部留白终值互相相同（漂移 ' + t2b.length + ' 处——「五份复制」真正要防的就是这个）',
   t2b.length === 0, t2b.map(x => x.msg).join(' ｜ '))
 const HOME = M.pages.filter(p => p.dir === 'home')[0]
-check('T2.4 home 的根类分支被穷举到（' + (HOME ? HOME.branches.length : 0) + ' 支）⇒ 「有卡片才留底」这条路要逐支过门，不是只过主干',
-  !!HOME && HOME.branches.length >= 2, HOME ? HOME.branches.map(b => b.label).join(',') : '没找到 home')
+check('T2.4 home 的根类分支可枚举（with-tabbar 空开关已于 2026-10-23 删除 ⇒ 单支是正确形状，终值仍须过 T2）',
+  !!HOME && HOME.branches.length >= 1, HOME ? HOME.branches.map(b => b.label).join(',') : '没找到 home')
 const homeShort = badOf(G, 'T2', 'home')
 check('T2.5 home 的**空状态那一支**也留够（把公式收进 .page.with-tabbar 再删页级载体，就是在这一支失守 ⇒ 现在必须是绿的）',
   homeShort.length === 0, homeShort.map(x => x.msg).join(' ｜ '))
@@ -427,8 +434,8 @@ const inertTokens = []
 condPages.forEach(p => p.inert.forEach(c => { if (inertTokens.indexOf(c) === -1) inertTokens.push(c) }))
 note('根节点上的条件类：' + condTokens.join(' / ') + '（出现在：' + condPages.map(p => p.dir).join('/') + '）')
 note('其中「加上它任何终值都不变」的空开关：' + (inertTokens.length ? inertTokens.join(' / ') : '无'))
-check('T4.1 条件类普查确实扫到 ≥ 2 个（with-tabbar 与 has-sticky 这一族；扫到 0 个就是枚举空转）',
-  condTokens.length >= 2, condTokens.join(','))
+check('T4.1 条件类普查确实扫到 ≥ 1 个（with-tabbar 已于 2026-10-23 删除，仅剩 has-sticky；扫到 0 个就是枚举空转）',
+  condTokens.length >= 1, condTokens.join(','))
 const RE = M.pages.filter(p => p.dir === 'route-edit')[0]
 check('T4.2 has-sticky 是真开关：加上它底部留白终值确实变大（app.wxss 定义它）',
   !!RE && (() => {
@@ -436,10 +443,10 @@ check('T4.2 has-sticky 是真开关：加上它底部留白终值确实变大（
     const wo = RE.branches.filter(b => b.classes.indexOf('has-sticky') === -1)[0]
     return !!w && !!wo && w.bottom.px > wo.bottom.px
   })(), RE ? RE.branches.map(b => b.label + '=' + fmt(b.bottom)).join(' / ') : '没找到 route-edit')
-check('T4.3 with-tabbar 是空开关（读数）：home 加上它与不加它，整个赢家映射逐字相同 ⇒ 它不产生任何样式',
-  inertTokens.indexOf('with-tabbar') !== -1, '空开关：' + inertTokens.join('/'))
-note('无定义的条件类用法：改前 1（with-tabbar）→ 改后 ' + inertTokens.length +
-  '（本 Agent 禁写 wxml；「删这个假开关」的论证与动作归属写在 requests.md）')
+const withTabbarLeft = M.pages.some(p => String(p.root || '').indexOf('with-tabbar') !== -1)
+check('T4.3 with-tabbar 空开关已彻底删除（wxml 0 引用）：它不产生任何样式，留着只会让条件类普查虚增一支',
+  inertTokens.indexOf('with-tabbar') === -1 && withTabbarLeft === false, '空开关：' + inertTokens.join('/'))
+note('无定义的条件类用法：改前 1（with-tabbar）→ 改后 ' + inertTokens.length + '（2026-10-23 随跨页重构删除）')
 
 /* ============================ §5 计数闭合（读数） ============================ */
 section('§5 计数闭合：复制份数 / 终值分组 / 文档里写成完整声明的次数')

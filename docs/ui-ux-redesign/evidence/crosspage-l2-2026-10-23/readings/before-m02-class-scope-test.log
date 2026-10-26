@@ -1,0 +1,83 @@
+== §0 探针自证（三种排除形态 + 阳性对照 + 解析器不空转） ==
+  ✓ P1 部分插值 prefix--{{x}}：静态 token 只剩 empty-state/status-panel，那半个不判
+  ✓ P2 整段 {{}}（含三元比较字面量）：featured 没被当成类名，静态两枚照常判
+  ✓ P3 三元里的 with-tabbar 不由本门判（它活在三元字面量内；假开关那条账归 b4-pad 的终值差），静态 page 仍判
+  ✓ P4 前缀插值与断尾 token 都是动态名：整条不产出静态 token
+  ✓ P5 hover-class 与 class 分开解析（hover 里的名字不进本门，class 里的仍是判定对象）
+  ✓ P6 阳性对照：夹具里未定义的 pos-made-up 被报出（判据有牙齿）
+  ✓ P7 三种排除没有反噬：已定义的 page、动态的 pos-prefix-*、hover 里的名字都不在命中里
+  ✓ P8 解析器不是空转：app.wxss 解出 819 条声明 / 134 个类名 / 44 个 token
+  ✓ P9 属性形态前提复核：全仓 class 属性只有双引号形态（单引号/裸值实测 0 处 ⇒ 提取式没有漏掉的形态）
+  ✓ P10 行号不被注释吞掉（跨行注释后第一个标签仍报正确行号 ⇒ 命中可复点到文件）
+  ✓ P11 夹具自证 10 组全部符合预期（正例必红、反例必绿、排除形态不反噬）
+  ✓ P12 夹具不是空跑：至少一组期望命中非空、至少一组期望为空
+== §1 逐作用域未定义类命中：每个页面/组件各用自己的作用域判（改前 16 处 / 5 文件） ==
+  ✓ S1.0 扫描真的有输入（无输入即 fatal，不冒充「命中 0」）｜ 作用域单元 40 个（页面 21 / 组件 18 / custom-tab-bar 1）；静态 class token 3115 个；app.wxss 定义 134 个类名
+  ✓ S1.1 未定义类命中 = 0（本次读数 0）
+  ✓ S1.2 命中数与命中文件数闭合（16 处对应 5 个文件；若命中 0 则文件也必须 0）
+  ✓ S1.3 五个活体作用域都在扫描面里（扫不到就是判据没有输入）
+  ✓ S1.4 扫描单元 = 页面 21 + 组件 18 + custom-tab-bar 1 = 40（分区闭合）；页面 ≥20、组件 ≥13、tabBar 恰好 1，且每个单元都真的解析出节点
+  ✓ S1.5 排除记账非零（三种形态在全仓真的存在，P1–P5 才不是自说自话）：整段 mustache 190 / 部分插值与断尾 1 / hover-class 319
+  · 活体计数（本轮 5 处目标）：card-label editor / me / route-edit / weather / weather-hub；privacy 的 container/h1/h2 命中 0 处
+== §2 .card-label 提升为 app.wxss 全局单源：五页逐页解终值，赢家只能有一个出处 ==
+  ✓ U0 使用 card-label 的作用域恰好是这 5 页（editor/route-edit/weather/weather-hub/me），privacy 不掺进来
+  ✓ U·editor 的 3 处 card-label：四条声明的**样式表**终值 = 15px/600/block/12px
+  ✓ U·editor 的 card-label 出处只有一个且是 app.wxss（app.wxss）
+  ✓ U·me 的 3 处 card-label：四条声明的**样式表**终值 = 15px/600/block/12px
+  ✓ U·me 的 card-label 出处只有一个且是 app.wxss（app.wxss）
+  ✓ U·route-edit 的 2 处 card-label：四条声明的**样式表**终值 = 15px/600/block/12px
+  ✓ U·route-edit 的 card-label 出处只有一个且是 app.wxss（app.wxss）
+  ✓ U·weather 的 2 处 card-label：四条声明的**样式表**终值 = 15px/600/block/12px
+  ✓ U·weather 的 card-label 出处只有一个且是 app.wxss（app.wxss）
+  ✓ U·weather-hub 的 1 处 card-label：四条声明的**样式表**终值 = 15px/600/block/12px
+  ✓ U·weather-hub 的 card-label 出处只有一个且是 app.wxss（app.wxss）
+  ✓ U2a 判据覆盖 ≥10 处使用点（读数 11；不钉死总数，防只抽一个样本）
+  ✓ U2b 内联覆盖 card-label 四条声明的位置都在本批写入集之外（实测 1 处：pages/me/me.wxml）；出现在 editor/route-edit/weather/weather-hub 里就是本批的错
+  · 既有内联覆盖读数（me.wxml 的 margin-bottom:0，A-23/B-11 同族，本批禁写 me.wxml ⇒ 记 requests.md）：pages/me/me.wxml:L66 margin-bottom:0
+  ✓ U1 me.wxss 不再持有第二份基础定义（本页解出的 .card-label 规则数 = 0）
+  ✓ U2 app.wxss 里 .card-label 四条属性齐全（display,font-size,font-weight,margin-bottom）
+== §3 单源必须改得动：影子改 app.wxss 的字号 ⇒ 五页一起动（铁律 31③） ==
+  ✓ SH0 影子真的改到了那一条（app.wxss 里 font-size:15px 共 2 处，不要求唯一；改动只落一处且落点可寻）
+  ✓ SH1 影子把字号改成 17px ⇒ 五页解出的终值全部变 17（一起动才说明只有一个出处）
+  ✓ SH2 还原后五页逐项相同（影子没把状态留在别处）
+  ✓ SH3 反证成立：在 me 页塞一份**同值**副本 ⇒ 影子（17px）追不上它、赢家退回 me.wxss ⇒ U1/§2 那条不是摆设
+== §4 privacy：容器与两级标题由全局类承载，段距由本页承载（不新造 container/h1/h2） ==
+  ✓ PV0 前置门：本作用域里没有「要靠祖先链才命中」的标题/容器规则（有的话单 compound 简化会漏算 ⇒ 停手）
+  ✓ PV1 根节点带 page 类（不再是全仓零定义的 container）
+  ✓ PV2 根节点四边内缩终值 = app.wxss 基线 24/20/32（白卡不再贴屏幕四边；简写与长写都算对）
+  ✓ PV3 底部留白终值 = 基线 32px 且不含 84px/安全区：privacy 不在 app.json 的 tabBar.list（isTab=false）
+  ✓ PV4 主标题由全局 .page-title 承载（终值 28px/700，赢家出处 = app.wxss；本页不重印层级）
+  ✗ PV5 四个章节标题：字号/字重终值来自 app.wxss（16px/600），段距不钉出处（容器节奏合法）（5 个节点；16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss）
+#V|PRIVACY|pages/privacy/privacy.wxml|章节标题终值/出处不对：16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss
+  ✓ PV6 更新日期那行唯一、无内联 style，间距由样式表（自身或祖先）承载
+  ✓ PV7 container/h1/h2 三个名字在本屏彻底消失（既没用也没在本作用域定义 ⇒ 不留第二套层级）
+  ✓ PV8 正文两档与强调仍在 privacy.wxss 定义（本批没把 .p/.li/.dot 顺手擦掉，B-16 那条字重读数不受害）
+  ✓ PV9 privacy 不是 tab 页这一事实由 app.json 现读，不抄名单（tabBar.list 4 项，含 privacy = false）
+== §5 privacy 这一屏：样式不再由内联 style 决定（A-23/B-11 同族） ==
+  ✓ I1 0 处内联声明在承重（样式表给不出同值 ⇒ 这条样式实际由内联决定 = 坏形态）
+  ✓ I2 本屏 style 属性数 = 0（判据原文「换成类」的直接形态；读数 0，其中承重 0 / 冗余 0）
+  · 其余四页的内联 style 共 142 处（A-23/B-11 的账，归其它批次；本批写入集不含它们，见 handoff）
+== §6 铁律 17：本批没有引入任何新色值或新 token ==
+  ✓ C1 本批新增的三条规则（.card-label/.doc-meta/.doc-section）不含颜色属性、字面色值、新 token
+  ✓ C2 token 仍只在 app.wxss 的 page 块声明（实测 44 个，非 page 块的 token 声明 0 处）
+  ✓ C3 单位口径：本批新增声明一律 px（privacy 原有 .p/.li 的 27rpx 是 E-09 的账，本批未动、也不由本门判）
+== §7 提升为全局的 .card-label 已登记，且文档数值与代码终值一致 ==
+  ✗ D0 规范文档可读（C:\Users\thinkbook\AppData\Local\Temp\opencode\ourtrail-crosspage-a215-baseline\.agents\skills\ourtrail-ui\references\design-system.md）
+  ✗ D1 design-system.md 的字号表里有且只有一行 `.card-label`（登记处两份 = 文档侧双真值源）（0 行）
+#V|REG|design-system.md|.card-label 登记行数 = 0
+  ✗ D2 文档那一行的数值 = 代码解出的终值（15px/600/12px；文档说别的 ⇒ 红）（row=""）
+  ✗ D3 登记说明写清它是「卡内小标题」语义且五页共用（否则下一个维护者继续当它是 me 私有）（）
+  ✓ D4 文档里没有「card-label 属于 me.wxss」这类旧描述残留（旧描述会让四页继续不生效）
+== §8 接线检查（G10 必须真挂在 tools/check.js 上） ==
+  ✓ check.js require 的是判据模块本身（不是把判定抄第二遍）
+  ✓ 整段被哨兵包住（m02 的变异自证靠哨兵切掉它，不靠改判据）
+  ✓ 夹具自证进了闸（每次提交都确认这条门不是空门）
+  ✓ 命中逐条 fail、fatal 也 fail、抛错同样 fail（三条一条不缺）
+  ✓ 夹具为空即红（SELF_CASES 被摘空时不能靠「一条都不用验」混成绿）
+  ✓ 落门带的是命中判定，没有豁免清单/跳过文件名单
+  ✓ 判据不认页面名/组件名（作用域一律由目录枚举与自己的 styleIsolation 声明现读）
+== §9 读数闭合 ==
+  ✓ Z1 E10 违例行数 = 命中数（0 = 0；漏一条就是违例账本与读数不同步）
+  ✓ Z2 违例账本去重后 2 条，分类：E10 0 / SRC 0 / PRIVACY 1 / INLINE 0 / COLOR 0 / REG 1
+
+passed=61 failed=5

@@ -1,0 +1,3557 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-23T11:16:15.066Z",
+  "baseline": "C:\\Users\\thinkbook\\AppData\\Local\\Temp\\opencode\\ourtrail-crosspage-a215-baseline",
+  "dataSource": "offline real domain commands and selectors; synthetic identities and coordinates",
+  "privacy": {
+    "personName": "演示同行人",
+    "phone": "00000000000 (synthetic non-dialable placeholder)",
+    "realIdentity": false,
+    "realLocation": false
+  },
+  "ids": {
+    "actorId": "demo-self",
+    "activityId": "activity-0013",
+    "noCoordsId": "activity-0019",
+    "archiveId": "activity-0100",
+    "vehicleId": "vehicle-0065",
+    "ownRoute": "route-0009",
+    "sharedRoute": "route-0011",
+    "selfSignup": "signup-0026"
+  },
+  "expectations": {
+    "homeUniqueMine": 2,
+    "discoverCards": 2,
+    "discoverMarkers": 1,
+    "vehiclePassengers": 2,
+    "tasks": 3,
+    "positionRows": 1
+  },
+  "responses": {
+    "profile": {
+      "view": {
+        "kind": "profile",
+        "profile": {
+          "id": "demo-self",
+          "person": {
+            "name": "演示同行人",
+            "phone": "00000000000",
+            "emergency": {
+              "name": "演示同行人",
+              "phone": "00000000000"
+            },
+            "medical": ""
+          },
+          "companions": [
+            {
+              "id": "companion-0007",
+              "person": {
+                "name": "演示同行人",
+                "phone": "00000000000",
+                "emergency": {
+                  "name": "演示同行人",
+                  "phone": "00000000000"
+                },
+                "medical": ""
+              }
+            }
+          ]
+        }
+      },
+      "revision": 48,
+      "now": "2026-10-23T11:16:15.066Z"
+    },
+    "me": {
+      "view": {
+        "kind": "me",
+        "profile": {
+          "id": "demo-self",
+          "person": {
+            "name": "演示同行人",
+            "phone": "00000000000",
+            "emergency": {
+              "name": "演示同行人",
+              "phone": "00000000000"
+            },
+            "medical": ""
+          },
+          "companions": [
+            {
+              "id": "companion-0007",
+              "person": {
+                "name": "演示同行人",
+                "phone": "00000000000",
+                "emergency": {
+                  "name": "演示同行人",
+                  "phone": "00000000000"
+                },
+                "medical": ""
+              }
+            }
+          ]
+        },
+        "stats": {
+          "ongoing": 2,
+          "finished": 1,
+          "organized": 2
+        },
+        "recent": [
+          {
+            "id": "activity-0013",
+            "title": "演示活动 · 有坐标同行",
+            "startAt": "2026-10-25T11:16:15.066Z",
+            "phase": "gathering",
+            "role": "owner"
+          },
+          {
+            "id": "activity-0019",
+            "title": "演示活动 · 无坐标同行",
+            "startAt": "2026-10-27T11:16:15.066Z",
+            "phase": "published",
+            "role": "participant"
+          },
+          {
+            "id": "activity-0100",
+            "title": "演示活动 · 已结束",
+            "startAt": "2026-10-29T11:16:15.066Z",
+            "phase": "archived",
+            "role": "owner"
+          }
+        ],
+        "positionRows": [
+          {
+            "activityId": "activity-0100",
+            "activityTitle": "演示活动 · 已结束",
+            "signupId": "signup-0107",
+            "name": "演示同行人",
+            "expired": false
+          }
+        ]
+      },
+      "revision": 48,
+      "now": "2026-10-23T11:16:15.066Z"
+    },
+    "home": {
+      "participant": {
+        "view": {
+          "kind": "home",
+          "activities": [
+            {
+              "id": "activity-0013",
+              "title": "演示活动 · 有坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-25T11:16:15.066Z",
+              "endAt": "2026-10-25T21:16:15.066Z",
+              "deadlineAt": "2026-10-24T23:16:15.066Z",
+              "phase": "gathering",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-25T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "meta": {
+                "owner": true,
+                "joined": true,
+                "staff": true,
+                "vehicle": true,
+                "confirmed": 4,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": []
+              }
+            },
+            {
+              "id": "activity-0019",
+              "title": "演示活动 · 无坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-27T11:16:15.066Z",
+              "endAt": "2026-10-27T21:16:15.066Z",
+              "deadlineAt": "2026-10-26T23:16:15.066Z",
+              "phase": "published",
+              "acceptingSignups": true,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-other",
+              "routeId": "route-0011",
+              "routeSnapshot": {
+                "title": "无坐标演示线",
+                "distanceKm": 0,
+                "ascentM": 0,
+                "points": [],
+                "risks": [],
+                "difficulty": "moderate"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-27T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": false,
+                "risks": false,
+                "pickups": true
+              },
+              "meta": {
+                "owner": false,
+                "joined": true,
+                "staff": false,
+                "vehicle": false,
+                "confirmed": 1,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": []
+              }
+            },
+            {
+              "id": "activity-0100",
+              "title": "演示活动 · 已结束",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-29T11:16:15.066Z",
+              "endAt": "2026-10-29T21:16:15.066Z",
+              "deadlineAt": "2026-10-28T23:16:15.066Z",
+              "phase": "archived",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-29T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "link",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "meta": {
+                "owner": true,
+                "joined": true,
+                "staff": false,
+                "vehicle": false,
+                "confirmed": 1,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": [
+                  {
+                    "activityId": "activity-0100",
+                    "activityTitle": "演示活动 · 已结束",
+                    "signupId": "signup-0107",
+                    "name": "演示同行人",
+                    "expired": false
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "revision": 48,
+        "now": "2026-10-23T11:16:15.066Z"
+      },
+      "staff": {
+        "view": {
+          "kind": "home",
+          "activities": [
+            {
+              "id": "activity-0013",
+              "title": "演示活动 · 有坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-25T11:16:15.066Z",
+              "endAt": "2026-10-25T21:16:15.066Z",
+              "deadlineAt": "2026-10-24T23:16:15.066Z",
+              "phase": "gathering",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-25T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "meta": {
+                "owner": true,
+                "joined": true,
+                "staff": true,
+                "vehicle": true,
+                "confirmed": 4,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": []
+              }
+            },
+            {
+              "id": "activity-0019",
+              "title": "演示活动 · 无坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-27T11:16:15.066Z",
+              "endAt": "2026-10-27T21:16:15.066Z",
+              "deadlineAt": "2026-10-26T23:16:15.066Z",
+              "phase": "published",
+              "acceptingSignups": true,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-other",
+              "routeId": "route-0011",
+              "routeSnapshot": {
+                "title": "无坐标演示线",
+                "distanceKm": 0,
+                "ascentM": 0,
+                "points": [],
+                "risks": [],
+                "difficulty": "moderate"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-27T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": false,
+                "risks": false,
+                "pickups": true
+              },
+              "meta": {
+                "owner": false,
+                "joined": true,
+                "staff": false,
+                "vehicle": false,
+                "confirmed": 1,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": []
+              }
+            },
+            {
+              "id": "activity-0100",
+              "title": "演示活动 · 已结束",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-29T11:16:15.066Z",
+              "endAt": "2026-10-29T21:16:15.066Z",
+              "deadlineAt": "2026-10-28T23:16:15.066Z",
+              "phase": "archived",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-29T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "link",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "meta": {
+                "owner": true,
+                "joined": true,
+                "staff": false,
+                "vehicle": false,
+                "confirmed": 1,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": [
+                  {
+                    "activityId": "activity-0100",
+                    "activityTitle": "演示活动 · 已结束",
+                    "signupId": "signup-0107",
+                    "name": "演示同行人",
+                    "expired": false
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "revision": 48,
+        "now": "2026-10-23T11:16:15.066Z"
+      },
+      "vehicle": {
+        "view": {
+          "kind": "home",
+          "activities": [
+            {
+              "id": "activity-0013",
+              "title": "演示活动 · 有坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-25T11:16:15.066Z",
+              "endAt": "2026-10-25T21:16:15.066Z",
+              "deadlineAt": "2026-10-24T23:16:15.066Z",
+              "phase": "gathering",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-25T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "meta": {
+                "owner": true,
+                "joined": true,
+                "staff": true,
+                "vehicle": true,
+                "confirmed": 4,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": []
+              }
+            },
+            {
+              "id": "activity-0019",
+              "title": "演示活动 · 无坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-27T11:16:15.066Z",
+              "endAt": "2026-10-27T21:16:15.066Z",
+              "deadlineAt": "2026-10-26T23:16:15.066Z",
+              "phase": "published",
+              "acceptingSignups": true,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-other",
+              "routeId": "route-0011",
+              "routeSnapshot": {
+                "title": "无坐标演示线",
+                "distanceKm": 0,
+                "ascentM": 0,
+                "points": [],
+                "risks": [],
+                "difficulty": "moderate"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-27T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": false,
+                "risks": false,
+                "pickups": true
+              },
+              "meta": {
+                "owner": false,
+                "joined": true,
+                "staff": false,
+                "vehicle": false,
+                "confirmed": 1,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": []
+              }
+            },
+            {
+              "id": "activity-0100",
+              "title": "演示活动 · 已结束",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-29T11:16:15.066Z",
+              "endAt": "2026-10-29T21:16:15.066Z",
+              "deadlineAt": "2026-10-28T23:16:15.066Z",
+              "phase": "archived",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-29T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "link",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "meta": {
+                "owner": true,
+                "joined": true,
+                "staff": false,
+                "vehicle": false,
+                "confirmed": 1,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": [
+                  {
+                    "activityId": "activity-0100",
+                    "activityTitle": "演示活动 · 已结束",
+                    "signupId": "signup-0107",
+                    "name": "演示同行人",
+                    "expired": false
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "revision": 48,
+        "now": "2026-10-23T11:16:15.066Z"
+      },
+      "organizer": {
+        "view": {
+          "kind": "home",
+          "activities": [
+            {
+              "id": "activity-0013",
+              "title": "演示活动 · 有坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-25T11:16:15.066Z",
+              "endAt": "2026-10-25T21:16:15.066Z",
+              "deadlineAt": "2026-10-24T23:16:15.066Z",
+              "phase": "gathering",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-25T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "meta": {
+                "owner": true,
+                "joined": true,
+                "staff": true,
+                "vehicle": true,
+                "confirmed": 4,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": []
+              }
+            },
+            {
+              "id": "activity-0019",
+              "title": "演示活动 · 无坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-27T11:16:15.066Z",
+              "endAt": "2026-10-27T21:16:15.066Z",
+              "deadlineAt": "2026-10-26T23:16:15.066Z",
+              "phase": "published",
+              "acceptingSignups": true,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-other",
+              "routeId": "route-0011",
+              "routeSnapshot": {
+                "title": "无坐标演示线",
+                "distanceKm": 0,
+                "ascentM": 0,
+                "points": [],
+                "risks": [],
+                "difficulty": "moderate"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-27T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": false,
+                "risks": false,
+                "pickups": true
+              },
+              "meta": {
+                "owner": false,
+                "joined": true,
+                "staff": false,
+                "vehicle": false,
+                "confirmed": 1,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": []
+              }
+            },
+            {
+              "id": "activity-0100",
+              "title": "演示活动 · 已结束",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-29T11:16:15.066Z",
+              "endAt": "2026-10-29T21:16:15.066Z",
+              "deadlineAt": "2026-10-28T23:16:15.066Z",
+              "phase": "archived",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-29T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "link",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "meta": {
+                "owner": true,
+                "joined": true,
+                "staff": false,
+                "vehicle": false,
+                "confirmed": 1,
+                "pending": 0,
+                "capacity": 12,
+                "positionRows": [
+                  {
+                    "activityId": "activity-0100",
+                    "activityTitle": "演示活动 · 已结束",
+                    "signupId": "signup-0107",
+                    "name": "演示同行人",
+                    "expired": false
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "revision": 48,
+        "now": "2026-10-23T11:16:15.066Z"
+      }
+    },
+    "discover": {
+      "view": {
+        "kind": "discover",
+        "activities": [
+          {
+            "id": "activity-0013",
+            "title": "演示活动 · 有坐标同行",
+            "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+            "organizerIntro": "演示同行人",
+            "startAt": "2026-10-25T11:16:15.066Z",
+            "endAt": "2026-10-25T21:16:15.066Z",
+            "deadlineAt": "2026-10-24T23:16:15.066Z",
+            "phase": "gathering",
+            "acceptingSignups": false,
+            "capacity": 12,
+            "approvalMode": "manual",
+            "routeId": "route-0009",
+            "routeSnapshot": {
+              "title": "合成坐标演示线（非实地路线）",
+              "distanceKm": 3.2,
+              "ascentM": 180,
+              "points": [
+                {
+                  "id": "demo-start",
+                  "name": "合成起点",
+                  "kind": "start",
+                  "coordinates": {
+                    "lat": 30.6,
+                    "lng": 104
+                  }
+                },
+                {
+                  "id": "demo-mid",
+                  "name": "合成休息点",
+                  "kind": "checkpoint",
+                  "coordinates": {
+                    "lat": 30.61,
+                    "lng": 104.01
+                  }
+                },
+                {
+                  "id": "demo-end",
+                  "name": "合成终点",
+                  "kind": "finish",
+                  "coordinates": {
+                    "lat": 30.62,
+                    "lng": 104.02
+                  }
+                }
+              ],
+              "risks": [
+                {
+                  "id": "demo-risk",
+                  "title": "合成风险提示",
+                  "advice": "仅供页面排版验收，不作出行依据",
+                  "severity": "low"
+                }
+              ],
+              "difficulty": "easy"
+            },
+            "equipment": [
+              "防滑鞋"
+            ],
+            "feeNote": "仅供演示",
+            "cancellationNote": "出发前联系演示同行人",
+            "equipmentSuggested": [
+              "饮用水"
+            ],
+            "coverFileId": "",
+            "publishedAt": "2026-10-23T11:16:15.066Z",
+            "owner": true,
+            "confirmed": 4,
+            "completeness": {
+              "route": true,
+              "points": true,
+              "risks": true,
+              "pickups": true
+            }
+          },
+          {
+            "id": "activity-0019",
+            "title": "演示活动 · 无坐标同行",
+            "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+            "organizerIntro": "演示同行人",
+            "startAt": "2026-10-27T11:16:15.066Z",
+            "endAt": "2026-10-27T21:16:15.066Z",
+            "deadlineAt": "2026-10-26T23:16:15.066Z",
+            "phase": "published",
+            "acceptingSignups": true,
+            "capacity": 12,
+            "approvalMode": "manual",
+            "routeId": "route-0011",
+            "routeSnapshot": {
+              "title": "无坐标演示线",
+              "distanceKm": 0,
+              "ascentM": 0,
+              "points": [],
+              "risks": [],
+              "difficulty": "moderate"
+            },
+            "equipment": [
+              "防滑鞋"
+            ],
+            "feeNote": "仅供演示",
+            "cancellationNote": "出发前联系演示同行人",
+            "equipmentSuggested": [
+              "饮用水"
+            ],
+            "coverFileId": "",
+            "publishedAt": "2026-10-23T11:16:15.066Z",
+            "owner": false,
+            "confirmed": 1,
+            "completeness": {
+              "route": true,
+              "points": false,
+              "risks": false,
+              "pickups": true
+            }
+          }
+        ]
+      },
+      "revision": 48,
+      "now": "2026-10-23T11:16:15.066Z"
+    },
+    "activities": {
+      "activity-0013": {
+        "participant": {
+          "view": {
+            "kind": "activity",
+            "activity": {
+              "id": "activity-0013",
+              "title": "演示活动 · 有坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-25T11:16:15.066Z",
+              "endAt": "2026-10-25T21:16:15.066Z",
+              "deadlineAt": "2026-10-24T23:16:15.066Z",
+              "phase": "gathering",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-25T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "content": []
+            },
+            "perspective": "participant",
+            "primarySignupId": "signup-0026",
+            "rows": [
+              {
+                "signupId": "signup-0026",
+                "groupId": "group-0025",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "self",
+                "pickupPointId": null,
+                "pickup": "自行前往",
+                "vehicle": "",
+                "seat": null,
+                "hasPassengerAssignment": false,
+                "checkedIn": true,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "own",
+                "departure": "unknown",
+                "home": false
+              }
+            ],
+            "counters": {
+              "confirmed": 4,
+              "pending": 0,
+              "occupied": 4,
+              "waitlisted": 0,
+              "remaining": 8,
+              "selfTravel": 1,
+              "vehicleTravel": 0,
+              "assigned": 0,
+              "unassigned": 0,
+              "unchecked": 0,
+              "pendingHome": 0,
+              "openIncidents": 0
+            },
+            "permittedActions": [
+              "activity.copy",
+              "export.record",
+              "activity.edit",
+              "activity.transition",
+              "membership.save",
+              "membership.revoke",
+              "notice.publish",
+              "notice.delivery",
+              "vehicle.save",
+              "vehicle.remove",
+              "assignment.commit",
+              "assignment.set",
+              "assignment.remove",
+              "assignment.swap",
+              "attendance.checkin",
+              "attendance.departure",
+              "incident.report",
+              "vehicle.depart",
+              "notice.read"
+            ],
+            "vehicleTask": null,
+            "positions": [],
+            "incidents": [],
+            "detailState": "checked"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        },
+        "organizer": {
+          "view": {
+            "kind": "activity",
+            "activity": {
+              "id": "activity-0013",
+              "title": "演示活动 · 有坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-25T11:16:15.066Z",
+              "endAt": "2026-10-25T21:16:15.066Z",
+              "deadlineAt": "2026-10-24T23:16:15.066Z",
+              "phase": "gathering",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-25T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "content": []
+            },
+            "perspective": "organizer",
+            "primarySignupId": "signup-0026",
+            "rows": [
+              {
+                "signupId": "signup-0026",
+                "groupId": "group-0025",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "self",
+                "pickupPointId": null,
+                "pickup": "自行前往",
+                "vehicle": "",
+                "seat": null,
+                "hasPassengerAssignment": false,
+                "checkedIn": true,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "own",
+                "departure": "unknown",
+                "home": false
+              },
+              {
+                "signupId": "signup-0034",
+                "groupId": "group-0033",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "shared",
+                "pickupPointId": "demo-pickup",
+                "pickup": "合成集合点",
+                "vehicle": "演示车辆 A",
+                "seat": "1",
+                "hasPassengerAssignment": true,
+                "checkedIn": true,
+                "outboundBoarded": true,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "assigned",
+                "departure": "unknown",
+                "home": false
+              },
+              {
+                "signupId": "signup-0042",
+                "groupId": "group-0041",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "shared",
+                "pickupPointId": "demo-pickup",
+                "pickup": "合成集合点",
+                "vehicle": "演示车辆 A",
+                "seat": "2",
+                "hasPassengerAssignment": true,
+                "checkedIn": false,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": true,
+                "needsReturnBoarding": false,
+                "returnPlan": "assigned",
+                "departure": "unknown",
+                "home": false
+              },
+              {
+                "signupId": "signup-0050",
+                "groupId": "group-0049",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "self",
+                "pickupPointId": null,
+                "pickup": "自行前往",
+                "vehicle": "",
+                "seat": null,
+                "hasPassengerAssignment": false,
+                "checkedIn": false,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "own",
+                "departure": "unknown",
+                "home": false
+              }
+            ],
+            "counters": {
+              "confirmed": 4,
+              "pending": 0,
+              "occupied": 4,
+              "waitlisted": 0,
+              "remaining": 8,
+              "selfTravel": 2,
+              "vehicleTravel": 2,
+              "assigned": 2,
+              "unassigned": 0,
+              "unchecked": 2,
+              "pendingHome": 0,
+              "openIncidents": 0
+            },
+            "permittedActions": [
+              "activity.copy",
+              "export.record",
+              "activity.edit",
+              "activity.transition",
+              "membership.save",
+              "membership.revoke",
+              "notice.publish",
+              "notice.delivery",
+              "vehicle.save",
+              "vehicle.remove",
+              "assignment.commit",
+              "assignment.set",
+              "assignment.remove",
+              "assignment.swap",
+              "attendance.checkin",
+              "attendance.departure",
+              "incident.report",
+              "attendance.board",
+              "vehicle.depart",
+              "notice.read"
+            ],
+            "vehicleTask": null,
+            "positions": [],
+            "incidents": [],
+            "detailState": "checked"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        },
+        "staff": {
+          "view": {
+            "kind": "activity",
+            "activity": {
+              "id": "activity-0013",
+              "title": "演示活动 · 有坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-25T11:16:15.066Z",
+              "endAt": "2026-10-25T21:16:15.066Z",
+              "deadlineAt": "2026-10-24T23:16:15.066Z",
+              "phase": "gathering",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-25T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "content": []
+            },
+            "perspective": "staff",
+            "primarySignupId": "signup-0026",
+            "rows": [
+              {
+                "signupId": "signup-0026",
+                "groupId": "group-0025",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "self",
+                "pickupPointId": null,
+                "pickup": "自行前往",
+                "vehicle": "",
+                "seat": null,
+                "hasPassengerAssignment": false,
+                "checkedIn": true,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "own",
+                "departure": "unknown",
+                "home": false
+              },
+              {
+                "signupId": "signup-0034",
+                "groupId": "group-0033",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "shared",
+                "pickupPointId": "demo-pickup",
+                "pickup": "合成集合点",
+                "vehicle": "演示车辆 A",
+                "seat": "1",
+                "hasPassengerAssignment": true,
+                "checkedIn": true,
+                "outboundBoarded": true,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "assigned",
+                "departure": "unknown",
+                "home": false
+              },
+              {
+                "signupId": "signup-0042",
+                "groupId": "group-0041",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "shared",
+                "pickupPointId": "demo-pickup",
+                "pickup": "合成集合点",
+                "vehicle": "演示车辆 A",
+                "seat": "2",
+                "hasPassengerAssignment": true,
+                "checkedIn": false,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": true,
+                "needsReturnBoarding": false,
+                "returnPlan": "assigned",
+                "departure": "unknown",
+                "home": false
+              },
+              {
+                "signupId": "signup-0050",
+                "groupId": "group-0049",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "self",
+                "pickupPointId": null,
+                "pickup": "自行前往",
+                "vehicle": "",
+                "seat": null,
+                "hasPassengerAssignment": false,
+                "checkedIn": false,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "own",
+                "departure": "unknown",
+                "home": false
+              }
+            ],
+            "counters": {
+              "confirmed": 4,
+              "pending": 0,
+              "occupied": 4,
+              "waitlisted": 0,
+              "remaining": 8,
+              "selfTravel": 2,
+              "vehicleTravel": 2,
+              "assigned": 2,
+              "unassigned": 0,
+              "unchecked": 2,
+              "pendingHome": 0,
+              "openIncidents": 0
+            },
+            "permittedActions": [
+              "activity.copy",
+              "export.record",
+              "activity.edit",
+              "activity.transition",
+              "membership.save",
+              "membership.revoke",
+              "notice.publish",
+              "notice.delivery",
+              "vehicle.save",
+              "vehicle.remove",
+              "assignment.commit",
+              "assignment.set",
+              "assignment.remove",
+              "assignment.swap",
+              "attendance.checkin",
+              "attendance.departure",
+              "incident.report",
+              "attendance.board",
+              "vehicle.depart",
+              "notice.read"
+            ],
+            "vehicleTask": null,
+            "positions": [],
+            "incidents": [],
+            "detailState": "checked"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        },
+        "vehicle": {
+          "view": {
+            "kind": "activity",
+            "activity": {
+              "id": "activity-0013",
+              "title": "演示活动 · 有坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-25T11:16:15.066Z",
+              "endAt": "2026-10-25T21:16:15.066Z",
+              "deadlineAt": "2026-10-24T23:16:15.066Z",
+              "phase": "gathering",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-25T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "content": []
+            },
+            "perspective": "vehicle",
+            "primarySignupId": "signup-0026",
+            "rows": [
+              {
+                "signupId": "signup-0034",
+                "groupId": "group-0033",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "shared",
+                "pickupPointId": "demo-pickup",
+                "pickup": "合成集合点",
+                "vehicle": "演示车辆 A",
+                "seat": "1",
+                "hasPassengerAssignment": true,
+                "checkedIn": true,
+                "outboundBoarded": true,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "assigned",
+                "departure": "unknown",
+                "home": false
+              },
+              {
+                "signupId": "signup-0042",
+                "groupId": "group-0041",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "shared",
+                "pickupPointId": "demo-pickup",
+                "pickup": "合成集合点",
+                "vehicle": "演示车辆 A",
+                "seat": "2",
+                "hasPassengerAssignment": true,
+                "checkedIn": false,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": true,
+                "needsReturnBoarding": false,
+                "returnPlan": "assigned",
+                "departure": "unknown",
+                "home": false
+              }
+            ],
+            "counters": {
+              "confirmed": 4,
+              "pending": 0,
+              "occupied": 4,
+              "waitlisted": 0,
+              "remaining": 8,
+              "selfTravel": 0,
+              "vehicleTravel": 2,
+              "assigned": 2,
+              "unassigned": 0,
+              "unchecked": 1,
+              "pendingHome": 0,
+              "openIncidents": 0
+            },
+            "permittedActions": [
+              "activity.copy",
+              "export.record",
+              "activity.edit",
+              "activity.transition",
+              "membership.save",
+              "membership.revoke",
+              "notice.publish",
+              "notice.delivery",
+              "vehicle.save",
+              "vehicle.remove",
+              "assignment.commit",
+              "assignment.set",
+              "assignment.remove",
+              "assignment.swap",
+              "attendance.checkin",
+              "attendance.departure",
+              "attendance.board",
+              "incident.report",
+              "vehicle.depart",
+              "notice.read"
+            ],
+            "vehicleTask": {
+              "vehicle": {
+                "id": "vehicle-0065",
+                "activityId": "activity-0013",
+                "label": "演示车辆 A",
+                "plate": "演示车牌",
+                "legalCapacity": 5,
+                "blockedSeats": 0,
+                "drivers": [
+                  {
+                    "kind": "service",
+                    "name": "演示同行人",
+                    "phone": "00000000000",
+                    "userId": null
+                  }
+                ],
+                "seatLabels": [
+                  "1",
+                  "2",
+                  "3",
+                  "4"
+                ],
+                "pickupPointIds": [
+                  "demo-pickup"
+                ],
+                "legs": {
+                  "outbound": {
+                    "departed": null,
+                    "completed": null
+                  },
+                  "return": {
+                    "departed": null,
+                    "completed": null
+                  }
+                }
+              },
+              "passengers": [
+                {
+                  "signupId": "signup-0034",
+                  "groupId": "group-0033",
+                  "name": "演示同行人",
+                  "status": "confirmed",
+                  "pickup": "合成集合点",
+                  "vehicle": "演示车辆 A",
+                  "seat": "1",
+                  "checkedIn": true,
+                  "outboundBoarded": true,
+                  "returnBoarded": false,
+                  "returnPlan": "assigned",
+                  "departure": "unknown",
+                  "home": false,
+                  "needsOutboundBoarding": false,
+                  "needsReturnBoarding": false,
+                  "returnBoardingApplies": true,
+                  "avatar": "",
+                  "phone": "00000000000"
+                },
+                {
+                  "signupId": "signup-0042",
+                  "groupId": "group-0041",
+                  "name": "演示同行人",
+                  "status": "confirmed",
+                  "pickup": "合成集合点",
+                  "vehicle": "演示车辆 A",
+                  "seat": "2",
+                  "checkedIn": false,
+                  "outboundBoarded": false,
+                  "returnBoarded": false,
+                  "returnPlan": "assigned",
+                  "departure": "unknown",
+                  "home": false,
+                  "needsOutboundBoarding": true,
+                  "needsReturnBoarding": false,
+                  "returnBoardingApplies": true,
+                  "avatar": "",
+                  "phone": "00000000000"
+                }
+              ]
+            },
+            "positions": [],
+            "incidents": [],
+            "detailState": "closed"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        }
+      },
+      "activity-0019": {
+        "participant": {
+          "view": {
+            "kind": "activity",
+            "activity": {
+              "id": "activity-0019",
+              "title": "演示活动 · 无坐标同行",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-27T11:16:15.066Z",
+              "endAt": "2026-10-27T21:16:15.066Z",
+              "deadlineAt": "2026-10-26T23:16:15.066Z",
+              "phase": "published",
+              "acceptingSignups": true,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-other",
+              "routeId": "route-0011",
+              "routeSnapshot": {
+                "title": "无坐标演示线",
+                "distanceKm": 0,
+                "ascentM": 0,
+                "points": [],
+                "risks": [],
+                "difficulty": "moderate"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-27T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "discover",
+              "completeness": {
+                "route": true,
+                "points": false,
+                "risks": false,
+                "pickups": true
+              },
+              "content": []
+            },
+            "perspective": "participant",
+            "primarySignupId": "signup-0058",
+            "rows": [
+              {
+                "signupId": "signup-0058",
+                "groupId": "group-0057",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "self",
+                "pickupPointId": null,
+                "pickup": "自行前往",
+                "vehicle": "",
+                "seat": null,
+                "hasPassengerAssignment": false,
+                "checkedIn": false,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "own",
+                "departure": "unknown",
+                "home": false
+              }
+            ],
+            "counters": {
+              "confirmed": 1,
+              "pending": 0,
+              "occupied": 1,
+              "waitlisted": 0,
+              "remaining": 11,
+              "selfTravel": 1,
+              "vehicleTravel": 0,
+              "assigned": 0,
+              "unassigned": 0,
+              "unchecked": 1,
+              "pendingHome": 0,
+              "openIncidents": 0
+            },
+            "permittedActions": [
+              "signup.submit",
+              "signup.cancel",
+              "signup.edit",
+              "group.setTogether",
+              "notice.read"
+            ],
+            "vehicleTask": null,
+            "positions": [],
+            "incidents": [],
+            "detailState": "ready"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        },
+        "organizer": {
+          "view": {
+            "kind": "denied",
+            "code": "FORBIDDEN",
+            "message": "不是此活动的组织者。"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        },
+        "staff": {
+          "view": {
+            "kind": "denied",
+            "code": "FORBIDDEN",
+            "message": "此活动的协作授权不存在或已过期。"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        },
+        "vehicle": {
+          "view": {
+            "kind": "denied",
+            "code": "FORBIDDEN",
+            "message": "没有此车辆的联络权限。"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        }
+      },
+      "activity-0100": {
+        "participant": {
+          "view": {
+            "kind": "activity",
+            "activity": {
+              "id": "activity-0100",
+              "title": "演示活动 · 已结束",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-29T11:16:15.066Z",
+              "endAt": "2026-10-29T21:16:15.066Z",
+              "deadlineAt": "2026-10-28T23:16:15.066Z",
+              "phase": "archived",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-29T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "link",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "content": []
+            },
+            "perspective": "participant",
+            "primarySignupId": "signup-0107",
+            "rows": [
+              {
+                "signupId": "signup-0107",
+                "groupId": "group-0106",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "self",
+                "pickupPointId": null,
+                "pickup": "自行前往",
+                "vehicle": "",
+                "seat": null,
+                "hasPassengerAssignment": false,
+                "checkedIn": true,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "own",
+                "departure": "joined",
+                "home": true
+              }
+            ],
+            "counters": {
+              "confirmed": 1,
+              "pending": 0,
+              "occupied": 1,
+              "waitlisted": 0,
+              "remaining": 11,
+              "selfTravel": 1,
+              "vehicleTravel": 0,
+              "assigned": 0,
+              "unassigned": 0,
+              "unchecked": 0,
+              "pendingHome": 0,
+              "openIncidents": 0
+            },
+            "permittedActions": [
+              "activity.copy",
+              "export.record",
+              "position.revoke",
+              "notice.read"
+            ],
+            "vehicleTask": null,
+            "positions": [],
+            "incidents": [],
+            "detailState": "finished"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        },
+        "organizer": {
+          "view": {
+            "kind": "activity",
+            "activity": {
+              "id": "activity-0100",
+              "title": "演示活动 · 已结束",
+              "description": "合成验收数据；不是真实活动，坐标与轨迹不得用于导航。",
+              "organizerIntro": "演示同行人",
+              "startAt": "2026-10-29T11:16:15.066Z",
+              "endAt": "2026-10-29T21:16:15.066Z",
+              "deadlineAt": "2026-10-28T23:16:15.066Z",
+              "phase": "archived",
+              "acceptingSignups": false,
+              "capacity": 12,
+              "approvalMode": "manual",
+              "ownerId": "demo-self",
+              "routeId": "route-0009",
+              "routeSnapshot": {
+                "title": "合成坐标演示线（非实地路线）",
+                "distanceKm": 3.2,
+                "ascentM": 180,
+                "points": [
+                  {
+                    "id": "demo-start",
+                    "name": "合成起点",
+                    "kind": "start",
+                    "coordinates": {
+                      "lat": 30.6,
+                      "lng": 104
+                    },
+                    "ele": 500
+                  },
+                  {
+                    "id": "demo-mid",
+                    "name": "合成休息点",
+                    "kind": "checkpoint",
+                    "coordinates": {
+                      "lat": 30.61,
+                      "lng": 104.01
+                    },
+                    "ele": 680
+                  },
+                  {
+                    "id": "demo-end",
+                    "name": "合成终点",
+                    "kind": "finish",
+                    "coordinates": {
+                      "lat": 30.62,
+                      "lng": 104.02
+                    },
+                    "ele": 520
+                  }
+                ],
+                "risks": [
+                  {
+                    "id": "demo-risk",
+                    "title": "合成风险提示",
+                    "advice": "仅供页面排版验收，不作出行依据",
+                    "severity": "low"
+                  }
+                ],
+                "track": [
+                  {
+                    "lat": 30.6,
+                    "lng": 104,
+                    "ele": 500
+                  },
+                  {
+                    "lat": 30.61,
+                    "lng": 104.01,
+                    "ele": 680
+                  },
+                  {
+                    "lat": 30.62,
+                    "lng": 104.02,
+                    "ele": 520
+                  }
+                ],
+                "difficulty": "easy"
+              },
+              "pickupPoints": [
+                {
+                  "id": "demo-pickup",
+                  "name": "合成集合点",
+                  "meetingAt": "2026-10-29T10:16:15.066Z",
+                  "address": "演示地址（非实际集合点）",
+                  "coordinates": null
+                }
+              ],
+              "equipment": [
+                "防滑鞋"
+              ],
+              "feeNote": "仅供演示",
+              "cancellationNote": "出发前联系演示同行人",
+              "equipmentSuggested": [
+                "饮用水"
+              ],
+              "coverFileId": "",
+              "highlights": [],
+              "leader": "演示同行人",
+              "feeSummary": "",
+              "feeIncludes": [],
+              "feeExcludes": [],
+              "signupNote": "",
+              "visibility": "link",
+              "completeness": {
+                "route": true,
+                "points": true,
+                "risks": true,
+                "pickups": true
+              },
+              "content": []
+            },
+            "perspective": "organizer",
+            "primarySignupId": "signup-0107",
+            "rows": [
+              {
+                "signupId": "signup-0107",
+                "groupId": "group-0106",
+                "name": "演示同行人",
+                "status": "confirmed",
+                "avatar": "",
+                "tripMode": "self",
+                "pickupPointId": null,
+                "pickup": "自行前往",
+                "vehicle": "",
+                "seat": null,
+                "hasPassengerAssignment": false,
+                "checkedIn": true,
+                "outboundBoarded": false,
+                "returnBoarded": false,
+                "needsSeatAssignment": false,
+                "needsOutboundBoarding": false,
+                "needsReturnBoarding": false,
+                "returnPlan": "own",
+                "departure": "joined",
+                "home": true
+              }
+            ],
+            "counters": {
+              "confirmed": 1,
+              "pending": 0,
+              "occupied": 1,
+              "waitlisted": 0,
+              "remaining": 11,
+              "selfTravel": 1,
+              "vehicleTravel": 0,
+              "assigned": 0,
+              "unassigned": 0,
+              "unchecked": 0,
+              "pendingHome": 0,
+              "openIncidents": 0
+            },
+            "permittedActions": [
+              "activity.copy",
+              "export.record",
+              "position.revoke",
+              "notice.read"
+            ],
+            "vehicleTask": null,
+            "positions": [],
+            "incidents": [],
+            "detailState": "finished"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        },
+        "staff": {
+          "view": {
+            "kind": "denied",
+            "code": "FORBIDDEN",
+            "message": "此活动的协作授权不存在或已过期。"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        },
+        "vehicle": {
+          "view": {
+            "kind": "denied",
+            "code": "FORBIDDEN",
+            "message": "没有此车辆的联络权限。"
+          },
+          "revision": 48,
+          "now": "2026-10-23T11:16:15.066Z"
+        }
+      }
+    },
+    "transport": {
+      "activity-0013": {
+        "ok": true,
+        "value": {
+          "vehicles": [
+            {
+              "id": "vehicle-0065",
+              "activityId": "activity-0013",
+              "label": "演示车辆 A",
+              "plate": "演示车牌",
+              "legalCapacity": 5,
+              "blockedSeats": 0,
+              "drivers": [
+                {
+                  "kind": "service",
+                  "name": "演示同行人",
+                  "phone": "00000000000",
+                  "userId": null
+                }
+              ],
+              "seatLabels": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "pickupPointIds": [
+                "demo-pickup"
+              ],
+              "legs": {
+                "outbound": {
+                  "departed": null,
+                  "completed": null
+                },
+                "return": {
+                  "departed": null,
+                  "completed": null
+                }
+              }
+            }
+          ],
+          "assignments": [
+            {
+              "activityId": "activity-0013",
+              "signupId": "signup-0034",
+              "vehicleId": "vehicle-0065",
+              "seatLabel": "1"
+            },
+            {
+              "activityId": "activity-0013",
+              "signupId": "signup-0042",
+              "vehicleId": "vehicle-0065",
+              "seatLabel": "2"
+            }
+          ],
+          "groups": [
+            {
+              "id": "group-0025",
+              "keepTogether": false,
+              "signupIds": [
+                "signup-0026"
+              ]
+            },
+            {
+              "id": "group-0033",
+              "keepTogether": false,
+              "signupIds": [
+                "signup-0034"
+              ]
+            },
+            {
+              "id": "group-0041",
+              "keepTogether": false,
+              "signupIds": [
+                "signup-0042"
+              ]
+            },
+            {
+              "id": "group-0049",
+              "keepTogether": false,
+              "signupIds": [
+                "signup-0050"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "access": {
+      "activity-0013": {
+        "ok": true,
+        "value": {
+          "memberships": [
+            {
+              "role": "staff",
+              "id": "demo-staff-grant",
+              "activityId": "activity-0013",
+              "userId": "demo-self",
+              "expiresAt": "2026-11-02T11:16:15.066Z",
+              "scope": {
+                "kind": "all"
+              },
+              "capabilities": [
+                "roster",
+                "checkin",
+                "node",
+                "incident",
+                "position",
+                "home"
+              ]
+            },
+            {
+              "role": "vehicle_contact",
+              "id": "demo-vehicle-grant",
+              "activityId": "activity-0013",
+              "userId": "demo-self",
+              "expiresAt": "2026-11-02T11:16:15.066Z",
+              "vehicleId": "vehicle-0065"
+            }
+          ]
+        }
+      }
+    },
+    "tasks": {
+      "activity-0013": {
+        "view": {
+          "kind": "tasks",
+          "activityId": "activity-0013",
+          "activityTitle": "演示活动 · 有坐标同行",
+          "canManage": true,
+          "tasks": [
+            {
+              "id": "task-0087",
+              "title": "核对演示装备",
+              "note": "合成条目，不执行实际采购或通知",
+              "category": "gear",
+              "assigneeName": "演示同行人",
+              "status": "doing",
+              "dueAt": "2026-10-24T23:16:15.066Z",
+              "updatedAt": "2026-10-23T11:16:15.066Z"
+            },
+            {
+              "id": "task-0092",
+              "title": "准备演示饮水",
+              "note": "合成条目，不执行实际采购或通知",
+              "category": "food",
+              "assigneeName": "演示同行人",
+              "status": "todo",
+              "dueAt": "2026-10-24T23:16:15.066Z",
+              "updatedAt": "2026-10-23T11:16:15.066Z"
+            },
+            {
+              "id": "task-0095",
+              "title": "整理演示记录",
+              "note": "合成条目，不执行实际采购或通知",
+              "category": "logistics",
+              "assigneeName": "演示同行人",
+              "status": "done",
+              "dueAt": "2026-10-24T23:16:15.066Z",
+              "updatedAt": "2026-10-23T11:16:15.066Z"
+            }
+          ]
+        },
+        "revision": 48,
+        "now": "2026-10-23T11:16:15.066Z"
+      }
+    },
+    "routes": {
+      "revision": 48,
+      "now": "2026-10-23T11:16:15.066Z",
+      "routes": [
+        {
+          "id": "route-0009",
+          "title": "合成坐标演示线（非实地路线）",
+          "distanceKm": 3.2,
+          "ascentM": 180,
+          "difficulty": "easy",
+          "pointCount": 3,
+          "riskCount": 1,
+          "updatedAt": "2026-10-23T11:16:15.066Z",
+          "source": "manual",
+          "visibility": "private",
+          "isOwner": true,
+          "referencedCount": 2
+        },
+        {
+          "id": "route-0011",
+          "title": "共享给我的演示路线",
+          "distanceKm": 0,
+          "ascentM": 0,
+          "difficulty": "moderate",
+          "pointCount": 0,
+          "riskCount": 0,
+          "updatedAt": "2026-10-23T11:16:15.066Z",
+          "source": "manual",
+          "visibility": "shared",
+          "isOwner": false,
+          "referencedCount": 1
+        }
+      ]
+    },
+    "route": {
+      "route-0009": {
+        "revision": 48,
+        "now": "2026-10-23T11:16:15.066Z",
+        "route": {
+          "id": "route-0009",
+          "ownerId": "demo-self",
+          "title": "合成坐标演示线（非实地路线）",
+          "isOwner": true,
+          "distanceKm": 3.2,
+          "ascentM": 180,
+          "points": [
+            {
+              "id": "demo-start",
+              "name": "合成起点",
+              "kind": "start",
+              "coordinates": {
+                "lat": 30.6,
+                "lng": 104
+              },
+              "ele": 500
+            },
+            {
+              "id": "demo-mid",
+              "name": "合成休息点",
+              "kind": "checkpoint",
+              "coordinates": {
+                "lat": 30.61,
+                "lng": 104.01
+              },
+              "ele": 680
+            },
+            {
+              "id": "demo-end",
+              "name": "合成终点",
+              "kind": "finish",
+              "coordinates": {
+                "lat": 30.62,
+                "lng": 104.02
+              },
+              "ele": 520
+            }
+          ],
+          "risks": [
+            {
+              "id": "demo-risk",
+              "title": "合成风险提示",
+              "advice": "仅供页面排版验收，不作出行依据",
+              "severity": "low"
+            }
+          ],
+          "track": [
+            {
+              "lat": 30.6,
+              "lng": 104,
+              "ele": 500
+            },
+            {
+              "lat": 30.61,
+              "lng": 104.01,
+              "ele": 680
+            },
+            {
+              "lat": 30.62,
+              "lng": 104.02,
+              "ele": 520
+            }
+          ],
+          "source": "manual",
+          "visibility": "private",
+          "updatedAt": "2026-10-23T11:16:15.066Z",
+          "difficulty": "easy",
+          "sharedWith": []
+        },
+        "referencedActivityIds": [
+          "activity-0013",
+          "activity-0100"
+        ]
+      },
+      "route-0011": {
+        "revision": 48,
+        "now": "2026-10-23T11:16:15.066Z",
+        "route": {
+          "id": "route-0011",
+          "ownerId": "demo-other",
+          "title": "共享给我的演示路线",
+          "isOwner": false,
+          "distanceKm": 0,
+          "ascentM": 0,
+          "points": [],
+          "risks": [],
+          "source": "manual",
+          "visibility": "shared",
+          "updatedAt": "2026-10-23T11:16:15.066Z",
+          "difficulty": "moderate"
+        },
+        "referencedActivityIds": [
+          "activity-0019"
+        ]
+      }
+    },
+    "weather": {
+      "status": "unavailable",
+      "reason": "合成验收不提供天气",
+      "hours": [],
+      "days": [],
+      "detail": null,
+      "series": [],
+      "pointElevation": null
+    }
+  },
+  "emptyResponses": {
+    "home": {
+      "view": {
+        "kind": "home",
+        "activities": []
+      },
+      "revision": 48,
+      "now": "2026-10-23T11:16:15.066Z"
+    },
+    "discover": {
+      "view": {
+        "kind": "discover",
+        "activities": []
+      },
+      "revision": 48,
+      "now": "2026-10-23T11:16:15.066Z"
+    },
+    "routes": {
+      "routes": [],
+      "revision": 48,
+      "now": "2026-10-23T11:16:15.066Z"
+    },
+    "tasks": {
+      "view": {
+        "kind": "tasks",
+        "activityId": "activity-0013",
+        "activityTitle": "演示活动 · 空任务",
+        "canManage": true,
+        "tasks": []
+      },
+      "revision": 48,
+      "now": "2026-10-23T11:16:15.066Z"
+    }
+  },
+  "baselineSourceSha": {
+    "miniprogram/app.js": "16fb9bda6be7f561fbc09992787a0fb1e1b7b36c3ea78b3d7991a300729e5124",
+    "miniprogram/app.json": "688c12faeca773100d36cf6e0cd01b8b54dee95d29944ca9a3379fec52aa3d33",
+    "miniprogram/app.wxml": "3df8cc58d11670c38922547b874c6d2fb9e551102df8c9b477a37cfc7c79e5b2",
+    "miniprogram/app.wxss": "2191407ba4b52e18f4c81e2aaec24b884f4c921ba24fdf6eb080d79718d41513",
+    "miniprogram/components/activity-card/activity-card.js": "5753ba6beaa0817b22f8b3c9f7b6dade622fb8cd8aa12506103e37140be0a42f",
+    "miniprogram/components/activity-card/activity-card.json": "f58dfb88246ad84552d99fc50ef5b5a4d287288fcd5dca771b45e7ef64741543",
+    "miniprogram/components/activity-card/activity-card.wxml": "a1113acbf0893633fef7e8c251e95bcd30979aec83254609238046314fe4b562",
+    "miniprogram/components/activity-card/activity-card.wxss": "5a0651268be6ce276d42cca1b88086847e57ae23934af828d53347e58874c340",
+    "miniprogram/components/activity-hero/activity-hero.js": "ac91839f2f0539fdad2caf8521a3432a02981c0ef6638ae65061c4f99f61bfcb",
+    "miniprogram/components/activity-hero/activity-hero.json": "3cac147888c7f1804ca5c8fd5aeca071cc29e1a776c6c7c6d52d823c4f568ef3",
+    "miniprogram/components/activity-hero/activity-hero.wxml": "ad646bc44c56842fbffd638531f9d9082896432e79830d40fd1c65b5bd75b069",
+    "miniprogram/components/activity-hero/activity-hero.wxss": "219a55c87d19fd72414063790cddbb456f47d23d9205c70ed27d829ebce688bd",
+    "miniprogram/components/chapter/chapter.js": "7d92ae26874c43a922219b5c5ccf6369a212ddd46850784613ebd935d2de2704",
+    "miniprogram/components/chapter/chapter.json": "035503c1a56d8b4b9227ce8bb9145fbd1ef8ec7dce59e55f9d5d55fb5eb7d566",
+    "miniprogram/components/chapter/chapter.wxml": "514e3ae0ffa5407f67b32c18da3e8889f790d3f02c870be83e9ff00ee0d32f8e",
+    "miniprogram/components/chapter/chapter.wxss": "06f166da0272400c67ee1f9d22895289440c8adb4eafd920a35d4696e283bdeb",
+    "miniprogram/components/content-editor/content-editor.js": "7304c14d1c7c124e97ebf750bd3e18efbc5be12a6fd4b6aa2befcb6e83709cdc",
+    "miniprogram/components/content-editor/content-editor.json": "e0ff4665edd7a0f6970dfafc7be8c3a1597c2460b608b3df0418611ff6eb42ce",
+    "miniprogram/components/content-editor/content-editor.wxml": "ca681e0464d937d0eb0eb6b6fe5a74d21e16125afcd129877063d33bed4d6454",
+    "miniprogram/components/content-editor/content-editor.wxss": "5753db057c5c39499516b8566b2bd9dcf7125a23dd680c8479c86c47cf5e0b57",
+    "miniprogram/components/equipment-grid/equipment-grid.js": "4ba9bbc9fffbc669e87c66056224585582cc1b179813779e9308fb1d91ddd944",
+    "miniprogram/components/equipment-grid/equipment-grid.json": "f58dfb88246ad84552d99fc50ef5b5a4d287288fcd5dca771b45e7ef64741543",
+    "miniprogram/components/equipment-grid/equipment-grid.wxml": "36fb89ccd5167745dfa7563d1058486ae8ba37aeefbee2d133ce56c11327b891",
+    "miniprogram/components/equipment-grid/equipment-grid.wxss": "a6a44fdf75dd0180e291393ac9dd306e71fa9997115337a9c933ab26e543122a",
+    "miniprogram/components/fact-grid/fact-grid.js": "11adcb86944715132725ffd16f2c78aec729d763159a00d09a0ac475060c221c",
+    "miniprogram/components/fact-grid/fact-grid.json": "3cac147888c7f1804ca5c8fd5aeca071cc29e1a776c6c7c6d52d823c4f568ef3",
+    "miniprogram/components/fact-grid/fact-grid.wxml": "015af51666db4d2038395ee6a40574575e24e5d348468cc3892bffc65cd12756",
+    "miniprogram/components/fact-grid/fact-grid.wxss": "0e97a6a30e4ad6f386dbabb0c250030e4fa14c9407f738507fd6ed775d327d25",
+    "miniprogram/components/field-panel/field-panel.js": "bb42ae2659503858b719a57ad254426925a627450e314d00a1e1b4043f90ee47",
+    "miniprogram/components/field-panel/field-panel.json": "d77e8ae2eed91b6019a1c1a15a01ff065b36f388c0efb0dfeb1f488881b5f420",
+    "miniprogram/components/field-panel/field-panel.wxml": "8bbdbd38855cbf175855b864e87198efbdb938593e25062258c7b570e430c37c",
+    "miniprogram/components/field-panel/field-panel.wxss": "3de5b4b47e9a1efbe1e14e7d6f1ecc1d85e06e458e7ee01b1c04bce3be2c4661",
+    "miniprogram/components/form-field/form-field.js": "4b5d11e5d297ce9e6124960ee32d0b8cc2cf3d0beb5d4d4e9dbbda9eed9e5670",
+    "miniprogram/components/form-field/form-field.json": "035503c1a56d8b4b9227ce8bb9145fbd1ef8ec7dce59e55f9d5d55fb5eb7d566",
+    "miniprogram/components/form-field/form-field.wxml": "fee5880e5ff8e87369f84874621e8cfadc106193a374918abb47f700cec02620",
+    "miniprogram/components/form-field/form-field.wxss": "2e019d9c123e11d116d90ab0d6181739fcb50cb81a3d971c5850545824a0818b",
+    "miniprogram/components/icon/icon.js": "27617481c6b259343145c07f8936178b9e4aaafa82c89d88cd7ff0f8b456f957",
+    "miniprogram/components/icon/icon.json": "035503c1a56d8b4b9227ce8bb9145fbd1ef8ec7dce59e55f9d5d55fb5eb7d566",
+    "miniprogram/components/icon/icon.wxml": "18da04f5dcf2b427d062004c4370eff9535c20507ff4c16dad2af85d8262a680",
+    "miniprogram/components/icon/icon.wxss": "8cac60a09cbc4f9fb50a4306cc6ebebf88e7a74f607264b7f38a714f35b1eabd",
+    "miniprogram/components/meteogram/layout.js": "30873a8bb55610ea74a099e2596b9ade424d4c211829e22b4016302a95400fbc",
+    "miniprogram/components/meteogram/meteogram.js": "401c2042285c8b42e15a0d26d1fe1f9dfd87fc8b8d0151d4090e76f117320faa",
+    "miniprogram/components/meteogram/meteogram.json": "035503c1a56d8b4b9227ce8bb9145fbd1ef8ec7dce59e55f9d5d55fb5eb7d566",
+    "miniprogram/components/meteogram/meteogram.wxml": "21921fafd1a33a68b424c3db50fc925828c9326bfd1dab9c44848d638299e514",
+    "miniprogram/components/meteogram/meteogram.wxss": "a1b2689c10dad1e45ef90486814cc34db316c574390c7eef571ad936466bfb0d",
+    "miniprogram/components/overlay/overlay.js": "af77444bc61108f48cff262a6e4285e09e294ba225aeaff70d15797b452f81bf",
+    "miniprogram/components/overlay/overlay.json": "f58dfb88246ad84552d99fc50ef5b5a4d287288fcd5dca771b45e7ef64741543",
+    "miniprogram/components/overlay/overlay.wxml": "97bc647a0bebe3e700c14f8014c7ecdd8541eaf045ed0b8e956989a1543a7496",
+    "miniprogram/components/overlay/overlay.wxss": "90fcd4cbe08f8df0122c59c972fbb1c7b9dc66f5af7248e4f3dcf54f9e718590",
+    "miniprogram/components/person-row/person-row.js": "4b66863a154c7737d1b39b181c24d58fce9b93346abfd149bfcc44edf3ec2e38",
+    "miniprogram/components/person-row/person-row.json": "035503c1a56d8b4b9227ce8bb9145fbd1ef8ec7dce59e55f9d5d55fb5eb7d566",
+    "miniprogram/components/person-row/person-row.wxml": "e079cf947e14208e6bce6bc17ed5591b63bdb2a06b30978549c73465761adf40",
+    "miniprogram/components/person-row/person-row.wxss": "3e7cd6107115d581483e91494228bd4cc06a6f2855fa9064e4369711bb79adf3",
+    "miniprogram/components/privacy-popup/privacy-popup.js": "84d42696c39c9500d2f6ef81d51799c16a7bd48184b02e174167613e7b08b571",
+    "miniprogram/components/privacy-popup/privacy-popup.json": "a86141b3fc9036835f80ed60a03bec91271f26da944e18c7ead57ce95dd9ad67",
+    "miniprogram/components/privacy-popup/privacy-popup.wxml": "675ea7c140908285a1ae21e564566255ccb6f7517520fb6bfe714d984d6cad61",
+    "miniprogram/components/privacy-popup/privacy-popup.wxss": "d4d363e9d17d1aa1855a978a80dc13db51f39a3f1ab01fdf6d2e6af7330b94a2",
+    "miniprogram/components/profile-gate/profile-gate.js": "87e68bd570a3aa309181328f2b830764b33ecd6a6ea15dcc70ebbccf054463f7",
+    "miniprogram/components/profile-gate/profile-gate.json": "24bd2e5d4a3221d0f517680867e952ee61c628c796c7459e5eef2dab17f4fefe",
+    "miniprogram/components/profile-gate/profile-gate.wxml": "fa1140ca8b2eff56898527ba0deeb8082c17938f0ecd530ade63f4222dda8e11",
+    "miniprogram/components/profile-gate/profile-gate.wxss": "4f93cac3fe6bfd5c317de5e83bbaecd14e25a4b440d3adb47336c5d4c2f53126",
+    "miniprogram/components/roster-panel/roster-panel.js": "ccfcf43876f0e4de84293ecd0ca530596a28e480d7556ab676cbe7ffe960c1e5",
+    "miniprogram/components/roster-panel/roster-panel.json": "d77e8ae2eed91b6019a1c1a15a01ff065b36f388c0efb0dfeb1f488881b5f420",
+    "miniprogram/components/roster-panel/roster-panel.wxml": "80dc42f86dc9c55d0ea5df394aa54836018a9d8d583611e265af48ffd4135cda",
+    "miniprogram/components/roster-panel/roster-panel.wxss": "188cd361867879781e1edb69720c63abd61be14a26ae2568f9ab2446fd6448c6",
+    "miniprogram/components/route-profile/route-profile.js": "9d19eae7860b86c883a4b69c94835b1fd559d31430bd9c60f3591b26f9dbe3dc",
+    "miniprogram/components/route-profile/route-profile.json": "3cac147888c7f1804ca5c8fd5aeca071cc29e1a776c6c7c6d52d823c4f568ef3",
+    "miniprogram/components/route-profile/route-profile.wxml": "7606708d0a927e645b58d03a9dc98ee07e31bcde7be9f8360c3978739872330f",
+    "miniprogram/components/route-profile/route-profile.wxss": "0715727e29436afeecd8821d476fada8eb12027dcd9871c010f900438570cdca",
+    "miniprogram/components/status-panel/status-panel.js": "babf4f510c3afe36802457134af0e6b0a5ec0cc76fc2cd1457f94870f697b180",
+    "miniprogram/components/status-panel/status-panel.json": "f58dfb88246ad84552d99fc50ef5b5a4d287288fcd5dca771b45e7ef64741543",
+    "miniprogram/components/status-panel/status-panel.wxml": "90107d77efa2f0ffe4de9bbb2296c7d7e49edd804e46f7d34181ad0b11ceed95",
+    "miniprogram/components/status-panel/status-panel.wxss": "b809db717973e8068693a27933ae04fb9b2d83dba484a9c6b31a174395b6f9a2",
+    "miniprogram/components/transport-panel/transport-panel.js": "c5ad3b6e851c58311f104de2dff864d50cef9399234929ec24dbb853e1f7e99e",
+    "miniprogram/components/transport-panel/transport-panel.json": "3f5b6bdfc70aef8b26859aeab887654f8ca42ad26f0b1dd533d9cb315d86b66f",
+    "miniprogram/components/transport-panel/transport-panel.wxml": "381d6cb456a9cfdad9d1000d78b5dcc27a04512a26f52186f4773c39bd4627f8",
+    "miniprogram/components/transport-panel/transport-panel.wxss": "dfc2d37cfb2d3fd13d40bc7c39b42b5e36f2f16ef72a7962954f529deb7bd541",
+    "miniprogram/config.js": "74d8e4df6595be6b59205f9256d09f2464e0ea7451f8a61bc8cf0d8e12ac1e45",
+    "miniprogram/custom-tab-bar/index.js": "76a2fcfe73b4cf03b0c9de81745541d38ebfac55bdd1d81d850e7cb46e1c8ae6",
+    "miniprogram/custom-tab-bar/index.json": "f58dfb88246ad84552d99fc50ef5b5a4d287288fcd5dca771b45e7ef64741543",
+    "miniprogram/custom-tab-bar/index.wxml": "f4415941ea1f94a25f59ea3e3ef3505157af8d583a046145ad2bae3c08bfa4f6",
+    "miniprogram/custom-tab-bar/index.wxss": "636a73005dc48a477e6077fc03f20f6cb8e7cf854be37bae05e980ed3fddd942",
+    "miniprogram/pages/activity/activity.js": "34f5aadc47193ac7e1f82af1a2291e68168e0f0771864b507b46245d748f0604",
+    "miniprogram/pages/activity/activity.json": "56ccb7553a7218347cb48c6b06d4730d0f7e2ebcc86306bc90e785794653f78a",
+    "miniprogram/pages/activity/activity.wxml": "c1409e5129fdf3af3f66a947a9b596f70d631f7875d40ac61110892419d42b39",
+    "miniprogram/pages/activity/activity.wxss": "792e0db1333da085b1ebd923ea8787c4a7232bd82c268f1dc7c27e201db703f3",
+    "miniprogram/pages/anotices/anotices.js": "5c196322d9edc46c089cbf08cfea411a35b53ba9c296ad2c7b13b18a59bc6051",
+    "miniprogram/pages/anotices/anotices.json": "e12e73ed0f372ab33a9d4d049ca643b9c98df671ebad436f9debfc5dcd156d19",
+    "miniprogram/pages/anotices/anotices.wxml": "e1b6560f19a90e8e51e35b474e982043f0914583da66945a111e096b0c4874e8",
+    "miniprogram/pages/anotices/anotices.wxss": "b1eeefb24a129c23fd34d8a58f68967db9781ee79ef9c6832d9e3b2dc1aa473d",
+    "miniprogram/pages/cloud-field-poc/cloud-field-poc.js": "e05beb28f8c7e04e3d1b8a1ed051e4451f8b94c20ad7a040b94702037c685d3c",
+    "miniprogram/pages/cloud-field-poc/cloud-field-poc.json": "03f3fc8f86cbf819650606f2ef24356bb71498c8d78813b9d14fd671bba070ae",
+    "miniprogram/pages/cloud-field-poc/cloud-field-poc.wxml": "5cf69617a94a10e4dad50a9458d9a211f8210ecd2be39ccb29a66fc927866842",
+    "miniprogram/pages/cloud-field-poc/cloud-field-poc.wxss": "c36bf326be6c613dadefeb19892d767e5f66c1bef819f585dcf445fef8c4f241",
+    "miniprogram/pages/cloud-field-poc/fixtures.js": "dfbea131037d7bc4e1f4a7235fe5fc0d91f7264029d088c6c321de49ac235be4",
+    "miniprogram/pages/discover/discover.js": "62c5390556ebca5c50057243d578eb6167734df9236b51f048a1f4205f191b09",
+    "miniprogram/pages/discover/discover.json": "b379f47b0bc4a49a36709641ba65df2afbf754a6bf8a96f0309c02aed3908833",
+    "miniprogram/pages/discover/discover.wxml": "8d151e3e324495dda2173f57e0f941a8d626259ee042b5fa6a45579fedc292dd",
+    "miniprogram/pages/discover/discover.wxss": "0da37b906856e9e4f41c15b7c2b7f043917b62eec44d45a07de7059e29a14b82",
+    "miniprogram/pages/editor/editor.js": "d1e97e88b6c265a96c948f5ce08cb76f9e6bf5dd2b5d2241b2ff250537afa2a6",
+    "miniprogram/pages/editor/editor.json": "49ff12b8f8cfc333278c03b7a2ec8e805fab01ca22e504053368431a9e96f051",
+    "miniprogram/pages/editor/editor.wxml": "17b5b579a574b6b23856b379fe45da6c351693520693e5c4471f4e1286a3fdd8",
+    "miniprogram/pages/editor/editor.wxss": "ba8657838bd71b3367e2eb46a6aaafabfad413647bf529befef17e11549c58ca",
+    "miniprogram/pages/home/home.js": "317d3ff2f6be5e9786ca7f7ef1bd1e42f92a118b5cdbebce52d9ac52deac1ae0",
+    "miniprogram/pages/home/home.json": "4098659ef779655be3b759ed5d0ece71fa5283717ece296722c905404c705ae1",
+    "miniprogram/pages/home/home.wxml": "50ef2f77ebd8841ea9b208ec345334330fee8e9d031a996c6bc1077555339070",
+    "miniprogram/pages/home/home.wxss": "1dd5241412928e8c1098f24dd896544afca10ff68f0421c5df53cda2e5420668",
+    "miniprogram/pages/lab/lab.js": "9f2c53b8105c7ec41d5b80ddeb4627536044635c59404169499a6d8657f8de0f",
+    "miniprogram/pages/lab/lab.json": "0bce9845871d95b1adb49ea3c4deb360823e78b9ae59a68547aad78ae40035a2",
+    "miniprogram/pages/lab/lab.wxml": "7fcd39c56b7873dddecc2517c5af44047f305ae62593dcdd4ca4850be7b3864e",
+    "miniprogram/pages/lab/lab.wxss": "ac1c65baa8c942d175a058ed913e5a0dc0441501bf2ce1724c7a838af877458e",
+    "miniprogram/pages/me/me.js": "82af1eb3621ad5f99851ec013546866cd40bc3a09cb6f2241c0f0fed5ac77dfc",
+    "miniprogram/pages/me/me.json": "f0eff400c94a761592767cace89c6b0a28dcec8269b0211371602a37ab387627",
+    "miniprogram/pages/me/me.wxml": "a74479691c77dca6b16fedd864dae9ba0c3fc53cf4d18b0ee2d1e58c0601ab88",
+    "miniprogram/pages/me/me.wxss": "7079e62066e1bdc4553c654e7e6b365d49e8756c921b89d106cf94f325d83831",
+    "miniprogram/pages/notices/notices.js": "c925c1ee81e349d9b735be14276ebdf3b4fa8384e27b13c76b311ce5459fe7a0",
+    "miniprogram/pages/notices/notices.json": "edf33862e29c8cb7ed619adf1f4dece33cbe3081ffe6d79aac75a21cbbc58b1f",
+    "miniprogram/pages/notices/notices.wxml": "e1b6560f19a90e8e51e35b474e982043f0914583da66945a111e096b0c4874e8",
+    "miniprogram/pages/notices/notices.wxss": "21ab57a203d7674b45a492a23ad30f0b271fc1e491fe46dad3ddbfeab150a595",
+    "miniprogram/pages/privacy/privacy.js": "64b17fe88990e6005f0ec0b9353d19fc488258bb8ea71dd507709e1bcd2b94a6",
+    "miniprogram/pages/privacy/privacy.json": "dea5904c2a8886040b05240579d2baf98b4619f54fbc6e7146c86682eebbcdf7",
+    "miniprogram/pages/privacy/privacy.wxml": "ad07e9005c993494cede9d31e03ae85b6e7a12b8d8cad062298680c6eae0f518",
+    "miniprogram/pages/privacy/privacy.wxss": "37c13cbec576372a18e48e21bfdbc22c38b4c1044e57248f0e607c0ea8e724d9",
+    "miniprogram/pages/route/route.js": "c521c3825f00ae20a675053a350894c3550f0100f0aaa8c9be9ea270f18074ff",
+    "miniprogram/pages/route/route.json": "de10e160af211e1d971c705ec37f03a84e6e1030eb3bb1ec82b9ce0535b23c95",
+    "miniprogram/pages/route/route.wxml": "2b32bb477ee48cd2e49c8d3ee11ff135840d20319fcd1c0c6059661f502d95c0",
+    "miniprogram/pages/route/route.wxss": "4456c09d7a548ce7bb52cce2e07eab7ae57262b2c4d055342557a710304c73e3",
+    "miniprogram/pages/route-edit/route-edit.js": "e006b41692c1c5a6eafb0268827bc72359a0e5b1bd8e3691e830b6173bd4a3b2",
+    "miniprogram/pages/route-edit/route-edit.json": "2f4dae2487462afc0f1fe49dd737739129e666bcc96e0d5c71bbcbaf991636c7",
+    "miniprogram/pages/route-edit/route-edit.wxml": "2215d28db5dac28c64f6917b9eae450a8ea2b24dd9c17f6fe9509c8a09fdb745",
+    "miniprogram/pages/route-edit/route-edit.wxss": "89a9d8fd90e073d7307839e6d9ec128ef0a92a2428bb711c56628c1785a08364",
+    "miniprogram/pages/routes/routes.js": "c55512bf32517896775ec9eaa69b0f688aba768ea5e4ce05061c813a2e6440c6",
+    "miniprogram/pages/routes/routes.json": "b3792c8022b4934b97c47c2077e5deef7c4909d7c277a96507d4325faaca1e33",
+    "miniprogram/pages/routes/routes.wxml": "4dbf32d810e11b73e03dfebc3e7568141519e48a285dea90fdb0980cc31f159f",
+    "miniprogram/pages/routes/routes.wxss": "053a85946cd7273ad294f612d2e7760c0bec735bac0d9fc030672d195780bdb6",
+    "miniprogram/pages/signup/signup.js": "e4a2a2280ccc38e6dbb66188d2ba971dd620ccf55fece79186832aed7d07517f",
+    "miniprogram/pages/signup/signup.json": "731e9e9412e58683f4b63150f43a65499e91b9f213c2b037fea3eeda4ad123b6",
+    "miniprogram/pages/signup/signup.wxml": "e1b14b5e5aa8b389c69302544cd0c19d90f1a06c4c713e173b6a9bf3cd10cf16",
+    "miniprogram/pages/signup/signup.wxss": "515d9129ef80396da16703de7c1a1c322640a9824629c510ba2361017420d425",
+    "miniprogram/pages/staff/staff.js": "8f42eff8d23550287df3de10bfaa9174eb3ee322e0d63967855eaf0fb2912fe3",
+    "miniprogram/pages/staff/staff.json": "c17649438da91ab3d19e04cc716ac25d03f4c511f6fcaf04d82fd75c58fbe279",
+    "miniprogram/pages/staff/staff.wxml": "a9861a9c39626655d4fb443ac3bb661a19a271be1dac2eed8db497a1d2e8de3a",
+    "miniprogram/pages/staff/staff.wxss": "f7742967f5a777ccb32082079e7ff560c15a21b4ff55684250509927cc7f4a5f",
+    "miniprogram/pages/tasks/tasks.js": "ca6e40ed89f9a0912461d7131f0231070e9478fac06e03cb8fda702a871d7c76",
+    "miniprogram/pages/tasks/tasks.json": "b16a5245184a5805c57b528549d95fa205e94608ea104227c83939640a0f8e0a",
+    "miniprogram/pages/tasks/tasks.wxml": "79f5899f2018d7695ea2ef9ace3abdd79dd1c6aadb6bcf4ba19bf616978f3d77",
+    "miniprogram/pages/tasks/tasks.wxss": "bc0b7470283b585f0fcc5609a3e135150a48ccd2c71d2152dab3ef9e13fd9701",
+    "miniprogram/pages/vehicle/vehicle.js": "6ab54810d40d3bfacd75dcf7cfe80c70b1fddb0598fb3edb79bc6667a2bbcf98",
+    "miniprogram/pages/vehicle/vehicle.json": "42933bfab2dcbe473c7a8fc7685ca15dba3e152b8c3834d06928472b15780d8f",
+    "miniprogram/pages/vehicle/vehicle.wxml": "670be51d4b30c516e1e778443a92b5797b78dd3b808040d9a5369716b573a4e5",
+    "miniprogram/pages/vehicle/vehicle.wxss": "20b523138ec21678c683bb7f924fc1c911377fa10c3cdbbcad957d52d3f1712c",
+    "miniprogram/pages/weather/weather.js": "4dbd9b980ea7ff88fdd923cad21e79776cacd30bb0034934f7b441ba168f26fa",
+    "miniprogram/pages/weather/weather.json": "c58b9138ab22c4dbb4ab7c57123fdcb71552a95513a9b7fa5ed88d046a22312d",
+    "miniprogram/pages/weather/weather.wxml": "30f5e7245f41f98b6d37d1cc290b72eff82192676815edcd47e30ccd956a5756",
+    "miniprogram/pages/weather/weather.wxss": "4866af8fcf001c817f6100614528403a8ad0edb3c94b6fccddb1c6b13694832a",
+    "miniprogram/pages/weather-chart/weather-chart.js": "15d9fc5ecf629e6a71864ec2bc509506b5abf81b4343a454979e7441d165595e",
+    "miniprogram/pages/weather-chart/weather-chart.json": "200ef8ee876ef907efb202f4eb2b561b49e4964d01c0d4ca80fb4fb78583aee9",
+    "miniprogram/pages/weather-chart/weather-chart.wxml": "64ebca0722bc056548a8bdea3da47d765a493b7cfd974eabb3ad266672cf6f3b",
+    "miniprogram/pages/weather-chart/weather-chart.wxss": "b2f91158d5147bde27ce6db7951b9a69ac647f019aa616046122e3898649454f",
+    "miniprogram/pages/weather-hub/weather-hub.js": "12eaf96ec49724f37ab9f1550d237738ce441ce89f02749cbd8f25ba880fd82f",
+    "miniprogram/pages/weather-hub/weather-hub.json": "41015e22887eab63028bfa0b5908b893716c9032fda334625dd709523f29361b",
+    "miniprogram/pages/weather-hub/weather-hub.wxml": "841a5c432dbbe1aca4c64fc142b4fe4a37a3f9ce2270807ea0860a3f8bf6b4b4",
+    "miniprogram/pages/weather-hub/weather-hub.wxss": "0d4f33b7c5a5e90f0ca0f1542570663e60a80a0cecc9adef4c37d919b2ae67f9",
+    "miniprogram/pages/workspace/workspace.js": "7bb647abd1c072b9cc416ff6972e7c2d4763666ce01eb7d1b76698996480d475",
+    "miniprogram/pages/workspace/workspace.json": "185e7d31b3f593eb7f1f3efec4daacc71aa548160fdd8af8002afb0be1115879",
+    "miniprogram/pages/workspace/workspace.wxml": "cabb54ee1c78ccaa4592f9a46517e341278afaec64d1e9067d29bceaad3a8f5d",
+    "miniprogram/pages/workspace/workspace.wxss": "b4f712043d884858d1981286c03bab23bcd7ed17eb6ac9dee925e05fa64de594",
+    "miniprogram/sitemap.json": "17dae30840b65be1cec903d883b0623606a3a2d82c69864c479a1d11c7c0c710",
+    "miniprogram/utils/activity-summary.js": "5296557e48cc321b68b479ffbb236316b47fec99510edcbcd20703dd35230acb",
+    "miniprogram/utils/agenda.js": "da14f96b5a2b2d4508013ad6834566f26fe15586fd1483ea649ec7b2991d4c7b",
+    "miniprogram/utils/api.js": "e3316f9ea590a737cbe77a7903559c26579a199c580dc61c45e6d48c21d1c652",
+    "miniprogram/utils/astro.js": "4647b15ed9d57b816b6779c32c57d457696c3ea4ec99e2c849c7aba20ca5b339",
+    "miniprogram/utils/chart-store.js": "1b96af41b8c05605d5ed850ed0849db86fb8704ce81fb3512103b6a099ba192e",
+    "miniprogram/utils/cloud-field-svg.js": "b5c06042718323edea07fb9c511595d877dfc22bd7e731679731b20084b40ffd",
+    "miniprogram/utils/cloud-layer-facts.js": "b1919c623699bae1a82e24554b635efdfb6ab395a9e28d5099837b1c00136930",
+    "miniprogram/utils/conditions.js": "3925099ffaf45d7ece444651b7b82a7be793150b3857efc00f1cd1094a08e41f",
+    "miniprogram/utils/content-view.js": "8d04dfe67e56ad8c60cba5111bc27775a2c1b1ce2785445c0bbcd8cf262ea769",
+    "miniprogram/utils/covers.js": "4f5b6030625d4ff66100b2189205cf6e14290c3d35c9cccad983495674e69057",
+    "miniprogram/utils/draft.js": "c47b7e475399c551ad75555fbb59b516bebd845c5013c361f24f950b1ffe1cc9",
+    "miniprogram/utils/equipment-icons.js": "a39624f5b6e5c84e4b300381ce9fb30d2f347c359e9c0528282f5c36bbd9bc41",
+    "miniprogram/utils/evidence-kind.js": "4ab3bbcd742e8fb8a6cd076090620af2bfb21e29f3561f2042a44bd487e5cd3b",
+    "miniprogram/utils/format.js": "7d4904a4b50041cddc809a525a1d3b829a68ec7f28c0d783b5d9324f547ebbaf",
+    "miniprogram/utils/gpx.js": "2033e709d864c490deb880bb6df6034ce88fc27bf2a3384af4d1c6b100eaf6b4",
+    "miniprogram/utils/journey.js": "24c17b081306c1356cf04eb6004a67f16eabaadf3027f57cfbbbc32dc5a74c91",
+    "miniprogram/utils/meteogram-svg.js": "37032eab9b47937fc27f0d5f22019f8da04d46daa986a819f98da8429b6ad9b8",
+    "miniprogram/utils/notices-page.js": "32a5ad1fd7e7a997fde4e26a55efc9fcf1e4e54d065f5a199dd6d18b2d7848b9",
+    "miniprogram/utils/oi-presentation.js": "0fa4548e937b9c5bfd1a9ef6935269f9b8d7844b748e4b7990fda5a18caf0ac9",
+    "miniprogram/utils/outdoor-intelligence.js": "377f02450489c98ac45e03e71aa22ec642a7521e07c7b3f0e712a091fdae9f55",
+    "miniprogram/utils/route-profile.js": "a773d7c159d008adddab640ac1d815184d69b7d5dc9e17f80621a1b343c02728",
+    "miniprogram/utils/route-schedule.js": "5fe679931cf196f8affff78cdf67ad6c3a0e4c88a46dfaf3ec11bfbaaf5e98eb",
+    "miniprogram/utils/sky.js": "18979086cd791da4d5336a55c4b4d6a97783de19057d740ff1d598049a9a2736",
+    "miniprogram/utils/util.js": "1de80721c149c53b815c5cf00f22833f5d7fb3a980bb32d3f5bc5156f4565865",
+    "miniprogram/utils/watch-points.js": "235e0faaf41530e97393f16fe18693c86332e5aa4e3e26f2e27aa86a635df9bf",
+    "miniprogram/utils/weather-brief.js": "97663e2b72ac334d420ce292ddfb8a250976292881d37eddc0b7af3e0f470ad2",
+    "miniprogram/utils/weather-cache.js": "aa1f27b8d37971006b7995b00583d3cc469037d0e9c4124f4a4b0d6eba30075c",
+    "miniprogram/utils/weather-cloud-field.js": "417a91725912616c00f33bbbd313f9b295d18a8318e7d95cd9acab655e091789",
+    "miniprogram/wxs/me.wxs": "c17499cce4dc75b2dc2775bc0c165821eeb088e6996d9ea6a4971ae50cb15aa4",
+    "miniprogram/wxs/text.wxs": "3c000b058baab456c6ff5c7ec844e19525b56ec3a531b1f92e27a399a6b3d6d0"
+  },
+  "generation": {
+    "commandCount": 49,
+    "revision": 48,
+    "harness": "tools/lifecycle-harness.js",
+    "selector": "cloudfunctions/trailApi/domain/selectors.js",
+    "fixtureContractReferences": [
+      "tools/scenario-workspace-test.js",
+      "tools/scenario-vehicle-test.js",
+      "tools/scenario-tasks-test.js",
+      "tools/routes-test.js"
+    ]
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "side": "a1",
+  "scenario": "cover-failed",
+  "capturedAt": "2026-10-23T09:52:57.308Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "fixture": {
+    "file": "fixtures\\baseline\\cover-failed.json",
+    "title": "青城后山 · 雨天备案"
+  },
+  "gates": {
+    "loadingFalse": true,
+    "titleIntact": true,
+    "selectorFound": true
+  },
+  "markers": {
+    "secFactsPresent": true,
+    "infoCardGone": true,
+    "heroSelectable": true,
+    "coverFailedClass": true
+  },
+  "geometry": {
+    "viewport": {
+      "windowWidth": 390,
+      "windowHeight": 753,
+      "pixelRatio": 3,
+      "SDKVersion": "3.8.12",
+      "platform": "devtools",
+      "model": "iPhone 12/13 (Pro)",
+      "system": "iOS 10.0.1"
+    },
+    "page": {
+      "left": 0,
+      "top": 0,
+      "width": 390,
+      "height": 3835
+    },
+    "hero": {
+      "left": 20,
+      "top": 24,
+      "width": 350,
+      "height": 431
+    },
+    "media": {
+      "left": 20,
+      "top": 24,
+      "width": 350,
+      "height": 240
+    },
+    "heroBody": {
+      "left": 20,
+      "top": 264,
+      "width": 350,
+      "height": 191
+    },
+    "titleBlockDeltaFromMediaBottom": 0,
+    "factRows": [
+      {
+        "box": {
+          "left": 20,
+          "top": 897.7,
+          "width": 350,
+          "height": 47
+        },
+        "label": "活动时间",
+        "value": "10/3 08:00 – 10/3 18:00"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 944.7,
+          "width": 350,
+          "height": 47
+        },
+        "label": "集合",
+        "value": "东门集合点 · 10/3 07:30"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 991.7,
+          "width": 350,
+          "height": 47
+        },
+        "label": "人数",
+        "value": "3–20 人"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1038.7,
+          "width": 350,
+          "height": 47
+        },
+        "label": "强度",
+        "value": "中等"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1085.7,
+          "width": 350,
+          "height": 68
+        },
+        "label": "报名后",
+        "value": "报名后请把紧急联系人填完整，出发前一天会在群里发集合提醒。"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1685.7,
+          "width": 350,
+          "height": 47
+        },
+        "label": "出发时间",
+        "value": "10/3 08:00"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1732.7,
+          "width": 350,
+          "height": 47
+        },
+        "label": "预计结束",
+        "value": "10/3 18:00"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1779.7,
+          "width": 350,
+          "height": 47
+        },
+        "label": "报名截止",
+        "value": "10/2 08:00"
+      }
+    ],
+    "overflow": {
+      "viewportWidth": 390,
+      "maxRight": 390,
+      "minLeft": 0,
+      "overflowRight": 0
+    }
+  },
+  "screenshot": {
+    "file": "a1-cover-failed-top.png",
+    "bytes": 38624,
+    "width": 306,
+    "height": 660
+  },
+  "status": "VALID",
+  "data": {
+    "title": "青城后山 · 雨天备案",
+    "infoFacts": 0,
+    "routeStats": 0,
+    "coverFailed": true,
+    "coverIsReal": true,
+    "factTime": "10/3 08:00 – 10/3 18:00",
+    "factPickup": "东门集合点 · 10/3 07:30",
+    "factPeople": "3–20 人",
+    "secNo": {
+      "intro": "01",
+      "facts": "02",
+      "peers": "03",
+      "itinerary": "04",
+      "weather": "05",
+      "route": "06",
+      "safety": "07",
+      "equipment": "08",
+      "fee": "09",
+      "signup": "10"
+    }
+  }
+}

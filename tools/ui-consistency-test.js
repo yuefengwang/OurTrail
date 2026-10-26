@@ -100,7 +100,12 @@ section('§2 固定底栏（sticky-action）与页面留白成对')
 section('§3 封面绘制路径（绝对定位+百分比高在部分基础库不绘制）')
 {
   const heroPages = wxmlFiles.filter(f => /class="[^"]*\bhero-cover\b/.test(fs.readFileSync(f, 'utf8')))
-  check('T3.1 至少两个页面用 hero-cover（活动详情 + 路线详情复用同一机制）', heroPages.length >= 2, heroPages.map(rel).join(', '))
+  // 2026-10-23 跨页重构：路线详情改为「地图优先」构图（路线模型没有图片字段，首屏给空间信息），
+  // 原「活动详情 + 路线详情两处复用」的前提已不存在。改为「机制仍在使用 + 确有页面注册组件」，
+  // T3.2–T3.4 继续对全部使用处生效；若整条机制被删，这两条会一起红。
+  check('T3.1 至少一个页面使用 hero-cover 封面机制（2026-10-23 起由活动详情承载）', heroPages.length >= 1, heroPages.map(rel).join(', '))
+  const heroUsers = walk(MP, ['.json']).filter(f => /"activity-hero"\s*:/.test(fs.readFileSync(f, 'utf8')))
+  check('T3.1b hero-cover 机制确有页面注册（不是只剩组件里的死样式）', heroUsers.length >= 1, heroUsers.map(rel).join(', ') || '无人注册 activity-hero')
   const mBox = /\.hero-cover-media\s*\{[^}]*height:\s*(\d+)px/
   const h = mBox.exec(appWxss)
   check('T3.2 媒体盒是定高（px）而不是百分比高', !!h, h ? 'height=' + h[1] + 'px' : '未找到 .hero-cover-media 的定高规则')
@@ -123,18 +128,27 @@ section('§4 死类普查（WXML 用了、任何 WXSS 都没定义 ⇒ 样式静
   }
   // 微信内置/框架类与本项目约定的非样式类（不进判据）
   const IGNORE = new Set(['native', 'open-type', 'catchtap', 'bindtap'])
+  // 「静态前缀 + 插值」在运行时才拼成类名（tone-{{statusTone}} ⇒ tone-doing），静态判不出取值，
+  // 按 m02-class-scope-rules 的同一口径排除。带 `--`/`-` 尾巴的静态片段都是前缀，不是类名。
+  function staticClassesOf(classAttr) {
+    const out = []
+    for (const raw of classAttr.replace(/\{\{[^}]*\}\}/g, ' ').split(/\s+/).filter(Boolean)) {
+      if (IGNORE.has(raw)) continue
+      if (raw.endsWith('--')) { const base = raw.slice(0, -2); if (base) out.push(base); continue }
+      if (raw.endsWith('-')) continue
+      out.push(raw)
+    }
+    return out
+  }
+  const probe = staticClassesOf('__probe_dead__ tone-{{item.statusTone}} status-panel--{{kind}}')
+  check('T4.0 死类普查器自身有效：静态死类仍被抓、动态前缀不误报',
+    probe.length === 2 && probe[0] === '__probe_dead__' && probe[1] === 'status-panel', probe.join(','))
   const dead = []
   for (const f of wxmlFiles) {
     const src = fs.readFileSync(f, 'utf8')
     for (const m of src.matchAll(/\bclass="([^"]*)"/g)) {
-      // 去掉 {{}} 动态插值里的表达式（含其中的字符串字面量），只留静态类名
-      const statics = m[1].replace(/\{\{[^}]*\}\}/g, ' ').split(/\s+/).filter(Boolean)
-      for (const raw of statics) {
-        if (IGNORE.has(raw)) continue
-        // 修饰符拼接：class="status-panel status-panel--{{kind}}" 里的静态尾巴是
-        // 「基类名的前缀」，它本身不是类名，要按基类名判（否则本判据会自造假红）。
-        const c = raw.endsWith('--') ? raw.slice(0, -2) : raw
-        if (!c || !defined.has(c)) dead.push(rel(f) + ' :: .' + c)
+      for (const c of staticClassesOf(m[1])) {
+        if (!defined.has(c)) dead.push(rel(f) + ' :: .' + c)
       }
     }
   }
