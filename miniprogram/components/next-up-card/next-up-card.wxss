@@ -1,0 +1,46 @@
+/* 「下一次同行」卡：森林底 + 白字，与 featured 活动卡同族（同一份 hero 语言）。
+   反向的空态卡退回白卡 + 细线：它邀请的是「还没有安排」这件事，不该抢列表卡片的焦点。
+   全部色值走既有 token，零新增。 */
+.next-up-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: var(--radius-card);
+  background: var(--forest-deep);
+  color: var(--white);
+}
+.next-up-card--pressed { opacity: 0.9; }
+.next-up-card__kicker {
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: var(--on-forest-muted);
+}
+.next-up-card__title {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+  overflow-wrap: anywhere;
+}
+.next-up-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  font-size: var(--text-caption);
+  line-height: 18px;
+  color: var(--on-forest-muted);
+}
+.next-up-card__fact { flex: 0 0 auto; }
+.next-up-card__dot { padding: 0 6px; color: var(--on-forest-line); }
+
+.next-up-card--invite {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+.next-up-card--invite .next-up-card__kicker { color: var(--muted); }
+.next-up-card__detail { font-size: var(--text-body); line-height: 22px; color: var(--muted); }
+.next-up-card__cta { margin-top: 8px; }

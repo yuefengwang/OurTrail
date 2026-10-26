@@ -37,6 +37,8 @@
 | 按需资料门 | `components/profile-gate` | 报名/发布前自动弹出；微信头像、昵称、手机号授权 + 手填兜底；保存后自动继续原动作 |
 | 图文编辑器 | `components/content-editor` | 活动发布的段落/图片块、封面选择、并发 3 上传与 `imgSecCheck`；块数据交给页面保存 |
 | 活动头图 | `components/activity-hero` | 活动详情首屏：实拍封面 + 标题压进照片下沿；只报封面错误，回退决策留在页面 |
+| 品牌栏 | `components/brand-header` | 3 个 tab 页（首页/通知/我的；天气中心页留批次二）的自绘品牌行（`trailMark` + `OurTrail` + 可选页名）；高度由 `utils/header-layout.js` 从状态栏与胶囊菜单算，子页仍走原生导航 |
+| 下一次同行 | `components/next-up-card` | 首页状态卡：最近一场未开始的活动 + 一行事实；整卡可点、卡内不放实心按钮；空态是邀请卡 |
 | 章节 | `components/chapter` | 编号 + 眉题 + 标题 + 说明 + slot；活动/路线/我的三页复用 |
 | 事实指标 | `components/fact-grid` | 两列事实网格，信息卡与路线指标共用；空值不占格、奇数末项通栏 |
 | 装备清单 | `components/equipment-grid` | 必带/建议分组与图标；只去首尾空白与空项，不去重、不排序、不改写原文 |
@@ -53,7 +55,8 @@ miniprogram/
                                  form-field/activity-card/activity-hero/chapter/
                                  fact-grid/equipment-grid/field-panel/roster-panel/
                                  transport-panel/meteogram/route-profile/
-                                 profile-gate/content-editor/privacy-popup(已注销，保留文件)
+                                 profile-gate/content-editor/brand-header/next-up-card/
+                                 privacy-popup(已注销，保留文件)
   utils/
     api.js           云函数调用封装（read/dispatch + Result 解包）
     draft.js         本地草稿 + 最近查看活动
@@ -133,8 +136,8 @@ docs/prototypes/ourtrail-app/   v1 高仿真原型（React，设计基准；已�
 无 root `package.json`、无 `node_modules/`、无 lint/format/typecheck。全部是零依赖 node 脚本，
 从仓库根目录裸跑，每个自报 `passed=N failed=N` 并以退出码表态。
 **当前清单与读数以 `AGENTS.md` 的 Gate recount 与 `SYNC.md` 为准**：2026-10-23 全量 sweep 实测
-110 套 / `passed=7002` / `failed=14` / 4 条已在干净 HEAD 复现的既有红；`tools/*-test.js` 共 112 个，
-其中 3 套需要开发者工具。下面这份命令清单与逐套数字是 2026-10-08 的历史快照，保留作演进参照，
+110 套 / `passed=7002` / `failed=14` / 4 条已在干净 HEAD 复现的既有红；`tools/*-test.js` 共 114 个
+（2026-10-26 实测，含本批 `card-view` / `header-layout`），其中 3 套需要开发者工具。下面这份命令清单与逐套数字是 2026-10-08 的历史快照，保留作演进参照，
 **不要据此判断当前覆盖率**：
 
 ```bash

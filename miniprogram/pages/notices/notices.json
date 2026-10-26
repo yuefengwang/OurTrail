@@ -1,9 +1,11 @@
 {
+  "navigationStyle": "custom",
   "navigationBarTitleText": "通知",
   "navigationBarBackgroundColor": "#F5F5F0",
   "navigationBarTextStyle": "black",
   "usingComponents": {
     "icon": "/components/icon/icon",
+    "brand-header": "/components/brand-header/brand-header",
     "overlay": "/components/overlay/overlay",
     "status-panel": "/components/status-panel/status-panel",
     "form-field": "/components/form-field/form-field"

@@ -73,6 +73,7 @@ function makeWx(opts) {
   const rec = {
     toasts: [], nav: [], titles: [], vibrations: 0,
     openLocations: [], clipboard: [], modals: [], shareHidden: 0, locationOk: opts.locationOk !== false,
+    scrolls: [],
   }
   const store = { 'ourtrail.openid': 'u-test' }
   global.wx = {
@@ -87,6 +88,7 @@ function makeWx(opts) {
     setClipboardData: o => { rec.clipboard.push((o && o.data) || ''); if (o && o.success) o.success() },
     showModal: o => { rec.modals.push(o); if (o && o.success) o.success({ confirm: true }) },
     hideShareMenu: () => { rec.shareHidden++ },
+    pageScrollTo: o => { rec.scrolls.push(o) },
     getLocation: o => {
       if (rec.locationOk) o.success({ latitude: FAKE_COORDS.latitude, longitude: FAKE_COORDS.longitude })
       else o.fail({ errMsg: 'getLocation:fail auth deny' })
@@ -1557,9 +1559,175 @@ async function scenario14() {
   }
 }
 
+// 15. 吸顶分段条（S5）：anchorGroups 派生 + IntersectionObserver 高亮
+//     派生规则：6 段覆盖 9 个既有锚点，段存在与否只看**首个**锚点；
+//     高亮规则：取「进入观测窗的最上一个锚点」所属段，一个都不在窗内时保持现状（不清空）。
+//     这里的 observer 是测试替身，但被驱动的是页面真实方法（setupAnchorObserver / syncAnchorActive），
+//     断言的是它们对回调的响应，不是替身自己的行为。
+async function scenarioAnchorGroups() {
+  section('15. 吸顶分段条（S5）：anchorGroups 六段 + 观测窗让开条高 + 高亮取最上一个')
+  const keys = gs => gs.map(g => g.key).join(',')
+  const idsOf = (gs, key) => {
+    const g = gs.filter(x => x.key === key)[0]
+    return g ? g.ids.join(',') : '(缺段)'
+  }
+  {
+    const env = bootActivity({ view: viewFixture(v => { v.activity.signupNote = '带好身份证，出发前一天会在群里确认。' }) })
+    await settle(env.page)
+    const gs = env.page.data.anchorGroups || []
+    check('已发布：6 段按阅读顺序（介绍/行程/路线/安全/装备/约定）',
+      keys(gs) === 'intro,itinerary,route,safety,equipment,terms', JSON.stringify(gs))
+    check('每段标签 2 字、target 是段内第一个真实存在的 id',
+      gs.length === 6 && gs.every(g => g.label.length === 2 && g.target && g.ids[0] === g.target),
+      JSON.stringify(gs))
+    check('介绍段含同行人（sec-peers 在正文里排在行程之前）',
+      idsOf(gs, 'intro') === 'sec-intro,sec-peers', idsOf(gs, 'intro'))
+    check('行程段含天气；约定段含报名后',
+      idsOf(gs, 'itinerary') === 'sec-itinerary,sec-weather' && idsOf(gs, 'terms') === 'sec-fee,sec-signup',
+      JSON.stringify({ i: idsOf(gs, 'itinerary'), t: idsOf(gs, 'terms') }))
+    check('sectionNav 原样保留（既有断言与跳转不搬家）',
+      env.page.data.sectionNav.length === gs.reduce((n, g) => n + g.ids.length, 0),
+      JSON.stringify(env.page.data.sectionNav))
+  }
+  {
+    // 草稿没有天气章节：行程段仍在，只是不再指向 sec-weather
+    const env = bootActivity({ view: viewFixture(v => {
+      v.activity.phase = 'draft'
+      v.permittedActions = OWNER_DRAFT_ACTIONS
+    }) })
+    await settle(env.page)
+    const gs = env.page.data.anchorGroups || []
+    check('草稿：无天气章节 ⇒ 行程段仍存在且只指向 sec-itinerary',
+      idsOf(gs, 'itinerary') === 'sec-itinerary', idsOf(gs, 'itinerary'))
+  }
+  {
+    // 没有手写介绍但同行人还在：介绍段必须整段消失，不能只剩一个指向无标题区块的入口
+    const env = bootActivity({ view: viewFixture(v => {
+      v.activity.description = ''
+      delete v.activity.content
+      v.activity.highlights = []
+    }) })
+    await settle(env.page)
+    const d = env.page.data
+    check('无手写介绍 ⇒ 「介绍」整段消失，即使 sec-peers 仍在',
+      d.sectionNav.some(x => x.id === 'sec-peers')
+      && !(d.anchorGroups || []).some(g => g.key === 'intro'),
+      JSON.stringify({ nav: d.sectionNav, groups: d.anchorGroups }))
+  }
+  {
+    const env = bootActivity({ view: viewFixture(v => { v.activity.signupNote = '' }) })
+    await settle(env.page)
+    check('无报名后须知 ⇒ 约定段只指向 sec-fee',
+      idsOf(env.page.data.anchorGroups, 'terms') === 'sec-fee', idsOf(env.page.data.anchorGroups, 'terms'))
+  }
+  {
+    // 观测能力缺失（老基础库 / 测试桩）时不得抛错，也不许留下假高亮
+    const env = bootActivity({ view: viewFixture() })
+    await settle(env.page)
+    let threw = ''
+    try { env.page.setupAnchorObserver() } catch (e) { threw = (e && e.message) || String(e) }
+    check('没有 createIntersectionObserver 时不抛错、anchorActive 保持空',
+      threw === '' && env.page.data.anchorActive === '', threw)
+  }
+  {
+    // 有观测能力：窗上沿让开条高（55）；回调只认「在窗内」，且高亮取最上一个段
+    const env = bootActivity({ view: viewFixture(v => { v.activity.signupNote = '带好身份证，出发前一天会在群里确认。' }) })
+    await settle(env.page)
+    const rec = { create: [], viewport: [], observes: [], disconnected: 0, violations: [] }
+    const cbs = {}
+    // 与平台同形：IntersectionObserver 实例只能 observe 一个节点，第二次 observe 会抛
+    // 「"observe" call can be only called once in IntersectionObserver」。桩若允许复用实例，
+    // 「一个实例 observe 全部锚点」这种在真机上会整条死掉的写法就会全绿（2026-10-26 真机抓到）。
+    env.page.createIntersectionObserver = opts => {
+      rec.create.push(opts)
+      const obs = {
+        observed: null,
+        relativeToViewport(o) { rec.viewport.push(o); return obs },
+        observe(sel, cb) {
+          if (obs.observed !== null) {
+            rec.violations.push(sel)
+            throw new Error('"observe" call can be only called once in IntersectionObserver')
+          }
+          obs.observed = sel
+          rec.observes.push(sel)
+          cbs[sel] = cb
+        },
+        disconnect() { rec.disconnected++ },
+      }
+      return obs
+    }
+    env.page.setupAnchorObserver()
+    const expectedOrder = 'sec-intro,sec-peers,sec-itinerary,sec-weather,meeting-block,sec-safety,sec-equipment,sec-fee,sec-signup'
+    check('观测按文档顺序登记全部 9 个锚点（顺序错一位高亮就跳段）',
+      rec.observes.map(s => s.slice(1)).join(',') === expectedOrder, rec.observes.join(','))
+    check('每个锚点各用一个 observer 实例（平台不允许一个实例 observe 两次）',
+      rec.violations.length === 0 && rec.create.length === 9 && rec.observes.length === 9,
+      JSON.stringify({ create: rec.create.length, observes: rec.observes.length, violations: rec.violations }))
+    check('每个实例的观测窗上沿都让开吸顶条高度 55（否则被盖住的章节还算可见）',
+      rec.viewport.length === 9 && rec.viewport.every(v => v.top === -55 && v.bottom === 0),
+      JSON.stringify(rec.viewport))
+
+    cbs['#sec-peers']({ intersectionRatio: 0.4 })
+    cbs['#sec-itinerary']({ intersectionRatio: 1 })
+    await sleep(5)
+    check('同行人在窗内、行程也在窗内 ⇒ 高亮最上一个所属段「介绍」',
+      env.page.data.anchorActive === 'intro', env.page.data.anchorActive)
+
+    cbs['#sec-peers']({ intersectionRatio: 0 })
+    await sleep(5)
+    check('介绍滚出观测窗 ⇒ 高亮收敛到「行程」',
+      env.page.data.anchorActive === 'itinerary', env.page.data.anchorActive)
+
+    cbs['#sec-safety']({ intersectionRatio: 1 })
+    cbs['#sec-itinerary']({ intersectionRatio: 0 })
+    await sleep(5)
+    check('行程滚出后高亮移到「安全」', env.page.data.anchorActive === 'safety', env.page.data.anchorActive)
+
+    cbs['#sec-safety']({ intersectionRatio: 0 })
+    await sleep(5)
+    check('一个锚点都不在窗内时保持上一次的高亮（空隙里不清空，条不抖）',
+      env.page.data.anchorActive === 'safety', env.page.data.anchorActive)
+
+    env.page.setupAnchorObserver()
+    check('重装时先断开旧的观测器（reload 多次不叠回调）', rec.disconnected === 9, String(rec.disconnected))
+    env.page.onUnload()
+    check('离开页面必须断开观测器（9 个实例全部断开）', rec.disconnected === 18, String(rec.disconnected))
+  }
+  {
+    // 点段跳转的落点：不让开吸顶条，跳过去的章节标题正好压在条底下（看起来像「点了没动」）
+    const env = bootActivity({ view: viewFixture() })
+    await settle(env.page)
+    env.page.onSectionNav({ currentTarget: { dataset: { id: 'sec-fee' } } })
+    const s = env.rec.scrolls[0] || null
+    check('点「约定」段：按选择器滚动且落点让开吸顶条 55px',
+      !!s && s.selector === '#sec-fee' && s.offsetTop === -55, JSON.stringify(s))
+  }
+  {
+    // 渲染与样式：条本身用全局 .segmented.tabs-line，页面层只管吸顶与底色
+    const wxss = fs.readFileSync(
+      path.join(__dirname, '..', 'miniprogram', 'pages', 'activity', 'activity.wxss'), 'utf8')
+    check('wxml 只渲染 anchorGroups，且用全局 .segmented.tabs-line / .seg',
+      ACTIVITY_WXML.indexOf('wx:for="{{anchorGroups}}"') !== -1
+      && ACTIVITY_WXML.indexOf('class="segmented tabs-line"') !== -1
+      && ACTIVITY_WXML.indexOf('class="seg {{item.key === anchorActive ? \'on\' : \'\'}}"') !== -1
+      && ACTIVITY_WXML.indexOf('data-id="{{item.target}}"') !== -1
+      && ACTIVITY_WXML.indexOf('bindtap="onSectionNav"') !== -1)
+    check('旧的横向 chips 已退场（不再渲染 sectionNav 原始项）',
+      ACTIVITY_WXML.indexOf('section-nav__chip') === -1
+      && ACTIVITY_WXML.indexOf('wx:for="{{sectionNav}}"') === -1)
+    check('.section-nav 吸顶且底色不透明（top:0 与导航栏下沿相接）',
+      /\.section-nav\s*\{[^}]*position:\s*sticky/.test(wxss)
+      && /\.section-nav\s*\{[^}]*top:\s*0/.test(wxss)
+      && /\.section-nav\s*\{[^}]*background:\s*var\(--paper\)/.test(wxss))
+    check('详情页导航配色改为纸面 + 黑字（A2）',
+      ACTIVITY_JSON.navigationBarBackgroundColor === '#F5F5F0'
+      && ACTIVITY_JSON.navigationBarTextStyle === 'black')
+  }
+}
+
 async function main() {
   const scenarios = [scenario1, scenario1b, scenario1c, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7,
-    scenario8, scenario9, scenario10, scenario11, scenario12, scenario13, scenario14]
+    scenario8, scenario9, scenario10, scenario11, scenario12, scenario13, scenario14, scenarioAnchorGroups]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

@@ -4,11 +4,11 @@
     <status-panel kind="loading" title="正在载入" detail="正在整理已发布的活动。" />
   </block>
   <view wx:else class="stack">
-    <!-- N3（2026-10-22）页头压缩为一行：眉题+主标题在左。N4（2026-10-23）把视图分段
-         从页头搬进结果工具组：它是「这批结果怎么看」，不是页面身份。 -->
+    <!-- N3（2026-10-22）页头压缩为一行。style-B（2026-10-26）：眉题「发现活动」删掉——
+         原生导航标题已经印着「发现活动」，同一屏重复两遍不增信息；页头身份由这行标题承担。
+         N4（2026-10-23）把视图分段从页头搬进结果工具组：它是「这批结果怎么看」，不是页面身份。 -->
     <view class="discover-head">
       <view class="list-head__text">
-        <text class="eyebrow">发现活动</text>
         <view class="list-head__title">看看别人在约什么。</view>
       </view>
     </view>
@@ -63,13 +63,14 @@
           title="{{item.title}}"
           cover="{{item.cover}}"
           route-name="{{item.routeName}}"
-          metrics="{{item.metrics}}"
+          chips="{{item.chips}}"
           date="{{item.date}}"
-          meta="{{item.meta}}"
-          status="{{item.status}}"
+          people="{{item.people}}"
+          pending="{{item.pending}}"
+          role-note="{{item.roleNote}}"
+          badge="{{item.badge}}"
           featured="{{false}}"
           compact="{{true}}"
-          info="{{item.info}}"
           activity-id="{{item.id}}"
           data-id="{{item.id}}"
           bind:open="onOpenCard"
@@ -105,13 +106,14 @@
         title="{{mapSelected.title}}"
         cover="{{mapSelected.cover}}"
         route-name="{{mapSelected.routeName}}"
-        metrics="{{mapSelected.metrics}}"
+        chips="{{mapSelected.chips}}"
         date="{{mapSelected.date}}"
-        meta="{{mapSelected.meta}}"
-        status="{{mapSelected.status}}"
+        people="{{mapSelected.people}}"
+        pending="{{mapSelected.pending}}"
+        role-note="{{mapSelected.roleNote}}"
+        badge="{{mapSelected.badge}}"
         featured="{{false}}"
         compact="{{true}}"
-        info="{{mapSelected.info}}"
         activity-id="{{mapSelected.id}}"
         data-id="{{mapSelected.id}}"
         bind:open="onOpenCard"

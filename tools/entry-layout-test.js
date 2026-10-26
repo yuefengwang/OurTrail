@@ -42,12 +42,13 @@ check('保留 article 根与原 open 入口', card.children.length === 1 && card
 const thumb = cls(card, 'activity-card__thumb')
 const heading = cls(card, 'activity-card__heading')
 const head = cls(card, 'activity-card__head')
+const featuredBody = cls(card, 'activity-card__cover-body')
 check('compact 缩略图与标题列在同一个横向头部', !!head && !!thumb && !!heading && head.children.includes(thumb) && head.children.includes(heading))
-check('compact 才挂缩略图；featured 优先保持场景封面', !!thumb && thumb.attrs['wx:if'] === '{{compact && !featured}}')
+check('compact 才挂缩略图；featured 分支自己就是场景封面、没有缩略图', !!thumb && thumb.attrs['wx:if'] === '{{compact}}' && !!featuredBody && !nodes(featuredBody).some(n => hasClass(n, 'activity-card__thumb')))
 check('右侧列包含完整标题、日期和状态槽', !!heading && !!cls(heading, 'activity-card__title') && nodes(heading).some(n => n.attrs.id === 'date') && nodes(heading).some(n => n.attrs.id === 'status'))
 check('状态不在任何图片容器内，图片失败不吞状态', nodes(card).some(n => n.attrs.id === 'status') && nodes(card).filter(n => hasClass(n, 'activity-card__media') || hasClass(n, 'activity-card__thumb')).every(n => !nodes(n).some(x => x.attrs.id === 'status')))
-check('routeName/meta 分别插值，不再互相 fallback 吞字段', /\{\{routeName\}\}/.test(cardSource) && /\{\{meta\}\}/.test(cardSource) && !/routeName\s*\|\|\s*meta/.test(cardSource))
-check('日期倒计时、指标、info 均保留', /\bwhen\b/.test(cardSource) && /wx:for="\{\{metrics\}\}"/.test(cardSource) && /\{\{info\}\}/.test(cardSource))
+check('路线名单独插值，chips 由页面派生传入（模板不再自己拼路线事实）', /\{\{routeName\}\}/.test(cardSource) && !/routeName\s*\|\|/.test(cardSource) && /wx:for="\{\{chips\}\}"/.test(cardSource))
+check('日期、倒计时、人数、归属与相位徽章各有一槽', /\{\{date\}\}/.test(cardSource) && /\bwhen\b/.test(cardSource) && /\{\{people\}\}/.test(cardSource) && /\{\{roleNote\}\}/.test(cardSource) && /\{\{badge\}\}/.test(cardSource))
 const collabs = nodes(card).filter(n => n.attrs.catchtap === 'onCollab')
 check('协作独立 catchtap，携带角色键且不冒泡为 open', collabs.length > 0 && collabs.every(n => n.attrs['data-key'] === '{{item.key}}' && !n.attrs.bindtap && n.attrs['hover-class'] === 'button-hover'))
 check('80px 缩略图与可换行 flex 结构有明确源码声明', /\.activity-card__thumb\s*\{[^}]*width:\s*80px/.test(cardCss) && /\.activity-card__head\s*\{[^}]*display:\s*flex/.test(cardCss) && /\.activity-card__heading\s*\{[^}]*min-width:\s*0/.test(cardCss))
@@ -56,10 +57,26 @@ check('协作触控目标读 token，非硬编码 44', /\.collab-leaf\s*\{[^}]*m
 const homeCards = nodes(home).filter(n => n.tag === 'activity-card')
 check('首页一个 cards 列表，只有非 featured 紧凑化', homeCards.length === 1 && homeCards[0].attrs['wx:for'] === '{{cards}}' && homeCards[0].attrs.compact === '{{!item.featured}}')
 check('首页原 open/collab 事件仍在', homeCards[0].attrs['bind:open'] === 'onOpenCard' && homeCards[0].attrs['bind:collab'] === 'onCardCollab')
-const header = cls(home, 'home-entry')
-check('首页个人活动标题与独立操作行，不把全部动作挤进标题行', !!header && !!cls(header, 'home-entry__actions') && homeSource.includes('我的活动'))
+// style-B（2026-10-26）：页标题让位给品牌栏。「下一次同行」卡 + 一行动作接替原来的标题块。
+const brand = nodes(home).find(n => n.tag === 'brand-header')
+const homeJson = JSON.parse(read('pages/home/home.json'))
+check('首页挂品牌栏并走自定义导航（原生标题栏不再出现，身份由词标承担）',
+  !!brand && homeJson.navigationStyle === 'custom' && homeJson.usingComponents['brand-header'] === '/components/brand-header/brand-header')
+const nextUp = nodes(home).find(n => n.tag === 'next-up-card')
+check('首屏先给「下一次同行」：整卡进详情、空态卡内发起；页面不再有页标题块',
+  !!nextUp && nextUp.attrs['bind:open'] === 'onOpenCard' && nextUp.attrs['bind:create'] === 'onNew' &&
+  nextUp.attrs['data-id'] === '{{nextUp.id}}' && !homeSource.includes('eyebrow') && !homeSource.includes('page-title') &&
+  homeJson.usingComponents['next-up-card'] === '/components/next-up-card/next-up-card')
+const header = cls(home, 'home-actions')
+check('首页动作行独立成行，不把全部动作挤进标题行',
+  !!header && !!nodes(header).find(n => n.attrs.bindtap === 'onGoDiscover'))
 const actions = header ? nodes(header).filter(n => hasClass(n, 'button')) : []
-check('发起为唯一主按钮，发现次级；原 handler 与文字契约保持', actions.filter(n => hasClass(n, 'primary')).length === 1 && actions.some(n => n.attrs.bindtap === 'onNew' && hasClass(n, 'primary')) && actions.some(n => n.attrs.bindtap === 'onGoDiscover' && !hasClass(n, 'primary')) && homeSource.includes('发起活动') && homeSource.includes('发现活动'))
+const primary = actions.filter(n => hasClass(n, 'primary'))
+check('发起为唯一主按钮，发现次级；原 handler 与文字契约保持；没有未来活动时主按钮随状态卡一起消失',
+  primary.length === 1 && primary[0].attrs['wx:if'] === '{{nextUp}}' &&
+  actions.some(n => n.attrs.bindtap === 'onNew' && hasClass(n, 'primary')) &&
+  actions.some(n => n.attrs.bindtap === 'onGoDiscover' && !hasClass(n, 'primary')) &&
+  homeSource.includes('发起活动') && homeSource.includes('发现活动'))
 check('四档筛选保持，移除无效 with-tabbar 开关', ['mine', 'recent', 'finished', 'collab'].every(v => homeSource.includes('data-value="' + v + '"')) && !homeSource.includes('with-tabbar'))
 const dc = nodes(discover).filter(n => n.tag === 'activity-card')
 check('发现列表和地图选中卡同为 compact', dc.length === 2 && dc.every(n => n.attrs.compact === '{{true}}' && n.attrs.featured === '{{false}}'))

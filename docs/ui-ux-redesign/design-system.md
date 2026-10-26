@@ -70,7 +70,7 @@
 | 类 | 值 | 用途 |
 |---|---|---|
 | `.display` | 30px / 1.28 / 700 / letter-spacing -0.4px | 活动大标题（hero 内） |
-| `.page-title` | 28px / 1.3 / 700 / -0.6px | 页面大标题（root 页）——既有未动 |
+| `.page-title` | 24px / 1.3 / 700 / -0.6px | 页面大标题（root 页）；2026-10-26 由 28px 收一档，见 §11 |
 | `.section-title` | 16px / 24 / 600 | 区块标题——既有未动 |
 | `.lede` | 15px / 24 / 400 | 导语（活动描述首段） |
 | `.kicker` | 11px / 16 / 600 / letter-spacing 1.2px / `--muted` | 眉题（区块上的小标签，中文不用大写改用字距） |
@@ -235,3 +235,19 @@ activity-card 媒体形态。浅色导航栏由页面 json 承担（`app.json` �
 
 判据变更：`tools/swx1-style-gates-test.js` T2.6 的选中 tab 终值由「白/浅底药丸」改为「透明底」，其余色阶/对比度门保持原值。
 
+
+## 11. Style B 批次一（2026-10-26，用户选「按参考板重新设计」）
+
+依据用户提供的全浅色参考板（品牌行 + 图在上卡片 + 吸顶分段 + 底栏三 tab），只借**结构与工艺**，
+不借品牌与色号：无中央 FAB、不做活动市场、无分类维度。**零新增 token / 零新增色值**。
+
+| 新增/变更 | 形态 | 取尺与边界 |
+|---|---|---|
+| `components/brand-header` | 自绘品牌行：`trailMark` 图标 + `OurTrail` + 可选页名，固定栏 + 同高占位块 | 底 `--paper`、线 `--line`、词标 `--forest` 16px/700；**只挂在 4 个 tab 页**（页面 json `navigationStyle: custom`），子页仍走原生导航栏；高度由 `utils/header-layout.js` 从状态栏与胶囊菜单算，不写死 |
+| `components/next-up-card` | 首页「下一次同行」状态卡：眉题 + 活动名 + 一行事实（日期 · 剩余 · 已确认 N/M · 待审核 N） | 深森林底（`--forest-deep`）+ 白字；**整卡可点、卡内不放实心按钮**（一屏一个主操作）；空态改邀请卡，主按钮「发起活动」在卡内 |
+| `.page-title` | 28px/700 → **24px/700** | 全批唯一一处全局字阶改动；判据 `tools/m02-class-scope-test.js` PV4 同步改期望值 |
+| 详情页吸顶分段条 | 全局 `.segmented.tabs-line` + 页面层 `.section-nav { position: sticky; top: 0; background: var(--paper) }` | 6 段（介绍/行程/路线/安全/装备/约定）覆盖 9 个既有锚点；当前项由 `IntersectionObserver` 逐锚点观测得出，观测窗上沿让开条高 45px；点按仍走 `onSectionNav` |
+| 通知页页头 | 两个分区头并成一个（`kicker 通知` + `重要安排，不错过。`）；条数/排序/未读说明降为一行细字 | 同一屏不再连出两次「通知」；`anotices` 是子页，不挂品牌头 ⇒ 两份 wxml 自本轮起**允许页头不同**，正文仍须同构（`tools/page2-gates-test.js` M-18 判据已按此收窄） |
+| `activity-card` 正文分槽 | 标题 + 一行 chips + 人数/角色行 | 卡内旧字段（status/info/metrics/meta）保留给既有断言，新槽位只做加法 |
+
+明确不改：`cloudfunctions/**`、`custom-tab-bar/**`、`utils/journey.js`、天气线任何文件。

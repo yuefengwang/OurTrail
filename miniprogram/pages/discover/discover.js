@@ -4,7 +4,9 @@
 'use strict'
 const api = require('../../utils/api')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 const covers = require('../../utils/covers')
+const CV = require('../../utils/card-view')
 
 const SEARCH_DEBOUNCE = 300
 const MARKER_ICONS = { start: '/assets/markers/start.png' }
@@ -20,17 +22,11 @@ function filterCount(filters) {
   return (filters.dateFrom ? 1 : 0) + (filters.dateTo ? 1 : 0) + (filters.difficulty ? 1 : 0)
 }
 
-// 与 home.js cardMetrics 同口径（2026-10-23 跨页 L2）：指标只放路线事实（距离/爬升），
-// 人数只留在 info 行一处，同一事实不在卡片上印两遍。缺字段整项不出现、绝不印 0。
-// utils/* 冻结 ⇒ 派生函数暂住页内，待 utils 解冻后上收共享模块（债务登记：out/SWX2/requests.md 同族）。
-// 与 home 拷贝的唯一差异：discoverView 投影把 confirmed/capacity 放在活动顶层
-// （home 投影嵌套在 a.meta 下），其余逐行同形。
-function cardMetrics(a) {
-  const metrics = []
-  if (a.routeSnapshot.distanceKm) metrics.push({ key: 'distance', label: '距离', value: String(a.routeSnapshot.distanceKm), unit: 'km' })
-  if (a.routeSnapshot.ascentM) metrics.push({ key: 'ascent', label: '爬升', value: String(a.routeSnapshot.ascentM), unit: 'm' })
-  return metrics
-}
+// 路线事实与 chips 统一由 utils/card-view 派生（2026-10-26 style-B）：
+// 首页与发现页此前各抄一份「距离/爬升」口径，现在只有一处。
+// 两页的 status 语义仍不同（首页有归属前缀、发现页没有），那部分留在各页，不抹平。
+// 与 home 的唯一投影差异：discoverView 把 confirmed/capacity 放在活动顶层
+// （home 投影嵌套在 a.meta 下），peopleOf 两个形态都认。
 
 // 活动地图只取「第一个有坐标的路线节点」作为标记；没有坐标的活动不画点。
 function buildDiscoverMap(activities) {
@@ -156,6 +152,7 @@ Page({
       }
       const cards = res.view.activities.map(a => {
         const difficulty = F.difficultyLabel(a.routeSnapshot && a.routeSnapshot.difficulty)
+        const people = CV.peopleOf(a)
         return {
           id: a.id,
           // 封面：优先后端解析的实拍封面；没有才退回按活动 id 派生的氛围图
@@ -168,8 +165,15 @@ Page({
           // N3：sub 行主语与指标行交给 activity-card 的新形态（与 home 同口径）；
           // meta 保留作未传 routeName 时的回落与投影契约，不删。
           routeName: a.routeSnapshot.title || '路线待完善',
-          metrics: cardMetrics(a),
+          metrics: CV.metricsOf(a),
           status: a.owner ? '我组织的' : (F.PHASE_LABELS[a.phase] || a.phase),
+          // 三槽正文（2026-10-26 style-B）：chips / 人数 / 归属各自一格，徽章只放相位短词。
+          // 发现页的归属只有「我组织的」一种（没有首页那套 最近查看/协作角色），保持这个差异。
+          chips: CV.chipsOf(a),
+          people: people.text,
+          pending: people.pending,
+          roleNote: a.owner ? '我组织的' : '',
+          badge: J.phaseLabel(a.phase),
           // L2（2026-10-23）：发现页不再提升任意一张为重点——列表卡统一横向紧凑形态，
           // 「最新发布」由排序 chip 说，不由视觉抬价暗示。
           featured: false,

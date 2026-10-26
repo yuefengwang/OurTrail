@@ -1,5 +1,7 @@
 {
   "navigationBarTitleText": "活动详情",
+  "navigationBarBackgroundColor": "#F5F5F0",
+  "navigationBarTextStyle": "black",
   "usingComponents": {
     "activity-hero": "/components/activity-hero/activity-hero",
     "chapter": "/components/chapter/chapter",

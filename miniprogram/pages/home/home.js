@@ -8,17 +8,7 @@ const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
 const J = require('../../utils/journey')
-
-// 指标行（N2 2026-10-22 照片在上卡；2026-10-23 跨页 L2 收窄为路线事实）：
-// 距离 / 爬升两件「扫一眼的事实」。人数只在 info 行出现一次——同一事实不在卡片上印两遍。
-// 每一项只在投影**确有**该字段时出现——缺字段整项不出现，不许印「0 km / 0 m」：
-// 把「没填」印成零事实是凭空造事实（路线可整体后补，与 meta 行距离同款口径）。
-function cardMetrics(a) {
-  const metrics = []
-  if (a.routeSnapshot.distanceKm) metrics.push({ key: 'distance', label: '距离', value: String(a.routeSnapshot.distanceKm), unit: 'km' })
-  if (a.routeSnapshot.ascentM) metrics.push({ key: 'ascent', label: '爬升', value: String(a.routeSnapshot.ascentM), unit: 'm' })
-  return metrics
-}
+const CV = require('../../utils/card-view')
 
 Page({
   data: {
@@ -29,6 +19,7 @@ Page({
     search: '',
     collabCount: 0,
     cards: [],
+    nextUp: null,
     emptyTitle: '',
     emptyDetail: '',
     emptyAction: '',
@@ -110,6 +101,13 @@ Page({
     const cards = filtered.map(a => {
       // 协作按钮与「需要协作」那一档共用同一个判据；终态活动不再给入口（车长页对已结束的活动只是回看）。
       const roles = isCollab(a) ? J.collabRoles(a.meta) : []
+      // 归属前缀按事实排：既不是组织者也不是报名者时，「最近查看」只是当时唯一可能的来由；
+      // 现在「需要协作」这一档也会带进没点开过的活动，那种情况必须说他的角色，
+      // 不能把「他被授了现场协作」印成「他不久前打开过这场」。
+      const roleNote = a.meta.owner
+        ? '我组织的'
+        : a.meta.joined ? '' : (roles.length ? roles.map(r => r.label).join(' · ') : '最近查看')
+      const people = CV.peopleOf(a.meta)
       return {
         id: a.id,
         // 实拍封面是服务端事实，随卡片传；氛围图仍由 activity-card 按 activityId 派生
@@ -119,15 +117,14 @@ Page({
         // 路线事实分槽后 meta 只留难度（2026-10-23 跨页 L2）：路线名走 routeName、
         // 距离/爬升走 metrics，同一事实不在 meta 再印一遍。
         meta: F.difficultyLabel(a.routeSnapshot && a.routeSnapshot.difficulty),
-        // N2（2026-10-22）照片在上卡的纯展示派生字段：sub 行用路线名，指标行见 cardMetrics。
+        // N2（2026-10-22）照片在上卡的纯展示派生字段：sub 行用路线名，指标行见 card-view。
         // 都不进投影契约的既有字段。
         routeName: a.routeSnapshot.title || '路线待完善',
-        metrics: cardMetrics(a),
+        metrics: CV.metricsOf(a),
         // 状态词只在 journey 一处定义；卡片再补一句「还有多久」，
         // 因为首页真正要回答的是「哪一场快到时间了」，不是「它在哪个 phase」。
-        // 归属前缀按事实排：既不是组织者也不是报名者时，「最近查看」只是当时唯一可能的来由；
-        // 现在「需要协作」这一档也会带进没点开过的活动，那种情况必须说他的角色，
-        // 不能把「他被授了现场协作」印成「他不久前打开过这场」。
+        // status/info 是既有投影契约（a20-owner-hero 按字节钉住），一字节不动；
+        // 卡片渲染改读下面三个新槽位，不再把归属与相位拼成一句。
         status: (a.meta.owner ? '我组织的 · ' : a.meta.joined ? '' : (roles.length ? roles.map(r => r.label).join(' · ') + ' · ' : '最近查看 · ')) + J.phaseLabel(a.phase),
         when: a.startAt && ['archived', 'cancelled'].indexOf(a.phase) === -1 ? J.remaining(this.now, a.startAt).text : '',
         featured: a.id === featuredId && a.phase !== 'draft',
@@ -141,13 +138,21 @@ Page({
           a.meta.owner ? '待审核 ' + a.meta.pending + ' 人' : '',
           '名额 ' + a.meta.capacity + ' 人',
         ].filter(Boolean).join(' · '),
+        // 三槽正文（2026-10-26 style-B）：chips / 人数 / 归属各自一格，徽章只放相位短词。
+        chips: CV.chipsOf(a),
+        people: people.text,
+        pending: people.pending,
+        roleNote,
+        badge: J.phaseLabel(a.phase),
         // 卡片上的协作入口：[] 表示这个人在这场活动上没有欠下的协作事项。
         collab: roles,
       }
     })
     let emptyTitle = '留一点时间，走进山野'
     let emptyDetail = '这里仅显示与你有关或你打开过的活动。收到活动链接后，可以查看安排并报名。'
-    let emptyAction = '发起一场同行'
+    // 空态不再带主按钮：本页的 primary 只有一个（有未来活动时在动作行、没有时在邀请卡里），
+    // 空态再给一个「发起」就是同屏两个主操作。检索为空时例外——「清除搜索」是恢复动作，不是推进动作。
+    let emptyAction = ''
     if (search) {
       emptyTitle = '没有匹配的活动'
       // D-06：搜索与活动范围是叠加关系，空态要说明搜索没有跳出当前范围。
@@ -156,9 +161,32 @@ Page({
     } else if (filter === 'recent') {
       emptyTitle = '还没有最近查看的活动'
       emptyDetail = '打开过一场活动之后，它会回到这里；也可以从「发现活动」开始。'
-      emptyAction = ''
     }
-    this.setData({ filter, collabCount, cards, emptyTitle, emptyDetail, emptyAction, hasAny: all.length > 0 })
+    // 「下一次同行」只做客户端派生：参与的、未终态、有出发时刻、**还没过点**的最近一场。
+    // 不额外发请求，也不新增域字段——排序口径与列表「我的活动」一致（出发时间升序）。
+    // 「还没过点」不能省：已发布但一直没归档的活动会留在非终态里，而升序取第一个
+    // ⇒ 最旧的那场过期活动会永久占住「下一次同行」，真正要去的下一场永远排不上；
+    // 卡片上的剩余时间还会印「已过时」。过没过去只问 journey.remaining，不在这里另写比较（铁律 30/31）。
+    const upcoming = all.filter(a => ['archived', 'cancelled', 'draft'].indexOf(a.phase) === -1 &&
+      (a.meta.owner || a.meta.joined) && a.startAt && !J.remaining(this.now, a.startAt).overdue)
+      .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt))
+    const next = upcoming[0] || null
+    let nextUp = null
+    if (next) {
+      const nextPeople = CV.peopleOf(next.meta)
+      nextUp = {
+        id: next.id,
+        title: next.title || '未命名活动',
+        // 剩余时间只从 journey 取词，不在页面另写「距出发 N 天」。
+        facts: [
+          F.dateLabel(next.startAt),
+          J.remaining(this.now, next.startAt).text,
+          nextPeople.text,
+          nextPeople.pending,
+        ].filter(Boolean),
+      }
+    }
+    this.setData({ filter, collabCount, cards, nextUp, emptyTitle, emptyDetail, emptyAction, hasAny: all.length > 0 })
   },
 
   onFilter(e) {

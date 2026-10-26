@@ -1,7 +1,12 @@
-// 活动卡：普通（缩略图 + 文字）/ featured（大幅封面照 + 压底）。
+// 活动卡：普通（图 + 标题 / chips / foot 三行）/ featured（大幅封面照 + 压底）。
 // 封面优先用外部传入的 cover；没传时只给 activityId，本组件按 id 稳定取一张
 //（utils/covers.js）——派生刻意留在组件内：页面 cards 数组是投影契约，
 //  a20-owner-hero 门按字节比对它们，展示派生字段不该进那个对象。
+//
+// 2026-10-26（style-B）：正文从「四行拼接串」收成三槽——标题 / chips / foot。
+// chips 与人数由页面经 utils/card-view.js 派生后传入，组件不自己算（投影口径归页面）；
+// 相位短词单独走 badge，归属短词走 roleNote——两者原先拼在 status 一处，
+// 于是「我组织的 · 报名中」既当徽章又当元信息，密度全花在重复上。
 'use strict'
 const covers = require('../../utils/covers')
 
@@ -10,10 +15,7 @@ Component({
   properties: {
     title: { type: String, value: '' },
     date: { type: String, value: '' },
-    meta: { type: String, value: '' },
-    status: { type: String, value: '' },
     when: { type: String, value: '' },
-    info: { type: String, value: '' },
     featured: { type: Boolean, value: false },
     // 这个人在这场活动上欠下的协作事项：[{ key: 'staff'|'vehicle', label: '现场协作' }]。
     // 判据与文案都由页面从服务端投影的 meta 派生（utils/journey.collabRoles），
@@ -21,14 +23,20 @@ Component({
     collab: { type: Array, value: [] },
     cover: { type: String, value: '' },
     activityId: { type: String, value: '' },
-    // N2（2026-10-22）照片在上形态的 sub 行主语：路线名。没传的使用方（发现页）回落 meta 串。
+    // 路线名：标题下一行的「去哪」。
     routeName: { type: String, value: '' },
-    // 紧凑行：80px 缩略图 + 标题/日期/状态列（2026-10-23 跨页 L2）。
-    // 默认 false，旧消费者仍拿照片在上的完整卡；首页/发现页显式传 true。
+    // 紧凑行：80px 缩略图 + 标题列。
     compact: { type: Boolean, value: false },
-    // 指标行：[{ key, label, value, unit }]，纯展示派生（页面从投影字段算好；缺字段整项不给）。
-    // 组件不自己算指标——投影契约与「缺则不印」的口径都归页面，组件只画。
-    metrics: { type: Array, value: [] },
+    // 三槽正文（2026-10-26）：chips 是 [{ key, text }]，次序即截断优先级
+    //（日期 > 难度 > 距离 > 爬升），由 utils/card-view.chipsOf 统一给。
+    chips: { type: Array, value: [] },
+    // 人数只印一处：people = 「已确认 3/10」；pending = 组织者工作队列「待审核 7 人」。
+    people: { type: String, value: '' },
+    pending: { type: String, value: '' },
+    // 与活动的关系（「我组织的」/「最近查看」/协作角色），细字一行，缺失即不印。
+    roleNote: { type: String, value: '' },
+    // 相位短词（「报名中」「报名已截止」），只做徽章。
+    badge: { type: String, value: '' },
   },
   data: {
     // 照片加载失败：缩略图退回 --stone 灰底、featured 封面藏起（纯色 hero 兜底）
@@ -37,6 +45,9 @@ Component({
     coverSrc: '',
     // 实拍封面失败时的氛围图兜底；已经是氛围图还失败才走纯色
     coverFallback: '',
+    // featured 的 header 已经印了日期，chips 里去掉日期那一项再画（顺序保持，
+    // 分隔点按过滤后的下标给——直接在模板里按原始下标跳过会多出一个「·」）。
+    restChips: [],
   },
   observers: {
     'cover, activityId'(cover, activityId) {
@@ -44,6 +55,9 @@ Component({
       const next = cover || fallback
       if (next === this.data.coverSrc) return
       this.setData({ coverSrc: next, coverFallback: fallback, coverFailed: false })
+    },
+    chips(chips) {
+      this.setData({ restChips: (chips || []).filter(c => c.key !== 'date') })
     },
   },
   methods: {

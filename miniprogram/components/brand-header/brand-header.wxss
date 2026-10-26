@@ -1,0 +1,38 @@
+/* 品牌栏 = 文档流占位块 + 固定条。
+   占位块让宿主页保留「唯一根节点」，固定条贴顶并且在滚动时不动（tab 页要的是一条始终在的顶栏）。
+   高度与右侧避让全部来自 header-layout.js 的实测值（行内 style 给 height/padding），
+   这里只放不随机型变化的排版与底色。 */
+.brand-header { display: block; }
+.brand-header__spacer { width: 100%; }
+.brand-header__bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  padding-left: 20px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.brand-header__word {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--forest);
+}
+.brand-header__dot {
+  color: var(--line);
+  font-size: 14px;
+  line-height: 22px;
+}
+.brand-header__title {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--ink);
+}

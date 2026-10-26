@@ -305,6 +305,67 @@ async function main() {
       && page.data.cards[0].routeName === '路线待完善' && page.data.cards[0].info.indexOf('已确认 3 人') !== -1)
   }
 
+  // ============ 8. 「下一次同行」卡：只做客户端派生，不改投影 ============
+  section('8. 「下一次同行」：参与的、未终态的最近一场；空态交给邀请卡')
+  {
+    const F = require('../miniprogram/utils/format')
+    const J = require('../miniprogram/utils/journey')
+    const rows = [
+      act('late', { startAt: '2026-11-02T08:00:00+08:00' }),
+      act('soon', { startAt: '2026-10-16T08:00:00+08:00' }),
+      act('draft', { phase: 'draft', startAt: '2026-10-15T08:00:00+08:00' }),
+      act('ended', { phase: 'archived', startAt: '2026-10-15T08:00:00+08:00' }),
+      act('cancelled', { phase: 'cancelled', startAt: '2026-10-15T08:00:00+08:00' }),
+      // 只为协作被授进来的人不是「同行者」：他不在这趟行程里，不能拿去当首屏的下一场
+      act('staff-only', { meta: meta({ staff: true }) }),
+      act('guest', { meta: meta({}) }),
+    ]
+    const { page } = boot(rows, [])
+    await settle(page, () => !page.data.loading && page.data.cards.length > 0, 'cards=' + ids(page))
+    const next = page.data.nextUp
+    check('有效性门：草稿/终态/纯协作/未参与都不算，最近一场是 soon', next && next.id === 'soon', JSON.stringify(next))
+    check('事实行与卡片同源：日期 + 剩余时间 + 人数 + 组织者待审核',
+      next && next.facts.join('|') === [
+        F.dateLabel('2026-10-16T08:00:00+08:00'),
+        J.remaining(NOW, '2026-10-16T08:00:00+08:00').text,
+        '已确认 3/10',
+        '待审核 7 人',
+      ].join('|'), JSON.stringify(next && next.facts))
+  }
+  {
+    const { page } = boot([act('joined', { meta: meta({ joined: true }) })], [])
+    await settle(page, () => page.data.nextUp !== null, 'nextUp=' + JSON.stringify(page.data.nextUp))
+    check('参与者（非组织者）也看到下一场；待审核一格不出现（失败关闭，不从别人的字段反推）',
+      page.data.nextUp.facts.indexOf('已确认 3/10') !== -1 && page.data.nextUp.facts.every(f => f.indexOf('待审核') === -1),
+      JSON.stringify(page.data.nextUp.facts))
+  }
+  {
+    // 2026-10-26 真机抓到的缺陷：已发布但一直没归档的活动留在非终态里，而候选按出发时间**升序**
+    // ⇒ 最旧的那场过期活动永久占住首屏，真正的下一场永远排不上，卡上还印「已过时」。
+    const rows = [
+      act('past', { startAt: '2026-10-02T08:00:00+08:00' }),
+      act('future', { startAt: '2026-10-20T08:00:00+08:00' }),
+    ]
+    const { page } = boot(rows, [])
+    await settle(page, () => !page.data.loading && page.data.cards.length > 0, 'cards=' + ids(page))
+    check('过期但未归档的活动不许占住「下一次同行」：取真正还没出发的那一场',
+      page.data.nextUp && page.data.nextUp.id === 'future', JSON.stringify(page.data.nextUp))
+    check('它仍留在列表里（派生不许反过来裁活动）', ids(page).indexOf('past') !== -1, ids(page))
+  }
+  {
+    const { page } = boot([act('past-only', { startAt: '2026-10-02T08:00:00+08:00' })], [])
+    await settle(page, () => page.data.loading === false && page.data.cards.length > 0, 'cards=' + ids(page))
+    check('只有过期未归档的活动 ⇒ 首屏走邀请卡（不把「已过时」冒充成下一场）',
+      page.data.nextUp === null && page.data.hasAny === true,
+      JSON.stringify([page.data.nextUp, page.data.hasAny]))
+  }
+  {
+    const { page } = boot([act('ended-only', { phase: 'archived' })], [])
+    await settle(page, () => page.data.loading === false && page.data.hasAny === true, 'hasAny=false')
+    check('只有已结束的活动 ⇒ 没有「下一场」，模板走邀请卡分支（empty 由页面派生，不由组件猜）',
+      page.data.nextUp === null && page.data.cards.length === 0, JSON.stringify([page.data.nextUp, page.data.cards.length]))
+  }
+
   console.log('\npassed=' + passed + ' failed=' + failed)
   process.exit(failed ? 1 : 0)
 }

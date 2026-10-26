@@ -171,12 +171,18 @@ async function main() {
       theirs.info === '已确认 3 人 · 名额 10 人', theirs.info)
     check('两行唯一差异就是那一段（去掉它，非组织者行与组织者行逐字节相同）',
       mine.info.replace(' · 待审核 7 人', '') === theirs.info, mine.info + ' / ' + theirs.info)
-    check('除归属相关的三个字段（info/status/featured）外卡片逐字节相同：收口没顺手改名、减卡、动 hero',
-      JSON.stringify(exceptCard(mine, ['id', 'info', 'status', 'featured'])) === JSON.stringify(exceptCard(theirs, ['id', 'info', 'status', 'featured'])),
-      JSON.stringify([exceptCard(mine, ['id', 'info', 'status', 'featured']), exceptCard(theirs, ['id', 'info', 'status', 'featured'])]))
+    check('除归属相关的字段（info/status/featured + 新槽位 roleNote/pending）外卡片逐字节相同：收口没顺手改名、减卡、动 hero',
+      JSON.stringify(exceptCard(mine, ['id', 'info', 'status', 'featured', 'roleNote', 'pending'])) === JSON.stringify(exceptCard(theirs, ['id', 'info', 'status', 'featured', 'roleNote', 'pending'])),
+      JSON.stringify([exceptCard(mine, ['id', 'info', 'status', 'featured', 'roleNote', 'pending']), exceptCard(theirs, ['id', 'info', 'status', 'featured', 'roleNote', 'pending'])]))
     check('归属前缀「我组织的」照旧（本页原有的归属表达没被动过）',
       mine.status.indexOf('我组织的 · ') === 0 && theirs.status.indexOf('我组织的') === -1,
       mine.status + ' / ' + theirs.status)
+    // 2026-10-26 style-B：归属从 status 一长串拆成 roleNote（左）与 pending（右）两个槽位。
+    // 这是同一事实的新表达，必须与 info/status 同源：组织者两处都在，非组织者两处都空。
+    check('新槽位与旧行同源：roleNote/pending 只在归属侧出现，非组织者一格都不漏',
+      mine.roleNote === '我组织的' && theirs.roleNote === ''
+      && mine.pending === '待审核 7 人' && theirs.pending === '',
+      [mine.roleNote, theirs.roleNote, mine.pending, theirs.pending].join(' / '))
   }
 
   section('1b. 同一场活动只换归属位：只有 info 与 status 变，hero/时间/日期一个字节都不动')
@@ -195,8 +201,8 @@ async function main() {
       co.featured === cg.featured, JSON.stringify([co.featured, cg.featured]))
     check('when（出发倒计时）两次逐字节相同——首页那条「还有多久」是设计决定，不许被动',
       co.when === cg.when && co.when !== '', co.when + ' / ' + cg.when)
-    check('除 info/status 外全部字段逐字节相同（越界 0）',
-      JSON.stringify(exceptCard(co, ['info', 'status'])) === JSON.stringify(exceptCard(cg, ['info', 'status'])),
+    check('除 info/status/roleNote/pending 外全部字段逐字节相同（越界 0）',
+      JSON.stringify(exceptCard(co, ['info', 'status', 'roleNote', 'pending'])) === JSON.stringify(exceptCard(cg, ['info', 'status', 'roleNote', 'pending'])),
       JSON.stringify([co, cg]))
     check('info 的差异恰好是那一段（不多不少，不留分隔符孤尾）',
       co.info === cg.info.slice(0, '已确认 3 人'.length) + ' · 待审核 7 人' + cg.info.slice('已确认 3 人'.length),
@@ -217,6 +223,9 @@ async function main() {
     check('非组织者 + pending=0 也不因数字为 0 而多出一段空文本（分隔符没留孤尾）',
       cardOf(page, 'zero-other').info === '已确认 3 人 · 名额 10 人',
       cardOf(page, 'zero-other').info)
+    check('新槽位同源：组织者 pending 槽照印 0，非组织者整格为空',
+      cardOf(page, 'zero-own').pending === '待审核 0 人' && cardOf(page, 'zero-other').pending === '',
+      cardOf(page, 'zero-own').pending + ' / ' + cardOf(page, 'zero-other').pending)
   }
   {
     const acts = [homeActivity('nokey', { meta: withoutKey(homeActivity('x').meta, 'owner') })]

@@ -1,11 +1,12 @@
 <article class="card activity-card {{featured ? 'hero activity-card--featured' : 'activity-card--plain'}} {{compact ? 'activity-card--compact' : ''}} {{coverFailed ? 'cover-failed' : ''}}" bindtap="onTap" hover-class="card-hover">
-  <!-- 编辑式卡片（2026-10-16）→ N2（2026-10-22）普通卡改照片在上：
-       featured 保留大幅封面照 + 压底；普通卡改为 168px 媒体盒贴卡顶 + 状态 badge 压图左上，
-       正文＝标题 + 路线/日期 sub 行 + 指标行 + info 行 +（可选）协作入口行（交付包拼板屏 1.1/1.2 的列表语言）。
-       卡片整体可点，卡内不再重复实心 CTA（2026-10-23 视觉收敛）。
+  <!-- 卡片形态（2026-10-26 style-B）：图在上 / featured 大封面；正文三槽——
+       ① 标题（可断行，不截断：标题是必须读完的语义，M-16 的判据继续成立）
+       ② chips 一行（日期 · 难度 · 距离 · 爬升，不折行，缺字段整项不出现）
+       ③ foot 一行（左：与活动的关系细字；右：已确认 3/10 · 待审核 7 人）
+       相位短词单独做徽章，与归属分开——原来两者拼在 status 一串里，同一行说了两件事。
        照片是场景氛围图（utils/covers.js 按活动 id 稳定选取），非活动实拍；
        加载失败根节点加 cover-failed：featured 藏起照片退回纯色 hero，
-       普通卡藏起整块媒体退回纯文字卡，都不出破图。 -->
+       普通卡藏起媒体退回纯文字卡，都不出破图。 -->
   <block wx:if="{{featured}}">
     <view class="activity-card__media">
       <image class="activity-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
@@ -13,27 +14,29 @@
     </view>
     <view class="activity-card__cover-body hero-body">
       <view class="card-header activity-card__header">
-        <text class="activity-card__date small tabular" id="date">{{date}}{{when ? ' · 出发 ' + when : ''}}</text>
-        <text class="badge on-forest" id="status">{{status}}</text>
+        <!-- when 是倒计时短语（剩 35 天 / 就在眼前 / 已过时），不是出发动作；
+             旧写法「· 出发 已过时」把状态词挂在了动作后面，读起来自相矛盾。 -->
+        <text class="activity-card__date small tabular" id="date">{{date}}{{when ? ' · ' + when : ''}}</text>
+        <text wx:if="{{badge}}" class="badge on-forest" id="status">{{badge}}</text>
       </view>
       <view class="activity-card__title hero-body">{{title}}</view>
-      <!-- 路线名单独一行：meta 已收窄为难度，路线事实不能随旧拼接一起从 hero 上消失。 -->
-      <text wx:if="{{routeName}}" class="activity-card__sub small muted hero-body">{{routeName}}</text>
-      <text class="activity-card__meta muted hero-body" id="meta">{{meta}}</text>
-      <!-- 首屏 featured 也要给出距离/爬升：这是列表上「扫一眼」的事实，
-           不能因为换成大图形态就从标题下方消失（2026-10-23 回归）。 -->
-      <view wx:if="{{metrics.length}}" class="metrics activity-card__metrics hero-body">
-        <view wx:for="{{metrics}}" wx:key="key" class="metric">
-          <text class="metric-label">{{item.label}}</text>
-          <text class="metric-value">{{item.value}}</text>
-          <text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text>
+      <text wx:if="{{routeName}}" class="activity-card__sub small hero-body">{{routeName}}</text>
+      <!-- 日期已经在上面那行，featured 只画 chips 的其余项（restChips 由 observer 过滤） -->
+      <view wx:if="{{restChips.length}}" class="activity-card__chips hero-body">
+        <block wx:for="{{restChips}}" wx:key="key">
+          <text wx:if="{{index}}" class="activity-card__dot">·</text>
+          <text class="activity-card__chip">{{item.text}}</text>
+        </block>
+      </view>
+      <view class="activity-card__foot hero-body">
+        <text wx:if="{{roleNote}}" class="activity-card__role">{{roleNote}}</text>
+        <view class="activity-card__count">
+          <text wx:if="{{people}}" class="tabular">{{people}}</text>
+          <text wx:if="{{pending}}">{{people ? ' · ' : ''}}{{pending}}</text>
         </view>
       </view>
-      <view wx:if="{{info}}" class="activity-card__info hero-body">{{info}}</view>
-      <!-- 卡片整体可点：不再重复放实心入口（2026-10-23 视觉收敛）。
-           只保留协作入口——它是卡内另一个目的地，不能靠点卡片到达。用 catchtap 而不是 bindtap：
-           卡片根节点自己 bindtap 打开活动，冒泡上去会变成「点车辆联络却进了详情页」。
-           leaf 浅底 chip + 深字在 featured 与普通卡上都成立。 -->
+      <!-- 卡片整体可点：不重复放实心入口。只保留协作入口——它是卡内另一个目的地，
+           不能靠点卡片到达。用 catchtap 而不是 bindtap：冒泡上去会变成「点车辆联络却进了详情页」。 -->
       <view wx:if="{{collab.length}}" class="activity-card__affordance">
         <view class="collab-row">
           <view wx:for="{{collab}}" wx:key="key" class="button leaf collab-leaf" hover-class="button-hover"
@@ -50,33 +53,33 @@
       <image class="activity-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
     </view>
     <view class="activity-card__plain">
-      <!-- 紧凑行（2026-10-23）：缩略图与标题/日期/状态同一个横向头部。
-           状态从图片容器里搬出来：封面失败时它仍然在，不随照片一起消失。 -->
       <view class="activity-card__head">
-        <view wx:if="{{compact && !featured}}" class="activity-card__thumb">
+        <view wx:if="{{compact}}" class="activity-card__thumb">
           <image class="activity-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
         </view>
         <view class="activity-card__heading">
-          <view class="activity-card__title">{{title}}</view>
-          <view class="activity-card__line">
-            <text class="activity-card__date small tabular" id="date">{{date}}{{when ? ' · 出发 ' + when : ''}}</text>
-            <text class="badge neutral activity-card__status" id="status">{{status}}</text>
+          <view class="activity-card__titlebar">
+            <view class="activity-card__title">{{title}}</view>
+            <text wx:if="{{badge}}" class="badge neutral activity-card__status" id="status">{{badge}}</text>
           </view>
-          <!-- 路线名与补充事实各占一行、各自插值：不再用 routeName || meta 让其中一个吞掉另一个。 -->
+          <view wx:if="{{chips.length}}" class="activity-card__chips">
+            <block wx:for="{{chips}}" wx:key="key">
+              <text wx:if="{{index}}" class="activity-card__dot">·</text>
+              <!-- 日期 chip 保留稳定 id：卡片形态换了，但「这张卡的日期在哪」这个读数钩子不变 -->
+              <text wx:if="{{item.key === 'date'}}" id="date" class="activity-card__chip">{{item.text}}</text>
+              <text wx:else class="activity-card__chip">{{item.text}}</text>
+            </block>
+          </view>
           <text wx:if="{{routeName}}" class="activity-card__sub small muted">{{routeName}}</text>
-          <text wx:if="{{meta}}" class="activity-card__meta small muted">{{meta}}</text>
+          <view wx:if="{{roleNote || people || pending}}" class="activity-card__foot">
+            <text wx:if="{{roleNote}}" class="activity-card__role">{{roleNote}}</text>
+            <view class="activity-card__count">
+              <text wx:if="{{people}}" class="tabular">{{people}}</text>
+              <text wx:if="{{pending}}">{{people ? ' · ' : ''}}{{pending}}</text>
+            </view>
+          </view>
         </view>
       </view>
-      <!-- 指标行复用全局 .metrics/.metric*（app.wxss），组件内压成一行 caption 级事实；
-           缺字段整项不出现由页面派生时保证（home.js cardMetrics），这里只画给的项。 -->
-      <view wx:if="{{metrics.length}}" class="metrics activity-card__metrics">
-        <view wx:for="{{metrics}}" wx:key="key" class="metric">
-          <text class="metric-label">{{item.label}}</text>
-          <text class="metric-value">{{item.value}}</text>
-          <text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text>
-        </view>
-      </view>
-      <view wx:if="{{info}}" class="activity-card__info">{{info}}</view>
       <view wx:if="{{collab.length}}" class="activity-card__affordance">
         <view class="collab-row">
           <view wx:for="{{collab}}" wx:key="key" class="button leaf collab-leaf" hover-class="button-hover"

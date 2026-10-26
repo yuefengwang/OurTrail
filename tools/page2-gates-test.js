@@ -1042,8 +1042,22 @@ section('§6 边界：写入集与追加条款（M-18 本批只做一半都不�
 {
   const nw = src(NOTICES_WXML)
   const aw = src(ANOTICES_WXML)
-  check('M-18 未动通知页：notices.wxml 与 anotices.wxml 仍逐字节相同（我没有改一半制造第三种形态）',
-    nw === aw, 'sizes ' + Buffer.byteLength(nw) + '/' + Buffer.byteLength(aw))
+  // S4（style-b 批次一，2026-10-26）：通知 Tab 页加了品牌头，并把两个分区头并成一个。
+  // 旧断言钉的是「两份 wxml 逐字节相同」——那记录的是 M-18 未修时的形态，不是不变量：
+  // 两份页面的**页头身份本来就不同**（notices 是 tab 页、自绘品牌栏；anotices 是原生导航的子页），
+  // 合法差异一落地它必然假红（铁律 30：门钉行为，不钉当时长什么样）。
+  // 换成钉真正必须同构的那一层：卡片正文、未读标记、分批、发布 sheet 的接线两边一致。
+  const bodyAnchors = ['notice-card', 'visibleItems', 'onMarkRead', 'onOpenActivity', 'onCopy',
+    'onLoadMore', 'hiddenCount', 'overlay open="{{publishOpen}}"', 'onPublish']
+  const missing = bodyAnchors.filter(a => nw.indexOf(a) === -1 || aw.indexOf(a) === -1)
+  check('M-18 两份通知页的卡片正文 / 未读标记 / 分批 / 发布接线仍同构（差异只允许在页头）',
+    missing.length === 0, '缺锚点：' + missing.join(' '))
+  check('品牌头只在 tab 版通知页（anotices 走原生导航，不顶第二条自绘品牌栏）',
+    nw.indexOf('<brand-header') !== -1 && aw.indexOf('<brand-header') === -1)
+  check('通知页分区头只留一处（旧版「同行消息」+「通知」两个头连出两次「通知」）',
+    (nw.match(/class="section-head"/g) || []).length === 1
+    && nw.indexOf('同行消息') === -1
+    && nw.indexOf('<text class="kicker">通知</text>') !== -1, '')
   const padRe = /padding-bottom:\s*calc\(\s*84px|padding-bottom:\s*calc\(\s*32px\s*\+\s*84px/
   // 旧桩（本文件上一版）写的是「两份通知 wxss 逐字节相同」与「anotices 的 tab 留白原样保留」——
   // 那钉的是 M-18 **未修**的中间态，合法修复一落地就假红（铁律 30：门钉行为，不钉当时长什么样）。

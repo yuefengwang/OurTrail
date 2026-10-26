@@ -254,10 +254,10 @@ section('§4 privacy：容器与两级标题由全局类承载，段距由本页
   const titles = pv.nodes.filter(n => n.classes.indexOf('page-title') !== -1)
   const t = titles[0]
   const tf = t ? [fin(pv, t, 'font-size'), fin(pv, t, 'font-weight')] : []
-  check('PV4 主标题由全局 .page-title 承载（终值 28px/700，赢家出处 = app.wxss；本页不重印层级）',
-    titles.length === 1 && tf[0].value === '28px' && tf[0].source === 'app.wxss' && tf[1].value === '700' && tf[1].source === 'app.wxss',
+  check('PV4 主标题由全局 .page-title 承载（终值 24px/700，赢家出处 = app.wxss；本页不重印层级）',
+    titles.length === 1 && tf[0].value === '24px' && tf[0].source === 'app.wxss' && tf[1].value === '700' && tf[1].source === 'app.wxss',
     titles.length + ' 个 page-title：' + tf.map(describe).join(' '))
-  if (!(titles.length === 1 && tf[0].value === '28px' && tf[1].value === '700')) viol('PRIVACY', pv.file, '主标题层级没由全局类承载')
+  if (!(titles.length === 1 && tf[0].value === '24px' && tf[1].value === '700')) viol('PRIVACY', pv.file, '主标题层级没由全局类承载')
   // 合并修正（2026-10-17，并入上游二阶段视觉重构后）：这两条原先把「privacy.wxss 的 .doc-meta/.doc-section」
   // 当成 privacy 屏的唯一合法形状钉死了 ⇒ 上游用 section-head/kicker/section-sub + 容器节奏重排同一屏时必然假红。
   // 钉"某页某个类名出自哪个文件"就是断言依赖工作树的偶然状态（铁律 30 的反面）。判据改回它本来要守的不变量：

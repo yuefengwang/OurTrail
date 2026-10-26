@@ -43,25 +43,16 @@
   display: block;
 }
 
-/* 分区锚点：横向滚动，不换行；只做阅读跳转 */
+/* 分区锚点（S5）：吸顶下划线分段条。外观全在全局 .segmented.tabs-line（2026-10-23 登记），
+   本层只管吸顶与底色：内容滚到条下面时不许透出来；top:0 与原生导航栏下沿相接。
+   底栏 .act-sticky 是 fixed，与这条分居上下，互不重叠。
+   z-index 20 低于 fixed 底栏（.sticky-action 50）与弹层（overlay 200），只压正文。 */
 .section-nav {
-  white-space: nowrap;
-  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--paper);
 }
-.section-nav__chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 12px;
-  margin-right: 8px;
-  border-radius: var(--radius-tag);
-  background: var(--stone);
-  color: var(--forest);
-  font-size: 13px;
-  font-weight: 600;
-}
-.section-nav__chip:last-child { margin-right: 0; }
 
 /* 活动图文正文（2026-10-21）：段落按空行拆开；图片 1 张通栏、2 张两列、3+ 张三列 */
 .article-p {

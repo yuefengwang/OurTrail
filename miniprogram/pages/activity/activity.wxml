@@ -75,18 +75,21 @@
       </view>
     </view>
 
-    <!-- 分区锚点：只做阅读跳转，不隐藏任何内容，也不替主操作做决定 -->
-    <scroll-view class="section-nav" scroll-x enhanced show-scrollbar="{{false}}">
-      <view
-        wx:for="{{sectionNav}}"
-        wx:key="id"
-        wx:if="{{item.id !== 'sec-weather' || !isDraft}}"
-        class="section-nav__chip"
-        hover-class="button-hover"
-        data-id="{{item.id}}"
-        bindtap="onSectionNav"
-      >{{item.label}}</view>
-    </scroll-view>
+    <!-- 分区锚点（S5）：吸顶下划线分段条，外观复用全局 .segmented.tabs-line。
+         只做阅读跳转，不隐藏任何内容，也不替主操作做决定；当前项由 IntersectionObserver
+         逐锚点观测得出（activity.js setupAnchorObserver），点按仍走 onSectionNav → pageScrollTo，
+         目标取段内第一个真实存在的 id，滚到位后高亮由 observer 自己收敛。 -->
+    <view class="section-nav" aria-label="活动章节">
+      <view class="segmented tabs-line">
+        <view
+          wx:for="{{anchorGroups}}"
+          wx:key="key"
+          class="seg {{item.key === anchorActive ? 'on' : ''}}"
+          data-id="{{item.target}}"
+          bindtap="onSectionNav"
+        >{{item.label}}</view>
+      </view>
+    </view>
 
     <!-- 正文：章节之间 28px（.stack-sections），章节标题到内容 12px（chapter 默认 gap），
          章节内部用自己的 .stack / .stack-gap3。id 留在页面外层，section-nav 与 pageScrollTo 的锚点不变。 -->

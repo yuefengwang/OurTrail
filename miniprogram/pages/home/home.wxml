@@ -1,26 +1,29 @@
 <view class="page">
+  <brand-header />
   <status-panel wx:if="{{denied}}" kind="denied" title="暂时无法读取活动" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在核对与你有关的活动。" />
   </block>
   <block wx:else>
     <view class="stack">
-      <!-- N3（2026-10-23）入口区不再把两个动作挤进标题行：标题独立成段，
-           下方一行「发现（次级）+ 发起（唯一主按钮）」。这是本页唯一推进动作的视觉预算，
-           与详情页 sticky 主按钮同一套判据（ourtrail-ui §3 #7）。 -->
-      <view class="home-entry">
-        <view class="list-head__text">
-          <text class="eyebrow">OURTRAIL · 一起走过</text>
-          <view class="list-head__title">我的活动</view>
-          <text class="small muted">{{profileName ? profileName + '，' : ''}}下一次同行</text>
+      <!-- 2026-10-26 style-B：页标题让位给品牌栏。首屏先回答「下一次同行是哪场」，
+           再给动作行；本页唯一的 primary 是「发起活动」——有未来活动时它在动作行，
+           没有时它在邀请卡里（动作行只剩次级「发现活动」，同屏不会出现两个主按钮）。 -->
+      <next-up-card
+        empty="{{!nextUp}}"
+        activity-id="{{nextUp.id}}"
+        title="{{nextUp.title}}"
+        facts="{{nextUp.facts}}"
+        data-id="{{nextUp.id}}"
+        bind:open="onOpenCard"
+        bind:create="onNew"
+      />
+      <view class="home-actions">
+        <view class="button secondary" hover-class="button-hover" bindtap="onGoDiscover">
+          <text>发现活动</text>
         </view>
-        <view class="home-entry__actions">
-          <view class="button secondary" hover-class="button-hover" bindtap="onGoDiscover">
-            <text>发现活动</text>
-          </view>
-          <view class="button primary" hover-class="button-hover" bindtap="onNew">
-            <text>发起活动</text>
-          </view>
+        <view wx:if="{{nextUp}}" class="button primary" hover-class="button-hover" bindtap="onNew">
+          <text>发起活动</text>
         </view>
       </view>
 
@@ -44,29 +47,32 @@
         </view>
       </view>
 
+      <!-- 一条活动都没有时，邀请卡已经是完整的空态（说明 + primary 都在里面），
+           这里不再叠一个空状态面板；筛选/搜索导致的空列表仍然要解释。 -->
       <status-panel
-        wx:if="{{!cards.length}}"
+        wx:if="{{hasAny && !cards.length}}"
         kind="empty"
         title="{{emptyTitle}}"
         detail="{{emptyDetail}}"
         actionLabel="{{emptyAction}}"
         bind:action="onEmptyAction"
       />
-      <view wx:else class="stack-gap3" aria-label="活动列表">
+      <view wx:elif="{{cards.length}}" class="stack-gap3" aria-label="活动列表">
         <activity-card
           wx:for="{{cards}}"
           wx:key="id"
           title="{{item.title}}"
           cover="{{item.cover}}"
           route-name="{{item.routeName}}"
-          metrics="{{item.metrics}}"
+          chips="{{item.chips}}"
           date="{{item.date}}"
-          meta="{{item.meta}}"
-          status="{{item.status}}"
           when="{{item.when}}"
           featured="{{item.featured}}"
           compact="{{!item.featured}}"
-          info="{{item.info}}"
+          people="{{item.people}}"
+          pending="{{item.pending}}"
+          role-note="{{item.roleNote}}"
+          badge="{{item.badge}}"
           collab="{{item.collab}}"
           activity-id="{{item.id}}"
           data-id="{{item.id}}"

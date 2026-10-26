@@ -111,7 +111,7 @@
 
 | 类 | 值 | 用途 |
 |---|---|---|
-| `.page-title` | 28px/1.3 字重700 字距-0.6px | 页面大标题（仅 root 页与重要节点） |
+| `.page-title` | 24px/1.3 字重700 字距-0.6px（2026-10-26 由 28 收一档：tab 页不再印页标题，降档避免与品牌栏抢层级） | 页面大标题（下钻页与重要节点） |
 | `.section-title` | 16px/24 700 | 区块标题 |
 | `.eyebrow` | 12px/18 600 字距0.72px muted | 眉题（OURTRAIL · 一起走过） |
 | `.card-label` | 15px 600，`display: block`，`margin-bottom: 12px`（行高继承正文 22px） | **卡内小标题**：卡片里说「这一段是什么」的那一行（「活动时间」「节点 1」「上车点 1」「风险 1」「我的观察点」「导入 GPX 轨迹」…）。5 页 17 处在用（me 7 / editor 4 / route-edit 2 / weather 2 / weather-hub 2），唯一出处 `app.wxss` |
@@ -149,7 +149,9 @@
 | `<person-row>` | 头像（无头像回退首字）+ 姓名 + 徽标 + 副标题 + 操作插槽 |
 | `<form-field>` | label + slot + hint + error；错误时外层 `.field.invalid`。`options` 只能写一次（该组件 wxss 是空的，全靠全局 `.field` 体系） |
 | `<overlay kind="sheet|dialog">` | 底部弹层/居中确认；内容放 `.stack`；危险操作用 dialog + danger 按钮。实测声明为 `multipleSlots: false`（不用具名 slot），改造成具名 slot 时必须同时改这个值 |
-| `<activity-card>` | 活动卡；`featured` 森林底 + 等高线装饰；`info` 属性传指标行。**卡片本体即入口**：2026-10-23 起不再印「查看活动安排」重复主入口；`collab` 非空时只出 leaf chip 协作行（leaf 只做点缀，不承载列表里的重复主操作） |
+| `<activity-card>` | 活动卡；`featured` 森林底/照片压底 + 等高线装饰。**卡片本体即入口**：2026-10-23 起不再印「查看活动安排」重复主入口；`collab` 非空时只出 leaf chip 协作行（leaf 只做点缀，不承载列表里的重复主操作）。**正文三槽（2026-10-26）**：`chips`（`utils/card-view.chipsOf` 派生，一行不折行，次序即截断优先级 日期 > 难度 > 距离 > 爬升）/ `people` + `pending`（人数只印一处，`pending` 只给组织者）/ `roleNote`（归属短词）+ `badge`（相位短词）。组件**不自己算**投影口径；`info`/`metrics`/`status` 三个旧属性已删除，调用方必须改传新槽位 |
+| `<brand-header>` | 一级 tab 页的品牌栏（2026-10-26）：宿主页 JSON 设 `navigationStyle: custom` 并注册本组件。**两层结构**：文档流占位块 + `position: fixed` 的条（占位让宿主页保留「唯一根节点」，不要为挂它改页骨架）。高度与右侧胶囊避让来自 `utils/header-layout.js`（实测 `getMenuButtonBoundingClientRect`，读不到走兜底），字符串 `OurTrail` + 可选 `title` 跟在词标右侧；`z-index: 90`（低于 overlay 200，高于详情页吸顶分段条 20）。**下钻页保留原生返回栏，不挂本组件** |
+| `<next-up-card>` | 首页「下一次同行」卡（2026-10-26）：输入是页面已派生的 `empty/activityId/title/facts`，整卡 `bind:open`；`empty` 时变邀请卡并在**卡内**给唯一 primary `bind:create`（此时页面的动作行只留次级按钮，同屏不许两个 primary）。不新增域字段、不额外发请求 |
 | `<route-profile>` | 活动/路线海拔剖面；输入 `track`（带可选 `ele`）与 `points`，输出连续/节点/无数据三态；SVG 由 `utils/route-profile.js` 生成并编码为 data-URI。**无连续高程时明确标「节点高程，非连续剖面」，不插值伪造地形**；组件用 `apply-shared` 读取 `.small/.muted/.tabular` |
 | `<profile-gate>` | 按需补资料 sheet：报名/发布前自动弹出；微信头像 `chooseAvatar`、昵称 `input type=nickname`、手机号 `getPhoneNumber` + 手填兜底；保存 `profile.save` 后由宿主重读或续跑原动作。**不要在浏览链路加门**；`getUserProfile` 已不保证返回真实头像昵称，不要用它冒充静默授权 |
 | `.segmented > .seg(.on)` | 分段切换（工作台四分区、首页筛选、编辑器步骤条、车辆页去/返程）。**可点高度取 `--touch-target`（44px），不许写死字面量**（M-06：这里曾是全站唯一硬编码 36px 的尺寸规则，补救只落在 weather-chart 一页）；未选中态文字是 `--ink` 压在 `--line` 轨道上（11.3:1，原 `--muted` 只有 4.12:1 未过自家 4.5:1 门），**选中与否由 `.seg.on` 的白底药丸 + `--forest` + 600 字重承担，不靠把未选中印淡**。**内容分区变体 `.segmented.tabs-line`**（2026-10-23）：去轨道/白底，文字 + 2px 森林绿下划线（`.on::after`），未选中 `--muted`、选中 `--forest` 600；类名仍是 `.segmented/.seg/.on`，E2E 选择器契约不变 |
@@ -269,7 +271,7 @@
 
 ## 页面模板
 
-- **root 页**（tabBar 页，名单见上节；实测 4 页）：`.eyebrow` + `.page-title` + 一句 `.muted` 副标题开头；底部留白按上节「Tab 页底部留白」那条公式，四条 tab 页各写一份且由判据钉成同构。
+- **root 页**（tabBar 页，名单见上节；实测 4 页）：`.eyebrow` + `.page-title` + 一句 `.muted` 副标题开头；底部留白按上节「Tab 页底部留白」那条公式，四条 tab 页各写一份且由判据钉成同构。**2026-10-26 起 3 页例外（首页 / 通知 / 我的）**：页内不再有 `.page-title`，身份由 `<brand-header>` 承担、分区由 `.section-head`（kicker + 20px `.list-head__title` + `.section-sub`）承担；天气中心页批次二再跟，别照抄这三页的形态到还没迁移的页。
 - **子页**：原生导航栏（深绿底白字），内容区从 `eyebrow + page-title` 或直接正文开始；底部留白**不写任何覆盖**，吃 `app.wxss` 的 `.page` 基线；操作区用 `.sticky-action`（固定底栏）或 `.form-actions`，用了固定底栏才挂 `.page.has-sticky`（120px）。
 - **工作台类**（workspace/staff）：顶部指标 `.metrics` + `.segmented` 分区 + 面板组件。；面板间写入失效靠 `sync-key` 与 `bind:written`（见 `miniprogram/AGENTS.md`）。
 - 新建页面的 5 步注册清单（目录四件套 → `app.json` `pages` → 页面 json 的 `usingComponents`（根绝对路径）→ 需要全局类时加 `styleIsolation` → `node tools/check.js`）**以 `miniprogram/AGENTS.md` 的「A new page requires 5 steps」为准**，本文件不重复维护。
