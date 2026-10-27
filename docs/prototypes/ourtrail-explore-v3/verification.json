@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-26",
+  "scope": "Local HTML browser prototype only; not WeChat device validation",
+  "checks": [
+    "No horizontal overflow and first compact activity fully visible at 375px",
+    "No horizontal overflow and first compact activity fully visible at 390px",
+    "No horizontal overflow and first compact activity fully visible at 414px",
+    "Distance quick filter shows both and only activities <=10km",
+    "Current-week filter uses the prototype reference date",
+    "Search visibly narrows activities by route/name",
+    "Empty state and reset recover the default hero and list",
+    "Sort reorders all four routes by length and can switch back",
+    "My outings displays exactly the two confirmed prototype memberships",
+    "Combined next-week / >10km / open-signup filters produce the correct empty state",
+    "Real activity tap opens correct metrics; Escape closes overlay and subsequent clicks work",
+    "Out-of-scope entry points disclose prototype scope and do not simulate successful real actions"
+  ],
+  "uncaughtBrowserErrors": 0,
+  "result": "PASS"
+}

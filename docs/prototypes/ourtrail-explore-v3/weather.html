@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff"><title>OurTrail · 山野天气</title>
+  <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="weather.css">
+</head>
+<body>
+  <div class="preview-toolbar"><a class="preview-brand" href="index.html">OurTrail <span>山野天气 / 04</span></a><div class="preview-sizes" aria-label="预览宽度"><button data-width="375">375</button><button data-width="390" class="on" aria-pressed="true">390</button><button data-width="414">414</button></div><a class="preview-info" href="WEATHER-DESIGN.md" target="_blank">设计说明 ↗</a></div>
+  <div class="device weather-device" id="device">
+    <div class="statusbar" aria-hidden="true"><b>9:41</b><span class="status-icons"><svg viewBox="0 0 20 16"><path d="M2 11v3M7 8v6M12 5v9M17 2v12"/></svg><svg viewBox="0 0 20 16"><path d="M2 5a12 12 0 0 1 16 0M5 8a8 8 0 0 1 10 0M8 11a3 3 0 0 1 4 0"/></svg><span class="battery"></span></span></div>
+    <div class="wechatbar"><div class="weather-brand"><button id="weather-back" aria-label="返回上一页" hidden></button><a href="index.html" class="wordmark"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="m3 22 8-16 5 10 4-7 6 13H3Z"/><path d="m10 22 5-7"/></svg>OurTrail</a></div><div class="wechat-capsule" aria-hidden="true"><span>•••</span><i></i><span class="capsule-dot"></span></div></div>
+    <main class="weather-screen" id="weather-screen">
+      <header class="weather-header"><div><button class="place-trigger" id="choose-place" aria-label="切换天气地点"><h1 id="place-name">毕棚沟</h1><span data-w-icon="down"></span></button><button id="choose-node" class="node-trigger"></button></div><button class="data-source" id="data-source"><span class="demo-dot"></span>演示数据<span data-w-icon="info"></span></button></header>
+      <div class="weather-days" id="weather-days" role="tablist" aria-label="预报日期"></div>
+      <nav class="weather-tabs" role="tablist" aria-label="天气视图"><button data-tab="hourly" role="tab" aria-selected="true">逐时预报</button><button data-tab="cloud" role="tab" aria-selected="false">云层剖面</button><button data-tab="route" role="tab" aria-selected="false">沿途天气</button><button data-tab="sky" role="tab" aria-selected="false">日月天相</button></nav>
+      <div id="weather-body"></div>
+      <footer class="weather-footnote">设计演示 · 合成天气数据 · 北京时间 UTC+8<br>用于体验页面，不作为实际出行依据</footer>
+    </main>
+    <nav class="bottom-nav" aria-label="主导航"><button data-nav="explore"><span data-w-icon="mountain"></span><span>探索</span></button><button class="active" data-nav="weather" aria-current="page"><span data-w-icon="sun"></span><span>天气</span></button><button data-nav="notices"><span data-w-icon="bell"></span><span>通知</span></button><button data-nav="me"><span data-w-icon="user"></span><span>我的</span></button></nav>
+    <div class="home-indicator" aria-hidden="true"></div>
+    <div class="overlay" id="weather-overlay" hidden><div class="scrim" data-dismiss></div><section class="sheet" id="weather-sheet" role="dialog" aria-modal="true" aria-labelledby="weather-sheet-title" tabindex="-1"></section></div>
+  </div>
+  <p class="preview-footer">同一地点 · 同一时刻 · 多维天气 <span>逐时 / 云层 / 沿途 / 日月</span></p>
+  <script src="weather-data.js"></script><script src="weather.js"></script>
+</body></html>

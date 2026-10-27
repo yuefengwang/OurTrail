@@ -1,0 +1,13 @@
+PASS inline script syntax
+PASS 12 internal anchors and unique IDs
+PASS generated SVG present, no NaN
+PASS simulated DOM scenario ready
+PASS simulated DOM scenario self
+PASS simulated DOM scenario pending
+PASS simulated DOM scenario closing
+PASS contrast #a83d17 / #ffffff = 6.28:1
+PASS contrast #60666b / #ffffff = 5.82:1
+PASS contrast #202427 / #ffffff = 15.64:1
+VISUAL: Chrome desktop screenshot inspected: first row (invitation / personal trip / organizer), no visible overlap in inspected viewport.
+UI: anchor click to #trip observed in real browser. Scenario select attempt interrupted by user app change: NOT VERIFIED in browser.
+NOT VERIFIED: mobile viewport; remaining screen pixels; real API writes; WeChat rendering; competitor logged-in apps.

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <title>OurTrail · 探索下一程</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="refinement.css">
+</head>
+<body>
+  <div class="preview-toolbar">
+    <a class="preview-brand" href="./index.html">OurTrail <span>探索与活动详情 / 03.2</span></a>
+    <div class="preview-sizes" aria-label="预览宽度">
+      <button data-width="375">375</button><button data-width="390" class="on" aria-pressed="true">390</button><button data-width="414">414</button>
+    </div>
+    <a class="preview-info" href="README.md" target="_blank">设计说明 ↗</a>
+  </div>
+  <div class="device" id="device">
+    <div class="statusbar" aria-hidden="true"><b>9:41</b><span class="status-icons"><svg viewBox="0 0 20 16"><path d="M2 11v3M7 8v6M12 5v9M17 2v12"/></svg><svg viewBox="0 0 20 16"><path d="M2 5a12 12 0 0 1 16 0M5 8a8 8 0 0 1 10 0M8 11a3 3 0 0 1 4 0"/><circle cx="10" cy="14" r="1"/></svg><span class="battery"></span></span></div>
+    <div class="wechatbar">
+      <div class="wordmark"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="m3 22 8-16 5 10 4-7 6 13H3Z"/><path d="m10 22 5-7"/></svg>OurTrail</div>
+      <div id="detail-navigation" hidden><button id="back-home" aria-label="返回活动列表"><span data-icon="back"></span></button><span>活动详情</span></div>
+      <div class="wechat-capsule" aria-hidden="true"><span>•••</span><i></i><span class="capsule-dot"></span></div>
+    </div>
+    <main id="screen" class="screen">
+      <header class="explore-header">
+        <h1 class="sr-only">探索下一程</h1>
+        <div class="browse-tabs" role="tablist" aria-label="活动范围"><button role="tab" id="discover-tab" aria-selected="true" data-view="discover" class="active">发现活动</button><button role="tab" id="mine-tab" aria-selected="false" data-view="mine">我的同行<span class="count">2</span></button></div>
+        <button class="create-button" id="create"><span data-icon="plus"></span>发起</button>
+      </header>
+      <div class="search-wrap"><span data-icon="search"></span><input type="search" id="search" aria-label="搜索活动或路线" placeholder="搜索活动或路线" autocomplete="off"><button id="clear-search" class="clear-search" aria-label="清除搜索" hidden><span data-icon="close"></span></button></div>
+      <div class="filterbar"><div class="quick-filters"><button class="chip selected" data-filter="all" aria-pressed="true">全部</button><button class="chip" data-filter="week" aria-pressed="false">本周出发</button><button class="chip" data-filter="short" aria-pressed="false">10 km 以内</button></div><button class="filter-button" id="filters" aria-label="更多筛选"><span data-icon="sliders"></span><span id="filter-dot" hidden></span></button></div>
+      <div id="content" aria-live="polite"></div>
+      <footer class="list-end"><span></span>每一程，都值得一起走<span></span></footer>
+    </main>
+    <main id="detail-screen" class="detail-screen" hidden aria-label="活动详情"></main>
+    <nav class="bottom-nav" aria-label="主导航"><button class="active" data-nav="explore" aria-current="page"><span data-icon="mountain"></span><span>探索</span></button><button data-nav="weather"><span data-icon="sun"></span><span>天气</span></button><button data-nav="notices"><span data-icon="bell"></span><span>通知</span></button><button data-nav="me"><span data-icon="user"></span><span>我的</span></button></nav>
+    <div id="detail-action" class="detail-action" hidden></div>
+    <div class="home-indicator" aria-hidden="true"></div>
+    <div class="overlay" id="overlay" hidden><div class="scrim" data-close></div><section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1"></section></div>
+    <div id="toast" class="toast" role="status"></div>
+  </div>
+  <p class="preview-footer">探索 → 活动详情 → 返回原位置 <span>虚构活动 · 示意配图与路线</span></p>
+  <script src="activities.js"></script>
+  <script src="app.js"></script>
+  <script src="detail.js"></script>
+</body>
+</html>

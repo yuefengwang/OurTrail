@@ -1,6 +1,6 @@
 # OurTrail 设计系统参考（token 表 + 组件清单）
 
-来源：`app.wxss`（原型 tokens.css/components.css 移植）。改动前先确认这里没有等价物。
+来源：`app.wxss`（原型 tokens.css/components.css 移植）。这是当前代码基线的快照，不是不可变规范。局部改动优先找可复用 token；整体重设计可以提出 token 调整，但要确认对比度与语义，并同步 `app.wxss`、画布色板和所有消费者。
 
 ## 颜色 token（page 级 CSS 变量，组件内可用 var()）
 
@@ -47,7 +47,7 @@
 - **色块上的字用 `inkOn()` 判，不要写死白字。** 黄金 #D6A33C 这类浅色配白字对比度只有 ~1.9:1，图上浅色标记的白字一直看不清。
 - **天相 key 增删必须同批改三处**：`utils/sky.js` 的 `hourMarks`、`meteogram/layout.js` 的 `MARK_STYLE`、以及任何消费方（如 `space-time/layout.js`）。key 分叉会让图表**静默丢标记**。
 
-**禁止发明新色值。** 需要新语义色时：在 app.wxss 加 token + 在本表登记。
+局部改动不要散落未登记的字面量颜色。若设计审查确认需要新语义色：在 app.wxss 加 token、在本表登记，并同步所有消费者；不要为凑齐色板而新增无明确语义的颜色。
 
 ## 字号与行高
 

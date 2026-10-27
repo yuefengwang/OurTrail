@@ -1,0 +1,162 @@
+{
+  "date": "2026-10-26",
+  "scope": "Local HTML weather prototype only; not real forecast, production mini-program or WeChat device validation",
+  "browser": "Codex in-app browser",
+  "liveViewportObserved": [
+    506,
+    691
+  ],
+  "independentQaViewport": [
+    1280,
+    720
+  ],
+  "deviceFrames": [
+    375,
+    390,
+    414
+  ],
+  "layoutChecks": [
+    {
+      "width": "375",
+      "mode": "逐时预报",
+      "body": 375,
+      "device": 375,
+      "scroll": 375,
+      "svg": 1008
+    },
+    {
+      "width": "375",
+      "mode": "云层剖面",
+      "body": 375,
+      "device": 375,
+      "scroll": 375,
+      "svg": 1008
+    },
+    {
+      "width": "375",
+      "mode": "沿途天气",
+      "body": 375,
+      "device": 375,
+      "scroll": 375,
+      "svg": null
+    },
+    {
+      "width": "375",
+      "mode": "日月天相",
+      "body": 375,
+      "device": 375,
+      "scroll": 375,
+      "svg": null
+    },
+    {
+      "width": "390",
+      "mode": "逐时预报",
+      "body": 390,
+      "device": 390,
+      "scroll": 390,
+      "svg": 1008
+    },
+    {
+      "width": "390",
+      "mode": "云层剖面",
+      "body": 390,
+      "device": 390,
+      "scroll": 390,
+      "svg": 1008
+    },
+    {
+      "width": "390",
+      "mode": "沿途天气",
+      "body": 390,
+      "device": 390,
+      "scroll": 390,
+      "svg": null
+    },
+    {
+      "width": "390",
+      "mode": "日月天相",
+      "body": 390,
+      "device": 390,
+      "scroll": 390,
+      "svg": null
+    },
+    {
+      "width": "414",
+      "mode": "逐时预报",
+      "body": 414,
+      "device": 414,
+      "scroll": 414,
+      "svg": 1008
+    },
+    {
+      "width": "414",
+      "mode": "云层剖面",
+      "body": 414,
+      "device": 414,
+      "scroll": 414,
+      "svg": 1008
+    },
+    {
+      "width": "414",
+      "mode": "沿途天气",
+      "body": 414,
+      "device": 414,
+      "scroll": 414,
+      "svg": null
+    },
+    {
+      "width": "414",
+      "mode": "日月天相",
+      "body": 414,
+      "device": 414,
+      "scroll": 414,
+      "svg": null
+    }
+  ],
+  "interactionChecks": [
+    "6000m outside layer coverage displays 无层资料, not 0%",
+    "72h to24h retains selected next-day 11/1 13:00",
+    "Along-route gust values and selected point update while retaining 11/1 13:00",
+    "Unknown elevation retains hourly data and model cloud field but hides node line, states missing altitude",
+    "Location search no-result and recovery work",
+    "Slider keyboard changes selected hour and values; 48h produces48 columns; reload preserves point/date/hour/view",
+    "Activity detail opens matching 四姑娘山 +11/8 weather, back restores detail route position",
+    "375/390/414px simulated device frames: all4 modes have no body overflow; time-chart internal scrolling intentionally retained",
+    "Hourly and cloud SVG now render at their full 42px-per-hour width; selected cursor centered without delayed scroll race",
+    "Read-chart help opens and closes; closed overlay does not block next actions"
+  ],
+  "dataContractReview": {
+    "hourlySamples": 5376,
+    "cloudNullValues": 25056,
+    "result": "finite values; valid numeric ranges; gust >= wind; outside coverage remains null"
+  },
+  "regressionsFixed": [
+    "CSS global svg width made the chart blank; weather-chart width now follows its time-axis canvas",
+    "72h ->24h on next-day hour now rebases to selected day and retains its hour",
+    "Missing-altitude caption now distinguishes absent green node line from amber read-height line",
+    "Programmatic cursor centering uses immediate scrolling so reading the previous animated offset cannot reset the view"
+  ],
+  "staticChecks": {
+    "javascriptSyntax": "PASS: weather.js/weather-data.js/app.js/detail.js",
+    "repositoryStatic": "ALL CHECKS PASSED",
+    "repositoryHandlers": "exit 0",
+    "trackedWhitespace": "git diff --check exit 0"
+  },
+  "browserErrorLogsObserved": 0,
+  "screenshots": {
+    "hourly": "weather-hourly.png",
+    "hourlyFull": "weather-hourly-full.png",
+    "cloud": "weather-cloud.png",
+    "route": "weather-route.png",
+    "sky": "weather-sky.png",
+    "unknown": "weather-unknown.png",
+    "note": "Primary screenshots capture the visible part of a390px device frame; hourly-full and unknown are full browser-page screenshots. Blank full-page+clip attempt was rejected and overwritten."
+  },
+  "limitations": [
+    "All weather values, elevations, map geometry and astronomical times are synthetic fixtures",
+    "Along-route independent weather comparison is a design proposal and needs separate point fetches in production",
+    "No real weather loading, cache, error recovery or astronomical/phenomenon calculations",
+    "Coordinate query, GPX import and saved independent observation points remain outside this prototype implementation",
+    "Frame width tests use desktop viewport with simulated phone container; they are not physical device tests"
+  ]
+}
