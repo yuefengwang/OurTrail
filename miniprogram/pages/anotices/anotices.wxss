@@ -1,2 +1,8 @@
-/* 通知列表：复用全局 notice-card / overlay 体系 */
-.page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }
+/* 通知列表：复用全局 notice-card / overlay 体系
+   B4-PAD（M-18 / E-03）：这一行原来抄的是 tab 页专用的底部留白（基线 32px 之上再加 84px 底栏位与安全区），
+   但本页不在 `app.json` 的 `tabBar.list` 里——它是从活动详情/工作台用 navigateTo 打开的**子页**，
+   微信不会为它渲染 custom-tab-bar，那 84px 是给一个不存在的底栏预留的（列表只有一两条通知时尤其明显）。
+   ⇒ 页尾留白由 app.wxss 的 `.page` 基线承载，本页不再写任何覆盖。
+   规则与判据：design-system.md「Tab 页底部留白（唯一规则）」+ `node tools/b4-pad-final-value-test.js` §3。
+   （故意不在注释里重印那条 calc 表达式：`tools/g2-platform-gate-test.js` §6 是按文本找这份公式的，
+     注释里重印会让它以为这一行还在 ⇒ 判据形态的教训见铁律 30。） */

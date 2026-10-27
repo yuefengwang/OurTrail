@@ -164,10 +164,24 @@ section('4. 结论卡：与图表标记同源不打架')
   check('概率卡都带三级标签', out.items.filter(i => i.key !== 'light').every(i => ['条件较好', '条件一般', '条件较差'].indexOf(i.label) !== -1),
     out.items.map(i => i.key + ':' + i.label).join(' '))
   check('返回日出日落与月相', !!out.sun.sunrise && !!out.sun.sunset && Number.isFinite(out.moon.illumination))
-  // 同源校验：图上有云海标记 → 结论也说有云海机会
+  /* 分层契约（C2/F3）：标记是事实层（不裁），窗口是可行动层（裁到民用晨昏）。
+     正确方向是「窗口内的每个小时都必须有云海标记」；反方向不成立——
+     凌晨的云带仍有标记但窗口为空。旧断言写成「有标记 ⇒ 有窗口」，
+     夹具恰好只有 06–09 的白天标记，于是把分层写反了也没红。 */
   const sea = out.items.filter(i => i.key === 'cloudSea')[0]
-  const hasMark = Object.keys(out.marks).some(k => out.marks[k].indexOf('cloudSea') !== -1)
-  check('图上有云海标记时结论也给出时段（' + sea.window + '）', !hasMark || !!sea.window, sea.text)
+  const seaWindowHours = (() => {
+    if (!sea.window) return []
+    return sea.window.split(' / ').reduce((acc, seg) => {
+      const parts = seg.split('-')
+      for (let m = sky.hourMin(parts[0]); m <= sky.hourMin(parts[1]); m += 60) acc.push(m)
+      return acc
+    }, [])
+  })()
+  check('云海窗口 ⊆ 云海标记（窗口内每小时都有事实标记；反过来不必成立）',
+    seaWindowHours.length > 0 && seaWindowHours.every(m => {
+      const hh = String(Math.floor(m / 60)).padStart(2, '0') + ':00'
+      return (out.marks[hh] || []).indexOf('cloudSea') !== -1
+    }), sea.window + ' / ' + Object.keys(out.marks).filter(k => (out.marks[k] || []).indexOf('cloudSea') !== -1).join(','))
   check('图上有星空标记时星空结论给窗口', (() => {
     const star = out.items.filter(i => i.key === 'star')[0]
     return Object.keys(out.marks).some(k => out.marks[k].indexOf('star') !== -1) ? !!star.window : true
@@ -613,6 +627,34 @@ function fcConfig() {
   check('store 的选中日 = 所选日', !!p && p.selected[DATE] === true, p && Object.keys(p.selected || {}))
   check('store 的 marks/night 与页面数据同源',
     !!p && p.marks === page.data.chartMarks && p.night === page.data.chartNight)
+
+  /* 2026-10-21：云层剖面缺失必须显式可见（缺失 ≠ 此窗没有 ≥80% 成层云带） */
+  check('没有 cloudLevels ⇒ cloudFieldMissing=true，统一图回退经典图',
+    page.data.cloudFieldMissing === true && page.data.unified === null,
+    'missing=' + page.data.cloudFieldMissing + ' unified=' + !!page.data.unified)
+
+  const n = result.series.length
+  const cloudLevels = {
+    times: result.series.map(h => h.d + 'T' + h.t),
+    levels: [
+      { altitudes: Array(n).fill(1000), cloudCover: Array(n).fill(20) },
+      { altitudes: Array(n).fill(2500), cloudCover: Array(n).fill(90) },
+      { altitudes: Array(n).fill(4000), cloudCover: Array(n).fill(30) },
+    ],
+  }
+  page.applyWeather(Object.assign({}, result, { cloudLevels }), { name: '冷杉坪', coordinates: COORD }, {})
+  check('有 cloudLevels ⇒ cloudFieldMissing=false 且统一图生成（旗标不是一红到底）',
+    page.data.cloudFieldMissing === false && !!page.data.unified,
+    'missing=' + page.data.cloudFieldMissing + ' unified=' + !!page.data.unified)
+
+  // 「重新查询」必须绕过内存复用，否则只是重绘同一份缺失数据
+  page._lastResult = {}
+  let refetch = 0
+  page.fetchWeather = function () { refetch++ }
+  page.onRetryWeather()
+  check('onRetryWeather 清掉 _lastResult 并真的再取一次',
+    page._lastResult === null && refetch === 1,
+    '_lastResult=' + JSON.stringify(page._lastResult) + ' refetch=' + refetch)
 
   const savedWx = global.wx
   global.wx = { getSystemInfoSync: () => ({ windowWidth: 780, windowHeight: 390 }) }
@@ -1249,6 +1291,228 @@ section('13. 天相卡沉默闸：真页面 buildCondCards / condSilent / 总评
   })(), JSON.stringify(cond.overallGrade(ocSky.items)))
 }
 
+section('13b. F4 阶段一：页面把结论项传进 factsFor，看图能跳到次日')
+{
+  /* 页面装配这一层只做两件事：把**这张卡自己的**结论项交给 factsFor（用副本，不改共享 ctx），
+     以及让「看图↗」先按完整日期键匹配。判据全部打在真页面函数上，不在这里重写装配。 */
+  const page = makePage(pageConfig())
+  const d1 = []
+  const d2 = []
+  for (let hh = 0; hh < 24; hh++) {
+    const t = String(hh).padStart(2, '0') + ':00'
+    d1.push({ d: '2026-07-15', t, temp: 12, pop: 0, precip: 0, showers: 0, code: 2, wind: 6, rh: 60, cloud: { low: 0, mid: 0, high: 0 }, band: null })
+    d2.push({ d: '2026-07-16', t, temp: 12, pop: 0, precip: 0, showers: 0, code: 2, wind: 6, rh: 60, cloud: { low: 0, mid: 0, high: 0 }, band: null })
+  }
+  d1[22].cloud = { low: 20, mid: 20, high: 20 }
+  d1[23].cloud = { low: 20, mid: 20, high: 20 }
+  d2[0].cloud = { low: 10, mid: 10, high: 10 }
+  const skyOut = sky.summarize({
+    date: '2026-07-15', lat: COORD.lat, lng: COORD.lng, elevation: 1200, elevOK: true,
+    detail: d1, series: d1.concat(d2), days: [], heading: null,
+    lightPollution: { bortle: 2, sqm: 21.8 },
+  })
+  const galaxy = skyOut.items.filter(i => i.key === 'galaxy')[0]
+  const ctx = {
+    date: '2026-07-15', detail: d1, days: [], elevation: 1200,
+    sun: skyOut.sun, moon: skyOut.moon, night: skyOut.night,
+  }
+  const cards = page.buildCondCards(skyOut, ctx)
+  const gCard = cards.filter(c => c.key === 'galaxy')[0]
+  const sCard = cards.filter(c => c.key === 'star')[0]
+  check('银河卡存在且证据非空（' + (gCard && gCard.evidence.length) + ' 条）', !!gCard && gCard.evidence.length > 0)
+  check('页面把 item 传进 factsFor：银河证据 at === item.at（次日 ' + (galaxy && galaxy.at) + '）',
+    !!gCard && gCard.evidence.every(f => f.at === galaxy.at), gCard && JSON.stringify(gCard.evidence))
+  check('星空卡（同日 at）证据仍是 HH:mm（页面只替跨夜的那张改锚点）',
+    !!sCard && sCard.evidence.every(f => /^\d{2}:\d{2}$/.test(f.at)), sCard && JSON.stringify(sCard.evidence))
+  check('共享 ctx 未被写入 item（每张卡各拿副本）', ctx.item === undefined, String(ctx.item))
+
+  // 「看图↗」：完整键优先，旧 HH:mm 仍按原行为落到当日同小时
+  page.data.chartView = [
+    { d: '2026-07-15', t: '00:00' },
+    { d: '2026-07-15', t: '06:00' },
+    { d: '2026-07-16', t: '01:00' },
+    { d: '2026-07-16', t: '06:00' },
+  ]
+  let jumped = null
+  page.selectHour = (d, t) => { jumped = { d, t } }
+  page.onEvidenceJump({ currentTarget: { dataset: { at: galaxy.at } } })
+  check('onEvidenceJump 按完整日期键跳到次日同小时',
+    !!jumped && jumped.d === '2026-07-16' && jumped.t === '01:00', JSON.stringify(jumped))
+  page.onEvidenceJump({ currentTarget: { dataset: { at: '06:00' } } })
+  check('旧 HH:mm 锚点仍落到同日同小时（首列不是 06:00 也能分辨）',
+    !!jumped && jumped.d === '2026-07-15' && jumped.t === '06:00', JSON.stringify(jumped))
+  page.onEvidenceJump({ currentTarget: { dataset: { at: '2026-07-17T01:00' } } })
+  check('视图里查无此键 ⇒ 落到最近可见列（不是首列）',
+    !!jumped && jumped.d === '2026-07-16' && jumped.t === '06:00', JSON.stringify(jumped))
+
+  /* 默认 24h 视图只有所选日 00–23 时：跨夜锚点必然不在视图内。
+     计划 §5.2.3 允许「该小时的最近可见列」——对次日 01:00 而言是当日 23:00，
+     不是首列 00:00（那是最远列，也是本轮修掉的回归）。 */
+  page.data.chartView = Array.from({ length: 24 }, (_, hh) => ({
+    d: '2026-07-15', t: String(hh).padStart(2, '0') + ':00',
+  }))
+  page.onEvidenceJump({ currentTarget: { dataset: { at: galaxy.at } } })
+  check('24h 视图没有次日列：跨夜锚点落到当日最后一列（最近可见列），不跳回 00:00',
+    !!jumped && jumped.d === '2026-07-15' && jumped.t === '23:00', JSON.stringify(jumped))
+}
+
+section('13c. 跨夜日程与 OI 24h：今晚银河进日程，时间轴只画今晚段')
+{
+  /* 用真实页面装配（applyWeather）跑一条能产生今晚银河窗口的 7 天序列：
+     2026-09-11 新月 + 银心季，晴空低海拔点；早晨 05–08 有一条 100–400 m 的成层云带
+     （用来证明「OI 可见时非夜间 L2 仍被过滤」不是空过滤）。 */
+  const agenda = require('../miniprogram/utils/agenda')
+  const D = '2026-09-11'
+  const page = makePage(pageConfig())
+  page.data.date = D
+  const series = []
+  for (let i = 0; i < 7 * 24; i++) {
+    const hh = i % 24
+    series.push({
+      d: addDays(D, Math.floor(i / 24)),
+      t: String(hh).padStart(2, '0') + ':00',
+      temp: 10, pop: 0, precip: 0, showers: 0, code: 2, wind: 5, rh: 50, uv: 0,
+      cloud: { low: 0, mid: 0, high: 0 },
+      band: hh >= 5 && hh <= 8 ? { base: 100, top: 400, cover: 90 } : null,
+    })
+  }
+  const n = series.length
+  const cloudLevels = {
+    times: series.map(h => h.d + 'T' + h.t),
+    levels: [
+      { altitudes: Array(n).fill(300), cloudCover: Array(n).fill(10) },
+      { altitudes: Array(n).fill(900), cloudCover: Array(n).fill(10) },
+      { altitudes: Array(n).fill(4000), cloudCover: Array(n).fill(10) },
+    ],
+  }
+  const result = {
+    series, days: fakeDays(D, 7), updatedAt: D + 'T00:00:00+08:00',
+    pointElevation: 500, cloudLevels,
+  }
+  const point = { name: '测试点', coordinates: COORD, ele: 500, eleSource: 'manual' }
+  page.applyWeather(result, point, {})
+
+  const agendaView = page.data.agenda || []
+  const nightL2 = agendaView.filter(e => e.l2 && (e.key === 'galaxy' || e.key === 'star'))
+  check('页面日程出现今晚银河窗口（' + nightL2.map(e => e.t + ' ' + e.window).join(' / ') + '）',
+    nightL2.some(e => e.key === 'galaxy' && /今晚 .* → 次日/.test(e.window || '')),
+    JSON.stringify(nightL2))
+  check('纯次日窗口标「次日 HH:mm」且排在全部今日事件之后', (() => {
+    const idx = agendaView.findIndex(e => e.key === 'star' && e.t.indexOf('次日 ') === 0)
+    return idx >= 0 && agendaView.slice(idx + 1).every(e => e.dayOffset === 1)
+  })(), JSON.stringify(agendaView.map(e => e.t + ':' + (e.key || e.title))))
+
+  const card = page.data.oiCard
+  check('OI 卡与统一图同时存在（后续「过滤」判据才有意义）', !!card && !!page.data.unified,
+    'oi=' + !!card + ' unified=' + !!page.data.unified)
+  const allOiItems = card ? card.items.concat(card.moreItems || []) : []
+  const crossItems = allOiItems.filter(i => i.crossMidnight)
+  check('OI 24h 卡出现跨零点窗口，列表文案是「今晚 … → 次日 …」',
+    crossItems.length > 0 && crossItems.every(i => /^今晚 .* → 次日 /.test(i.timeText)),
+    JSON.stringify(crossItems.map(i => i.timeText)))
+  check('OI 跨零点窗口的时间轴只有今晚段（每个机会恰 1 个 zone，无多余次日段）', (() => {
+    if (!card || !crossItems.length) return false
+    const crossOk = crossItems.every(it => {
+      const left = +(it.fromMin / 1440 * 100).toFixed(2)
+      const width = +((1440 - it.fromMin) / 1440 * 100).toFixed(2)
+      const hit = card.tapZones.filter(z => +z.left === left && +z.width === width)
+      return hit.length === 1
+    })
+    /* 旧的 `!some(left=0 && width<=3.1)` 只能抓结束于 00:00–00:43 的次日段：
+       21:00→05:00 的旧次日段宽 20.83%，会被放行。机会数 = zone 数是更强的判据——
+       每个机会在 24h 卡上只该占一段，多出来的就是越日假跨度。 */
+    return crossOk && card.tapZones.length === allOiItems.length
+  })(), JSON.stringify({ zones: card && card.tapZones.length, items: allOiItems.length }))
+  check('OI 可见时日程仍保留 galaxy/star 夜间条目（否则次日窗口永远看不到）',
+    nightL2.length > 0 && agendaView.some(e => e.l2 && e.key === 'galaxy'))
+  check('OI 可见时日程只保留 OI 卡表达不了的夜间条目（同日窗口不重复）',
+    agendaView.filter(e => e.l2 && agenda.isNightKey(e.key))
+      .every(e => e.dayOffset === 1 || /→ 次日/.test(e.window || '')),
+    JSON.stringify(agendaView.filter(e => e.l2 && agenda.isNightKey(e.key)).map(e => e.t + '|' + e.window)))
+  check('OI 可见时 cloudSea 等非夜间 L2 仍按旧规则过滤',
+    agendaView.every(e => !(e.l2 && e.key === 'cloudSea')),
+    JSON.stringify(agendaView.filter(e => e.l2).map(e => e.key)))
+
+  /* 阳性对照：不经页面过滤的同一份日程里确实有云海条目——
+     证明上面那条不是"本来就没有"，而是过滤真的在起作用。 */
+  const raw = agenda.buildDayAgenda({
+    date: D, detail: series.filter(h => h.d === D), marks: page.data.chartMarks,
+    sun: A.sunTimes(D, COORD.lat, COORD.lng, 500),
+    win: A.photoWindows(D, COORD.lat, COORD.lng, 500),
+    nightHours: page._skyNight,
+  })
+  check('阳性对照：未过滤的日程里确有云海条目（过滤不是空转）',
+    raw.some(e => e.l2 && e.key === 'cloudSea'),
+    JSON.stringify(raw.filter(e => e.l2).map(e => e.key + '@' + e.t)))
+}
+
+/* ============ 8. 逐时摘要带 / 降水概率行 / 详细数据四行（2026-10-26 style-B 4） ============
+   板 04-2 要的是"瞟一眼趋势"：带上每列 = 天气简字 + 温度 + 时刻，图下一行概率。
+   走页面自己的 buildHourStrip / buildBriefRows，不在测试里重写采样与区间规则。 */
+async function stripCases() {
+  section('8. 逐时摘要带与详细数据四行')
+  const page = pageConfig()
+  const hours = fakeSeries(DATE, 3)
+  const strip = span => page.buildHourStrip(page.buildViewSeries(hours, span))
+
+  const s24 = strip(24)
+  check('24h 窗：3 小时一格 × 8 列（步长从列里的时刻自己看得出来）',
+    s24.items.length === 8 &&
+      s24.items.map(x => x.t).join(',') === '00:00,03:00,06:00,09:00,12:00,15:00,18:00,21:00',
+    s24.items.map(x => x.t).join(','))
+  const s48 = strip(48)
+  const s72 = strip(72)
+  check('48h / 72h 窗换成 6 / 9 小时一格，列数恒为 8（步长 = 窗长 / 8）',
+    s48.items.length === 8 && s72.items.length === 8 &&
+      s48.items.map(x => x.t).join(',') === '00:00,06:00,12:00,18:00,00:00,06:00,12:00,18:00' &&
+      s72.items.map(x => x.t).join(',') === '00:00,09:00,18:00,03:00,12:00,21:00,06:00,15:00',
+    s48.items.length + '/' + s72.items.length + ' · ' + s72.items.map(x => x.t).join(','))
+  /* wx:key 必须唯一：48/72h 跨天，同一时刻会重复出现。
+     用 t 当键就是重复键（WXML 复用错节点），所以键要带日期。 */
+  check('三档窗口的列键全部唯一（跨天同一时刻不得撞键）',
+    [s24, s48, s72].every(s => {
+      const keys = s.items.map(x => x.k)
+      return keys.every(k => typeof k === 'string' && k) && new Set(keys).size === keys.length
+    }),
+    [s24, s48, s72].map(s => new Set(s.items.map(x => x.k)).size + '/' + s.items.length).join(' '))
+
+  /* 缺读数不得变成有利事实：Number(null) === 0，补 0 会把「没有概率」印成「降水 0%」。 */
+  const noPop = page.buildHourStrip(page.buildViewSeries(
+    hours.map(h => Object.assign({}, h, { pop: null })), 24))
+  check('概率全缺 ⇒ popShown=false（图下整行不印），列内印「—」而不是 0%',
+    noPop.popShown === false && noPop.items.every(x => x.pop === '—'),
+    noPop.popShown + ' / ' + noPop.items.map(x => x.pop).join(','))
+  const onePop = page.buildHourStrip(page.buildViewSeries(
+    hours.map((h, i) => Object.assign({}, h, i === 3 ? { pop: null } : {})), 24))
+  check('个别小时缺概率 ⇒ 行仍在，那一格印「—」（缺测 ≠ 不会下雨）',
+    onePop.popShown === true && onePop.items.filter(x => x.pop === '—').length === 1 &&
+      onePop.items.filter(x => x.t === '03:00')[0].pop === '—',
+    onePop.items.map(x => x.pop).join(','))
+  const noTemp = page.buildHourStrip(page.buildViewSeries(
+    hours.map(h => Object.assign({}, h, { temp: null })), 24))
+  check('温度缺测印「—」而不是 0°',
+    noTemp.items.every(x => x.temp === '—'), noTemp.items.map(x => x.temp).join(','))
+
+  const brief = page.buildBriefRows([
+    { temp: 6, precip: 0, showers: 0, wind: 2, cloud: { total: 30 } },
+    { temp: 16, precip: 2.4, showers: 0, wind: 6, cloud: { total: 80 } },
+  ])
+  check('详细数据四行 = 当日真实 min–max（温度 / 降水 / 风速 / 云量，顺序固定）',
+    brief.map(r => r.k).join(',') === '温度,降水量,风速,云量' &&
+      brief[0].v === '6 – 16°C' && brief[1].v === '0 – 2.4 mm/h' &&
+      brief[2].v === '2 – 6 km/h' && brief[3].v === '30 – 80%',
+    brief.map(r => r.k + '=' + r.v).join(' | '))
+  check('缺读数整行印「—」，不拿 0 顶替（缺测 ≠ 无雨 / 无风 / 晴）',
+    page.buildBriefRows([{ temp: null, wind: null, cloud: null }]).map(r => r.v).join('|') === '—|—|—|—',
+    page.buildBriefRows([{ temp: null, wind: null, cloud: null }]).map(r => r.v).join('|'))
+  check('旧返回体没有 precip 只有 showers 时只用 showers（缺失字段不当 0 相加）',
+    page.buildBriefRows([{ showers: 1.5 }])[1].v === '1.5 mm/h',
+    page.buildBriefRows([{ showers: 1.5 }])[1].v)
+  check('全天同一数值时不印假区间（「12°C」而不是「12 – 12°C」）',
+    page.buildBriefRows([{ temp: 12 }, { temp: 12 }])[0].v === '12°C',
+    page.buildBriefRows([{ temp: 12 }, { temp: 12 }])[0].v)
+}
+
 raceCases()
   .catch(e => { failed++; console.error('  ✗ 竞态用例执行异常（' + e.message + '）') })
   .then(windowCases)
@@ -1257,6 +1521,8 @@ raceCases()
   .catch(e => { failed++; console.error('  ✗ local 模式用例执行异常（' + e.message + '）') })
   .then(routeElevCases)
   .catch(e => { failed++; console.error('  ✗ 路线海拔用例执行异常（' + e.message + '）') })
+  .then(stripCases)
+  .catch(e => { failed++; console.error('  ✗ 摘要带用例执行异常（' + e.message + '）') })
   .then(() => {
     console.log('\npassed=' + passed + ' failed=' + failed)
   process.exit(failed ? 1 : 0)

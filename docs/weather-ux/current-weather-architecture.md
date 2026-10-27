@@ -23,23 +23,22 @@ cloudfunctions/trailApi/lib/weather.js  fetchForecast()
 actions: getWeather（活动节点）/ getWeatherByPoint（自由查询）→ 免鉴权（FREE_ACTIONS）
    │  返回体 { status, updatedAt, days[7], detail[24], series[168], pointElevation }
    ▼
-miniprogram/utils/api.js  getWeather / getWeatherByPoint（唯一下云入口）
+miniprogram/utils/api.js  getWeather / getWeatherByPoint / getSkyContext（唯一下云入口）
    ▼
 客户端纯函数（云函数不做任何判断）
-   ├─ utils/astro.js   NOAA 天文：sunTimes / photoWindows（黄金·蓝调）/ moonInfo / galaxySeason / solarPosition
-   ├─ utils/sky.js     天相转译：hourMarks（8 键逐时标记）+ summarize（6 张结论卡）
-   │                   阈值唯一来源；与 meteogram/layout.js MARK_STYLE 同源
-   └─ utils/weather-model.js  P4 编排：snap 插值 / nodeFacts 逐节点海拔判定 / runsOf 主窗口 / judge 汇总
+   ├─ utils/astro.js   NOAA 天文：sunTimes / photoWindows（黄金·蓝调）/ moonInfo / moonPosition / moonTimes / galaxyPosition / solarPosition
+   └─ utils/sky.js     天相转译：hourMarks（8 键逐时标记）+ summarize（6 张结论卡）
+                       阈值唯一来源；跨夜窗口（今晚入夜→次日晨）/ 缺测失败关闭 / 低云按观察点海拔（cloudAboveAt）
    ▼
 页面：pages/weather（查询视图，3 模式）· pages/weather-chart（横屏全图）· pages/weather-hub（Tab 入口）
-组件：meteogram（canvas 2d 7×24）· space-time（时间×海拔，P4）
+组件：meteogram（canvas 2d 7×24）
 ```
 
 **关键架构事实：**
 
 - **判断全在客户端**，云函数只取数。这是对的——`sky.js` 可被 `tools/sky-test.js`（65 例）覆盖。
-- **单一阈值来源原则**（`weather-model.js` 顶部明文）：图上标记与文字结论共用 `sky.hourMarks`，
-  「同一时刻图与卡不同结论」被制度性禁止。
+- **单一阈值来源原则**：图上标记与文字结论共用 `sky.hourMarks`（`meteogram/layout.js` 的
+  `MARK_STYLE` 只做键映射），「同一时刻图与卡不同结论」被制度性禁止。
 - **逐时插值不编造**：`snap`/`lerpBand` 在无样本端点保持 null，`route-schedule` 无时间不插值，
   `spaceNodes` 只收可信抵达时刻——「宁可沉默，不可编造」贯穿全链。
 - 海拔优先真实高程（RoutePoint.ele，GPX 导入），缺省退回模型降尺度值并**在 UI 标注来源**。
@@ -58,6 +57,9 @@ miniprogram/utils/api.js  getWeather / getWeatherByPoint（唯一下云入口）
 | `rh` | 相对湿度 | sky.js 彩虹/雾信号；UI 不显示 |
 | `cloud.low/mid/high` | 三层云量 % | 图三带、指标卡日均值 |
 | `uv` / `visibility` / `freezing` | 紫外 / 能见度(km) / 0℃层 | 明细表 / callouts |
+| `pblh` | 边界层高度（m） | 辅助（霾/扩散），可选 |
+| `cloud.total` | 总云量 % | 三层之外交叉校验，可选 |
+| `profile` | 925/850/700 hPa 温度/湿度（缺档 null） | 云海逆温、主结论卡 evidence |
 | `band` | 云层带 {base,top,cover} 或 null | 云海判断、图上带标记、指标卡 |
 
 **逐日（`days[]`）：** date / code / tMax / tMin / windMax / precipSum / precipProbMax / precipHours /
@@ -69,6 +71,17 @@ alpenglow 光染 · golden 黄金 · blueHour 蓝调 · inCloud 入云（减分�
 **结论卡（`sky.summarize` 6 项）：** 每项 { key, title, window, look「往哪看」, text, score 0-100,
 tone, label }，label ∈ 条件较好（≥70）/ 条件一般（≥45）/ 条件较差。
 
+**天相上下文（`getSkyContext`，第 16 个 action，2026-10-21）**：与天气主体分开、非阻塞、四源独立：
+
+| 块 | 来源 | 用途 | 缺省语义 |
+|---|---|---|---|
+| `spatial` | Open-Meteo 多坐标，8 方位 × 3 距离（5/15/30 km） | 银河看银心方向云、彩虹看反日方向降水 | null = 旧口径 |
+| `terrain` | Copernicus DEM 90 m，16 方位 × 9 距离（1–80 km） | 银河山脊遮挡、彩虹反日地平线、光染目标山脊、云海 openness | null = 旧口径 |
+| `atmosphere` | 7Timer! ASTRO（3 天）+ CAMS AOD/PM（5 天） | 星空/银河透明度、seeing、气溶胶 | null = 不修正 |
+| `lightPollution` | DarkSkySites（env `DARKSKY_API_KEY`） | 星空/银河 Bortle/SQM；显式 null 时封顶 69 | null = 未计入并封顶 |
+
+每个块独立失败，`sources` 标 `ok/missing`，`stale` 标是否用了旧数据；页面先按无上下文渲染，到达后原地重算。
+
 ## 3. 现有页面结构（pages/weather 自上而下）
 
 | # | 区块 | 性质 | 问题① |
@@ -77,7 +90,6 @@ tone, label }，label ∈ 条件较好（≥70）/ 条件一般（≥45）/ 条�
 | 2 | 节点 picker（第几天抵达）/ 单点卡 | 上下文 | 无 |
 | 3 | 7 日概览条（横滚，含日出） | 事实 | 信息密度好；但与图分离，点选后才联动 |
 | 4 | meteogram（7×24 横滚 canvas） | 事实 | **当日过程感弱**：22px/列要横滑 7 天；风/湿度不在图上 |
-| 5 | space-time 时空天相图 | 事实+推断 | 多日轨迹场景强；单日查询时是重复信息 |
 | 6 | 「{{date}} 的数字」指标卡 | 事实 | 与明细表重复；「无成层云带」这类行价值低 |
 | 7 | 安全 callouts（≤2 条） | 事实→规则 | 好；但与天相卡视觉同权 |
 | 8 | 天相结论 6 张卡（badge+长文字） | **推断** | **核心问题区**：文字墙、无层级、推断与事实无视觉区分 |
@@ -121,7 +133,7 @@ tone, label }，label ∈ 条件较好（≥70）/ 条件一般（≥45）/ 条�
 3. **风与湿度缺时序表达。** wind/gust/rh 数据齐全，风只出现在 8 整点列表里；户外判断里风是核心变量。
 4. **当日 24h 过程感弱。** meteogram 是 7 天横滚（22px/h），看「明天一天」要滚 1.3 屏宽；
    而多数查询发生在「看明天」。当日视图应默认一屏 24h 免横滚。
-5. **三处重复。** 7 日条 / meteogram / space-time / 指标卡 / 8 slot / 24h 明细 —— 同一事实最多出现 4 次。
+5. **三处重复。** 7 日条 / meteogram / 指标卡 / 8 slot / 24h 明细 —— 同一事实最多出现 4 次。
 6. **「为什么」不可验证。** 结论分数的依据埋在文字括号里，无法锚回图上时段，信任建立弱。
 7. **评级语言暴露分数。** 「条件较好 72」的数字是模型分数不是用户语言；星级+词语更诚实可读。
 
@@ -138,13 +150,13 @@ tone, label }，label ∈ 条件较好（≥70）/ 条件一般（≥45）/ 条�
 ## 6. 复用 / 保留 / 重做 / 废弃清单（新设计的输入）
 
 **原样保留（引擎与契约）：**
-`lib/weather.js` 全部 · `sky.js` 全部阈值与同源原则 · `astro.js` · `weather-model.js` ·
+`lib/weather.js` 全部 · `sky.js` 全部阈值与同源原则 · `astro.js` ·
 `route-schedule.js` · api 契约（status 三态 / 窗口内复用 / 30min 缓存）· 免责文案与概率语言铁律 ·
 节点/日期联动 · 分享与存点 · 草稿通知。
 
 **保留但换位置/换形态：**
 7 日条（增强：选中日与图同窗）· meteogram 7 天图（降级为「全周期」视图/横屏页主图）·
-space-time（多日轨迹场景保留，单日查询折叠）· 24h 数字明细（折叠层）· 安全 callouts（保留在分析区）。
+24h 数字明细（折叠层）· 安全 callouts（保留在分析区）。
 
 **新做：**
 当日逐时图（24h 一屏）· 云层带剖面行 · 风 row · 日照条 · 今日户外时间轴 · 天象评级卡 + ReasonPanel ·

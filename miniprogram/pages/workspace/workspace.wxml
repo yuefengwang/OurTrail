@@ -3,82 +3,143 @@
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在核对当前需要关注的事。" />
   </block>
-  <view wx:else class="stack">
-    <view class="stack" style="gap:8px;">
-      <view class="card-header">
-        <text class="eyebrow">{{eyebrow}}</text>
-        <text class="badge success">{{phaseLabel}}</text>
+  <!-- 2026-10-26 style-B Slice 3a：首屏是「森林底身份块 + 抬进它下沿 20px 的纸面板」。
+       .ws-top 必须是不带 gap 的 flex 列：纸面板的 margin-top:-20px 若在同一层再叠 .stack 的 16px gap，
+       实际只盖住 4px（首页 2026-10-26 踩过这一次）；flex 列里也不会发生外边距合并。 -->
+  <view wx:else class="ws-top">
+    <!-- 身份块回答「哪一场、走到哪」。满宽森林底从导航下开始（-24 抵掉 .page 的顶内边距），
+         下沿被纸面板盖住 20px，剩下的是标题与阶段徽标之间的一段呼吸。 -->
+    <view class="workspace-hero">
+      <view class="workspace-identity">
+        <view class="card-header">
+          <text class="eyebrow">{{eyebrow}}</text>
+          <text class="badge on-forest">{{phaseLabel}}</text>
+        </view>
+        <text class="workspace-hero__title">{{title}}</text>
+        <text class="workspace-hero__sub">{{subtitle}}</text>
       </view>
-      <text class="page-title">{{title}}</text>
-      <text class="muted">{{subtitle}}</text>
     </view>
 
-    <!-- 指标即入口：点数字直接跳到对应工作区 -->
-    <view class="metrics">
-      <view class="metric" hover-class="button-hover" bindtap="goRoster"><text class="metric-value">{{pending}}</text><text class="metric-label">待审核 ›</text></view>
-      <view class="metric" hover-class="button-hover" bindtap="goTransport"><text class="metric-value">{{unassigned}}</text><text class="metric-label">待安排车辆 ›</text></view>
-      <view class="metric" hover-class="button-hover" bindtap="goField"><text class="metric-value">{{thirdValue}}</text><text class="metric-label">{{thirdLabel}} ›</text></view>
+    <!-- 纸面板承担其余全部内容：分段器回答「看哪一面」，三格指标是跨分区的导航入口
+         （待审核/待安排车辆/待签到或待到家），面板与 tab0 待办都在同一块纸面上。 -->
+    <view class="sheet-top ws-sheet">
+      <view class="segmented tabs-line" aria-label="工作台分区">
+        <view wx:for="{{tabLabels}}" wx:key="index" class="seg {{tab === index ? 'on' : ''}}" data-tab="{{index}}" bindtap="onTab">{{item}}</view>
+      </view>
+
+      <!-- 三个事实格：C17 保留（删了会失去一眼可见的总量），但去卡片化——纸面本身已经是白面，
+           再叠一层石色卡片只会变成第二层表面。格间只留发丝线，把视觉主块让给下面的检查队列。 -->
+      <view class="workspace-band">
+        <view class="metrics">
+          <view class="metric" hover-class="button-hover" bindtap="goRoster"><text class="metric-value">{{pending}}<text class="metric-unit">人</text></text><text class="metric-label">待审核 ›</text></view>
+          <view class="metric" hover-class="button-hover" bindtap="goTransport"><text class="metric-value">{{unassigned}}<text class="metric-unit">人</text></text><text class="metric-label">待安排车辆 ›</text></view>
+          <view class="metric" hover-class="button-hover" bindtap="goField"><text class="metric-value">{{thirdValue}}<text class="metric-unit">人</text></text><text class="metric-label">{{thirdLabel}} ›</text></view>
+        </view>
+        <!-- 出行方式构成写在指标下面：待安排车辆只统计「需要乘车」的人，自行到达的人不是缺事项 -->
+        <text class="small muted trip-summary">{{tripSummaryLine}}</text>
+      </view>
+
+      <!-- 面板保持挂载、用类名隐藏：自定义组件宿主上 hidden 属性不生效（曾导致四区内容全部平铺）；
+           不用 wx:if 是为了保住各面板内的搜索词、勾选与车辆表单状态。
+           bind:written：任一面板写库成功后宿主重读并下发新 sync-key，兄弟面板才不会拿旧 revision 发命令 -->
+      <roster-panel class="{{tab === 1 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
+      <transport-panel class="{{tab === 2 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
+      <!-- 指标带已经是本页的三个入口（待审核/待安排车辆/待签到或待到家），现场面板不再把同名计数
+           印在常驻头部（A-17）；入口一个都没减：三格与 goField 照旧。 -->
+      <field-panel class="{{tab === 3 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" perspective="organizer" sync-key="{{syncKey}}" bind:written="onPanelSync" page-metrics="{{true}}" />
+
+      <block wx:if="{{tab === 0}}">
+        <!-- ① 现在这一步：主待办占主位，其余待办退为行；
+             有真待办时阶段推进降为次要按钮，没有待办时它才是这一屏唯一的主动作。 -->
+        <view class="workspace-queue">
+          <view class="section-head">
+            <text class="kicker">现在这一步</text>
+            <text class="section-title">当前待办</text>
+          </view>
+          <!-- 队列不再套 .card：纸面板就是它的表面，行间只留发丝线（.list-row 自带 border-bottom），
+               否则 tab0 会变成「白卡里再放白卡」，把检查队列压回第二层。 -->
+          <view class="queue-card">
+            <view wx:if="{{queuePrimary && queuePrimary.id !== 'idle'}}" class="list-row primary" data-target="{{queuePrimary.target}}" hover-class="button-hover" bindtap="goQueueItem">
+              <view class="list-main">
+                <text>{{queuePrimary.label}}{{queuePrimary.blocking ? '（拦路）' : ''}}</text>
+                <text class="list-sub">{{queuePrimary.detail}}</text>
+              </view>
+              <icon name="arrow" size="18" color="#163E35" />
+            </view>
+            <!-- 没有拦路的事时说一句就够，不摆四个 0 让人以为都欠着；这句仍然是阶段状态，不是待办 -->
+            <view wx:if="{{!queuePrimary || queuePrimary.id === 'idle'}}" class="list-row idle-row">
+              <view class="list-main">
+                <text>{{queuePrimary ? queuePrimary.label : '暂时没有拦路的事'}}</text>
+                <text class="list-sub">{{queuePrimary ? queuePrimary.detail : subtitle}}</text>
+              </view>
+            </view>
+            <view wx:for="{{queueRest}}" wx:key="id" class="list-row" hover-class="button-hover" bindtap="goQueueItem" data-target="{{item.target}}">
+              <view class="list-main">
+                <text>{{item.label}}{{item.blocking ? '（拦路）' : ''}}</text>
+                <text class="list-sub">{{item.detail}}</text>
+              </view>
+              <icon name="arrow" size="18" color="#163E35" />
+            </view>
+          </view>
+          <view wx:if="{{canTransition}}" class="button {{queuePrimary && queuePrimary.id !== 'idle' ? 'secondary' : 'primary'}} block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{canTransition && !busy ? 'onTransition' : ''}}">{{nextPhaseLabel}}</view>
+          <!-- 门槛不满足时先说清缺什么、去哪儿补，而不是给一个点不动的灰按钮。
+               这行只由 transitionHint 决定：权限位与门槛清没清是两件事（审计 F-01）。 -->
+          <view wx:if="{{transitionHint}}" class="callout info">
+            <text class="small muted" style="display: block">为什么现在不能推进：{{transitionHint}}</text>
+          </view>
+          <view wx:elif="{{!canTransition}}" class="callout info">
+            <text class="small muted" style="display: block">这一阶段没有可推进的下一步；已归档或已取消的活动只读。</text>
+          </view>
+        </view>
+
+        <!-- ② 时间锚点：领队最该先看到的不是字段，是「还剩多久到我必须做的那一步」 -->
+        <view wx:if="{{milestone}}" class="callout">
+          <text class="callout-title">● {{milestone}}</text>
+        </view>
+
+        <!-- ③ 独立工具：处理完待办之后的去处，不与待办混在同一张卡里。
+             style-B（2026-10-26 批次二 b）：去掉了 leaf 淡绿实底——四个入口是导航而非主行动，
+             改用与页面其余卡片同族的白面细线，把强调色留给待办与阶段。 -->
+        <view class="workspace-tools">
+          <view class="button workspace-tool" hover-class="button-hover" bindtap="goTasks">
+            <text class="workspace-tool__title">任务清单</text>
+            <text class="workspace-tool__sub">装备、采购与记录的分工</text>
+          </view>
+          <view class="button workspace-tool" hover-class="button-hover" bindtap="goNotices">
+            <text class="workspace-tool__title">活动通知</text>
+            <text class="workspace-tool__sub">发布安排，核对实际状态</text>
+          </view>
+          <view class="button workspace-tool" hover-class="button-hover" bindtap="goDetail">
+            <text class="workspace-tool__title">参与者视角</text>
+            <text class="workspace-tool__sub">看看同行的人看到什么</text>
+          </view>
+          <view wx:if="{{canEdit}}" class="button workspace-tool" hover-class="button-hover" bindtap="goEdit">
+            <text class="workspace-tool__title">编辑活动</text>
+            <text class="workspace-tool__sub">改时间、集合点与说明</text>
+          </view>
+        </view>
+
+        <!-- ④ 阶段区块：时间轴回答「走到哪」，取消是破坏性动作、只留文字入口 -->
+        <view class="workspace-phase">
+          <view class="section-head">
+            <text class="kicker">阶段</text>
+            <text class="section-title">活动进程</text>
+          </view>
+          <!-- ✓ 已完成 · ● 当前 · ○ 还没到：户外强光下不能只靠颜色承载状态（AGENTS 铁律 / 设计走查） -->
+          <view class="card">
+            <view class="timeline">
+              <view wx:for="{{phaseTimeline}}" wx:key="phase" class="timeline-item">
+                <text class="badge {{item.current ? 'on-forest' : (item.done ? 'success' : 'neutral')}}">{{item.mark}} {{item.label}}{{item.current ? ' · 当前' : ''}}</text>
+              </view>
+            </view>
+          </view>
+          <!-- 取消是破坏性动作，降级为文字入口；真正的危险确认留在弹层里 -->
+          <view wx:if="{{canCancel}}" class="button text" hover-class="button-hover" bindtap="{{busy ? '' : 'onTransition'}}" data-next="cancelled">取消这场活动（仅出发前可作废）</view>
+        </view>
+
+        <view wx:if="{{message}}" class="callout success">{{message}}</view>
+      </block>
     </view>
-    <!-- 出行方式构成写在指标下面：待安排车辆只统计「需要乘车」的人，自行到达的人不是缺事项 -->
-    <text class="small muted" style="display:block;margin-top:-4px;">{{tripSummaryLine}}</text>
-
-    <view class="segmented" aria-label="工作台分区">
-      <view wx:for="{{tabLabels}}" wx:key="index" class="seg {{tab === index ? 'on' : ''}}" data-tab="{{index}}" bindtap="onTab">{{item}}</view>
-    </view>
-
-    <!-- 面板保持挂载、用类名隐藏：自定义组件宿主上 hidden 属性不生效（曾导致四区内容全部平铺）；
-         不用 wx:if 是为了保住各面板内的搜索词、勾选与车辆表单状态。
-         bind:written：任一面板写库成功后宿主重读并下发新 sync-key，兄弟面板才不会拿旧 revision 发命令 -->
-    <roster-panel class="{{tab === 1 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
-    <transport-panel class="{{tab === 2 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" sync-key="{{syncKey}}" bind:written="onPanelSync" />
-    <field-panel class="{{tab === 3 ? '' : 'hide'}}" activity-id="{{activityId || ''}}" perspective="organizer" sync-key="{{syncKey}}" bind:written="onPanelSync" />
-
-    <block wx:if="{{tab === 0}}">
-      <!-- 时间锚点：领队最该先看到的不是字段，是「还剩多久到我必须做的那一步」 -->
-      <view wx:if="{{milestone}}" class="callout">
-        <text class="callout-title">● {{milestone}}</text>
-      </view>
-
-      <view class="stack" style="gap:0;">
-        <text class="section-title">当前待办</text>
-        <!-- 待办由 journey.leaderQueue 生成：只列真的拦路的事，每条带人数与去处；
-             没有拦路事时给一句话，而不是摆四个 0 让人以为都欠着 -->
-        <view wx:for="{{queue}}" wx:key="id" class="list-row" hover-class="button-hover" bindtap="goQueueItem" data-target="{{item.target}}">
-          <view class="list-main">
-            <text>{{item.label}}{{item.blocking ? '（拦路）' : ''}}</text>
-            <text class="list-sub">{{item.detail}}</text>
-          </view>
-          <icon name="arrow" size="18" color="#163E35" />
-        </view>
-        <view class="list-row" hover-class="button-hover" bindtap="goNotices">
-          <view class="list-main">
-            <text>活动通知</text>
-            <text class="list-sub">发布安排，核对通知的实际状态</text>
-          </view>
-          <icon name="arrow" size="18" color="#163E35" />
-        </view>
-      </view>
-
-      <view class="stack" style="gap:12px;">
-        <text class="section-title">活动进程</text>
-        <!-- ✓ 已完成 · ● 当前 · ○ 还没到：户外强光下不能只靠颜色承载状态（AGENTS 铁律 / 设计走查） -->
-        <view class="timeline">
-          <view wx:for="{{phaseTimeline}}" wx:key="phase" class="timeline-item">
-            <text class="badge {{item.current ? 'on-forest' : (item.done ? 'success' : 'neutral')}}">{{item.mark}} {{item.label}}{{item.current ? ' · 当前' : ''}}</text>
-          </view>
-        </view>
-        <view class="button primary block {{canTransition && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canTransition && !busy ? 'onTransition' : ''}}">{{nextPhaseLabel || '这一步现在还不能做'}}</view>
-        <!-- 门槛不满足时先说清缺什么、去哪儿补，而不是给一个点不动的灰按钮 -->
-        <text wx:if="{{!canTransition && transitionHint}}" class="small muted" style="display:block;">为什么现在不能推进：{{transitionHint}}</text>
-        <text wx:elif="{{!canTransition}}" class="small muted" style="display:block;">这一阶段没有可推进的下一步；已归档或已取消的活动只读。</text>
-        <view wx:if="{{canEdit}}" class="button text" hover-class="button-hover" bindtap="goEdit">编辑活动</view>
-      </view>
-      <!-- 取消是破坏性动作，降级为文字入口；真正的危险确认留在弹层里 -->
-      <view wx:if="{{canCancel}}" class="button text" hover-class="button-hover" bindtap="{{busy ? '' : 'onTransition'}}" data-next="cancelled">取消这场活动（仅出发前可作废）</view>
-
-      <view class="button secondary block" hover-class="button-hover" bindtap="goDetail">以参与者视角查看活动</view>
-      <view wx:if="{{message}}" class="callout success">{{message}}</view>
-    </block>
   </view>
 
   <overlay open="{{transitionOpen}}" kind="dialog" title="{{transitionTitle}}" bind:close="onTransitionClose">

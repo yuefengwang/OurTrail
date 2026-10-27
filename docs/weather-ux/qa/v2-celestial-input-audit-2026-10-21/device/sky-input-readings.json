@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-21",
+  "waitedSky": true,
+  "updatedAt": "2026-10-21 12:35",
+  "skyInputLoading": false,
+  "skyInputNote": "",
+  "condOverall": {
+    "score": 69,
+    "tone": "warning",
+    "label": "条件一般",
+    "stars": "★★★☆☆",
+    "insufficient": false
+  },
+  "condSilent": {
+    "count": 3,
+    "titles": "晨昏光染、云海、彩虹",
+    "text": "这些天相今天条件不成立，就不单独列出：晨昏光染、云海、彩虹。"
+  },
+  "cards": [
+    {
+      "key": "star",
+      "title": "星空",
+      "stars": "★★★☆☆",
+      "tone": "warning",
+      "window": "21:00-23:00 / 次日 00:00-06:00",
+      "text": "天文暗夜 21:00-23:00 / 次日 00:00-06:00（10 小时，今晚入夜到次日晨），夜间晴朗，但月光偏亮，星空条件一般（暗夜晴空 100%，盈凸月月照 77%，月亮在夜段 7/10 小时在地平线上（最高 48°）；CAMS 气溶胶低、7Timer 透明度好、seeing 好；光污染中等（DarkSkySites.com，模型估算））。",
+      "look": "关掉手电、避开城镇光害，找开阔北向视野",
+      "evidence": [
+        "夜段高层云 0% · 中层云 0%",
+        "夜段观察点上方云量峰值 平均 0%",
+        "月照 77%（盈凸月）",
+        "CAMS 气溶胶 AOD 0.06",
+        "7Timer 透明度 2/8（越小越好） · seeing 3/8（越小越好）",
+        "天空亮度 Bortle 4 · SQM 20.82（DarkSkySites.com，模型估算）"
+      ]
+    },
+    {
+      "key": "galaxy",
+      "title": "银河",
+      "stars": "★★★☆☆",
+      "tone": "warning",
+      "window": "21:00 前后",
+      "text": "银心在夜段最高约 9°，但月光偏亮（月亮在银心可见时段 1/1 小时在地平线上（最高 48°））；银心方向云约 0%（方向为模式粗判）；CAMS 气溶胶低、7Timer 透明度好、seeing 好；光污染中等（DarkSkySites.com，模型估算），银河不建议抱太大期望。",
+      "look": "朝西南（约 229 度）找银心带（此方位山脊约 2°）",
+      "evidence": [
+        "夜段高层云 0% · 中层云 0%",
+        "夜段观察点上方云量峰值 平均 0%",
+        "月照 77%（盈凸月）",
+        "CAMS 气溶胶 AOD 0.06",
+        "7Timer 透明度 2/8（越小越好） · seeing 3/8（越小越好）",
+        "天空亮度 Bortle 4 · SQM 20.82（DarkSkySites.com，模型估算）"
+      ]
+    }
+  ],
+  "errors": []
+}

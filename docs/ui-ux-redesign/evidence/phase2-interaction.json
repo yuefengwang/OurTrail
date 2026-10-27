@@ -1,0 +1,80 @@
+[
+  {
+    "id": "P2-01a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "路线库分组渲染：kicker 2 · 行 289 · mine=289 shared=0"
+  },
+  {
+    "id": "P2-02a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "路线详情 hero 绘制 350×240 · hero 指标 3 · 分区头 6 · 标题「月亮湖穿越伍须海-1790560849819.g」"
+  },
+  {
+    "id": "P2-03a",
+    "verdict": "FAIL",
+    "dim": "UI",
+    "reason": "inputs=0 sticky=0 heads=0"
+  },
+  {
+    "id": "P2-04a",
+    "verdict": "FAIL",
+    "dim": "UI",
+    "reason": "sticky=0 heads=2 loading=false denied=活动尚未开放、已截止或没有报名权限。已有安排不会改变。"
+  },
+  {
+    "id": "P2-04b",
+    "verdict": "N/A",
+    "dim": "UI",
+    "reason": "当前不是新报名状态（mode=new），勾选路径不适用"
+  },
+  {
+    "id": "P2-05a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "编辑器装配：步骤 3 · 分区头 2 · 固定操作栏 1 · 输入 1"
+  },
+  {
+    "id": "P2-05b",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "真实 tap 第 02 步：step=1（分区头 2）"
+  },
+  {
+    "id": "P2-05c",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "真实 tap 第 03 步：step=2"
+  },
+  {
+    "id": "P2-06a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "通知页：分区头 2 · 通知卡 667"
+  },
+  {
+    "id": "P2-07a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "我的页分组：分区头 4 · 最近活动封面 3"
+  },
+  {
+    "id": "P2-08a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "隐私页层级：page-title 1 · 小节标题 4（此前 .h1/.h2 全站无定义=无层级）"
+  },
+  {
+    "id": "P2-09a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "天气总入口：分区头 2"
+  },
+  {
+    "id": "P2-10a",
+    "verdict": "PASS",
+    "dim": "UI",
+    "reason": "lab 页渲染（denied=无 · 分区头 4）"
+  }
+]

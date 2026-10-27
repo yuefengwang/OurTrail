@@ -1,0 +1,148 @@
+{
+  "tag": "before",
+  "port": "9420",
+  "state": [
+    {
+      "step": 0,
+      "steps": 4,
+      "publishReady": true,
+      "requiredMissingText": "",
+      "stickyButtons": [
+        {
+          "text": "发布活动",
+          "cls": "button primary block"
+        },
+        {
+          "text": "继续完善",
+          "cls": "button text"
+        }
+      ],
+      "segMode": "segmented",
+      "activeSeg": {
+        "text": "01 信息",
+        "color": "rgb(22, 62, 53)",
+        "weight": "600",
+        "bg": "rgb(255, 255, 255)"
+      },
+      "counts": {
+        ".section-head": 5,
+        ".step-group": 2,
+        ".card": 3,
+        ".form-actions": 1,
+        ".ce-cover-row": 0,
+        ".ce-group": 0
+      }
+    },
+    {
+      "step": 1,
+      "steps": 4,
+      "publishReady": true,
+      "requiredMissingText": "",
+      "stickyButtons": [
+        {
+          "text": "上一步",
+          "cls": "button text"
+        },
+        {
+          "text": "发布活动",
+          "cls": "button primary block"
+        },
+        {
+          "text": "继续完善",
+          "cls": "button text"
+        }
+      ],
+      "segMode": "segmented",
+      "activeSeg": {
+        "text": "02 路线",
+        "color": "rgb(22, 62, 53)",
+        "weight": "600",
+        "bg": "rgb(255, 255, 255)"
+      },
+      "counts": {
+        ".section-head": 4,
+        ".step-group": 1,
+        ".card": 3,
+        ".form-actions": 1,
+        ".ce-cover-row": 0,
+        ".ce-group": 0
+      }
+    },
+    {
+      "step": 2,
+      "steps": 4,
+      "publishReady": true,
+      "requiredMissingText": "",
+      "stickyButtons": [
+        {
+          "text": "上一步",
+          "cls": "button text"
+        },
+        {
+          "text": "发布活动",
+          "cls": "button primary block"
+        },
+        {
+          "text": "继续完善",
+          "cls": "button text"
+        }
+      ],
+      "segMode": "segmented",
+      "activeSeg": {
+        "text": "03 介绍",
+        "color": "rgb(22, 62, 53)",
+        "weight": "600",
+        "bg": "rgb(255, 255, 255)"
+      },
+      "counts": {
+        ".section-head": 2,
+        ".step-group": 0,
+        ".card": 2,
+        ".form-actions": 1,
+        ".ce-cover-row": 1,
+        ".ce-group": 0
+      }
+    },
+    {
+      "step": 3,
+      "steps": 4,
+      "publishReady": true,
+      "requiredMissingText": "",
+      "stickyButtons": [
+        {
+          "text": "上一步",
+          "cls": "button text"
+        },
+        {
+          "text": "发布活动",
+          "cls": "button primary block"
+        }
+      ],
+      "segMode": "segmented",
+      "activeSeg": {
+        "text": "04 发布",
+        "color": "rgb(22, 62, 53)",
+        "weight": "600",
+        "bg": "rgb(255, 255, 255)"
+      },
+      "counts": {
+        ".section-head": 7,
+        ".step-group": 5,
+        ".card": 6,
+        ".form-actions": 1,
+        ".ce-cover-row": 0,
+        ".ce-group": 0
+      }
+    }
+  ],
+  "data": {
+    "publishReady": true,
+    "requiredMissingText": "",
+    "stepLabels": [
+      "01 信息",
+      "02 路线",
+      "03 介绍",
+      "04 发布"
+    ]
+  }
+}

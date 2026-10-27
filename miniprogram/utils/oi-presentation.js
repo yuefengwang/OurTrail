@@ -4,8 +4,8 @@
  *
  * 输入  OI.buildOutdoorIntelligence 的产出（conditions/opportunities/meta）
  * 输出  {
- *   items: [{ timeText, title, tierText, tierClass, summaryText, hour, rank, type }],
- *   tapZones: [{ left, width, hour }],          // 时间轴上可点的窗口区（百分比）
+ *   items: [{ timeText, title, tierText, tierClass, summaryText, hour, rank, type, fromMin, toMin }],
+ *   tapZones: [{ left, width, hour }],          // 时间轴上可点的窗口区（百分比；跨零点只含今晚段）
  *   timelineSvg: '<svg…>',                      // 机会时间轴（与 Meteogram 同一 timeScale）
  *   silenceNote: null | '今天暂无明显户外机会',
  *   astroNote: '天文时刻为确定性事件',
@@ -82,13 +82,17 @@ function pad2(n) { return (n < 10 ? '0' : '') + n }
 /* 跨零点窗口：OI 模型输出真实时间（to <= from 表示跨零点），
  * 呈现层负责切段与标注（不污染模型）：
  *   segments → [{ fromMin, toMin }]（都在 [0,1440] 内；跨零点拆两段）
- *   timeLabel → '今晚 22:30 → 次日 02:40' | '05:00–10:00' */
-function splitSegments(from, to) {
-  const f = hmMin(from), t = hmMin(to)
-  if (f < 0 || t < 0) return []
+ *   timeLabel → '今晚 22:30 → 次日 02:40' | '05:00–10:00'
+ * 24h 卡在**时间轴上只画今晚段**（计划 §5.3 保守方案）：次日段贴到今日最左端是谎，
+ * 但列表文案仍完整说明「今晚 … → 次日 …」，后半夜部分不隐藏。 */
+function segmentsOfMinutes(f, t) {
+  if (!(f >= 0) || !(t >= 0)) return []
   if (t === f) return [{ fromMin: f, toMin: Math.min(1440, f + 60) }]  // 单小时窗：[from, from+1h)
   if (t > f) return [{ fromMin: f, toMin: t }]
   return [{ fromMin: f, toMin: 1440 }, { fromMin: 0, toMin: t }]
+}
+function splitSegments(from, to) {
+  return segmentsOfMinutes(hmMin(from), hmMin(to))
 }
 function isCrossMidnight(from, to) {
   const f = hmMin(from), t = hmMin(to)
@@ -107,21 +111,32 @@ function timeLabel(from, to) {
 function evidenceAnchor(w2) {
   const segs = splitSegments(w2.from, w2.to)
   if (!segs.length) return null
+  const cross = isCrossMidnight(w2.from, w2.to)
   const startHour = segs[0].fromMin / 60
-  const endSeg = segs[segs.length - 1]
-  const endHour = (endSeg.toMin === 1440 ? 1440 : endSeg.toMin) / 60
+  let endHour
   let focusMin = -1
   const head = primaryEvidence(w2)
   const atMin = head ? hmMin(head.at) : -1
-  if (atMin >= 0 && segs.some(function (sg) {
-    return atMin >= sg.fromMin && (atMin < sg.toMin || (sg.toMin === 1440 && atMin < 1440))
-  })) {
-    focusMin = atMin
+  if (cross) {
+    /* 跨零点：24h 图上只有今晚这一段 [from, 24:00)，锚点必须落在这里。
+       次日 02:00 的证据在小程序这张图上不存在——采用它会让「看图」跳到一个
+       今天不存在的时刻（旧实现把次日段贴到今日最左端，正是同一类谎）。 */
+    endHour = 24
+    if (atMin >= segs[0].fromMin && atMin < 1440) focusMin = atMin
+    else focusMin = segs[0].fromMin + Math.floor((1440 - segs[0].fromMin) / 2)
   } else {
-    /* 中点（跨零点感知：span 沿时间轴单向累计） */
-    const span = endSeg.toMin - segs[0].fromMin + (segs.length > 1 ? 1440 : 0)
-    focusMin = segs[0].fromMin + Math.floor(span / 2)
-    if (focusMin >= 1440) focusMin -= 1440
+    const endSeg = segs[segs.length - 1]
+    endHour = (endSeg.toMin === 1440 ? 1440 : endSeg.toMin) / 60
+    if (atMin >= 0 && segs.some(function (sg) {
+      return atMin >= sg.fromMin && (atMin < sg.toMin || (sg.toMin === 1440 && atMin < 1440))
+    })) {
+      focusMin = atMin
+    } else {
+      /* 中点（跨零点感知：span 沿时间轴单向累计） */
+      const span = endSeg.toMin - segs[0].fromMin + (segs.length > 1 ? 1440 : 0)
+      focusMin = segs[0].fromMin + Math.floor(span / 2)
+      if (focusMin >= 1440) focusMin -= 1440
+    }
   }
   const focusHour = Math.floor(focusMin / 60) % 24
   return {
@@ -179,12 +194,16 @@ function buildOiCard(oi, opts) {
     return hmMin(w2.from) >= 0 && hmMin(w2.to) >= 0
   }).map(function (w2) {
     const fromMin = hmMin(w2.from)
+    const toMin = hmMin(w2.to)
     const tier = tierOf(w2)
     const cross = isCrossMidnight(w2.from, w2.to)
-    /* 「进行中」：now 落在窗口内（跨零点窗口按两段判） */
+    /* 「进行中」：now 落在窗口内。跨零点窗口在 24h 卡上只有今晚段可表示 ⇒ 只按今晚段判：
+       now=01:00 不是"今晚 23:00→次日 04:00"的进行中（那是明天的图），now=23:30 才是。 */
     let live = false
     if (nowMin != null) {
-      live = splitSegments(w2.from, w2.to).some(function (sg) {
+      const segs = splitSegments(w2.from, w2.to)
+      const visible = cross ? segs.slice(0, 1) : segs
+      live = visible.some(function (sg) {
         return nowMin >= sg.fromMin && nowMin < sg.toMin
       })
     }
@@ -192,6 +211,10 @@ function buildOiCard(oi, opts) {
       type: w2.type,
       title: w2.interpretation || TITLES[w2.type] || w2.type,
       timeText: timeLabel(w2.from, w2.to),
+      /* 起止分钟是附加字段：applySelection / 排序用它，跨零点时 toMin < fromMin。
+         timeText 只负责显示，不拿它反解业务时间（「今晚 … → 次日 …」反解会丢语义）。 */
+      fromMin: fromMin,
+      toMin: toMin,
       hour: Math.max(0, Math.min(23, Math.floor(fromMin / 60))),
       tierText: tier.text,
       tierClass: tier.cls,
@@ -205,10 +228,14 @@ function buildOiCard(oi, opts) {
     }
   })
 
-  /* 列表排序：primary 在前，其余按开始时间（时间轴仍按时间序） */
+  /* 列表排序：primary 在前，其余按开始时间（时间轴仍按时间序）。
+     开始时间用 fromMin：跨零点条目的 timeText 是「今晚 … → 次日 …」，拿它按 '–' 切
+     既切不出时间、又会得到 -1（旧实现把它们全排到最前面）。 */
   const itemsSorted = items.slice().sort(function (a, b) {
     if (a.rank !== b.rank) return a.rank === 'primary' ? -1 : 1
-    return hmMin(a.timeText.split('–')[0]) - hmMin(b.timeText.split('–')[0])
+    const af = Number.isFinite(a.fromMin) ? a.fromMin : hmMin(a.timeText.split('–')[0])
+    const bf = Number.isFinite(b.fromMin) ? b.fromMin : hmMin(b.timeText.split('–')[0])
+    return af - bf
   })
 
   /* 时间轴带分配：单轨道优先，重叠放第二轨道（最多两轨，不做 Gantt 墙） */
@@ -217,7 +244,11 @@ function buildOiCard(oi, opts) {
     return hmMin(w2.from) >= 0 && hmMin(w2.to) >= 0
   }).forEach(function (w2) {
     const segs = splitSegments(w2.from, w2.to)
+    const cross = isCrossMidnight(w2.from, w2.to)
     segs.forEach(function (sg, si) {
+      /* 计划 §5.3：跨零点窗口在 24h 时间轴上**只画今晚段**，次日段不画——
+         次日段只能贴到今日最左端（00:00 起），那不是这一天发生的事。列表文案照旧说明后半夜。 */
+      if (cross && si > 0) return
       spans.push({
         type: w2.type,
         fromMin: sg.fromMin,
@@ -225,7 +256,7 @@ function buildOiCard(oi, opts) {
         hour: Math.max(0, Math.min(23, Math.floor(sg.fromMin / 60))),
         color: TYPE_COLOR[w2.type] || '#346583',
         title: w2.interpretation || TITLES[w2.type] || w2.type,
-        nextDay: si > 0,   // 跨零点的次日段（贴 00:00 起）
+        nextDay: false,   // 跨零点只 push 今晚段；字段保留以维持 span 形状
       })
     })
   })
@@ -325,7 +356,12 @@ function buildHorizonOiCard(days, opts) {
         focusLabel: it.anchor.focusLabel,
         label: it.anchor.label,
       } : null
-      items.push(Object.assign({}, it, {
+      /* fromMin/toMin 是 24h 卡内部字段（排序/命中/跨零点判定用），不得漏进 48/72h
+         item：horizon 卡是本轮的**阳性对照**，输出必须与改前逐字节相同。 */
+      const base = Object.assign({}, it)
+      delete base.fromMin
+      delete base.toMin
+      items.push(Object.assign(base, {
         dayLabel: day.dayLabel,
         absHour: absHour,
         anchor: anchor,
@@ -404,19 +440,24 @@ function applyHorizonSelection(card, absHour) {
       if (absHour >= f && absHour < t2 && card.selGroup < 0) { card.selGroup = gi; card.selIndex = ii }
     })
   })
-  /* 宽语义：选中小时落在窗口段内（anchor 段）也算命中 */
+  /* 宽语义：选中小时落在窗口段内也算命中。
+     窗口起点可能是分钟级（云海按民用晨昏裁剪后 06:52），不能把它当整数小时；
+     起点/终点都用绝对小时（跨日已由 buildHorizonOiCard 的 di*24 展开），
+     终点小于起点时视为跨零点。 */
   if (card.selGroup < 0) {
     card.groups.forEach(function (g, gi) {
       g.items.forEach(function (it, ii) {
         if (card.selGroup >= 0 || !it.anchor) return
         const a = it.anchor
-        const segs = splitSegments(
-          pad2(a.startHour >= 24 ? a.startHour - 24 : a.startHour) + ':00',
-          pad2(a.endHour >= 24 ? a.endHour - 24 : a.endHour) + ':00')
-        const m = (absHour % 24) * 60 + (a.endHour >= 24 && a.startHour >= 24 ? 0 : 0)
-        const sameDay = Math.floor(a.startHour / 24) === Math.floor(absHour / 24)
-        if (sameDay && segs.some(function (sg) { return (absHour % 24) * 60 >= sg.fromMin && (absHour % 24) * 60 < sg.toMin })) {
-          card.selGroup = gi; card.selIndex = ii
+        const start = Number(a.startHour)
+        let end = Number(a.endHour)
+        if (!Number.isFinite(start) || !Number.isFinite(end)) return
+        if (end < start) end += 24
+        if (end === start) end = start + 1
+        const focus = Number(absHour)
+        if (focus >= start && focus < end) {
+          card.selGroup = gi
+          card.selIndex = ii
         }
       })
     })
@@ -458,27 +499,51 @@ function buildMultiDay(days, getOi) {
 function applySelection(card, hour) {
   if (!card) return false
   const all = (card.items || []).concat(card.moreItems || [])
-  function hits(it) {
-    const segs = splitSegments(it.timeText.indexOf('→') >= 0
-      ? it.timeText.replace(/^今晚 /, '').split(' → ')[0]
-      : it.timeText.split('–')[0],
+  function segsOf(it) {
+    /* 新形状带 fromMin/toMin（buildOiCard 的附加字段）：跨零点窗口只有今晚段可点，
+       次日段不在这张 24h 图上 ⇒ 只返回第一段（hour=23 命中，hour=01 不命中）。
+       旧形状（没有 fromMin）退回旧的 timeText 解析，行为逐字节不变。 */
+    if (Number.isFinite(it.fromMin) && Number.isFinite(it.toMin) && it.fromMin >= 0 && it.toMin >= 0) {
+      const segs = segmentsOfMinutes(it.fromMin, it.toMin)
+      return it.toMin < it.fromMin ? segs.slice(0, 1) : segs
+    }
+    const t = it.timeText
+    return splitSegments(it.timeText.indexOf('→') >= 0
+      ? t.replace(/^今晚 /, '').split(' → ')[0]
+      : t.split('–')[0],
       it.timeText.indexOf('→') >= 0
-        ? it.timeText.split(' → ')[1]
-        : it.timeText.split('–')[1] || it.timeText.split('–')[0])
-    const m = hour * 60
-    return segs.some(function (sg) { return m >= sg.fromMin && m < sg.toMin })
+        ? t.split(' → ')[1]
+        : t.split('–')[1] || t.split('–')[0])
+  }
+  const m = hour * 60
+  function hits(it) {
+    return segsOf(it).some(function (sg) { return m >= sg.fromMin && m < sg.toMin })
   }
   let hit = -1
   all.forEach(function (it, i) { if (hit < 0 && hits(it)) hit = i })
-  if (hit >= (card.items || []).length) {
-    /* 命中折叠区 → 提升到可见列表末尾 */
-    const promoted = all[hit]
-    card.moreItems = (card.moreItems || []).filter(function (it) { return it !== promoted })
-    card.items = (card.items || []).concat([promoted])
-    hit = card.items.length - 1
+  /* 兜底：窗口起点不在整点时，条目自己的 anchor hour = floor(fromMin/60) 落在该窗口之外
+   * （实测峨眉山 CLOUD_SEA「06:45–07:00」anchor hour=6 ⇒ 点这一条永远 selIndex=-1）。
+   * 只在上面那条**一个都没命中**时才启用 ⇒ 任何原本选得中的点击给出的结果逐字节不变（包含关系是重叠关系的子集）。
+   * 多个重叠候选取「本小时内最早开始」的那段，保证确定性；终点仍是开区间，所以窗口结束的那一格不算命中。 */
+  if (hit < 0) {
+    let best = -1, bestFrom = Infinity
+    all.forEach(function (it, i) {
+      segsOf(it).forEach(function (sg) {
+        if (m < sg.toMin && m + 60 > sg.fromMin && sg.fromMin < bestFrom) { bestFrom = sg.fromMin; best = i }
+      })
+    })
+    hit = best
   }
-  card.selIndex = hit
-  card.selSummary = hit >= 0 ? all[hit].summaryText : ''
+  const picked = hit >= 0 ? all[hit] : null
+  if (picked && hit >= (card.items || []).length) {
+    /* 命中折叠区 → 提升到可见列表末尾 */
+    card.moreItems = (card.moreItems || []).filter(function (it) { return it !== picked })
+    card.items = (card.items || []).concat([picked])
+  }
+  /* selIndex 必须与 selSummary 指向同一个对象：旧写法把提升后的下标拿去索引提升前的 all，
+   * 提升 moreItems 里非首条时会让「高亮的那行」和「展开的摘要」分属两条机会。 */
+  card.selIndex = picked ? (card.items || []).indexOf(picked) : -1
+  card.selSummary = picked ? picked.summaryText : ''
   return true
 }
 

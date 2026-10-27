@@ -51,6 +51,17 @@ const OPPORTUNITY = {
  * 光污染与地形遮挡没有可靠数据源，必须写出来，否则读者会以为已经纳入。 */
 const NIGHT_LIMIT = '只看云量与月照：光污染与地形遮挡无数据源，未纳入判断'
 
+/* OI 的夜间窗口仍只由 hourMarks（云/月照）决定；地形/光污染已经进入主结论卡，
+   所以边界话术要分开说，不能在有输入时还宣称“无数据源”。 */
+function nightLimit(ctx) {
+  const hasLP = !!(ctx && ctx.lightPollution)
+  const hasTerrain = !!(ctx && ctx.terrain && Array.isArray(ctx.terrain.horizon) && ctx.terrain.horizon.length)
+  if (hasLP && hasTerrain) return 'OI 窗口只看云量与月照；光污染与地形已用于主结论卡'
+  if (hasLP) return 'OI 窗口只看云量与月照；光污染已用于主结论卡，地形遮挡无读数'
+  if (hasTerrain) return 'OI 窗口只看云量与月照；地形已用于主结论卡，光污染无读数'
+  return NIGHT_LIMIT
+}
+
 /* Rank：静态基础优先级（稀有性 × 户外价值），不伪装成科学评分 */const BASE_RANK = {
   CLOUD_SEA: 'primary',
   ALPENGLOW: 'primary',
@@ -429,9 +440,15 @@ function buildOpportunities(ctx, conditions) {
   const out = []
   const detail = ctx.detail || []
   const civil = agenda.civilWindow(ctx.sun)
+  /* 今晚跨夜序列（可选）。只有形状合法（带 d、绝对时间严格递增）才启用；
+     没有它时本函数的所有输出与旧实现逐字节相同（48/72h 逐日 OI 走这条）。 */
+  const nights = agenda.isNightSequence(ctx.nightHours) ? ctx.nightHours : null
 
   /* 1) hourMarks 簇 → 天相窗口（cloudSea/golden/blueHour/star/galaxy/rainbow/alpenglow） */
   agenda.clustersOf(detail, ctx.marks || {}).forEach(function (c) {
+    /* 当日 detail 里的 galaxy/star 是**前夜尾段**（00:00–05:00），不是今晚的窗口；
+       有今晚序列时改由下面的夜簇产出，这里必须跳过，否则同一现象会被标成"今天凌晨"。 */
+    if (nights && agenda.isNightKey(c.key)) return
     const type = markType(c.key)
     if (!type) return
     let from = c.from, to = c.to
@@ -451,10 +468,29 @@ function buildOpportunities(ctx, conditions) {
     const ev = (ctx.factsFor && ctx.factsFor(c.key)) || []
     if (NIGHT_TYPES[type]) {
       if (skyBlocked(conditions, from, to)) return   // 剖面说头顶有云 ⇒ 这张卡不成立，省略
-      ev.push({ fact: NIGHT_LIMIT, at: from, kind: K.NIGHT_LIMIT })
+      ev.push({ fact: nightLimit(ctx), at: from, kind: K.NIGHT_LIMIT })
     }
     out.push(makeWindow(type, from, to, ev, extra, hours, ctx))
   })
+
+  /* 1b) 今晚序列 → galaxy/star 跨零点窗口（from 今晚、to 次日时钟串：to<from 即跨零点）。
+     纯次日窗口（fromD 已在次日）在 24h 卡里无法表示，一律不产出（结论卡/日程仍会显示）。
+     窗口小时用**簇自己的 hours**：detailHours(detail, ...) 只认当日 24h，会把跨零点的后半段筛掉。 */
+  if (nights) {
+    agenda.clustersOf(nights, ctx.marks || {}, ctx.date).forEach(function (c) {
+      if (!agenda.isNightKey(c.key)) return
+      if (c.fromD !== ctx.date) return
+      const type = markType(c.key)
+      if (!type) return
+      const from = c.from, to = c.to
+      const ev = (ctx.factsFor && ctx.factsFor(c.key)) || []
+      if (NIGHT_TYPES[type]) {
+        if (skyBlocked(conditions, from, to)) return
+        ev.push({ fact: nightLimit(ctx), at: from, kind: K.NIGHT_LIMIT })
+      }
+      out.push(makeWindow(type, from, to, ev, {}, c.hours, ctx))
+    })
+  }
 
   /* 2) 条件态连续段 → IN_CLOUD / VIEW_WINDOW / CLOUD_BELOW 窗口 */
   const runs = conditionRuns(conditions)
@@ -572,9 +608,14 @@ const NIGHT_BLOCKED = { IN_CLOUD: true, CLOUD_ABOVE: true }
 function skyBlocked (conditions, from, to) {
   if (!conditions || !conditions.length) return false
   const f = sky.hourMin(from), t = sky.hourMin(to)
+  /* 跨零点窗口（to < from，to 是次日时钟）：conditions 只有**今天**的逐时条件态，
+     次日没有读数。按旧式 [f-30, t+30] 去比会把整个今日段漏掉、反而去查次日凌晨
+     （永远查不到 ⇒ 误判"没被挡"）。这里只检查今日段 [from, 24:00)：
+     缺测不是"被挡"，但今天已经测到的头顶云必须照挡。 */
+  const end = t < f ? 1440 : t
   return conditions.some(function (c) {
     const m = sky.hourMin(c.t)
-    if (!(m >= f - 30 && m <= t + 30)) return false
+    if (!(m >= f - 30 && m <= end + 30)) return false
     return NIGHT_BLOCKED[c.key] === true || (c.holds || []).indexOf('mid') !== -1
   })
 }
@@ -602,7 +643,9 @@ function makeWindow(type, from, to, evidence, extra, hours, ctx) {
  *   lat, lng, heading?,
  *   cloudField?（Phase 1 适配器产出，含 covered；有则走云场条件）
  *   marks?（缺省由 sky.hourMarks 计算——单源阈值，不改）
- *   sun/win/moon/galaxySeason?（缺省由 astro 计算）
+ *   cloudLevels/terrain/lightPollution/atmosphere/spatial?（缺省 marks 也要拿到与主卡相同的
+ *     增强输入，否则同一时刻的 OI 窗口与结论卡会各判一套）
+ *   sun/win/moon?（缺省由 astro 计算）
  *   factsFor?（缺省 conditions.factsFor）
  * }
  * @returns { conditions, opportunities, meta }
@@ -612,6 +655,9 @@ function buildOutdoorIntelligence(ctx) {
     return { conditions: [], opportunities: [], meta: { silence: true } }
   }
   const full = Object.assign({}, ctx)
+  /* 今晚跨夜序列（可选，计划 §5.3）：只接受形状合法的序列（带 d、绝对时间严格递增）。
+     它只影响 galaxy/star 的窗口归属与证据夜段，不碰云海/光染/彩虹/条件态。 */
+  full.nightHours = agenda.isNightSequence(ctx.nightHours) ? ctx.nightHours : null
   /* 云场采样器：适配器产出是 {times, altitudes, values} 数据网格，
      这里包装成 sample(t, alt)（时间维 CR、海拔维线性）供条件态与证据采样。 */
   if (full.cloudField && !full.cloudField.sample) {
@@ -627,6 +673,11 @@ function buildOutdoorIntelligence(ctx) {
       date: ctx.date, lat: ctx.lat, lng: ctx.lng,
       elevation: ctx.userAltitude, elevOK: ctx.elevOK !== false,
       detail: ctx.detail,
+      cloudLevels: ctx.cloudLevels || null,
+      terrain: ctx.terrain || null,
+      lightPollution: ctx.lightPollution,
+      atmosphere: ctx.atmosphere,
+      spatial: ctx.spatial,
     })
     full.marks = {}
     Object.keys(raw).forEach(function (t) {
@@ -636,10 +687,15 @@ function buildOutdoorIntelligence(ctx) {
   if (!full.sun && ctx.lat != null) full.sun = require('./astro.js').sunTimes(ctx.date, ctx.lat, ctx.lng, ctx.userAltitude)
   if (!full.win && ctx.lat != null) full.win = require('./astro.js').photoWindows(ctx.date, ctx.lat, ctx.lng, ctx.userAltitude)
   if (!full.moon && ctx.date) full.moon = require('./astro.js').moonInfo(ctx.date)
+  /* 光污染事实行不进 OI 证据：OI 窗口只看云量与月照，边界由 nightLimit(ctx) 统一声明。
+     注入主卡那行会让同一张卡同时出现「光污染未计入」与「光污染已用于主结论卡」。 */
   if (!full.factsFor) full.factsFor = function (key) { return require('./conditions.js').factsFor(key, {
     date: ctx.date, detail: ctx.detail, days: ctx.days || [], elevation: ctx.userAltitude,
     sun: full.sun, moon: full.moon,
-  }) }
+    /* 只影响 galaxy/star 分支：证据里的「夜段」要用真实的今晚序列，
+       否则跨零点窗口的证据仍在统计当日凌晨那段前夜尾段。 */
+    night: full.nightHours || null,
+  }, { omitLightPollution: true }) }
 
   const conditions = buildConditions(full)
   let opportunities = buildOpportunities(full, conditions)
@@ -692,7 +748,8 @@ function buildOutdoorIntelligence(ctx) {
   if (!full.moon) evidenceGaps.push('moon')
   if (!(full.detail || []).some(h => Number.isFinite(h.visibility))) evidenceGaps.push('visibility')
   if (!(full.detail || []).some(h => Number.isFinite(h.rh))) evidenceGaps.push('humidity')
-  evidenceGaps.push('lightPollution')   // 永远缺：无数据源，星空/银河类只能声明边界
+  if (!full.lightPollution) evidenceGaps.push('lightPollution')
+  if (!full.terrain) evidenceGaps.push('terrain')
 
   return {
     conditions: conditions,

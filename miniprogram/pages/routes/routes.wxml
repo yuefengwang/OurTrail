@@ -1,0 +1,81 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="路线库暂不可用" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
+  <block wx:elif="{{loading}}">
+    <status-panel kind="loading" title="正在载入" detail="正在读取你的路线。" />
+  </block>
+  <view wx:else class="stack-sections">
+    <!-- style-B（2026-10-26 批次二 b）原生导航已印「路线库」，页内不再自报一次名字；
+         身份由一句 20px 陈述承担（与 discover 同型）。主行动按 notices / weather-hub 的
+         既有口径放在页头下一条全宽实底按钮 —— 390 下「陈述 + 右侧按钮」实测换行
+         （约 370 > 358 内容宽），不拿 nowrap 硬塞。 -->
+    <view class="section-head">
+      <text class="list-head__title">自己整理的，别人共享的。</text>
+    </view>
+    <view class="button primary block" hover-class="button-hover" bindtap="onNewRoute">
+      <icon name="plus" size="18" color="#FFFFFF" />
+      <text>新建路线</text>
+    </view>
+
+    <view wx:if="{{mineRoutes.length}}" class="stack-gap3">
+      <view class="section-head">
+        <text class="section-title">我的路线</text>
+        <text class="section-sub">{{mineRoutes.length}} 条 · 可发起活动、编辑与共享</text>
+      </view>
+      <view class="route-list">
+        <view wx:for="{{mineRoutes}}" wx:key="id" class="route-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
+          <text class="route-index tabular">{{item.indexText}}</text>
+          <view class="route-body">
+            <text class="route-title">{{item.title}}</text>
+            <view class="cluster">
+              <text class="small muted">{{item.sourceText}}</text>
+              <text wx:if="{{item.difficultyText}}" class="badge neutral">{{item.difficultyText}}</text>
+              <text wx:if="{{item.shared}}" class="badge info">已共享</text>
+              <text class="small muted">{{item.updatedText}}</text>
+            </view>
+            <view class="metrics compact route-metrics">
+              <view wx:for="{{item.metrics}}" wx:key="label" class="metric">
+                <text class="metric-value">{{item.value}}<text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text></text>
+                <text class="metric-label">{{item.label}}</text>
+              </view>
+            </view>
+            <text class="small muted">{{item.riskText}} · {{item.refText}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{sharedRoutes.length}}" class="stack-gap3">
+      <view class="section-head">
+        <text class="section-title">共享给我</text>
+        <text class="section-sub">{{sharedRoutes.length}} 条 · 可查看，不能修改或用它发起活动</text>
+      </view>
+      <view class="route-list">
+        <view wx:for="{{sharedRoutes}}" wx:key="id" class="route-row" hover-class="button-hover" data-id="{{item.id}}" bindtap="onOpen">
+          <text class="route-index tabular">{{item.indexText}}</text>
+          <view class="route-body">
+            <text class="route-title">{{item.title}}</text>
+            <view class="cluster">
+              <text class="small muted">{{item.sourceText}}</text>
+              <text wx:if="{{item.difficultyText}}" class="badge neutral">{{item.difficultyText}}</text>
+              <text class="small muted">{{item.updatedText}}</text>
+            </view>
+            <view class="metrics compact route-metrics">
+              <view wx:for="{{item.metrics}}" wx:key="label" class="metric">
+                <text class="metric-value">{{item.value}}<text wx:if="{{item.unit}}" class="metric-unit">{{item.unit}}</text></text>
+                <text class="metric-label">{{item.label}}</text>
+              </view>
+            </view>
+            <text class="small muted">{{item.riskText}} · {{item.refText}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <status-panel
+      wx:if="{{!routes.length}}"
+      kind="empty"
+      title="路线库还是空的"
+      detail="创建活动时，路线会自动沉淀到这里；也可以把路线共享给同行的领队。"
+    />
+  </view>
+</view>

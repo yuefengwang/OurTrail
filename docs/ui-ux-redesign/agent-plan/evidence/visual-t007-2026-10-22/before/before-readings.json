@@ -1,0 +1,44 @@
+{
+  "mode": "before",
+  "wsPort": "9435",
+  "page": "pages/editor/editor",
+  "shots": {
+    "step1-filled": {
+      "file": "before-step1-filled.png",
+      "scrollTop": 0
+    },
+    "step1-missing": {
+      "file": "before-step1-missing.png",
+      "scrollTop": 0
+    },
+    "step2-top": {
+      "file": "before-step2-top.png",
+      "scrollTop": 0
+    },
+    "step2-nodes": {
+      "file": "before-step2-nodes.png",
+      "scrollTop": 500
+    },
+    "step3-intro": {
+      "file": "before-step3-intro.png",
+      "scrollTop": 500
+    },
+    "step4-publish": {
+      "file": "before-step4-publish.png",
+      "scrollTop": 500
+    },
+    "publish-overlay": {
+      "file": "before-publish-overlay.png",
+      "scrollTop": 500
+    }
+  },
+  "gates": {
+    "segClasses": [
+      "seg on",
+      "seg",
+      "seg",
+      "seg"
+    ],
+    "stepGroupCount": 0
+  }
+}

@@ -1,10 +1,14 @@
-// 首页（活动 Tab）：三视角读取合并 + 协作任务 + 我的/最近/已结束筛选 + 搜索。
-// 对应原型 screens/ActivityHome.tsx。
+// 首页（活动 Tab）：三视角读取合并 + 一个活动列表（我的/最近/已结束/需要协作四档）+ 搜索。
+// 对应原型 screens/ActivityHome.tsx，但**页面结构在此处与原型分叉**（2026-10-20）：
+// 原型把「需要我协作」做成列表上方的第二个列表，于是同一场活动可以同时进两个区、
+// 且一屏出现两种列表形态。现在只有一个列表、一种卡片形态，协作动作下沉为卡片上的入口。
+// 判据与原因：docs/superpowers/specs/2026-10-20-home-dual-list-dedup.md。
 'use strict'
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
 const J = require('../../utils/journey')
+const CV = require('../../utils/card-view')
 
 Page({
   data: {
@@ -13,8 +17,9 @@ Page({
     profileName: '',
     filter: 'mine',
     search: '',
-    tasks: [],
+    collabCount: 0,
     cards: [],
+    nextUp: null,
     emptyTitle: '',
     emptyDetail: '',
     emptyAction: '',
@@ -70,55 +75,127 @@ Page({
   render() {
     const byId = this.cache || new Map()
     const all = Array.from(byId.values())
-    const filter = this.data.filter
+    let filter = this.data.filter
     const search = this.data.search.trim().toLowerCase()
-    const tasks = all
-      .filter(a => ['archived', 'cancelled'].indexOf(a.phase) === -1 && (a.meta.staff || a.meta.vehicle))
-      .sort((a, b) => (a.startAt ? Date.parse(a.startAt) : Infinity) - (b.startAt ? Date.parse(b.startAt) : Infinity))
-      .map(a => ({
-        id: a.id,
-        title: a.title || '未命名草稿',
-        roles: [a.meta.staff ? '现场协作' : '', a.meta.vehicle ? '车辆联络' : ''].filter(Boolean).join(' · '),
-        phase: F.PHASE_LABELS[a.phase] || a.phase,
-        goStaff: !!a.meta.staff,
-      }))
+    // 协作判据只有一个出处：非终态 + 服务端投影的 meta.staff / meta.vehicle。
+    // 同一批判据既决定「需要协作」这一档筛出哪些活动，也决定卡片上出哪几枚协作按钮——
+    // 两处必须同一批，否则写着「3 项待办」点进去只剩 2 张卡。
+    const isCollab = a => ['archived', 'cancelled'].indexOf(a.phase) === -1 && (a.meta.staff || a.meta.vehicle)
+    const collabCount = all.filter(isCollab).length
+    // 协作授权会过期（expiresAt 一到服务端就不再给 meta.staff/vehicle）：这一档空掉时停在原地
+    // 只会得到一个「谁都没被选中」的筛选段和一句不相干的空态话，所以退回「我的活动」。
+    if (filter === 'collab' && !collabCount) filter = 'mine'
     const filtered = all.filter(a => {
       const ended = ['archived', 'cancelled'].indexOf(a.phase) !== -1
       let inScope
       if (filter === 'recent') inScope = this.openedIds.indexOf(a.id) !== -1
       else if (filter === 'finished') inScope = ended
+      else if (filter === 'collab') inScope = isCollab(a)
       else inScope = (a.meta.owner || a.meta.joined) && !ended
       if (!inScope) return false
       if (!search) return true
       const hay = (a.title + ' ' + a.routeSnapshot.title + ' ' + a.description).toLowerCase()
       return hay.indexOf(search) !== -1
     }).sort((a, b) => (a.startAt ? Date.parse(a.startAt) : Infinity) - (b.startAt ? Date.parse(b.startAt) : Infinity))
-    const featuredId = filtered.length ? filtered[0].id : ''
-    const cards = filtered.map(a => ({
-      id: a.id,
-      title: a.title || '未命名草稿',
-      date: F.dateLabel(a.startAt),
-      meta: (a.routeSnapshot.title || '路线待完善') + ' · ' + a.routeSnapshot.distanceKm + ' km',
-      // 状态词只在 journey 一处定义；卡片再补一句「还有多久」，
-      // 因为首页真正要回答的是「哪一场快到时间了」，不是「它在哪个 phase」。
-      status: (a.meta.owner ? '我组织的 · ' : (a.meta.joined ? '' : '最近查看 · ')) + J.phaseLabel(a.phase),
-      when: a.startAt && ['archived', 'cancelled'].indexOf(a.phase) === -1 ? J.remaining(this.now, a.startAt).text : '',
-      featured: a.id === featuredId && a.phase !== 'draft',
-      info: '已确认 ' + a.meta.confirmed + ' 人 · 待审核 ' + a.meta.pending + ' 人 · 名额 ' + a.meta.capacity + ' 人',
-    }))
+    // 「下一次同行」只做客户端派生：参与的、未终态、有出发时刻、**还没过点**的最近一场。
+    // 不额外发请求，也不新增域字段——排序口径与列表「我的活动」一致（出发时间升序）。
+    // 「还没过点」不能省：已发布但一直没归档的活动会留在非终态里，而升序取第一个
+    // ⇒ 最旧的那场过期活动会永久占住「下一次同行」，真正要去的下一场永远排不上；
+    // 卡片上的剩余时间还会印「已过时」。过没过去只问 journey.remaining，不在这里另写比较（铁律 30/31）。
+    const upcoming = all.filter(a => ['archived', 'cancelled', 'draft'].indexOf(a.phase) === -1 &&
+      (a.meta.owner || a.meta.joined) && a.startAt && !J.remaining(this.now, a.startAt).overdue)
+      .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt))
+    const next = upcoming[0] || null
+    let nextUp = null
+    if (next) {
+      const nextPeople = CV.peopleOf(next.meta)
+      nextUp = {
+        id: next.id,
+        title: next.title || '未命名活动',
+        // 剩余时间只从 journey 取词，不在页面另写「距出发 N 天」。
+        facts: [
+          F.dateLabel(next.startAt),
+          J.remaining(this.now, next.startAt).text,
+          nextPeople.text,
+          nextPeople.pending,
+        ].filter(Boolean),
+      }
+    }
+    // C16（2026-10-26 style-B）：下一次同行已经占着首屏大图，列表第一张再印同一场就是重复。
+    // 只在「我的活动」这一档剔除：协作档的条数必须与筛选段上的计数一致（见 isCollab 处），
+    // 最近查看档是用户点过的那几场、剔掉会与该档的名字自相矛盾，已结束档不可能命中（nextUp 是非终态）。
+    const dedupeId = filter === 'mine' && next ? next.id : ''
+    const listed = dedupeId ? filtered.filter(a => a.id !== dedupeId) : filtered
+    const featuredId = listed.length ? listed[0].id : ''
+    const cards = listed.map(a => {
+      // 协作按钮与「需要协作」那一档共用同一个判据；终态活动不再给入口（车长页对已结束的活动只是回看）。
+      const roles = isCollab(a) ? J.collabRoles(a.meta) : []
+      // 归属前缀按事实排：既不是组织者也不是报名者时，「最近查看」只是当时唯一可能的来由；
+      // 现在「需要协作」这一档也会带进没点开过的活动，那种情况必须说他的角色，
+      // 不能把「他被授了现场协作」印成「他不久前打开过这场」。
+      const roleNote = a.meta.owner
+        ? '我组织的'
+        : a.meta.joined ? '' : (roles.length ? roles.map(r => r.label).join(' · ') : '最近查看')
+      const people = CV.peopleOf(a.meta)
+      return {
+        id: a.id,
+        // 实拍封面是服务端事实，随卡片传；氛围图仍由 activity-card 按 activityId 派生
+        cover: a.coverFileId || '',
+        title: a.title || '未命名草稿',
+        date: F.dateLabel(a.startAt),
+        // 路线事实分槽后 meta 只留难度（2026-10-23 跨页 L2）：路线名走 routeName、
+        // 距离/爬升走 metrics，同一事实不在 meta 再印一遍。
+        meta: F.difficultyLabel(a.routeSnapshot && a.routeSnapshot.difficulty),
+        // N2（2026-10-22）照片在上卡的纯展示派生字段：sub 行用路线名，指标行见 card-view。
+        // 都不进投影契约的既有字段。
+        routeName: a.routeSnapshot.title || '路线待完善',
+        metrics: CV.metricsOf(a),
+        // 状态词只在 journey 一处定义；卡片再补一句「还有多久」，
+        // 因为首页真正要回答的是「哪一场快到时间了」，不是「它在哪个 phase」。
+        // status/info 是既有投影契约（a20-owner-hero 按字节钉住），一字节不动；
+        // 卡片渲染改读下面三个新槽位，不再把归属与相位拼成一句。
+        status: (a.meta.owner ? '我组织的 · ' : a.meta.joined ? '' : (roles.length ? roles.map(r => r.label).join(' · ') + ' · ' : '最近查看 · ')) + J.phaseLabel(a.phase),
+        when: a.startAt && ['archived', 'cancelled'].indexOf(a.phase) === -1 ? J.remaining(this.now, a.startAt).text : '',
+        featured: a.id === featuredId && a.phase !== 'draft',
+        // 「待审核 N 人」是组织者的工作队列，不是访问者此刻能行动的事——这条决定 activity.js 早已写下
+        // （非组织者的同一格给他的下一步）。首页此前对所有人无条件印它，等于把参与者打不开的那个数字
+        // 塞进他每次刷列表都要看见的一行。归属位只有一个出处：服务端 home 投影显式给的 meta.owner，
+        // 客户端不比自己 ownerId、不从标签反推（铁律 19：domain → projection → label 单向）。
+        // meta.owner 缺位按「非组织者」处理：越权数字失败关闭，而不是失败开放。
+        info: [
+          '已确认 ' + a.meta.confirmed + ' 人',
+          a.meta.owner ? '待审核 ' + a.meta.pending + ' 人' : '',
+          '名额 ' + a.meta.capacity + ' 人',
+        ].filter(Boolean).join(' · '),
+        // 三槽正文（2026-10-26 style-B）：chips / 人数 / 归属各自一格，徽章只放相位短词。
+        chips: CV.chipsOf(a),
+        people: people.text,
+        pending: people.pending,
+        roleNote,
+        badge: J.phaseLabel(a.phase),
+        // 卡片上的协作入口：[] 表示这个人在这场活动上没有欠下的协作事项。
+        collab: roles,
+      }
+    })
     let emptyTitle = '留一点时间，走进山野'
     let emptyDetail = '这里仅显示与你有关或你打开过的活动。收到活动链接后，可以查看安排并报名。'
-    let emptyAction = '发起一场同行'
+    // 空态不再带主按钮：本页的 primary 只有一个（有未来活动时在动作行、没有时在邀请卡里），
+    // 空态再给一个「发起」就是同屏两个主操作。检索为空时例外——「清除搜索」是恢复动作，不是推进动作。
+    let emptyAction = ''
     if (search) {
       emptyTitle = '没有匹配的活动'
-      emptyDetail = '换个关键词，或切换活动范围。'
+      // D-06：搜索与活动范围是叠加关系，空态要说明搜索没有跳出当前范围。
+      emptyDetail = '搜索只在当前活动范围内查找；换个关键词，或切换活动范围。'
       emptyAction = '清除搜索'
     } else if (filter === 'recent') {
       emptyTitle = '还没有最近查看的活动'
       emptyDetail = '打开过一场活动之后，它会回到这里；也可以从「发现活动」开始。'
-      emptyAction = ''
+    } else if (filter === 'mine' && nextUp) {
+      // 唯一一场活动就是首屏那场时，列表空着不是「什么都没有」——如实说它已经在上面。
+      emptyTitle = '其余活动会出现在这里'
+      emptyDetail = '「下一次同行」已经在上面；再组织或报名一场，就会列在这里。'
     }
-    this.setData({ tasks, cards, emptyTitle, emptyDetail, emptyAction, hasAny: all.length > 0 })
+    this.setData({ filter, collabCount, cards, nextUp, emptyTitle, emptyDetail, emptyAction, hasAny: all.length > 0 })
   },
 
   onFilter(e) {
@@ -148,12 +225,17 @@ Page({
     wx.navigateTo({ url: '/pages/activity/activity?id=' + id })
   },
 
-  onOpenTask(e) {
+  // 卡片上的协作入口。两条 URL 字面量必须留在这个页面文件里：
+  // tools/journey-graph-test.js 静态扫页面 JS 的 navigateTo，而 staff / vehicle 两页
+  // 在全仓库只有这一个入口。
+  onCardCollab(e) {
     const id = e.currentTarget.dataset.id
-    const goStaff = e.currentTarget.dataset.gostaff
+    if (!id) return
     draft.rememberActivity(id)
-    if (goStaff) wx.navigateTo({ url: '/pages/staff/staff?id=' + id })
-    else wx.navigateTo({ url: '/pages/vehicle/vehicle?id=' + id })
+    // 两个角色各走各的。旧实现是一个 goStaff 布尔决定整行跳哪儿，一个人同时是现场协作
+    // 与车辆联络时，车辆那一半再也进不去（docs/testing/ui-user-journeys.md §8.6）。
+    if (e.detail.key === 'staff') wx.navigateTo({ url: '/pages/staff/staff?id=' + id })
+    else if (e.detail.key === 'vehicle') wx.navigateTo({ url: '/pages/vehicle/vehicle?id=' + id })
   },
 
   onEmptyAction() {

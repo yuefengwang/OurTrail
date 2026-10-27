@@ -1,6 +1,6 @@
 // GPX 解析的 node 冒烟测试。运行：node tools/gpx-test.js
 'use strict'
-const { parseGpx, extractPoints, wgsToGcj, gcjToWgs, simplifyTrack, saneEle, ELE_MIN, ELE_MAX } = require('../miniprogram/utils/gpx')
+const { parseGpx, extractPoints, wgsToGcj, gcjToWgs, simplifyTrack, suggestForRoute, saneEle, ELE_MIN, ELE_MAX } = require('../miniprogram/utils/gpx')
 // 云端输入契约：ele 合法区间必须与 schema.js 的 RoutePoint.ele 同源，漂移在这里炸
 const S = require('../cloudfunctions/trailApi/domain/schema.js')
 
@@ -106,6 +106,11 @@ function run() {
   check('track 坐标范围合法', r3.ok && r3.track.every(p => Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180))
   const r4 = parseGpx(SAMPLE)
   check('有轨迹时 track 来自轨迹', r4.ok && r4.track.length >= 2, r4.ok && r4.track.length)
+  check('track 保留采样点高程（连续剖面用，地图仍只用 lat/lng）',
+    r4.ok && r4.track.every(p => Number.isFinite(p.ele)), r4.ok && r4.track.map(p => p.ele))
+  check('track 无高程时不补 0（缺数据与 0 m 必须分开）',
+    parseGpx('<gpx><trk><trkseg><trkpt lat="30" lon="103"/><trkpt lat="30.001" lon="103.001"/></trkseg></trk></gpx>')
+      .track.every(p => !('ele' in p)))
   const wptOnly = '<gpx><wpt lat="30.1" lon="103.1"><name>A</name></wpt><wpt lat="30.2" lon="103.2"><name>B</name></wpt></gpx>'
   const r5 = parseGpx(wptOnly)
   check('纯航点无轨迹 → track 为空数组', r5.ok && r5.track.length === 0, r5.ok && r5.track)
@@ -187,6 +192,19 @@ function run() {
     '</trkseg></trk></gpx>'
   const rf2 = parseGpx(floatXml)
   check('parseGpx 端到端 track ≤200 点', rf2.ok && rf2.track.length <= 200, rf2.ok && rf2.track.length)
+
+  console.log('== 路线库建议（复用 GPX 关键词 + 里程/爬升规则）==')
+  const routeSuggest = suggestForRoute({
+    title: '溪谷环线', distanceKm: 18, ascentM: 900,
+    points: [{ name: '溪谷起点' }, { name: '垭口' }], track: [],
+  })
+  check('路线库路线按节点关键词给出风险建议',
+    !!routeSuggest && routeSuggest.risks.some(r => r.title.indexOf('涉水') !== -1)
+      && routeSuggest.risks.some(r => r.title.indexOf('垭口') !== -1), routeSuggest && routeSuggest.risks)
+  check('里程/爬升触发对应装备建议',
+    !!routeSuggest && routeSuggest.equipment.some(item => item.indexOf('登山杖') !== -1)
+      && routeSuggest.equipment.some(item => item.indexOf('能量食品') !== -1), routeSuggest && routeSuggest.equipment)
+  check('只有标题、没有可依据数据 → 不建议（宁缺毋造）', suggestForRoute({ title: '神秘路线' }) === null)
 
   console.log('== 异常输入 ==')
   check('空文件', !parseGpx('').ok)

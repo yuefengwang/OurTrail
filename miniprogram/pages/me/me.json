@@ -1,10 +1,16 @@
 {
+  "navigationStyle": "custom",
   "navigationBarTitleText": "我的",
+  "navigationBarBackgroundColor": "#F5F5F0",
+  "navigationBarTextStyle": "black",
   "usingComponents": {
     "icon": "/components/icon/icon",
+    "brand-header": "/components/brand-header/brand-header",
     "overlay": "/components/overlay/overlay",
     "status-panel": "/components/status-panel/status-panel",
-    "form-field": "/components/form-field/form-field"
+    "form-field": "/components/form-field/form-field",
+    "chapter": "/components/chapter/chapter",
+    "person-row": "/components/person-row/person-row"
   },
   "enablePullDownRefresh": true
 }

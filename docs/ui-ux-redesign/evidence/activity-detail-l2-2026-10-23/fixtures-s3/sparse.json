@@ -1,0 +1,174 @@
+{
+  "loading": false,
+  "denied": "",
+  "isDraft": false,
+  "draftNotice": false,
+  "badgeText": "行前安排就绪",
+  "milestone": "集合 剩 3 天（2026-10-03 08:00）",
+  "howLine": "",
+  "nextActionLabel": "查看集合与出行安排",
+  "nextActionTarget": "meeting",
+  "startAtLabel": "10/3 08:00",
+  "title": "城区周边 · 傍晚散步",
+  "routeTitle": "滨江步道",
+  "cover": "/assets/photos/cover-dawn.jpg",
+  "coverFailed": false,
+  "coverIsReal": false,
+  "infoFacts": [
+    {
+      "key": "time",
+      "label": "活动时间",
+      "value": "10/3 08:00",
+      "sub": ""
+    },
+    {
+      "key": "pickup",
+      "label": "集合",
+      "value": "",
+      "sub": ""
+    },
+    {
+      "key": "people",
+      "label": "人数",
+      "value": "1 / 6",
+      "unit": "人",
+      "sub": ""
+    },
+    {
+      "key": "intensity",
+      "label": "强度",
+      "value": ""
+    }
+  ],
+  "routeStats": [],
+  "routeStatsNote": "",
+  "photoNote": "封面为场景氛围图，非本次活动实拍；路线与天气信息以组织者填写与实测数据为准。",
+  "confirmed": 1,
+  "capacity": 6,
+  "stateKey": "ready",
+  "stateTitle": "行前安排已就绪",
+  "stateDetail": "检查集合时间、出行方式与装备，出发当天见。",
+  "stateTone": "success",
+  "countersLine": "",
+  "isOwner": false,
+  "showSticky": true,
+  "canSubmit": false,
+  "canSelfSheet": false,
+  "selfButton": "",
+  "rows": [],
+  "primaryId": "",
+  "description": "",
+  "organizerIntro": "",
+  "contentView": [],
+  "contentImages": [],
+  "hasContentImages": false,
+  "highlights": [],
+  "leader": "",
+  "sceneryRating": 0,
+  "funRating": 0,
+  "ratingOptions": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "feeSummary": "",
+  "feeIncludes": [],
+  "feeExcludes": [],
+  "signupNote": "",
+  "points": [],
+  "pickups": [],
+  "scheduleBasis": "",
+  "map": {
+    "visible": false
+  },
+  "risks": [],
+  "equipment": [],
+  "equipmentSuggested": [],
+  "difficultyLabel": "",
+  "track": [],
+  "secNo": {
+    "itinerary": "01",
+    "weather": "02",
+    "route": "03",
+    "safety": "04",
+    "equipment": "05",
+    "fee": "06"
+  },
+  "weatherBrief": {
+    "ready": false,
+    "status": "empty",
+    "text": "路线还没有可定位的起点，暂时查不了出发日天气。",
+    "retry": false,
+    "dayLabel": "",
+    "phraseLabel": "",
+    "tone": "neutral",
+    "hourText": "",
+    "dayText": "",
+    "pointText": "",
+    "staleText": "",
+    "riskText": ""
+  },
+  "weatherLoading": false,
+  "sectionNav": [
+    {
+      "id": "sec-itinerary",
+      "label": "行程"
+    },
+    {
+      "id": "sec-weather",
+      "label": "天气"
+    },
+    {
+      "id": "meeting-block",
+      "label": "路线"
+    },
+    {
+      "id": "sec-safety",
+      "label": "安全"
+    },
+    {
+      "id": "sec-equipment",
+      "label": "装备"
+    },
+    {
+      "id": "sec-fee",
+      "label": "费用"
+    }
+  ],
+  "feeNote": "",
+  "cancellationNote": "",
+  "sheetOpen": false,
+  "selRow": null,
+  "selNote": "",
+  "selPointIndex": -1,
+  "selPoints": [],
+  "selKindIndex": 0,
+  "kindOptions": [
+    "其他需要协助",
+    "迟到",
+    "提前退出同行",
+    "伤病"
+  ],
+  "selConsent": false,
+  "selPurpose": "",
+  "selSensitive": null,
+  "selError": "",
+  "selMessage": "",
+  "showPosBox": false,
+  "canCancel": false,
+  "canEdit": false,
+  "canCheckin": false,
+  "canNode": false,
+  "canHome": false,
+  "canIncident": false,
+  "canPosReport": false,
+  "canPosRevoke": false,
+  "busy": false,
+  "busyAt": 0,
+  "startDate": "2026-10-03",
+  "canCancelRow": true,
+  "canEditRow": true,
+  "justPublished": false
+}

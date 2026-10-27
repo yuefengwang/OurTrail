@@ -4,20 +4,46 @@
     <status-panel kind="loading" title="正在载入" detail="正在整理已发布的活动。" />
   </block>
   <view wx:else class="stack">
-    <view>
-      <text class="eyebrow">发现活动</text>
-      <text class="page-title" style="display:block;margin-top:4px;">看看别人在约什么。</text>
-      <text class="muted" style="display:block;margin-top:4px;">按发布时间排序，只显示尚未出发的活动。</text>
+    <!-- N3（2026-10-22）页头压缩为一行。style-B（2026-10-26）：眉题「发现活动」删掉——
+         原生导航标题已经印着「发现活动」，同一屏重复两遍不增信息；页头身份由这行标题承担。
+         N4（2026-10-23）把视图分段从页头搬进结果工具组：它是「这批结果怎么看」，不是页面身份。 -->
+    <view class="discover-head">
+      <view class="list-head__text">
+        <view class="list-head__title">看看别人在约什么。</view>
+      </view>
     </view>
 
-    <view class="callout">
-      <text class="callout-title">这些活动由个人发起</text>
-      <text style="display:block;margin-top:4px;">平台尚未做领队资质认证。路线强度、风险与装备要求以活动说明为准，报名前请自行评估是否适合自己。</text>
+    <!-- N3：搜索从带 label 的表单字段改为图标内嵌搜索条（.searchbar，T001 交付）；
+         原 field-label「查找已发布的活动」的语义由 input 的 aria-label 承接，onSearch 能力不删。 -->
+    <view class="searchbar">
+      <!-- icon 的 color 属性拿不到 var()：#5F6E66 与 --muted 逐字节同值（既有 token，不是新色；与 home.wxml 同口径） -->
+      <icon name="search" size="16" color="#5F6E66" />
+      <input class="searchbar__input" type="text" confirm-type="search" placeholder="搜索活动名、路线或描述" aria-label="查找已发布的活动" value="{{search}}" bindinput="onSearch" />
     </view>
 
-    <view class="field">
-      <text class="field-label">查找已发布的活动</text>
-      <input class="input" type="text" confirm-type="search" placeholder="搜索活动名、路线或描述" value="{{search}}" bindinput="onSearch" />
+    <!-- L3（2026-10-23）：排序/筛选、视图切换、结果计数收进同一个结果工具组。
+         工具组只说「结果怎么排/怎么看/有多少」，不再占页头身份区。 -->
+    <view class="discover-toolbar">
+      <view class="discover-toolbar__top">
+        <view class="segmented discover-views" aria-label="发现视图">
+          <view class="seg {{viewMode === 'list' ? 'on' : ''}}" data-mode="list" bindtap="onViewMode">列表</view>
+          <view class="seg {{viewMode === 'map' ? 'on' : ''}}" data-mode="map" bindtap="onViewMode">地图</view>
+        </view>
+        <text class="result-count tabular">本次结果 {{cards.length}} 场 · 均未出发</text>
+      </view>
+      <view class="filter-row">
+        <view class="filter-chip {{filterCount ? 'on' : ''}}" hover-class="button-hover" bindtap="onOpenFilters">筛选{{filterCount ? ' · ' + filterCount : ''}}</view>
+        <view class="filter-chip {{sort === 'start' ? '' : 'on'}}" hover-class="button-hover" data-sort="default" bindtap="onSort">最新发布</view>
+        <view class="filter-chip {{sort === 'start' ? 'on' : ''}}" hover-class="button-hover" data-sort="start" bindtap="onSort">最近出发</view>
+      </view>
+    </view>
+
+    <!-- 诚实提示：文案一字不改（铁律），从 callout 降为低权重说明条；
+         常驻可见（不折叠、不按状态隐藏），并在末尾说明「可定位」与列表范围。 -->
+    <view class="discover-note">
+      <text class="discover-note__title">这些活动由个人发起</text>
+      <text class="discover-note__body">平台尚未做领队资质认证。路线强度、风险与装备要求以活动说明为准，报名前请自行评估是否适合自己。</text>
+      <text class="discover-note__meta">本次结果中 {{map.markers.length}} 场可定位 · 列表只含尚未出发的活动</text>
     </view>
 
     <status-panel
@@ -25,23 +51,110 @@
       kind="empty"
       title="{{emptyTitle}}"
       detail="{{emptyDetail}}"
-      actionLabel="{{search ? '清除搜索' : ''}}"
-      bind:action="onClearSearch"
+      actionLabel="{{emptyAction}}"
+      bind:action="onEmptyAction"
     />
 
-    <view wx:else class="stack" aria-label="已发布的活动">
+    <block wx:elif="{{viewMode === 'list'}}">
+      <view class="discover-list" aria-label="已发布的活动">
+        <activity-card
+          wx:for="{{cards}}"
+          wx:key="id"
+          title="{{item.title}}"
+          cover="{{item.cover}}"
+          route-name="{{item.routeName}}"
+          chips="{{item.chips}}"
+          date="{{item.date}}"
+          people="{{item.people}}"
+          pending="{{item.pending}}"
+          role-note="{{item.roleNote}}"
+          badge="{{item.badge}}"
+          featured="{{false}}"
+          compact="{{true}}"
+          flat="{{true}}"
+          activity-id="{{item.id}}"
+          data-id="{{item.id}}"
+          bind:open="onOpenCard"
+        />
+      </view>
+    </block>
+
+    <block wx:else>
+      <view wx:if="{{map.visible}}" class="map-card">
+        <map
+          class="discover-map"
+          latitude="{{map.latitude}}"
+          longitude="{{map.longitude}}"
+          scale="{{map.scale}}"
+          markers="{{map.markers}}"
+          include-points="{{map.includePoints}}"
+          show-compass="{{false}}"
+          show-scale="{{false}}"
+          bindmarkertap="onMapMarkerTap"
+          bindcallouttap="onMapMarkerTap"
+        />
+      </view>
+      <view wx:if="{{map.visible}}" class="callout">
+        <text>{{mapSelected ? '已选中的活动：' + mapSelected.title : '点地图上的标记查看活动；底图未加载时可切回列表。'}}</text>
+      </view>
+      <view wx:else class="callout warning">
+        <text>地图上暂无可定位的活动；有路线坐标的活动才会出现在这里，其余活动仍在列表里。</text>
+      </view>
+      <!-- 选中卡取自 cards 数组（onMapMarkerTap 从 this.data.cards 取），routeName/metrics 已自带，
+           这里显式传同一批字段，与列表卡形态逐字一致。 -->
       <activity-card
-        wx:for="{{cards}}"
-        wx:key="id"
-        title="{{item.title}}"
-        date="{{item.date}}"
-        meta="{{item.meta}}"
-        status="{{item.status}}"
-        featured="{{item.featured}}"
-        info="{{item.info}}"
-        data-id="{{item.id}}"
+        wx:if="{{mapSelected}}"
+        title="{{mapSelected.title}}"
+        cover="{{mapSelected.cover}}"
+        route-name="{{mapSelected.routeName}}"
+        chips="{{mapSelected.chips}}"
+        date="{{mapSelected.date}}"
+        people="{{mapSelected.people}}"
+        pending="{{mapSelected.pending}}"
+        role-note="{{mapSelected.roleNote}}"
+        badge="{{mapSelected.badge}}"
+        featured="{{false}}"
+        compact="{{true}}"
+        flat="{{true}}"
+        activity-id="{{mapSelected.id}}"
+        data-id="{{mapSelected.id}}"
         bind:open="onOpenCard"
       />
-    </view>
+    </block>
   </view>
+
+  <overlay open="{{filtersOpen}}" kind="sheet" title="筛选活动" bind:close="onCloseFilters">
+    <view class="stack">
+      <form-field label="出发日期从">
+        <picker mode="date" value="{{draftFilters.dateFrom}}" start="{{today}}" bindchange="onDateFrom">
+          <view class="picker {{draftFilters.dateFrom ? '' : 'placeholder'}}">
+            <text class="picker-value">{{draftFilters.dateFrom || '不限'}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+      <form-field label="出发日期到">
+        <picker mode="date" value="{{draftFilters.dateTo}}" start="{{draftFilters.dateFrom || today}}" bindchange="onDateTo">
+          <view class="picker {{draftFilters.dateTo ? '' : 'placeholder'}}">
+            <text class="picker-value">{{draftFilters.dateTo || '不限'}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+      <form-field label="难度" hint="只筛选组织者已标注难度的活动">
+        <picker range="{{difficultyFilters}}" range-key="label" value="{{draftFilters.difficulty === 'easy' ? 1 : draftFilters.difficulty === 'moderate' ? 2 : draftFilters.difficulty === 'hard' ? 3 : 0}}" bindchange="onDifficultyFilter">
+          <view class="picker">
+            <text class="picker-value">{{draftFilters.difficulty === 'easy' ? '轻松' : draftFilters.difficulty === 'moderate' ? '中等' : draftFilters.difficulty === 'hard' ? '挑战' : '不限难度'}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+      <view wx:if="{{filterError}}" class="callout danger">{{filterError}}</view>
+      <view class="form-actions">
+        <view class="button text" hover-class="button-hover" bindtap="onCloseFilters">取消</view>
+        <view class="button text" hover-class="button-hover" bindtap="onResetFilters">清除筛选</view>
+        <view class="button primary" hover-class="button-hover" bindtap="onApplyFilters" style="flex:1;">应用筛选</view>
+      </view>
+    </view>
+  </overlay>
 </view>

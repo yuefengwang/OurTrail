@@ -1,27 +1,43 @@
 <view class="page">
-  <view class="stack">
-    <view>
-      <text class="eyebrow">天气</text>
-      <text class="page-title" style="display:block;margin-top:4px;">先看天，再上山。</text>
+  <brand-header />
+  <view class="stack-sections">
+    <!-- D8（2026-10-26）：tab 页删除 28px 页标题，改用分区头三件套；
+         kicker 里的「天气」是删页标题的代价条款——原生标题栏不再出现，页面身份必须仍有字面。
+         （与 notices / home / me 同一处理，本页是第 4 个 tab 页。） -->
+    <view class="section-head">
+      <text class="kicker">天气</text>
+      <text class="list-head__title">先看天，再上山。</text>
+      <text class="section-sub">查过的点与轨迹会存住，下次不用重传。</text>
     </view>
 
     <!-- 输入区：主行动唯一化——地图选点是唯一实心按钮 -->
     <view class="button primary block" hover-class="button-hover" bindtap="onPickMap">地图选点查天气</view>
     <view class="button secondary block" hover-class="button-hover" bindtap="onManualOpen">输入经纬度</view>
 
+    <!-- A-24：卡标题原先逐字重复下面那颗按钮的文案，多出一行不带信息。
+         现在标题承担「为什么」、按钮承担「做什么」，与 editor.wxml:169 / route-edit.wxml:30 同一分工。
+         ⚠ 复验 A-24 请剥掉注释再比字符串，否则本条注释会让重复看起来仍然存在。 -->
     <view class="card">
       <view class="card-header">
-        <text class="card-label">导入 GPX 轨迹</text>
+        <text class="card-label">有 GPX 轨迹？逐点看天气</text>
       </view>
       <text class="small" style="display:block;">导入轨迹，自动取出山路线上的标注点，逐点看天气与天相。</text>
       <view class="button secondary block" style="margin-top:12px;" hover-class="button-hover" bindtap="onImportGpx">导入 GPX 轨迹</view>
       <text class="small muted" style="display:block;margin-top:8px;">把 GPX 文件发到任意聊天，再点上面按钮选择。导入后展开轨迹，点任一节点名即可进入该点的天气与天相。</text>
     </view>
 
-    <!-- 我的观察点：有数据才显示，空态不渲染空卡片 -->
-    <view wx:if="{{points.length}}" class="card" style="padding:0;">
+<!-- 我的观察点：有数据才显示，空态不渲染空卡片。
+     A-23（合并自 master）：原先这张卡带一个把内边距归零的内联 style，.card-header 与 .list-row
+     自身都没有左右 padding ⇒ 横向留白被一起吃掉，标题与行内容贴到卡片圆角边。
+     现在横向留白回到 app.wxss 的 .card 单源，与同页另两张卡（GPX 卡、轨迹点组卡）一致；
+     观察点行组不再套第二张卡（卡中卡会把留白再收一层）。
+     ⚠ 复验请剥掉注释、按「节点 attrs + 层叠终值」判，别按整文件 grep。 -->
+    <view wx:if="{{points.length}}" class="card">
       <view class="card-header">
-        <text class="card-label">我的观察点</text>
+        <view class="section-head">
+          <text class="kicker">已存</text>
+          <text class="section-title">我的观察点</text>
+        </view>
         <text class="small muted tabular">{{points.length}}</text>
       </view>
       <view
@@ -108,18 +124,21 @@
       <block wx:if="{{gpxMeta && !gpxError}}">
         <view class="callout">
           <text class="callout-title">{{gpxMeta.fileName}}</text>
-          <text style="display:block;margin-top:4px;">解析出 {{gpxMeta.count}} 个路线节点{{gpxMeta.distanceKm > 0 ? ' · 全程约 ' + gpxMeta.distanceKm + ' km' : ''}}{{gpxMeta.hasElevation ? ' · 累计爬升约 ' + gpxMeta.ascentM + ' m' : ''}}{{gpxMeta.hasTime ? ' · 含时刻（可推算抵达日）' : ''}}。</text>
+          <text style="display:block;margin-top:4px;">解析出 {{gpxMeta.count}} 个路线节点{{gpxMeta.count > gpxPoints.length ? '，保留 ' + gpxPoints.length + ' 个' : ''}}{{gpxMeta.distanceKm > 0 ? ' · 全程约 ' + gpxMeta.distanceKm + ' km' : ''}}{{gpxMeta.hasElevation ? ' · 累计爬升约 ' + gpxMeta.ascentM + ' m' : ''}}{{gpxMeta.hasTime ? ' · 含时刻（可推算抵达日）' : ''}}。</text>
         </view>
         <view class="stack" style="gap:4px;">
-          <text class="small muted">确认前可先核对各节点：</text>
+          <text class="small muted">确认前可先核对各节点，多余的可以删掉：</text>
           <view wx:for="{{gpxPoints}}" wx:key="index" class="list-row">
             <view class="list-main">
               <text>{{item.name}}</text>
               <text class="list-sub tabular">{{item.coordinates.lat}}, {{item.coordinates.lng}}</text>
             </view>
+            <view class="button text" hover-class="button-hover" catchtap="onGpxRemove" data-index="{{index}}">删除</view>
           </view>
         </view>
-        <view class="button primary block" hover-class="button-hover" bindtap="onGpxApply">存为轨迹点组</view>
+        <view wx:if="{{gpxMeta.count > gpxPoints.length}}" class="button text block" hover-class="button-hover" bindtap="onGpxReset">恢复全部节点</view>
+        <text wx:if="{{!(gpxPoints.length >= 2)}}" class="small muted">至少保留 2 个节点才能存为轨迹点组。</text>
+        <view class="button primary block {{gpxPoints.length >= 2 ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{gpxPoints.length >= 2 ? 'onGpxApply' : ''}}">存为轨迹点组</view>
       </block>
       <block wx:elif="{{gpxError}}">
         <text class="small muted">请确认文件是标准 GPX（含 wpt/rtept/trkpt）后重试。</text>

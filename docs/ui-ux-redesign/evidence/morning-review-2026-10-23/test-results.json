@@ -1,0 +1,104 @@
+{
+  "node": "v24.19.0",
+  "execPath": "C:\\Program Files\\nodejs\\node.exe",
+  "root": "D:/OurTrail-ui-followup-20261023",
+  "head": "220a91c35df548517572b487b62f5c2f4936e4da",
+  "results": [
+    {
+      "name": "check",
+      "command": "node tools/check.js",
+      "start": "2026-10-23T01:40:13.035Z",
+      "exit": 0,
+      "signal": null,
+      "summary": null
+    },
+    {
+      "name": "check-handlers",
+      "command": "node tools/check-handlers.js",
+      "start": "2026-10-23T01:40:32.587Z",
+      "exit": 0,
+      "signal": null,
+      "summary": null
+    },
+    {
+      "name": "scenario-notices-test",
+      "command": "node tools/scenario-notices-test.js",
+      "start": "2026-10-23T01:40:33.693Z",
+      "exit": 0,
+      "signal": null,
+      "summary": "passed=91 failed=0 skipped=0"
+    },
+    {
+      "name": "scenario-me-test",
+      "command": "node tools/scenario-me-test.js",
+      "start": "2026-10-23T01:40:34.534Z",
+      "exit": 0,
+      "signal": null,
+      "summary": "passed=143 failed=0 skipped=0"
+    },
+    {
+      "name": "swx1-style-gates-test",
+      "command": "node tools/swx1-style-gates-test.js",
+      "start": "2026-10-23T01:40:40.620Z",
+      "exit": 0,
+      "signal": null,
+      "summary": "passed=45 failed=0"
+    },
+    {
+      "name": "swx2-style-gates-test",
+      "command": "node tools/swx2-style-gates-test.js",
+      "start": "2026-10-23T01:40:40.768Z",
+      "exit": 0,
+      "signal": null,
+      "summary": "passed=110 failed=0"
+    },
+    {
+      "name": "t4-e08-test",
+      "command": "node tools/t4-e08-test.js",
+      "start": "2026-10-23T01:40:41.370Z",
+      "exit": 0,
+      "signal": null,
+      "summary": "passed=41 failed=0 ===="
+    },
+    {
+      "name": "m02-class-scope-test",
+      "command": "node tools/m02-class-scope-test.js",
+      "start": "2026-10-23T01:40:41.798Z",
+      "exit": 1,
+      "signal": null,
+      "summary": "passed=65 failed=1"
+    },
+    {
+      "name": "b4-pad-final-value-test",
+      "command": "node tools/b4-pad-final-value-test.js",
+      "start": "2026-10-23T01:40:42.006Z",
+      "exit": 0,
+      "signal": null,
+      "summary": "passed=32 failed=0"
+    },
+    {
+      "name": "b4-e05-checklabel-test",
+      "command": "node tools/b4-e05-checklabel-test.js",
+      "start": "2026-10-23T01:40:42.212Z",
+      "exit": 0,
+      "signal": null,
+      "summary": "passed=49 failed=0"
+    },
+    {
+      "name": "ui-consistency-test",
+      "command": "node tools/ui-consistency-test.js",
+      "start": "2026-10-23T01:40:42.310Z",
+      "exit": 0,
+      "signal": null,
+      "summary": "passed=17 failed=0"
+    },
+    {
+      "name": "page2-gates-test",
+      "command": "node tools/page2-gates-test.js",
+      "start": "2026-10-23T01:40:42.436Z",
+      "exit": 0,
+      "signal": null,
+      "summary": "passed=98 failed=0 ===="
+    }
+  ]
+}

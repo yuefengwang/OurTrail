@@ -44,6 +44,6 @@
 
 .fc-spacer { flex: 1; }
 .fc-modes { flex: 0 0 auto; width: 216px; }
-/* .segmented .seg 默认 36px，低于可点区域下限，这里补到 44 */
-.fc-modes .seg { min-height: 44px; font-size: var(--text-caption); }
+/* .segmented .seg 默认 36px，低于可点区域下限，这里补到 --touch-target（横屏单手，摸黑也要点得中） */
+.fc-modes .seg { min-height: var(--touch-target); font-size: var(--text-caption); }
 .fc-close { flex: 0 0 auto; }

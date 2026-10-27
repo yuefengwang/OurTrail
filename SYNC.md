@@ -1,4 +1,4 @@
-# OurTrail 原型落地小程序 · 进度同步文档
+﻿# OurTrail 原型落地小程序 · 进度同步文档
 
 > 多 agent 协同的工作同步文件。每完成一个里程碑更新一次。
 > 原型：`docs/prototypes/ourtrail-app`（React+Vite 高仿真原型，含完整 domain 层）。
@@ -664,3 +664,755 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
 - 2026-10-10（**Weather V2 第九~十二轮 + 门禁修引信 → master 集成：候选已建立并全绿，远端推送阻塞**）：候选分支 `win/integrate-weather-v2-r12`，合并提交 **`6e646d1`**（`origin/master` = `abf08f0` 是 HEAD 祖先 ⇒ 零冲突面，一次 `--no-ff` 完成，7 个提交边界原样保留，无 squash / 无 rebase / 无 force）。**合并提交树哈希 `40e41c77…` 与功能分支 `fa28986` 逐字节相同** ⇒ 合并没夹带第三个内容变化。**门禁全部从候选跑**：`check` + `check-handlers` exit 0；63 个可无头套件逐套独立跑 **63 套 exit 0 / 4371 断言 / 失败 0**（本跑连偶发项 `outdoor-intelligence-ui` 都绿，仍按既有口径登记为偶发，不因一次绿宣布消失）。生产文件只有 6 个客户端文件（`utils/{sky,conditions,agenda}.js` + `pages/weather/weather.{js,wxml,wxss}`），**`cloudfunctions/` 改动文件数实测 0** ⇒ **不需要重新部署**；全 diff 里与阈值常量相关的增删行只有 `+const LIGHT_LIMITS = { LOW_CLOUD_MAX: 40 }` 一条（把光染一直在用的 `low<40` 命名出来，不是新数），`300/80/200/2200/±600/2000–6000` 全部未动。**推送阻塞**：`git fetch origin` 报 `connect to host 192.168.3.15 port 22: Connection timed out`（exit 128），且 TCP22 实测 `192.168.3.15` / `192.168.2.22` / `192.168.1.101` 全部 TIMEOUT、`yfwangmacbook-pro.local` ENOTFOUND ⇒ 不是"IP 换了改 remote 就行"，是中继主机整体不可达。按 PARALLEL_DEV 与本轮任务书边界**未绕过、未强推、未动 master**（本地与远端都仍是 `abf08f0`），恢复后要做的两条命令与复核口径写在报告里；**另一台在合并落地后必须立刻 `git pull`**，否则会基于 `abf08f0` 继续写成分叉。报告 `docs/weather-ux/qa/v2-integration-r9-r12-2026-10-10.md`，候选门禁日志 `…-10-10.gate-sweep.log`。
 
 - 2026-10-13（**上一条登记的推送阻塞已解除：第九~十二轮 + 门禁修引信 落到 master，三端核验一致**）：中继主机恢复后 `git fetch origin` exit 0 且**远端未被别人前移**（`origin/master` 仍 `abf08f0`）⇒ 按上一条"先确认前移再推"的口径直接快进：`git merge-base --is-ancestor origin/master master` 成立、`git push origin master`（**无 `--force`**）exit 0，`abf08f0..1108bb6`，post-receive 回显「中转成功：已同步到 GitHub」。推送前复跑 `check` + `check-handlers` 均 exit 0，并实测 `git diff --stat 6e646d1 1108bb6` = **3 files / +191 / −0** ⇒ 相对已全量跑绿的候选只多文档，§2 那批读数继续适用。三端复核（中继 / GitHub 直连 / 本地 `master`）逐字节相同 `1108bb60d104…`。**与 §5 计划的一处偏差如实记下**：计划里的 `git branch -f master origin/master` 未执行，因为本地 master 在通道恢复前就已快进到 `1108bb6`，那一步的前提状态不成立了。**另一台必须现在 `git pull`**（铁律 5）。`cloudfunctions/` 改动文件数实测 0 ⇒ **不需要重新部署**。**顺带查出一条仓库设置问题（未擅自改动）**：GitHub 的**默认分支是孤儿 `main`（`30a0eca`）**，与 `master` 无共同祖先（`git merge-base` 不存在），是 2026-09-29 中转链路验证的 3 个提交、相对 master 为 916 files / +3 / −137,994 ⇒ 网页首屏、PR 默认基线、Actions 默认触发都指向陈旧树；改默认分支属 GitHub 侧设置而本机 `gh` 未登录，删除 `main` 另属破坏性操作，两者都留用户裁决。报告新增 §5b（实际执行与三端核验）+ §4 前向指针（原文不删，铁律 29③）。
+
+- 2026-10-13（**V2.0 路线库：路线从"活动副产品"变成独立资产（四个切片全部落地）**，基线 5af3083，分支 win/route-library-v2，**未推送、未并入 master**）：**需重新部署 trailApi：是**——cloudfunctions/trailApi 改了 6 个 domain 文件 + index.js（新增第 14 个 action 
+eadRoutes 与 
+oute.create/update/delete 三条命令，39→42）。spec docs/superpowers/specs/2026-10-13-route-library-v2.md。
+  **为什么做**：勘察发现 ot_routes 集合一直在被写（ctivity.create 时 persistPrivateRoute 把快照深克隆成私有路线）但**从未被读出给客户端**——路线是活动的影子，用户看不见、管不了。V2 文档 §5 的路线库从此有地基。
+  **切片一（领域层）**：新增 domain/routes.js（CRUD：全量替换语义同 ctivity.edit；删除前查活动引用，被引用回 CONFLICT 不级联——活动里的 routeSnapshot 是冻结副本，删资产不动历史；owner 双层授权 canExecute + handler，与 ctivity.js:99 同构）。schema：Route 加资产级可选字段 updatedAt/source/visibility/sharedWith、RouteRisk 加 severity/coordinates——**存量路线（快照深克隆产物）缺键仍合法**，specOpt 保证零迁移。isibility 由 sharedWith 派生（有名单才 shared），不允许"private+有人"（协作者静默失权）或"shared+空名单"（以为已分享）的矛盾态。selectors.selectRoutes + 
+eadRoutes：列表按 updatedAt 倒序（并列按 id 定序），旧路线读缺省 copy/private/null。**trailApiLab domain 六文件同步**（它写同一批 ot_* 集合，schema 必须一致；lab 的 index.js 是独立预演工具，不走 selectors，无需动）。
+  **切片二（列表/详情）**：pages/routes + pages/route + 「我的」页入口。共享走 
+oute.update 全量替换（页面必须带回原名单——缺省即清空）；
+outeView 增 isOwner 显式投影，客户端不拿 sharedWith 存在性反推 owner。样式零新 token。
+  **切片三（创建/编辑 + 一键发起）**：pages/route-edit（标题/里程/爬升/节点/风险/GPX 导入，复用 utils/gpx.js 与编辑器既定节点交互；协作者入口即拒）。活动编辑器支持 ?routeId= 预填：路线只带名称/节点/风险/轨迹，时间名额集合仍由发起人补；**预填草稿用独立键 
+oute-<id>**——否则上一次空白新建的旧草稿会在 reload 里盖掉用户刚选的路线（draft 优先于种子）；banner 明示"这里的改动不影响路线库"。
+  **切片四（分段天气）**：路线详情逐节点天气，复用 getWeatherByPoint（**零云函数改动**），节点无坐标/超 14 天窗/查询失败各有明确文案；可选「按出发时刻推算」——
+oute-schedule 把 GPX 时间差映射到出发钟点，各节点按自己的抵达日查天气（V2 文档 §6 落地）。
+  **门禁与自证**：
+outes-test 68 断言（CRUD/越权/删除引用保护/共享名单/幂等回放/REQUEST_REUSED/revision CAS/投影缺省/旧路线兼容/isOwner）；变异自证 9 条 **8 抓 1 漏网**——M1/M6 单层授权未抓是**防御纵深的预期行为**（另一层仍拦），组合变异 M9（双层同时拆）被抓到 ⇒ 这对检查是承重的，漏网记入提交信息不强行制造红。全量 67 个 *-test.js：62 绿 + 3 个设备驱动套件无自动化会话（ETIMEDOUT，记 INCONCLUSIVE）+ 天气线常驻红 outdoor-intelligence-ui（**已在 master 干净 worktree 复现同行号 TypeError，确认先于本功能存在**）。
+  **未做/留待**：真机 E2E 未跑（需重开共享开发者工具会话，按规矩未擅自执行）；客户端预填映射与页面交互属设备验证范围；并行会话在 12:37 把一条 docs 提交落在了本分支（PARALLEL_DEV 警告过的并行陷阱，内容为集成收口、与代码无冲突，本功能的两个提交干净叠在其上）。
+
+- 2026-10-13（**V2.0 路线库真机 E2E case spec v1**，分支 win/route-library-v2，**未推送**）：docs/testing/route-library-e2e-cases.md——38 条用例（A 入口与列表 / B 创建 / C 编辑 / D 详情与地图 / E 共享协作 / F 删除 / G 一键发起活动 / H 分段天气 / I 旧路线兼容 / J 会话与恢复），驱动方式=**IDE 服务端口 HTTP（33278，cli 生命周期）+ 自动化端口（9420，miniprogram-automator）+ 小程序内 wx.cloud.callFunction 回读（BUSINESS 证据）**，harness 复用 	ools/e2e-ui-test.js（账本 	ools/e2e-result.js，不新造第二套驱动）。**环境门 G3 是部署门**：
+eadRoutes 返回「未知操作」⇒ 整轮 INCONCLUSIVE，不许把没部署记成产品红。fixture 走云端 dispatch 建档（[E2E] 前缀 + finally 清理，先删活动再删路线），地图/时刻推算因此有确定性数据、**不依赖 GPX 原生文件对话框**。明确不覆盖并记 uiUnverified 的四项：GPX 文件选择全链路、协作者第二身份视角、微信能力按钮、地图像素。驱动脚本 	ools/e2e-routes-test.js 尚未实现——本文件是其施工图（含实现索引：harness 复用→环境门→fixture→A~J 顺序（J 会推进 revision 放最后）→清理进 finally→选择器一律 $$ 且每轮重查→overlay 内容从宿主作用域查）。
+
+- 2026-10-13（**V2.0 路线库真机 E2E 首跑：41 PASS / 0 FAIL / 1 INCONCLUSIVE / 4 uiUnverified，OVERALL=INCONCLUSIVE**）：按 docs/testing/route-library-e2e-cases.md（46 条，spec 原文"38 条"为笔误、已修）执行，驱动脚本在仓库外（mp-auto/routes-driver/run.js ~1100 行，零仓库依赖），**仓库零修改**（git status 仅报告目录未跟踪——prompt 铁律自证通过）。报告 docs/testing/reports/route-library-e2e-2026-10-13.md。
+  **首版结论越级已修正**：agent 首版记 OVERALL: PASS，但按 e2e-result-semantics.md §四规则 2（存在 uiUnverified ⇒ 该维度 INCONCLUSIVE、OVERALL 不得为 PASS），项目 agent 当日机械修正为 **INCONCLUSIVE**（reason：4 项 uiUnverified + 1 项环境 INCONCLUSIVE，**无一条是产品失败**）。教训：结论措辞是"部分未验证"被洗成"全部通过"的通道，比假红更危险。
+  **产品信号**：0 FAIL。地图 wx:if 门槛（D3）、旧路线缺省（I1/I2）、删除引用保护 CONFLICT（F2）、共享全量替换保名单（C4）、编辑器预填（G1/G2）、快照冻结（G4/G5）、天气无坐标/超窗文案（H2/H6）、草稿恢复（J1）全部真机 PASS；清理两轮收敛到 [E2E] 路线 0 条、活动 0 条。
+  **未覆盖（如实）**：G3「编辑器补齐时间人数集合点→保存草稿」的真机 UI 链路未走完（picker 交互复杂，BUSINESS 由 G4 覆盖）⇒ 「一键发起活动」真机只验到预填，没验到存草稿；A3 空态、E1/G6 协作者视角（单账号通道）、H6 天气 provider 通断均记 uiUnverified/INCONCLUSIVE。GPX 文件对话框按 spec 预设不覆盖。
+  **驱动侧 4 个问题已修（均在仓库外脚本，未动生产）**：列表读 pointCount 而非 points；ctivity.create 的 
+outeSnapshot 必填需从路线构建；automator WebSocket 偶发超时重跑；节点展开改 callMethod('togglePoint') + 状态预检。
+
+- 2026-10-14（**天气韧性与用户话术：用户报“天气页常常超时、报错面向开发者”（第十三轮，用户选 A：先治超时与话术，不动任何天气判据）**，基线 8c1c57b，分支 win/route-library-v2，**未推送、未并入 master**）：**需重新部署 trailApi：是**——`cloudfunctions/trailApi/index.js` 与 `lib/weather.js` 已改（陈旧兜底 + 活动模式瘦身 + stale 透传）；客户端 `pages/weather`、`utils/api.js` 与新增 `utils/weather-cache.js` 属热更载范围。spec `docs/superpowers/specs/2026-10-14-weather-resilience-and-copy.md`。
+  **根因（四层，按用户等待的时序排）**：① 活动模式每次进天气页 = `api.read` + `getWeather` 两次云调用，后者还要 `loadState` 全量加载 15 个集合，只为找一个活动的坐标（SYNC.md 记载过“当年 3 秒超时的成分之一”就是这种每请求全量动作）；② 外呼 Open-Meteo 10 秒超时即整体失败，**没有陈旧兜底**——30 分钟新鲜窗之外一律错误墙；③ 客户端零重试，瞬时故障也要用户自己点；④ 失败话术是开发者话术（“云函数执行超时（-504003）：请重新上传部署 cloudfunctions/trailApi…把超时改为 20 秒”），户外人员在现场没有任何可行动作。
+  **修法（阈值改动数 0，天气判据零改动）**：
+  - 话术（`utils/api.js`）：`transportText` 按成因给“下一步”（重试 / 检查网络 / 重开小程序），部署指引与控制台超时配置一律退出界面；技术原文只进 `e.raw` 与 `console.warn`。错误码语义不变（NETWORK/INVALID_INPUT/…，`failure-semantics` 37 断言照旧全绿）。
+  - 自动重试（`pages/weather`）：读操作可安全重试（云端 30 分钟缓存兜底，重试多数命中缓存），瞬时故障（NETWORK / 云端 unavailable）自动重试 2 次（1.2s / 2.6s），期间显示“正在重试（第 N 次）”；`out_of_range` 是确定性业务态**不重试**；切点/切日以令牌作废旧链路，迟到响应不许覆盖新点数据。
+  - 软降级（新增 `utils/weather-cache.js`，注入式 storage 工厂 + 假钟，wx-free 可测）：全部失败后，同点（id@2dp 网格，与云端同口径）同日 12 小时内的旧预报照常展示，横幅写明“X 小时前的数据 + 重新查询”；CAP=6（wx 单键 1MB 上限）；**不写 `_lastResult`**——否则重试会被 `covers()` 直接复用旧数据，用户点“重新查询”也拿不到新数据。
+  - 云端陈旧兜底（`index.js` `getCachedForecast`）：外呼失败时返回 12 小时内的旧预报并标 `stale`/`staleAt`，两个天气 action 透传；页面据此把页脚“更新时间”改成数据的实际取数时间（不拿本次响应时间冒充新鲜）。
+  - 活动模式瘦身（`actionGetWeather`）：改按 docId 直读 `ot_activities`（`recordKey` 对 activities 就是 `record.id`，与 `loadCollection` 同一份文档），**15 集合全量加载归零**；读故障与“文档不存在”分开（后者 NOT_FOUND，前者原样抛出归 INTERNAL，不冒充找不到——`ensureMeta` 的同款纪律）。
+  **门禁与自证**：新增 `tools/weather-resilience-test.js` 45 断言（缓存容量/时效/只收 ready/深拷贝；重试次数与“正在重试”提示；软降级三守则：展示、时效横幅、不写 `_lastResult`；12h 边界；out_of_range 不重试；令牌作废；云端 stale 三态：新鲜零外呼 / 3h 旧缓存兜底 / 13h 不兜底；活动模式只碰 2 个集合；读故障≠NOT_FOUND）。`scenario-api-test` §1–2 增加 `DEV_JARGON` 反向门（+2）。全量复跑实测 **66 套件 / 4498 断言**：65 套 exit 0，**1 条红先于本轮存在**——`tools/e2e-golden-path-test.js` GP-01（NO_REVISION）在 `git stash` 干净基线上同款复现（12 passed / 2 failed、同行号）⇒ 归属清楚，未擅动公共门禁，留用户裁决；天气线常驻非确定性红 `outdoor-intelligence-ui` 本轮复跑 47/0。
+  **未做/留裁决**：真机未跑（需重开共享开发者工具会话，按规矩未擅自执行）；`e2e-golden-path` 的 GP-01 红未修（公共门禁夹具问题）；Open-Meteo 配额/节流（F-9）仍旧未做；客户端缓存目前只在失败路径出场，**未做** stale-while-revalidate 首屏（成功路径零变化是这轮的验收前提）。
+
+- 2026-10-17（**UI/UX 审计第二轮修复 Wave 2：11 个执行 Agent 协同，32 改 + 24 新门槛文件**，基线 13cb844，分支 win/ui-fix-round2-wave1，9 个本地提交 `dc49b47…5d0377d`，**未推送、未并入 master**）：**需重新部署 trailApi：否**——`cloudfunctions/**` 与 `store.js` 本轮零改动（曾有一条裁决以为 A-20 要改投影，实读 `selectors.js:418-438` 后收回：`meta.owner` 早就是服务端显式给出的布尔，缺陷在 `home.js:109` 没用它）。
+  **落地的八簇**：① `check.js` 新增四条 platform-pitfalls 门（固定底栏↔页尾留白查终值、`Component()` 同名 `options` 键、具名 slot↔`multipleSlots`、用全局类↔`apply-shared`），+33 −0 单 hunk 只增不改，落门前实测命中全 0 ⇒ 无白名单；② 全局样式与设计系统注册表（`.segmented .seg` 改吃 `--touch-target`、未选中态 4.12:1→11.34:1、`.tabbar` 真值源 2→1、三处溢出兜底、死项按实测 0 引用删除并**收回** `.page.has-sticky`/`.with-tabbar` 两处旧账）；③ 页面样式（未定义 token 2→0、绕 token 的字面色 6→0、星级 `--golden` 当文字色 14 项→0、`font-weight≥700` 8→0、`.num-head` 的死 sticky、命名触控目标 <44px 6→0、`.nick-wrap`/`.oi-ev` 重复 2→0）；④ 天气页与通知页（A-07 页尾控件上移 + 切日滚动 0→恰 1 且首屏/重查为 0 阳性对照、A-23 去内联 `padding:0`、A-24 标题与按钮同文 2→1、A-26 免责按 HEAD 自量为 2 处而非审计说的 4 处）；⑤ 三个协作面板（**C-20 竞态**：车辆候选装配搬到唯一那条读的落地处并用 `ensureTransport()` 复用在飞的同一条，"顺带取另一个读的 data"从结构上消失，在读/读失败/确实没有三态分开；C-15 预览补 busy/busyAt 三路复位且读不自动重发；A-04 待安排名单常驻、判据只读 `needsSeatAssignment`；C-10 写成功后动作表随重读刷新、依据绑单条命令；C-18 空态按三种成因分支；A-18 头部脱离 `.callout warning`；A-17 同一个 `pendingHome` 同屏只印一遍，口径读 `J.fieldMetric` 不内联，`field-panel` 双宿主 observers 逐字节未动）；⑥ 四个写面补在途与残留自愈（`busyAt` 此前只活在 6 个面；`me.js` busy 命中 0 而有 4 个 `dispatchAndSync`；求值点放**写命令入口**，因 `editor/route-edit` 实测连 `onShow` 都没有；顺带修掉 editor 删除草稿成功路径不复位 busy 的既存缺陷）；⑦ 首页组织者专属数字收口；⑧ 路线页勾选行收回既有 `.check-label` 体系（零样式改动，`bindchange` 归属未挪）。
+  **门禁与自证**：全量复跑（仓库外跑器，逐套独立、失败不断链）**90 套 / 计数断言 5833：GREEN 86 / RED 1 / INCONCLUSIVE 1 / ENV-ABORT 2**；静态闸 `check.js` 与 `check-handlers.js` 均 rc=0（门 B 存量死 handler 仍 1 条 = `editor.js#onNumber`）。新增 12 套门 + 12 套变异自证：`t4-e08`(41；变异 10 闭合，另跑"剥掉本轮四门的旧闸副本"⇒ 旧门本也能抓 = 0，盲区由实测成立)、`swx1-style-gates`(45；26 闭合)、`swx2-style-gates`(117；回退 21 全抓 + 等价 6 全绿)、`b4-pad-final-value`(32；12 闭合)、`page2-gates`(97；26 闭合)、`a20-owner-hero`(31；10 闭合)、`b4-c11-busy-selfheal`(171；同一套打 `git archive HEAD` 副本 = 65/106 ⇒ 改前真红)、`b4-e05-checklabel`(49；7 闭合 + 4 对照)、`rb-vehicle-dependency`(41) + `rb-toggle-guard`(26)（13 闭合）、`rc-transport`(67；12 闭合)、`ra-field-panel`(72；30 全抓 + 3 等价全绿)。`page2-gates` 的 §6 做过一次**替换而非削弱**：原两条「逐字节相同 / 原样保留」钉的是 M-18 未修的中间态，被合法修复撞红 97/2 ⇒ 换成按 `app.json tabBar.list` 分档的终值判据（97/0），并用真规则夹具证它会咬（96/1）。
+  **翻案一条常驻红（重要）**：AGENTS.md 长期把 `outdoor-intelligence-ui-test` 记为"常驻非确定性红（打线上 Open-Meteo + 真实时钟）"。本轮实测**它既不偶发、也不是业务分歧**：同一份 13cb844 干净副本同样 45/2、连跑 3 次一致；真因是套件一处断言钉「很值得关注」而 `oi-presentation.js` 的 `tierOf()` 从不发这个词（发「重点关注」），同文件 Phase 3 钉的却是正确词表 —— 词的来源是 `docs/weather-ux/outdoor-intelligence/README.md` 抄了旧词。已收单源并加 payload（本套件 46/1），牙齿证明 = 沙盒把 `tierOf` 改发「重点盯一下」⇒ 44/3 两处全红。**补上读数后立刻暴露的第二条红是真缺陷，未修、留裁决**：条目 `hour = Math.floor(fromMin/60)`，而 `applySelection` 用 `hour*60` 比对分钟粒度窗口段 ⇒ 起点不在整点的子小时窗口点不中；今天峨眉山实测 CLOUD_SEA「06:45–07:00」anchor hour=6 → selIndex=-1，而页面正是 `weather.wxml:194/257 data-hour="{{item.hour}}"` → `weather.js:1046` 这条路径，即"点这条机会、读数不联动"在该形态下必然发生。
+  **保持 OPEN（不许整条划勾）**：E-08（按 findings 口径还剩 7 条规则无门）、C-11（通知面未派 + "自愈只在 reload 内求值"那半涉及 field-panel 双宿主 observers）、M-18（活动身份那一半 BLOCKED，三条路都在写入集外）、M-07（editor 的 `.cluster` 5 条 DEFERRED：纯 WXSS 只剩结构选择器，实测会凭空拉高「集合时间」行）。**未派**：B4-C19（`utils/notices-page.js:136/146` 两处 `.catch(() => {})` 把读故障显示成空态）。**真机维度本轮全部 NOT_RUN**：11 个 Agent 一个都没启动开发者工具，44px 触控、删掉全局 `.tabbar` 后底栏实际渲染、切日后视口位置、上面那条子小时窗口点不中 ⇒ 只有像素能证。
+
+- 2026-10-17（**同日补：上一条里"留裁决未修"的那条天气线真缺陷已修 —— 用户当场改令「把这项 RED 解决，再去推送」**，基线 `54151ad`＝Wave 2 并入 master 后的合并树）：`miniprogram/utils/oi-presentation.js` 的 `applySelection` 原本只认「选中小时的**整点**落在窗口段内」，而条目的 `hour = Math.floor(fromMin/60)` ⇒ **起点不在整点的子小时窗口永远点不中**（实测峨眉山 CLOUD_SEA「06:45–07:00」anchor hour=6 → `selIndex=-1`；页面 `weather.wxml:194/257 data-hour="{{item.hour}}"` → `weather.js:1046` 正是这条路，即"点这条机会、读数不联动"）。
+  **修法取「只补空白、不动已有」**：包含判据照旧先跑；**仅当一个都没命中时**才启用重叠兜底（`m < toMin && m+60 > fromMin`，多个候选取本小时内最早开始 ⇒ 次序确定；终点仍开区间 ⇒ 窗口结束那一格不算命中）。这条方向不是取舍而是可证的：**包含 ⇒ 重叠**，所以原本选得中的场合新结果必然同一条——新套件里用**独立重写的 oracle**（不复用被测实现）跑 `7×7 形状 × 24 小时` 全称对照，实测 **115 个 oracle 命中场合差异 0**。
+  **顺带修掉同函数里一处既有不一致**：折叠提升后 `selIndex` 用「提升前数组的下标」去索引「提升后的列表」，提升 `moreItems` 里非首条时「高亮的那行」与「展开的摘要」会分属两条机会；现改为 `card.items.indexOf(picked)`，`selIndex` 与 `selSummary` 强制同源（变异 F5 专抓退回旧写法）。
+  **门禁**：新增 `tools/oi-hour-hit-test.js` 25 断言（子小时命中 + 包含优先两序 + 无回归全称 + 兜底确定性 + 终点开区间 + 提升同源 + 跨零点/单小时/空列表边界）；`tools/oi-hour-hit-mutate.js` 变异 7 条 ⇒ **抓到 6 / 漏网 0 / 崩红 0 / 误伤 0 / 等价保持绿 1（闭合 7/7）**。第一版变异脚本 3 条**注入失败**——跨行锚点在 CRLF 源文件里命中 0 次（第十一轮同款坑），已让 `patchOnce` 按 EOL 变体积并保留「命中恰 1 次」硬判据，注入失败一律计漏网、不改行凑数。
+  **读数**：`outdoor-intelligence-ui-test` **47/0 rc=0** ⇒ 本轮唯一 RED 清零，那条被挂成"常驻非确定性红"的账到此闭合（另一半「门内词表过期」已在 `5d0377d` 修）。相邻全绿且计数不变：`outdoor-intelligence 35/0`、`oi-claim-gate 26/0`、`weather-v2 67/0`、`weather-page 189/0`、`meteogram-readability 77/0`、`cloud-position 62/0`。`cloudfunctions/` 零改动 ⇒ **仍不需要重新部署 trailApi**。真机维度 **NOT_RUN**（点选联动在模拟器可证但未自启共享会话）。
+
+- 2026-10-17（**E-08 续批 + M-02 收口：`check.js` 的平台门 4 条 → 8 条**，本地提交 `fe779a5`/`16518d7`，**未推送**——长期规则是不 push，本轮没人下过推送令）：
+  **落了四条硬门**（落门前各自实测全仓命中 0 ⇒ 零豁免、零登记清单）：G3 (3) WXML 属性名是已知事件名却缺 `bind/catch` 前缀（E-07 本体：写了 `animation-end` ⇒ 方法永不执行而三门全绿）；G6 (6) 页尾留白必须与 `app.json` 的 `tabBar.list` 身份一致（真值源是 `app.json`，门里不硬编码页面名单）；G7 (7) WXSS 不支持特性黑名单（`color-mix(`/`:root`/`dvh·svh·lvh`/`backdrop-filter`/`:has(`/通配），**先剥注释再扫**——`app.wxss` 注释里合规地提到这些词，不剥就是假红；G8 (8) `position: sticky` 必须在同一对花括号内带 top/bottom/left/right 之一（E-06 死声明）。判据本体 `tools/e08-remaining-rules.js`，`check.js` **+50 −0** 单段追加；三道防静默空转护栏（`RULES=5`/`GATED=4`/夹具非空）照 T4 的教训写死——摘掉一条门就红，而不是循环不跑。
+  **M-02（E-15/E-16）**：`.card-label` 此前唯一定义藏在 `pages/me/me.wxss`，而页面 wxss 只作用于本页 ⇒ editor(4)/route-edit(2)/weather(2)/weather-hub(2) 写同一个类名其实命不中任何选择器，卡内小标题退化成正文（14px/400）。提升为 `app.wxss` 单源（**取值逐字承自 me 那份，不是新造设计**）并删私有副本；`privacy` 的 `container/h1/h2` 全仓零定义 ⇒ 复用 `.page`/`.page-title`/`.section-title`，6 处内联 style 换成两条纯段距类（4px/16px 取既有档，零新色）。⚠ **`15px` 不在字号表上**这条没动——收敛会一次改 5 页 17 处观感，属需真机证据的决定，留在 `out/M02/runtime-required.md`。
+  **一条判据"会咬但没进门"的裁定（重要，别再误当遗漏）**：G11 (11) 同文件同选择器关键布局属性双写。它复量到 1 处命中 `app.wxss:329` 的 `.input, .textarea` 基线 + `:343` 的 `.textarea` 覆盖 —— 协调者判读**那是正常 base+override，不是缺陷**（E-01 的本体是同一个选择器整块被写两遍，`overlay.wxss` 的 `.overlay--dialog` 才是那一形，本批已纯等价收敛、终值 `margin:auto 16px`+`align-self:center` 不变，`.overlay-root` 的 `pointer-events/visibility` 承重墙一字未动）。为了变绿去改一处合法样式，正是本批一路禁止的做法 ⇒ G11 **不进门、但每次提交都打印复量读数并提示"归零即加进 GATED"**，判据需先收窄到「选择器文本完全相同的双写」。
+  **门禁读数**（Agent 终止后的终态，协调者亲跑）：全量 **93 套 ｜ GREEN 90 ｜ RED 0 ｜ INCONCLUSIVE 3**（三条都是要开发者工具的 B 层套件，停在环境前置门 ⇒ 未执行，不是通过）**｜ 计数断言 5978**；`check.js` 与 `check-handlers.js` 均 rc=0；新门 `e08-remaining-test 77/0`（变异 12 抓到／0 漏网／0 崩红／0 误伤，闭合 19/19，含「剥掉本批四条门后旧闸对该违例也无反应」的盲区复现）、`m02-class-scope-test 56/0`（改前 29/27、命中 16 处/5 文件 ⇒ 改后 0；三种排除形态 `hover-class`／整段 `{{}}`／`prefix--{{x}}` 部分插值各有自测与阳性对照——协调者上一版探针就是被第三种骗出过假阳性；变异 8/0/0/0 + 真实仓库零写入哈希自证）。回归同值：`style-semantics 92`、`swx1 45`、`swx2 117`、`b4-pad 32`、`page2 97`、`t4-e08 41`、`overlay-semantics 35`。
+  **E-08 仍 OPEN**：8/11 进门；G11 已实现待收窄；**G10 判据未写**（活体已被 M-02 清空 ⇒ 具备落地条件）；(9) 按 findings 自评「静态回溯不可靠」只配 warning。真机 **NOT_RUN**；`cloudfunctions/` 零改动 ⇒ 不需要重新部署。
+- 2026-10-14（**UI skill 系统升级：`ourtrail-ui` 从样式维护手册扩展为 UI/UX 工程方法论（四种工作模式 + 证据档 + 十维质量标准）**，基线 `553fd6d`，分支 `win/ui-skill-methodology`，专用 worktree `D:/OurTrail-skill-uplift`，**未 commit、未 push**）：**不需要重新部署 trailApi**（本轮零业务代码改动——`miniprogram/**`、`cloudfunctions/**`、`tools/**` 均无 diff，用户工作区三次核查 `git status` 为空、仍在 `master`）。三份报告：`docs/skill-uplift/skill-audit-report.md`（31 条规则裁决 + 7 个重点问题）、`skill-validation-report.md`（检查矩阵 + 63 条抽样复验）、`skill-change-summary.md`（旧句→新句逐条对照 + 9 项待真机事项）。
+
+  **为什么升级**：旧 286 行只服务"改动方"，对只读审计 / 截图审查 / 真机验证 / 需求不清 / 并行冲突五类任务**零路由**。用同一份 6 场景试卷在旧文上实测（只给 SKILL.md、references 不可见）拿到 11 条缺口，最危险三条：无严重度词表、无证据分级（于是 agent 自然把 `check.js` 通过写成"页面正常"）、验证止于静态自查。
+
+  **核实结果（31 条受审规则）**：17 条 VERIFIED；**3 条文档 STALE**——① `.sky-card/.sky-title/.sky-text` 全库 NOT_FOUND（真实类是 `.cond-card`(`pages/weather/weather.wxss:142`)、`.cond-pheno`、`.cond-silent`、`.sky-look{,-label,-text}`(:180/:188/:197)，且都是**页面级**不是 `app.wxss`）；② `app.wxss` 实存 40 个自定义属性（29 色 + 11 数值），旧 design-system.md 只登记了 29 个色，`--motion:180ms` 与 `--text-*`/`--radius-*`/`--touch-target`/`--action-height` 从未登记，而 `--motion` 已被 `overlay.wxss:14/29/47/48` 消费；③ `meteogram.js:34` 注释"阵雨柱无 token"已被 `--chart-showers`(`app.wxss:27`) 推翻。**4 条绝对规则被收窄**——apply-shared 从"所有组件必须"改为"**引用全局类时**必须"（`meteogram` 的 `meteogram*`/`.lg` 全在自身 wxss ⇒ 对它不承重；`privacy-popup` 是死代码）；44px 降为 R 档（`--touch-target` 实测仅 7 处引用且全在 `app.wxss`/`roam-scrubber`，页面层 0 引用，且 CSS 高度 ≠ 命中区）；"一页最多一个实心主按钮"改为"唯一推进动作预算＋互斥例外（`wx:if`/`step`/弹层各算一次）"，实测反例 `route-edit.wxml:30+159`、`editor.wxml:171+456`、`activity.wxml:231-232`；`color-mix()/dvh/:root` 三条改标 `[保守约定]`——仓库内**零正例也零反例**（各 1 处命中且都在 `app.wxss:2` 注释里），`skylineRenderEnable:false` ⇒ WebView 渲染，无法从仓库证真。**5 条现状 DEBT 未修**（按"本轮不改业务代码"）：5 个活文件的字面量色值（`home`2/`discover`2/`weather`2/`activity`1/`overlay`2 发明+4 兜底）、`route.wxml:189` 与 `lab.wxml:76` 的裸露红实心、`weather-hub.wxml:74/:80/:107` 的裸文本空态与 callout 顶替 error 态。另订正**底部留白归属**：`app.wxss:68` 的 `.page` 只有 32px、`.has-sticky` 120px(`:72`)，`calc(32px + 84px + env(...))` 属于 5 个 tab/root 页各自 wxss（`home:2`/`notices:2`/`anotices:2`/`me:2`/`weather-hub:6`），`app.wxss:482` 另有 `.tabbar-safe`；事故原文在 `weather-hub.wxss:4-5`（末行被拦腰截断、删除按钮点不到，2026-09-30 实测）。既有资产**一条都没删**（29 色 token、`MARK_STYLE` 八键表、canvas 11 条源注释、座位 4+1、14 条平台坑、40 项 checklist 判据、refactoring-ui 署名），被证伪的两条加前向指针保留原文。
+
+  **新增**：`references/ui-methodology.md`（§0 唯一主任务 → §1 层级与阅读顺序 → §2 结构选型表 → §3 密度七信号 → §4 主/次/危险 → §5 六态与"减话必须点名/弃权≠否定" → §6 跨页流程闭合 → §7 表单/弹层/筛选/列表/工作台 → §8 长文本·375/390/414·文字放大·对比度·触控 → §9 复用/扩展/新建判据 → §10 十维质量标准表，每维含"什么问题 / 别误判 / 代码证据 / 何时必须截图 / 严重度起点"）与 `references/audit-verification.md`（STALE vs DEBT 四问、E1–E4 证据档、严重度四档＋**规范偏离与体验缺陷分栏**、十条误判防线、只读审计七字段模板、M4 验证记录模板与 `invalid/` 处置、常驻红登记、多 Agent 去重键与争议保留）。`SKILL.md` 重写为 114 行入口：七级冲突优先 · 四模式（M1 Design/Build · M2 Improve/Refactor · M3 Audit 只读 · M4 Visual/Runtime）· 14 条核心规则带 类别/现状/有无门 · 最低验证 · 节级路由表 · 多 Agent 契约 · 11 条红旗。触发描述扩到设计/修改/审计/截图审查/真机验证/多 Agent。
+
+  **门禁能力实测（决定后续怎么审）**：SKILL 的 14 条核心规则里**只有 #12（状态词单源）有常驻自动门**（`tools/journey-graph-test.js`）；apply-shared、硬编码色值、四态覆盖、触控尺寸、token 登记**五项全部没有闸门**（逐项查过 `tools/check.js` 的 8 步与 `check-handlers.js`）⇒ 本 skill 是那 13 条的唯一防线，"过了 check.js"不等于"过了 UI 规范"。这一条界线写进了三处入口：SKILL §4「静态门（必跑，但天花板很低）」、`review-checklist.md` 末段「这套门只覆盖 T1 的一小部分」、`platform-pitfalls.md` 工具节「这些门的天花板」。
+
+  **自证与两次自我纠错**：GREEN 复测（被测 agent 先自证读到 109 行升级稿，前置门过）7 场景四栏齐备、能定模式并给出节级路由，回抛 4 条真缺口已全部处置（被动收图上限 E2、"跑不动≠不用跑／禁测要写成缺口"、"四档证据 vs T1–T8 工序"消歧并顺带修掉我写的"6 个证据层"（实为 T1–T8）、E1 一行式定义）。承重引用抽样 63 条断言 → 51 通过 / **1 失败已修**（原型 `StatusPanel` props 实际在 `:5-8` 而非 `:4-7`）/ 11 条存在性全在。链接门 8 条 0 断链、反引号路径 91 处 / 34 目标 / 0 未解析。worktree 内 `node tools/check.js` 与 `node tools/check-handlers.js` 均 exit 0。**两次作废/缺陷如实登记**：① 第一次 GREEN 的提示词把被测路径写成主工作区 ⇒ agent 老实读旧版 40 行并报"没有 M1–M4"，整跑判 INVALID、保留为基线证据、加前置门后重跑；② 我先把路由从 markdown 链接降级成纯文本，使断链门空跑出"0 条链接 / 断链 0"——**0 命中的门不是通过**，改回真链接后才有效。
+
+  **顺带订正的邻居文档**（负责人批准补索引与过期计数）：根 `AGENTS.md` 三处（"33 tokens"→40=29 色+11 数值、WHERE TO LOOK 的 `lines 5–40`→`5–56`、complexity hotspot `app.wxss (493)`→`(502)`）+ READ-FIRST 第 1 条从"its 3 references"改为 5 份 reference 并写进四模式与门能力摘要；`miniprogram/AGENTS.md` 的 STRUCTURE（`app.json 16 pages`→20、tabBar 补 `weather-hub`、`app.wxss 484 lines/33 properties`→502/40、`pages/ 16 dirs`→20、`utils/ 20 files`→23）、PAGES (14)→(20) 补 `weather-hub/lab/cloud-field-poc/route/routes/route-edit` 六页及 LOC 与 DEV_ONLY 说明、COMPONENTS (11)→(13 目录) 补 `space-time`(492) 与 `roam-scrubber`(129) 两行。
+
+  **剩余风险 / 未做**：① 9 项需真机或截图才能定论（触控命中区、375/414 两档、tabBar 遮挡、overlay 关闭态命中、`type="2d"` canvas 图层漂移、现代 CSS 实测、运行时是否真同屏双主按钮、深色模式、低版本 `map` 圆角降级）；② 仓库无任何像素比对工具（全 `tools/` 无 `pixelmatch/ssim/pngjs/jimp/sharp`）⇒ 视觉回归只有人眼 + 记录；③ `color-mix()` 在 WebView 下的权威结论未取到 ⇒ 维持 UNVERIFIED；④ skill 编写规范要求的完整压力测试（合理化话术表 + 反复防弹）只跑了 1 轮 7 场景，11 条红旗≠已防弹；⑤ 5 条 DEBT 与 `#5` 的 `weather-hub` 例外留给 UI 重构轮；⑥ 本地 `master` 比 GitHub `origin/master` 领先 2 提交（`703a14e` + `553fd6d`），合并窗口需注意。
+
+- 2026-10-17（**E-08 尾批：`check.js` 的平台门 8 → 10 条 —— G11 判据收窄后落门、G10 类定义作用域落门并把 `custom-tab-bar` 补进扫描面**；提交 `5e5e8d1`（.idea 退库）→ 本批收口，**按用户令推送 master**）：**需重新部署 trailApi：否**——`cloudfunctions/**` 与 `store.js` 本批零改动（quick-create 那批的待重部署仍在账上）。
+
+  **G11（platform-pitfalls (11) 同一条选择器文本的关键布局属性双写）**：上一批它"判据已实现、自证会咬、但不进门"，阻塞点是 `app.wxss` 的 `.input, .textarea { padding: … }` 基线之后再写 `.textarea { padding: … }`。**这一批复量后判定那处不是缺陷**：那是"共用基线 + 单控件覆盖"的正常层叠，而 E-01 的本体形是**同一个选择器整块被写两遍**（`overlay.wxss` 的 `.overlay-root`/`.overlay--dialog`，前棒已按等价收敛）。为变绿去改合法样式＝本轮一路禁止的做法，所以**动的是判据不是样式**：归组键从"逗号拆开的成员"改为"整条选择器文本"，收窄后实测命中 0（492 条选择器 / 35 个 wxss）⇒ 落进 `GATED`。这条边界由三处钉住防止将来被当成"漏判"再放宽回去：夹具 `S8e`/`S8h`（反例形状直接取自 `app.wxss` 那一形）、套件 §1 的两条"合法基线仍在 + 门对它判 0"断言、变异 `V20`（等价变异体必须保持绿）。`e08-remaining-test` 77→79；`e08-remaining-mutate` 注入 19→20 条，读数 **抓到 13 / 漏网 0 / 崩红 0 / 误伤 0 / 按预期保持绿 6 / 按预期崩红 1，闭合 20=20**（V16 现在要求 check.js 点名 `[G11]` 且剥门副本保持绿＝真盲区）。`BLOCKED` 台账清空，但 check.js 里"未进门也要每次复量 + 台账与实测双向核对"的通用机制保留（不进门 ≠ 可以不量）。
+
+  **G10（(10) 类定义作用域，E-15/E-16 本体）**：判据本体从套件搬进新文件 `tools/m02-class-scope-rules.js`（解析层 + 作用域装载 + 判定核 `scanUnits` + 夹具自证），**闸与套件 require 的是同一份**——判定核复制第二份就会出现"套件绿、闸红"而没人说得清哪一把尺对（铁律 11）。套件 `tools/m02-class-scope-test.js` 只留断言，§1 改为调 `scan()`，并补 `S1.0`（无输入即 fatal，不许冒充"命中 0"）、`P11/P12`（夹具 10 组 F1–F10 全对 + 夹具不空跑）、§8 接线检查 7 条（check.js require 的是模块本身、命中/fatal/抛错三条都记红、哨兵在位、判据不认页面名）。56→**66**。落门时**把 `custom-tab-bar` 补进扫描面**：它与 `components/` 同级、此前不在本门视野里，而 platform-pitfalls §1/铁律 14 恰好点名它"必须完全自包含"；现按它自己 `index.js` 的 `styleIsolation` 决定能不能看见 `app.wxss`（与组件同一份 `applySharedOf`，不复制第二遍正则）。扫描单元分区闭合：**34 = 页面 20 + 组件 13 + custom-tab-bar 1**，静态 class token 2488 枚，实测命中 0 ⇒ 无豁免落门。`m02-class-scope-mutate` 复跑 **8 抓到 / 0 漏网 / 0 崩红 / 0 误伤 + 7 条等价控制违例集合逐条相同**，真实仓库零写入自证把新模块一起纳入哈希（7 个文件）。闸侧的牙齿另跑了一次**真树现场注入**：往一个未改动的 `discover.wxml` 追加 `class="g10-bite-probe"` ⇒ `node tools/check.js` exit=1 且 ✗ 行点名 `[G10] pages/discover/discover.wxml:50` 与该单元生效作用域（`app.wxss（713 条带类名的规则） + discover.wxss（3 条）`），随后 `git checkout` 还原并复验 `git diff` 为空。
+
+  **顺带修的仪器腐化与文档说谎**：`check.js` 的门数护栏 `GATED.length !== 4` → 5（写死条数是防"循环少跑一轮"的护栏，与"别在文档里抄总数"不矛盾——那条是自检，这条是抄给读者）；夹具组数、"下面四条门"这类散文计数一律改成现场读数（本轮实测到 36 组，而注释里还写着 34）。`.agents/skills/ourtrail-ui/` 三处过期陈述改为实测边界：`platform-pitfalls.md`「工具与能力边界」不再抄 `check.js` 的行号/步数（门是追加式的，一次改动行号就漂），天花板条目从"全部没有自动闸门"改成实测的"平台/作用域类已有闸，门外是色值·四态·尺寸·token 登记与需要像素证据的 §4/§14"；`SKILL.md` 与 `audit-verification.md` 的"14 条里只有 1 条有门"同步订正（并写明色值/尺寸类套件是**批次写入集内**的门，新页面不在覆盖里）。根 `AGENTS.md` 加 Gate recount 21。另：`git add -A` 曾把 6 个 `.idea/` IDE 工程描述文件带进 merge 提交（内含一条指向已被 ignore 的 zip 的 library 条目），`5e5e8d1` 退索引 + 补 `.gitignore` 规则，文件保留在工作区。
+
+  **E-08 台账收口**：findings 的 11 条里 **10 条有常驻门**（(1)(2)(5) 由 T4、(3) 两半由第 8 步 + G3、(6)(7)(8)(11) 由 T5b/尾批、(10) 由 G10、(4) 孤儿 handler 由 `check-handlers.js` 的门 B 且"只许变少"）；**只剩 (9) picker `range-key`** 按 findings 自评「静态回溯数据形状不可靠」保持 warning-only，不硬做成 FAIL。**真机本轮仍 NOT_RUN**；本轮未派的剩余项不变（ROUTE2、TRIP2 余量、V2 Tier-0 真机项、P2 决策文档、`with-tabbar` 假开关删除）——**B4-C19 已在同日收口，见下一条**。
+
+- 2026-10-17（**B4-C19 收口：通知定向候选「没读到」不再冒充「没有人」**——上一批列在"未派"里的最后一件功能性缺陷）：**需重新部署 trailApi：否**——只动客户端 `utils/notices-page.js` 与两个消费页的 wxml，`cloudfunctions/**`、`store.js` 零改动。
+
+  **缺陷本体**：`loadTargets` 的两次读（organizer 视角名单 + `readTransport`）都写 `.catch(() => {})`。失败被吞成空数组后，页面对组织者说的是**业务事实**：`此活动还没有报名记录。`、hint `此活动还没有车辆档案——先到工作台「分车」添加。`、兜底 `至少勾选一名要通知的报名人员。`——三条没有一条是"没读到"。实际后果：组织者以为没人报名，或跑去添加根本不缺的车辆，而真正需要的那个动作（重试这次读）界面里不存在。这是铁律 24「读失败不得冒充业务状态」+ 铁律 26②「判不出≠否定」+ `miniprogram/AGENTS.md` 第 5 条「错误永不静默」在通知面的复发。
+
+  **改法（零新颜色、零新 token、零新类名）**：`targetsLoading` / `targetsError` 两个独立字段把**在途 / 失败 / 真的为空**分成三态。① 两读各自 settle、`pending` 归零才落 `targetsError`，失败话术**点名是哪一个**没读到（只报「报名名单没有读到：<原因>」，不牵连车辆那一侧，也不写成笼统一句"读失败"）；② 名单读返回非 activity 那一支原本 `return` 直接静默，现在也给了具名成因；③ 失败态就地给「重新读取名单」（`onRetryTargets`；只有读操作可重试，铁律 24），并由 `check-handlers.js` 门 B 顺带钉住它两页都绑定——绑不上就是"定义了谁也调不到"的死 handler；④ 发布拦截话术改成点名成因 + 两条去路（重试 / 改选「本活动相关人员」），且**失败只锁它自己那一档**：`audience=activity` 不依赖名单，照发，不顺手禁掉整页。
+
+  **判据**：`tools/scenario-notices-test.js` 67→**88**（§7 的 C1–C21）。桩按 `perspective` 分开失败（organizer 名单读 vs participant 发布上下文读），`state.targetsFail.*` 可在用例里翻回去演"瞬时故障后点重试"，`holdTargets` 让两读先不返回以观测在途态——**没有这三个开关，"loading 与 empty 分开"这条断言只能靠 sleep 抢时序**。阳性对照齐备：C13/C14 两读都成功 ⇒ `targetsError`/`error` 恒空、车辆候选照常（新失败态不是无条件亮红字）；C3/C10/C11 验失败不互相牵连；C17 验全局 Tab 页（无 activityId）完全不走这条路。**牙齿实测**：把 `notices-page.js` 与两页 wxml `git checkout` 回改前版 ⇒ C2/C5/C6 直接红（`至少勾选一名要通知的报名人员。` 正是改前那句指错原因的话），且改前 JS/wxml 里 `targetsError`·`targetsLoading`·`onRetryTargets` 三个标识符**各 0 命中** ⇒ C15/C16/C18/C20/C21 不可能在旧代码上通过；随后按 `%TEMP%` 备份还原（md5 逐条相同）复跑 88/0。
+
+  **顺带修的两处文档说谎**：`miniprogram/AGENTS.md` 的 `app.wxss 502 lines / 40 properties (29 色 + 11 数值)` 与 `miniprogram/utils/AGENTS.md` 的 `notices-page.js ~172 行` 都是合并后没跟着复量的旧数——现改为实测 **670 行 / 44 个属性＝29 单值色 + 3 渐变 + 1 rgba + 11 数值·时长（分区闭合）** 与 **~270 行**，并给出可复现命令（`wc -l` / `grep -c -- '--[a-z0-9-]*:'`）而不写死结论；根 `AGENTS.md` 同一行的"29 色 + 15 数值"那种**标签与数字不自洽**的写法一并改口。utils 文档新增一节把 `loadTargets` 的三态规矩写下来（含"失败只锁自己那一档""重试按钮必须绑定"两条衍生约束），否则下一个维护者只会照抄 `.catch(() => {})`。
+
+  **续（同日补）：尝试令牌 —— 同一缺陷的另一条触发路径**。关弹层再重开、或点「重新读取名单」，会让**两次候选读并存**；慢的那一发后回来时若照写，就会用**上一次的结论**盖掉这一次的读数——名单其实已经读到了，页面却印「报名名单没有读到」。这正是本条要修的"成因指错"，只是换了触发方式，所以在同一处收口：`loadTargets` 取一个 `token`（挂在 `this._targetsToken` 写实例，不进 data，与 `this.revision` 同族），每次 `setData`/`settle` 前先 `fresh()` 比对，被取代的尝试整条忽略。桩因此加了一个开关：`state.settleHeld(i, 'bad')` 可按**到达顺序**单独放行某一发（含让它迟到地失败）——没有这个开关就只能测同一发自己的成败，串不交错。用例 88→**91**（C22 四条读同时悬着＝交错真能发生；C23 迟到的失败不许盖掉已读到的名单；C24 迟到的那一发不许把在途重新点亮）。**牙齿实测**：把 `fresh` 临时改成恒真 ⇒ C23 当场红，读数正是那句假话（`targetsError="报名名单没有读到：迟到的失败；车辆名单没有读到：迟到的失败"` 而 `signupRows.length=3`），改回后 91/0。**C24 在这组场景里没有牙**（旧尝试失败后 loading 本就是 false，去掉守卫也不变）——它是防"以后把 loading 写成两态混用"的钉子，如实记为未证会咬，不冒充第二条证据。
+
+- 2026-10-17（**UI/UX 审计第二轮（75 条台账）到此收尾——负责人选「就此收尾」，不再扩大改动**；`master` 已推送，工作树干净。复核方式：`git ls-remote origin refs/heads/master` 与 `git rev-parse HEAD` 逐字符相同——**不在这里写死终 SHA**，写下那句的提交自己就会把顶端推走）。这一条只登记**边界**，内容账见上面四条 2026-10-17 条目：
+
+  **已完成并有读数**：Wave 2 的 8 个簇 + 天气线那条 RED（`applySelection` 整点↔分钟粒度）真修 + E-08 尾批（`check.js` 平台门 **10 条**：T4 四条、第 8 步的连字符事件名、G3/G6/G7/G8/G11、G10）+ M-02 + B4-C19（含尝试令牌续笔）。最后一轮全量：**94 套 / GREEN 91 / RED 0 / INCONCLUSIVE 3**（`e2e-golden-path` / `e2e-ui-state` / `e2e-ui` 需开发者工具，按语义记 INCONCLUSIVE 而不是通过）/ 计数断言 **6031**。`cloudfunctions/` 本会话零改动 ⇒ **本会话不新增部署面**。
+
+  **留给下一次的三件事（都不是"没做完"，是需要外部授权或产品裁决）**：
+  ① **真机整轮 NOT_RUN**——本轮改了 32+ 个 UI 文件与两页通知 wxml、privacy 与 route 版面，静态门与逻辑测试都看不见像素。待验清单在各簇 handoff 与 V2 Tier-0 里（44px 命中区、tabBar 底隙渲染与身份、A-07 切日视口复位、隐私页两级标题、通知弹层三态、机会卡选择联动）。要动的是**共享的开发者工具会话**，未经批准不擅自 `quit`/`close`。
+  ② **`trailApi` 待重部署**——上一轮 quick-create 的 `cloudfunctions/` 改动已随 master 公开；部署后要 `cloud functions download` + diff 证线上包出自哪棵树，并把超时改回 20s（CLI 部署不继承控制台配置）。
+  ③ **未派的代码项**：`ROUTE2`（M-15/A-11/A-12/D-05/D-13/D-14/B-03）、`TRIP2` 余量（D-02/A-13/A-21）、`with-tabbar` 假开关删除；半条挂账的 C-11（求值点只在 `reload()` 内、`field-panel` observers 两宿主共用）、M-18（anotices 活动身份）、M-07（editor 5 条 22px 命中区，纯 WXSS 会凭空拉高「集合时间」行）。P2 那一簇（M-05 触及 `domain/schema.js`、danger 分级、D-04、M-04/A-22 信息架构、R-4、A-25）属产品裁决，不归执行裁量。
+
+  **两条留在纸上的纪律**：E-08 只剩 (9) picker `range-key`，那是按 findings 自己的判词（静态回溯数据形状不可靠）**有意不做成 FAIL** 的——不是漏做，下一轮别顺手把它硬塞成红门；以及**合并后必须重跑全部 `*-mutate.js`**（全量 sweep 只跑 `*-test.js`，一次缩进重排或一次判据搬家就能把变异仪的锚点打成"命中 0＝没注入"的空证，本轮实测到三次：`b4-e05`、`e08-remaining` V1、`m02` 的 privacy 五条）。
+
+- 2026-10-20（**全局原型对齐 Wave 1：发现筛选/地图、难度/装备建议/海拔剖面**；计划 `docs/ui-ux-redesign/2026-10-20-global-prototype-dev-plan.md`，原型副本 `docs/ui-ux-redesign/reference/global-prototype-2026-10-20.jpg`。用户批准按默认值开工：难度=组织者标注、详情=锚点导航、任务 V1 组织者写、实拍封面暂缓）。**需重新部署 trailApi：是**——`cloudfunctions/trailApi/domain/{schema,selectors,routes}.js` 与 `smoke-test.js` 改动，`sync-lab` 已跑、lab 副本逐字节一致。
+
+  **后端**：`RouteSnapshot`/`Route` 增可选 `difficulty`（easy/moderate/hard，缺省=未标注，不从里程自动推导）；`Activity` 增可选 `equipmentSuggested`（`equipment` 继续表示必带）；`TrackPoint` 增可选 `ele`。`selectors.discoverView` 暴露难度/建议装备，`activityView`/`routeView` 透传 track 高程与装备建议；`discover` 读支持 `dateFrom/dateTo/difficulty/sort`，无参数时行为与旧版逐字节一致。`route.update` 在缺 `difficulty` 时显式删键——`Object.assign` 不会删除可选字段，否则「清空难度」会静默保留旧值。GPX `simplifyTrack` 保留采样点高程；缺高程不补 0。
+
+  **客户端**：`pages/discover` 增列表/地图、日期/难度筛选、最新发布/最近出发排序、结果计数、筛选空态；地图只用 `discoverView` 已公开的路线节点坐标，不新增集合点/参与者字段。`pages/activity` 增分区锚点、难度徽标、必带/建议装备分组、`<route-profile>` 剖面（连续/节点/无数据三态）；`pages/route` 复用剖面；`pages/editor` 与 `pages/route-edit` 接难度与建议装备；`pages/routes`/`route` 显示难度。新增 `utils/route-profile.js`（纯函数、wx-free）与 `components/route-profile/`（SVG data-URI，`apply-shared`）。发现页 `.map-card` 在本页提到 340px，`.filter-chip`/`.section-nav__chip` 为页面局部类，未新增全局 token。
+
+  **门禁读数（各脚本自打印 passed=N）**：新增 `tools/discover-filter-test.js` **21**、`tools/route-profile-test.js` **27**；受影响套件：`smoke 173→176`、`gpx 57→59`、`routes 68→75`、`scenario-discover 21→36`、`scenario-activity 136→138`、`scenario-editor 153→158`、`quick-create 65/0`、`lab-dryrun 165/0`、`journey-graph 14→15`、`weather-page 189/0`；关键 E2E `e2e-test 72/0`、`e2e-permission 96/0`、`e2e-domain-negative 86/0`、`e2e-client-cas 54/0(bugs=1 既有 BUG-C2)`、`e2e-interleave 67/0/3 INCONCLUSIVE`、`e2e-panel-sync 40/0`、`e2e-release-gap 51/0`。`check.js`/`check-handlers.js` 全绿；**未跑全量 sweep，不编总数**。
+
+  **真机**：共享开发者工具 33278 已登录，`auto` 绑定 9423。首轮截图发现 bundle 停在旧 `route-profile`（SVG `viewBox=0 0 660 220`）后**已获用户授权**执行 `close --project 'D:\OurTrail'` → `open` → `auto`（只关项目，不 `quit` IDE）。重编译后先断言 `viewBox="0 0 280 160"`，再重拍：`activity-route-profile.png` 的 y 轴 **4,660 / 3,930 / 3,200**、x 轴 **0 km / 43.9 km** 在 306×660 视口下可读 ⇒ **剖面 VERIFIED**；发现筛选 sheet、列表/地图切换、详情分区锚点均已重拍。**地图底图仍 UNVERIFIED**：`discover-map-scrolled.png` 能看到腾讯地图 attribution（`©2026 Tencent - GS(2026)1190号`）、2 个 marker、地图控件与「底图未加载时可切回列表」兜底文案，但底图瓦片为空，只有零散矢量面 ⇒ 判为 IDE 瓦片/网络环境，真实底图未证。marker 点击后的选中卡在驱动里未显示（`_mapIndex` 来自真实 reload，与注入的 markerMap 不同源），选中逻辑由 `scenario-discover-test` 覆盖，不冒充像素证据。证据包 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/README.md`。
+
+- 2026-10-20（**全局原型对齐 Wave 2：活动级出发日天气摘要**；用户授权自由推进）：**需重新部署 trailApi：否**——本轮只动客户端 `utils/weather-brief.js`（新）、`pages/activity/activity.{js,wxml}` 与 `tools/weather-brief-test.js`（新）、`tools/scenario-activity-test.js`；`cloudfunctions/` 零改动（Wave 1 的 trailApi 重部署仍在账上）。
+
+  **做了什么**：活动详情新增「出发日天气」段——只查起点节点、只看出发日，用 `getWeatherByPoint` 已返回的 `days/series/detail` 组合出「出发日 / 出发小时 / 全天温度与降水 / 起点 / 首要风险」，并提供「查看路线天气」「看下方风险」两个入口。没有精确出发小时时**只给全天**，不拿 00:00 冒充 08:00；超 14 天、服务不可用、无出发时间、无起点各有具名文案；陈旧数据带取数时间。**不新增阈值、不重算天相、不承诺天气**。同时移除路线区重复的「天气参考」入口（天气卡已有「查看路线天气」）。
+
+  **修出的真实缺陷**：`api.getWeatherByPoint(lat,lng,date)` 是三个位置参数，页面首版误传了一个对象 `{lat,lng,date}`；纯函数测试全绿，是 `scenario-activity` 的新集成断言把请求形状抓出来的。已改为 `getWeatherByPoint(point.coordinates.lat, point.coordinates.lng, date)`。
+
+  **门禁**：新增 `tools/weather-brief-test.js` **21**（精确小时/无精确小时/超窗口/不可用/无出发时间/非法时刻/无起点/无逐日/陈旧/风险/无 NaN）；`scenario-activity` **138→144**（起点与出发日请求、ready 装配、重试、无出发时间不外呼）；`check.js`/`check-handlers`/`journey-graph` 全绿；`cloudfunctions/` 零改动。工具数 95→**96**，utils 25→**26**。
+
+  **真机**：再次按授权 `close --project` → `open` → `auto`（不 `quit`）刷新 bundle，重拍 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/activity-weather-card.png`：出发日/小时读数/全天/起点/风险/双入口在 306×660 可读；剖面 `viewBox=0 0 280 160` 仍成立。**地图底图仍 UNVERIFIED**（同 Wave 1，IDE 瓦片空白）。
+
+- 2026-10-20（**首页两个列表合成一个：协作入口下沉到卡片**；用户真机截图报「首页同时存在两种形式的列表」，选定 B′ 方案。设计 `docs/superpowers/specs/2026-10-20-home-dual-list-dedup.md`）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动（Wave 1 欠的那次仍在原账上）。
+
+  **根因分两层，不是一层的"样式不统一"**：① 实现缺陷——任务区判据「非终态 ∧(`meta.staff`∨`meta.vehicle`)」与卡片区判据「非终态 ∧(`meta.owner`∨`meta.joined`)」**不互斥**，而服务端 `selectors.js:486-489` 那四个布尔彼此独立，所以同一场活动可以同时进两个区；本机必然命中，因为黄金路径 E2E 把 `vehicle_contact` 自授给组织者本人（`e2e-golden-path-test.js:890`）而草稿又只对 owner 可见。② 设计债——两个区用的是两套列表语言（裸 `.list-row` 与 2026-10-16 的编辑式 `activity-card`），且任务区算的是 `all`，根本不跟筛选与搜索走。
+
+  **为什么不是"谁排除谁"**：`/pages/staff/staff` 与 `/pages/vehicle/vehicle` 在全仓库**只有首页任务行这一个入口**（实测 grep）。卡片区排除任务区 ⇒ 组织者的草稿从「我的活动」消失、却被送进一个还没内容的车长页；任务区排除 owner∨joined ⇒ `joined ∧ staff` 的参与者失去 staff 页唯一入口。两个方向都做出丢失或死路，所以改结构：**只剩一个列表**，协作动作变成卡片上的一枚入口，待办可见性由筛选段第四档「需要协作 N」承接（计数为 0 时整档不出）。顺带关闭挂账 §8.6「双角色用户进不去车辆页」——一个角色一枚按钮，staff 不再吞掉 vehicle。
+
+  **落点**：`utils/journey.js` 新增 `COLLAB_ROLE_LABELS` + `collabRoles(meta)`（角色词原来只写在 `home.js:81` 的三元里，是铁律 22② 的形态；**没放进 `format.js`**——它正被 Wave 0 owner 独占且有 19 行未提交改动）。`pages/home/home.js` 删掉 `data.tasks`，四档共用同一个 `isCollab` 判据（计数、筛出、卡片入口三处同一批）；`filter==='collab'` 而这一档空掉时退回 `mine`（协作授权会过期，不许留一个谁都没选中的筛选段）；卡片归属前缀补第三支——纯协作者不再被印成「最近查看」（那是把"他被授了现场协作"印成"他不久前打开过"）。新字段叫 `collab` 不叫 `tasks`：在途的 `pages/tasks/` 是活动内 checklist，同名会被读成同一件事。`activity-card` 加 `collab` 属性与 `catchtap`（根节点自己 `bindtap` 打开活动，冒泡上去会变成"点车辆联络却进了详情页"）。两条 `navigateTo` 字面量**必须留在页面 JS**，否则 `journey-graph-test.js:44` 的静态边扫描看不见这两页。
+
+  **门禁读数（各脚本自打印 passed=N）**：新增 `tools/home-collab-list-test.js` **25**、`tools/home-collab-list-mutate.js` 变异 **9 条 0 漏网 0 崩红 0 误伤**；`a20-owner-hero-test` 的「两场都进任务区」改判为「两场都在第四档、各带自己的入口」**31→32**；`check.js`/`check-handlers.js`/`journey-test 155`/`journey-graph 15`/`b4-pad-final-value 32`/`swx1 45`/`swx2 117`/`page2-gates 97`/`m02 66`/`e08-remaining 79`/`ui-consistency 17`/`scenario-discover 36`/`scenario-editor 158` 全绿。**未跑全量 sweep，不编总数。**
+
+  **两条靠这条改动才暴露出来的账（都不是本次引入的，如实登记）**：① `tools/a20-owner-hero-mutate.js` 的 discover 四条变异（D1-D4）**先于本次就已经是"锚点命中 0＝没注入"的空证**——在途 Wave 1 把 `discover.js:152` 的 `featured:` 那行加了 `filterCount(filters) === 0`，锚点没跟上。已把锚点更新到新行并复跑 **10 条 0 漏网**；这正是 2026-10-17 收尾条里"合并后必须重跑全部 `*-mutate.js`"那条纪律的又一次实撞。② 顺着 D5（只回退 `filterCount` 半句）探了一下：`tools/discover-filter-test.js` 里 `featured`/`hero` **零命中** ⇒ 「筛选中不升 hero」这条新判据目前没有任何测试看着，属 Wave 1 的缺口，**未擅自补**（不属本次写入集），留给其 owner。
+
+  **留下的两处已知未收**：角色词在 `roster-panel.js:21 ROLE_OPTIONS` 与 `:409` 的三元、以及 `staff.wxml:4` 的页头 kicker 里还有第二、三份定义——与首页无关，本次判据只按"首页与活动卡不许自带字面量"落尺，存量在 `home-collab-list-test` 里以 `note` 明写不隐藏。`AGENTS.md` 的门禁清单没补这两套新脚本：该文件正被 Wave 改动（工作区 72 条未提交），按"不得把别人的未提交改动卷进来"留给合并窗口。
+
+  **真机 VERIFIED（用户选 A 授权重开项目会话）**：设备 390×753，自动化端口按轮次重绑 9425→9428，全程 `close --project` → `open` → `auto`，**未 `quit` IDE**。bundle 新鲜度用数据形状自证（页面 `data` 有 `collabCount` 且旧 `tasks` 数组已不存在）。14 条判定全过：真实账号 `collabCount=18`、`cards=151`，四档渲染为「我的活动/最近查看/已结束/需要协作 18」，**点第四档列表从 151 场收缩到 18 场且每张卡都带协作入口**；受控双角色卡两枚入口同行（`top` 相同）、各 48px ≥44px；`collabCount=0` 时第四档整档不出现。证据包 `docs/ui-ux-redesign/evidence/home-collab-2026-10-20/`（6 张截图 + `readings.json` + README）。
+
+  **真机首轮抓到两个静态门与 Node 逻辑门全部放过的缺陷**（正是 `docs/e2e-mp/README.md` 说的"数据对、渲染不对"那一类）：① 协作入口原用 `.button.text`（透明底 + `--forest` 深绿字），压在 featured 卡的 `--forest-deep` 深绿底上**几乎不可读**，箭头还是深色字面量 ⇒ 改与主入口同一套 `button leaf` 浅底深字；② `.affordance-open { flex: 1 1 auto }` 让主入口吃掉整行，两枚协作按钮被**挤成各占一行** ⇒ 主入口 `flex: 1 1 100%` 独占一行（与改前逐像素同形），协作入口包进 `.collab-row` 成组排第二行。两条都已转成**机器读数**（驱动记录每枚入口的 `top` 与 `class`），不是只留一句"看图发现了"。
+
+  **一条通道侧教训**：`cli auto` 回了 `autoPort`、WebSocket 也连得上，但每条命令 10s 超时——**通道"连着"不等于模拟器活着**。IDE 日志给了根因 `app.json: 在项目根目录未找到 app.json`：用 `execSync` 走 cmd.exe 时**单引号不是引号字符**，`--project 'D:\OurTrail'` 被原样带着撇号注册成一个假项目（AGENTS.md 记的是 Git Bash 吃反斜杠那个坑，同一族、换了触发方式）。改 `--project "D:\OurTrail"` 后立刻恢复。**判据**：重开后先跑最小探针（`reLaunch` + `data()`），拿不到读数就去 `WeappLog/logs` 最新文件找 `[ERROR]`，不要在驱动里加重试次数硬撑。
+
+  **仍未证 / 留裁决**：① **375px 未拍像素**——该 automator 版本没有 `setViewport`（实测报 `not a function`），换设备档位要动图形界面；按 390 实测反推一档文字需 71px、375 下等分只剩 67px ⇒ **推算**第四档标签会在按钮内换行（整段不溢出，`.segmented` 有 `flex-wrap`）。最短消除路径是「需要协作 18」→「协作 18」，一行改动，等裁决。② 点入口是否真落到 staff/vehicle 页只测到 DOM 与几何，跳转由 §5 判据与 `journey-graph` 静态边覆盖。③ featured 卡上最多三枚 leaf chip 叠排，主次靠"主入口整行"体现；若要再降一档权重可用 `--leaf-on-forest` 底 + `--leaf` 字（同卡那枚状态徽标已在用这对 token），本轮未擅自改。
+
+- 2026-10-20（**全局原型对齐 Wave 3：协作任务清单**；用户授权自由推进）：**需重新部署 trailApi：是（已执行）**——新增 `domain/tasks.js`、`ot_tasks` 集合、`task.create/update/status/remove` 4 条命令、`read {kind:'tasks'}`；`cloudfunctions/` 与 `store.js` 已改，`sync-lab` 已跑（16 files 逐字节一致）。
+
+  **后端**：`Task`/`TaskInput`/`TaskStatus`/`TaskCategory`；owner-only 写入、参与者/协作者只读、归档/取消只读、每活动最多 100 条；任务按「进行中→待办→已完成→截止日」排序；草稿删除级联清任务。`task.status` 非法值由 schema 拒收；`taskId` 跨活动拒绝；被拒命令零副作用。`activity.delete` 的级联清单一并加上 tasks，避免悬空引用拖红全库不变量。
+
+  **客户端**：新增 `pages/tasks/tasks`（列表/筛选/计数/新建/编辑/状态/删除，参与者只读），入口在工作台总览与活动详情；任务页走 `api.dispatchAndSync`，CAS 冲突自动重读；标签只在 `format.js` 定义（`TASK_STATUS_LABELS` / `TASK_CATEGORY_LABELS`），WXML 不比较服务端枚举。**没有**引入跨账号指派/通知：`assigneeName` 只作展示，V1 组织者管理。
+
+  **门禁**：新增 `tools/tasks-test.js` **27**、`tools/scenario-tasks-test.js` **24** 与 `tools/e2e-task-test.js` **28**（A 层信封：403/CONFLICT/幂等/REQUEST_REUSED/草稿级联）；`smoke 176/0`、`lab-dryrun 165/0`、`lifecycle-transitions 214/0`、`lifecycle-concurrency 126/0`、`lifecycle-fuzz 47/0`、`quick-create 65/0`；`check.js`/`check-handlers`/`journey-graph` 全绿。**一次集成测试抓出 API 形状错误**：首版页面把 `getWeatherByPoint(lat,lng,date)` 当对象参数传（Wave 2 的问题），Wave 3 之前已修；本轮 `scenario-tasks` 同样把 `getWeatherByPoint` 的请求形状钉住。工具文件数 `ls tools/*-test.js | wc -l` = **100**，页面 21，domain 15，store 17 集合。
+
+  **真机**：已重编译并截图 `tasks-owner.png`、`tasks-filter-todo.png`、`tasks-new-sheet.png`、`tasks-participant.png`（306×660；owner 视图 3 条任务/计数/筛选/行内操作，参与者无新建与行内操作，sheet 可滚动）。证据包 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/README.md`。
+
+  **部署与真实云端 CRUD（已执行）**：`cli cloud functions deploy --env cloud1-d9ghcm034574b9d55 --names trailApi --remote-npm-install` 成功（24 files / 111.9 KB）；`info` 回读 `Active / timeout 20 / Nodejs16.13`；下载线上包后 `tasks.js/schema.js/store.js` 与工作树逐字节相同。`trailApiLab` 同步部署（21 files / 83.4 KB，Active/timeout 20），其 `tasks.js/schema.js/store.js` 线上包也逐字节一致。用真实账号的「测试活动」（`activity-mv0q0bt305yaqe`）跑真实云端：创建任务 → `task.status` 置进行中 → `task.remove` 删除，三步均成功、页面回读数量回到 0；没有改动活动本身。输出留档 `docs/ui-ux-redesign/evidence/wave1-2026-10-20/real-task-crud.txt`。**Wave 1 欠的 trailApi 重部署由此清零；Wave 1 的 task/schema 线上生效。**
+
+- 2026-10-21（**未登录可浏览，点报名/发布才补微信资料**；用户要求“点报名自动弹微信个人信息授权，不必去我的页手动写头像/昵称/手机号”）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，复用现有 `profile.save` / `getPhoneNumber`。
+
+  **实现**：新增可复用 `components/profile-gate/`。档案缺姓名/手机号时，报名页与编辑器在本页自动弹出补资料 sheet，提供：
+  ① 微信头像（`button open-type="chooseAvatar"`）→ 上传云存储 fileID；
+  ② 昵称（`input type="nickname"`，可获得微信昵称建议）；
+  ③ 手机号（`button open-type="getPhoneNumber"`）→ 现有服务端换取真实号码，失败/取消可手填；
+  ④ 保存走 `profile.save` + CAS，保留档案里的紧急联系人、医疗备注与已有头像。
+  报名页保存成功后重读报名表；编辑器保存成功后由 `_afterProfile` 自动续跑刚才的保存/发布，不再让用户去「我的」再回来。
+
+  **平台边界（没有假装能做到）**：微信不允许静默读取头像/昵称/手机号，`getUserProfile` 也不保证返回真实头像昵称，所以没有用它冒充“自动授权”。这里做的是**自动弹出补资料 sheet**，头像/昵称/手机号仍由用户逐项点击授权；不想授权可手填。浏览链路（发现/活动详情/任务只读）不经过此门。
+
+  **门禁**：新增 `tools/scenario-profile-gate-test.js` **19**（读档案预填、头像上传、微信手机号、取消手填、空姓名/非法手机号拦截、保留安全字段、CAS revision、CONFLICT 复位、saved/close 事件）；`scenario-signup 105→106`（缺资料不再 denied/跳我的，改为 `profileGate+profileGateOpen`，关闭只收 sheet，保存后重读）、`scenario-editor 158→160`（缺资料自动开门，保存后 `_afterProfile` 续跑）；`check.js`/`check-handlers`/`journey-graph` 全绿；工具数 100→**101**。`cloudfunctions/` 零改动 ⇒ 不需要部署。
+
+  **真机**：重编译后截图 `docs/ui-ux-redesign/evidence/profile-gate-2026-10-21/`：`profile-gate-signup.png`（自动弹出的 sheet：头像/昵称/手机号/手填/保存并继续）与 `profile-gate-required-card.png`（关闭后的重开卡）。截图前清空组件里的姓名/手机号显示，未截取真实账号资料；真实账号已有资料，未在真机提交 `profile.save`（避免覆盖用户真实姓名/手机号），保存与 CONFLICT 由 19 条组件测试覆盖。
+
+- 2026-10-21（**活动发布页对齐公众号图文：封面 + 图文正文 + 活动说明/费用**；用户提供俱乐部公众号活动文截图，选 C 档「封面 + 图集 + 图文混排」）。**需重新部署 trailApi：是（已执行）**——`domain/{schema,activity,selectors,files}.js`、`index.js`、`config.json` 与 `smoke-test.js` 改动；`sync-lab` 已跑；线上包下载后与工作树逐文件 diff 为空，`info` 回读 `Active / timeout 20 / Nodejs16.13`。
+
+  **数据模型（全部可选，旧数据零迁移）**：`content`（段落/图片组块，≤30 块）、`coverFileId`（必须在正文图片里）、`highlights`、`leader`、`minParticipants`、`sceneryRating`/`funRating`、`feeSummary`/`feeIncludes`/`feeExcludes`、`signupNote`。发布门不变（标题/三个时间/至少一个完整上车点）；图文整体可后补。`activity.edit` 的阶段锁不锁这些信息性字段，集合中/行程中仍可补；交易键仍锁。总图 ≤20、总文本 ≤20,000，空块/封面不在正文/非 `activity-media/` fileID/重复图/成行人数高于上限均 `INVALID_INPUT`。（`sync-lab` 后 `trailApiLab` 也已部署，Active/timeout 20，线上包 diff 空。）
+
+  **服务端**：`activityView(activity, {includeContent})`——detail 带正文块，home 不带（首页不为长文买单）；`discoverView` 带解析后的 `coverFileId`；discover 搜索补正文与推荐理由。新增 `domain/files.js` 的 `activityFiles/collectActivityFiles/removedActivityFiles`，`actionDispatch` 持久化成功后按引用计数 `cloud.deleteFile`（copy 共用不误删；删除失败只记日志）。新增 action `checkImage`（14→15）：校验 `activity-media/` 前缀 → 下载 → >1MB 拒绝 → `security.imgSecCheck`；返回 `{pass,reason}`，权限/接口不可用失败关闭。`config.json` 增加 `security.imgSecCheck`。
+
+  **客户端**：编辑器 3 步→4 步（内容/图文/路线/招募），新增 `components/content-editor`（段落/图片块、上移下移删除、并发 3 上传、压缩 1280/70、生产安全检查、封面从正文图选、20 张上限、上传中锁保存/发布/切步）；`activity` 详情新增活动介绍（分段/双列或三列图/亮点）、活动说明 fact card（时间/集合/人数/领队/强度/风景/腐败/费用/报名后）、费用包含/不含、报名后须知、封面三态脚注（实拍/氛围图+正文实拍/无图），实拍封面失败回退氛围图并改口；`discover`/`home`/`activity-card` 优先实拍封面、失败回退氛围图；新增 `utils/content-view.js` 纯函数。
+
+  **门禁（逐套实测）**：`smoke 210/0`、`scenario-editor 169/0`、`scenario-activity 151/0`、`content-editor 16/0`（新）、`content-view 14/0`（新）、`scenario-discover 36/0`、`scenario-signup 106/0`、`scenario-workspace 114/0`、`lab-dryrun 165/0`、`quick-create 65/0`、`e2e-test 72/0`、`e2e-client-cas 54/0 (bugs=1 既有 BUG-C2)`、`lifecycle-projection 132/0`、`a20-owner-hero 32/0`、`journey-graph 15/0`、`ui-consistency 17/0`；`check.js`/`check-handlers` 全过。工具数 101→**103**。**未跑全量 sweep，不编总数。**
+
+  **真机**：`close --project` → `open` → `auto`（不 `quit`）重编译；真实草稿活动 + 真实云图片，截图 `docs/ui-ux-redesign/evidence/activity-article-p2p3-2026-10-21/`（编辑器四步/图文块/两列封面、详情 hero/介绍/活动说明/费用/报名后）。删除草稿后两张图的 `checkImage` 均返回 `read_failed` ⇒ 引用计数清理在真实请求链路生效。**UNVERIFIED**：跨用户读图（单账号）、真实键盘焦点（automator 不触发 focus/blur）、原生相册选择器（图片是程序化上传）、分享卡 `imageUrl` 未截分享面板；`activity-facts.png` 是 `isDraft:false` + 字段注入的渲染证据，不是已发布活动。`e2e-golden-path` 已把步骤 3→4 的 `.seg` 序号与 `stepLabels` 更新，未跑（GP-01 既有红）。
+
+  **边界**：不收款、不做保险承诺；图片安全检查是公开发现页的必选项，权限不可用时失败关闭，不静默放行。
+
+- 2026-10-21（**天气天相输入修正 Slice 1：月球/银心真实位置、跨夜窗口、低云按海拔、缺测失败关闭**；用户先要求梳理“各天相推论的必要输入”，选定 B+C 数据路径，光污染走 DarkSkySites）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动；本轮只改客户端纯函数与页面装配。
+  审计与数据路径报告：`docs/weather-ux/qa/v2-celestial-input-audit-2026-10-21/README.md`（输入充分性）与 `data-path-plan.md`（候选源实测、许可、失败降级、Slice 1–6）。
+
+  **为什么改**：旧天相卡的输入与断言不匹配——银河用「月份 + 固定经验方位表」，忽略经纬度；月照只看照亮百分比，不看月亮是否在地平线上；星空只看中高层云，低云在头顶也判晴；“今晚”的夜段混入所选日清晨（前夜尾段）却漏掉次日 00:00–04:00；缺测被 `hourCloud` 的 `|| 0` 当成 0%/无降水；`astro.starSight` 与 `sky.starConclusion` 两套实现会在同一张卡上给出矛盾文字。合成复现：低云 100%/中高 0% 仍给星空 73 分（★★★★）；3500–3800 m 中层云带被写成“云海 74 分”；`cloud:{}` 时分数 73、文字却说“夜间云量高”。这些都在报告里留了读数。
+
+  **天文层（`miniprogram/utils/astro.js`）**：
+  ① 新增 `equatorialToHorizontal` / `moonPosition` / `moonTimes` / `galaxyPosition`。月球用 Schlyter 简化式 + 主要摄动项（地心，未做地平视差）；银心用 J2000 固定赤经赤纬 + 地方恒星时，按真实高度/方位判可见性。
+  ② 删除 `galaxyBearing`（25–40°N 经验表，忽略经纬度）、`galaxySeason`（只按月份）与 `starSight`（第二套星空实现）。`astro-test` 用满月午夜高挂/正午地平线下、满月 18:26 升/06:22 落、新月相反、银心 7 月 22 点东南→午夜近南→02 点西南→04 点落地平线、1 月午夜地平线下等物理事实替换旧断言；`astro-test` 仍 60 条（13 条旧断言被 13 条新断言替换，不是净删）。
+
+  **夜窗口与低云（`miniprogram/utils/sky.js`）**：
+  ① `nightHoursForDate`：有 `series` 时取“所选日 `astroDusk` → 次日 `astroDawn`”，没有 `series` 时退回旧自然日口径；`nightWindowText` 给次日小时加“次日”前缀；`weather.js`、`weather-model.judge`/`nightOutlook` 都把 `series` 传进来。合成测试钉住 22:00–23:00 / 次日 00:00–04:00，并证明次日清晨全阴会被计入。
+  ② `cloudAboveAt`：读云函数既有的 22 层 `cloudLevels`，只统计观察点海拔以上（+50 m）的云；低云在脚下不挡天顶、在头顶才挡。500 m 点 vs 3000 m 点同一份 1000 m 低云给出相反结论，`cloudLevels` 缺省时退回低/中/高三层均值（旧口径）。
+  ③ `hasCloudAmount` / `hasCloudData` / 80% 覆盖率门：星空/银河/彩虹/光染/云海缺测一律 `unknown`（卡片保留、说明缺什么），不再把 `null` 当 0；云海在没有 `band` 字段时也说“云层剖面不足”，不再印“今天没有成层低云带”。
+  ④ 云海把“此点在云带上方”（几何）与“有没有可见窗口”（高层云/风）拆开：高层云多时不再误写成“此点不在云带上方”；只有几何不成立才 `excluded`。
+  ⑤ `weather-model` 的 `judge`/`nightOutlook` 补传 `series`；`conditions.factsFor` 优先用 `skyOut.night`，并新增一条“夜段观察点上方云量峰值 平均 X%”的可核对事实。
+
+  **新增启发式（如实登记，不是实测概率）**：月光有效值 = 照亮百分比 × 地平线上小时占比 × `min(1, 最高高度/30°)`；银河再乘月-银心角距因子（<45° 1.0 / 45–90° 0.7 / >90° 0.4）；云层上方判定用 +50 m 余量、低云带按 +2000 m 分层；数据覆盖门 80%。这些数字是工程启发式，后续需用真实快照/真机校准；已有的晴空 <30%、月照 20/35/50、评分 70/45 等阈值未改。
+
+  **门禁（逐套实测）**：`sky-test 82→101`（新增 §13 月球/银心、§14 跨夜、§15 低云按海拔、§16 缺测失败关闭）、`astro-test 60`、`weather-page 189/0`、`weather-v2 67/0`、`weather-model 82/0`、`outdoor-intelligence 35/0`、`meteogram-multiday 48/0`、`space-time 109/0`、`space-time-draw 55/0`、`weather-v2-visual-audit 43/0`、`journey-graph 15/0`、`smoke 210/0`；`check.js` / `check-handlers.js` 全过（G10 命中 0；死 handler 仍只有存量 `editor#onNumber`）。**未跑全量 sweep，不编总数。**
+
+  **顺带修的真缺陷**：`oi-presentation.applyHorizonSelection` 的宽语义把 `anchor.startHour` 当整数小时拼 `'HH:00'`，而云海窗口按民用晨昏裁剪后起点可能是 `06:52`（本夹具是 `06:52–09:00`，绝对小时 `30.8667`），于是 `focusAbs=31` 选不中该窗口——`meteogram-multiday` 的 `focusAbs → horizon 卡高亮` 当场红（47/1）。改为按绝对小时区间 `start <= focus < end` 判定（终点小于起点视为跨零点，零长度窗口按 1h 处理），`meteogram-multiday 47/1 → 48/0`；这条修复不改变任何阈值。
+
+  **UNVERIFIED / 留账**：① 未跑真机——本轮无 WXML/组件结构改动，但结论卡的文案/窗口/星级会变，像素与真实预报下的分布未证；② `components/space-time` / OI 窗口仍没有 `cloudLevels` 输入，`weather-model.nightOutlook` 的云量仍走低/中/高三层旧口径（主结论卡已用新口径）；③ 光污染、大气透明度/seeing、地形/地平线、方向云/降水、逆温廓线均尚未接入——这些是 B+C 的 Slice 2–5，`data-path-plan.md` 已实测 Open-Meteo 25 点网格/100 点 DEM/7Timer/AOD/DarkSkySites 的接法；④ 下一轮若接 DarkSkySites 需要云函数环境变量存 key，属于仓库第一个外部密钥，需单独批准。
+
+  **文档**：`miniprogram/utils/AGENTS.md` 删除“银心方位为经验曲线、不要升级”的旧约束，改为 `moonPosition`/`galaxyPosition` + 跨夜/缺测口径；`docs/weather-ux/current-weather-architecture.md` 的天文链路同步。
+
+- 2026-10-21（**创建活动收敛：极简优先 + 自动填充 + 图文编辑降负担**；基线 `8a4c2bf`，用户要求“少填、少点、能自动就自动”，同时保留现有内容块/上传/安全检查/封面/详情展示）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动；本轮只动客户端 `components/content-editor/*`、`pages/editor/*`、`pages/activity/{js,wxml}`、新增 `utils/activity-summary.js`、`utils/gpx.js` 的 `suggestForRoute`，以及测试/证据/文档。设计报告 `docs/superpowers/specs/2026-10-21-create-activity-simplification.md`。
+  **字段审计**：发布门仍只拦「标题 + 三个时间 + ≥1 集合点（名称/地址/集合时间）」；结束/截止由出发自动估算，集合时间默认出发前 30 分，标题可由路线名/GPX 文件名自动填，路线名称/里程/爬升/节点/风险/轨迹由路线库或 GPX 带入，装备/风险建议复用 `gpx.suggestTrailInfo` 的同一套规则；图文、封面、简介、费用、装备、风险等全部可后补。**没有放宽集合地址/集合时间等既有安全/履约约束。**
+  **交互**：四步重排为「01 信息 / 02 路线 / 03 介绍 / 04 发布」，路线步骤提前；`content-editor` 改成**一个连续 textarea + 可多选图片组**，图片组按 `anchor=第几段之后` 保存，低频「前移/后移/删除本组」收进「管理」，封面默认正文第一张、按需更换；上传/`checkImage`/20 张上限/封面引用逻辑保留。必填齐后底栏在任意步骤把主按钮提为「发布活动」，旁边保留「继续完善」；快速路径可绕过 03/04。模板复制收成一行可展开入口；路线库选择加搜索并只渲染最近 40 条（真实账号 296 条、搜「飞泉沟」133 条匹配）。详情页在无手写介绍时用 `utils/activity-summary.js` 生成带来源标注的事实摘要；分区锚点按实际存在的区块动态生成；实拍/氛围封面拆两个 `image` 分支分别挂 `binderror`，修掉旧 src 的迟到 error 把回退图判死的竞态。
+  **门禁（各脚本自报）**：`check.js` / `check-handlers.js` 全过（死 handler 仍只有存量 `editor#onNumber`）；`content-editor 30/0`、`content-view 14/0`、`activity-summary 13/0`、`gpx 62/0`、`scenario-editor 188/0`、`scenario-activity 159/0`、`e2e 72/0`、`quick-create 65/0`、`journey-graph 15/0`、`e2e-client-cas 54/0 (bugs=1 既有 BUG-C2)`、`scenario-discover 36/0`、`scenario-signup 106/0`、`scenario-workspace 114/0`、`ui-consistency 17/0`、`t4-e08 41/0`、`swx1 45/0`、`m02 66/0`；`page2-gates` 一次 97/0，同一份「HEAD + 本轮文件」副本连续复跑出现 95/2 与 97/0 交替（干净 HEAD 一次 97/0）⇒ **既有测试时序抖动，非本轮文件导致**；`swx2 117/1`，唯一红是 HEAD 已存在的 `pages/activity/activity.wxss L90 .highlight-dot font-weight:700`（第三档字重）。**未跑全量 sweep，不编总数；B 层 `e2e-golden-path` / `e2e-ui` / `e2e-ui-state` 未跑**（本轮一次 golden-path 尝试挂起，按环境性停掉）。
+  **真机/证据**（共享开发者工具，只 `open` 重编译，未 `quit`/`close`；自动化端口按轮次重绑 9430–9436）：`docs/ui-ux-redesign/evidence/create-flow-2026-10-21/` 10 张截图 + 4 份 JSON。读数：快速创建页 4 个短标签不换行、模板复制收成一行、建议时间点一下得到 10/24 08:00 与结束 16:00/截止 10/23 08:00；连续正文输入 31 字/2 段、切步骤后仍在；路线库 296 条、搜索后 133/40；发布确认层点名「路线名称/节点/风险」可后补；真实云端 `[预演]` 草稿回填 `content` 3 块、图片组 anchor=2、封面=第二张，详情页 `contentView` 为「文字 2 段 → 双图 → 文字 1 段」、`coverIsReal=true`、封面实拍可见；`[预演]` 活动与上传图片在脚本 finally 中用 `activity.delete`/`cloud.deleteFile` 清理（文件删除返回 `STORAGE_FILE_NONEXIST`，说明随引用清理已不在）。**UNVERIFIED**：① 真实键盘焦点/中文输入法/键盘遮挡——automator 对组件内 `textarea.tap()` 不触发 focus，读数 `bodyFocused=false`，只能证明 input 事件与跨步骤回填；② 原生相册选择器——IDE 模拟器 `wx.chooseMedia` 返回失败，组件显示「打开相册失败，请重试。」，未出现可选文件的原生面板；③ 多账号读图、分享卡图片未验。另：编辑器回填截图 06/07 用的是种子本地草稿（真实本地存储 + 真组件），云端回填由 `detail-readings.json` 与真实 `[预演]` 活动读数证明；自动填充的来源提示不落库，保存后按普通字段看待；自动集合点跨会话不跟随出发时间更新（仍被发布门拦住）。未触碰工作区里其他人的天气/天文未提交改动。
+  **收尾补跑（未受创建活动改动影响的 headless 套件）**：33 套中 31 套 exit 0（scenario-me 143、vehicle 57、notices 91、staff 25、lab 20、api 29、profile-gate 19、routes 75、route-profile 27、discover-filter 21、weather-brief 21、tasks 27、scenario-tasks 24、e2e-task 28、trailapilab 25、lab-dryrun 165、journey 155、fault-probe 34、revision-guard 16、meta-guard 18、receipt 19+2、failure-semantics 44+2、concurrency 50+4、interleave 67+3、panel-sync 40、release-gap 51、lifecycle 214/71/109/126/47）；两个失败均已归属：`weather-resilience` 工作区 43/2、干净 HEAD 45/0（天气线并发改动），`cold-start-work` 工作区与干净 HEAD 同为 8/2（createCollections=17 / reads=15，基线期望漂移，非本轮）。逐套记录 `docs/ui-ux-redesign/evidence/create-flow-2026-10-21/e2e-regression.txt`。
+
+- 2026-10-21（**天相输入 B+C 落地：方向云 + DEM 地平线 + 透明度/seeing + 光污染**；接上一轮 Slice 1 的审计 `docs/weather-ux/qa/v2-celestial-input-audit-2026-10-21/`，用户选定 B+C 数据路径、光污染走 DarkSkySites）。**需重新部署 trailApi：是（已执行 2026-10-21）**——`cloudfunctions/trailApi/index.js`、`lib/weather.js` 与新增 `lib/{spatial,terrain,atmosphere,light-pollution}.js` 已改；`trailApiLab` 不含这些 lib/action，未同步、无需为本次部署。**部署回读**：`cli cloud functions deploy` 成功（首次 29 files / 129.4 KB；修复 `null` 海拔后二次部署 29 files / 129.5 KB），`info` = `Active / timeout 20 / Nodejs16.13`；部署后下载线上包，`index.js`、`lib/{weather,spatial,terrain,atmosphere,light-pollution}.js`、`smoke-test.js`、`config.json`、`package.json` 与工作树逐文件一致，`domain/` 也与工作树一致。二次部署后再次回读 `Active / timeout 20 / Nodejs16.13`，下载线上包 `index.js`、`lib/terrain.js` 与工作树逐字节一致。**新增外部密钥**：云函数环境变量 `DARKSKY_API_KEY`（控制台设置，不入库；用户已于 2026-10-21 配置）；**线上真实调用**：通过开发者工具自动化 9431 在小程序 App 环境调用 `getSkyContext`（30,103,500 m, 2026-10-21）→ `ok:true, status:'ready'`；`sources` 四源全 `ok`（spatial 8 方位、terrain 16 方位、atmosphere sevenTimer/air 均 ok、lightPollution Bortle 6 / SQM 20.01）。**页面级真实数据（非像素）**：`/pages/weather` 本地点 30,100.27/4000 m/2026-10-21 出星空/银河两张卡（均 3 星）；star 证据含“夜段观察点上方云量峰值 平均 0%”、CAMS 气溶胶 AOD 0.06、7Timer 透明度 2/8（越小越好）+ seeing 3/8、Bortle 4/SQM 20.82（DarkSkySites.com，模型估算）；跨夜窗口 `21:00-23:00 / 次日 00:00-06:00`；galaxy 银心最高 9°、方向云 0%。成都 30,103 真实夜况中高云 50%/低云 60–98%/降水 1 mm ⇒ 五项沉默，属正确行为。读数落盘 `docs/weather-ux/qa/v2-celestial-input-audit-2026-10-21/live-verify-2026-10-21.json`。**同日精度/合规深化**：跨 6 个海拔/光环境点 + 冷湖/阿里天文台暗空点 + 不传海拔复测；抓到并修复两处真缺陷——7Timer 透明度标尺反向（官方定义越小越好；理塘 2/8 是“好”，三亚 8/8 才是“差”）、`Number(null) === 0` 把“无海拔”当海平面 0（不传海拔时出 71.8°/76.51° 假山脊）。修复后不传海拔回填 2860 m（峨眉）/4019 m（理塘），假山脊消失；并给“满月 + 通透天空”的银河加封顶 69，避免 4 星与“不建议”打架。精度报告 `precision-report.md`、法务核对 `legal-review.md`；未传海拔的无效读数留在 `invalid/precision-null-elevation-before-fix.json`。卡片/页脚/隐私已补 `DarkSkySites.com，模型估算`、`CAMS`、7Timer 越小越好、Open-Meteo 链接入口与复制来源；`app.json` 的 `scope.userLocation.desc` 补“天气查询点”。未设置/401 时 `lightPollution=null`，星/银河显式封顶 69，不把“没取到”当“天空暗”。
+
+  **同源扩展（Slice 2）**：`HOURLY` 增 `cloud_cover`、`boundary_layer_height` 与 925/850/700 hPa 温度/相对湿度；`hourView` 增 `cloud.total`、`pblh`、`profile`（缺档 null，三档全缺则整体 null）。`sky.inversionAt` 用“此点上方最近气压层 − 地面温度”判逆温（dT>0.5℃；无廓线/层高返回 null，不加不扣），云海卡据此加/减分并写进 evidence；`spatial.js` 以 8 方位 × 3 距离（5/15/30 km）一次多坐标请求取云/降水，覆盖所选日+次日；`sky.directionValue` 按圆周插值，银河用银心方位云、彩虹用反日方向降水，缺 spatial 时完全退回旧口径。
+
+  **DEM 地形（Slice 4）**：`terrain.js` 16 方位 × 9 距离（1–80 km）采样 Copernicus DEM 90 m（Open-Meteo Elevation API，100 点/请求，144 点分 2 次），按地球曲率+0.13 折射算地平线角与 openness。银河：银心高度必须高于该方位山脊+1°（否则 excluded / 贴近地平线）；彩虹：反日方向地平线 >2° 时降分并说明；光染：用太阳方位的最高地形点替代“轨迹走向”当目标山脊；云海：openness <0.3 / >0.7 分别减/加分。没有 terrain 时保持旧口径。
+
+  **大气（Slice 3）**：`atmosphere.js` 取 7Timer! ASTRO（3 天、3 小时，seeing/transparency，免费非商业）与 CAMS/Open-Meteo Air Quality（AOD/PM2.5/PM10，5 天）；`sky.atmosphereAt` 取 ±1.5h 最近 7Timer 点 + 逐时 AOD；`atmosphereImpact` 按 AOD 0.4/0.15、透明度 3/6、seeing 3/6 修正星空/银河分数并写进 evidence；7Timer 只有前 3 天、CAMS 只有前 5 天，超窗不编。
+
+  **光污染（Slice 5）**：`light-pollution.js` 调 DarkSkySites `/api/sqm`（`x-api-key`，30k/月，全球）；`lightPollutionImpact` 按 Bortle ≤3 / ≥6（或 SQM ≥21.5 / <19）加/扣分；`lightPollution:null` 是**显式缺测**，星/银河封顶 69 并写“未计入光污染”；字段完全不传（旧调用）保持旧行为。`getSkyContext` 是第 16 个 action，四源 `Promise.allSettled`，任一成功即 `status:'ready'`，每源 `sources` + `stale`；单源失败不拖垮天气页。页面 `loadSkyContext` 非阻塞外呼、到达后原地重算，迟到响应按点/日/海拔 key 丢弃。
+
+  **UI/合规**：页脚补 7Timer!/CAMS/Copernicus/DarkSkySites 署名；`pages/privacy` 补“天气查询坐标会发送给这些数据服务商（不含姓名/手机号）”，更新日期 2026-10-21。**这条隐私文案需要法务/合规复核**（尤其境外数据源与坐标是否构成个人信息）。证据 panel 增加 AOD、7Timer 透明度/seeing、Bortle/SQM；OI 夜间窗口仍只按云/月照，`nightLimit` 如实写“光污染/地形已用于主结论卡”。
+
+  **新增启发式（需真实快照校准，不是概率）**：逆温 dT>0.5℃；地形银河 +1°、彩虹山脊 >2°、云海 openness 0.3/0.7；AOD 0.4/0.15；**7Timer 透明度/seeing 都是数值越小越好**（≤3 好、≥6 差）；Bortle 3/6、SQM 21.5/19；LP 缺失封顶 69；月光明亮（moonEffective ≥35）时银河封顶 69。7Timer 3 小时一档，客户端取 ±1.5h 最近点。
+
+  **门禁（逐套实测）**：`sky 135/0`（§17 逆温、§18 方向云、§19 地形、§20 透明度/seeing、§21 光污染）、`spatial 22/0`、`terrain 15/0`、`atmosphere 14/0`、`light-pollution 9/0`、`sky-context 13/0`（真 index + wx-server-sdk 桩 + https 路由桩：四源并行/atmosphere 缺失/无 key LP/null 海拔中心回填）、`smoke 214/0`（§12c 廓线/总云量/PBLH）、`weather-page 189/0`、`weather-v2 67/0`、`weather-model 82/0`、`outdoor-intelligence 35/0`、`outdoor-cloud-sea 32/0`、`meteogram-multiday 48/0`、`space-time 109/0`、`e2e 72/0`、`check.js`/`check-handlers` 全过。**未跑全量 sweep，不编总数。**
+
+  **UNVERIFIED / 留账**：① trailApi 已部署并回读 `Active / timeout 20 / Nodejs16.13`；`DARKSKY_API_KEY` 已由用户设置，并通过线上真实调用验证（四源 ok；Bortle 6 / SQM 20.01 @30,103）。**天气页已做数据级验证**（理塘点星空/银河卡与 evidence；`getSkyContext` 到达后的二次 `setData` 生效），但**像素截图/真机 UI 仍未观察**；**客户端版本未上传**——透明度修正、署名/隐私页、`app.json` 描述只在工作树与开发者工具模拟器生效，线上小程序仍是旧版本，需你在开发者工具上传/发布后用户才会看到。② 未跑真机像素——新增页脚/隐私/卡片文案与加载态无截图证据。③ 精度测试是**量级/一致性**核对，不是绝对精度：DarkSkySites 8 点（城市/山顶/高原/海岛/暗空）量级合理；7Timer 中国区未对照站点观测，且云量与 Open-Meteo 在阿里/三亚分歧较大（已不作为云量判据）；DEM 90 m 未对照独立 DEM、不含树木/建筑；方向云无雷达实况。④ 法务核对是工程侧条款对齐（`legal-review.md`），不是法律意见：微信后台隐私指引、跨境/PIPL、真正可点击的数据源链接、7Timer 非商业限制仍需管理员/法务确认。⑤ OI 窗口未用 terrain/LP 做门控，只在主结论卡使用；`weather-model`/space-time 也没有 `cloudLevels`，逆温/地形不进入 space-time。⑥ 2026-10-21 工作区已有其他未提交改动（创建活动收敛等），本轮**未触碰、未提交**。
+
+- 2026-10-21（**修上传被拦：`scope.userLocation.desc` 超 30 字，微信错误码 80058**；用户上传报 `desc(...) of scope.userLocation exceeds 30, word count: 40`）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，只改 `miniprogram/app.json` 一处文案 + `tools/check.js` 一条静态门。
+  **根因**：本轮天相输入 B+C 为补「天气查询点」把描述从 25 字扩到 40 字（工作区未提交），而该字段微信硬上限 30 字（按字符计，含 `/`、`、`）。**修法**：改为「用于选择集合点/路线节点/天气查询点、签到校验与位置上报」（28 字），三类真实用途一个不少——`chooseLocation` 选集合点/路线节点/天气查询点（`editor.js:691/934/962`、`route-edit.js:222`、`weather-hub.js:80`），`getLocation` 签到校验与位置上报（`activity.js:713`）。
+  **门禁**：`check.js` 的 app.json 段新增「权限描述 ≤30 字」并带自证（31 字必拒、30 字必收）；变异实测 40 字 ⇒ `exit 1` 并点名「当前 40 字」，改回 28 字 ⇒ `ALL CHECKS PASSED`。同步更新 `.agents/skills/ourtrail-ui/references/platform-pitfalls.md` §15 与 `docs/weather-ux/qa/v2-celestial-input-audit-2026-10-21/legal-review.md` §3.1。
+  **上传侧**：需在开发者工具重新上传；后台《用户隐私保护指引》是否与这句表述一致，仍待管理员在 mp.weixin.qq.com 核对。
+
+- 2026-10-21（**修 tab 页弹层被自定义 tabBar 盖住：天气页 GPX 导入 sheet 的「存为轨迹点组」滚到底仍点不到**；用户真机截图：天气 tab → 导入 GPX → 节点 7–10 与终点可见，末行按钮只露出上边缘在 tabBar 后面）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动；改客户端 `components/overlay/overlay.js`、`custom-tab-bar/index.{js,wxml}` 与 `tools/overlay-semantics-test.js`。
+  **根因（平台层）**：自定义 tabBar 是框架的独立高层，`overlay.wxss` 的 `z-index:200` 只能赢页面内的 `z-index:100`；sheet 贴底且 body 上限 62vh，底部只有 `16px + safe-area`，所以列表能滚、但最后一个按钮永远停在 tabBar 后面（不是滚动坏了，也不是 max-height 小了）。官方文档建议自定义 tabBar 用 cover-view 以保持层级较高，佐证它不在页面普通层叠里。
+  **修法**：`overlay.js` 的 `open` 观察者打开时取当前页 `getTabBar()` 并 `setData({hidden:true})`，关闭时恢复；同页多个弹层按 WeakMap 引用计数只隐藏/恢复一次（面板里再开确认层是真实路径）；非 tab 页 / 无 `getCurrentPages` 时是无声明的 no-op。`custom-tab-bar` 增 `hidden:false` 并用 `wx:if="{{!hidden}}"` 消费。**没有改 z-index**（改不动平台层），也没有给单个 sheet 加垫片（me/notices 的 6 个 sheet 同样受影响）。
+  **门禁**：`tools/overlay-semantics-test.js` 35→**46**（§4：打开隐藏 / 关闭恢复 / 双弹层引用计数 / 再次打开 / 非 tab 页 / 无 getCurrentPages / tabBar 模板确实消费 hidden）；变异自证＝注释掉 `lockTabBar(this)` ⇒ `passed=39 failed=7` 且 7 条全在 §4，恢复后 46/0。`check.js` / `check-handlers.js` / `ui-consistency 17/0` 全过。
+  **真机/开发者工具本轮 NOT_RUN**：33278 在听但无 9420–9424 自动化会话，按共享资源约定不擅自 `close/open` 或新起 `auto`；结论上限＝JS 行为已证，像素级「tabBar 隐藏且末行按钮可点」待重编译后由用户或下一轮真机确认。平台坑已登记 `platform-pitfalls.md` §5。
+
+- 2026-10-21（**GPX 导入预览支持删除节点 + 恢复全部**；用户要求“解析出的节点增加删除功能”）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动；改 `pages/weather-hub/weather-hub.{js,wxml}`，新增 `tools/weather-hub-gpx-test.js`。
+  **行为**：节点行右侧新增「删除」（沿用观察点列表的 `.button.text` + `catchtap` 模式，行本身无 tap）；删除后头部从「解析出 N 个」变成「解析出 N 个，保留 M 个」，「含时刻」按剩余点重算；出现「恢复全部节点」入口（`onGpxReset` 从 `_gpxParsed` 还原）；剩余 <2 时主按钮 disabled + `bindtap` 置空 + handler 守卫，并给一句可行动提示。**保存路径同时修正**：`onGpxApply` 改为 `WP.fromGpx(Object.assign({}, parsed, { points: this.data.gpxPoints }))`——旧实现直接把 `_gpxParsed` 交出去，删了也会原样存回全部节点。里程/爬升仍取整条轨迹的解析值（删点不伪造路线变短），`stats.count`/`stats.hasTime` 按保存后的点集重算。
+  **门禁**：新增 `tools/weather-hub-gpx-test.js` **23/0**（删除/越界 no-op/恢复全部/保存点集/统计口径/<2 点守卫/模板三层接线）；变异自证＝把 apply 退回 `WP.fromGpx(parsed, …)` ⇒ `passed=19 failed=4`（保存仍是 3 个点、`stats.count=3`、`hasTime=true`、toast 仍报 3 个），恢复后 23/0。`check.js` / `check-handlers.js` / `ui-consistency 17/0` / `g2-toast-copy 13/0` / `t2-m11 46/0` / `b4-pad 32/0` 全过。
+  **`page2-gates-test` 95/2，两条红均归属天气线在途改动，不是本轮**：测试仍期望旧句 `（CC BY 4.0）` 与全页只有一个含「数据来源」的节点，而工作区 `pages/weather/weather.wxml` 已改成带 Open-Meteo URL 的署名 + 第二行「点按复制数据来源与许可链接」；本轮 GPX 段断言全绿。
+  **真机 NOT_RUN**：无运行中的开发者工具自动化会话；删除按钮的像素/点击待重编译/上传后确认（与上一条 tabBar 修复同一批）。工具数 109→**110**，已补进 `AGENTS.md` 的场景清单与全量 sweep。
+
+- 2026-10-21（**删除沿线时空天相 + 统一图 gutter 可读性 + 云层剖面缺失显式化**；用户真机截图：左侧「降水/云量」与刻度挤在一起、云图空白只有一句「没有有意义云量」且无报错，并要求「沿线时空天相直接删除」）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动。
+  **删除面**：`components/space-time`、`components/roam-scrubber`、`utils/weather-model.js`（删除前已无任何 require）与 4 套测试（`space-time-test` 109 / `space-time-draw-test` 55 / `roam-scrubber-test` 33 / `weather-model-test` 82）；`pages/weather` 的 data/装配/WXML/`weather.json` 注册全清；`t4-e08` R3 的真实具名 slot 样本随之归零（判据本体的合成夹具仍自证）；`swx2` 写入集 9→8，变异表删除 M1–M4/E6；AGENTS、`miniprogram/AGENTS.md`、`utils/AGENTS.md`、README、`current-weather-architecture.md`、`weather-page-v2-design.md`、`production-implementation-plan.md`、`docs/e2e-mp/README.md` 同步；P4 时空天相设计文档加「已下线」存档头，历史 QA 证据不重写。工具数 110→**106**，组件目录 16→**14**（13 在用 + privacy-popup），utils 27。
+  **图表可读性**：`utils/meteogram-svg.js` 把左侧 gutter 的四个整行标题拆成「指标 / 单位」两行（温度°C、降水 mm/h、云量/高度 m、风 km/h），`L` 38→44；旧写法「降水 mm/h」「云量 · 高度 m」约 52px，与右对齐在 L-5 的刻度标签叠字。无成层云带文案从「没有有意义云量」改为「没有 ≥80% 成层云带」（明确读的是测量结果，不是缺数据）。`meteogram-readability-test` 新增 §9（gutter 全部文本右缘 ≤ L-6 + 与刻度字形不重叠，且输入非空自证），回旧布局变异 ⇒ 9 红；`meteogram-svg` / `multiday` / `weather-v2-visual-audit` 改为从 `geo.L` / `geo.plotW` 取几何，不再硬编码 38/48。
+  **云层缺失状态**：`buildUnifiedCard` 在 `cloudField` 为 null 时置 `_cloudFieldMissing`；页面 `cloudFieldMissing` 在「逐时天气」上方显示 warning callout 与「重新查询」（区分「没取到数据」和「此窗没有 ≥80% 成层云带」）。新增 `onRetryWeather`：先清 `_lastResult` 再取——旧「重新查询」走 `fetchWeather` 会命中内存复用，只剩重绘不重取；陈旧兜底横幅也改用它。`weather-page-test` 新增 3 条（缺失 true / 有数据 false / 重试真外呼），去掉旗标变异 ⇒ 1 红。
+  **门禁**：`weather-page 192/0`、`meteogram-readability 86/0`、`page2 98/0`、`meteogram-svg 25/0`、`meteogram-multiday 48/0`、`weather-v2-visual-audit 43/0`、`weather-v2 71/0`、`cloud-field-svg 29/0`、`cloud-position 62/0`、`weather-cloud-field 31/0`、`t4-e08 41/0`、`journey-graph 15/0`、`oi-claim-gate 26/0`；`check.js` / `check-handlers.js` 全过。**既有红（非本轮）**：`swx2-style-gates 109/1`（`pages/activity/activity.wxss:90 .highlight-dot` 的 700 字重，先前已登记）、`weather-resilience 43/2`（工作区天气线在途改动；干净 HEAD 45/0）；`swx2-style-gates-mutate` 因这条既存红以前置门 exit 2（INVALID，不是通过）。**未跑全量 sweep**，不编总数。
+  **真机 NOT_RUN**：33278 服务口在听但没有 9420–9424 自动化会话，未擅自 `close/open` 或起 `auto`；统一图标签与云缺失 callout 需重编译/上传后确认。删除前 `components/space-time/space-time.js` 在工作区显示为已修改（可能是 CRLF 归一化），随功能整体删除；`utils/weather-model.js` 与测试在删除前另存到工作区外 `$TEMP/ourtrail-removed-2026-10-21/`。
+
+- 2026-10-21（**天相输入六项收口：一致性 / 总评语义 / 缺测可见 / 校准 / 法务 / 配额与页面重量**；接同日上午的 B+C 落地条目）。**需重新部署 trailApi：是（本段已执行三次）**——`index.js` 增加 `getSkyContext` 的按 openid 日配额、DarkSkySites 全局月预算与光污染 30 天过期重取；最后一次部署 29 files / 130.4 KB，`info` = `Active / timeout 20 / Nodejs16.13`，下载线上包后 `index.js` 与 `lib/{weather,spatial,terrain,atmosphere,light-pollution}.js` 与工作树逐字节一致（CRLF 归一）。`trailApiLab` 不含该 action/lib，未同步、无需为本次部署。收口报告 `docs/weather-ux/qa/v2-celestial-input-audit-2026-10-21/closeout-six-items.md`。
+  **① 一致性**：主图 `buildChartMarks` 把 `terrain/lightPollution/atmosphere/spatial` 传给 `sky.hourMarks`；OI 卡与 OI 多日卡直接吃 `this._chartMarks`；日程 L2 吃同一份 marks；`outdoor-intelligence` 在不传 `marks` 的 fallback 里也补传同一组增强输入（新增行为测试：晴朗低月夜 + 89° 山脊 ⇒ 银河窗口必须消失）。**② 总评**：`conditions.overallGrade` 只让“判过且非 unknown”投票，星空/银河去重，空/全 unknown ⇒ 数据不足，全 excluded ⇒ 条件较差，不再让被沉默的卡替总评投票。**③ 缺测可见**：`skyInputLoading`/`skyInputNote` 点名缺项；配额用尽把云端 `res.message` 上屏，不再伪装成“没取到”。**④ 校准**：7Timer 透明度标尺反向、`Number(null)===0` 假海拔两处真缺陷已在上一段修复；本轮补光污染缓存 TTL（原实现过期只标 stale、永不重取），失败才退回旧值。**⑤ 法务**：隐私页 §三 补缓存 TTL（天气/方向云 30 min、大气 3 h、地形/光污染 30 天，过期重查），`legal-review.md` P2 行收口；微信后台隐私指引、跨境/PIPL、可点击外链仍待管理员/法务。**⑥ 配额/页面重量**：`getSkyContext` 每 openid 每日 60 次，第 61 次 `reason:'rate_limited'` 且零外呼；DarkSkySites 25k/月全局预算，用尽只停光污染、其它源照常；无 key 不耗预算。168 小时序列改由实例属性 `this._chartSeries` 持有，不再进 `setData`（WXML 未读过；切窗/全屏从内存取）。
+  **门禁（逐套实测）**：`sky 136/0`、`weather-v2 71/0`、`weather-page 192/0`、`outdoor-intelligence 37/0`、`outdoor-cloud-sea 32/0`、`oi-claim-gate 26/0`、`oi-hour-hit 25/0`、`sky-context 24/0`（四源/缺测/61 次配额/LP TTL/月预算）、`spatial 22`、`terrain 15`、`atmosphere 14`、`light-pollution 9`、`scenario-api 29`、`smoke 214`、`page2-gates 98/0`、`weather-resilience 45/0`、`journey-graph 15`、`ui-consistency 17`、`elevation-semantics 34`；`check.js` / `check-handlers.js` 全过。**未跑全量 sweep，不编总数。** 并行工作停止后复跑，`meteogram-svg 25/0`、`meteogram-multiday 48/0`、`weather-v2-visual-audit 43/0`、`meteogram-readability 86/0` 也已转绿。
+  **并行工作区**：本轮进行中时空天相图被并行工作整体移除（`components/space-time/*`、`roam-scrubber`、对应 3 个测试与 `weather.json` 注册均删），未恢复、未认领；`utils/meteogram-svg.js` 正在被并行改（gutter `L` 38→44、行标题拆两行），`meteogram-svg 19/6`、`meteogram-multiday 44/4` 与 `weather-v2-visual-audit 37/6` 的红由此而来，本轮零改动该文件；**`weather-resilience` 的两条红在本轮收口后查明并修掉（45/0）**：① `loadSkyContext` 的 `api.getSkyContext(...)` 同步抛错会穿过天气取数链的 `.catch`，被误判成“天气没取到”并触发缓存降级 ⇒ 包进 `Promise.resolve().then(...)`；② 缓存软降级经 `applyWeather` 写了 `_lastResult`，随后“重新查询”会被 `covers()` 复用旧数据 ⇒ `applyWeather` 增加 `remember` 参数，软降级传 `false`。两条都是真实用户路径缺陷，不是测试假红。并行工作随后还删除了 `miniprogram/utils/weather-model.js` 与 `tools/weather-model-test.js`（时空图删除后的孤儿），本轮未参与删除、也不再把它计入读数。`page2-gates` 原 5 条红由本轮“天相条件”改名与来源行新增触发，已把免责词目标改为新句「只汇总天相」、脚注按正文计数并新增页面重量断言，现 98/0。
+  **真机（IDE 模拟器）已补**：`cli open` 重编译 + `cli auto` 9425，真实云端/真实数据（理塘 30.0,100.27 / 4000 m / 2026-10-21）；4 张截图 + 2 份读数在 `docs/weather-ux/qa/v2-celestial-input-audit-2026-10-21/device/`，`errors` 为空。`skyInputLoading:false` / `skyInputNote:""`，星空与银河证据同时含方向云、地形山脊、CAMS、7Timer、Bortle/SQM ⇒ 四源真的到页；页脚署名、隐私缓存 TTL、「天相条件」区块均按新文案渲染，且这些文案只存在于新代码 ⇒ **bundle 新鲜度自证**；页面 data 无 `chartSeries`。天气主体当时走的是 stale 兜底（12:35 数据，页面有“2 小时前”横幅），不影响增强输入四源证据。
+  **UNVERIFIED**：① 上述是**IDE 模拟器，不是物理手机**；配额用尽文案（需 61 次真调用）与缺项提示行没有自然样本，仍只有 A 层/合成用例；② 配额/预算只在桩 + 真 index 上验证，未做 61 次真云端连击，也未验证并发越过配额的竞态（get/set 非原子，已知且作为粗略上限接受）；③ 绝对精度未校准（无站点 SQM/ASOS/雷达/seeing）；④ 法务仍待管理员/法务；⑤ **客户端版本未上传**（工作区有大量并行未提交改动），线上小程序仍是旧版本。
+- 2026-10-22（**night-v2 T011：通知/活动通知/我的 视觉收敛 + 真实视觉验收闭环**；任务书 `OurTrail UI 重设计：S.txt` 夜间自主模式，分支 `agent/ourtrail-night-ui-v2`，提交 `a81e3b7` + `5395f02`，**未 push**）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动。改动面 7+2 文件：三页 json 补浅色导航两键（routes.json 同值先例）、行内 `gap:12px` 换全局 `.stack-gap3`（notices/anotices wxml 改后仍逐字节同源）、me 昵称升 `--text-title`、位置撤回着 `.revoke-text` danger 语义色（**不加确认弹窗**＝交互越界登记）、激活引导卡 `.onboard-row` nowrap 修箭头换行左坠（首轮真机帧实测缺陷）。门禁实测：check/handlers 0、scenario-notices 91、scenario-me 143、swx1 45、swx2 110、t4-e08 41、b4-pad 32、b4-e05 49、ui-cons 17；m02 65/1 为 clean 基线同款存量（PRIVACY 计数）。**真机**：IDE 本夜新起（机器原无会话）+ auto 9425；after 前 close+open 重编译（仅自起会话）；新鲜度门用新 bundle 独有类 `.stack-gap3` 三页自证；before/after 各 6 帧真实云数据 + 13 帧注入态（逐帧标注）在 `docs/ui-ux-redesign/evidence/night-v2-2026-10-22/`；独立 QA 子 Agent 读图结论＝无回归、仅导航换肤为规格内变化。**过程证据**：首轮误加未定义类 `onboard-card` 被 G10/m02/ui-consistency 三门同点抓红（门有牙齿）；`page2-gates` 2 条天气滚动断言为 setImmediate vs settle(30ms) 时序竞态（探针读数 latch/queries 证实；noop 注释亦红绿各一；clean 7 绿 0 红），**登记 OPEN 留门 owner 裁决，tools/ 冻结未动**。交付文档 `docs/ui-ux-redesign/engineering-workflow/`（SKILL_EVALUATION / TOOLCHAIN_CAPABILITY_MATRIX / AGENT_WORKFLOW_PROPOSAL / UI_AUDIT_REPORT / PAGE_REFERENCE_MAP / VISUAL_GAP_ANALYSIS / DESIGN_SYSTEM / PAGE_SPEC / VISUAL_QA_REPORT / IMPLEMENTATION_REPORT）。A0 结论：点名两外部仓库均 MIT 纯 markdown、无小程序特异性，不引入；能力缺口靠 ourtrail-ui + 开发者工具 CLI + automator 闭环补齐。
+
+- 2026-10-23（**UI 后续批次合入 master（D-09 选项 A）：T011 night-v2 + FU/FD/FH 批次 `--no-ff` 合并，合并后 12 门复跑**；用户批准「批准合并 `win/ui-followup-plan-20261023` → master（含 T011 night-v2），随后按惯例合并后复跑并登记 SYNC」）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动（`git diff c1a5aeb..65acce3 --name-only` 核实）。**未 push**：master 领先 `origin/master` 10 个提交；主工作区 `D:/OurTrail` 未被进入或修改，全部操作在 `D:/OurTrail-ui-followup-20261023` 完成。
+
+  **合并面**：合并前 master=`c1a5aeb`、分支 tip=`50f7fde`；`git merge --no-ff win/ui-followup-plan-20261023` ⇒ `65acce3`（parents `c1a5aeb` + `50f7fde`），并入 9 个提交：T011 night-v2 三提交（`a81e3b7` 通知/活动通知/我的视觉收敛、`5395f02` 激活引导卡箭头钉行右端、`220a91c` T011 验收取证与状态落盘）＋晨审与派发资产 `64fca5c`、基线读数 `0d8dde7`、派发上下文同步 `c58da75`、FU-01 勘误 `b5d0742`、FD-01 触控高 `90e95e3`、FH-01 页头规则上收 `50f7fde`。改动 50 个文件，其中代码 13 个：`app.wxss`（FH-01 新增 `.list-head__text` / `.list-head__title` 两规则）、`home.{wxml,wxss}`、`discover.{wxml,wxss}`、`me.{json,wxml,wxss}`、`notices.{json,wxml}`、`anotices.{json,wxml}`；其余 37 个全在 `docs/`（engineering-workflow 十文档 + 晨审证据包）。零改动：`cloudfunctions/`、`tools/`、`miniprogram/utils/`、`components/`、`pages/weather*`、`pages/privacy`、`custom-tab-bar/`、`app.json`、项目配置。
+
+  **两处可核的收敛**：FD-01 把 `discover.wxss` 筛选 chip 的 `min-height:34px` 改为 `var(--touch-target)`（`app.wxss:67` = 44px）；FH-01 把 home/discover 各自一份逐字同形的 20px/28px/600/-0.3px 页头规则上收为全局两规则并改名，实测旧类名 `home-head__text` / `home-title` / `discover-head__text` / `discover-title` 在 `miniprogram/` **0 命中**，两处 WXML 均已改用 `.list-head__*`，计算值不变。
+
+  **FU-02 / FU-14 补证结论（D-01 授权会话，自动化端口 9425，只读 + 合成注入，零生产写入）**：① FU-02 激活引导卡箭头——长说明折 2 行（36px）时 `›` 仍在行右端且垂直居中：`insideRow=true`、`onRightHalf=true`、`rightGapPx=0.4`、`verticalCenterDeltaPx=0`；② FU-14 昵称——原生 `input` 接受 80 字（`maxlength=80`），输入框 238×40、top 114.4，统计带 top 199.4，无覆盖；两次 `profile.save` 由 monkey-patch 拦截（`expectedRevision:5644`），服务端重读仍为「林溪」未变；草稿与本地存储已清理，1 张时序假读截图隔离在 `invalid/` 并注明原因。**证据包在仓库外** `%TEMP%/opencode/fu02/evidence/`（临时目录，未入库；`FOLLOWUP_TASK_LEDGER.md` 内 FU-02/FU-14 仍标 BLOCKED，不在本轮改动面内）。
+
+  **合并后 12 门复跑（逐门实测，与派发基线逐项相同）**：`check.js` EXIT 0 `ALL CHECKS PASSED`；`check-handlers.js` EXIT 0；`scenario-notices 91/0`；`scenario-me 143/0`；`swx1 45/0`；`swx2 110/0`；`t4-e08 41/0`；`b4-pad 32/0`；`b4-e05 49/0`；`ui-consistency 17/0`；`page2 98/0`（单次运行；`tools/page2-gates-test.js:584,649,798-807` 的 setImmediate vs settle 竞态仍 **OPEN**，D-10 待 `tools/` 解冻后裁决）；`m02 65/1` —— 唯一红仍是存量 `PV5 四个章节标题…`，签名与 clean 基线相同。**未跑全量 sweep，不编总数**；本轮无 `tools/` 改动，门禁口径与合并前一致。
+
+- 2026-10-23（**UI 后续批次 2：六项决策一次落地（D-10/D-02/D-03/D-04/D-05/D-06）**；用户指令「都按照你推荐项进行」，分支 `win/ui-followup-batch2-20261023`（基线 `88efd3e`），**已提交（`744d2f8` page2 测试、`f9e24b5` 本批代码+测试）、未 push**；`tools/` 按 D-10 A 解冻）。**需重新部署 trailApi：是（2026-10-23 已执行，trailApi + trailApiLab 均部署）**——`cloudfunctions/trailApi` 的 `schema/commands/notices/selectors` 四个 domain 文件改动（D-03 + D-05），`trailApiLab` 已跑 `sync-lab.js`（17 文件，`selectors.js` 逐字节相同）。
+
+  **决策与实现**：① **D-10 A / FU-03**：`tools/page2-gates-test.js` 不再用固定 `setTimeout(30)` 猜「页面跑完了没有」，改为「setData 回调计数 + 在途天气请求计数」双信号归零（连续两轮 setImmediate 复核，5000ms 仅作死锁上限）；牙齿用例＝响应迟到 80ms 时固定 30ms 读到 `early=0`、新信号读到恰 1 次 `.timeline-card` 滚动，且结束后回调计数归零；100/0 连跑 3 次读数一致。② **D-02 B / FU-16**：`notices-page.js` 加 `PAGE_SIZE=20`、`visibleItems`/`hiddenCount`/`applyItems`/`onLoadMore`，两页 WXML 改渲染 `visibleItems` 并挂「加载更多（还有 N 条）」；`items` 仍持全量供计数与查表。**只减渲染与 setData 体积，列表读仍全量**，界面无「下载变少」类文案；重读后保留已展开条数，已全展开时按钮收起且再点幂等。③ **D-03 A / FU-17**：`Notice.kind` 为封闭七值 `manual/publish/itinerary/review/join/cancel/unknown`（`specOpt` 保历史数据合法），自动通知类型在写入端 `noticeKindFor` 按命令定死；读取端只搬运，历史无键投影 `unknown`，**不按文案反猜**。④ **D-04 A / FU-15**：位置撤回保持一次点击，行内常驻「撤回后本次不再共享；如需恢复需重新上报」，不加 `overlay` 二次确认。⑤ **D-05 B / FU-20**：`selectors.positionRowsFor` 保留未撤销但已到期的行并给 `expired: !(now < consentExpiresAt)`（与活动视图「有效位置」的严格 `<` 同源）；me 与 home `meta.positionRows` 共用同一投影；模板按 `item.expired` 分岔「已过期（活动已结束）」/「本次活动的位置授权仍然有效」，撤回按钮保留（`position.revoke` 无阶段门，活动结束后仍可撤回）。⑥ **D-06 B / FU-11**：第二行导语保持删除；discover 搜索空态与筛选空态补「只在当前范围 / 列表只含尚未出发」，结果计数「N 场 · 均未出发」；home 搜索空态同步。**D-07 未决，未触碰**（editor 四项零改动）。
+
+  **文件面**：22 改 + 1 新。代码 16：`cloudfunctions/trailApi/domain/{schema,commands,notices,selectors}.js` + `trailApiLab` 同名四文件；`miniprogram/pages/{me/me.js,me/me.wxml,notices/notices.wxml,anotices/anotices.wxml,home/home.js,discover/discover.js,discover/discover.wxml}`、`miniprogram/utils/notices-page.js`。测试 6 改 + 1 新：`page2-gates-test`、`scenario-notices-test`、`scenario-me-test`、`scenario-discover-test`、`home-collab-list-test`、`lifecycle-projection-test`、新增 `tools/notice-kind-test.js`。零改动：`app.wxss`、`app.json`、组件、`custom-tab-bar`、天气线、privacy。
+
+  **门禁（逐套实测）**：`check.js` exit 0 `ALL CHECKS PASSED`；`check-handlers.js` exit 0（存量死 handler 1 条已登记）；`smoke 214/0`；`lifecycle-projection 146/0`（§6b 新增 14 条：到期边界、双面投影、撤回落库）；`scenario-me 145/0 skipped=0`；`notice-kind 45/0`（独立 oracle 七值 + 写入端赋值 + 跨角色投影 + 历史 unknown + 非法值被拒）；`scenario-notices 105/0`（§8 分批 14 条，含「三次加载更多零读请求」与两页模板接线）；`scenario-discover 40/0`；`home-collab-list 26/0`；`lifecycle-transitions 214/0`；`lab-dryrun 165/0`；`page2 100/0 ×3`。**唯一红仍是存量** `m02 65/1`（PV5 privacy 章节计数，签名与 clean 基线相同）。**未跑全量 sweep，不编总数。**
+
+  **变异自证（D-05 四处，改完均已还原）**：投影 `expired:false` ⇒ 3 红（18:00 边界、home 行、18:30 行）；边界改 `nowMs > expiry` ⇒ 2 红（恰在到期时刻）；页面 `expired:false` ⇒ 1 红；模板退回恒称「仍然有效」⇒ 1 红。D-10 的牙齿内建在用例中（固定 30ms 与迟到 80ms 响应同场对照）。
+
+  **部署回读（2026-10-23，共享环境，用户批准后执行）**：`cli cloud functions deploy` 两次均成功——`trailApi` 28 files / 130.6 KB、`trailApiLab` 22 files / 87.0 KB；`info` 两台均 `Active / timeout 20 / Nodejs16.13`。部署后 `cli cloud functions download` 到仓库外 `%TEMP%/opencode/deploy-batch2/`，与工作树逐文件 `diff -r --strip-trailing-cr`（排除 node_modules/package-lock/.DS_Store）**两个函数的差异均为空**。**行为级真云端探针未跑**（需 automator 会话；本轮未获授权新起 `auto`），所以「线上已按新 schema/投影返回」目前是包级证据，不是真实账号读数。
+
+  **真机已补（2026-10-23，IDE 模拟器，用户批准后执行）**：对本工作区 `D:\OurTrail-ui-followup-20261023` 执行 `close --project` → `open` → `auto --auto-port 9426` 重编译（不 `quit` IDE），驱动脚本在仓库外 `%TEMP%/opencode/mp-auto/verify-batch2.js`。**16/16 marker 全真**，7 张 306×660 截图 + `readings.json` 在 `docs/ui-ux-redesign/evidence/batch2-2026-10-23/`。读数：① **me 位置行**——注入两条 `positionRows`（一条 `expired:true`、一条 `false`），渲染分岔逐字命中「已过期（活动已结束）」与「本次活动的位置授权仍然有效」，撤回后果文案两行各出现一次、撤回按钮 2 个；**全程零点击撤回，云端零写入**（`me-position-rows.png`）。② **discover 结果计数**——真实数据读数「50 场 · 均未出发」（`discover-count.png`）。③ **notices / anotices 用真实 669 条通知，未注入**——首次加载 `visible 20 / hidden 649 / DOM 20`，点一次「加载更多（还有 649 条）」后 `40 / 629 / DOM 40`，按钮数字与隐藏数一致；两页读数同形（`notices-{before,after}.png`、`anotices-{before,after}.png`）。④ **点到底按钮收起**——另行注入 25 条，一次点击后 `visible 25 / hidden 0 / DOM 25 / 按钮消失`（`notices-tail.png`）。**bundle 新鲜度自证**：D-04 那句后果文案只存在于本批代码，屏幕出现即证明加载的是重编译后的包。**两次作废轮次隔离在 `invalid/` 并写明原因**（第一版把「点一次按钮应消失」写进判据，而 669 条时按钮应继续存在；第二次尾部用例复用了 `reLaunch` 已销毁的页面句柄），均属驱动缺陷、不是产品缺陷。**仍未覆盖**：这是 IDE 模拟器不是物理手机；D-05 的过期行是注入态、没有自然到期的真实样本；D-03 的 `kind` 无像素面（只有投影与门禁），线上真实账号的行为级读数仍未跑（部署后仅包级 diff 证据）。
+
+- 2026-10-23（**编辑器三项收口（EDI-01/02/03）；用户选 A**：封面槽上移、节点日程只读推算、装备改 chips。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，纯客户端 + 测试/文档）。
+  **改动**：① `components/content-editor/content-editor.wxml/.wxss` 把封面槽从图片组之后移到正文之前，补「添加正文图片后自动使用第一张 / 默认用正文第一张图片 / 已指定正文中的一张图片」三态文案；封面仍只从正文图片里选（服务端 `activity.js:44` 的约束不变），仍默认首张、可更换，无独立上传。② `pages/editor/editor.js` 引入共享 `utils/route-schedule.js`，新增只读派生 `scheduleRows/scheduleBasis/scheduleSpanDays`（`routeDerivedOf`，接线到载入/表单/时间/节点/路线带入/GPX/示例路线等入口），`editor.wxml` 在路线节点下新增「节点日程」timeline；`pages/activity/activity.{js,wxml}` 用同一函数按 `startAt` 推算每个节点的 `scheduleLabel`，只在**至少一个节点有时间戳**时显示 `scheduleBasis`。没有时间戳就不摆日程（不把「没记录时间」印成日常提示）。③ `editor.wxml` 把两组多行 textarea 改为 chips + 单行录入（必带/建议各一套），`editor.js` 新增 `onEquipmentDraft/addEquipment/removeEquipment`：空值与重复只拦在录入端，存储仍是 `equipmentText/equipmentSuggestedText` 换行文本 ⇒ **零 schema、零部署**，旧草稿/旧数据原样往返。
+  **门禁（逐套实测）**：`check.js` ALL CHECKS PASSED；`check-handlers.js` 全过（存量死 handler 仍只有 `editor.js#onNumber` 1 条）；`scenario-editor 200/0`（新增 §14 十二条：有出发/无出发/全无时间戳三态 + chips 增删去重 + `buildInput` 过 `ActivityInput` 严检）；`scenario-activity 163/0`（新增 §1c 四条：无时间戳不摆日程、有时间戳按时间差推算、模板渲染位）；`content-editor 33/0`（新增三条模板结构门：封面槽在正文前且只有一处、空态文案、更换入口唯一）；`route-schedule 41/0`、`journey-graph 15/0`、`t4-e08 41/0`、`swx1 45/0`、`swx2 110/0`、`page2 100/0`、`b4-pad-final-value 32/0`、`ui-consistency 17/0`、`e2e-client-cas 54/0 (bugs=1 既有 BUG-C2)`。**未跑全量 sweep，不编总数。**
+  **真机已补（2026-10-23，IDE 模拟器，用户指令「继续未完成任务」后执行）**：对本工作区 `D:\OurTrail-ui-followup-20261023` 执行 `close --project` → `open` → `auto --auto-port 9427` 重编译（不 `quit` IDE），驱动脚本在仓库外 `%TEMP%/opencode/mp-auto/drive-edi-verify.js`。**31/31 check 通过**，5 张 306×660 截图 + `readings.json` 在 `docs/ui-ux-redesign/evidence/edi-d07-2026-10-23/`。读数：① **EDI-02**——编辑器真实 `setForm` 按轨迹时间差派生 3 行 `第1天 08:00 / 09:30 / 11:15`（0/+90/+195 分钟），口径句逐字命中、`scheduleSpanDays=1`、DOM 3 条 timeline 与数据一致；活动页注入生产形状数据后 3 条逐点时刻与口径句同屏（`edi02-{editor,activity}-schedule.png`）。② **EDI-03**——编辑态 3 个 chip；真实 tap「添加」把 `防潮垫` 写入 `equipmentText`（3→4），真实 tap chip 移除（4→3）；重复 `登山杖` 不入清单并提示「「登山杖」已在清单里。」；chip 实测 `76×44`（`edi03-equipment-chips.png`）。③ **EDI-01**——空态虚线占位「封面」+「添加正文图片后自动使用第一张」且无「更换」；有图态缩略图 +「默认用正文第一张图片」+「更换」；真实 tap「更换」打开「选择封面」层（`coverOpen=true`）；封面行 `top=454.4` 早于正文 `top=525.4`（`edi01a-cover-empty.png`、`edi01b-cover-sheet.png`）。**bundle 新鲜度自证**：新增文案与 chips 结构只存在于本批代码，屏幕出现即证明加载的是重编译后的包。**边界**：这是 IDE 模拟器不是物理手机；活动页与封面缩略图为注入的生产形状数据（渲染路径仍是仓库代码），未选择新封面、未提交活动、**云端零写入**；真实 tap 触发的草稿写入已在驱动结束时按快照还原。`cloudfunctions/` 零改动 ⇒ 本批不需要重新部署；EDI-04（可见性）未动，按 D-07 另批立项。
+
+- 2026-10-23（**EDI-04 活动可见性 `discover|link`（D-07 ④B，用户「继续实施」授权）**；分支 `win/edi04-visibility-20261023`（基线 master `7a44b8c`），已 `--no-ff` 并入 master（`76bf027`）并推送。**需重新部署 trailApi：是（已由用户部署，2026-10-23）**——动 `domain/schema.js` + `domain/selectors.js`，`trailApiLab` 已跑 `sync-lab.js`（17 文件）。
+  **语义**：新增可选 `visibility: specEnum(['discover','link'])`，**缺省 `discover`**：不带键创建的记录仍不含该键，旧客户端/存量数据行为逐字节不变。`link` 在服务端发现页过滤里排除（放在 `slice(0,50)` 之前，不占名额），**创建者本人也看不到**；活动详情读本来只对 draft 做 owner 门，因此 `link` 活动仍可凭 id/分享链接打开并报名。`home` 是个人视角，不受影响。`activity.copy` 沿用原记录的可见性。
+  **客户端**：`editor.js` 的 `emptyInput/toForm/buildInput` 兜底 `discover`；`buildInput` **始终显式带键**——`activity.edit` 是 `Object.assign`，缺键会把「改回公开」静默变成保留 `link`。`onVisibility` 用下标映射且异常下标失败关闭为 `discover`。`editor.wxml` 发布步在「名额审核」与「费用文本」之间新增「可见范围」卡（picker 绑 `value` 指向当前项 + 三态文案），只用既有 `.step-group/.card/.picker/.small.muted` 类，零新 token。
+  **门禁（逐套实测）**：`check.js` ALL CHECKS PASSED；`check-handlers` 全过（新增 handler 已绑定，存量死 handler 仍只有 `editor.js#onNumber`）；`smoke-test 226/0`（214→226，新增 §14b 十二条：缺省无键/读回兜底/link 可建可发/他人与创建者发现页均不可见/凭 id 可开/组织者首页仍在/改回 discover 后重新出现/50 名额不被 link 占用/非法值拒绝）；`scenario-editor 210/0`（200→210，新增 §15 十条：旧草稿兜底、buildInput 始终带键、切换与草稿落盘、link 提交过 schema、改回公开的 payload、服务器回读、异常下标、WXML 控件结构门、picker `value` 绑定）；`scenario-discover 40/0`、`lifecycle-projection 146/0`、`lab-dryrun 165/0`、`trailapilab 25/0`、`scenario-activity 163/0`、`scenario-workspace 114/0`、`quick-create 65/0`、`e2e-client-cas 54/0 (bugs=1 既有 BUG-C2)`、`t4-e08 41/0`、`swx1 45/0`、`swx2 110/0`、`page2 100/0`、`b4-pad-final-value 32/0`、`ui-consistency 17/0`。**未跑全量 sweep，不编总数。**
+  **上线与边界（2026-10-23 收口）**：部署 `trailApi` + `trailApiLab` 与重编译后的发布步真机核验由用户完成（用户确认；本轮未新增入库证据文件）。上线顺序仍为「先云后客户端」——旧 schema 会把带 `visibility` 的创建/编辑判为 `INVALID_INPUT`；本次已按此顺序执行。分支以 `--no-ff` 并入 master（`76bf027`，合并树与分支树哈希一致）并推送。
+
+- 2026-10-23（**全局视觉收敛 A：冷白纸底 + 森林绿唯一主操作 + 白卡细线 + 下划线页签 + 提高密度**；用户提供 `OurTrail_UI_交付包/01_全局视觉参考.png` 并选定方案 A「按推荐方案执行」。只取参考的**结构规则**，不抄其品牌与具体色号；4 个 tab、页面 IA、详情页 hero 不变）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，纯客户端 token/样式/模板 + 测试与文档；分支 `agent/ourtrail-style-a-20261023`（基线 master `269599b`），**未提交、未 push**。
+
+  **改动面（24 文件，+128/−70）**：
+  ① `miniprogram/app.wxss`——`--paper` 由暖纸 `#F6F3EC` 回到冷近白 `#F5F5F0`（`--muted` 其上复算 4.91:1，过 4.5:1）；`--stone`/`--stone-line` 由暖米 `#EDE9DE/#DCD5C4` 改为冷中性 `#EDEFEA/#D9DED7`；`.card` 与 `.notice-card` 加 1px `--line` 发丝边、保持零阴影；新增 `.segmented.tabs-line` 变体（去轨道/白底，文字 + 2px 森林绿下划线），**沿用 `.segmented/.seg/.on` 类名**——E2E golden-path/ui-state 按 `.seg` 定位，换类名等于拆驱动契约。
+  ② `custom-tab-bar/index.wxss`——`.tab.on` 去掉 `#ECF0EF` 药丸底，改 `#163E35` 字 + 600 字重 + 透明底；触控高度/圆角仍归 `.tab`；仍全字面量、零 `var()`。
+  ③ `components/activity-card/*`——卡片本体即入口，删掉「查看活动安排」重复主入口（featured/普通两处），协作入口保留为 `collab` 非空时的 leaf chip 行（`catchtap` 防冒泡进详情）；leaf 退回点缀，不再承载列表里的重复主操作。
+  ④ home/discover 活动列表容器 `.stack` → `.stack-gap3`（16→12px）；home、tasks、workspace 的内容分区 `segmented` 加 `tabs-line`。
+  ⑤ 12 个页面 json 的浅色导航 `#F6F3EC` → `#F5F5F0`，消除原生导航与冷白纸面的色差接缝（`app.json` `window.backgroundColor` 本就是 `#F5F5F0`，未动）。
+  ⑥ 文档：`docs/ui-ux-redesign/design-system.md` 更新 token 表并新增 §10 收敛登记；`.agents/skills/ourtrail-ui/references/design-system.md` 同步 token/类登记（10-16 暖调描述加前向指针，不删历史）。
+
+  **门禁实测**：`check.js` ALL CHECKS PASSED（G10 类作用域 0 命中）、`check-handlers.js` exit 0；`swx1 45/0`（T2.6 由「药丸底」改钉「透明底」）、`swx2 110/0`、`page2 100/0`、`b4-pad 32/0`、`t4-e08 41/0`、`e08-remaining 79/0`、`ui-consistency 17/0`、`style-semantics 92/0`、`journey-graph 15/0`、`scenario-discover 40/0`、`scenario-tasks 24/0`、`scenario-workspace 114/0`、`scenario-activity 163/0`。**唯一红 `m02-class-scope 65/1`（PV5 privacy `.section-title` 5 个）为 clean 基线同款存量**，非本轮引入。
+
+  **真机已补（2026-10-23，IDE 模拟器；用户授权「你可以自由地连接开发者工具做验证」后执行）**：对本工作区 `D:\OurTrail` 执行 `close --project` → `open` 重编译（不 `quit` IDE），`auto --auto-port 9428`；驱动脚本在仓库外 `%TEMP%/opencode/mp-auto/verify-style-a.js` 与 `tap-style-a.js`。**6 帧页面截图 + 1 帧点击后截图 + 两份读数**在 `docs/ui-ux-redesign/evidence/style-a-2026-10-23/`（`home-top/home-list/discover-top/discover-list/tasks-top/workspace-top/home-tab-recent.png`、`readings.json`、`tap-reading.json`）。**数据全部为真实云端、零注入、零写入**：home 156 张卡、discover 50 张、workspace 用组织者本人活动「测试活动」（`activity-mv0q0bt305yaqe`，待审核 0 / 待安排车辆 0 / 待签到 1）、tasks 列表为空。**bundle 新鲜度自证**：`.tabs-line` 只存在于本批代码，home/tasks/workspace 三页实测均命中（`tabsLine=1`、`segCount=4`）。
+  读数：① home 当前页签 `background rgba(0,0,0,0)` / `color rgb(22,62,53)` / `font-weight 600`，底部 4 个 tab 的 active 同为透明底 + 森林绿 + 600；普通卡 `border 1px solid rgb(222,227,219)`（= `--line`）、底白、圆角 14px，featured 卡仍 forest-deep（`rgb(18,46,40)`）；列表卡片间距实测 `11.695px`（≈ `.stack-gap3` 12px）；页面 WXML 内「查看活动安排」重复入口 **0 次**。② discover 50 张卡、间距同为 `11.695px`、`.stack-gap3` 存在、`loading=false`、`denied=''`。③ **真实 tap** `.seg[1]`（最近查看）：`filter` `mine → recent`、卡片 `156 → 41`、`.seg.on` 恰 1 个且文本为「最近查看」，下划线随选中项移动（`home-tab-recent.png`；`tap-reading.json` `pass=true`，exit 0）。**注意**：下划线是 `.seg.on::after` 伪元素，元素自身的 `border-bottom` 读数为 `0px none` **不代表缺失**，像素证据只有截图；后续不要据此误判。
+  **边界**：仍是 IDE 模拟器（306×660）不是物理手机；tasks 当前无真实任务数据，只验证了空态与页签；除内容页签那一次真实 tap 外，未重测报名/发布等业务交互（本轮只改样式类，handler 未动）；`cloudfunctions/` 零改动 ⇒ 不需要重新部署 trailApi；`tools/` 改了 `swx1-style-gates-test.js` 的 T2.6 钉值，另补 `e2e-ui-state-test.js` 的 revision 夹具（见下）。
+
+  **业务交互回归已补（2026-10-23，用户要求「运行剩余业务交互测试」；同一开发者工具会话、样式 A 重编译后的 bundle，同会话 `.tabs-line` 与卡片 1px 边框只读复核通过）**：
+  **A 层七套判读行全部零失败**：`e2e-test 72/0`、`e2e-permission 96/0`、`e2e-domain-negative 86/0`、`e2e-client-cas 54/0（bugs=1 既有 BUG-C2、drift=0）`、`e2e-interleave 67/0（inconclusive=3：真云端并发 / 跨身份桩 / 读滞后）`、`e2e-panel-sync 40/0（bugs=0）`、`e2e-release-gap 51/0`。日志在仓库外 `%TEMP%/opencode/e2e-style-a/e2e-*.log`。
+  **B 层**：`e2e-ui-test` 为 `BUSINESS PASS 26/0/0`、`UI INCONCLUSIVE 64/0/1`、`passed=90 failed=0 unverified=1`，唯一未验证＝组织者经原生 `<picker>` 授予车辆联络（弹层不在可查询树），整体按语义记 **INCONCLUSIVE 不是 PASS**。`e2e-ui-state-test` 为 `BUSINESS FAIL 14/1/2`、`UI FAIL 41/13/3`、`passed=55 failed=14 unverified=5`，**14 条失败全部归因到套件过期而非样式 A**：① 8 UI + 1 BUSINESS＝套件按 `.button.secondary` 找「确认报名」，当前是 `.button.primary`（`roster-panel.wxml:61`，自 `3c11cd19` 2026-10-09 起），按钮找不到导致下游「审核落库」断言没有成因；② 2 BUSINESS + 2 UI INCONCLUSIVE＝套件找「进入正在集合」，当前单一来源是 `journey.js:266` 的「开始集合」，只读复核该沙盒 `nextPhaseLabel="开始集合"`、`canTransition=true`、按钮实际 `button primary block`（首版定点探针的同类失败是装载时机假红，已用补等待的只读复核收回）；③ 3 UI＝保存后 2 秒内重开「编辑车辆与司机」时 `busy` 仍真，`transport-panel.wxml:99` 在 busy 期间置空 `bindtap`，真实点击按设计不生效，属夹具时序；④ 1 UI INCONCLUSIVE＝原生 `<picker>`。**定点复核**已确认在选时「确认报名」class 含 `disabled`，真实点击后 `batch=""`、`selectedCount=1`，产品侧 BUG-C 不变量成立（截图与读数在证据目录）。
+  **套件修复（未提交）**：`tools/e2e-ui-state-test.js` 建档/发布补 `globalRev` + `dispatchGlobal`——该套件 2026-10-07 定稿，早于 `076bf11`（2026-10-09）的 `NO_REVISION` 失败关闭；只动测试夹具，产品代码零改动。`e2e-golden-path-test.js` **未跑**：其 `dispatch` 仍缺 `expectedRevision`（GP-01 既有红）、阶段文案同样过期，且开跑前会取消共享云上最多 8 个历史 `[GP·黄金路径]` 活动并新建**非 `[预演]`** 活动，超出本轮授权。**副作用未清理、待裁决**：状态矩阵写入 `[预演] 状态矩阵E2E-7cm7`（`activity-mvkm7ge4esw8a1`）与 `赵辰/李晃/王闰-7cm7`（首轮失败另写 `-r7sk` 三名），`e2e-ui-test` 写入 `[预演] 工作台E2E`、`[预演] 报名E2E`；未创建任何非 `[预演]` 活动，未删除云端测试数据。证据汇总见 `docs/ui-ux-redesign/evidence/style-a-2026-10-23/README.md` §业务交互回归。
+
+- 2026-10-23（**活动发布流程视觉收敛（方案 A 后续）；用户「把活动发布流程涉及的页面都优化一版吧」**；分支 `agent/ourtrail-style-a-20261023`（方案 A 工作分支），**未提交、未 push**。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，4 个产品文件纯模板/样式）。
+  **改动面（4 文件，+53/−65，零 schema / 零 domain / 零 handler）**：① `pages/editor/editor.wxml`——步骤页签改 `.segmented.tabs-line` 并删除「第 X 步 / 共 4 步」重复计数（`.seg/.on` 类名保留，E2E 驱动契约不变）；模板复制卡从页签上方移入步骤 1 必填项之后，只在步骤 1 出现；删除 8 处与卡内标题重复的 `.kicker`（基本/时间/上车点/名额审核/可见范围/费用文本/风险/装备）；路线节点与风险提示由「卡中卡」改为 `.subrows/.subrow` 发丝线子行；发布弹层在参与但未勾资料授权时补后果说明；页头副文案收紧。② `pages/editor/editor.wxss`——`.segmented.tabs-line .seg` 横向 padding 4px→2px（306px 宽四步带 ✓ 不换行）；新增 `.subrows/.subrow/.subrow + .subrow`。③ `content-editor.wxml`——空封面占位「封面」→「待选」，去掉与右侧字段标签的重复。④ `profile-gate.wxss`——`.phone-btn` 32px→`var(--touch-target)`（44px），padding 12px 0。
+  **静态门（本轮复跑）**：`check.js` ALL CHECKS PASSED；`check-handlers` exit 0（存量死 handler 1 条未增）；`t4-e08 41/0`、`swx1 45/0`、`swx2 110/0`、`page2 100/0`、`b4-pad 32/0`、`style-semantics 92/0`、`e08-remaining 79/0`、`ui-consistency 17/0`。**唯一红 `m02-class-scope 65/1`（PV5 privacy `.section-title` 5 个）为 clean 基线同款存量**，与本轮无关。
+  **真机（IDE 模拟器 306×660，用户授权「自由连接开发者工具」）**：改前 11 帧端口 9420；改后 `close --project 'D:\OurTrail'` → `open` → `auto --auto-port 9421`（不 `quit`），驱动在仓库外 `%TEMP%/opencode/mp-auto/publish-flow-capture.js` / `publish-flow-expanded.js`。证据 `docs/ui-ux-redesign/evidence/publish-flow-2026-10-23/`（before 11 帧、after 18 帧 + 2 份读数）。**数据为生产形状注入，零云端写入**：弹层用 `onPublishOpen`（纯 setData）打开，未点「发布活动」/「确认发布」；未捕获 profile-gate（会渲染真实账号资料）。
+  读数：① 四步 `.section-head` 5/4/2/7 → 3/3/2/2，`.card` 3/3/2/6 → 3/2/1/5；模板卡不再出现在步骤 2–4。② active 页签背景 `rgb(255,255,255)` → `rgba(0,0,0,0)`，文字色 `rgb(22,62,53)` 与 600 不变；底部每一步仍恰 1 个 `.button.primary`。③ 发布弹层未勾资料授权时新说明在场、确认按钮 `button primary block disabled`；勾选后说明消失、class 变 `button primary block`（未点击确认）。④ 真实 tap 展开节点/风险：节点行 46/47/47px、风险行 102/103px，宽 316px，均 ≥44px。**bundle 新鲜度自证**：新副文案与「待选」只存在于本批代码，`segMode="segmented tabs-line"` 旧包不可能出现。
+  **边界**：IDE 模拟器不是物理手机；资料授权说明在弹层折叠线以下，两帧状态截图字节相同（`scroll-view` 无 automator 滚动通路）⇒ 该状态只有元素文本/class 证据、没有像素证据；`profile-gate` 仅样式改动、无真机帧；未发布、未部署、未清理任何云端数据。
+
+- 2026-10-23（**活动创建全流程交互/UI（DESIGN 选项 B）；用户「你来设计下活动创建所涉及的所有页面交互及UI呢」→ 设计稿后选「B」**；分支 `agent/ourtrail-style-a-20261023`（HEAD `269599b`，style A 工作树），**未提交、未 push**。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，纯页面 JS/模板/样式 + 测试与文档）。
+  **设计稿**：`docs/ui-ux-redesign/creation-flow-2026-10-23/DESIGN.md`（§0 边界、§2 D1–D14、§11 选项 B；本轮已补 §12 实施记录）。**边界一条没破**：不改 schema/云函数/domain/命令/业务状态机；不改 `missingForPublish` 的判据、条数、标签与步骤；不重排四步、不挪集合点上移；零新 token；一屏一个 primary。
+
+  **改动面（4 个产品文件）**：① `pages/editor/editor.js`——新增 `requiredGroups/groupMissing` 把 5 条原始缺项**只在展示层**收成 3 组（活动名称/出发与报名时间/集合上车点）；`onPublishIntent` 预检落到第一组并给逐组失败文案（`还差：…。补齐后再发布。`），`onFixRequired` / `onMessageAction` 跳步骤并按需滚到 `#pickup-section`；`scrollTop`/`scrollToPickup` 统一 `typeof wx.pageScrollTo === 'function'` 守卫；模板副本加二次确认（`templateConfirmOpen`）；快捷路线导入先关路线弹层；`doPublish` 成功后跳 `activity?id=…&published=1`；集合时间/日期被手动改过后撤掉 `autoPickupIds`，徽标不再继续宣称「自动生成」。② `pages/editor/editor.wxml`——分组缺口清单与「去补上」出口；模板确认弹层；发布步底栏三态。③ `pages/activity/activity.js`——读取 `?published=1` 的一次性庆祝（`this.justPublished` 首帧后消费）；草稿 `wx.hideShareMenu`；草稿转发兜底回首页路径。④ `pages/activity/activity.wxml`——发布成功卡把唯一 primary 给「分享给同行的人」，owner 工作台降为 text；草稿/庆祝态隐藏底部重复分享。**测试**：`scenario-editor` **210→227/0**、`scenario-activity` **163→171/0**（分组预检/滚顶/滚集合点、模板确认、快捷路线关层、自动徽标生成与撤销、消息动作落点、`hideShareMenu`、草稿转发兜底、`published=1` 只庆祝一次、常规进入不庆祝）。
+
+  **门禁（本轮末次复跑，逐套实测）**：`check.js` exit 0 `ALL CHECKS PASSED`；`check-handlers.js` exit 0（存量死 handler 仍只有 `editor.js#onNumber` 1 条）；`scenario-editor 227/0`、`scenario-activity 171/0`、`quick-create 65/0`、`journey-graph 15/0`、`page2 100/0`、`t4-e08 41/0`、`b4-pad 32/0`、`swx1 45/0`、`swx2 110/0`。**唯一红是存量** `m02 65/1`（PV5 `privacy.wxml` 章节标题 5 节点，签名与 clean `git archive HEAD` 副本逐字相同），未在本轮修。**未跑全量 sweep，不编总数。**
+
+  **真机（IDE 模拟器 306×660，用户授权自由连接开发者工具）**：`close --project 'D:\OurTrail' --port 33278` → `open` → `auto --auto-port 9426`（不 `quit` IDE），驱动在仓库外 `%TEMP%/opencode/mp-auto/drive-creation-flow-2026-10-23.js`，**`ok=true`，5 帧截图 + `report.json` + README 在 `docs/ui-ux-redesign/evidence/creation-flow-2026-10-23/`**。读数：① **A 空表单预检**（注入空白表单夹具；本机存完整草稿，直接点发布不会缺项）——`step=0`，数据与像素层均为「还差：活动名称、出发与报名时间、集合上车点。补齐后再发布。」，三组分别指向 `01 信息/01 信息/02 路线`（`A-editor-empty-preflight.png`）。② **B 自动集合点**（同一注入夹具，走真实 `onDate/onTime/applyRouteSnapshot`）——生成「溪谷起点集合」，集合时间 = 出发前 30 分钟 07:30，`autoPickupIds` 恰 1 个 true，动作「去确认集合点」落到第 2 步；收起后卡上可见「自动生成」徽标；真实 `onPickupTime(07:40)` 后徽标消失、`autoPickupIds={}`（`B-editor-auto-pickup.png`、`B2-editor-pickup-badge-cleared.png`）。③ **C 发布成功闭环**（真实 owner 活动 `activity-mv0q0bt305yaqe`，**本轮未发布、云端零写入**）——`?published=1` 首屏 `justPublished=true`、恰 1 个 primary「分享给同行的人」，庆祝卡文案逐字命中（`C-activity-published-banner.png`）。④ **C2 常规进入**——同一 id 不带参数时 `justPublished=false`、页内无「活动已发布」文案（该活动状态卡本身也是 `.callout.success`，故按文案认领而不是按类名）、唯一 primary「进入工作台」（`C2-activity-normal-entry.png`）。**bundle 新鲜度自证**：`requiredGroups` 等新字段在 `page.data()`，A/B/C 的新文案只存在于本批代码。**副作用**：驱动前后快照/还原 `ourtrail.drafts.v1`（B 期间的真实 `persistDraft` 写入已回滚），未发布活动、未部署、未清理云端数据。
+  **边界**：A/B 是注入空白表单夹具（渲染与 handler 走仓库真实代码）；IDE 模拟器不是物理手机，未验证手势/键盘/原生 picker；`tools/` 只改上述两套 + 既有样式门读数，`cloudfunctions/` 零改动。
+
+- 2026-10-23（**跨页 L2/L3 重构：把活动详情试点的方法论推到全部页面**；用户「参照上面的重构逻辑……更加大胆……不要跟我交互，有分歧点就以你的推荐为准」）。分支 `agent/ourtrail-night-ui-v2` 工作树，**未提交、未 push、未部署**。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动（`git diff --name-only -- cloudfunctions` 为空），只动客户端模板/样式/页面 JS + 测试与文档。
+  **边界**：不改 schema/云函数/domain/业务状态机；不新增云写路径；不覆盖用户未跟踪文件（`OurTrailNightBu.txt`、两个交付包、`OurTrail全局UI重设计.txt`）。所有写操作沿用既有 `dispatchAndSync` 与 CAS；页面状态词仍只来自 `journey.js` / `format.js`。
+  **结构变化（L2 组件契约 / L3 页面编排，不是换色）**：① **home** 身份头（眉题/主标题/问候副标题）+「发现（次级）/发起（主）」唯一主按钮；搜索条内嵌；四档分段（协作档只在 `collabCount>0` 时出现）。② **discover** 页头压成一行；视图分段 + 结果计数 + 筛选/排序 chip 收进同一工具组；诚实说明降为低权重常驻条。③ **workspace** 身份头 + 四档分段 + **常驻三格事实带**（跨分区入口，不随 tab 消失，`tripSummaryLine` 说明构成）；总览重排为「当前待办（主项 + 其余行）→ 里程碑 → 独立工具 → 阶段」；第三格随阶段在「待签到/待到家」切换，现场面板用 `page-metrics` 避免重复印计数。④ **vehicle** 森林底身份头（车名/车牌/司机）+ 去程/返程分段 +「本程行动」前置于名单。⑤ **staff** 紧凑身份头（角色/活动编号/授权范围）+ 单一面板。⑥ **tasks** 身份头 + 唯一主按钮「新建任务」+ 带计数分段 + 状态语义色任务行。⑦ **routes** 页头 +「我的路线 / 协作路线」分行 + 序号/难度/指标/风险/引用/更新时间的路线行；`routes.wxml` 原内联 `{{index + 1 &lt; 10 ? …}}` 触发 WXML 编译错误（`&lt;` 在 mustache 内非法，`check.js` 抓不到），改为 JS 预计算 `indexText`。⑧ **route** 概览 + 事实指标、地图、01 剖面 / 02 节点 / 03 分段天气 / 04 风险、共享、被引用活动、管理与 sticky 双操作；复用 `<chapter>`。⑨ **me** 头像/昵称直改身份区 + 统计带 + 分组化（资料/协作码/设置），危险动作留文字入口；复用 `<chapter>`。⑩ **activity-card** featured 分支补回 `metrics`（列表上「扫一眼」的距离/爬升不能因为换成大图就消失），并给森林底指标值换纸白；`compact` 保持列表密度。新增 L2 组件 `activity-hero` / `chapter` / `fact-grid` / `equipment-grid`（`chapter` 已被 activity/route/me 三页复用）。
+  **回归修复（本轮实测发现）**：首页 featured 卡在重构后**丢失距离/爬升**——根因是 `activity-card.wxml` 只在普通分支渲染 metrics，而 home 首卡走 featured 分支；已补并重编译取证（`30.5 km / 2883 m` 重新出现在像素里）。
+  **门禁**：`check.js` exit 0 `ALL CHECKS PASSED`（G10 类作用域命中 0：40 个作用域单元 / 3133 个 class token / app.wxss 134 类名）；`check-handlers.js` exit 0（死 handler 存量仍 1 条 `editor.js#onNumber`）。受影响套件最终复跑：`t1-r01 28/1`、`operations-layout 37/0`、`scenario-workspace 125/0`、`activity-l2-structure 83/0`、`entry-layout 39/0`、`personal-route-layout 57/0`、`equipment-icons 24/0`。**全量 sweep 实测 110 套 / passed=7002 / failed=14 / redSuites=4**（日志仓库外 `%TEMP%/opencode/sweep-final-2026-10-23.log`；四个红套件即下列四条既有红）。B 层 `e2e-ui-test`/`e2e-ui-state-test`/`e2e-golden-path-test` 未跑（前两套已登记过期，golden-path 有共享云端副作用），记 NOT_RUN 不是 PASS。
+  **四条既有红（`git archive HEAD`=`e05e559` 干净副本复现同读数，不是本轮引入）**：`cold-start-work 8/2`（`createCollections=17`/`reads=15`，期望上限写死在 `ot_tasks` 之前）、`g2-platform-gate 14/1`（全仓已无具名 slot 样本 `{defs:0,uses:0}`，该步自判空转）、`t1-r01 28/1`（T25 `small` vs `small + muted` 期望差）、`trip2-gates 66/10`（测试桩缺 `wx.cloud.callFunction`）。本轮一度让 `t1-r01` 多红一条 T27——工作台模板写了复合 `wx:if`（`item.id !== 'idle' && (...)`）被判「求不出来」；修法不是放宽门，而是把「排除主待办与 idle」的集合运算收回 JS（`queueRest`），模板只读给定顺序的行（与铁律 22 同向），复跑后与 HEAD 读数一致。
+  **真机（IDE 模拟器 390×753 / 截图 306×660，用户授权自由连接开发者工具）**：`close --project 'D:\OurTrail' --port 33278` → `open` → `auto --auto-port 9421`（**不 `quit` IDE**），驱动在仓库外 `%TEMP%/opencode/mp-auto/crosspage-capture.js`。**证据包 `docs/ui-ux-redesign/evidence/crosspage-l2-2026-10-23/`：before 13 帧、after 13 帧、两份 manifest（11 页 × 门槛/几何读数）、`readings/` 与本 README**。两组 `gates` 失败 0、`residual` 0、`exceptions` 0；守卫账本 `blocked=[]`、`mutations` 仅 `ourtrail.opened.v1`/`ourtrail.openid`（页面打开时的本地 LRU 与匿名标识，无云写）。**bundle 新鲜度自证**：首页精选卡指标行与「我的活动」标题、工作台常驻事实带只存在于当前工作树，均出现在 after 像素；before 组仍是「沈青，下一次同行」旧版。**脱敏**：采集时把昵称/同行者/手机号/车牌/协作码替换为假名池，`field-panel` 用元素句柄二次脱敏；两份 manifest 共 87 条原值在入库前全部剥离（只留 `originalsCount`），整份再扫 11 位手机号 0 命中。
+  **证据边界**：屏幕上是云端测试/预演数据（发现页 158 场、路线库 299 条、标题带 `[UI]`/`[预演]`/时间戳尾巴）；`staff` 为 denied 态，`vehicle` 为「已完成 + 零乘车人」极端数据，`tasks` 为注入合成夹具；地图底图瓦片在 IDE 仍空白 ⇒ **底图 UNVERIFIED**；原生 picker/相册/分享面板未驱动；截图左缘 x=0–9 的细碎字形残带是截图通道固定伪影（两组同样存在），不是布局元素。本批**未对任何活动执行真实写操作**。
+
+- 2026-10-26（**Style B 批次一：按用户参考板重做信息结构（不是换色）**；用户「当前我的页面展示我觉得非常糟糕，你需要重新设计下」+ 参考板 → 11 条 grill-me 决策 → 「继续推动吧」。分支 `agent/ourtrail-style-a-20261023`，**未提交、未 push、未部署**）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，只动客户端模板/样式/页面 JS + 测试与文档。
+  **决策与边界**：`docs/ui-ux-redesign/style-b-decision-record-2026-10-26.md`（D1–D11）+ `docs/ui-ux-redesign/style-b-implementation-design-batch1-2026-10-26.md`（§3 共享层、§4 逐页 Spec、§6 文件清单、§7 分片、§8 A1/A2）。只取参考板的**信息结构**（品牌词标 → 无页内大标题 → 卡片三行正文 → 详情页吸顶分段），**不抄其品牌与色号**；**零新 token、零新色值**；不改 schema / 云函数 / domain / 命令 / 业务状态机，不改 `utils/journey.js` 与 `custom-tab-bar/**`；页面状态词仍只来自 `journey.js` / `format.js`（铁律 22）。
+  **改动面（客户端 18 改 + 10 新；测试 6 改 + 2 新；文档 2 改 + 2 新）**：
+  ① 新 `components/brand-header/`（**在流内的占位块 + `position: fixed` 的条**：占位保证 `.page` 仍是 WXML 唯一根，m02 PV1/PV2 与 b4 根级联门不破）+ `utils/header-layout.js`（把 `statusBarHeight` 与**实测胶囊**换算成「头的总高 + 右侧给胶囊让出的内缩」，纯函数可 Node 测；写死 96px 在窄屏会把词标压到胶囊底下、在平板上留出半个屏幕空隙）。本批挂在**三个 tab 页**（首页 / 通知 / 我的）并各自 `navigationStyle: custom`——这是 D2 的取舍：用自定义导航换取参考板那一行词标，代价是原生标题栏消失；天气中心页留批次二。
+  ② 新 `utils/card-view.js`（`chipsOf` / `metricsOf` / `peopleOf`，wx-free）+ `components/activity-card` 正文重排为「图 / 标题 / **一行 chips**（日期 > 难度 > 距离 > 爬升，次序即截断优先级，`nowrap`）/ 人数行（`已确认 x/y` + 组织者 `待审核 n 人`）/ 短相位徽章」；首页与发现页共用同一份派生，删掉两页此前各抄一份的 `cardMetrics`。**投影字段 `info`/`status`/`metrics` 一字未动**；归属从 `status` 一长串拆成左 `roleNote` 与右 `pending` 两槽，两页的 status 语义差异（首页有归属前缀、发现页只有「我组织的」）保持不抹平。
+  ③ 首页首屏改「下一次同行」卡（新 `components/next-up-card`）+ 一行动作：取**参与的、非终态、最近一场**（草稿/终态/纯协作被授进来的都不算）；没有未来活动时卡自己变邀请卡并带唯一 primary，动作行只剩次级「发现活动」——同屏不出现两个 primary（`ourtrail-ui §3 #7`）。只有已结束活动时不再叠一个空状态面板（新增 `hasAny` 派生），筛选/搜索导致的空列表仍然解释。
+  ④ 通知页两处「通知」分区头合并成一处，条数/排序/未读降为一行 caption；`anotices`（原生导航子页）保留原页头。
+  ⑤ 活动详情：`.section-nav` chips 改为**吸顶下划线分段条**——复用全局 `.segmented.tabs-line`（不新造外观类，E2E 按 `.seg` 定位的契约不变），`.section-nav` 只加 `position: sticky; top: 0; background: var(--paper)`；**z-index 20 低于底栏 50 与 overlay 200**（两栏不同时在屏）。6 段覆盖 9 个锚点（介绍/行程/路线/安全/装备/约定），`IntersectionObserver` + `wx.nextTick` 做滚动高亮；`onUnload` 断开、迟到回调有作废守卫。**吸顶条自身高度实测 55**（`.seg` 的 44 + tabs-line 下内边距 10 + 发丝线 1），`STICKY_NAV_OFFSET = 55` 同时是观测窗上沿（`relativeToViewport({top: -55})`）与点段落点偏移（`wx.pageScrollTo({offsetTop: -55})`）的**唯一来源**——此前按 45 算，条底那 10px 里被盖住的章节仍算「在视口里」⇒ 高亮慢一屏、点「约定」标题压在条下（真机抓到的两条）。**一个锚点一个 observer 实例**：微信的 `IntersectionObserver` 第二次 `observe` 直接抛 `"observe" call can be only called once in IntersectionObserver`，整条高亮当场死掉（真机 `exceptions=1` 抓到；旧测试桩允许实例复用，把这类平台限制挡掉了——桩已按平台行为改成第二次 observe 抛错）。`sectionNav` **一字未改**（`scenario-activity-test.js:368/452/454/458/465/513` 六处既有断言按它钉），渲染改读新增 `anchorGroups`；段的存亡只看**首锚点**是否存在——没有手写介绍时「介绍」整段消失，不会跳到没有标题的块上。
+  ⑥ 全局 `.page-title` 28 → 24px（参考板页内不出现大标题，降一档避免与品牌栏抢层级；`m02` 的 PV4 终值同步）。
+  **门禁（逐套实测）**：`check.js` exit 0 `ALL CHECKS PASSED`；`check-handlers.js` exit 0（装载 42 个模板宿主 · 死 handler 仍只有 `editor.js#onNumber` 1 条）；新增 `header-layout 38/0`、`card-view 24/0`；`scenario-activity 171→212/0`（新增 §15 二十三条：6 段次序与 2 字标签、`target === ids[0]`、介绍含 `sec-peers`、草稿无 `sec-weather` ⇒ 行程只剩一段、无手写介绍时「介绍」整段消失、无 `signupNote` 时「约定」只剩费用、缺 `createIntersectionObserver` 不抛且高亮留空、按文档顺序登记 9 个锚点且**每个锚点各用一个 observer 实例（violations 0 / create 9 / observes 9）**、每个实例观测窗上沿 `-55`、点段落点 `offsetTop === -55`、取文档序最靠上的命中段、间隙中保持上一段、重设只断开一次、`onUnload` 断开、WXML 改用 `anchorGroups` 且不再有 `section-nav__chip`/`wx:for="{{sectionNav}}"`、`.section-nav` sticky + paper、`activity.json` 只给纸白/黑）；`entry-layout 41/0`、`home-collab-list 39→42/0`（新增 §8 三条：只认参与的未终态最近一场、事实行与卡片同源、只有已结束活动时走邀请卡）、`a20-owner-hero 36/0`、`scenario-me 145/0`、`scenario-notices 105/0`、`scenario-discover 60/0`、`scenario-editor 227/0`、`scenario-workspace 125/0`、`scenario-signup 106/0`、`scenario-vehicle 66/0`、`scenario-staff 26/0`、`scenario-lab 20/0`、`scenario-api 29/0`、`smoke 226/0`、`m02-class-scope 66/0`、`journey-graph 15/0`、`personal-route-layout 57/0`、`activity-l2-structure 83/0`、`operations-layout 37/0`、`ui-consistency 19/0`、`swx1 45/0`、`swx2 110/0`（此前登记的 `activity.wxss:90 .highlight-dot` font-weight 红随本批样式重写消失）、`page2-gates 102/0`、`t4-e08 41/0`、`b4-pad-final-value 33/0`、`b4-e05-checklabel 49/0`。**未跑全量 sweep，不编总数。**
+  **门禁改动（逐条说明——换形态，不是放宽）**：① `tools/page2-gates-test.js` M-18 原来按**字节相等**要求 `notices.wxml ≡ anotices.wxml`；本批合法地只给 tab 版加品牌栏与合并页头 ⇒ 按铁律 30（静态文本门会把合法重构误判成改判据）换成「卡片正文 / 未读标记 / 分批 / 发布接线同构 + 品牌栏只在 tab 版 + 分区头只有一处」，99→**102**，既有判据一条未删。② `tools/a20-owner-hero-test.js` 的字节比对排除表补 `roleNote/pending`（归属拆槽的新表达），并新增两条同源断言（组织者两处都在、非组织者两处都空、`pending=0` 照印）——**没有**放宽 `info`/`status`/`metrics` 的既有比对。③ `tools/entry-layout-test.js` 把「页标题块 + 双按钮」换成「品牌栏 + 下一次同行 + 动作行」，并新增「无未来活动时主按钮随状态卡消失」。④ `tools/m02-class-scope-test.js` 的 PV4 终值 28→24px（跟设计决定走，出处仍是 `app.wxss`）。
+  **真机验收（2026-10-26，用户「执行吧」授权后执行）**：`close --project 'D:\OurTrail'` → `open` → `auto --auto-port 9434` 重编译（**未** `cli quit`，未动共享会话的其它窗口），模拟器 390×844；驱动 31 条断言 **31/0**，`exceptions=0 consoleErrors=0`；证据目录 `docs/ui-ux-redesign/evidence/style-b-2026-10-26/`（8 张页面截图 + 2 张坐标探针 + 3 帧 A3 探针 + `readings.json` + README 记账）。**bundle 新鲜度自证**：最后一处改动（featured 卡删「出发」）在 `home.png` 里可见。读数要点：品牌栏 **87**（statusBar 47 + navBar 40）、右侧胶囊内缩 102、首屏可用下沿 **749**（自定义 tab 栏上沿，**不是** windowHeight 844）、下一次同行卡 111–217 整卡在可用区内、首卡标题 627–657 与 chips 690.7 都在 749 之上（**A1 口径成立**）、通知 caption 12px 一行、详情分段条实测 **55**、maxScroll 1747、点「安全」落点 55 / 程序滚动落点 59、两次高亮都等于几何算得的 `safety`。**真机抓到 4 条缺陷并当场修掉**：① `IntersectionObserver` **一个实例只能 observe 一次**——原实现一个实例 observe 9 个锚点，真机抛 `"observe" call can be only called once`、整条高亮死掉（旧测试桩允许实例复用，正属「桩替答」式假绿；桩已改成第二次 observe 抛错，并新增「每锚点各一实例 / violations 0 / create 9 / observes 9」三条断言）；② 吸顶条高 **45→55**（高亮慢一屏 + 点段标题被条压住，同一常数兼作观测窗上沿与落点偏移）；③ 过期活动曾被当成「下一次同行」；④ featured 卡日期行「10/03 周六 · **出发** 已过时」——`when` 是倒计时短语不是动作，删「出发」二字。另：发现页 body 内眉题「发现活动」按 §4.2 删除（原生导航已印同一句，无门钉过该字面量）。**登记不改**：静止时 `.section-nav` 在流内 642.9–697.9、固定底栏占 646–753（视口 753）⇒ 首屏那 55px 被底栏盖住，滚约 52px 后露出、643 起贴顶；§4.5 把导航之上的 hero/信息块列为不动，故本批只留读数。**UNVERIFIED**：375 宽（automator 0.13.0 无 `setWindowSize`，无法程序化改画布；右内缩按实测胶囊换算，375 只会更窄）；**A3 下拉刷新**（`wx.startPullDownRefresh` 在模拟器里不渲染原生指示器，120/500/1000 ms 三帧一致、页面不位移，只能证「API 不抛错、内容不永久下移」；回退方案仍留：`backgroundTextStyle: dark` + 顶部偏移，或这两页改 `<scroll-view refresher-enabled>`）；相册/分享/picker/键盘焦点未驱动。页面数据全部真实云端读取（通知 677 条、发现 50 场、首页 cards 投影 158 条），**未**用 `setData` 注入合成载荷。批次二 16 页（含天气页重排）在批次一验收后再开；`cloudfunctions/` 零改动 ⇒ 只需要客户端重编译，**不重新部署 trailApi**；**仍未提交、未 push、未部署**。
+
+- 2026-10-26（**Style B 批次二 2a：天气中心页接入品牌栏 + 天气页按 D7 重排「条件 → 图 → 详解」**；基线 `6e1faec`（批次一 checkpoint），分支 `agent/ourtrail-style-a-20261023`，**未提交、未 push、未部署**）。**需重新部署 trailApi：否**——本轮只动客户端两页 + 一条门禁 + 文档/证据，`cloudfunctions/` 零改动。
+  **设计与决策**：`docs/ui-ux-redesign/style-b-implementation-design-batch2a-2026-10-26.md`（S8/S9 + 6 条实施偏离 + 验收结果）。只取参考板信息结构，**零新 token、零新色值**；不碰任何阈值，`utils/{sky,conditions,agenda,cloud-field-svg}.js` 与 `--chart-ramp`/SVG 几何一字未改；不改 schema / 云函数 / `journey.js`。
+  **S8 天气中心页**：`weather-hub.json` 改 `navigationStyle: custom` + `<brand-header />`（第 4 个 tab 页；品牌栏实测 87 = 状态栏 47 + 导航 40，右侧给胶囊让出 102），页内 `eyebrow + page-title` 整块删除（D8：同一身份不再自报第三次）；kicker/标题/说明仍以字面存在，主行动「地图选点查天气」205–253（350×48）紧接品牌栏。
+  **S9 天气页重排（D7）**：页内次序改为 页头（24px）→ 概率免责 → 点/节点 picker + 日期 + 草稿按钮 → **徒步提示 callouts（安全优先，从图后上移）** → **条件 strip（总评 + 天相 pill）+ 沉默卡** → 逐时天气（日条 / 24·48·72h / 点卡 / meteogram 或云场+OI） → 详解（天相详解 → 今日户外时间轴 → 逐小时表 → 出处）。strip 的数据全部取自明细区已在用的同一批字段：总评 `condOverall`（`overallGrade` 唯一出口）、pill = `condCards`（`buildCondCards` 已过滤 silent/light）、沉默 = `condSilent`（`buildCondSilent` 唯一出口）——**零新阈值、零第二实现**；总评与沉默说明整页各只出现一次（明细区那两张已删，不复制）。pill 只读不可点（零新 handler、零滚动副作用）。
+  **实施偏离 6 条（都写进设计文档）**：①「现在读数」不搬进 strip（`unified.r1..r4` 默认态为空，把「点图上任意小时」印在图上方是指路指反；读数留在云场卡唯一一处）；②总评卡从明细区**删除**而非复制；③沉默说明是 strip 之后的独立卡（复用既有左边条语义：不是结论、也没有评级）；④**「此点」卡从页首下移到图正上方**（真机实测那张卡占 226px，preamble 合计 631 / 视口 753 ⇒ strip 只剩 101px 余量，与 D7 正相反；卡内收成两行，226→94，`onSavePoint` 与字段一字未动）；⑤`.cond-grade` 容器 `<text>`→`<view>`；⑥区头方向与 UA 按钮宽两处修正（见下）。
+  **门禁（逐套实测）**：`check.js` exit 0 `ALL CHECKS PASSED`（G10 作用域单元 42 / token 3143 / 类名 134 / 命中 0）；`check-handlers.js` exit 0（装载 42 个模板宿主，死 handler 仍只有存量 `editor.js#onNumber`）；`page2-gates 102→117/0`（§5b 新增：`cond-grade` 容器 tag=view + 星串/档位两个独立 `text` 子节点；带行动区头 `flex-direction: row` 的**级联赢家必须来自页级 sheet**、另两个区头必须解析为 `column` —— 新增 `computedOf(entry, prop, sheets)` 复用 `parseSheet/selMatches/specOf` 算终值，inline 最高，`from` 形如 `sel@sheetN`）；`weather-page 209/0`、`weather-v2 103/0`、`swx2 110/0`、`t4-e08 41/0`、`b4-pad 33/0`、`m02 66/0`、`entry-layout 41/0`、`header-layout 38/0`、`weather-hub-gpx 23/0`、`journey-graph 15/0`、`ui-consistency 19/0`、`meteogram-readability 86/0`、`cloud-field-svg 29/0`、`weather-resilience 45/0`。**未跑全量 sweep，不编总数。** 变异自证（改完文件 sha256 还原一致）：改回 `<text>` ⇒ 1 红；`.has-action` 改回 column ⇒ 1 红；给「天相详解」挂 has-action ⇒ 1 红；删 button 的 `width/margin` ⇒ 1 红。
+  **真机验收（2026-10-26，用户「A」授权：先提交批次一 checkpoint，再开批次二 16 页）**：`close --project` → `open` → `auto --auto-port 9434` 重编译（**未** `cli quit`），模拟器 390×844；驱动 `%TEMP%/mp-auto/verify-style-b-2a-2026-10-26.js` 为只读（不发布 / 不报名 / 不写库），**18 条断言全过**、`exceptions=0 consoleErrors=0`；证据 `docs/ui-ux-redesign/evidence/style-b-2a-2026-10-26/`（4 张截图 + `readings.json` + 修前探针 + README 记账，含 7 次运行历史与两次通道超时的归类）。真实读数（四姑娘山大峰 31.0632/102.9085 · 5025 m · 7 天，未注入）：strip 417.2–511.2、沉默卡 526.7–604.7、逐时天气区头 624.7–694.7 —— **全部在视口 753 内**（D7 目标达成）；`.point-meta` top 991.7（图上方、切窗之下）；区头一行（title 636.7–660.7 / 按钮 296–370 = 74×48 且右沿等于内容右沿 370 / head 高 70），来源说明单行 h=18 且未断 `Open-Meteo.com`；另两个区头仍是 50 高竖排；星串与档位真实间隙 **6px**（starsRight 299 → gradeLeft 305）。注入 5 颗 pill 的最宽情形换 2 行、最右 337 ≤ 390、strip 底 545.2 仍在首屏（**该截图是注入数据**，只用来看换行与溢出）。
+  **真机抓到的 3 条缺陷（静态门与逻辑测试都看不见，逐条配门）**：①**条件 strip 名存实亡**——修前 strip 底边距折线 0.2px、区头整块在折线下 113px，根因是页首点卡 226px 在重复导航栏已给出的身份；下移后首屏让出 242px。②**「★★☆☆☆条件较差」贴成一串**——`.cond-grade` 是 `<text>`，**微信的 text 不能当 flex 容器**，写在上面的 `gap:6px` 被静默丢弃；同页 `.cond-pill` 是 view 所以间隙正常，DOM 文本与 `page.data()` 全都看不出问题，只有像素读得出来。③**「全图展示」像副标题且不贴右**——页级 `.section-head` 只覆盖 display/align/justify，**没复位 `app.wxss:145` 的 `flex-direction: column`**；且微信 `<button>` 的 UA 样式是**固定宽 184px + 左右 `auto` 外边距**，auto 先吸收剩余空间 ⇒ `justify-content: space-between` 失效（实测 left 135 / width 184，右缘 319）。修法成对：方向只加在 `.section-head.has-action`（另两个区头的正确形状就是竖排，不能被拍平），button 在作用域内 `width: auto; margin: 0`。
+  **UNVERIFIED（不当通过）**：375 宽度（automator 无 `setWindowSize`，「5 颗 pill 换行」只对 390 成立）；原生 picker/分享/相册/键盘焦点未驱动，「全图展示」只测位置与可点击性、未验全屏页；`skyInputsSettled` 本轮为 true 但未记分项耗时；全部读数为 IDE 模拟器（不同 DPR/字体缩放的真机未跑）。驱动两次 `timeout waiting for automator response`（同命令不同位置）经通道探针证健康（connect 16ms、systemInfo/currentPage 正常）后重跑，得到与第 3 次逐项相同的读数 ⇒ 记通道瞬时退化，不计产品红。
+  **下一步**：批次二 2b 余 14 页（signup / editor / routes / route / route-edit / workspace / tasks / staff / vehicle / weather-chart / anotices / lab / privacy / cloud-field-poc）逐页 Gap Matrix；批次二整体验收后再问是否提交。
+
+- 2026-10-26（**Style B 批次二 2b：余 14 页逐页 Gap Matrix 收口 + 5 处定向修复（F1–F5）+ 新门 `nav-chrome`**；基线 `6e1faec`，分支 `agent/ourtrail-style-a-20261023`，**未提交、未 push、未部署**）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，只动 4 个页面模板/1 个 wxss/1 个 `app.json` + 测试与文档。
+  **设计与证据**：`docs/ui-ux-redesign/style-b-implementation-design-batch2b-2026-10-26.md`（§2 导航分割线取证、§3 十四页逐页 改/不改 + 理由 + 证据、§4 F1–F5 精确改法、§5 明确不改并附门禁、§6 文件清单、§7 验收与 UNVERIFIED）；证据包 `docs/ui-ux-redesign/evidence/style-b-2b-2026-10-26/README.md`（before 14 页首屏 + after 8 张 + 像素读数 + `readings-after.json`）。
+  **五处修复**：**F1** `app.json window` 导航底 `#163E35`/白字 → `#F5F5F0`/黑字——改前 7 页继承绿色、14 页各自声明浅色，同一 App 两套顶栏；**F2** 路线库页头删 kicker 与副标题（原生导航已印「路线库」，同一身份自报三次），主按钮改 `block`；每行把「保存于…」从行尾独立灰行收进元信息簇（行内文本行 5→4）；**F3** 路线详情把 source 提为眉题、难度/权限/已共享/保存时间收进标题下的同一簇；**F4** 路线编辑器导入 GPX 由 `primary` 降 `secondary`（本页唯一 primary 是底栏保存，先例 `page2-gates-mutate.js:61` P6）+ 删 `OURTRAIL · 编辑路线` 眉题（`route-edit.js:143` 已动态设原生标题）；**F5** 工作台四个工具入口去 `leaf` 实底（`.button` 基类即白面细线）、说明文字 `forest`→`muted`。**零新 token、零新色值、零阈值改动**；不碰 schema / 云函数 / domain / `journey.js`。
+  **明确不改（已逐条取证）**：`tasks`/`staff` 的 18px 身份行（门禁钉住）、`vehicle` 深色 hero（有意）、`activity` 图文与吸顶条、`editor`/`signup`/`anotices`/`weather-hub` 既有层级、`me` 章节顺序、`lab`/`cloud-field-poc`（DEV_ONLY）；299 条 `….gpx.bin_tmp` 是数据卫生不是版式。
+  **门禁**：新增 `tools/nav-chrome-test.js` **15/0**（`app.json` 为 `#F5F5F0`/`black`；21 页 json 分类闭合——声明了的必须同对浅色，未声明的视为继承且由第一条兜住；`tabBar.selectedColor` 仍 `#163E35`；判定抽成纯 `judgePageNav`，对合成 `#163E35/white`、半声明、大小写、缺键四类喂料自证牙齿）；`personal-route-layout 57→60`、`operations-layout 37→39`；逐套实测 `page2-gates 117`、`entry-layout 41`、`header-layout 38`、`scenario-editor 227`、`scenario-activity 212`、`journey-graph 15`、`ui-consistency 19`、`t4-e08 41`、`m02-class-scope 66`、`swx1 45`、`swx2 110`、`b4-pad-final-value 33`，全部 exit 0；`check.js` ALL CHECKS PASSED（G10 作用域 42 / token 3136 / 类名 134 / 命中 0），`check-handlers` 只余存量 `editor#onNumber`。**未跑全量 sweep**，不编总数。
+  **真机（IDE 模拟器 390×844，ws 9435，只读驱动 `%TEMP%/mp-auto/verify-2b-2026-10-26.js`，14/14 断言过）**：F1 走像素——`nav-signup/editor/privacy/weather` 导航条在 y=6/14/24/34 全为 `#F5F5F0`（改前这 4 页是深绿条）；F2 `title 24-52 / btn 80-128 w=350`、首行 `title@229 updated@289/479/668`、风险行 299；F3「活动沉淀」在标题前、`updated@110`；F4 无 `OURTRAIL` 眉题、首屏唯一实底只有「保存修改@659」、导入 `button secondary block`；F5 四个 `button workspace-tool` 无 `leaf`。bundle 新鲜度由新陈述文案自证。
+  **两处更正（如实登记）**：① F2 初稿把「陈述 + 右侧按钮」塞同一行，390 实测换行（`title 24-80 / btn 88-136`；估算 ≈370 > 358 内容宽），改为 notices/weather-hub 的「陈述独占一行 + 全宽 block primary」，**不用 nowrap 硬塞**；② 一条真机断言方向写反（要求保存时间在标题**之上**），失败读数 `title@237 updated@297` 暴露的是断言错，已改成钉真实阅读顺序 标题→元信息→风险，**换方向不是放宽**。
+  **UNVERIFIED**：真实报名表单（唯一非本人活动已过时）、真实任务面板（无协作授权）、真实车辆 hero（无车辆）、工作台其余三个 tab 展开态、原生 picker/分享/相册/键盘、375 宽度、`cloud-field-poc`、地图底图瓦片。
+  **下一步**：等用户统一审批后再 commit；批次二整体验收后再谈是否推送/部署。
+- 2026-10-26（**Style B Slice 1：首页 hero 接入 + 发现页平铺行 + C16 首屏/列表去重**；基线 `6e1faec`，分支 `agent/ourtrail-style-a-20261023`，**未提交、未 push、未部署**）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，只动 home/discover 两页 + `brand-header`/`activity-card` 样式 + `--scrim-top` 一条改档 + 两个门禁夹具/牙齿 + 文档/证据。
+  **结构（按 G0 §3.1 逐块）**：① 照片 hero 负边距出血（`home.wxss:22`）；品牌词标走 `brand-header variant="overlay"` 压在照片上，组件自建层叠上下文 `z-index:3` + 200px `::before` 压深（`--scrim-top` 原为**零消费者**，本轮 0.3/40% → 0.6/0.4@45%/0，唯一消费者就是它；**零新增 token/色值**，仍 44 条）；② 首屏只放「下一次同行」大卡，无下一场时切邀请卡并联动**三条**（品牌栏回 `solid`、hero 去 `-24px` 上边距、`.sheet-top--invite` 退回纸面）；③ 白面 sheet 从照片下沿抬起（`-20px` 叠压）；④ 搜索 + 动作行 + 四档范围 + 「更多活动 / 按出发时间排序」区块头 + **单一** `activity-card` 列表；⑤ 发现页两张卡加 `flat`（去底色/圆角、保留下发丝线），列表 gap 0，地图 340→260。**不实现分类筛选（C19）、不动暖纸/webfont（C12）、不新增筛选路由（C13）、不改造装备网格（C14）**。
+  **C16（本轮唯一判据变化）**：`home.js:124-129` 在 `filter === 'mine'` 时先剔除 `nextUp.id` 再算 `featuredId`；协作档不剔（条数必须等于筛选段计数）、最近查看不剔（该档名字就是「我点开过的那几场」）、已结束档不可能命中。唯一一场活动就是首屏那场时，列表空态改说「其余活动会出现在这里」（`home.js:193-197`），不是「什么都没有」。
+  **门禁重钉（夹具适配 + 加牙，不是放宽）**：`home-collab-list 42→46/0`（§1/§2/§3/§4/§5/§7 各补一场更早的同行活动占首屏；新增 hero 不在 `cards`、协作档 `collabCount === cards.length`、三视角合并排序不变、首屏那场只出现一次）；`a20-owner-hero 36→39/0`（§1/§1b/§2/§4a 补 `hero()`，§3 让被测活动直接当 hero；新增默认档不重复 + 空态文案、`recent` 档同一场必须还在、夹具自证首屏不是被测卡）。**变异自证**：把 `dedupeId` 临时置 `''`（锚点命中恰 1 次），两套**都 exit 1**（`cards=soon,dual` / `["soon","own","other"]`），还原后 sha256 逐字节相同、两套恢复绿。
+  **其余门禁（实跑 exit 0）**：`check.js` ALL CHECKS PASSED（G10 作用域 42 / token 3144 / 类名 135 / 命中 0）、`check-handlers`（死 handler 仍只 1 条）、`entry-layout 41`、`m02 66`、`page2 117`、`swx1 45`、`swx2 110`、`scenario-discover 60`、`scenario-activity 212`、`nav-chrome 15`、`ui-consistency 19`、`journey-graph 15`、`scenario-editor 227`、`header-layout 38`、`b4-pad 33`、`t4-e08 41`、`activity-l2-structure 83`、`operations-layout 39`、`personal-route-layout 60`。**未跑全量 sweep**，不编总数。
+  **真机 NOT_RUN**（共享开发者工具会话未接管、未重编译）：本切片只有结构 + 静态门 + 页面/组件行为证据，**不宣称页面已保真**。残留风险已登记：白字压在亮封面（`cover-snow.jpg` 顶部亮天空）无对比度读数、sheet 叠照片 20px 是否切到 hero 正文、发现页 `compact+flat` 首次用于生产。证据 `docs/ui-ux-redesign/evidence/style-b-slice1-2026-10-26/README.md`（含结构块验收表、门禁读数、变异证明、升 VERIFIED 缺项清单）。
+  **UNVERIFIED**：hero 实际像素高度与裁切、白字/亮天空对比度、sheet 叠压观感、flat 行发丝线与缩略图对齐、375 宽度、真实实拍封面、原生键盘顶起搜索栏。
+  **下一步**：Slice 2（活动详情）按 G0 §4.2 开工；真机门槛待用户授权重编译后补。
+- 2026-10-26（**Style B Slice 2：活动详情首屏改 `.sheet-top` 纸面板**；基线 `6e1faec`，分支 `agent/ourtrail-style-a-20261023`，**未提交、未 push、未部署**）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，只动 `activity.{wxml,wxss}` 两个文件 + 一套门禁 + 文档/证据。
+  **结构（G0 §3.3）**：`activity.wxml:33-61` 把首屏收成「全出血 hero（媒体 320）→ `<view class="sheet-top act-sheet">`」，纸面板内依次是 `fact-grid variant="card"`（`:50`）、封面说明（`:51`）、状态 callout（`:52-59`）——它们是「值不值得去 / 现在该做什么」的唯一出口。负上边距与上圆角**只来自全局 `.sheet-top`**（`app.wxss:149-155`），页面只补内部 `gap:12` 与 `padding-bottom:20`（`activity.wxss:24-29`），否则状态卡会贴到纸面底边被裁。旧写法「浮起信息卡」`.card.act-info`（`margin-top:-24px`）删除 ⇒ 事实行落在纸面上，不再卡中卡。`.act-top` 保持 flex column（负边距不与父容器合并，封面不会被顶进上方提示）。`activity.js` 未改：`infoFacts`/`stateTone`/`photoNote` 数据口径一字不动；吸顶锚点、`.stack-sections` 40、9 个 chapter 顺序、`sticky-action` 全部未动（C14/C21 与天气章节卡序同理）。
+  **有意重钉（§5.2 点名的 `activity-l2-structure`，只换外层容器）**：`83→89/0`（+6）。顺序断言改为 `act-top < hero < 纸面板 < 事实格 < 封面说明 < callout`；新增三条更硬的判据——① **容器归属**：按 `<view>` 深度找纸面板自己的闭合位置，事实格/说明/状态卡必须都在块内（只比前后顺序时同级兄弟也能满足）；② 纸面板块内不得出现 `class="card`（钉住「事实行不是卡」）；③ 纸面板必须在同行评分之前收口。原「`.act-info` 有 -24px」改为「页面不得再写 -20/-24 负边距 + 全局 `.sheet-top` 必须同时有 -20 与 `--radius-sheet`」，负边距单源。章节顺序判据抽成 `judgeOrder(text)`，并对「对调末两章」的合成串要求**判红**（常驻牙齿，§5.2 要求的“顺序反了必须红”）。
+  **变异自证**：把 `<fact-grid>` 移出 `.sheet-top`（锚点命中各恰 1 次）⇒ exit 1、`passed=87 failed=2`（顺序 + 容器归属）；还原后 `sha256sum -c` OK、复跑 `89/0`。
+  **其余门禁（实跑 exit 0）**：`check.js` ALL CHECKS PASSED（G10 作用域 42 / token 3144 / 类名 135 / 命中 0）、`check-handlers`（死 handler 仍只 `editor#onNumber`）、`scenario-activity 212`、`page2-gates 117`、`t4-e08 41`、`m02 66`、`swx1 45`、`swx2 110`、`b4-pad 33`、`ui-consistency 19`、`journey-graph 15`、`entry-layout 41`。**未跑全量 sweep**，不编总数。
+  **一处有意偏离（登记不改）**：`⟂` 在活动页只做**横向**全出血（`.activity-hero-bleed { margin: 0 -20px }`），保留 `.page` 顶部 24px 纸面带。原因：`draftNotice` / 「活动已发布」成功卡都是 `act-top` 的前置兄弟，若 hero 再吃 `-24px` 上边距就会盖住它们；原生导航（C20）已经承担了顶部分隔。升到真机后再判是否需要按「无提示时才顶到导航」的条件分支。
+  **真机 NOT_RUN**（共享开发者工具会话未接管、未重编译）：本切片只有结构 + 静态门 + 页面套件证据，**不宣称首屏已保真**。算术已验证：hero body `padding-bottom:28px` > 叠压 20px ⇒ 标题与路线/领队整块不会被纸面板切到。证据 `docs/ui-ux-redesign/evidence/style-b-slice2-2026-10-26/README.md`（结构块验收表 / 门禁读数 / 重钉对照 / 变异自证 / 升 VERIFIED 缺项）。
+  **UNVERIFIED**：纸面板与封面的实际叠压观感、亮天空下的白字对比度、状态卡在纸面底色上的层级、375 宽两列事实格换行、原生导航高度对吸顶落点的影响。
+  **下一步**：Slice 3a（工作台：identity hero + `.sheet-top` + 紧凑 metric 条 + 检查队列），按 §5.2 重钉 `operations-layout`（新顺序 + metric 数量 + 「删掉 metric 必须红」）。
+
+- 2026-10-26（**Style B Slice 3a：工作台身份 hero + `.sheet-top` 纸面板 + 紧凑指标条**；基线 `6e1faec`，分支 `agent/ourtrail-style-a-20261023`，**未提交、未 push、未部署**）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，只动 `workspace.{wxml,wxss}` + 一套门禁 + 文档/证据。
+  **结构与决策**（`docs/ui-ux-redesign/style-b-shared-layer-spec-2026-10-26.md` §3.4/§5.2/C17）：首屏改成两块——森林底 `.workspace-hero`（`margin:-24px -20px 0`、`padding:20px 20px 56px`；eyebrow + `badge on-forest` 阶段徽标 + 标题 20/28 + `phaseScene` 副行）与 `.sheet-top.ws-sheet`（`gap:20`、`padding-bottom:24`），后者依次装 tabs ×4 → 指标带 → 三个常驻面板 → tab0 总览。指标带按 C17 **保留但不做卡片**：去 `--stone` 底/圆角/内边距、竖线改 `--line`、删 24px 覆盖（回全局 26px）；队列去掉 `.card`，纸面只留发丝线。**一个 20px 算术坑**：`.sheet-top` 的 `-20px` 落进 `.stack`（gap 16）只剩 4px 净叠压 ⇒ 首屏用无 gap 的 flex 列 `.ws-top` 承载（与活动详情 `.act-top` 同一教训），并钉成断言。
+  **改动面**：`workspace.wxml`（根节点换 `.ws-top`、新增 hero、tabs/指标带/三面板/tab0 收进纸面板、队列去 `.card`）、`workspace.wxss`（新增 3 个页面类、指标带去卡片化）、`tools/operations-layout-test.js`（结构读取改两层、面板父节点改 `sheet`、+6 条断言含「删一格 metric 必红」与「`.ws-top` 不得有 gap」）。`workspace.js` / `workspace.json` 未改，`TABS` 文案、`tab` 逻辑、`journey.leaderQueue` 口径一字未动；零新 token / 零新色值。
+  **收回一条既有红（不是放宽）**：`t1-r01` T25 自 Gate recount 28 起红，要求门槛解释行是 `small + muted` 且 `style` 含 `display:block`。取证 `66fd8e3`（引入该门的提交）原文正是 `class="small muted" style="display:block;"`，后续重构压成 `<view class="callout info"><text class="small">` 丢了排版 ⇒ 本轮该节点本就在改写范围，按原始口径恢复，**28/1 → 29/0**，未删改任何断言。
+  **门禁（实跑 exit 0）**：`operations-layout 45/0`（39→45）、`t1-r01 29/0`、`scenario-workspace 125/0`、`page2-gates 117/0`、`swx1 45`、`swx2 110`、`t4-e08 41`、`m02 66`、`b4-pad 33`、`b4-c11 171`、`e2e-panel-sync 40/0(bugs=0)`、`journey-graph 15`、`ui-consistency 19`、`entry-layout 41`；`check.js` ALL CHECKS PASSED（G10 作用域 42 / token 3148 / 类名 135 / 命中 0；G11 43 个 wxss、关键属性双写 0）、`check-handlers` 仍只 `editor#onNumber`。**未跑全量 sweep**，不编总数。
+  **变异自证（还原后 sha256 一致、复跑 45/0）**：`.ws-top` 加回 `gap:16px` / 队列加回 `card` 类 / hero 底色改 `--surface`，三条各恰好红 1 条（均为对应新断言）。
+  **真机 NOT_RUN**：共享会话未接管、未重编译，**不宣称该屏已保真**。证据 `docs/ui-ux-redesign/evidence/style-b-slice3a-2026-10-26/README.md`（结构块验收 / 有意偏离 6 条 / 门禁读数 / 变异 / 升 VERIFIED 缺项）。**UNVERIFIED**：森林底白字对比度、纸面板叠压观感、375 宽指标带与 `tripSummaryLine` 换行、`muted` 门槛行在 `callout info` 底上的可读性。
+  **下一步**：Slice 3b（名单 / 交通面板；C15 保留 3 指标与座位图，`person-row__body { min-width:0 }` 不动）。
+
+- 2026-10-26（**Style B Slice 3b：名单汇总三格指标带 + 搜索 pill + 人员行 44/16 + 添加车辆移到列表末尾**；基线 `6e1faec`，分支 `agent/ourtrail-style-a-20261023`，**未提交、未 push、未部署**）。**需重新部署 trailApi：否**——`cloudfunctions/` 零改动，只动 3 个组件（person-row / roster-panel / transport-panel）+ 两套门禁 + 文档/证据。
+  **结构（spec §3.5 逐块）**：① 名单 `{{countersLine}}` 一句话 → 三格 `.metrics`（已确认 / 待审核 / 候补）+「仅显示你有权查看的人员」；数字由 `render()` 透传 `counters: v.counters`（不再拼字符串）。② 搜索 `.input` → 44 高 `.searchbar` pill（含 icon），与状态 picker 同行：`.searchbar { flex:1; min-width:0 }`、picker `flex:0 0 auto`。③ 人员行头像 `.avatar-img` 40→**44**（与全局首字占位 `.avatar` 同尺寸；40/44 并排会造成 4px 行高差）、姓名升 `var(--text-input)`（16）；`person-row__body { min-width:0 }` 未动。④ 交通「添加车辆」从标题行搬到车辆 `wx:for` **之后的整宽按钮**（板上就是列表下方那颗），无车时 `primary`（此时预览被 `busy || !vehicles.length` 禁用，它是唯一可用推进动作）、有车时 `secondary`（主位交回「预览自动分车」）；icon 颜色随底色条件（`#163E35`=`--forest`、`#FFFFFF`=`--white`，均既有 token 同值，`icon` 拿不到 `var()`）。C15 的 3 格容量带与座位图一字未动。
+  **改动面**：`components/person-row/person-row.wxss`、`components/roster-panel/roster-panel.{wxml,js,wxss}`、`components/transport-panel/transport-panel.wxml`。零新 token / 零新色值；未改投影、未改 `transport-panel.js`、未改座位布局。**跨页影响**：`person-row` 同时挂在 `field-panel`/`activity`/`vehicle` ⇒ 头像 44 与姓名 16 在四屏同时生效（这四屏本轮真机均未跑）。
+  **重钉（§5.2 允许，判据更强不是放宽）**：`scenario-workspace` 原断言只比一句话 `countersLine === '已确认 4 · 待审核 1 · 候补 1。…'`；现改为**同一批数字换载体**——`counters.confirmed/pending/waitlisted` 逐字段 + wxml 三处 `{{counters.*}}` + `.metric` 恰 3 格 + **删一格必须变 2**（条数不变 125/0）。`counters` 是投影完整对象（另有 occupied/remaining/…），故逐字段比而**不整对象深比**（后者会把投影新增字段变成假红）。
+  **门禁（实跑 exit 0）**：`operations-layout 50/0`（45→50，+5）、`scenario-workspace 125/0`、`t1-r01 29/0`、`rc-transport 67/0`、`b4-c11 171/0`、`page2-gates 117/0`、`t4-e08 41`、`m02 66`、`swx1 45`、`swx2 110`、`b4-pad 33`、`ui-consistency 19`、`journey-graph 15`、`e2e-panel-sync 40/0`、`scenario-activity 212/0`；`check.js` ALL CHECKS PASSED（G10 作用域 42 / token 3158 / 类名 135 / 命中 0；G11 43 wxss、717 选择器、双写 0）、`check-handlers` 仍只 `editor#onNumber`。**未跑全量 sweep**，不编总数。`trip2-gates` 复跑 **66/10**，与 Gate recount 28 在干净基线 `e05e559` 上逐条相同（装配环境缺桩），**既有红、非本轮**，未擅动。
+  **变异自证（锚点各命中恰 1 次；还原后 sha256 一致、复跑 50/0）**：M1 名单一格改名 `.metric-slot` ⇒ `operations-layout` 49/1 + `scenario-workspace` 124/1；M2 添加车辆条件底色写死 `text`；M3 头像退回 40；M4 条件底色写死 `primary` —— 各恰好红 1 条（均为对应新断言）。
+  **有意偏离（登记）**：① 汇总 3 格（板 2 格）：候补是本面板第三类可批量操作对象，少一格只能逐条筛选去数；② 车辆卡**无缩略图**——`Vehicle` schema 没有图片字段，加字段属 schema 变更（本轮硬禁）；③ 待安排名单仍 `list-row`（待办队列，不是人员档案；`pendingList` 只装 name/pickup/groupNote）；④ 板上的「剩余座位」本面板给的是「可分配乘客位 = 核载 − 司机 − 预留」，更准，C15 要求保留 3 格。
+  **真机 NOT_RUN**：共享会话未接管、未重编译，**不宣称这两屏已保真**。证据 `docs/ui-ux-redesign/evidence/style-b-slice3b-2026-10-26/README.md`（板面读数 / 结构块验收 / 5 文件改动面 / 4 条偏离 / 门禁与重钉 / 4 变异 / 布局算术 / 升 VERIFIED 缺项）。
+  **UNVERIFIED**：真实头像裁切下与首字占位是否等高、pill 内 icon 与文字光学居中、`secondary` 底是否被读成按钮、四屏 `person-row` 姓名 16 的换行与行高、出发后（`lockHint`）页尾留白。
+  **下一步**：Slice 3c（任务 / 通知 / 公告：新建主按钮移到底部 `sticky-action`、行形态按板重排；`e2e-task` 按文案点，不受类名影响）。
+
+### 2026-10-26 · style-B Slice 3c：任务 / 通知 / 公告（逐屏对齐 10-20 板 03-4、03-5）
+
+基准：用户裁定「仓库里的 10-20 板」为逐屏保真目标（覆盖 handoff §0 的旧标注）。
+
+**任务（`pages/tasks`）**：新建按钮从页头搬进固定底栏 `.sticky-action`（板上它在列表下方整宽），
+根节点改条件类 `.page {{canManage && !denied && !loading ? 'has-sticky' : ''}}`——底栏与留白同条件，
+否则只读参与者会白多 88px 页尾；题名 18/26 → 20/28（与 `home.wxss` 分区标题、`workspace-hero__title` 同档）。
+分段筛选（C6 状态维度）与行内状态边栏原样保留。
+
+**通知（`pages/notices` + `pages/anotices`）**：`.notice-card` 从白卡堆叠改为**消息流的一行**——
+透明底、无圆角、只留 1px 底边发丝线；未读态只切左侧 2px 边线颜色（`transparent → --forest`），
+两条读态都占位，未读行不会右移 2px 导致文字左缘错位。正文改 `.notice-body` 16/24（主信息档）。
+类名仍叫 `.notice-card`：两份 wxml 与 `page2-gates` 的 `bodyAnchors` 都以它做同构锚点。
+`anotices` 并掉第二个分区头（原「同行消息」大标题 +「通知」小标题连出两次页面身份），
+列表读数（条数/排序/未读标记）降为一行细字，与 tab 版正文逐块同构，差异只留页头（M-18 允许面）。
+
+**板上做不到的两条，登记为偏离不是漏做**：D1 发送者头像/姓名——`selectors.js:172` 的 `noticeView`
+只投 id/activityId/content/publishedAt/sourceEventId/kind/audience/readBy/deliveries，无发送者身份，
+补它属 domain/投影改动（本轮禁改）；D2 正文配图与「查看天气」链——`Notice` schema 无图片字段。
+
+改动面：`pages/tasks/{wxml,wxss}`、`app.wxss`、`pages/notices/notices.wxml`、`pages/anotices/anotices.wxml`、
+`tools/operations-layout-test.js`（+6 → 57）、`tools/scenario-tasks-test.js`（re-pin）、
+`docs/ui-ux-redesign/design-system.md` 与 skill `references/design-system.md` 的 `.notice-card` 条目（同步 STALE）。
+`cloudfunctions/` 零改动 ⇒ **不需要重新部署 trailApi**。
+
+两条 re-pin（位置变了判据不松）：`scenario-tasks` 旧断言只钉页头那颗受管新建按钮，新断言要求
+`sticky-action` 与 `task-row__actions` **各自**都有 `canManage` 守卫；`operations-layout` 多钉
+「页头不许再出现 onNew」「`has-sticky` 与 canManage 同表达式」。
+
+门禁实测：`operations-layout 57/0`、`scenario-tasks 34/0`、`scenario-notices 105/0`、`page2-gates 117/0`、
+`scenario-workspace 125/0`、`scenario-activity 212/0`、`header-layout 38/0`、`nav-chrome 15/0`、
+`swx1 45/0`、`swx2 110/0`、`t4-e08 41/0`、`m02 66/0`、`b4-pad-final-value 33/0`、`ui-consistency 19/0`、
+`journey-graph 15/0`、`e2e-task 28/0`；`check.js` ALL CHECKS PASSED（G10 42 单元 / 3159 token / 136 类名，命中 0；
+G11 43 wxss / 718 选择器 / 双写 0），`check-handlers` 只余存量 `editor#onNumber`。
+
+变异自证 4 条（真文件改坏 → 跑门 → 还原比对 sha256，复跑 57/0）：M1 任务根节点去掉 canManage 条件 ⇒ 红 1；
+M2 未读边改回只给未读加边 3px ⇒ 红 2（行形态 + 该断言的牙齿自检，读同一份 app.wxss；脚本首次预期写成 1，
+按实测改预期并如实登记）；M3 anotices 恢复第二个分区头 ⇒ 红 1；M4 正文退回 14/22 ⇒ 红 1。
+
+**真机 NOT_RUN**（驱动要 `close --project`+`open` 重编译共享开发者工具会话，本轮未获授权）；
+证据 `docs/ui-ux-redesign/evidence/style-b-slice3c-2026-10-26/README.md`（含升到 VERIFIED 的四条前置）。
+UNVERIFIED：行间距与发丝线在 375/390/414 的视觉密度、`notice-body` 折行、下拉刷新与剪贴板反馈、
+`anotices` 真实打开/返回路径、任务页只读参与者真实数据。
+
+**下一步**：Slice 4（天气页顺序与信息层级；不碰 `buildCondCards`／阈值／重试），然后 Slice 5a/5b/5c（余下 13 页）。
+
+### 2026-10-26 · style-B Slice 4：天气页信息层级（逐屏对齐 10-20 板 04-2、04-4）
+
+基准同上（用户裁定「仓库里的 10-20 板」）。**只动"同一份数据怎么排、印哪些、缺测怎么写"**：
+`buildCondCards` / `buildCondSilent` / 天相阈值 / 重试与缓存 `/cloudfunctions/` / `--chart-ramp` 全部零改动。
+
+**图上方新增逐时摘要带 `.hour-strip`**（`weather.wxml:146-155`）：板 04-2 的"图标 + 温度"横带落地为
+**固定 8 列**、每列「WMO 简字 / 温度 / 时刻」三级。步长 = 窗长 / 8（24→3h、48→6h、72→9h），
+所以带上印的是真实采样时刻，步长自己看得出来。不引图标资源（仓里只有地图 marker）⇒ 简字复用
+`.day-phrase` 的同一套 tone，**零新色值**；温度 `--ink`、时刻 `--muted`、10px 档与同页 `.day-date` /
+`.chart-legend` / `.ag-src` 同档（不是新 token）。带与图**同窗同源**：`applyWeather` 与 `onSpanToggle`
+各只算一次 `buildViewSeries`，`buildHourStrip` 吃的就是 `chartView` 那个数组。
+
+**图下方新增降水概率行 `.pop-strip`**（`weather.wxml:236-244`）：整行由 `popShown` 控制——
+窗口里一个概率读数都没有就整行不印；个别小时缺概率印「—」而不是 0%（`Number(null)===0` 那个坑）。
+数值行与摘要带同为 `flex:1 0 0` 等分 ⇒ 两行天然按列对齐，不需要滚动同步。
+
+**详细数据（`weather.wxml:481-517`）**：裸「展开/收起」按钮换成 `.section-head.has-action` + 文字链，
+下面四行 `.card.brief-rows`（4 × `app.wxss` `.fact-row`：温度 / 降水量 / 风速 / 云量，当日 min–max）
+**默认可见**；14 列逐小时全表仍由 `showDetail` 收起、一列不删。数据来源与更新时间本来就在它正下方
+（`weather.wxml:524-525`），与板 04-4 的底部两行对位，不重复印第二份。
+
+**自查抓到并修掉的真缺陷（两处都在初版里）**：① 48/72h 跨天，`00:00` 会出现两次，而初版列表键是
+`wx:key="t"` ⇒ **重复键**（WXML 复用错节点）；改为 `k = d + 'T' + t`，模板与数据两层各留一条断言。
+② 初版列数是"≤9 列（3/6/8 小时）"：375 宽下 9 列只有 37.2px，而最宽简字「毛毛雨」约 36px，只剩 1.2px
+⇒ 折行会把温度行推歪，且 8 小时步长在 72h 上与 24 取余为 0、造成时刻重复；改为固定 8 列（41.9px，余量 5.9px）。
+
+**有意偏离（登记为偏离不是漏做）**：D1 无天气图标/行内图标（不引图标资源）；D2 降水量 `mm/h`、风速 `km/h`
+（与 provider 原单位、14 列全表列头同口径，改单位就得同时改全表）；D3 无山景照片（C21 已定）；
+D4 降水概率收成一行 8 列而不是板上 2×5（折行会让"哪列对应图上哪小时"要靠拼接才能读）；
+D5 右上圆形图标换成文字链「展开逐小时全表」；D6 图表横轴刻度沿用 meteogram 自算（本轮不碰图表几何）。
+
+改动面：`pages/weather/{js,wxml,wxss}`、`tools/page2-gates-test.js`（117→**124**，夹具补生产形状 + 6 条）、
+`tools/weather-page-test.js`（209→**219**，新增 §8 `stripCases` 10 条）、两份 design-system 登记（skill
+`references/design-system.md` 天气类目表 + `docs/ui-ux-redesign/design-system.md` §13）。
+`cloudfunctions/` 零改动 ⇒ **不需要重新部署 trailApi**。
+
+门禁实测：`page2-gates 124/0`、`weather-page 219/0`、`weather-v2 103/0`、`t4-e08 41/0`、`m02 66/0`、
+`swx1 45/0`、`swx2 110/0`、`b4-pad-final-value 33/0`、`ui-consistency 19/0`、`journey-graph 15/0`；
+`check.js` ALL CHECKS PASSED（G10 42 单元 / 3181 token / 136 类名，命中 0；G11 43 wxss / 727 选择器 / 双写 0），
+`check-handlers` 只余存量 `editor#onNumber`。
+
+一条 re-pin（判据变强）：`weather-page-test §8` 旧断言"48/72h 列数 8/9、前 3–4 个时刻对得上"→ 两档都 8 列、
+**整条时刻序列**逐项相等 + 三档**列键全部唯一**。旧的只查前几列、且允许 9 列，并完全没覆盖键唯一性。
+
+变异自证 7 条（真文件改坏 → 跑门 → 还原比 sha256 → 复跑 0 红，`mutations=7 failures=0`）：
+M1 概率行 `wx:if` 换 `{{true}}` ⇒ 红 1；M2 步长 `/8` → `/12` ⇒ 红 3（三条断言共享同一输入，一处改坏必然一起红，
+脚本预期按实测从 1 改为 3 并登记）；M3 `hasPop = true` ⇒ 红 2；M4 温度 `h.temp || 0` ⇒ 红 1；
+M5 全表去掉 `wx:if` ⇒ 红 1；M6 键退回 `h.t` ⇒ 红 1；M7 模板 `wx:key="k"` → `"t"` ⇒ 红 1。
+
+**真机 NOT_RUN**（重编译共享开发者工具会话需 `close --project`+`open`，本轮未获授权）；
+证据 `docs/ui-ux-redesign/evidence/style-b-slice4-2026-10-26/README.md`（含升到 VERIFIED 的五条前置）。
+UNVERIFIED：375 宽下三字简字是否真的不折行（算术余量 5.9px）、`gap:1px` 的真机三行节距、
+`.pop-strip` 的 `--info` 在纸面底上的可读性、48/72h 切窗后带与图列对齐、展开全表后的滚动位置。
+
+**下一步**：Slice 5a（`me` / `signup` / `editor`），5b（`routes` / `route` / `route-edit` / `weather-chart`），
+5c（`vehicle` / `staff` / `lab` / `privacy` / `cloud-field-poc`）——只做 token 与组件收敛，不引入回归。
+
+
+### 2026-10-26 · style-B Slice 5a：我的 / 报名 / 编辑器 —— token 与组件收敛（**无逐屏板的一批**）
+
+基准：这三页不在 10-20 板的 20 张里（`style-b-fidelity-matrix-2026-10-26.md` §2.3 明写"只能继承全局 token
+与 L2 组件契约，不能按逐屏保真验收"），所以本片的口径就是任务书 Slice 5 的那两句：**只做收敛、
+导航/四态/底部留白不得回归、真实内容页做一次首屏结构审查**；不发明板上没有的模块，不凭 denied 态改 `signup` 结构。
+零新增色值、零新增字阶、业务与 `cloudfunctions/` 零改动 ⇒ **不需要重新部署**。
+
+**收敛掉的三处重复出处**：① `class="card" style="padding:4px 16px;"` 这一句内联 style 曾抄了 5 份
+（`me.wxml:77/:119/:156`、`editor.wxml:172/:843`）⇒ 收进 `app.wxss:150` 的 `.card.rows`，页面只写 `class="card rows"`；
+② 常用同行人是全仓最后一个不合群的"人行"（`<person-row>` 已在 activity/vehicle/roster-panel/field-panel 四处使用），
+它用私有 `.list-row` + `.who` + `.avatar-img.sm`（36px）+ `.avatar-fallback.sm-text`（含 **15px 无源字阶**）
+⇒ 改用 `<person-row>`（头像恒 44、姓名 16/600），编辑/移除仍在它的**操作插槽**内，`me.json` 补登记；
+③ 随之删掉那两条页面私有小头像规则，全站人行头像只剩 44 一个数。`me` 的内联 style 14 → 11。
+
+**代价如实写（§2）**：`.person-row__actions` 在姓名下方，行高从 ≈72px 增到 ≈100px，N 位同行人多 N×28px。
+无板可裁 ⇒ 按"组件契约优先于本页密度"执行，并登记为待真机确认项；若要救密度，改法是给组件加一个
+显式的"动作放行右端"变体（四处共用），**不是**回退成页面私有拼装。
+
+**审查后没动的**：`signup.wxss`（6 行，已 token 化）、`editor.wxss`（51 行，4 处例外都带注释理由）、
+`editor`/`signup` 的内联 `font-weight:600`（8+1 处；收它要新造全局类，而现成的 `.section-title`/`.person-name`
+都带 line-height 或颜色副作用，复用会改行高 ⇒ 不为不可见 churn 造新 API）、`me.wxss:17` 把 `.metric-value`
+从全局 26px 覆盖成 24px（无板、无判据说明谁对 ⇒ 登记待裁决，不"凭审美改数"）。
+
+**`me` 首屏结构审查**：`.stack-sections` 的 `gap:40px` 是**逐兄弟**施加的，而该容器实测有 11 个直接子节点
+（常态 7 个）⇒ 常态 6×40=240px、未激活且本机有未保存修改时 10×40=400px。真问题不是"留白多"而是
+**留白不携带分组信息**：身份区↔统计带↔待保存横幅↔激活引导卡这四兄弟之间的 40px，与"最近活动"和
+"同行与安全"两个真章节之间的 40px 是同一个数，而一个 `chapter` 自己题头到正文只有 12–16px。
+属结构判断 ⇒ **本片未自行改**，交裁决三问（推荐：A=那四兄弟套一层既有 `.stack`(16px)，`.stack-sections` 的 40
+只留给章节与工具入口；`personal-route-layout:101` 的"同级、不套进同一张卡"仍然成立，因为 `.stack` 无底色无边框）。
+
+**门**：`tools/personal-route-layout-test.js` **60 → 65**，新增 5 条——组件在用且两 handler 是其后代（认结构关系，
+不数标签）/ 个人页不得再出现第二套人行头像尺寸与 15px 无源字阶（去注释后再测）/ `.card.rows` 单源且两页内联为 0 /
+内联 style **棘轮 ≤ 11**（与 `b4-e05` 的 `INLINE_STYLE_BASELINE` 同族，只许变少）/ `me.json` 必须登记 `person-row`。
+一条不放松：原有"身份区与统计带独立""三分组始终存在""七个弹层全部保留""tab 页底部 calc 不变""电话仍遮罩"全过。
+**牙齿自证**：`evidence/style-b-slice5a-2026-10-26/tools/mutate-5a.js` 把收敛逐项退回去，**6 条 0 漏网**，
+每条恰好只红 1 项（归因干净），sha256 校验逐字节还原，且变异前先断言工作树全绿（否则 exit 2 记 INVALID 不作结论）；
+M2b 只塞一个 `font-size: 15px` 而不碰类名，证明"无源字阶"那半句不是空断言。
+
+**复跑读数**：`personal-route-layout 65/0`、`scenario-me 145/0`、`scenario-editor 227/0`、`scenario-signup 106/0`、
+`page2-gates 124/0`、`swx1 45/0`、`swx2 110/0`、`m02-class-scope 66/0`、`t4-e08 41/0`、`ui-consistency 19/0`、
+`journey-graph 15/0`、`b4-pad-final-value 33/0`、`smoke 226/0`；`check.js ALL CHECKS PASSED`
+（G10 命中 0 ｜ 作用域单元 42 ｜ class token 3179 ｜ **app.wxss 类名 136 → 137**）；
+`check-handlers` 死 handler 仍是存量 1 条（`editor#onNumber`）。登记：`.agents/skills/ourtrail-ui/references/design-system.md`
+新增 `.card.rows` 行 + `<person-row>` 行补"全站人行只有一个出处"；`docs/ui-ux-redesign/design-system.md` 新增 §14。
+
+真机 **NOT_RUN**（改了 WXML/WXSS 与一个页面的 `usingComponents`，属"静态门通过 ≠ 页面正常"那一类）。
+前置缺五项：批准重开共享开发者工具会话拿新 bundle、组件真被加载（未登记=静默空白，铁律 3 的事故形态）、
+一组 2–4 位同行人的真实数据（判 §2 的高度代价）、denied/loading/empty 各一帧（本片声明"四态不回归"）、
+375 与 414 下 `.card.rows` 的行文字左缘与卡外标题是否仍对齐。本轮结论上限 **E1 + E2**，
+**任何"渲染正常/更好看"的说法本轮不成立**。证据 `docs/ui-ux-redesign/evidence/style-b-slice5a-2026-10-26/README.md`。
+
+**下一步**：Slice 5b（`routes` / `route` / `route-edit` / `weather-chart`），5c（`vehicle` / `staff` / `lab` /
+`privacy` / `cloud-field-poc`）——同口径。三问（`me` 首屏分组 / 统计带 24px 还是 26px / 同行人行动作位置是否
+批准给组件加右端变体）已交负责人裁决，未自行改。
+
+### 2026-10-26 · style-B Slice 5b：路线四页（routes / route / route-edit / weather-chart）+ signup 的重复出处归一
+
+同 5a 口径：这四页**没有逐屏板** ⇒ 只做 token 与组件收敛，不改结构、不碰业务、`cloudfunctions/` 零改动
+⇒ **不需要重新部署**。审计先读四页 wxss 全文（36 / 27 / 6 / 49 行）：**零原始色值、零无源字号**，
+真问题全是"同一句话抄在几页"，以及抄的过程中**漏掉的那一半**。
+
+**四处收敛**：① 紧凑指标（四列横排每列约 67px，26px 大字会压邻列）曾在 `routes.wxss` 与 `route.wxss`
+各存一份**逐字相同**的规则 ⇒ 收进 `app.wxss` 的 `.metrics.compact`，模板写 `class="metrics compact …"`
+（`.card-label` 那个"唯一出处写在某页、别页同名类命不中"事故的同族形态）；② `.route-meta { gap:8px }`
+在两页各定义一次，而 `app.wxss:117` 的 `.cluster` **缺省 gap 就是 8px** ⇒ 两份都是空转的死覆盖，
+定义与模板使用点一起删（3 处）；③ `style="font-weight:600;"` 的行内主标题在 route / route-edit / editor / signup
+**抄了 14 份**，而 M-16 的断词保护只写在 `route.wxss` 的 `.route-node-name` 里 ⇒ 同一个用户输入名称
+（节点名 / 风险标题 / 上车点名 / 参与人名，`maxlength=80`）在**编辑器与报名页没有断词保护**，
+一个无空格拉丁串会撑破行 ⇒ 新增 `.row-title { font-weight:600; overflow-wrap:anywhere }`（**两半同处**，
+分开抄必然漏一半），`.route-node-name` 只留 `display:block; margin-top:2px` 的排布差；
+④ `weather-chart` 的 `.fc-modes .seg` 触点写死 `44px` ⇒ 改 `var(--touch-target)`（规则 8）。
+
+**判据收窄一处，如实记**：第一版要求"四页不得出现 `font-weight:600`"，跑红 —— `editor.wxml:638` 的
+「完成/编辑」是带语义色的**文字动作强调**，不是行标题，塞进 `.row-title` 是错贴标签。判据改为只咬
+**独立** `style="font-weight:600;"` 形态，例外写进两份 design-system。这是"判据认关系不认字节"的具体执行。
+
+内联 style 前后：route 11→10、route-edit 19→17、editor 109→99、signup 18→17，routes / weather-chart 恒 0，**合计 −14**。
+**没动**：`route-edit.wxss`（已 token 化，自述属实）、route/route-edit 剩余的 `.cluster` 微调（是布局覆盖不是数值出处，
+已由棘轮钉住只许变少）、`activity.wxml:342` 同族一处（属已验收的 Slice 2/3 写集，登记后续项）、
+`lab.wxml` 2 处（DEV_ONLY，留 5c）。
+
+**门**：`tools/personal-route-layout-test.js` **65 → 71**（+6：紧凑指标单源 / 死覆盖连使用点一起消失 ——
+其中含"`.cluster` 缺省 gap 仍是 8px"这句**承重前提**，缺省若变则本判据必须重判 / 全图触点引用 token /
+行内主标题两半同处 / `.route-node-name` 不再声明字重与断词 / **六页内联 style 棘轮** routes 0·chart 0·
+route ≤10·route-edit ≤17·editor ≤99·signup ≤17，全部实测）。
+**牙齿自证** `evidence/style-b-slice5b-2026-10-26/tools/mutate-5b.js`：**14 条 0 漏网**，逐条 sha256 还原并独立复验，
+变异前全绿否则 exit 2 记 INVALID；N8 专证"只留字重、丢掉 overflow-wrap"必须红（两半同处不是空话），
+N12 专证 signup 那一页**不是搭便车通过**（它原本没有锚点，只有把行名退回内联才会红）；
+N9/N12 各红 2 项属预期（同一处编辑同时碰字重门与棘轮）。
+
+**复跑读数**：`personal-route-layout 71/0`、`routes 75/0`、`scenario-editor 227/0`、`scenario-signup 106/0`、
+`scenario-activity 212/0`、`scenario-me 145/0`、`page2-gates 124/0`、`swx1 45/0`、`swx2 110/0`、`m02 66/0`、
+`t4-e08 41/0`、`ui-consistency 19/0`、`b4-c11 171/0`、`ra-field-panel 72/0`；
+`check.js ALL CHECKS PASSED`（G10 命中 0 ｜ class token 3193 ｜ **app.wxss 类名 137→139** ｜ G11 双写 0）；
+`check-handlers` 死 handler 仍存量 1 条。登记：`design-system.md`（skill 侧新增 `.row-title` 行与
+`.metrics/.metric` 的紧凑档说明；项目侧 §15）。
+
+真机 **NOT_RUN**。必须有像素证据的四件事：① C3 的断词变化（编辑器节点/风险/上车点行与报名页参与人行，
+各喂一个 80 字无空格拉丁串看是否真在行内断开，并在正常短名下确认零变化的阴性对照）——
+`overflow-wrap:anywhere` 会改 min-content，只有原本溢出的行才有变化，但"哪些行原本会溢出"本轮**UNVERIFIED**；
+② C1 紧凑指标在 routes 行与 route 四列头部不压邻列；③ C2 删掉 `.route-meta` 后 `.cluster` 的 8px 缺省确实生效（推断，非读数）；
+④ C4 横屏三档实际触点 ≥44。结论上限 **E1 + E2**。证据 `docs/ui-ux-redesign/evidence/style-b-slice5b-2026-10-26/README.md`。
+
+**下一步**：Slice 5c（`vehicle` / `staff` / `lab` / `privacy` / `cloud-field-poc`）——同口径；
+5a/5b 交出的三问（`me` 首屏 40px 分组 / `me` 统计带 24 还是 26 / `<person-row>` 是否批准加"动作放行右端"变体）仍待裁决，未自行改。
+
+### 2026-10-26 · style-B Slice 5c：车辆 / 现场协作 / 预演 / 隐私 / 云场 POC —— 审片 + 判据升成全仓
+
+五页同样**无逐屏板**（覆盖矩阵 §2.3），`lab` / `privacy` / `cloud-field-poc` 还按矩阵排除在视觉批次
+（DEV_ONLY 预演 / 法务正文 / POC）；任务书另有一条硬边界：**不凭 denied 态改结构**。
+审计先做一遍：五页 wxss **零原始色值**，`vehicle.wxss` 自述"本页不写任何 min-height 字面量（M-07）"
+经 grep 复算**属实**（字面量 0 处，触控高由 `.person-row` / `.button` 的全局 token 承担）。
+
+**实际改动只有 `lab.wxml` 两处类名替换**：活动标题 `class="row-title" style="min-width:0;word-break:break-all;"`
+（**`break-all` 原样保留**——那是该页对 64 位身份码串的既有强断策略，比 `anywhere` 更狠，不能被"收敛"顺手换掉）、
+阶段卡标题 `class="row-title"`；`lab` 内联 style 13→12。其余四页**一行未动** ⇒ 它们的
+"导航 / 四态 / 底部留白不回归"是**按构造成立**，不是测出来的，本轮也没为它们伪造读数。
+
+**本片真正的交付**：把 5b 那条只扫 5 个页的判据升成**全仓**——
+`全仓独立的内联字重行标题为 0；复合内联字重只剩登记的这 2 处`，扫描面 = 全部页面 + 全部组件的 wxml，
+例外**逐条点名比对**而非数个数（`editor.wxml:638` 带语义色的文字动作 ≠ 行标题，有意保留；
+`activity.wxml:166` 同族行标题属已验收的 Slice 2/3 写集，登记后续项不重开该文件）。
+全仓读数：**独立形态 0 处**（14 份抄写在 5b/5c 收干），复合恰好上述 2 处。
+**牙齿自证** `evidence/style-b-slice5c-2026-10-26/tools/mutate-5c.js` **6 条 0 漏网**，宽度矩阵是刻意凑的：
+P2 打在**本轮一行未动的 staff**（证明扫描面不等于写集）、P3 打在**同样未动的 vehicle** 且用**复合**形态
+（证明名单是逐条比、多一处就红）、P4 把已登记的 `activity` 例外由复合改成独立（例外不许反过来保护新写法）、
+P5 打在 `components/roster-panel`（组件目录也在面内）、P6 打掉 `.row-title` 的**字重**那一半
+（5b 的 N8 打掉的是断词那一半，两半都要能咬）、P1 同时触发页级与全仓两条 ⇒ 实际红 2 项属预期。
+逐条 sha256 还原并独立复验，变异前全绿否则 exit 2 记 INVALID。
+
+**一处判读为"不动"，理由留档防下轮重提**：`--text-title` + 26px + 600 这个三元组在 `me.wxss:32`（工具入口标题）、
+`routes.wxss:26`（路线标题）、`staff.wxss:11`（身份头标题）各抄一份，**没有合并** —— 同值不同义（铁律 31②）：
+三种屏上的三种对象，今天同值不构成绑在一起改的理由，且三处各自的颜色与断词都已到位、**不产生行为缺口**。
+对照本轮真做的两条：`.card.rows` 是"同一含义抄 5 份"、`.row-title` 是"同一含义抄 14 份**且漏了另一半**"，
+都有"含义同一"的证据，这一条没有。见到第四份复制时先判语义再谈收。
+其余登记未动：`cloud-field-poc.wxss` 的 15/11/10px 无源字号（POC 页排除在视觉批次，收它等于给 DEV_ONLY 造第二档位消费者）、
+`privacy.wxss` 的 `27rpx`（该文件头注释已写明属 **E-09 的账**、先于本轮且已归属，不重复登记）、
+`staff` 1 处 / `vehicle` 3 处 `.stack`/`.cluster` 布局覆盖内联（不是数值出处，由 5b 棘轮管住只许变少）。
+
+**门**：`tools/personal-route-layout-test.js` **71 → 72**（+1 条全仓门；顺带给该套件的 `check()` 补 `extra` 参数，
+失败时打印命中清单而不是一句光杆 FAIL —— 因为这条门的判据是"名单逐条相等"，不打出两侧清单就无法归因）。
+页级那条门的覆盖页从 4 增到 5（加 `lab`）。
+**复跑读数**：`personal-route-layout 72/0`、`scenario-lab 20/0`、`lab-dryrun 165/0`、`scenario-vehicle 66/0`、
+`scenario-staff 26/0`、`routes 75/0`、`scenario-editor 227/0`、`scenario-signup 106/0`、`scenario-activity 212/0`、
+`scenario-me 145/0`、`page2-gates 124/0`、`swx1 45/0`、`swx2 110/0`、`m02 66/0`、`t4-e08 41/0`、`ui-consistency 19/0`、
+`journey-graph 15/0`、`b4-pad-final-value 33/0`；`check.js ALL CHECKS PASSED`
+（G10 命中 0 ｜ 作用域单元 42 ｜ class token 3195 ｜ app.wxss 类名 139）；`check-handlers` 死 handler 仍存量 1 条。
+登记：skill 侧 `.row-title` 行补"全仓判据 + 2 处例外 + 三元组未合并的理由"；项目侧 `design-system.md` 新增 §16。
+（顺手纠错：本轮先按 `AGENTS.md` 的旧快照写了 `scenario-vehicle 56` / `scenario-staff 18`，实测是 **66 / 26**，
+证据文件已改 —— 计数一律以脚本自打印的 `passed=N` 为准，不继承文档。）
+
+真机 **NOT_RUN**（`lab` 两处是 WXML 类名替换，要回读的是"长哈希串仍按 break-all 断行 + 普通活动名零变化的阴性对照"；
+其余四页未动，不需要新帧来证明"没变"）。结论上限 **E1 + E2**；`cloudfunctions/` 零改动 ⇒ **不需要重新部署**。
+证据 `docs/ui-ux-redesign/evidence/style-b-slice5c-2026-10-26/README.md`。
+
+**Slice 5 全部完成**（5a / 5b / 5c）。style-B 逐屏批次随之收口：有板的 8 个屏族（home / discover / activity /
+workspace / tasks / notices / weather + 共用层）已在 Slice 0–4 落完，无板的 13 页在 5a–5c 完成出处归一。
+**待负责人裁决的三问**（均未自行改）：① `me` 首屏 `.stack-sections` 的 40px 逐兄弟段距把"我是谁 + 还差什么"
+四兄弟也拉开了 3×40 ⇒ 推荐那四兄弟套既有 `.stack`(16px)；② `me.wxss:17` 把统计带数字从全局 26px 覆盖成 24px，
+无登记理由 ⇒ 推荐删覆盖跟 26；③ 常用同行人改用 `<person-row>` 后行高 ≈72→≈100px，若真机读起来变松，
+是否批准给组件加一个"动作放行右端"的显式变体（四处共用）⇒ 推荐先拍真机再决定。
+**唯一的验证缺口**：本轮五批全部真机 NOT_RUN，需要一次授权的重编译 + 逐屏回读才能把结论从 E2 升到 VERIFIED。
+
+### 2026-10-26 · style-B Slice 5 真机回读（更正上面三条 "NOT_RUN" 与一处自估数字）
+
+负责人授权重编译（`cli close --project` → `cli open`，**没有 quit IDE**）后，用 IDE 模拟器 390 宽、
+**真实数据**（常用同行人 85 条 / 统计 131·119·293 / 路线库 299 条 / 编辑器真实日程 / lab 真实 [预演] 活动）
+回读 5a–5c。全程只读：`reLaunch` + `setData` + 元素读数 + 截图，**没有点过任何提交类按钮、没有 dispatch 任何命令**。
+bundle 新鲜度由屏上事实自证（`.card.rows` 存在且计算 `padding-top = 4px`，旧内联 `[style*="4px"]` 命中 0）。
+
+**升到 E3 的读数**：`.person-row` 2 个在屏、姓名计算 `font-size` 16px、头像实测宽 **44px**；
+80 字无空格拉丁串姓名盒 `93+260=353 ≤ 卡右沿 370`（不溢出）且长名行 158 / 短名行 120（污染自证：两读数不同）；
+loading / denied / empty 三态各有 `status-panel`，空态文案是解释过的；
+路线库指标行 `.metric-value` 计算 **18px**（= `--text-title`，不是全局 26px）、每行 3 格格间实测 11.66px、同行无压叠且全在容器内；
+编辑器节点行计算 `overflow-wrap` = **anywhere**、长名 316×44（两行）不越卡沿、短名 70×22（单行）＝断词分支被双向证明；
+`lab` 的 7 个 `.row-title` 在屏（含带 `break-all` 的真实活动标题）。
+
+**三处如实更正**：① 5a §2 估"同行人行高 ≈72→≈100、每位 +28px"，**实测 120px（长名 158）= 每位 +48px**，
+估算偏低一半，漏算了 `.person-row__actions` 的 `margin-top:8px` 与按钮自身 `min-height` —— 这条改判了 Q3 的量级；
+② 上面三条 Slice 条目写的"真机 NOT_RUN"自本条起对**已读数的点**失效，未读的（375/414、`route` 详情页、全图页触点）照旧记缺口；
+③ 回读过程中**红过的两条不是页面缺陷而是探针缺陷**：E2 第一版把"本行最后一格"与"下一行第一格"拿来判压叠
+（299 条路线每行第一格都回到 left 56 ⇒ 必然假压叠），改成只比 `top` 相同的兄弟后全 PASS；
+D2 前两版量错对象——真节点行套在 `<block wx:if="{{routeDetailsOpen}}">`（`editor.wxml:233`、`editor.js:849`）里，
+夹具没打开那一支，`matched=""` 是真话，第三版显式打开 + 按文本反查 + 短名阴性对照才成立
+（**铁律 34⑥ 第三次现形：条件分支类断言必须先证明被查那一支真的在屏上**）。作废的 3 张帧隔离进
+`evidence/style-b-slice5a-2026-10-26/device/invalid/`。另两条工具事实：`mp.pageScrollTo` 要传**数字**
+（传对象静默不滚，第一版三张"滚动帧"与首屏逐字节同形，靠字节数变化才发现）；该 automator 版本**没有**
+`element.screenshot()` ⇒ 元素级证据只能用"滚到目标再截整屏"。
+
+**仍 NOT_RUN**：`weather-chart` 的 `.fc-modes .seg ≥ 44`（该页数据走跨页总线、无独立入口，本轮没能真实进入含横屏姿态）；
+375 / 414 两档宽度；真机（非模拟器）；`route` 详情页的 `.row-title` 未单独驱动。
+
+读数 18 条全 PASS、截图 17 张、结构化 `readings*.json` 三份、四份驱动与四份原始日志入库，
+统一在 `docs/ui-ux-redesign/evidence/style-b-slice5-device-2026-10-26/README.md`（唯一索引）。
+`cloudfunctions/` 与业务代码**零改动**（本条只动文档与证据）⇒ 不需要重新部署；仍未 commit/push。
+
+### 2026-10-27 · 天气交互原型入库，供独立分支审阅
+
+**原因**：本轮天气交互原型此前仅保存在会话目录，其他开发者无法通过拉取仓库审阅；本次整理为独立预览包，不把演示功能混入生产小程序。
+
+新增 `docs/weather-ux/interactive-prototype-20261027/`：可编辑的 `weather.fragment.html`、浏览器直接打开的 `index.html`、可移植的 `verify.cjs` 与使用说明；天气文档索引新增入口。
+演示范围包括三种查询入口、逐时预报 / 云层剖面 / 沿途天气 / 日月天相、按天和抵达时刻安排节点、复制个人计划，以及地点 / 路线 / 行程分离保存。
+已确认边界：首期聚焦云层剖面；共用路线库但天气计划独立；活动带入只生成个人计划、不回写活动；云同步与本机缓存为目标方案，当前仅演示。
+
+**验证**：对入库包装页实际运行浏览器检查 **29/29 PASS**，含 320 / 375 / 390 / 414 px 布局、标签不重叠、日期越界、时间逆序、取消与复制隔离、收藏与导入保留、缺海拔 / 缺云层 / 离线状态；浏览器运行时错误 **0**。
+`node tools/check.js` 输出 `ALL CHECKS PASSED`；`node tools/check-handlers.js` 通过（既有死 handler `editor.onNumber` 仍为 1 条，未增加）。验证脚本的依赖与截图均放在仓库外，不引入项目 npm 依赖。
+
+**非生产交付**：天气与天相是样例数据，地图、登录、云同步和活动导入是流程模拟，GPX 仅本机抽样预览，不是完整轨迹存档。上述为浏览器原型验证，**不是微信真机或真实云端业务验收**。
+`miniprogram/`、`cloudfunctions/` 均零改动 ⇒ **无需部署 trailApi**。仅进入 `mac/weather-prototype-20261027` 审阅分支，不合并到 `master`。
+
+### 2026-10-27 · 退出本地 relay 模式改直连 GitHub —— 并入远端 master 与天气原型分支
+
+**原因**：本机 `origin` 指向 `ssh://yfwang@yfwangMacBook-Pro.local/...`（同一台 Mac 上的 relay），**本机没有 sshd 在监听 22 端口**，于是 push 与 pull 两条路同时断掉——这不是权限或凭证问题，是传输通道根本不存在。即便走 relay 的 `file://` 路径，relay 的 `post-receive` 钩子转发 GitHub 时仍被拒：`relay.log` 记 `UPDATE refs/heads/mac/ourtrail-explore-v3 5af3083 -> 6166857` 后第 1 次转发即 `! [rejected] ... (fetch first)`，脚本判定「非快进拒绝，停止重试」。原因是远端同名分支已被改写为 `e1f4a65`（等于 `mac/weather-prototype-20261027`），**不包含**本地独有的 `6166857`。
+
+**做法（两半同时满足：能推也能拉）**：① `remote set-url origin git@github.com:yuefengwang/OurTrail.git` —— origin 直连 GitHub，push/pull 只剩 SSH 一跳；② 原 relay 保留但降级为 `relay file:///Users/yfwang/gitrelay/OurTrail.git`，只作本地只读镜像与故障排查用，不再参与推送链路。③ **用 merge 而不是强推**把两边合到一起：merge-base `5af3083`，本地独有 1 个提交（`6166857` v3 重构原型），远端独有 **124** 个提交（含 `origin/master` 的 `d2e3905` style-a/style-b 全站版式重构与 `e1f4a65` 天气交互原型）。符合根 `AGENTS.md`「一旦分叉，GitHub 是权威」与铁律「禁止强推」——强推会单方面抹掉远端 124 个提交，merge 两边都保住。④ 另建 `backup/explore-v3-local-6166857` 指回本地原提交，合并前状态可随时回查。
+
+**冲突面只有 3 个文件，且全在同一目录**：`.agents/skills/ourtrail-ui/SKILL.md`（整篇）、`references/design-system.md`（头部计数说明）、`references/review-checklist.md`（3 段）。用 `git merge-tree --write-tree --name-only` 在不碰工作区的前提下先数出冲突面，确认只有这 3 处才动手。**解法依据**：远端版 SKILL.md 的「七级冲突优先 / M1–M4 工作模式 / 14 条规则表」与本地版的「多页面重构工作流」是**互补而非互斥**的两套内容——本地版指向的 `references/redesign-workflow.md` 在远端分支里不存在，故以远端版为骨架，把本地版的重构工作流、日常改动五处前置核对、仓库与实现约定并进去；`design-system.md` 取远端版「计数会漂、以 `app.wxss` 为实时真身」的防漂说明 + 本地版「本表是快照不是不可变规范」一句；`review-checklist.md` 以远端版 T1–T8 分档（对象/判据/证据三列）为主体，本地版的扁平条目按主题拆入 T2/T3/T8 行，另加一节「设计与范围（多页面/流程重构）」。三方比对 `docs/prototypes/ourtrail-app/**` 的删除与远端新增的 `docs/weather-ux/interactive-prototype-20261027/` **互不触碰**，自动合并。
+
+**验证**（合并树上的读数）：`node tools/check.js` → `ALL CHECKS PASSED`（exit 0，含 G10 作用域门：42 个作用域单元 / 3195 个 class token / 139 个 app.wxss 类名）；`node tools/check-handlers.js` → exit 0（既有死 handler `editor.onNumber` 仍为 1 条，**未增加**）；`node cloudfunctions/trailApi/smoke-test.js` → `passed=226 failed=0`；`node tools/journey-graph-test.js` → `passed=15 failed=0`。合并内容计数：`git diff --cached --shortstat` = 1145 files changed / 108575 insertions / 5567 deletions（964 新增 / 13 删除 / 167 修改 / 1 重命名）。
+
+**`cloudfunctions/` 与业务代码本轮零改动**（合并进来的是远端 124 个提交的既有内容，不是本轮新写的）⇒ **不需要重新部署 trailApi**。
+
+**遗留待裁决（未自行改）**：本地分支删掉了 `docs/prototypes/ourtrail-app/`（React 原型树），但仓库里仍有 **11 个文件**引用该路径——根 `AGENTS.md:102/125/784`、`README.md`、`.gitignore`、`SYNC.md`（多处历史条目）、`cloudfunctions/trailApi/domain/AGENTS.md:25`、`docs/product/*`、`docs/skill-uplift/*`、`docs/superpowers/*`、`docs/ui-ux-redesign/*`。这些引用是「历史记录里的路径」还是「活约定」需要负责人分档处理：前者补一行「原型树已移除」的前向指针即可，后者要改写。**本轮不动**——擅自批量改文档会掩盖「哪些描述真的已失效」这件事。

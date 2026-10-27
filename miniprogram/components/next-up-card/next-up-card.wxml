@@ -1,0 +1,24 @@
+<!-- 有未来活动：照片 hero（氛围图，非活动实拍）+ 压底文字；整卡可点，卡内无实心按钮。
+     照片失败先换一张、再退回纯色森林底——两档都由 coverFailed 决定，文字始终可读。 -->
+<view wx:if="{{empty}}" class="next-up-card next-up-card--invite">
+  <text class="next-up-card__kicker">还没有安排</text>
+  <text class="next-up-card__title">从一场短途开始。</text>
+  <text class="next-up-card__detail">选一条路线、定好时间，把同行的朋友叫上。</text>
+  <view class="button primary next-up-card__cta" hover-class="button-hover" bindtap="onCreate">
+    <text>发起活动</text>
+  </view>
+</view>
+<view wx:else class="next-up-card next-up-card--photo {{coverFailed ? 'cover-failed' : ''}}" hover-class="next-up-card--pressed" bindtap="onOpen">
+  <image wx:if="{{!coverFailed}}" class="next-up-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
+  <view class="next-up-card__scrim" />
+  <view class="next-up-card__body">
+    <text class="next-up-card__kicker">下一次同行</text>
+    <text class="next-up-card__title">{{title}}</text>
+    <view wx:if="{{facts.length}}" class="next-up-card__facts">
+      <block wx:for="{{facts}}" wx:key="*this">
+        <text wx:if="{{index}}" class="next-up-card__dot">·</text>
+        <text class="next-up-card__fact">{{item}}</text>
+      </block>
+    </view>
+  </view>
+</view>

@@ -90,10 +90,10 @@ section('TimeScale：24/48/72')
 const s24 = UMG.timeScale(375)
 const s48 = UMG.timeScale(375, 48)
 const s72 = UMG.timeScale(375, 72)
-check('24h 默认不变（x0(12) = 中点）', Math.abs(s24.x0(12) - (38 + 327 / 2)) < 0.01)
-check('48h：x0(24) = 水平中点（日界）', Math.abs(s48.x0(24) - (38 + 327 / 2)) < 0.01)
-check('72h：x0(36) = 水平中点', Math.abs(s72.x0(36) - (38 + 327 / 2)) < 0.01)
-check('48h 列宽 = plotW/48，72h = plotW/72', Math.abs((s48.X(1) - s48.X(0)) - 327 / 48) < 0.01 && Math.abs((s72.X(1) - s72.X(0)) - 327 / 72) < 0.01)
+check('24h 默认不变（x0(12) = 中点）', Math.abs(s24.x0(12) - (s24.L + s24.plotW / 2)) < 0.01)
+check('48h：x0(24) = 水平中点（日界）', Math.abs(s48.x0(24) - (s48.L + s48.plotW / 2)) < 0.01)
+check('72h：x0(36) = 水平中点', Math.abs(s72.x0(36) - (s72.L + s72.plotW / 2)) < 0.01)
+check('48h 列宽 = plotW/48，72h = plotW/72', Math.abs((s48.X(1) - s48.X(0)) - s48.plotW / 48) < 0.01 && Math.abs((s72.X(1) - s72.X(0)) - s72.plotW / 72) < 0.01)
 
 /* ---------- Geometry：48/72 ---------- */
 section('Geometry：48h / 72h 构建')
@@ -179,9 +179,14 @@ if (day2Item) {
   OIP.applyHorizonSelection(hcard, day2Item.anchor.focusAbs)
   check('focusAbs → horizon 卡高亮命中该窗口', hcard.selGroup === 1 && hcard.selIndex >= 0)
   const evSel = UMG.renderUnifiedSelection(g72, { selectedAbs: day2Item.anchor.focusAbs })
-  check('focusAbs → crosshair 落在 Day2 区段（x > 日界）', +evSel.svg.match(/x1="([0-9.]+)"/)[1] > 38 + 327 / 72)
+  check('focusAbs → crosshair 落在 Day2 区段（x > 日界）', +evSel.svg.match(/x1="([0-9.]+)"/)[1] > g72.x0(24))
 }
 check('48/72h 时间轴 tapZones 用 absHour', hcard.tapZones.every(z2 => Number.isFinite(z2.hour) && z2.hour >= 0 && z2.hour < 72))
+/* C7：fromMin/toMin 是 24h 卡用来排序/命中/判跨零点的内部字段，不得漏进 horizon item。
+   horizon 是本轮的阳性对照，形状必须与改前一致（buildHorizonOiCard 负责剥掉）。 */
+check('horizon item 不含 24h 内部字段 fromMin/toMin（形状与改前一致）',
+  hcard.items.every(it => !('fromMin' in it) && !('toMin' in it)),
+  JSON.stringify(Object.keys(hcard.items[0] || {})))
 
 /* ---------- 缺失 / 部分日 ---------- */
 section('缺失与部分日')

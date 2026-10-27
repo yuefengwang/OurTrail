@@ -27,7 +27,7 @@ function emptyState() {
     schemaVersion: 1, revision: 0, savedAt: '2026-09-26T07:00:00+08:00',
     profiles: [], routes: [], activities: [], groups: [], signups: [], vehicles: [],
     assignments: [], memberships: [], attendance: [], positions: [], incidents: [],
-    events: [], notices: [], receipts: [],
+    events: [], notices: [], tasks: [], receipts: [],
   }
 }
 
@@ -200,7 +200,13 @@ function run() {
 
   console.log('== 10. 路线轨迹 track（GCJ-02 折线） ==')
   const withTrack = fullActivityInput()
-  withTrack.routeSnapshot.track = [{ lat: 30.9394, lng: 103.4901 }, { lat: 30.9458, lng: 103.4769 }, { lat: 30.9565, lng: 103.4769 }]
+  withTrack.routeSnapshot.track = [
+    { lat: 30.9394, lng: 103.4901, ele: 700 },
+    { lat: 30.9458, lng: 103.4769, ele: 860 },
+    { lat: 30.9565, lng: 103.4769, ele: 820 },
+  ]
+  withTrack.routeSnapshot.difficulty = 'moderate'
+  withTrack.equipmentSuggested = ['备用袜']
   let sTrack = emptyState()
   r = dispatch(sTrack, LIN, { type: 'profile.save', person: { name: '林溪', phone: '00000000001', emergency: { name: '林母', phone: '00000000051' }, medical: '' } })
   sTrack = r.value.state
@@ -210,8 +216,14 @@ function run() {
   const act2 = sTrack.activities[0]
   check('activity 保留 track', act2.routeSnapshot.track.length === 3)
   check('私有路线携带 track', sTrack.routes[0].track && sTrack.routes[0].track.length === 3)
+  check('私有路线携带难度', sTrack.routes[0].difficulty === 'moderate')
   const view2 = selectView(sTrack, { userId: LIN }, { kind: 'activity', activityId: act2.id, perspective: 'organizer' }, '2026-09-26T07:00:00+08:00')
   check('视图透传 track', view2.kind === 'activity' && view2.activity.routeSnapshot.track && view2.activity.routeSnapshot.track.length === 3)
+  check('视图透传 track 高程（连续剖面用）',
+    view2.kind === 'activity' && view2.activity.routeSnapshot.track.every(p => Number.isFinite(p.ele)))
+  check('视图透传难度与建议装备',
+    view2.kind === 'activity' && view2.activity.routeSnapshot.difficulty === 'moderate'
+    && view2.activity.equipmentSuggested[0] === '备用袜')
   const noTrack = fullActivityInput()
   delete noTrack.routeSnapshot.track
   r = dispatch(sTrack, LIN, { type: 'activity.create', input: noTrack })
@@ -309,6 +321,27 @@ function run() {
   check('NaN/Infinity 不离开数据层（转 null）',
     clNaN.levels[0].cloudCover[0] === null && clNaN.levels[0].altitudes[1] === null, clNaN)
 
+  console.log('== 12c. 天气：低层温湿廓线 / 总云量 / PBLH（2026-10 天相输入修正） ==')
+  const { hourView, PROFILE_LEVELS } = require('./lib/weather')
+  const hProf = {
+    temperature_2m: [10], temperature_925hPa: [12], relative_humidity_925hPa: [90],
+    temperature_850hPa: [8], relative_humidity_850hPa: [80],
+    temperature_700hPa: [2], relative_humidity_700hPa: [70],
+    cloud_cover: [55], cloud_cover_low: [10], cloud_cover_mid: [20], cloud_cover_high: [30],
+    boundary_layer_height: [800],
+    precipitation: [0], precipitation_probability: [0], weather_code: [0],
+    wind_speed_10m: [5], wind_gusts_10m: [8], relative_humidity_2m: [60],
+  }
+  const hv = hourView(['2026-10-06T00:00'], hProf, 0)
+  check('廓线档位固定为 925/850/700', PROFILE_LEVELS.join(',') === '925,850,700')
+  check('hourView 带气压层温湿廓线', hv.profile && hv.profile[925].t === 12 && hv.profile[850].rh === 80, hv.profile)
+  check('hourView 总云量 / PBLH additive', hv.cloud.total === 55 && hv.pblh === 800, { cloud: hv.cloud, pblh: hv.pblh })
+  const hvMissing = hourView(['2026-10-06T00:00'], {
+    temperature_925hPa: [null], relative_humidity_925hPa: [null],
+    temperature_850hPa: [undefined], relative_humidity_850hPa: [undefined],
+  }, 0)
+  check('廓线全缺 → null，不编 0', hvMissing.profile === null, hvMissing.profile)
+
   console.log('== 13. 删除草稿 ==')
   r = dispatch(sTrack, LIN, { type: 'activity.create', input: fullActivityInput() })
   check('再建一份草稿用于删除', r.ok, r.error)
@@ -363,6 +396,75 @@ function run() {
     && legacyDiscover.activities[legacyDiscover.activities.length - 1].id === draftForDiscover)
   const noOpenedIds = selectView(sTrack, { userId: OWNER }, { kind: 'home', perspective: 'participant' }, '2026-09-26T07:00:00+08:00')
   check('home 未传 openedActivityIds 不再抛异常', noOpenedIds.kind === 'home')
+
+  console.log('== 14b. 活动可见性 visibility（D-07 ④B：缺省 discover / link 只走分享链接） ==')
+  {
+    const NOW = '2026-09-26T07:00:00+08:00'
+    // 缺省：不带键创建的记录不含该键（存量形状不变），读回按 discover
+    check('不带 visibility 创建 → 记录无该键',
+      sTrack.activities.find(a => a.id === draftForDiscover).visibility === undefined)
+    check('旧活动读回活动视图按 discover 兜底',
+      selectView(sTrack, { userId: LIN }, { kind: 'activity', activityId: draftForDiscover, perspective: 'organizer' }, NOW).activity.visibility === 'discover')
+
+    // 显式 link：可建可发，但不进任何人的发现页；凭 id 仍可打开
+    r = dispatch(sTrack, LIN, { type: 'activity.create', input: Object.assign(fullActivityInput(), { visibility: 'link' }) })
+    check('带 visibility:link 可创建', r.ok, r.error)
+    sTrack = r.value.state
+    const linkId = r.value.targetIds[0]
+    r = dispatch(sTrack, LIN, { type: 'activity.publish', activityId: linkId, participation: null })
+    check('link 活动可发布', r.ok, r.error)
+    sTrack = r.value.state
+    check('他人发现页看不到 link 活动',
+      !selectView(sTrack, { userId: OWNER }, { kind: 'discover' }, NOW).activities.some(a => a.id === linkId))
+    check('创建者自己的发现页也看不到 link 活动',
+      !selectView(sTrack, { userId: LIN }, { kind: 'discover' }, NOW).activities.some(a => a.id === linkId))
+    const linkDetail = selectView(sTrack, { userId: OWNER }, { kind: 'activity', activityId: linkId }, NOW)
+    check('他人凭 id/分享链接仍可打开 link 活动',
+      linkDetail.kind === 'activity' && linkDetail.activity.visibility === 'link' && linkDetail.activity.phase === 'published')
+    check('link 活动仍在组织者自己的首页',
+      selectView(sTrack, { userId: LIN }, { kind: 'home', perspective: 'organizer' }, NOW).activities.some(a => a.id === linkId))
+
+    // 改回 discover：activity.edit 用 Object.assign，键必须显式提交
+    const linkEdit = JSON.parse(JSON.stringify(sTrack.activities.find(a => a.id === linkId)))
+    delete linkEdit.id
+    delete linkEdit.ownerId
+    delete linkEdit.phase
+    delete linkEdit.publishedAt
+    linkEdit.visibility = 'discover'
+    r = dispatch(sTrack, LIN, { type: 'activity.edit', activityId: linkId, input: linkEdit })
+    check('已发布 link 可改回 discover', r.ok, r.error)
+    sTrack = r.value.state
+    check('改回 discover 后重新出现在他人发现页',
+      selectView(sTrack, { userId: OWNER }, { kind: 'discover' }, NOW).activities.some(a => a.id === linkId))
+
+    // link 不占发现页 50 条名额：5 条更新的 link + 50 条 discover ⇒ 仍返回 50 条且全非 link
+    const bulk = JSON.parse(JSON.stringify(sTrack))
+    const template = bulk.activities.find(a => a.id === linkId)
+    for (let i = 0; i < 50; i++) {
+      const a = JSON.parse(JSON.stringify(template))
+      a.id = 'bulk-discover-' + i
+      a.title = '公开活动 ' + i
+      a.visibility = 'discover'
+      a.publishedAt = '2026-09-20T00:00:00+08:00'
+      bulk.activities.push(a)
+    }
+    for (let i = 0; i < 5; i++) {
+      const a = JSON.parse(JSON.stringify(template))
+      a.id = 'bulk-link-' + i
+      a.title = '链接活动 ' + i
+      a.visibility = 'link'
+      a.publishedAt = '2026-09-25T00:00:00+08:00'
+      bulk.activities.push(a)
+    }
+    const bulkRes = selectView(bulk, { userId: OWNER }, { kind: 'discover' }, NOW)
+    check('发现页最多 50 条，更新的 link 不占名额',
+      bulkRes.activities.length === 50 && bulkRes.activities.every(a => a.id.indexOf('bulk-link-') !== 0),
+      JSON.stringify({ count: bulkRes.activities.length, linkHits: bulkRes.activities.filter(a => a.id.indexOf('bulk-link-') === 0).length }))
+
+    // 非法值必须被 schema 拒绝，不能静默落成未知可见性
+    r = dispatch(sTrack, LIN, { type: 'activity.create', input: Object.assign(fullActivityInput(), { visibility: 'public' }) })
+    check('非法 visibility 被拒', !r.ok && r.error.code === 'INVALID_INPUT', r.error)
+  }
 
   /* ================= 第 15 节：P3 独立天气 getWeatherByPoint 纯逻辑 =================
    * index.js 无法在本地 require（wx-server-sdk），所以校验/窗口/纠偏/投影全部沉到
@@ -747,6 +849,133 @@ function run() {
     check('第二层在字段校验之前生效：非 owner 带非法输入仍是 FORBIDDEN 而非 INVALID_INPUT',
       handleActivity(deepClone(st), { actor: { userId: OWNER }, requestId: genId('req'), expectedRevision: st.revision, fingerprint: '0'.repeat(64), payload: { type: 'activity.edit', activityId: actId, input: null } }, ctx()).error.code === 'FORBIDDEN', '')
   }
+
+  section('16 活动图片文件（fileID 白名单与引用计数）')
+  const files = require('./domain/files')
+  const f1 = 'cloud://env.abc/activity-media/2026-10-21/a.jpg'
+  const f2 = 'cloud://env.abc/activity-media/2026-10-21/b.jpg'
+  const f3 = 'cloud://env.abc/activity-media/2026-10-21/c.jpg'
+  check('fileID 白名单接受 activity-media/ 下的 cloud:// 文件', files.isActivityMediaFileId(f1) === true, f1)
+  check('fileID 白名单拒绝头像路径', files.isActivityMediaFileId('cloud://env.abc/avatars/a.jpg') === false, '')
+  check('fileID 白名单拒绝 https 外链', files.isActivityMediaFileId('https://example.com/activity-media/a.jpg') === false, '')
+  check('fileID 白名单对 null/空值失败关闭', files.isActivityMediaFileId(null) === false && files.isActivityMediaFileId('') === false, '')
+  check('旧活动缺 cover/content 时 activityFiles 为空且不抛', files.activityFiles({}).size === 0, '')
+  const withImages = { coverFileId: f1, content: [
+    { type: 'text', text: '一段正文' },
+    { type: 'images', fileIds: [f1, f2] },
+    { type: 'images', fileIds: [f2, f3] },
+    { type: 'images', fileIds: [] },
+    null,
+  ] }
+  const oneFiles = files.activityFiles(withImages)
+  check('activityFiles 去重合并封面与正文图片', oneFiles.size === 3 && oneFiles.has(f1) && oneFiles.has(f2) && oneFiles.has(f3), Array.from(oneFiles))
+  const copySharingF2 = { coverFileId: f2, content: [] }
+  const all = files.collectActivityFiles({ activities: [withImages, copySharingF2] })
+  check('collectActivityFiles 跨活动求并集（copy 共用不误删）', all.size === 3 && all.has(f2), Array.from(all))
+  check('collectActivityFiles 对空 state/非数组 activities 失败关闭', files.collectActivityFiles({}).size === 0 && files.collectActivityFiles(null).size === 0, '')
+  const removedNone = files.removedActivityFiles({ activities: [withImages] }, { activities: [withImages] })
+  check('removedActivityFiles 引用未变 → 空', removedNone.length === 0, removedNone)
+  const removedOne = files.removedActivityFiles({ activities: [withImages] }, { activities: [copySharingF2] })
+  check('removedActivityFiles 只删无人引用的图（f2 被 copy 保留）',
+    removedOne.length === 2 && removedOne.indexOf(f1) !== -1 && removedOne.indexOf(f3) !== -1 && removedOne.indexOf(f2) === -1, removedOne)
+  const removedAll = files.removedActivityFiles({ activities: [withImages] }, { activities: [] })
+  check('removedActivityFiles 删除活动 → 三张全删', removedAll.length === 3, removedAll)
+  check('removedActivityFiles 空 state 不抛', files.removedActivityFiles(null, null).length === 0, '')
+
+  section('17 活动图文：schema/校验/投影')
+  const richInput = () => {
+    const input = fullActivityInput()
+    input.description = '一句话简介'
+    input.content = [
+      { type: 'text', text: '开篇段落。\n\n第二段，关键词：冰川湖。' },
+      { type: 'images', fileIds: ['cloud://env.abc/activity-media/a.jpg', 'cloud://env.abc/activity-media/b.jpg'] },
+      { type: 'text', text: '收尾段落。' },
+    ]
+    input.coverFileId = 'cloud://env.abc/activity-media/b.jpg'
+    input.highlights = ['理由一', '理由二']
+    input.leader = '陈屿'
+    input.minParticipants = 3
+    input.sceneryRating = 5
+    input.funRating = 3
+    input.feeSummary = '498 元/人'
+    input.feeIncludes = ['大巴', '住宿']
+    input.feeExcludes = ['餐食']
+    input.signupNote = '报名后拉群'
+    return input
+  }
+  const baseState = () => {
+    const st = emptyState()
+    const saved = dispatch(st, LIN, { type: 'profile.save', person: { name: '林溪', phone: '00000000001', emergency: { name: '林母', phone: '00000000051' }, medical: '' } })
+    return saved.value.state
+  }
+  let rr = dispatch(baseState(), LIN, { type: 'activity.create', input: richInput() })
+  check('带图文的活动可创建', rr.ok, rr.error)
+  const richState = rr.value.state
+  const richId = rr.value.targetIds[0]
+  const richAct = richState.activities[0]
+  check('新字段落库', richAct.content.length === 3 && richAct.coverFileId === 'cloud://env.abc/activity-media/b.jpg'
+    && richAct.highlights.length === 2 && richAct.leader === '陈屿' && richAct.minParticipants === 3
+    && richAct.sceneryRating === 5 && richAct.funRating === 3 && richAct.feeIncludes.length === 2
+    && richAct.feeExcludes.length === 1 && richAct.signupNote === '报名后拉群', richAct)
+  rr = dispatch(richState, LIN, { type: 'activity.publish', activityId: richId, participation: null })
+  check('带图文的活动可发布', rr.ok, rr.error)
+  const publishedRich = rr.value.state
+  const richDetail = selectView(publishedRich, { userId: LIN }, { kind: 'activity', activityId: richId, perspective: 'participant' }, ctx().now)
+  check('detail 视图带正文块', richDetail.kind === 'activity' && Array.isArray(richDetail.activity.content) && richDetail.activity.content.length === 3, richDetail.activity && richDetail.activity.content)
+  check('detail 视图封面解析为显式封面', richDetail.activity.coverFileId === 'cloud://env.abc/activity-media/b.jpg', richDetail.activity.coverFileId)
+  check('detail 视图带亮点/费用/报名后须知', richDetail.activity.highlights.length === 2 && richDetail.activity.feeIncludes.length === 2 && richDetail.activity.signupNote === '报名后拉群', '')
+  const richHome = selectView(publishedRich, { userId: LIN }, { kind: 'home', perspective: 'participant', openedActivityIds: [] }, ctx().now)
+  const homeRich = richHome.activities.find(a => a.id === richId)
+  check('home 视图不带正文块（避免首页为长文买单）', !!homeRich && homeRich.content === undefined && homeRich.coverFileId === 'cloud://env.abc/activity-media/b.jpg', homeRich && Object.keys(homeRich))
+  const richDiscover = selectView(publishedRich, { userId: OWNER }, { kind: 'discover', search: '冰川湖' }, ctx().now)
+  check('discover 搜索命中正文文本', richDiscover.activities.some(a => a.id === richId), richDiscover.activities.map(a => a.id))
+  const richDiscover2 = selectView(publishedRich, { userId: OWNER }, { kind: 'discover', search: '理由二' }, ctx().now)
+  check('discover 搜索命中推荐理由', richDiscover2.activities.some(a => a.id === richId), richDiscover2.activities.map(a => a.id))
+  const richDiscover3 = selectView(publishedRich, { userId: OWNER }, { kind: 'discover' }, ctx().now)
+  const discoverRich = richDiscover3.activities.find(a => a.id === richId)
+  check('discover 视图带解析后的封面', !!discoverRich && discoverRich.coverFileId === 'cloud://env.abc/activity-media/b.jpg', discoverRich && discoverRich.coverFileId)
+  const bad = (mutate) => {
+    const input = richInput()
+    mutate(input)
+    return dispatch(baseState(), LIN, { type: 'activity.create', input }).error
+  }
+  const emptyText = bad(input => { input.content = [{ type: 'text', text: '   ' }] })
+  check('空文本块被拒', emptyText && emptyText.code === 'INVALID_INPUT', emptyText)
+  const badCover = bad(input => { input.coverFileId = 'cloud://env.abc/activity-media/c.jpg' })
+  check('封面不在正文里被拒', badCover && badCover.code === 'INVALID_INPUT', badCover)
+  const badPath = bad(input => { input.content[1].fileIds = ['cloud://env.abc/avatars/x.jpg']; input.coverFileId = '' })
+  check('非 activity-media 图片被拒', badPath && badPath.code === 'INVALID_INPUT', badPath)
+  const dup = bad(input => { input.content[1].fileIds = [input.coverFileId, input.coverFileId] })
+  check('重复图片被拒', dup && dup.code === 'INVALID_INPUT', dup)
+  const badMin = bad(input => { input.minParticipants = 25 })
+  check('成行人数高于上限被拒', badMin && badMin.code === 'INVALID_INPUT', badMin)
+  const tooMany = bad(input => {
+    input.content = [0, 1, 2].map(n => ({ type: 'images', fileIds: Array.from({ length: 9 }, (_, i) => 'cloud://env.abc/activity-media/n' + n + '-' + i + '.jpg') }))
+    input.coverFileId = ''
+  })
+  check('总图片超过 20 张被拒', tooMany && tooMany.code === 'INVALID_INPUT', tooMany)
+  const tooMuchText = bad(input => {
+    input.content = Array.from({ length: 11 }, () => ({ type: 'text', text: 'x'.repeat(2000) }))
+    input.coverFileId = ''
+  })
+  check('总文本超过 20000 字被拒', tooMuchText && tooMuchText.code === 'INVALID_INPUT', tooMuchText)
+  const badHighlight = bad(input => { input.highlights = [''] })
+  check('空推荐理由被拒', badHighlight && badHighlight.code === 'INVALID_INPUT', badHighlight)
+  const copyRes = dispatch(publishedRich, LIN, { type: 'activity.copy', sourceActivityId: richId })
+  const copied = copyRes.ok ? copyRes.value.state.activities.find(a => a.id === copyRes.value.targetIds[0]) : null
+  check('activity.copy 保留正文与封面', !!copied && copied.content.length === 3 && copied.coverFileId === 'cloud://env.abc/activity-media/b.jpg', copied)
+  const gathering = dispatch(publishedRich, LIN, { type: 'activity.transition', activityId: richId, next: 'gathering', reason: '' })
+  check('发布→集合可推进（无待审核）', gathering.ok, gathering.error)
+  const phaseState = gathering.value.state
+  const editInput = richInput()
+  editInput.acceptingSignups = false
+  editInput.routeId = phaseState.activities[0].routeId
+  editInput.content = editInput.content.concat([{ type: 'text', text: '集合中补充的一段。' }])
+  const editRes = dispatch(phaseState, LIN, { type: 'activity.edit', activityId: richId, input: editInput })
+  check('集合中可补图文（新字段不锁）', editRes.ok && editRes.value.state.activities[0].content.length === 4, editRes.error)
+  editInput.title = '改标题'
+  const lockRes = dispatch(phaseState, LIN, { type: 'activity.edit', activityId: richId, input: editInput })
+  check('集合中仍锁标题（新字段未放宽交易键）', !lockRes.ok && lockRes.error.code === 'WRONG_PHASE', lockRes.error)
 
   console.log('')
   console.log('passed=' + passed + ' failed=' + failed)

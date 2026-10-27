@@ -1,14 +1,94 @@
-<article class="card activity-card {{featured ? 'hero activity-card--featured' : ''}}" bindtap="onTap" hover-class="card-hover">
-  <image wx:if="{{featured}}" class="trail-art" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNENkVBOEEiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTEzNS0yMEM0MCAzMSAyMjAgNTEgMTI2IDEwN1MzNSAxNzkgMTMyIDI2MCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE4My0yMEM4OCAzMSAxNjQgNzggODQgMTIzUzkyIDIwMSAxNzkgMjYwIiBzdHJva2Utd2lkdGg9IjEuMjUiLz48L3N2Zz4=" mode="aspectFit" />
-  <view class="card-header activity-card__header hero-body">
-    <text class="activity-card__date small tabular" id="date">{{date}}{{when ? ' · 出发 ' + when : ''}}</text>
-    <text class="badge {{featured ? 'on-forest' : 'neutral'}}" id="status">{{status}}</text>
-  </view>
-  <view class="activity-card__title hero-body">{{title}}</view>
-  <text class="activity-card__meta muted hero-body" id="meta">{{meta}}</text>
-  <view wx:if="{{info}}" class="activity-card__info hero-body">{{info}}</view>
-  <view class="activity-card__affordance {{featured ? 'button leaf affordance-leaf' : ''}} hero-body" aria-hidden="true">
-    <text>查看活动安排</text>
-    <icon name="arrow" size="18" color="{{featured ? '#163E35' : '#163E35'}}" />
-  </view>
+<article class="card activity-card {{featured ? 'hero activity-card--featured' : 'activity-card--plain'}} {{compact ? 'activity-card--compact' : ''}} {{flat ? 'activity-card--flat' : ''}} {{coverFailed ? 'cover-failed' : ''}}" bindtap="onTap" hover-class="card-hover">
+  <!-- 卡片形态（2026-10-26 style-B）：图在上 / featured 大封面；正文三槽——
+       ① 标题（可断行，不截断：标题是必须读完的语义，M-16 的判据继续成立）
+       ② chips 一行（日期 · 难度 · 距离 · 爬升，不折行，缺字段整项不出现）
+       ③ foot 一行（左：与活动的关系细字；右：已确认 3/10 · 待审核 7 人）
+       相位短词单独做徽章，与归属分开——原来两者拼在 status 一串里，同一行说了两件事。
+       照片是场景氛围图（utils/covers.js 按活动 id 稳定选取），非活动实拍；
+       加载失败根节点加 cover-failed：featured 藏起照片退回纯色 hero，
+       普通卡藏起媒体退回纯文字卡，都不出破图。 -->
+  <block wx:if="{{featured}}">
+    <view class="activity-card__media">
+      <image class="activity-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
+      <view class="activity-card__scrim" />
+    </view>
+    <view class="activity-card__cover-body hero-body">
+      <view class="card-header activity-card__header">
+        <!-- when 是倒计时短语（剩 35 天 / 就在眼前 / 已过时），不是出发动作；
+             旧写法「· 出发 已过时」把状态词挂在了动作后面，读起来自相矛盾。 -->
+        <text class="activity-card__date small tabular" id="date">{{date}}{{when ? ' · ' + when : ''}}</text>
+        <text wx:if="{{badge}}" class="badge on-forest" id="status">{{badge}}</text>
+      </view>
+      <view class="activity-card__title hero-body">{{title}}</view>
+      <text wx:if="{{routeName}}" class="activity-card__sub small hero-body">{{routeName}}</text>
+      <!-- 日期已经在上面那行，featured 只画 chips 的其余项（restChips 由 observer 过滤） -->
+      <view wx:if="{{restChips.length}}" class="activity-card__chips hero-body">
+        <block wx:for="{{restChips}}" wx:key="key">
+          <text wx:if="{{index}}" class="activity-card__dot">·</text>
+          <text class="activity-card__chip">{{item.text}}</text>
+        </block>
+      </view>
+      <view class="activity-card__foot hero-body">
+        <text wx:if="{{roleNote}}" class="activity-card__role">{{roleNote}}</text>
+        <view class="activity-card__count">
+          <text wx:if="{{people}}" class="tabular">{{people}}</text>
+          <text wx:if="{{pending}}">{{people ? ' · ' : ''}}{{pending}}</text>
+        </view>
+      </view>
+      <!-- 卡片整体可点：不重复放实心入口。只保留协作入口——它是卡内另一个目的地，
+           不能靠点卡片到达。用 catchtap 而不是 bindtap：冒泡上去会变成「点车辆联络却进了详情页」。 -->
+      <view wx:if="{{collab.length}}" class="activity-card__affordance">
+        <view class="collab-row">
+          <view wx:for="{{collab}}" wx:key="key" class="button leaf collab-leaf" hover-class="button-hover"
+            data-key="{{item.key}}" catchtap="onCollab">
+            <text>{{item.label}}</text>
+            <icon name="arrow" size="16" color="#163E35" />
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+  <block wx:else>
+    <view wx:if="{{!compact}}" class="activity-card__media">
+      <image class="activity-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
+    </view>
+    <view class="activity-card__plain">
+      <view class="activity-card__head">
+        <view wx:if="{{compact}}" class="activity-card__thumb">
+          <image class="activity-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
+        </view>
+        <view class="activity-card__heading">
+          <view class="activity-card__titlebar">
+            <view class="activity-card__title">{{title}}</view>
+            <text wx:if="{{badge}}" class="badge neutral activity-card__status" id="status">{{badge}}</text>
+          </view>
+          <view wx:if="{{chips.length}}" class="activity-card__chips">
+            <block wx:for="{{chips}}" wx:key="key">
+              <text wx:if="{{index}}" class="activity-card__dot">·</text>
+              <!-- 日期 chip 保留稳定 id：卡片形态换了，但「这张卡的日期在哪」这个读数钩子不变 -->
+              <text wx:if="{{item.key === 'date'}}" id="date" class="activity-card__chip">{{item.text}}</text>
+              <text wx:else class="activity-card__chip">{{item.text}}</text>
+            </block>
+          </view>
+          <text wx:if="{{routeName}}" class="activity-card__sub small muted">{{routeName}}</text>
+          <view wx:if="{{roleNote || people || pending}}" class="activity-card__foot">
+            <text wx:if="{{roleNote}}" class="activity-card__role">{{roleNote}}</text>
+            <view class="activity-card__count">
+              <text wx:if="{{people}}" class="tabular">{{people}}</text>
+              <text wx:if="{{pending}}">{{people ? ' · ' : ''}}{{pending}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{collab.length}}" class="activity-card__affordance">
+        <view class="collab-row">
+          <view wx:for="{{collab}}" wx:key="key" class="button leaf collab-leaf" hover-class="button-hover"
+            data-key="{{item.key}}" catchtap="onCollab">
+            <text>{{item.label}}</text>
+            <icon name="arrow" size="16" color="#163E35" />
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
 </article>

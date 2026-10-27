@@ -179,6 +179,15 @@ function canExecute(state, actor, payload, now) {
     ref.kind === 'user' ? ref.userId === actor.userId
       : ref.ownerId === actor.userId && !!profile && profile.companions.some(c => c.id === ref.companionId)
   if (payload.type === 'profile.save' || payload.type === 'activity.create') return allowed()
+  // V2 路线库：route.* 没有 activityId，必须在 requireActivity 之前分支——
+  // 否则 payload.activityId 为 undefined，会被误判成「找不到活动」。
+  // 归属校验与 routes.js 处理器各做一次（授权不依赖单点）。
+  if (payload.type === 'route.create') return allowed()
+  if (payload.type === 'route.update' || payload.type === 'route.delete') {
+    const route = state.routes.find(r => r.id === payload.routeId)
+    if (!route) return missing()
+    return route.ownerId === actor.userId ? allowed() : permissionDenied('只有路线创建者可以管理此路线。')
+  }
   if (payload.type === 'companion.save' || payload.type === 'companion.remove') {
     return payload.companionId === null || (profile && profile.companions.some(c => c.id === payload.companionId))
       ? allowed() : permissionDenied('只能管理当前账号已有的同行人。')
@@ -187,6 +196,19 @@ function canExecute(state, actor, payload, now) {
   const activity = requireActivity(state, activityId)
   if (!activity.ok) return activity
   const owner = isOwner(state, actor, activityId)
+
+  // 协作任务：V1 只有组织者写；归档/取消后任务只读。
+  // 不把 taskId 送进 requireSignups/requireVehicles——任务不是报名或车辆目标。
+  if (payload.type.indexOf('task.') === 0) {
+    if (!workDataAvailable(state, activityId)) return permissionDenied('活动已归档或取消，任务只读。')
+    if (payload.type !== 'task.create') {
+      const task = state.tasks.find(t => t.id === payload.taskId)
+      if (!task) return missing()
+      if (task.activityId !== activityId) return permissionDenied('任务不属于这场活动。')
+    }
+    return owner ? allowed() : permissionDenied()
+  }
+
   const signupIds = []
   const vehicleIds = []
   if ('signupId' in payload) signupIds.push(payload.signupId)

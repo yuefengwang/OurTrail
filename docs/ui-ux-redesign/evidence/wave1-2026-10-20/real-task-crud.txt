@@ -1,0 +1,16 @@
+真实云端任务 CRUD（2026-10-20）
+
+环境：微信开发者工具 automator 9423；云环境 cloud1-d9ghcm034574b9d55
+活动：activity-mv0q0bt305yaqe（真实账号的「测试活动」，行前准备）
+部署：trailApi 24 files / 111.9 KB，trailApiLab 21 files / 83.4 KB
+回读：两函数均 Active / timeout 20 / Nodejs16.13
+线上包：tasks.js / schema.js / store.js 与工作树逐字节一致
+
+驱动输出：
+initial {"denied":"","title":"测试活动","canManage":true,"tasks":0}
+after create {"message":"任务已添加。","error":"","id":"task-mvhbe0wwuj2wak","status":"todo","count":1}
+after status {"status":"doing","error":""}
+after delete {"message":"任务已删除。","error":"","remaining":false,"count":0}
+
+结论：真实云端创建 → 进行中 → 删除三步通过；活动本身未被修改。
+参与者只读与 owner-only 由 tools/tasks-test.js（27）与 tools/scenario-tasks-test.js（24）覆盖。

@@ -1,0 +1,89 @@
+/* 协作任务清单：身份头 → 带计数的筛选 → 逐条状态边栏，记录本身不折叠。 */
+
+.tasks-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tasks-identity__title {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* 计数与筛选标签同一行：四个分段各自说清「这格有几条」，不必再摆一条独立指标带。 */
+.seg-count {
+  margin-left: 4px;
+  font-size: var(--text-caption);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 左侧 3px 状态边栏：待办/进行中/已完成在列表里一眼可扫，缩放与色弱用户也能靠位置识别。 */
+.task-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border-left: 3px solid var(--stone-line);
+  border-radius: var(--radius-card);
+}
+
+.task-row.tone-doing { border-left-color: var(--info); }
+.task-row.tone-done { border-left-color: var(--success); }
+
+.task-row__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.task-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-input);
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.task-note {
+  display: block;
+  line-height: 20px;
+}
+
+.task-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.task-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-target);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-button);
+  font-size: var(--text-body);
+  color: var(--forest);
+  background: var(--surface);
+}
+
+.task-status-action {
+  border-color: var(--forest);
+  font-weight: 600;
+}

@@ -1,0 +1,31 @@
+{
+  "mode": "before",
+  "wsPort": "9435",
+  "shots": {
+    "routes-list": {
+      "file": "before-routes-list.png",
+      "scrollTop": 0
+    },
+    "route-hero": {
+      "file": "before-route-hero.png",
+      "scrollTop": 0
+    },
+    "route-timeline": {
+      "file": "before-route-timeline.png",
+      "scrollTop": 500
+    },
+    "route-edit-top": {
+      "file": "before-route-edit-top.png",
+      "scrollTop": 0
+    },
+    "route-edit-gpx": {
+      "file": "before-route-edit-gpx.png",
+      "scrollTop": 300
+    }
+  },
+  "gates": {
+    "routeCards": 0,
+    "riskCallouts": 0,
+    "rowTaps": 0
+  }
+}

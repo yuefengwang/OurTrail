@@ -8,9 +8,10 @@
  * 摄影窗口（黄金/蓝调）的"当时值不值得蹲"后缀只按**引用**读 `sky.LIGHT_LIMITS.LOW_CLOUD_MAX`
  * （与光染、彩虹同一把尺），数字不在本文件里出现第二次。
  *
- * 可见性规则（presentation 层唯一一处裁剪）：云海窗口与**民用晨光–民用暮光**取交集。
+ * 可见性规则（裁剪判据的单源在 sky.js）：云海窗口与**民用晨光–民用暮光**取交集。
  * sky.js 的 cloudSea 判定不含昼夜条件，凌晨 01:00 的云况成立但不可见；
- * 在聚合层裁掉，sky.js 阈值与其余 65 例测试零改动（任务 §20 的落点）。
+ * 判据住在 `sky.civilWindow` / `sky.clipRange`（依赖方向 agenda → sky 已存在，反向会成环），
+ * 结论卡、本日程、机会窗口三处走同一份，不存在"第二处裁剪"。
  *
  * wx-free：不得出现任何 wx.*，否则会被移出 Node 测试覆盖（utils/AGENTS.md 铁律）。
  */
@@ -37,6 +38,52 @@ function primaryOf(list) {
     if (list.indexOf(AGENDA_KEYS[i]) !== -1) return AGENDA_KEYS[i]
   }
   return null
+}
+
+/* 夜间天相 = 只认这两个 key。星座/银河以外的标记（云海/光染/彩虹/晨昏）都是**当日**
+   的自然现象，不能搬进"今晚"序列（它们要么依赖白天光照，要么依赖民用晨昏）。 */
+function isNightKey(key) {
+  return key === 'galaxy' || key === 'star'
+}
+
+/* 24h OI 卡表达不了的夜间窗口：跨零点（今晚起、次日止）与纯次日窗口。
+   同日夜间窗口 OI 卡已经列得下，页面在 OI 可见时不必在日程里再重复一遍
+   （旧规则"OI 可见就不重复 L2"仍然适用于它们）。 */
+function isSpanningNightEvent(e) {
+  if (!e || !e.l2 || !isNightKey(e.key)) return false
+  return e.dayOffset === 1 || String(e.window || '').indexOf('→ 次日') !== -1
+}
+
+/* 跨夜小时序列的形状门：数组非空、每项带非空日期 `d`、且按绝对时间严格递增。
+   必须带 `d` 是因为聚类/排序/「今晚→次日」标签全靠它区分哪几个小时属于次日；
+   没有日期的裸小时列表（旧调用形态）过不了这道门，调用方据此退回旧口径（不猜、不补）。 */
+function isNightSequence(hours) {
+  if (!Array.isArray(hours) || !hours.length) return false
+  let prev = null
+  for (const h of hours) {
+    if (!h || typeof h.d !== 'string' || !h.d) return false
+    const m = sky.hourMin(h.t)
+    const day = Date.parse(h.d + 'T00:00:00Z')
+    if (!Number.isFinite(m) || !Number.isFinite(day)) return false
+    const abs = day + m * 60000
+    if (prev != null && !(abs > prev)) return false
+    prev = abs
+  }
+  return true
+}
+
+/* 日期差（以 originDate 为 0）。只用于把跨夜小时换算成可比较的绝对分钟；
+   `d` 缺失或格式不对时按 0 处理（与"缺字段不增信息"一致，不编造跨日）。 */
+function dayOffsetOf(d, originDate) {
+  if (!originDate || !d) return 0
+  const a = Date.parse(d + 'T00:00:00Z')
+  const b = Date.parse(originDate + 'T00:00:00Z')
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0
+  return Math.round((a - b) / 86400000)
+}
+
+function absMinutes(h, originDate) {
+  return dayOffsetOf(h.d, originDate) * 1440 + sky.hourMin(h.t)
 }
 
 /* ---------- L1：天气转折（相邻小时差分，只陈述不预测） ---------- */
@@ -68,39 +115,52 @@ function weatherTransitions(detail) {
 
 /* ---------- L2：sky.hourMarks 簇（连续同相小时合并） ---------- */
 
-function clustersOf(detail, marks) {
+/**
+ * 连续同相小时聚簇。
+ * @param originDate 可选。传了就用「日偏移 × 1440 + 分钟」判连续（只有这样才能把
+ *   23:00 与次日 00:00 连成一簇），并额外输出 { fromD, toD, hours }；
+ *   不传时输出形状与旧实现逐字节相同（{ key, from, to }）。
+ */
+function clustersOf(detail, marks, originDate) {
   const out = []
   let cur = null
+  let curAbs = -1
   for (const h of detail) {
     const key = primaryOf(marks[h.d + 'T' + h.t] || [])
-    if (key && cur && cur.key === key && sky.hourMin(h.t) === sky.hourMin(cur.to) + 60) {
+    const abs = originDate ? absMinutes(h, originDate) : sky.hourMin(h.t)
+    if (key && cur && cur.key === key && abs === curAbs + 60) {
       cur.to = h.t
+      if (originDate) { cur.toD = h.d; cur.hours.push(h) }
+      curAbs = abs
     } else if (key) {
       if (cur) out.push(cur)
-      cur = { key, from: h.t, to: h.t }
+      cur = originDate
+        ? { key, from: h.t, to: h.t, fromD: h.d, toD: h.d, hours: [h] }
+        : { key, from: h.t, to: h.t }
+      curAbs = abs
     } else if (cur) {
       out.push(cur)
       cur = null
+      curAbs = -1
     }
   }
   if (cur) out.push(cur)
   return out
 }
 
-// 民用晨光–暮光窗口（分钟）。天文数据缺失时 ok=false，调用方不裁剪（宁可多给，不给错）
+// 民用晨光–暮光窗口（分钟）。判据本体在 sky.civilWindow（单源）；本处保留同名导出供 OI 使用。
 function civilWindow(sun) {
-  const from = sky.hourMin(sun && sun.civilDawn)
-  const to = sky.hourMin(sun && sun.civilDusk)
-  return { from, to, ok: Number.isFinite(from) && Number.isFinite(to) }
+  return sky.civilWindow(sun)
 }
 
 // 云海簇与民用晨昏取交集。返回 null = 整段不可见（应从日程丢弃）
 function visibleSeaWindow(fromT, toT, civil) {
-  if (!civil.ok) return { fromT, toT }
-  const s = Math.max(sky.hourMin(fromT), civil.from)
-  const e = Math.min(sky.hourMin(toT) + 60, civil.to) // 簇末小时覆盖 [toT, toT+60)
-  if (!(e > s)) return null
-  return { fromT: F.minutesLabel(s), toT: F.minutesLabel(e) }
+  /* 缺天文数据时原样返回（宁可多给，不给错）。不能把 `civil` 直接当 [fromT,toT] 用：
+     clipRange 吃的是半开区间 [start,end)，簇末小时必须先把结束时刻补成 toT+60 再取交集。 */
+  if (!civil.ok) return { fromT: fromT, toT: toT }
+  const seg = sky.clipRange(sky.hourMin(fromT), sky.hourMin(toT) + 60, civil) // 簇末小时覆盖 [toT, toT+60)
+  if (!seg) return null
+  return { fromT: F.minutesLabel(seg.from), toT: F.minutesLabel(seg.to) }
 }
 
 /* 某个标记在这一天是否真的出现过。口径一律在 sky.hourMarks 里（银心季 + 月照 + 暗夜晴空
@@ -141,15 +201,31 @@ function subWith(base, note) {
 
 /* ---------- 主入口 ---------- */
 
+/* 日程排序键：今日事件 = 0:00 起的分钟；`次日` 事件（纯次日窗口）整体排在今日之后。
+   今日事件之间这个键与旧实现 `sky.hourMin(t)` 完全同序（前缀为空、dayOffset 未设）。 */
+function sortKeyOf(e) {
+  const next = e.dayOffset === 1 || /^次日 /.test(String(e.t || ''))
+  const m = sky.hourMin(String(e.t || '').replace(/^次日 /, ''))
+  return (next ? 1440 : 0) + (Number.isFinite(m) ? m : 0)
+}
+
 /**
  * 构建某一天的户外日程。
- * @param input { date, detail(当日24h), marks(页面级 {'dateTHH:mm': [key]}), sun(sunTimes), win(photoWindows) }
- * @returns [{ t:'HH:mm', title, sub?, l2?:true, key?, window? }]
+ * @param input { date, detail(当日24h), marks(页面级 {'dateTHH:mm': [key]}), sun(sunTimes), win(photoWindows),
+ *                nightHours?（可选，sky.summarize 产出的跨夜小时序列，元素带 d） }
+ * @returns [{ t:'HH:mm'|'次日 HH:mm', title, sub?, l2?:true, key?, window?, dayOffset? }]
  *          l2=true 的条目由页面按 key 关联 sky.summarize 的同 key 结论补上评级与文案。
+ *
+ * 跨夜（计划 §5.3）：给了合法的 nightHours 时，galaxy/star 只按**今晚**序列聚类——
+ *   当日 detail 里的 galaxy/star 是**前夜尾段**，从日簇里剔除；今晚序列跨零点能连成一簇，
+ *   起点在次日的事件标「次日 HH:mm」并排在当日事件之后（dayOffset=1，只给这类事件加）。
+ *   没给 nightHours 时整份输出与旧实现逐字节相同（含事件字段集合）。
  */
 function buildDayAgenda(input) {
   const { detail, marks, sun, win } = input || {}
   if (!Array.isArray(detail) || !detail.length) return []
+  const date = input.date
+  const nights = isNightSequence(input.nightHours) ? input.nightHours : null
   const civil = civilWindow(sun)
   const events = []
 
@@ -165,8 +241,9 @@ function buildDayAgenda(input) {
     if (win && win.eveningGolden) add(win.eveningGolden.from, '黄金时刻（昏）', subWith(null, lightNote(detail, win.eveningGolden.from, 'golden')), false)
     if (win && win.duskBlue) add(win.duskBlue.from, '蓝调时刻（昏）', subWith(null, lightNote(detail, win.duskBlue.from, 'blue')), false)
     /* 这句 sub 是机会主张，不是钟点：满天云或不在银心季的那晚，银河卡已被沉默闸收掉，
-       这一行却还替它背书 ⇒ 只有 marks 里真有 galaxy 小时才说；否则这一条只剩时刻（事实）。 */
-    if (sun.astroDusk) add(sun.astroDusk, '天文暗夜始', hasMark(detail, marks, 'galaxy') ? '银河与深空窗口' : null, false)
+       这一行却还替它背书 ⇒ 只有 marks 里真有 galaxy 小时才说；否则这一条只剩时刻（事实）。
+       跨夜序列存在时必须问**今晚**（次日凌晨的银河也是今晚的），而不是问当日那段尾段。 */
+    if (sun.astroDusk) add(sun.astroDusk, '天文暗夜始', hasMark(nights || detail, marks, 'galaxy') ? '银河与深空窗口' : null, false)
   }
 
   // 天气转折（L1）
@@ -174,6 +251,9 @@ function buildDayAgenda(input) {
 
   // OurTrail 窗口（L2，同源 hourMarks）；云海做可见性交集
   clustersOf(detail, marks || {}).forEach(c => {
+    /* 有今晚序列时，当日 detail 里的 galaxy/star 是前夜尾段（00:00–05:00 那一段），
+       真正的今晚窗口在下面的夜簇里；这里必须先剔除，否则同一现象会出现两次、且早上那次是错的。 */
+    if (nights && isNightKey(c.key)) return
     if (c.key === 'cloudSea') {
       const vis = visibleSeaWindow(c.from, c.to, civil)
       if (!vis) return
@@ -185,7 +265,29 @@ function buildDayAgenda(input) {
       c.from === c.to ? c.from : c.from + '–' + c.to)
   })
 
-  events.sort((a, b) => sky.hourMin(a.t) - sky.hourMin(b.t))
+  // 今晚序列的夜间天相（只取 galaxy/star；跨零点为一簇，起点在次日的事件带 dayOffset）
+  if (nights) {
+    clustersOf(nights, marks || {}, date).forEach(c => {
+      if (!isNightKey(c.key)) return
+      const startNextDay = c.fromD !== date
+      const endNextDay = c.toD !== date
+      const t = startNextDay ? '次日 ' + c.from : c.from
+      let window
+      if (startNextDay) {
+        // 纯次日簇：整个窗口都在次日（24h 日程无法用"今晚"表示半截，只能照实标「次日」）
+        window = '次日 ' + c.from + (c.to === c.from ? '' : '–' + c.to)
+      } else if (endNextDay) {
+        // 跨零点：起点今晚、终点次日
+        window = '今晚 ' + c.from + ' → 次日 ' + c.to
+      } else {
+        window = c.from === c.to ? c.from : c.from + '–' + c.to
+      }
+      add(t, TITLES[c.key], null, true, c.key, window)
+      if (startNextDay) events[events.length - 1].dayOffset = 1
+    })
+  }
+
+  events.sort((a, b) => sortKeyOf(a) - sortKeyOf(b))
   // 同刻同题去重（天文与差分可能撞在同一整点）
   return events.filter((e, i) => i === 0 || !(e.t === events[i - 1].t && e.title === events[i - 1].title))
 }
@@ -195,6 +297,9 @@ module.exports = {
   buildDayAgenda,
   weatherTransitions,
   clustersOf,
+  isNightKey,
+  isNightSequence,
+  isSpanningNightEvent,
   civilWindow,
   visibleSeaWindow,
   lowCloudAt,

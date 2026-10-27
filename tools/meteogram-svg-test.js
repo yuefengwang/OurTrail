@@ -27,12 +27,12 @@ function build(key, elev, width) {
 /* ---------- 单一 timeScale ---------- */
 section('TimeScale：四变量共享同一 time → x')
 const geo = build('emeishan', 3079)
-const plotW = 375 - 38 - 10
+const plotW = geo.plotW
 check('X(h) 线性且等距（每 2h 间距 = plotW/12）',
   [0, 2, 6, 12, 16, 20, 22].every(h => Math.abs((geo.X(h + 2) - geo.X(h)) - plotW / 12) < 0.01))
-check('X(0) 在绘图区左缘中心', Math.abs(geo.X(0) - (38 + plotW / 48)) < 0.01)
+check('X(0) 在绘图区左缘中心', Math.abs(geo.X(0) - (geo.L + plotW / 48)) < 0.01)
 check('云场网格与 surface 行共用同一映射（t=6.5 处网格 x = X(6)）',
-  Math.abs((38 + (6.5 / 24) * plotW) - geo.X(6)) < 0.01)
+  Math.abs((geo.L + (6.5 / 24) * plotW) - geo.X(6)) < 0.01)
 check('海拔线 y 与云场行在同一行内（2000m 贴行底）',
   Math.abs(geo.cloud.yAlt(2000) - (ROWS().cloud.y + ROWS().cloud.h)) < 0.01)
 function ROWS() { return UMG.ROWS }
@@ -83,7 +83,7 @@ section('375 / 390 / 414')
   const g = build('emeishan', 3079, w)
   const b = UMG.renderUnifiedBase(g, { sunrise: 7.03, sunset: 18.77 })
   check(w + 'px：构建 + 生成正常，crosshair 等距', b.svg.indexOf('<svg') === 0 && g.stats.pathCount >= 3 &&
-    Math.abs((g.X(22) - g.X(20)) - (w - 48) / 12) < 0.01)
+    Math.abs((g.X(22) - g.X(20)) - g.plotW / 12) < 0.01)
 })
 
 /* ---------- 性能 ---------- */

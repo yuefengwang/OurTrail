@@ -1,0 +1,45 @@
+{
+  "mode": "after",
+  "wsPort": "9436",
+  "page": "pages/signup/signup",
+  "shots": {
+    "form-top": {
+      "file": "after-form-top.png",
+      "scrollTop": 0
+    },
+    "expanded-identity-contact": {
+      "file": "after-expanded-identity-contact.png",
+      "scrollTop": 300
+    },
+    "expanded-trip-consent": {
+      "file": "after-expanded-trip-consent.png",
+      "scrollTop": 756.5
+    },
+    "capacity-ask": {
+      "file": "after-capacity-ask.png",
+      "scrollTop": 425
+    },
+    "purpose-gate": {
+      "file": "after-purpose-gate.png",
+      "scrollTop": 0
+    },
+    "profile-gate": {
+      "file": "after-profile-gate.png",
+      "scrollTop": 0
+    }
+  },
+  "gates": {
+    "badges": [
+      "1",
+      "授权 1/1",
+      "资料齐",
+      "2",
+      "授权 0/2",
+      "资料齐"
+    ],
+    "stickyAsk": [
+      "明确同意整组候补",
+      "提交报名"
+    ]
+  }
+}

@@ -61,10 +61,10 @@ await mp.disconnect()
 |---|---|---|---|---|---|
 | H-01 发现活动 | `.card-header >>> .button.text`（第 1 个，文案「发现活动」） | tap | `onGoDiscover` | — | 跳转 discover |
 | H-02 发起活动 | 同上第 2 个（「发起活动」） | tap | `onNew` | — | 跳转 editor（无 id） |
-| H-03 筛选段 | `.seg` ×3（data-value=mine/recent/finished） | tap 或 `callMethod('onFilter',{currentTarget:{dataset:{value:'recent'}}})` | `onFilter` | — | `filter==='recent'`，cards 重算 |
+| H-03 筛选段 | `.seg` ×3~4（data-value=mine/recent/finished/collab；**第四档仅 `collabCount>0` 时存在**） | tap 或 `callMethod('onFilter',{currentTarget:{dataset:{value:'recent'}}})` | `onFilter` | — | `filter==='recent'`，cards 重算 |
 | H-04 搜索 | `input.input` | `element.input('雪山')` | `onSearch` | — | `search` 变化 + cards 过滤 |
 | H-05 打开活动卡 | `activity-card`（`$$` 下标 i） | tap（卡片内 `bindtap="onTap"` trigger('open')） | `onOpenCard` | — | `draft.rememberActivity`；跳 activity?id |
-| H-06 协作任务行 | `.list-row`（需要我协作区，data-id/data-gostaff） | tap | `onOpenTask` | — | goStaff→staff 页，否则 vehicle 页 |
+| H-06 卡片上的协作入口 | `activity-card >>> .collab-leaf`（一个角色一枚，`data-key`=staff/vehicle；无授权时该节点不存在） | tap（组件内 `catchtap="onCollab"` → `trigger('collab',{key})`） | `onCardCollab` | — | key=staff→staff 页，key=vehicle→vehicle 页；**两枚独立，不再二选一**。判据 `tools/home-collab-list-test.js` §1/§5 |
 | H-07 空态 action | `status-panel >>> .button.secondary` | tap | `onEmptyAction` | — | 有搜索→清搜索；否则进 editor |
 
 云端读取（onShow 自动，无需驱动）：`read`×4。denied 断言：`data.denied !== ''`。

@@ -1,0 +1,112 @@
+{
+  "side": "s3",
+  "scenario": "confirmed-bottom",
+  "capturedAt": "2026-10-23T10:54:33.917Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "fixture": {
+    "file": "fixtures-s3\\confirmed-bottom.json",
+    "title": "青城后山 · 集合日"
+  },
+  "gates": {
+    "loadingFalse": true,
+    "titleIntact": true,
+    "stateMatch": true,
+    "stylesReady": true,
+    "styleWaitMs": 55
+  },
+  "markers": {},
+  "geometry": {
+    "mode": "document",
+    "pageBox": {
+      "left": 0,
+      "top": 0,
+      "width": 390,
+      "height": 3783,
+      "bottom": 3783
+    },
+    "stickyBox": {
+      "left": 0,
+      "top": 3675.5,
+      "width": 390,
+      "height": 107,
+      "bottom": 3782.5
+    },
+    "lastContentBottom": 3663,
+    "expectedStickyTop": 3676,
+    "dockedToBottom": true,
+    "reservedBottom": 120,
+    "gapAboveBar": 12.5,
+    "notOccluded": true,
+    "viewportHeight": 753
+  },
+  "screenshots": [
+    {
+      "file": "confirmed-bottom-top.png",
+      "bytes": 241041,
+      "width": 500,
+      "height": 1082
+    },
+    {
+      "file": "confirmed-bottom-bottom.png",
+      "bytes": 84675,
+      "width": 500,
+      "height": 1082
+    },
+    {
+      "file": "confirmed-bottom-sheet.png",
+      "bytes": 75133,
+      "width": 500,
+      "height": 1082
+    }
+  ],
+  "status": "VALID",
+  "problems": [],
+  "dom": {
+    "rootClass": "page has-sticky",
+    "hasStickyClass": true,
+    "stickyCount": 1,
+    "primaryCount": 1,
+    "primaryText": "我已到达 · 去签到",
+    "sharePresent": true,
+    "shareText": "分享",
+    "shareWidth": 88,
+    "primaryWidth": 250,
+    "successCardShare": false,
+    "successCardShareText": "",
+    "successCardWorkspace": false,
+    "successCardWorkspaceText": ""
+  },
+  "injected": {
+    "title": "青城后山 · 集合日",
+    "showSticky": true,
+    "isOwner": false,
+    "isDraft": false,
+    "justPublished": false
+  },
+  "sheet": {
+    "overlayOpen": true,
+    "overlayBox": {
+      "left": 0,
+      "top": 3029.5,
+      "width": 390,
+      "height": 753,
+      "bottom": 3782.5
+    },
+    "busyDisabledWriteButtons": 1,
+    "stickyStillInDom": 1,
+    "screenshot": {
+      "file": "confirmed-bottom-sheet.png",
+      "bytes": 75133,
+      "width": 500,
+      "height": 1082
+    }
+  }
+}

@@ -1,0 +1,5 @@
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')

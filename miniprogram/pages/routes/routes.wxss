@@ -1,0 +1,30 @@
+.route-list {
+  border-top: 1px solid var(--line);
+}
+.route-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.route-index {
+  flex: 0 0 24px;
+  padding-top: 2px;
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+.route-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.route-title {
+  font-size: var(--text-title);
+  line-height: 26px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.route-metrics .metric .metric-label { margin-top: 0; }

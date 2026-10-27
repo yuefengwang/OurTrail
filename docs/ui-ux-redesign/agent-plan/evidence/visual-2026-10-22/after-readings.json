@@ -1,0 +1,22 @@
+{
+  "mode": "after",
+  "wsPort": "9434",
+  "pages": {
+    "home": {
+      "file": "after-home.png",
+      "cards": 2,
+      "searchbar": true,
+      "field": false,
+      "cardRendered": true,
+      "navBg": null
+    },
+    "discover": {
+      "file": "after-discover.png",
+      "cards": 2,
+      "searchbar": true,
+      "field": false,
+      "cardRendered": true,
+      "navBg": null
+    }
+  }
+}

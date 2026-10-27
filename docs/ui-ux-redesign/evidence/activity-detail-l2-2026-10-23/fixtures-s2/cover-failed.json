@@ -1,0 +1,490 @@
+{
+  "loading": false,
+  "denied": "",
+  "isDraft": false,
+  "draftNotice": false,
+  "badgeText": "行前安排就绪",
+  "milestone": "集合 剩 3 天（2026-10-03 07:30）",
+  "howLine": "到点集合：东门集合点 车：1号车 · 01 座",
+  "nextActionLabel": "查看集合与出行安排",
+  "nextActionTarget": "meeting",
+  "startAtLabel": "10/3 08:00",
+  "title": "青城后山 · 雨天备案",
+  "routeTitle": "青城后山穿越",
+  "cover": "/assets/photos/cover-ridge.jpg",
+  "coverFailed": true,
+  "coverIsReal": true,
+  "infoFacts": [
+    {
+      "key": "time",
+      "label": "活动时间",
+      "value": "10/3 08:00",
+      "sub": "至 10/3 18:00 · 截止 10/2 08:00"
+    },
+    {
+      "key": "pickup",
+      "label": "集合",
+      "value": "东门集合点",
+      "sub": "10/3 07:30"
+    },
+    {
+      "key": "people",
+      "label": "人数",
+      "value": "2 / 20",
+      "unit": "人",
+      "sub": "成行 3 人"
+    },
+    {
+      "key": "intensity",
+      "label": "强度",
+      "value": "中等"
+    }
+  ],
+  "routeStats": [
+    {
+      "key": "distance",
+      "label": "路线里程",
+      "value": "12.5",
+      "unit": "km"
+    },
+    {
+      "key": "ascent",
+      "label": "累计爬升",
+      "value": "860",
+      "unit": "m"
+    },
+    {
+      "key": "maxEle",
+      "label": "最高海拔",
+      "value": "900",
+      "unit": "m",
+      "sub": "轨迹高程"
+    },
+    {
+      "key": "duration",
+      "label": "预计用时",
+      "value": "10",
+      "unit": "小时",
+      "sub": ""
+    }
+  ],
+  "routeStatsNote": "",
+  "photoNote": "封面与正文图片由组织者提供。",
+  "confirmed": 2,
+  "capacity": 20,
+  "stateKey": "ready",
+  "stateTitle": "行前安排已就绪",
+  "stateDetail": "检查集合时间、出行方式与装备，出发当天见。",
+  "stateTone": "success",
+  "countersLine": "",
+  "isOwner": false,
+  "canSubmit": false,
+  "canSelfSheet": false,
+  "selfButton": "",
+  "rows": [
+    {
+      "signupId": "s1",
+      "name": "张三",
+      "avatar": "",
+      "statusLabel": "已确认",
+      "tone": "success",
+      "subtitle": "搭乘车辆 · 东门集合点 · 1号车 · 01 座",
+      "isPrimary": true
+    },
+    {
+      "signupId": "s2",
+      "name": "李四",
+      "avatar": "",
+      "statusLabel": "已确认",
+      "tone": "success",
+      "subtitle": "搭乘车辆 · 东门集合点 · 车辆待安排",
+      "isPrimary": false
+    },
+    {
+      "signupId": "s3",
+      "name": "王五",
+      "avatar": "",
+      "statusLabel": "已确认",
+      "tone": "success",
+      "subtitle": "搭乘车辆 · 东门集合点 · 2号车 · 02 座",
+      "isPrimary": false
+    }
+  ],
+  "primaryId": "s1",
+  "description": "当天往返的轻装徒步，适合新手。走完泰安古镇到白云寺的老路，全程林下，夏天也凉快。",
+  "organizerIntro": "老驴带队，十年后山经验。",
+  "contentView": [],
+  "contentImages": [],
+  "hasContentImages": false,
+  "highlights": [],
+  "leader": "",
+  "sceneryRating": 0,
+  "funRating": 0,
+  "ratingOptions": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "feeSummary": "",
+  "feeIncludes": [],
+  "feeExcludes": [],
+  "signupNote": "报名后请把紧急联系人填完整，出发前一天会在群里发集合提醒。",
+  "points": [
+    {
+      "id": "pt-1",
+      "name": "泰安古镇",
+      "kind": "start",
+      "kindLabel": "01 · 起点",
+      "coordinates": {
+        "lat": 30.9,
+        "lng": 103.5
+      },
+      "ele": 700,
+      "scheduleLabel": ""
+    },
+    {
+      "id": "pt-2",
+      "name": "又一村",
+      "kind": "checkpoint",
+      "kindLabel": "02 · 途中节点",
+      "coordinates": {
+        "lat": 30.92,
+        "lng": 103.52
+      },
+      "ele": 900,
+      "scheduleLabel": ""
+    },
+    {
+      "id": "pt-3",
+      "name": "白云寺",
+      "kind": "finish",
+      "kindLabel": "03 · 终点",
+      "coordinates": {
+        "lat": 30.94,
+        "lng": 103.54
+      },
+      "ele": 860,
+      "scheduleLabel": ""
+    }
+  ],
+  "pickups": [
+    {
+      "id": "pk-1",
+      "name": "东门集合点",
+      "address": "青城山快铁站出口",
+      "time": "10/3 07:30",
+      "coordinates": {
+        "lat": 30.88,
+        "lng": 103.56
+      }
+    }
+  ],
+  "scheduleBasis": "",
+  "map": {
+    "visible": true,
+    "markers": [
+      {
+        "id": 0,
+        "latitude": 30.9,
+        "longitude": 103.5,
+        "iconPath": "/assets/markers/start.png",
+        "width": 22,
+        "height": 22,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "label": {
+          "content": "1",
+          "color": "#163E35",
+          "bgColor": "#FFFFFF",
+          "borderRadius": 8,
+          "padding": 3,
+          "fontSize": 10,
+          "anchorX": 11,
+          "anchorY": -20,
+          "textAlign": "center"
+        },
+        "callout": {
+          "content": "起点 · 泰安古镇",
+          "color": "#163E35",
+          "bgColor": "#FFFFFF",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "borderColor": "#DEE3DB",
+          "padding": 7,
+          "fontSize": 12,
+          "display": "BYTAP"
+        }
+      },
+      {
+        "id": 1,
+        "latitude": 30.92,
+        "longitude": 103.52,
+        "iconPath": "/assets/markers/checkpoint.png",
+        "width": 22,
+        "height": 22,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "label": {
+          "content": "2",
+          "color": "#163E35",
+          "bgColor": "#FFFFFF",
+          "borderRadius": 8,
+          "padding": 3,
+          "fontSize": 10,
+          "anchorX": 11,
+          "anchorY": -20,
+          "textAlign": "center"
+        },
+        "callout": {
+          "content": "又一村",
+          "color": "#163E35",
+          "bgColor": "#FFFFFF",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "borderColor": "#DEE3DB",
+          "padding": 7,
+          "fontSize": 12,
+          "display": "BYTAP"
+        }
+      },
+      {
+        "id": 2,
+        "latitude": 30.94,
+        "longitude": 103.54,
+        "iconPath": "/assets/markers/finish.png",
+        "width": 22,
+        "height": 22,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "label": {
+          "content": "3",
+          "color": "#163E35",
+          "bgColor": "#FFFFFF",
+          "borderRadius": 8,
+          "padding": 3,
+          "fontSize": 10,
+          "anchorX": 11,
+          "anchorY": -20,
+          "textAlign": "center"
+        },
+        "callout": {
+          "content": "终点 · 白云寺",
+          "color": "#163E35",
+          "bgColor": "#FFFFFF",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "borderColor": "#DEE3DB",
+          "padding": 7,
+          "fontSize": 12,
+          "display": "BYTAP"
+        }
+      },
+      {
+        "id": 1000,
+        "latitude": 30.88,
+        "longitude": 103.56,
+        "iconPath": "/assets/markers/pickup.png",
+        "width": 22,
+        "height": 22,
+        "anchor": {
+          "x": 0.5,
+          "y": 0.5
+        },
+        "callout": {
+          "content": "上车点 · 东门集合点",
+          "color": "#163E35",
+          "bgColor": "#FFFFFF",
+          "borderRadius": 8,
+          "borderWidth": 1,
+          "borderColor": "#DEE3DB",
+          "padding": 7,
+          "fontSize": 12,
+          "display": "BYTAP"
+        }
+      }
+    ],
+    "polyline": [
+      {
+        "points": [
+          {
+            "latitude": 30.9,
+            "longitude": 103.5
+          },
+          {
+            "latitude": 30.91,
+            "longitude": 103.51
+          },
+          {
+            "latitude": 30.92,
+            "longitude": 103.52
+          },
+          {
+            "latitude": 30.94,
+            "longitude": 103.54
+          }
+        ],
+        "color": "#163E35AA",
+        "width": 4,
+        "arrowLine": true
+      }
+    ],
+    "includePoints": [
+      {
+        "latitude": 30.8752,
+        "longitude": 103.4952
+      },
+      {
+        "latitude": 30.9448,
+        "longitude": 103.5648
+      }
+    ],
+    "latitude": 30.91,
+    "longitude": 103.53,
+    "scale": 13,
+    "selectedId": -1
+  },
+  "risks": [
+    {
+      "id": "rk-1",
+      "title": "垭口风大",
+      "advice": "带防风外套，结伴通行。"
+    }
+  ],
+  "equipment": [
+    "登山杖",
+    "饮用水 2L",
+    "防风外套"
+  ],
+  "equipmentSuggested": [
+    "备用袜",
+    "防晒"
+  ],
+  "difficultyLabel": "中等",
+  "track": [
+    {
+      "lat": 30.9,
+      "lng": 103.5,
+      "ele": 700
+    },
+    {
+      "lat": 30.91,
+      "lng": 103.51,
+      "ele": 780
+    },
+    {
+      "lat": 30.92,
+      "lng": 103.52,
+      "ele": 900
+    },
+    {
+      "lat": 30.94,
+      "lng": 103.54,
+      "ele": 860
+    }
+  ],
+  "secNo": {
+    "intro": "01",
+    "itinerary": "02",
+    "weather": "03",
+    "route": "04",
+    "safety": "05",
+    "equipment": "06",
+    "fee": "07",
+    "signup": "08"
+  },
+  "weatherBrief": {
+    "ready": false,
+    "status": "empty",
+    "text": "出发日不在 14 天预报窗口内，临近再查。",
+    "retry": false,
+    "dayLabel": "",
+    "phraseLabel": "",
+    "tone": "neutral",
+    "hourText": "",
+    "dayText": "",
+    "pointText": "",
+    "staleText": "",
+    "riskText": ""
+  },
+  "weatherLoading": false,
+  "sectionNav": [
+    {
+      "id": "sec-intro",
+      "label": "介绍"
+    },
+    {
+      "id": "sec-itinerary",
+      "label": "行程"
+    },
+    {
+      "id": "sec-weather",
+      "label": "天气"
+    },
+    {
+      "id": "meeting-block",
+      "label": "路线"
+    },
+    {
+      "id": "sec-safety",
+      "label": "安全"
+    },
+    {
+      "id": "sec-equipment",
+      "label": "装备"
+    },
+    {
+      "id": "sec-fee",
+      "label": "费用"
+    },
+    {
+      "id": "sec-signup",
+      "label": "报名后"
+    },
+    {
+      "id": "sec-peers",
+      "label": "同行人"
+    }
+  ],
+  "feeNote": "费用 AA，含车费约 80 元。",
+  "cancellationNote": "出发前 24 小时可免费退出。",
+  "sheetOpen": false,
+  "selRow": null,
+  "selNote": "",
+  "selPointIndex": -1,
+  "selPoints": [],
+  "selKindIndex": 0,
+  "kindOptions": [
+    "其他需要协助",
+    "迟到",
+    "提前退出同行",
+    "伤病"
+  ],
+  "selConsent": false,
+  "selPurpose": "",
+  "selSensitive": null,
+  "selError": "",
+  "selMessage": "",
+  "showPosBox": false,
+  "canCancel": false,
+  "canEdit": false,
+  "canCheckin": false,
+  "canNode": false,
+  "canHome": false,
+  "canIncident": false,
+  "canPosReport": false,
+  "canPosRevoke": false,
+  "busy": false,
+  "busyAt": 0,
+  "startDate": "2026-10-03",
+  "canCancelRow": true,
+  "canEditRow": true,
+  "justPublished": false
+}

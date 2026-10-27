@@ -1,2 +1,162 @@
-/* 活动详情页 */
-.hero .metric-unit { color: #D0D8D7; }
+/* 活动详情页 · 编辑式视觉层（2026-10-16）
+   结构与业务逻辑不动，只做视觉层：hero-cover 全局类已定义在 app.wxss，
+   这里只放页面特有的微调。 */
+/* B-10（合并自 master）：本页 hero 容器是 .hero-cover（原写法写死 #D0D8D7，与app.wxss 的
+   --on-forest-muted 逐字节同值却是两份真值）⇒ 改引用 token，值不变、无视觉变化。 */
+.hero-cover .metric-unit,
+.hero .metric-unit { color: var(--on-forest-muted); }
+/* 主状态 callout：编辑式"当前该做什么"——比其他提示重半格，但不换语义色体系 */
+.callout .callout-title { font-size: 15px; line-height: 22px; }
+
+/* ---------- 首屏纵深（S1 / Slice 2） ----------
+   .act-top 必须是 flex 列而不是 block：纸面板 .sheet-top 的 margin-top:-20px 若发生外边距合并，
+   会把整个首屏（含封面）一起顶进上方提示里；flex 容器不与子项合并外边距。 */
+.act-top {
+  display: flex;
+  flex-direction: column;
+}
+.activity-hero-bleed {
+  margin: 0 -20px;
+}
+/* 首屏纸面板（Slice 2）：盖住封面下沿 20px（负外边距来自全局 .sheet-top），
+   事实格 / 封面说明 / 状态卡同处一块纸面。下沿留白补在这里——全局 .sheet-top 的
+   padding-bottom 是 0，状态卡直接贴到底边会被裁掉半行。 */
+.act-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 20px;
+}
+.act-photo-note {
+  display: block;
+}
+
+/* 同行评分：从事实区搬出的可选观感信息，不占信息卡格子 */
+.act-rating__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.act-rating__item { gap: 4px; }
+
+/* 路线四指标：位于章节标题与地图之间，间距由外层 .stack 统一给 */
+.act-route-stats { margin-top: 0; }
+.act-route-stats-note {
+  display: block;
+}
+
+/* 分区锚点（S5）：吸顶下划线分段条。外观全在全局 .segmented.tabs-line（2026-10-23 登记），
+   本层只管吸顶与底色：内容滚到条下面时不许透出来；top:0 与原生导航栏下沿相接。
+   底栏 .act-sticky 是 fixed，与这条分居上下，互不重叠。
+   z-index 20 低于 fixed 底栏（.sticky-action 50）与弹层（overlay 200），只压正文。 */
+.section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--paper);
+}
+
+/* 活动图文正文（2026-10-21）：段落按空行拆开；图片 1 张通栏、2 张两列、3+ 张三列 */
+.article-p {
+  display: block;
+  margin-top: 12px;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+
+/* 风光图组（T004）：只调间距与圆角，不改布局语义——圆角跟摄影卡同一档
+   （--radius-card），长图文里图片才像「相册」而不是贴图 */
+.article-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.article-cell { width: 100%; }
+
+.article-images.single .article-img {
+  width: 100%;
+  height: auto;
+}
+
+/* 列宽里的减数必须与 .article-images 的 gap 同账：gap 改 12px 后减数不跟着改，
+   两列总宽会超出容器、第二张被 flex-wrap 挤到下一行（T004 真机对拍当场抓到，
+   after 侧章节锚点整体下移 152px = 一行 140px 图 + 12px 间隙）。 */
+.article-images.double .article-cell {
+  width: calc((100% - 12px) / 2);
+  height: 140px;
+}
+
+.article-images.triple .article-cell {
+  width: calc((100% - 24px) / 3);
+  height: 96px;
+}
+
+.article-img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-card);
+  background: var(--stone);
+}
+
+.article-img-failed {
+  width: 100%;
+  height: 100%;
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-card);
+  background: var(--stone);
+  color: var(--muted);
+  font-size: var(--text-caption);
+}
+
+.highlight-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+/* T004 授权顺手修：swx2 存量红（B-16 字重两档，700 只许 app.wxss 的 .page-title） */
+.highlight-dot {
+  color: var(--forest);
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.highlight-text {
+  flex: 1;
+  line-height: 24px;
+}
+
+.star-row {
+  display: flex;
+  gap: 2px;
+}
+
+.star {
+  color: var(--line);
+  font-size: 15px;
+}
+
+.star.on { color: var(--forest); }
+
+.fee-line {
+  line-height: 24px;
+  color: var(--ink);
+}
+
+/* 底栏只占一行：全局 .sticky-action 允许 wrap，长主按钮会把分享挤到第二行。
+   分享固定内容宽，主按钮吃掉剩余空间；窄屏时让主按钮内部换行（min-width:0），
+   而不是整条底栏长高成两行按钮。 */
+.act-sticky { flex-wrap: nowrap; }
+.sticky-action.act-sticky .button { min-width: 0; }
+/* 分享是次级动作：全局 .sticky-action .button { flex:1 }（0,2,0）会把它撑满。
+   原生 <button> 自带 width:184px（类选择器盖得住元素默认值，但 width 不写就一直是 184），
+   390px 屏上实测它吃掉 184、主按钮只剩 154 ⇒「查看集合与出行安排」折成两行、按钮高 70px。
+   3 类选择器同时收 flex 与 width，主按钮才拿得回整行。 */
+.sticky-action .button.act-sticky__share { flex: 0 0 auto; width: auto; }

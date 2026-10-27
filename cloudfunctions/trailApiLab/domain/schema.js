@@ -135,22 +135,48 @@ const RoutePoint = specObj({
   time: specOpt(specInstant),
   ele: specOpt(specNum(-500, 9000)),
 })
-const RouteRisk = specObj({ id: specId, title: specText, advice: specText })
-// 轨迹折线采样点（GCJ-02）：画地图 polyline 用，导入 GPX 时按里程采样到 ≤200 点
-const TrackPoint = specObj({ lat: specNum(-90, 90), lng: specNum(-180, 180) })
+const RouteRisk = specObj({
+  id: specId, title: specText, advice: specText,
+  // V2 路线库（可选）：严重度分级与风险点坐标。旧记录没有这两个键——
+  // specOpt 保证 persistPrivateRoute 的旧快照克隆仍能通过 stateSpec。
+  severity: specOpt(specEnum(['low', 'mid', 'high'])),
+  coordinates: specOpt(specNull(Coordinates)),
+})
+// 轨迹折线采样点（GCJ-02）：画地图 polyline 与连续高程剖面用，导入 GPX 时按里程采样到 ≤200 点。
+// ele 是可选字段：旧轨迹没有它仍然合法；有它才能画「连续高程」，命名节点高程只能画节点剖面。
+const TrackPoint = specObj({
+  lat: specNum(-90, 90), lng: specNum(-180, 180),
+  ele: specOpt(specNum(-500, 9000)),
+})
+// 难度是组织者的判断，不从里程/爬升自动推导；缺省 = 未标注，旧数据不需要迁移。
+const Difficulty = specEnum(['easy', 'moderate', 'hard'])
 const RouteSnapshot = specObj({
   title: specText, distanceKm: specNum(0, Number.MAX_SAFE_INTEGER), ascentM: specCount,
+  difficulty: specOpt(Difficulty),
   points: specArr(RoutePoint), risks: specArr(RouteRisk),
   track: specOpt(specArr(TrackPoint, 2, 200)),
 })
 const Route = specObj({
   id: specId, ownerId: specId, title: specText, distanceKm: specNum(0, Number.MAX_SAFE_INTEGER),
-  ascentM: specCount, points: specArr(RoutePoint), risks: specArr(RouteRisk),
+  ascentM: specCount, difficulty: specOpt(Difficulty),
+  points: specArr(RoutePoint), risks: specArr(RouteRisk),
   track: specOpt(specArr(TrackPoint, 2, 200)),
+  // V2 路线库资产级字段（全部 specOpt）：存量路线是 activity.create 时
+  // persistPrivateRoute 从 RouteSnapshot 深克隆来的，没有这些键也必须是合法 Route。
+  updatedAt: specOpt(specInstant),                                    // 服务端时间戳，客户端不可提交
+  source: specOpt(specEnum(['gpx', 'manual', 'copy'])),               // 来源标记；快照副产品记 'copy'
+  visibility: specOpt(specEnum(['private', 'shared'])),               // 缺省按 'private' 读
+  sharedWith: specOpt(specArr(specId)),                               // 被授权协作者的 userId（身份码）
 })
 const PickupPoint = specObj({
   id: specId, name: specText, meetingAt: specNull(specInstant),
   address: specText, coordinates: specNull(Coordinates),
+})
+// 活动图文正文块（2026-10-21）：段落与图片组交替。text 可含空行，渲染层拆段；
+// images 的 fileIds 必须在 activity-media/ 云存储路径下（validateInput 校验）。
+const ContentBlock = specUnion('type', {
+  text: specObj({ type: specEnum(['text']), text: specText }),
+  images: specObj({ type: specEnum(['images']), fileIds: specArr(specStr(1000), 1, 9) }),
 })
 const Phase = specEnum(['draft', 'published', 'gathering', 'active', 'closing', 'archived', 'cancelled'])
 const ApprovalMode = specEnum(['manual', 'automatic'])
@@ -160,8 +186,24 @@ const Activity = specObj({
   phase: Phase, acceptingSignups: specBool, capacity: specNum(1, 500, true),
   approvalMode: ApprovalMode, routeId: specNull(specId), routeSnapshot: RouteSnapshot,
   pickupPoints: specArr(PickupPoint), equipment: specArr(specText),
+  // 「建议携带」是可选清单；equipment 继续表示「必带」，旧数据没有本键按空数组读。
+  equipmentSuggested: specOpt(specArr(specText)),
   feeNote: specText, cancellationNote: specText,
+  // 公众号式图文（2026-10-21）：全部可选，旧数据不迁移。
+  content: specOpt(specArr(ContentBlock, 0, 30)),
+  coverFileId: specOpt(specStr(1000)),
+  highlights: specOpt(specArr(specStr(200), 0, 8)),
+  leader: specOpt(specStr(100)),
+  minParticipants: specOpt(specNum(1, 500, true)),
+  sceneryRating: specOpt(specNum(1, 5, true)),
+  funRating: specOpt(specNum(1, 5, true)),
+  feeSummary: specOpt(specStr(200)),
+  feeIncludes: specOpt(specArr(specStr(200), 0, 12)),
+  feeExcludes: specOpt(specArr(specStr(200), 0, 12)),
+  signupNote: specOpt(specText),
   publishedAt: specOpt(specInstant),
+  // 可见范围（D-07 ④B）：缺省 discover 保持既有行为；link 不进发现页，凭 id/分享链接仍可打开。
+  visibility: specOpt(specEnum(['discover', 'link'])),
 })
 
 const Trip = specUnion('mode', {
@@ -265,9 +307,28 @@ const Delivery = specObj({
   id: specId, channel: DeliveryChannel, status: DeliveryStatus,
   at: specInstant, by: specId, detail: specText,
 })
+// D-03：通知类型是封闭词表，写入端赋值、读取端只搬运。
+// specOpt 保住历史通知（没有该键）仍然合法；那种通知投影为 'unknown'——
+// 类型丢了就说丢了，不许按文案反猜（D-03 选项 B 被否的原因就是这个）。
+const NoticeKind = specEnum(['manual', 'publish', 'itinerary', 'review', 'join', 'cancel', 'unknown'])
 const Notice = specObj({
   id: specId, activityId: specId, audience: Audience, sourceEventId: specNull(specId),
+  kind: specOpt(NoticeKind),
   content: specText, publishedAt: specInstant, readBy: specRec(specInstant), deliveries: specArr(Delivery),
+})
+// 协作任务：V1 是活动内 checklist，不是跨活动工作流。
+// assigneeName 只作展示；不引入跨账号指派授权，避免第二套权限模型。
+const TaskStatus = specEnum(['todo', 'doing', 'done'])
+const TaskCategory = specEnum(['gear', 'food', 'logistics', 'other'])
+const Task = specObj({
+  id: specId, activityId: specId,
+  title: specText, note: specText, category: TaskCategory, assigneeName: specText,
+  status: TaskStatus, dueAt: specNull(specInstant),
+  created: Evidence, updated: Evidence,
+})
+const TaskInput = specObj({
+  title: specText, note: specText, category: TaskCategory, assigneeName: specText,
+  dueAt: specOpt(specNull(specInstant)),
 })
 const Receipt = specObj({
   actorId: specId, requestId: specId, fingerprint: specStr(128),
@@ -282,7 +343,7 @@ const State = specObj({
   assignments: specArr(Assignment), memberships: specArr(Membership),
   attendance: specArr(Attendance), positions: specArr(PositionReport),
   incidents: specArr(Incident), events: specArr(ActivityEvent),
-  notices: specArr(Notice), receipts: specArr(Receipt),
+  notices: specArr(Notice), tasks: specArr(Task), receipts: specArr(Receipt),
 })
 const stateSpec = State
 
@@ -301,6 +362,16 @@ const VehicleInput = specObj((function () {
   delete keys.id
   delete keys.activityId
   delete keys.legs
+  return keys
+})())
+// V2 路线库：路线资产的提交面。id/ownerId 由服务端给；updatedAt 是服务端时间戳
+// （不接受客户端值，否则「最近保存」会被客户端伪造）；source/visibility/sharedWith
+// 由客户端可选提交，缺省值在 routes.js 处理器里补。
+const RouteInput = specObj((function () {
+  const keys = Object.assign({}, Route.keys)
+  delete keys.id
+  delete keys.ownerId
+  delete keys.updatedAt
   return keys
 })())
 const ParticipantInput = specObj({
@@ -357,7 +428,17 @@ const Payload = specUnion('type', {
   'notice.publish': specObj({ type: specEnum(['notice.publish']), activityId: specId, audience: Audience, content: specText }),
   'notice.read': specObj({ type: specEnum(['notice.read']), activityId: specId, noticeId: specId }),
   'notice.delivery': specObj({ type: specEnum(['notice.delivery']), activityId: specId, noticeId: specId, channel: DeliveryChannel, status: DeliveryStatus, detail: specText }),
+  'task.create': specObj({ type: specEnum(['task.create']), activityId: specId, input: TaskInput }),
+  'task.update': specObj({ type: specEnum(['task.update']), activityId: specId, taskId: specId, input: TaskInput }),
+  'task.status': specObj({ type: specEnum(['task.status']), activityId: specId, taskId: specId, status: TaskStatus }),
+  'task.remove': specObj({ type: specEnum(['task.remove']), activityId: specId, taskId: specId }),
   'export.record': specObj({ type: specEnum(['export.record']), activityId: specId, signupIds: specArr(specId, 1), mode: specEnum(['ordinary', 'sensitive']), purpose: specText }),
+  // V2 路线库：路线不再只是活动的副产品，而是可独立创建/编辑/删除的资产。
+  // 与活动命令的边界：route.* 不挂 activityId、不产事件（事件必须以活动为归属，
+  // invariants.js 的 event.activityId 引用完整性钉死了这一点）。
+  'route.create': specObj({ type: specEnum(['route.create']), input: RouteInput }),
+  'route.update': specObj({ type: specEnum(['route.update']), routeId: specId, input: RouteInput }),
+  'route.delete': specObj({ type: specEnum(['route.delete']), routeId: specId }),
   'profile.save': specObj({ type: specEnum(['profile.save']), person: Person }),
   'companion.save': specObj({ type: specEnum(['companion.save']), companionId: specNull(specId), person: Person }),
   'companion.remove': specObj({ type: specEnum(['companion.remove']), companionId: specId }),
@@ -371,10 +452,10 @@ module.exports = {
   validate, specObj, specArr, specEnum, specUnion, specNull, specRec, specOpt, specLit,
   specStr, specNum, specId, specText, specCount, specInstant, specBool,
   Coordinates, Contact, Person, PersonRef, Companion, Profile,
-  RoutePoint, RouteRisk, RouteSnapshot, Route, PickupPoint, Activity,
+  RoutePoint, RouteRisk, TrackPoint, Difficulty, RouteSnapshot, Route, PickupPoint, Activity,
   Trip, Consent, SignupGroup, Signup, Driver, Evidence, Vehicle,
   Assignment, Membership, Departure, CheckIn, ReturnPlan, NodeVisit, Attendance,
-  PositionReport, Incident, ActivityEvent, Audience, Notice, Receipt,
-  stateSpec, ActivityInput, VehicleInput, ParticipantInput, AssignmentPreview,
+  PositionReport, Incident, ActivityEvent, Audience, Notice, Task, TaskInput, TaskStatus, TaskCategory, Receipt,
+  stateSpec, ActivityInput, VehicleInput, ParticipantInput, AssignmentPreview, RouteInput,
   Payload, Command,
 }

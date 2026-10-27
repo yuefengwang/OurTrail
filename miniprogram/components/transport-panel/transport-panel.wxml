@@ -6,10 +6,6 @@
   <view wx:else class="stack">
     <view class="card-header">
       <text class="section-title">先看容量，再安排同行</text>
-      <view wx:if="{{!lockHint}}" class="button text" hover-class="button-hover" data-id="" bindtap="onEditorOpen">
-        <icon name="plus" size="18" color="#163E35" />
-        <text>添加车辆</text>
-      </view>
     </view>
     <view class="metrics">
       <view class="metric"><text class="metric-value">{{metrics.vehicles}}</text><text class="metric-label">辆车</text></view>
@@ -33,6 +29,22 @@
 
     <status-panel wx:if="{{!vehicles.length && metrics.vehicleTravel}}" kind="empty" title="还没有车辆安排" detail="先添加车辆、司机和覆盖的上车点，再预览分车。仍有 {{metrics.vehicleTravel}} 人需要乘车。" />
     <status-panel wx:elif="{{!vehicles.length}}" kind="empty" title="这一场不需要排车" detail="全部 {{metrics.selfTravel}} 位已确认参与者都选择自行前往集合点，没有人需要车辆。这里不需要任何操作，活动可以直接进入集合与签到。" />
+
+    <!-- 待安排名单（A-04）：顶部那个数字在这里逐个给出名字，判据只有一个——投影的 needsSeatAssignment。
+         需乘车人数为 0 且没人可列时整块不出现，避免「这一场不需要排车」的空态下面挂一张空名单；
+         条件带上 pendingList.length，是为了万一部署中的投影还没有 vehicleTravel 这一位时，
+         名单不至于被静默藏掉（那是把"读不到"演成"没有"）。 -->
+    <view wx:if="{{pendingList.length || metrics.vehicleTravel}}" class="stack" style="gap:0;">
+      <text class="section-title">待安排名单 {{pendingList.length}} 人</text>
+      <view wx:for="{{pendingList}}" wx:key="signupId" class="list-row">
+        <view class="list-main">
+          <text>{{item.name}}</text>
+          <text class="list-sub">上车点 {{item.pickup}}{{item.groupNote}}</text>
+        </view>
+      </view>
+      <text wx:if="{{!pendingList.length}}" class="small muted">需要乘车的人已全部安排到车辆，这里没有待办。</text>
+      <text wx:elif="{{!lockHint}}" class="small muted">以上是还没有车辆安排的人。到下面某辆车点「安排乘客至此车」，或直接点一个空座位把人放进去。</text>
+    </view>
 
     <view wx:for="{{vehicles}}" wx:for-item="vh" wx:key="id" class="card stack-gap3">
       <view class="card-header">
@@ -80,9 +92,18 @@
       </view>
 
       <view wx:if="{{!lockHint}}" class="form-actions">
-        <view class="button text" hover-class="button-hover" data-id="{{vh.id}}" bindtap="onEditorOpen">编辑车辆与司机</view>
+        <view class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" data-id="{{vh.id}}" bindtap="{{busy ? '' : 'onEditorOpen'}}">编辑车辆与司机</view>
         <view class="button text" hover-class="button-hover" data-id="{{vh.id}}" bindtap="onRemoveAsk">删除车辆</view>
       </view>
+    </view>
+
+    <!-- 添加车辆是这一屏的收口动作（板上它在车辆列表下方的整宽按钮）。
+         无车时它是唯一可用的推进动作——上方「预览自动分车」此时是灰的——所以用实心主按钮；
+         有车后主位属于预览，它降为软底整宽，仍留在列表末尾而不是挤进标题行。
+         icon 取不到 var()：#163E35 = --forest、#FFFFFF = --white，均为既有 token 同值。 -->
+    <view wx:if="{{!lockHint}}" class="button block {{vehicles.length ? 'secondary' : 'primary'}} {{busy ? 'disabled' : ''}}" hover-class="button-hover" data-id="" bindtap="{{busy ? '' : 'onEditorOpen'}}">
+      <icon name="plus" size="18" color="{{vehicles.length ? '#163E35' : '#FFFFFF'}}" />
+      <text>添加车辆</text>
     </view>
 
     <view wx:if="{{groups.length}}" class="stack" style="gap:0;">
@@ -118,7 +139,18 @@
 <overlay open="{{assignOpen}}" kind="sheet" title="手动调整人员安排" bind:close="onAssignClose">
   <view class="stack">
     <text>{{assignSeat ? assignSeat + '座' : '不编座号'}}</text>
-    <form-field label="选择参与人">
+    <!-- 候选分两档（A-04）：先给「还没有车辆安排的人」，再把含已分车者的全集单独标出后果。
+         旧实现只有一个全集滚轮，组织者要在几十个名字里自己认出谁还没车，选错还会把人从原车挪走。
+         滚轮本身不带搜索（需要新控件，已交裁决），所以这里靠分区把「混入」的那一半先解决掉。 -->
+    <form-field wx:if="{{pendingOptions.length}}" label="待安排人员（{{pendingOptions.length}} 人还没有车辆）">
+      <picker range="{{pendingOptions}}" range-key="label" value="{{pendingIndex}}" bindchange="onPendingPick">
+        <view class="picker {{pendingIndex < 0 ? 'placeholder' : ''}}">
+          <text class="picker-value">{{pendingIndex < 0 ? '请选择一位还没有车辆的人' : pendingOptions[pendingIndex].label}}</text>
+          <text class="picker-arrow">▾</text>
+        </view>
+      </picker>
+    </form-field>
+    <form-field label="全部需乘车人员（选中已分车者会将其移出原车）">
       <picker range="{{confirmedOptions}}" range-key="label" value="{{assignIndex}}" bindchange="onAssignPick">
         <view class="picker {{assignIndex < 0 ? 'placeholder' : ''}}">
           <text class="picker-value">{{assignIndex < 0 ? '请选择已确认人员' : confirmedOptions[assignIndex].label}}</text>
@@ -128,7 +160,7 @@
     </form-field>
     <text class="small muted">同车组与上车点仍受检查；不会因为手动安排跳过约束。</text>
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
-    <view class="button primary block {{busy || assignIndex < 0 ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || assignIndex < 0 ? '' : 'onAssignSet'}}">确认安排至此座位 / 车辆</view>
+    <view class="button primary block {{busy || (assignIndex < 0 && pendingIndex < 0) ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || (assignIndex < 0 && pendingIndex < 0) ? '' : 'onAssignSet'}}">确认安排至此座位 / 车辆</view>
     <block wx:if="{{hasCurrent}}">
       <view class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onAssignRemove'}}">移除此人原有安排</view>
       <form-field label="与另一位已分车人员交换">

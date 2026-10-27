@@ -1,0 +1,37 @@
+{
+  "startedAt": "2026-10-21T03:35:12.072Z",
+  "step": 2,
+  "stepTapFallback": false,
+  "formContentBlocks": 3,
+  "ce": {
+    "bodyText": "第一段：这是从云端读回的正文。\n\n第二段：同一段文字里用空行分段。\n\n第三段：图片后面的正文，顺序应与保存时一致。",
+    "paragraphCount": 3,
+    "groups": [
+      {
+        "id": "ce-2-mvhk7ak9",
+        "fileIds": [
+          "/assets/photos/cover-ridge.jpg",
+          "/assets/photos/cover-valley.jpg"
+        ],
+        "anchor": 2
+      }
+    ],
+    "effectiveCover": "/assets/photos/cover-valley.jpg",
+    "imageCount": 2
+  },
+  "publishSheet": {
+    "open": true,
+    "summary": "2026-10-23 11:35 · 集合点 · 上限 24 人",
+    "deferred": [
+      "路线名称",
+      "至少 1 个路线节点",
+      "至少 1 条风险提示"
+    ],
+    "shot": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\05-publish-sheet.png"
+  },
+  "shots": {
+    "top": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\06-editor-restored-content.png",
+    "group": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\07-editor-image-group.png",
+    "sheet": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\05-publish-sheet.png"
+  }
+}

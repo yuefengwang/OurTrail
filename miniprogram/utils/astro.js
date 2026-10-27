@@ -1,4 +1,4 @@
-// 天文计算：太阳位置与日出日落/三重暮光/黄金蓝调时刻 + 月相、银心季节与方位、观星条件。
+// 天文计算：太阳位置与日出日落/三重暮光/黄金蓝调时刻 + 月相、月球高度/升落、银心高度与方位。
 // 纯函数、无 wx 依赖，可在 node 下测试（tools/astro-test.js）。
 // 太阳位置算法：NOAA Solar Calculator（低精度式），日出日落误差约 ±2 分钟，
 // 精度只用于"有没有可能"的概率判断，不做航海/天文级用途。
@@ -176,6 +176,150 @@ function solarPosition(dateMs, lat, lng) {
   return { altitude: Math.round((90 - zenith) * 100) / 100, azimuth: Math.round(azimuth * 100) / 100 }
 }
 
+/* ---------- 月球与银心位置（纯几何，供星空/银河判定用） ----------
+ * 这里只回答“这个时刻它在地平线上多高、朝哪边”，不做星历级精度：
+ * 月球用 Schlyter 简化式 + 主要摄动项（误差约 0.2–0.5°，对“在不在天上/离银心多远”足够）；
+ * 银心用 J2000 固定赤经赤纬 + 地方恒星时。两个函数都不依赖 wx，可在 node 下测。
+ * 注意：月球位置是地心坐标，未做地平视差修正（最大约 1°，对应升落约 2 分钟）。
+ */
+
+const GALACTIC_CENTER = { ra: 266.41683, dec: -29.00781 } // J2000，银心 Sgr A*
+
+function julianDay(dateMs) {
+  return dateMs / 86400000 + 2440587.5
+}
+
+// 格林尼治平恒星时（度）。Meeus 简化式，精度足够做“地平线上/下”判断。
+function gmstDeg(dateMs) {
+  const jd = julianDay(dateMs)
+  const T = (jd - 2451545.0) / 36525
+  const gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0)
+    + 0.000387933 * T * T - T * T * T / 38710000
+  return norm360(gmst)
+}
+
+function localSiderealDeg(dateMs, lng) {
+  return norm360(gmstDeg(dateMs) + lng)
+}
+
+/**
+ * 赤道坐标 → 地平坐标。方位角自北顺时针，高度角为几何高度（未含蒙气差）。
+ * 与 solarPosition 同一套方位约定：H 为正表示天体在子午线以西。
+ */
+function equatorialToHorizontal(raDeg, decDeg, lat, lng, dateMs) {
+  const H = norm360(localSiderealDeg(dateMs, lng) - raDeg) * RAD
+  const dec = decDeg * RAD
+  const latRad = lat * RAD
+  const sinAlt = Math.sin(dec) * Math.sin(latRad)
+    + Math.cos(dec) * Math.cos(latRad) * Math.cos(H)
+  const altitude = Math.asin(clamp(sinAlt, -1, 1)) * DEG
+  const az = Math.atan2(
+    Math.sin(H),
+    Math.cos(H) * Math.sin(latRad) - Math.tan(dec) * Math.cos(latRad)
+  )
+  return {
+    altitude: Math.round(altitude * 100) / 100,
+    azimuth: Math.round(norm360(az * DEG + 180) * 100) / 100,
+  }
+}
+
+/**
+ * 月球地心位置 → 地平坐标。Schlyter 简化式 + 主要摄动项。
+ * 误差约 0.2–0.5°，用于“月亮是否在地平线上、离银心多远”，不做定位/摄影级用途。
+ */
+function moonPosition(dateMs, lat, lng) {
+  // Schlyter 的 d：自 2000-01-01 00:00 UT（JD 2451543.5）起的天数
+  const d = julianDay(dateMs) - 2451543.5
+  const N = norm360(125.1228 - 0.0529538083 * d) // 升交点黄经
+  const i = 5.1454 // 轨道倾角
+  const w = norm360(318.0634 + 0.1643573223 * d) // 近地点角距
+  const a = 60.2666 // 地球半径
+  const e = 0.0549
+  const M = norm360(115.3654 + 13.0649929509 * d) // 平近点角
+
+  // 解开普勒方程
+  let E = M * RAD
+  for (let k = 0; k < 10; k++) {
+    E = E - (E - e * Math.sin(E) - M * RAD) / (1 - e * Math.cos(E))
+  }
+  const xv = a * (Math.cos(E) - e)
+  const yv = a * Math.sqrt(1 - e * e) * Math.sin(E)
+  const v = Math.atan2(yv, xv)
+  const r = Math.sqrt(xv * xv + yv * yv)
+  const vw = v + w * RAD
+  const Nr = N * RAD
+  const ir = i * RAD
+
+  // 未摄动的黄道直角坐标
+  const xe = r * (Math.cos(Nr) * Math.cos(vw) - Math.sin(Nr) * Math.sin(vw) * Math.cos(ir))
+  const ye = r * (Math.sin(Nr) * Math.cos(vw) + Math.cos(Nr) * Math.sin(vw) * Math.cos(ir))
+  const ze = r * Math.sin(vw) * Math.sin(ir)
+  let lon = Math.atan2(ye, xe)
+  let latEcl = Math.atan2(ze, Math.sqrt(xe * xe + ye * ye))
+
+  // 主要摄动项（Schlyter §Moon）：把月亮从“理想二体”拉回真实轨道
+  const Ms = norm360(356.0470 + 0.9856002585 * d) // 太阳平近点角
+  const ws = norm360(282.9404 + 4.70935e-5 * d) // 太阳近地点黄经
+  const Ls = norm360(Ms + ws) // 太阳平黄经
+  const Lm = norm360(N + w + M) // 月亮平黄经
+  const D = norm360(Lm - Ls) // 平距角
+  const F = norm360(Lm - N) // 升交点角距
+  const sin = x => Math.sin(x * RAD)
+  const cos = x => Math.cos(x * RAD)
+  lon += (-1.274 * sin(M - 2 * D) + 0.658 * sin(2 * D) - 0.186 * sin(Ms)
+    - 0.059 * sin(2 * M - 2 * D) - 0.057 * sin(M - 2 * D + Ms)
+    + 0.053 * sin(M + 2 * D) + 0.046 * sin(2 * D - Ms)
+    + 0.041 * sin(M - Ms) - 0.035 * sin(D) - 0.031 * sin(M + Ms)
+    - 0.015 * sin(2 * F - 2 * D) + 0.011 * sin(M - 4 * D)) * RAD
+  latEcl += (-0.173 * sin(F - 2 * D) - 0.055 * sin(M - F - 2 * D)
+    - 0.046 * sin(M + F - 2 * D) + 0.033 * sin(F + 2 * D)
+    + 0.017 * sin(2 * M + F)) * RAD
+
+  // 黄道 → 赤道
+  const ob = (23.4393 - 3.563e-7 * d) * RAD
+  const xeq = Math.cos(latEcl) * Math.cos(lon)
+  const yeq = Math.cos(latEcl) * Math.sin(lon) * Math.cos(ob) - Math.sin(latEcl) * Math.sin(ob)
+  const zeq = Math.cos(latEcl) * Math.sin(lon) * Math.sin(ob) + Math.sin(latEcl) * Math.cos(ob)
+  const ra = norm360(Math.atan2(yeq, xeq) * DEG)
+  const dec = Math.atan2(zeq, Math.sqrt(xeq * xeq + yeq * yeq)) * DEG
+  return equatorialToHorizontal(ra, dec, lat, lng, dateMs)
+}
+
+/**
+ * 某日北京时间的月出/月落。按 10 分钟采样找地平线穿越，误差约几分钟；
+ * 极区或当天不升不落时 alwaysUp/alwaysDown 为 true。
+ */
+function moonTimes(dateStr, lat, lng, elevM) {
+  const h0 = SUN_HORIZON - horizonDip(elevM)
+  const start = cnToMs(dateStr, '00:00')
+  const events = []
+  let prev = null
+  for (let m = 0; m <= 1440; m += 10) {
+    const p = moonPosition(start + m * 60000, lat, lng)
+    const above = p.altitude > h0
+    if (prev && above !== prev.above) {
+      const frac = (h0 - prev.alt) / (p.altitude - prev.alt)
+      events.push({ type: above ? 'rise' : 'set', min: prev.m + frac * (m - prev.m) })
+    }
+    prev = { m, alt: p.altitude, above }
+  }
+  const at = type => {
+    const e = events.find(x => x.type === type)
+    return e ? hhmm(e.min) : null
+  }
+  return {
+    rise: at('rise'),
+    set: at('set'),
+    alwaysUp: events.length === 0 && !!prev && prev.above,
+    alwaysDown: events.length === 0 && !!prev && !prev.above,
+  }
+}
+
+// 银心（Sgr A*）在该时刻的地平坐标；核心是否可见用它判，不再用月份经验表。
+function galaxyPosition(dateMs, lat, lng) {
+  return equatorialToHorizontal(GALACTIC_CENTER.ra, GALACTIC_CENTER.dec, lat, lng, dateMs)
+}
+
 // 把北京时间的 'YYYY-MM-DD' + 'HH:mm' 折成 UTC 毫秒（固定 +08:00）
 function cnToMs(dateStr, hhmmStr) {
   const t = (hhmmStr || '00:00').slice(0, 5)
@@ -209,75 +353,12 @@ function moonInfo(dateIso) {
   return { age: Math.round(age * 10) / 10, illumination, name }
 }
 
-// 银河核心季节（北纬 25–35°）：约 3–10 月夜间可见银心方向
-function galaxySeason(dateIso) {
-  const m = Number(dateIso.slice(5, 7))
-  return m >= 3 && m <= 10
-}
-
-// 银心（银河核心）方位：北纬 25–40° 的经验曲线——入夜东南、午夜前后正南偏西、后半夜西南。
-// 表以"20:00 起的钟点数"为横轴（单调递增，天然跨零点），按北京时间的钟点线性插值。
-// 只用于"该往哪个方向找"的粗判，不是天文级星历。
-const GALAXY_BEARING_TABLE = [
-  [20.5, 105], [22, 128], [23.5, 150], [25, 172], [26.5, 196], [28, 218], [29.5, 238],
-]
-
-/**
- * 银心方位角（度）。hour 为北京时间钟点小数（0–24）。非银心季返回 null。
- */
-function galaxyBearing(dateIso, hour) {
-  if (!galaxySeason(dateIso) || !Number.isFinite(hour)) return null
-  const t = hour < 20 ? hour + 24 : hour // 20:00 之后的钟点视为"次日凌晨"，统一到同一坐标系
-  const tb = GALAXY_BEARING_TABLE
-  if (t <= tb[0][0]) return tb[0][1]
-  if (t >= tb[tb.length - 1][0]) return tb[tb.length - 1][1]
-  for (let i = 0; i < tb.length - 1; i++) {
-    if (t >= tb[i][0] && t <= tb[i + 1][0]) {
-      const r = (t - tb[i][0]) / (tb[i + 1][0] - tb[i][0])
-      return Math.round(tb[i][1] + (tb[i + 1][1] - tb[i][1]) * r)
-    }
-  }
-  return null
-}
-
-/**
- * 星空/银河结论。nightHours: 该日天文暗夜时段的小时 { t, cloud:{low,mid,high}, precip }，
- * moon: moonInfo 结果。返回 { star:{tone,text}, galaxy:{tone,text} }，概率语言。
- */
-function starSight(nightHours, moon, galaxy) {
-  const n = nightHours.length
-  if (!n) return { star: { tone: '', text: '夜间数据不足' }, galaxy: { tone: '', text: '夜间数据不足' } }
-  const clearRate = Math.round(nightHours.filter(h => (h.cloud.high + h.cloud.mid) / 2 < 30 && !h.precip).length / n * 100)
-  const brightMoon = moon.illumination >= 60
-  const star = { tone: '', text: '' }
-  if (clearRate >= 70 && !brightMoon) {
-    star.tone = 'success'
-    star.text = '夜间晴朗且月照仅 ' + moon.illumination + '%（' + moon.name + '），星空条件好'
-  } else if (clearRate >= 70) {
-    star.text = '夜间晴朗，但月照 ' + moon.illumination + '% 较亮，亮星可见、银河困难'
-  } else if (clearRate >= 40) {
-    star.tone = 'warning'
-    star.text = '夜间有云（晴 ' + clearRate + '%），观星看运气'
-  } else {
-    star.tone = 'warning'
-    star.text = '夜间云量高，观星条件差'
-  }
-  const galaxyOut = { tone: '', text: '' }
-  if (!galaxy) {
-    galaxyOut.text = '不在银心季节（约 3–10 月），仅亮星可见'
-  } else if (clearRate >= 70 && moon.illumination < 35) {
-    galaxyOut.tone = 'success'
-    galaxyOut.text = '银心季 + 月照低 + 夜间晴，凌晨朝东南方向银河概率较大'
-  } else if (clearRate >= 70) {
-    galaxyOut.text = '银心季但月照偏亮，银河大概率被月光盖住'
-  } else {
-    galaxyOut.text = '夜间云量偏高，银河不建议抱期望'
-  }
-  return { star, galaxy: galaxyOut }
-}
-
 module.exports = {
   solarTerms, solarPosition, sunTimes, photoWindows, altitudeCrossings, horizonDip, dayOfYear,
-  cnToMs, hhmm, norm1440, norm360, bearingLabel, galaxyBearing,
-  moonInfo, galaxySeason, starSight,
+  /* 几何地平线 + 蒙气差的视高度（-0.833°）：日出日落与彩虹「太阳照得出来」的判定共用这一个数。
+     新代码引用它，不再新写 -0.833 字面量。 */
+  SUN_HORIZON,
+  cnToMs, hhmm, norm1440, norm360, bearingLabel,
+  moonInfo,
+  equatorialToHorizontal, moonPosition, moonTimes, galaxyPosition,
 }

@@ -13,6 +13,7 @@ V1（信息架构与组件规格）+ V2（Meteoblue 集成调查与最终决策�
 
 | 文档 | 内容 |
 |---|---|
+| [interactive-prototype-20261027/README.md](interactive-prototype-20261027/README.md) | **2026-10-27 天气交互原型**：三种查询入口、专业云层剖面、沿途天气、独立个人行程及保存流程；浏览器直接打开同目录 `index.html`，全部为演示数据 |
 | [decision.md](decision.md) | **决策矩阵 + 最终推荐 + 十问十答 + 问题台账**（从这里开始读） |
 | [meteoblue-integration-v2.md](meteoblue-integration-v2.md) | Image API/Forecast API/Widget 严肃调查（官方 OpenAPI 规格实证、credits 算账、无中文发现） |
 | [meteoblue-visual-integration.md](meteoblue-visual-integration.md) | Meteoblue 截图专业性拆解（§2 七问）+ Option A/B/C 三方案 + 移动端 Meteogram UX |

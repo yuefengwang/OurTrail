@@ -11,11 +11,22 @@
         <text>协作授权</text>
       </view>
     </view>
-    <text class="small muted">{{countersLine}}</text>
+    <!-- 汇总先给这一屏要处理的三类人：批量动作的对象就是它们，数字必须与筛选器同一出处。
+         候补单列一格（板上只有两格）：它是第三类可批量操作对象，删掉就只能靠逐条筛选去数。 -->
+    <view class="metrics">
+      <view class="metric"><text class="metric-value">{{counters.confirmed}}</text><text class="metric-label">已确认</text></view>
+      <view class="metric"><text class="metric-value">{{counters.pending}}</text><text class="metric-label">待审核</text></view>
+      <view class="metric"><text class="metric-value">{{counters.waitlisted}}</text><text class="metric-label">候补</text></view>
+    </view>
+    <text class="small muted">仅显示你有权查看的人员。</text>
 
-    <!-- 搜索 + 状态筛选一行放下，少占两行标签 -->
+    <!-- 搜索 + 状态筛选一行放下：搜索是 pill（44 高），筛选按内容收窄 -->
     <view class="roster-filter">
-      <input class="input" placeholder="搜索姓名、上车点或车辆" value="{{search}}" bindinput="onSearch" />
+      <view class="searchbar">
+        <!-- icon 的 color 拿不到 var()：#5F6E66 与 --muted 逐字节同值（既有 token，不是新色） -->
+        <icon name="search" size="16" color="#5F6E66" />
+        <input class="searchbar__input" placeholder="搜索姓名、上车点或车辆" value="{{search}}" bindinput="onSearch" />
+      </view>
       <picker range="{{statusOptions}}" range-key="label" value="{{statusIndex}}" bindchange="onStatus">
         <view class="picker">
           <text class="picker-value">{{statusOptions[statusIndex].label}}</text>
@@ -80,7 +91,8 @@
           <text>{{item.names}}</text>
           <text class="list-sub">{{item.keepTogether ? '整组同车，不允许自动拆分' : '允许分开安排'}}</text>
         </view>
-        <view class="button text" hover-class="button-hover" data-id="{{item.id}}" data-keep="{{item.keepTogether}}" bindtap="onToggleGroup">
+        <!-- 同行组约束是写命令：与批量/导出/撤销/授权四个写点同一套在途姿态（busy 由 JS 侧守卫兜底）。 -->
+        <view class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" data-id="{{item.id}}" data-keep="{{item.keepTogether}}" bindtap="{{busy ? '' : 'onToggleGroup'}}">
           {{item.keepTogether ? '允许分车' : '保持同车'}}
         </view>
       </view>
@@ -110,6 +122,7 @@
       <input class="input" value="{{purpose}}" bindinput="onPurpose" placeholder="例如：核实伤病后的紧急联络" />
     </form-field>
     <view class="button secondary block {{purpose ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{purpose ? 'onSensitive' : ''}}">查看紧急联络与健康备注</view>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
     <view wx:if="{{sensitive}}" class="callout">
       <text>紧急联系人：{{sensitive.emergency.name}}</text>
       <text style="display:block;">紧急电话：{{sensitive.emergency.phone}}</text>
@@ -136,7 +149,7 @@
     </form-field>
     <text class="small muted">先记录审计，再按当前权限生成名单（复制到剪贴板）。请妥善保存，不向无关人员转发。</text>
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
-    <view class="button primary block {{busy && exportPurpose ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{busy || !exportPurpose ? '' : 'onExportConfirm'}}">确认用途并复制名单</view>
+    <view class="button primary block {{busy || !exportPurpose ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || !exportPurpose ? '' : 'onExportConfirm'}}">确认用途并复制名单</view>
   </view>
 </overlay>
 
@@ -152,7 +165,7 @@
       </view>
       <view class="cluster">
         <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEditMembership">调整</view>
-        <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRevokeMembership">撤销</view>
+        <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="onRevokeAsk">撤销</view>
       </view>
     </view>
 
@@ -200,7 +213,21 @@
     </block>
     <block wx:else>
       <form-field label="负责车辆">
-        <picker range="{{vehicles}}" value="{{vehicleIndex}}" bindchange="onVehiclePick">
+        <!-- 候选来自那条唯一的 readTransport：装配点在它落地的那一刻，未落地时不给结论（C-20）。
+             一条 if/elif/else 链说三种情况：还在读 / 这次没读到 / 确实没有车辆——读取失败绝不写成空态。 -->
+        <view wx:if="{{vehicleLoading}}" class="stack">
+          <view class="picker placeholder"><text class="picker-value">正在读取车辆列表…</text></view>
+        </view>
+        <view wx:elif="{{vehicleFailed}}" class="stack">
+          <view class="picker placeholder"><text class="picker-value">车辆列表这次没有读到</text></view>
+          <text class="small muted">这不等于「这场活动没有车辆」——那次读取失败了，车辆可能已经在分车区里。</text>
+          <view class="button text" hover-class="button-hover" bindtap="onRetryVehicles">重新读取车辆列表</view>
+        </view>
+        <view wx:elif="{{vehicleEmpty}}" class="stack">
+          <view class="picker placeholder"><text class="picker-value">这场活动还没有车辆</text></view>
+          <text class="small muted">「车辆联络」要绑定到具体那辆车：请先在分车区添加车辆，再回来授权。</text>
+        </view>
+        <picker wx:else range="{{vehicles}}" value="{{vehicleIndex}}" bindchange="onVehiclePick">
           <view class="picker {{vehicleIndex < 0 ? 'placeholder' : ''}}">
             <text class="picker-value">{{vehicleIndex < 0 ? '请选择车辆' : vehicles[vehicleIndex]}}</text>
             <text class="picker-arrow">▾</text>
@@ -213,5 +240,15 @@
     <view wx:if="{{message}}" class="callout success">{{message}}</view>
     <view class="button primary block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onAccessSave'}}">保存明确授权</view>
     <view class="button text" hover-class="button-hover" bindtap="onAccessReset">清空表单，新增另一份授权</view>
+  </view>
+</overlay>
+
+<!-- 撤销授权确认（M-13）：不可回退且影响第三方，套用 me.wxml 移除同行人的 dialog 范式。
+     必须排在协作授权 sheet 之后——两个 overlay 同为 z-index:200，靠文档顺序决定谁压在上面。 -->
+<overlay open="{{!!revokeId}}" kind="dialog" title="撤销协作授权" bind:close="onRevokeCancel">
+  <view class="stack">
+    <text>将立即终止 {{revokeText}} 的协作能力。</text>
+    <text>对方如果正在现场清点，下一次读取就会被挡在门外；撤销不可回退，要恢复只能让对方重新复制身份码再授权一次。</text>
+    <view class="button danger block {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onRevokeConfirm'}}">确认撤销授权</view>
   </view>
 </overlay>

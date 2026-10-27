@@ -9,6 +9,10 @@ const api = require('./api')
 const draft = require('./draft')
 const F = require('./format')
 
+// D-02 B：首屏 20 条 + 每次再展开 20 条。只省渲染与 setData 体积，
+// 列表读仍是全量（服务端游标分页未做），所以界面任何文案都不得暗示「下载变少了」。
+const PAGE_SIZE = 20
+
 module.exports = function makeNoticesPage(getActivityId, opts) {
   const tabBarIndex = opts && Number.isInteger(opts.tabBarIndex) ? opts.tabBarIndex : null
   return {
@@ -16,6 +20,8 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       loading: true,
       denied: '',
       items: [],
+      visibleItems: [],
+      hiddenCount: 0,
       canPublish: false,
       publishOpen: false,
       content: '',
@@ -24,6 +30,8 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       signupRows: [],
       vehicleRows: [],
       vehicleIndex: -1,
+      targetsError: '',
+      targetsLoading: false,
       message: '',
       error: '',
       vehicles: [],
@@ -32,6 +40,7 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
     onLoad(options) {
       this._options = options || {}
       this._tabBarIndex = tabBarIndex
+      this._visibleCount = PAGE_SIZE
     },
 
     onShow() {
@@ -47,6 +56,24 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
 
     activityId() {
       return getActivityId.call(this)
+    },
+
+    /* items 持全量（计数、handler 查表都用它），visibleItems 才进 WXML。
+       已展开的条数在重读/刷新后保留；列表缩短时收敛到实有条数。 */
+    applyItems(items, extra) {
+      const count = Math.min(Math.max(this._visibleCount || PAGE_SIZE, PAGE_SIZE), items.length)
+      this._visibleCount = count
+      this.setData(Object.assign({
+        items,
+        visibleItems: items.slice(0, count),
+        hiddenCount: items.length - count,
+      }, extra || {}))
+    },
+
+    onLoadMore() {
+      if (!this.data.hiddenCount) return
+      this._visibleCount = (this._visibleCount || PAGE_SIZE) + PAGE_SIZE
+      this.applyItems(this.data.items)
     },
 
     reload() {
@@ -66,7 +93,7 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
           time: F.dtFull(n.publishedAt),
           read: n.read,
         }))
-        this.setData({ loading: false, denied: '', items })
+        this.applyItems(items, { loading: false, denied: '' })
         if (activityId) this.loadPublishContext(activityId)
       }).catch(e => {
         this.setData({ loading: false, denied: api.errorText(e) })
@@ -95,12 +122,12 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
             && ['archived', 'cancelled'].indexOf(res.view.activity.phase) === -1
           // 发布上下文里读到的 revision 才是发布/已读/投递命令的 CAS 基准（写实例，不进 data）
           this.revision = res.revision
-          this.setData({ items, canPublish })
+          this.applyItems(items, { canPublish })
           if (res.view.kind === 'activity') this.now = res.now
         })
       }).catch(() => {
         // 非所有者：不显示发布与投递记录
-        this.setData({ items: this.data.items.map(i => Object.assign({}, i, { owned: false, deliveries: [] })), canPublish: false })
+        this.applyItems(this.data.items.map(i => Object.assign({}, i, { owned: false, deliveries: [] })), { canPublish: false })
       })
     },
 
@@ -114,6 +141,7 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
         signupRows: [],
         vehicleRows: [],
         vehicleIndex: -1,
+        targetsError: '',
         error: '',
       })
       this.loadTargets(activityId)
@@ -123,27 +151,64 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
     // 定向通知的候选来源（P0-3：原先要求手填 signup ID/车辆 ID，全站无处可查，是功能性死路）。
     // 名单走 organizer 视角 read（rows 即全部报名），车辆走 readTransport（组织者专属）。
     loadTargets(activityId) {
+      // 「名单空着」与「没有人报名/没有车」是两件事：读失败必须点名是**哪一个**没读到并给出去路，
+      // 不能留着空数组让页面印成业务事实（铁律 24 的话术分岔 + 铁律 26② 的「判不出≠否定」；B4-C19）。
+      // 在途也算一件要说的事：miniprogram/AGENTS.md 的第 5 条要求 loading 与 empty 分开，
+      // 否则点开弹层的那一秒会先印「此活动还没有报名记录。」再翻成名单。
+      //
+      // 尝试令牌：关弹层再重开 / 点重试都可能让两次读并存。慢的那一发后回来时若照写，
+      // 就会用**上一次的结论**盖掉这一次的读数（名单其实已经读到了，页面却说「没有读到」）——
+      // 那正是本条要修的"成因指错"，只是换了个触发路径，所以同一处收口。
+      const token = (this._targetsToken || 0) + 1
+      this._targetsToken = token
+      const fresh = () => this._targetsToken === token
+      const errs = []
+      let pending = 2
+      const settle = () => {
+        if (!fresh()) return
+        if (--pending === 0) this.setData({ targetsLoading: false, targetsError: errs.join('；') })
+      }
+      this.setData({ targetsLoading: true, targetsError: '' })
       api.read({ kind: 'activity', activityId, perspective: 'organizer' }).then(res => {
-        if (res.view.kind !== 'activity') return
-        const rows = res.view.rows || []
-        this.setData({
-          signupRows: rows.map(r => ({
-            id: r.signupId,
-            label: (r.name || '未命名') + ' · ' + (F.STATUS_LABELS[r.status] || r.status),
-            checked: false,
-          })),
-        })
-      }).catch(() => {})
+        if (res.view.kind === 'activity') {
+          const rows = res.view.rows || []
+          if (fresh()) this.setData({
+            signupRows: rows.map(r => ({
+              id: r.signupId,
+              label: (r.name || '未命名') + ' · ' + (F.STATUS_LABELS[r.status] || r.status),
+              checked: false,
+            })),
+          })
+        } else if (fresh()) {
+          errs.push('报名名单没有读到：这一视角没有返回名单')
+        }
+        settle()
+      }).catch(e => {
+        if (fresh()) errs.push('报名名单没有读到：' + api.errorText(e))
+        settle()
+      })
       api.readOr('readTransport', { activityId }).then(t => {
         const vehicles = t.vehicles || []
-        this.setData({
+        if (fresh()) this.setData({
           vehicleRows: vehicles.map(v => ({
             id: v.id,
             label: (v.label || '车辆') + (v.plate ? ' · ' + v.plate : ''),
           })),
           vehicleIndex: vehicles.length ? 0 : -1,
         })
-      }).catch(() => {})
+        settle()
+      }).catch(e => {
+        if (fresh()) errs.push('车辆名单没有读到：' + api.errorText(e))
+        settle()
+      })
+    },
+
+    // 失败态的可行动性：给一条就在眼前的重试路径，而不是只把红字印出来（读操作才允许重试，见铁律 24）
+    onRetryTargets() {
+      const activityId = this.activityId()
+      if (!activityId) return
+      this.setData({ signupRows: [], vehicleRows: [], vehicleIndex: -1, targetsError: '', error: '' })
+      this.loadTargets(activityId)
     },
     onToggleSignupTarget(e) {
       const id = e.currentTarget.dataset.id
@@ -171,14 +236,19 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       if (this.data.audienceKind === 'vehicle') {
         const v = this.data.vehicleRows[this.data.vehicleIndex]
         if (!v) {
-          this.setData({ error: '此活动还没有车辆档案——先到工作台「分车」添加车辆，或改选其他通知范围。' })
+          // 读失败时不许说「此活动还没有车辆档案」——那是把没读到印成业务事实（B4-C19）
+          this.setData({ error: this.data.targetsError
+            ? '暂时不能按车辆定向发布：' + this.data.targetsError + '。可点「重新读取名单」，或改选「本活动相关人员」。'
+            : '此活动还没有车辆档案——先到工作台「分车」添加车辆，或改选其他通知范围。' })
           return
         }
         audience = { kind: 'vehicle', vehicleId: v.id }
       } else if (this.data.audienceKind === 'signups') {
         const ids = this.data.signupRows.filter(r => r.checked).map(r => r.id)
         if (!ids.length) {
-          this.setData({ error: '至少勾选一名要通知的报名人员。' })
+          this.setData({ error: this.data.targetsError
+            ? '暂时不能按人定向发布：' + this.data.targetsError + '。可点「重新读取名单」，或改选「本活动相关人员」。'
+            : '至少勾选一名要通知的报名人员。' })
           return
         }
         audience = { kind: 'signups', signupIds: ids }

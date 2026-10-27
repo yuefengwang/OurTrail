@@ -1,12 +1,54 @@
-/* 我的页：微信资料同步 + 自动保存 */
+/* 我的页：微信资料同步 + 自动保存
+   Tab 页底部留白：规则与理由唯一登记在 design-system.md「Tab 页底部留白（唯一规则）」；
+   本页在 app.json 的 tabBar.list 内 ⇒ 必须留（判据 tools/b4-pad-final-value-test.js §2 逐页解终值）。 */
 .page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }
 
-.card-label {
-  display: block;
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 12px;
+/* 身份区与统计带：身份可编辑，统计只读；两者是同级事实，不再套进同一张卡。 */
+.profile-identity { display: flex; flex-direction: column; gap: 10px; }
+.profile-stats {
+  background: var(--stone);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
 }
+.profile-stats .metric + .metric {
+  border-left: 1px solid var(--stone-line);
+  padding-left: 12px;
+}
+.profile-stats .metric .metric-value { font-size: 24px; }
+
+/* 路线库：独立工具入口，服务「下一次发起」，不与最近活动混成一张卡。 */
+.tool-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  background: var(--forest-soft);
+  border-radius: var(--radius-card);
+}
+.tool-entry__main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tool-entry__title {
+  font-size: var(--text-title);
+  line-height: 26px;
+  font-weight: 600;
+  color: var(--forest);
+}
+
+/* .card-label 已提升为 app.wxss 的全局单源（M-02 / E-15：本页那份私有定义是它**唯一**的出处，
+   结果另外四页同一个类名命不中任何选择器）。这里不再留第二份基础定义——
+   本页那 7 处使用的终值仍由 app.wxss 给出，判据 tools/m02-class-scope-test.js §2 逐页解一次并验出处唯一。 */
+
+/* 最近活动行：封面缩略图（2026-10-16 编辑式对齐，与发现页同一选取逻辑）。
+   图片加载失败由 onCoverError 隐藏，退回纯文字行。 */
+.recent-row { align-items: center; }
+.recent-cover {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-button, 8px);
+  background: var(--stone, #EDEFEA);
+}
+.recent-cover.cover-failed { visibility: hidden; }
 
 /* 微信资料行：头像 + 昵称 */
 .wx-row {
@@ -32,7 +74,6 @@
 }
 .avatar-btn::after { border: none; }
 .avatar-img { width: 64px; height: 64px; border-radius: 50%; flex: 0 0 64px; }
-.avatar-img.sm { width: 36px; height: 36px; flex: 0 0 36px; }
 .avatar-fallback {
   display: flex;
   align-items: center;
@@ -45,13 +86,11 @@
   color: var(--forest, #163E35);
   border-radius: 50%;
 }
-.avatar-fallback.sm-text {
-  display: inline-flex;
-  width: 36px;
-  height: 36px;
-  font-size: 15px;
-}
-.nick-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+/* 5a（2026-10-26）：同行人行改用共享 <person-row>，这里原来那套 36px 私有小头像
+   （.avatar-img.sm / .avatar-fallback.sm-text，含 15px 无源字阶）随之一并删除——
+   全站的人行头像只剩组件里的 44px 一个出处。 */
+/* B-14：这一条原来被逐字节复制了两遍（两行完全相同 ⇒ 是真重复，不是两个语义）。
+   留一份；「两条都改才不会漂移」的那种担心由 tools/swx2-style-gates-test.js §8 常驻守着。 */
 .nick-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 /* 无下划线大字：身份行读作"个人资料"而非输入框（可编辑性由下方小字提示） */
 .nick-input {
@@ -60,7 +99,7 @@
   border: none;
   border-radius: 0;
   background: transparent;
-  font-size: 17px;
+  font-size: var(--text-title, 18px);
   font-weight: 600;
   line-height: 40px;
 }
@@ -86,4 +125,11 @@ button.phone-btn { font-family: inherit; }
 /* 其余 */
 .who { display: flex; align-items: center; gap: 12px; }
 .code-text { flex: 1; min-width: 0; word-break: break-all; }
+/* 位置撤回：行级危险动作＝text + danger 语义色（T011 规格）；实心红只进确认弹窗（ourtrail-ui 规则 10） */
+.revoke-text { color: var(--danger, #B43D3B); font-weight: 600; }
+
+/* 激活引导卡：箭头必须钉在行右端。全局 .cluster 允许 wrap，长说明会把箭头挤到
+   独立行左端（真机实测 2026-10-22 me-onboarding 帧）⇒ 本卡改 nowrap + 文本列 min-width:0 */
+.onboard-row { flex-wrap: nowrap; gap: 12px; justify-content: space-between; }
+.onboard-main { flex: 1; min-width: 0; gap: 4px; }
 .textarea.slim { min-height: 72px; }

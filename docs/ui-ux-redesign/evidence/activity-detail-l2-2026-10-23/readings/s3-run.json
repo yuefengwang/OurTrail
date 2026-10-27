@@ -1,0 +1,578 @@
+{
+  "side": "s3",
+  "ws": "ws://127.0.0.1:9421",
+  "capturedAt": "2026-10-23T10:53:57.965Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "fixtureManifest": {
+    "generatedAt": "2026-10-23T10:38:09.209Z",
+    "label": "s3",
+    "fixtureNow": "2026-09-29T09:00:00+08:00",
+    "gitHead": "e05e5591e66387de72a2b08c823403c0df14f4df",
+    "source": "miniprogram/pages/activity/activity.js#renderView",
+    "sourceSha256": "34f5aadc47193ac7e1f82af1a2291e68168e0f0771864b507b46245d748f0604",
+    "coverFileIdStandIn": "/assets/photos/cover-ridge.jpg",
+    "note": "页面 data 全部由真实 renderView 产出；视图夹具只填服务端投影字段。coverFileId 用本地实拍图代替 cloud:// fileID（渲染路径等价，非线上数据形状）。",
+    "scenarios": {
+      "rich": {
+        "title": "青城后山 · 周末轻徒步",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": 4,
+        "routeStats": [
+          "distance",
+          "ascent",
+          "maxEle",
+          "duration"
+        ],
+        "rows": 3,
+        "photoNote": "封面与正文图片由组织者提供。",
+        "dataSha256": "08e3255034459f812684e9f93e26df8a90e504332bfb875d87b30f72ad2c2041"
+      },
+      "sparse": {
+        "title": "城区周边 · 傍晚散步",
+        "coverFailed": false,
+        "coverIsReal": false,
+        "infoFacts": 4,
+        "routeStats": [],
+        "rows": 0,
+        "photoNote": "封面为场景氛围图，非本次活动实拍；路线与天气信息以组织者填写与实测数据为准。",
+        "dataSha256": "ac3363dbe58b02dd4ede8c554ba4efb966a70167ebca07f043e77ed068f5f778"
+      },
+      "long-title": {
+        "title": "青城后山泰安古镇经又一村至白云寺环线轻装徒步暨秋季山脊云海观测与同行者集合出发安排说明会（含备用路线与雨天改线方案，请务必阅读集合时间、装备清单与退出规则后再报名）这是一个用于验证极值换行与不截断的超长标题样例，长度已超过一百个汉字，不应出现省略号或横向溢出。",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": 4,
+        "routeStats": [
+          "distance",
+          "ascent",
+          "maxEle",
+          "duration"
+        ],
+        "rows": 3,
+        "photoNote": "封面与正文图片由组织者提供。",
+        "dataSha256": "3d5d656fb1300bf9a466d5c5a01b27242fe3e70c5ee7fde3e88930903fad07f5"
+      },
+      "cover-failed": {
+        "title": "青城后山 · 雨天备案",
+        "coverFailed": true,
+        "coverIsReal": true,
+        "infoFacts": 4,
+        "routeStats": [
+          "distance",
+          "ascent",
+          "maxEle",
+          "duration"
+        ],
+        "rows": 3,
+        "photoNote": "封面与正文图片由组织者提供。",
+        "dataSha256": "6870806cc481254b46b0101403c27baff4210558aef6b07a0a78ff56067b3d67"
+      },
+      "s2-rich": {
+        "title": "青城后山 · 九月同行",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": 4,
+        "routeStats": [
+          "distance",
+          "ascent",
+          "maxEle",
+          "duration"
+        ],
+        "rows": 3,
+        "photoNote": "封面与正文图片由组织者提供。",
+        "dataSha256": "d21de759008118a2b292fb497986e91f965206d7a897e2c9759dd96bd265d78f"
+      },
+      "participant-bottom": {
+        "title": "青城后山 · 同行者视角",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": 4,
+        "routeStats": [
+          "distance",
+          "ascent",
+          "maxEle",
+          "duration"
+        ],
+        "rows": 3,
+        "photoNote": "封面与正文图片由组织者提供。",
+        "dataSha256": "ea6eaa582a4b03db1775deb91315f9d2870bee9d9368dadf045a3d4465d8077b"
+      },
+      "owner-bottom": {
+        "title": "青城后山 · 组织者视角",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": 4,
+        "routeStats": [
+          "distance",
+          "ascent",
+          "maxEle",
+          "duration"
+        ],
+        "rows": 3,
+        "photoNote": "封面与正文图片由组织者提供。",
+        "dataSha256": "9e9fd4cd989a565f24a27bd6c9a23b7034d4b465700d3f630bff7179a2095742"
+      },
+      "draft-bottom": {
+        "title": "青城后山 · 草稿预览",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": 4,
+        "routeStats": [
+          "distance",
+          "ascent",
+          "maxEle",
+          "duration"
+        ],
+        "rows": 3,
+        "photoNote": "封面与正文图片由组织者提供。",
+        "dataSha256": "d2ec6824299b9f45ca261b958cd2b2a032f0c04472418e6a9337a3e38429972b"
+      },
+      "signup-bottom": {
+        "title": "青城后山 · 开放报名",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": 4,
+        "routeStats": [
+          "distance",
+          "ascent",
+          "maxEle",
+          "duration"
+        ],
+        "rows": 0,
+        "photoNote": "封面与正文图片由组织者提供。",
+        "dataSha256": "e2e4863b7a6e0e56dfa3bd3d43fad672bb36850a447e8856110f97e2dbc8ea0f"
+      },
+      "confirmed-bottom": {
+        "title": "青城后山 · 集合日",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": 4,
+        "routeStats": [
+          "distance",
+          "ascent",
+          "maxEle",
+          "duration"
+        ],
+        "rows": 3,
+        "photoNote": "封面与正文图片由组织者提供。",
+        "dataSha256": "ee913da415bdc4f4d5191e5e565764616886cf1c9a2635119f23d7b97f61557e"
+      },
+      "justPublished-bottom": {
+        "title": "青城后山 · 发布成功",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": 4,
+        "routeStats": [
+          "distance",
+          "ascent",
+          "maxEle",
+          "duration"
+        ],
+        "rows": 3,
+        "photoNote": "封面与正文图片由组织者提供。",
+        "dataSha256": "9efc2031013dbc492fda1150d7127cafc1381ad4d9343cfa9433b68f7f08a3ab"
+      }
+    }
+  },
+  "results": [
+    {
+      "scenario": "participant-bottom",
+      "status": "VALID",
+      "problems": [],
+      "gates": {
+        "loadingFalse": true,
+        "titleIntact": true,
+        "stateMatch": true,
+        "stylesReady": true,
+        "styleWaitMs": 44
+      },
+      "dom": {
+        "rootClass": "page has-sticky",
+        "hasStickyClass": true,
+        "stickyCount": 1,
+        "primaryCount": 1,
+        "primaryText": "查看集合与出行安排",
+        "sharePresent": true,
+        "shareText": "分享",
+        "shareWidth": 88,
+        "primaryWidth": 250,
+        "successCardShare": false,
+        "successCardShareText": "",
+        "successCardWorkspace": false,
+        "successCardWorkspaceText": ""
+      },
+      "geometry": {
+        "mode": "document",
+        "pageBox": {
+          "left": 0,
+          "top": 0,
+          "width": 390,
+          "height": 3783,
+          "bottom": 3783
+        },
+        "stickyBox": {
+          "left": 0,
+          "top": 3675.5,
+          "width": 390,
+          "height": 107,
+          "bottom": 3782.5
+        },
+        "lastContentBottom": 3663,
+        "expectedStickyTop": 3676,
+        "dockedToBottom": true,
+        "reservedBottom": 120,
+        "gapAboveBar": 12.5,
+        "notOccluded": true,
+        "viewportHeight": 753
+      },
+      "injected": {
+        "title": "青城后山 · 同行者视角",
+        "showSticky": true,
+        "isOwner": false,
+        "isDraft": false,
+        "justPublished": false
+      },
+      "screenshots": [
+        "participant-bottom-top.png",
+        "participant-bottom-bottom.png"
+      ]
+    },
+    {
+      "scenario": "owner-bottom",
+      "status": "VALID",
+      "problems": [],
+      "gates": {
+        "loadingFalse": true,
+        "titleIntact": true,
+        "stateMatch": true,
+        "stylesReady": true,
+        "styleWaitMs": 53
+      },
+      "dom": {
+        "rootClass": "page has-sticky",
+        "hasStickyClass": true,
+        "stickyCount": 1,
+        "primaryCount": 1,
+        "primaryText": "进入工作台",
+        "sharePresent": true,
+        "shareText": "分享",
+        "shareWidth": 88,
+        "primaryWidth": 250,
+        "successCardShare": false,
+        "successCardShareText": "",
+        "successCardWorkspace": false,
+        "successCardWorkspaceText": ""
+      },
+      "geometry": {
+        "mode": "document",
+        "pageBox": {
+          "left": 0,
+          "top": 0,
+          "width": 390,
+          "height": 3805,
+          "bottom": 3805
+        },
+        "stickyBox": {
+          "left": 0,
+          "top": 3697.5,
+          "width": 390,
+          "height": 107,
+          "bottom": 3804.5
+        },
+        "lastContentBottom": 3685,
+        "expectedStickyTop": 3698,
+        "dockedToBottom": true,
+        "reservedBottom": 120,
+        "gapAboveBar": 12.5,
+        "notOccluded": true,
+        "viewportHeight": 753
+      },
+      "injected": {
+        "title": "青城后山 · 组织者视角",
+        "showSticky": true,
+        "isOwner": true,
+        "isDraft": false,
+        "justPublished": false
+      },
+      "screenshots": [
+        "owner-bottom-top.png",
+        "owner-bottom-bottom.png"
+      ]
+    },
+    {
+      "scenario": "draft-bottom",
+      "status": "VALID",
+      "problems": [],
+      "gates": {
+        "loadingFalse": true,
+        "titleIntact": true,
+        "stateMatch": true,
+        "stylesReady": true,
+        "styleWaitMs": 34
+      },
+      "dom": {
+        "rootClass": "page has-sticky",
+        "hasStickyClass": true,
+        "stickyCount": 1,
+        "primaryCount": 1,
+        "primaryText": "返回编辑与发布",
+        "sharePresent": false,
+        "shareText": "",
+        "shareWidth": null,
+        "primaryWidth": 350,
+        "successCardShare": false,
+        "successCardShareText": "",
+        "successCardWorkspace": false,
+        "successCardWorkspaceText": ""
+      },
+      "geometry": {
+        "mode": "document",
+        "pageBox": {
+          "left": 0,
+          "top": 0,
+          "width": 390,
+          "height": 3386,
+          "bottom": 3386
+        },
+        "stickyBox": {
+          "left": 0,
+          "top": 3278.5,
+          "width": 390,
+          "height": 107,
+          "bottom": 3385.5
+        },
+        "lastContentBottom": 3266,
+        "expectedStickyTop": 3279,
+        "dockedToBottom": true,
+        "reservedBottom": 120,
+        "gapAboveBar": 12.5,
+        "notOccluded": true,
+        "viewportHeight": 753
+      },
+      "injected": {
+        "title": "青城后山 · 草稿预览",
+        "showSticky": true,
+        "isOwner": true,
+        "isDraft": true,
+        "justPublished": false
+      },
+      "screenshots": [
+        "draft-bottom-top.png",
+        "draft-bottom-bottom.png"
+      ]
+    },
+    {
+      "scenario": "signup-bottom",
+      "status": "VALID",
+      "problems": [],
+      "gates": {
+        "loadingFalse": true,
+        "titleIntact": true,
+        "stateMatch": true,
+        "stylesReady": true,
+        "styleWaitMs": 52
+      },
+      "dom": {
+        "rootClass": "page has-sticky",
+        "hasStickyClass": true,
+        "stickyCount": 1,
+        "primaryCount": 1,
+        "primaryText": "填写报名资料",
+        "sharePresent": true,
+        "shareText": "分享",
+        "shareWidth": 88,
+        "primaryWidth": 250,
+        "successCardShare": false,
+        "successCardShareText": "",
+        "successCardWorkspace": false,
+        "successCardWorkspaceText": ""
+      },
+      "geometry": {
+        "mode": "document",
+        "pageBox": {
+          "left": 0,
+          "top": 0,
+          "width": 390,
+          "height": 3259,
+          "bottom": 3259
+        },
+        "stickyBox": {
+          "left": 0,
+          "top": 3151.5,
+          "width": 390,
+          "height": 107,
+          "bottom": 3258.5
+        },
+        "lastContentBottom": 3139,
+        "expectedStickyTop": 3152,
+        "dockedToBottom": true,
+        "reservedBottom": 120,
+        "gapAboveBar": 12.5,
+        "notOccluded": true,
+        "viewportHeight": 753
+      },
+      "injected": {
+        "title": "青城后山 · 开放报名",
+        "showSticky": true,
+        "isOwner": false,
+        "isDraft": false,
+        "justPublished": false
+      },
+      "screenshots": [
+        "signup-bottom-top.png",
+        "signup-bottom-bottom.png"
+      ]
+    },
+    {
+      "scenario": "confirmed-bottom",
+      "status": "VALID",
+      "problems": [],
+      "gates": {
+        "loadingFalse": true,
+        "titleIntact": true,
+        "stateMatch": true,
+        "stylesReady": true,
+        "styleWaitMs": 55
+      },
+      "dom": {
+        "rootClass": "page has-sticky",
+        "hasStickyClass": true,
+        "stickyCount": 1,
+        "primaryCount": 1,
+        "primaryText": "我已到达 · 去签到",
+        "sharePresent": true,
+        "shareText": "分享",
+        "shareWidth": 88,
+        "primaryWidth": 250,
+        "successCardShare": false,
+        "successCardShareText": "",
+        "successCardWorkspace": false,
+        "successCardWorkspaceText": ""
+      },
+      "geometry": {
+        "mode": "document",
+        "pageBox": {
+          "left": 0,
+          "top": 0,
+          "width": 390,
+          "height": 3783,
+          "bottom": 3783
+        },
+        "stickyBox": {
+          "left": 0,
+          "top": 3675.5,
+          "width": 390,
+          "height": 107,
+          "bottom": 3782.5
+        },
+        "lastContentBottom": 3663,
+        "expectedStickyTop": 3676,
+        "dockedToBottom": true,
+        "reservedBottom": 120,
+        "gapAboveBar": 12.5,
+        "notOccluded": true,
+        "viewportHeight": 753
+      },
+      "injected": {
+        "title": "青城后山 · 集合日",
+        "showSticky": true,
+        "isOwner": false,
+        "isDraft": false,
+        "justPublished": false
+      },
+      "screenshots": [
+        "confirmed-bottom-top.png",
+        "confirmed-bottom-bottom.png",
+        "confirmed-bottom-sheet.png"
+      ]
+    },
+    {
+      "scenario": "justPublished-bottom",
+      "status": "VALID",
+      "problems": [],
+      "gates": {
+        "loadingFalse": true,
+        "titleIntact": true,
+        "stateMatch": true,
+        "stylesReady": true,
+        "styleWaitMs": 28
+      },
+      "dom": {
+        "rootClass": "page",
+        "hasStickyClass": false,
+        "stickyCount": 0,
+        "primaryCount": 0,
+        "primaryText": "",
+        "sharePresent": false,
+        "shareText": "",
+        "shareWidth": null,
+        "primaryWidth": null,
+        "successCardShare": true,
+        "successCardShareText": "分享给同行的人",
+        "successCardWorkspace": true,
+        "successCardWorkspaceText": "进入工作台"
+      },
+      "geometry": {
+        "mode": "document",
+        "pageBox": {
+          "left": 0,
+          "top": 0,
+          "width": 390,
+          "height": 3943,
+          "bottom": 3943
+        },
+        "stickyBox": null,
+        "lastContentBottom": 3911.4,
+        "viewportHeight": 753
+      },
+      "injected": {
+        "title": "青城后山 · 发布成功",
+        "showSticky": false,
+        "isOwner": true,
+        "isDraft": false,
+        "justPublished": true
+      },
+      "screenshots": [
+        "justPublished-bottom-top.png",
+        "justPublished-bottom-bottom.png"
+      ]
+    }
+  ],
+  "pollutionProof": {
+    "distinct": true,
+    "titles": [
+      "青城后山 · 同行者视角",
+      "青城后山 · 组织者视角",
+      "青城后山 · 草稿预览",
+      "青城后山 · 开放报名",
+      "青城后山 · 集合日",
+      "青城后山 · 发布成功"
+    ],
+    "primaries": [
+      "查看集合与出行安排",
+      "进入工作台",
+      "返回编辑与发布",
+      "填写报名资料",
+      "我已到达 · 去签到",
+      ""
+    ],
+    "stickyShown": 5
+  },
+  "bundleMarkers": {
+    "stickyBarPages": 5,
+    "sharePages": 4,
+    "celebrateStickyFree": true,
+    "headHasNoSticky": true,
+    "note": "HEAD 的活动页无 .sticky-action / .act-sticky__share / has-sticky（运行时 git show 实测，非手写断言）"
+  },
+  "bundleFresh": true
+}

@@ -1,1 +1,14 @@
-/* 协作任务页 */
+/* 协作任务页：紧凑角色头，把高度让给现场面板。 */
+
+.staff-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.staff-identity__title {
+  font-size: var(--text-title);
+  line-height: 26px;
+  font-weight: 600;
+  color: var(--ink);
+}

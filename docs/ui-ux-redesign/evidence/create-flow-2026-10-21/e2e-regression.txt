@@ -1,0 +1,88 @@
+OurTrail · 创建活动收敛 · 补充 E2E/场景回归记录
+日期：2026-10-21（Asia/Shanghai）
+基线：8a4c2bf（工作区含本轮改动；另有天气线 agent 的未提交改动，未由本轮修改）
+环境：Windows / Git Bash / Node v24.18.0 / 无 npm 依赖
+
+## 一、本轮补跑（未受创建活动改动影响，headless）
+
+scenario-me-test             exit=0  passed=143 failed=0 skipped=0
+scenario-vehicle-test        exit=0  passed=57  failed=0 skipped=0
+scenario-notices-test        exit=0  passed=91  failed=0 skipped=0
+scenario-staff-test          exit=0  passed=25  failed=0 skipped=0
+scenario-lab-test            exit=0  passed=20  failed=0 skipped=0
+scenario-api-test            exit=0  passed=29  failed=0 skipped=0
+scenario-profile-gate-test   exit=0  passed=19  failed=0
+routes-test                  exit=0  passed=75  failed=0
+route-profile-test           exit=0  passed=27  failed=0
+discover-filter-test         exit=0  passed=21  failed=0
+weather-brief-test           exit=0  passed=21  failed=0
+tasks-test                   exit=0  passed=27  failed=0
+scenario-tasks-test          exit=0  passed=24  failed=0 skipped=0
+e2e-task-test                exit=0  passed=28  failed=0
+trailapilab-test             exit=0  passed=25  failed=0 skipped=0
+lab-dryrun-test              exit=0  passed=165 failed=0 skipped=0
+journey-test                 exit=0  passed=155 failed=0
+e2e-fault-probe-test         exit=0  passed=34  failed=0
+e2e-revision-guard-test      exit=0  passed=16  failed=0
+meta-revision-guard-test     exit=0  passed=18  failed=0
+receipt-window-test          exit=0  passed=19  failed=0 inconclusive=2
+failure-semantics-test       exit=0  passed=44  failed=0 inconclusive=2
+e2e-concurrency-test         exit=0  passed=50  failed=0 inconclusive=4
+e2e-interleave-test          exit=0  passed=67  failed=0 inconclusive=3
+e2e-panel-sync-test          exit=0  passed=40  failed=0
+e2e-release-gap-test         exit=0  passed=51  failed=0
+lifecycle-transitions-test   exit=0  passed=214 failed=0
+lifecycle-cancellation-test  exit=0  passed=71  failed=0
+lifecycle-allocation-test    exit=0  passed=109 failed=0
+lifecycle-concurrency-test   exit=0  passed=126 failed=0
+lifecycle-fuzz-test          exit=0  passed=47  failed=0
+
+## 二、异常（已归属，不是本轮改动导致）
+
+1) weather-resilience-test
+   工作区：exit=1  passed=43 failed=2
+   失败：① 成功后无错误态残留；③ 软降级不写 _lastResult（否则重试会被 covers() 直接复用旧数据）
+   干净 HEAD 副本（git archive HEAD）：exit=0  passed=45 failed=0
+   归属：工作区里天气线 agent 正在修改 weather 相关文件；本轮的创建活动文件不在该套件依赖链上。
+   复现命令：
+     mkdir -p /d/tmp/ourtrail-head-clean3 && git archive HEAD | tar -x -C /d/tmp/ourtrail-head-clean3
+     cd /d/tmp/ourtrail-head-clean3 && node tools/weather-resilience-test.js
+
+2) cold-start-work-test
+   工作区：exit=1  passed=8 failed=2（createCollections=17，read 集合读=15）
+   干净 HEAD 副本：exit=1  passed=8 failed=2（同一读数）
+   归属：干净基线上同样失败，属既有基线/测试期望漂移（集合数已从 14 涨到 15），不是本轮创建活动改动。
+   复现命令（同上目录）：node tools/cold-start-work-test.js
+
+## 三、本轮早前已跑的受影响套件（供合并查看）
+
+check.js / check-handlers.js       全过（死 handler 仅存量 editor#onNumber）
+content-editor-test               30/0
+content-view-test                 14/0
+activity-summary-test             13/0
+gpx-test                          62/0
+scenario-editor-test              188/0
+scenario-activity-test            159/0
+e2e-test                          72/0
+quick-create-test                 65/0
+journey-graph-test                15/0
+e2e-client-cas-test               54/0（bugs=1 既有 BUG-C2）
+scenario-discover-test            36/0
+scenario-signup-test              106/0
+scenario-workspace-test           114/0
+ui-consistency-test               17/0
+t4-e08-test                       41/0
+swx1-style-gates-test             45/0
+m02-class-scope-test              66/0
+swx2-style-gates-test             117/1（HEAD 既有 .highlight-dot font-weight:700）
+page2-gates-test                  97/0（同代码复跑出现 95/2 时序抖动；干净 HEAD 一次 97/0）
+
+## 四、未执行
+
+- B 层真机 E2E：e2e-golden-path-test / e2e-ui-test / e2e-ui-state-test（需开发者工具；一次 golden-path 尝试挂起，按环境性停掉）。
+- 天气/天相全套件：正被天气线 agent 修改，未在本记录内重复跑。
+
+## 五、结论
+
+- 本轮补跑的 33 个 headless 套件中，31 个 exit 0；2 个失败均已归属：1 个由天气线并发改动导致（干净 HEAD 45/0），1 个在干净基线同样失败（cold-start 期望漂移）。
+- 没有发现由创建活动收敛改动引入的新红。

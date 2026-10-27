@@ -1,0 +1,22 @@
+{
+  "mode": "before",
+  "wsPort": "9433",
+  "pages": {
+    "home": {
+      "file": "before-home.png",
+      "cards": 2,
+      "searchbar": false,
+      "field": true,
+      "cardRendered": true,
+      "navBg": null
+    },
+    "discover": {
+      "file": "before-discover.png",
+      "cards": 2,
+      "searchbar": false,
+      "field": true,
+      "cardRendered": true,
+      "navBg": null
+    }
+  }
+}

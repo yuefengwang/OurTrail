@@ -1,0 +1,21 @@
+<view class="eq-grid">
+  <block wx:if="{{requiredItems.length}}">
+    <text class="field-label">必带</text>
+    <view class="eq-grid__list">
+      <view wx:for="{{requiredItems}}" wx:key="index" class="eq-grid__item">
+        <view class="eq-grid__tile"><icon name="{{item.icon}}" size="20" color="#163E35" /></view>
+        <text class="eq-grid__text">{{item.text}}</text>
+      </view>
+    </view>
+  </block>
+  <block wx:if="{{suggestedItems.length}}">
+    <text class="field-label">建议</text>
+    <view class="eq-grid__list">
+      <view wx:for="{{suggestedItems}}" wx:key="index" class="eq-grid__item">
+        <view class="eq-grid__tile"><icon name="{{item.icon}}" size="20" color="#163E35" /></view>
+        <text class="eq-grid__text">{{item.text}}</text>
+      </view>
+    </view>
+  </block>
+  <text wx:if="{{!requiredItems.length && !suggestedItems.length}}" class="muted">组织者未填写装备清单。</text>
+</view>

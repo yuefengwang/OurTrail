@@ -110,7 +110,7 @@ function emptyState() {
     schemaVersion: 1, revision: 0, savedAt: NOW,
     profiles: [], routes: [], activities: [], groups: [], signups: [], vehicles: [],
     assignments: [], memberships: [], attendance: [], positions: [], incidents: [],
-    events: [], notices: [], receipts: [],
+    events: [], notices: [], tasks: [], receipts: [],
   }
 }
 

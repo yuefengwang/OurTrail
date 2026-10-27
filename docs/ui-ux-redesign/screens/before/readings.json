@@ -1,0 +1,52 @@
+{
+  "/pages/home/home": {
+    "loading": false,
+    "denied": "",
+    "emptyTitle": "留一点时间，走进山野"
+  },
+  "/pages/discover/discover": {
+    "loading": false,
+    "denied": "",
+    "emptyTitle": "还没有发布的活动"
+  },
+  "/pages/activity/activity?id=activity-mvb1pkbov4td54": {
+    "loading": false,
+    "denied": "",
+    "title": "[UI] 赵公山 · 东线穿越",
+    "routeTitle": "赵公山东线",
+    "stateTitle": "到集合点了吗？",
+    "countersLine": "待审核 0 人 · 候补 0 人 · 剩余 22 个名额",
+    "rows": "[2]"
+  },
+  "/pages/workspace/workspace?id=activity-mvb1pkbov4td54": {
+    "loading": false,
+    "denied": "",
+    "phaseLabel": "正在集合",
+    "title": "[UI] 赵公山 · 东线穿越",
+    "subtitle": "集合时段：要看到人到没到、谁随队出发。",
+    "phaseTimeline": "[5]",
+    "nextPhaseLabel": "确认出发",
+    "transitionTitle": ""
+  },
+  "/pages/staff/staff?id=activity-mvb1pkbov4td54": {},
+  "/pages/vehicle/vehicle?id=activity-mvb1pkbov4td54": {
+    "loading": false,
+    "denied": "没有此车辆的联络权限。",
+    "phase": ""
+  },
+  "/pages/weather-hub/weather-hub": {},
+  "/pages/weather/weather?id=activity-mvb1pkbov4td54": {
+    "loading": false,
+    "denied": "",
+    "pointLabels": "[4]",
+    "dayCards": "[7]",
+    "detailRows": "[24]",
+    "emptyTitle": "",
+    "loadingWeather": false
+  },
+  "/pages/me/me": {
+    "loading": false,
+    "denied": "",
+    "positionRows": "[0]"
+  }
+}

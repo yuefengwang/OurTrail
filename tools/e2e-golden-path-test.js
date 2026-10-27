@@ -365,7 +365,7 @@ async function main() {
     page = await open('/pages/editor/editor')
     await probeChannel(page)
     const ed = await page.data()
-    u('编辑器装配（isNew=true、三步标签）', !!ed && ed.isNew === true && (ed.stepLabels || []).length === 3,
+    u('编辑器装配（isNew=true、四步标签）', !!ed && ed.isNew === true && (ed.stepLabels || []).length === 4,
       JSON.stringify({ isNew: ed && ed.isNew, steps: (ed && ed.stepLabels || []).length }))
     const inputs = await queryAll(page, '.input')
     const okTitle = await inputEl(inputs[0], FIXTURE.title)
@@ -380,13 +380,8 @@ async function main() {
     const back0 = await tapEl((await page.$$('.seg'))[0])
     tap('回到第 01 步准备填时间', back0, 'tap .seg[0]')
     await page.waitFor(1000)
-    const timeRow = (await page.$$('[data-key="dt_start"]'))[0] || null
-    const okTimeOpen = await tapEl(timeRow)
-    tap('点开「出发时间」行', okTimeOpen, 'tap [data-key=dt_start]')
-    await page.waitFor(1200)
-    const afterTime = await page.data()
-    ue('时间行展开（expandedTimes.dt_start=true）',
-      !!(afterTime.expandedTimes && afterTime.expandedTimes.dt_start === true), JSON.stringify(afterTime.expandedTimes))
+    const startDatePicker = (await page.$$('[data-key="dt_start"]'))[0] || null
+    tap('出发时间日期/时间选择器直接可见（不再先展开一行）', !!startDatePicker, 'page.$$([data-key=dt_start])[0]')
     const pickers = await page.$$('picker')
     const beforePicker = (await page.data()).form.dt_start
     if (pickers.length) { await tapEl(pickers[0]); await page.waitFor(2000) }
@@ -431,20 +426,23 @@ async function main() {
     u('编辑器按已存草稿装配（isNew=false、标题回填）',
       !!ed && ed.isNew === false && ed.form.title === FIXTURE.title, JSON.stringify({ isNew: ed && ed.isNew, title: ed && ed.form.title }))
     const note = '黄金路径编辑追加：集合点提前十分钟到。'
-    // 「详细介绍（可选）」是折叠卡（editor.wxml:136 toggleIntro），里面的 textarea 在展开前根本不存在
-    const introRow = (await page.$$('.card [hover-class], .card .cluster'))[0] || null
+    // 介绍字段现在在「03 介绍（可选）」里，且与连续正文输入区并存——必须按 data-key 定位，
+    // 不能拿 .textarea[0]（那已是正文输入区）。
+    const contentSegs = await queryAll(page, '.seg')
+    if (contentSegs[2]) await tapEl(contentSegs[2])
+    await page.waitFor(800)
     const rows = (await page.$$('.cluster')) || []
     let target = null
-    for (const r of rows) { if (String((await r.text()) || '').indexOf('详细介绍') !== -1) { target = r; break } }
-    const okExpand = await tapEl(target || introRow)
-    tap('展开「详细介绍（可选）」折叠', okExpand, 'tap .cluster 含「详细介绍」文案@ editor step0')
+    for (const r of rows) { if (String((await r.text()) || '').indexOf('简介与推荐理由') !== -1) { target = r; break } }
+    const okExpand = await tapEl(target)
+    tap('展开「简介与推荐理由（可选）」折叠', okExpand, 'tap .cluster 含「简介与推荐理由」文案@ editor step2')
     await page.waitFor(1200)
     const exp = await page.data()
     ue('折叠展开生效（expandedIntro=true，介绍输入位出现）',
       !!(exp && exp.expandedIntro === true), JSON.stringify({ expandedIntro: exp && exp.expandedIntro, textareas: (await page.$$('.textarea')).length }))
-    const descArea = (await queryAll(page, '.textarea'))[0] || null
+    const descArea = (await page.$$('[data-key="description"]'))[0] || null
     const okDesc = await inputEl(descArea, note)
-    tap('在活动介绍里填写新内容', okDesc, 'input .textarea[0]（data-key=description）')
+    tap('在活动介绍里填写新内容', okDesc, 'input [data-key=description]')
     const typed = await page.data()
     ue('新介绍落到表单状态（form.description 等于所填）', !!typed && typed.form.description === note,
       JSON.stringify({ description: ((typed && typed.form.description) || '').slice(0, 30) }))
@@ -472,11 +470,11 @@ async function main() {
   node('GP-03', 'Publish 发布')
   await L.block('GP-03 真实发布与重复发布', 8, async () => {
     const segs = await queryAll(page, '.seg')
-    const okStep = await tapEl(segs[2])
-    tap('切到第 03 步「招募与风险」（发布按钮只在这一步渲染）', okStep, 'tap .seg[2]@ editor')
+    const okStep = await tapEl(segs[3])
+    tap('切到第 04 步「招募与费用」（发布按钮只在这一步渲染）', okStep, 'tap .seg[3]@ editor')
     await page.waitFor(1200)
     const st = await page.data()
-    ue('步骤切换生效（data.step=2）', !!st && st.step === 2, 'step=' + (st && st.step))
+    ue('步骤切换生效（data.step=3）', !!st && st.step === 3, 'step=' + (st && st.step))
     const pubIntent = await byText(page, '发布活动')
     const okIntent = await tapEl(pubIntent)
     tap('点「发布活动」打开发布弹层', okIntent, 'tap .button.primary「发布活动」@ editor')

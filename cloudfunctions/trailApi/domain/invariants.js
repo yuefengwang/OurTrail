@@ -11,7 +11,7 @@ const unique = values => new Set(values).size === values.length
 function assertInvariants(state) {
   if (!S.validate(S.stateSpec, state)) return invalid('记录字段不完整或格式不正确。')
   const collections = [state.profiles, state.routes, state.activities, state.groups, state.signups,
-    state.vehicles, state.memberships, state.incidents, state.events, state.notices]
+    state.vehicles, state.memberships, state.incidents, state.events, state.notices, state.tasks]
   if (collections.some(items => !unique(items.map(item => item.id)))) return invalid('记录标识不能重复。')
   if (!unique(state.receipts.map(r => r.actorId + '\u0000' + r.requestId))) return invalid('请求记录重复。')
   const profiles = new Map(state.profiles.map(p => [p.id, p]))
@@ -25,7 +25,12 @@ function assertInvariants(state) {
     if (!unique(profile.companions.map(p => p.id))) return invalid('常用同行人标识重复。')
   }
   for (const route of state.routes) {
-    if (!profiles.has(route.ownerId) || !unique(route.points.map(p => p.id))) return invalid('路线归属或节点标识无效。')
+    if (!profiles.has(route.ownerId) || !unique(route.points.map(p => p.id)) || !unique(route.risks.map(r => r.id))) return invalid('路线归属或节点标识无效。')
+    // V2 路线库：共享名单里的账号必须存在（与 membership.userId 同口径——
+    // 身份码授权只授予已建过档案的用户），且不能把创建者自己列进去。
+    if (route.sharedWith && (route.sharedWith.some(id => !profiles.has(id) || id === route.ownerId) || !unique(route.sharedWith))) {
+      return invalid('路线共享名单无效。')
+    }
   }
   for (const group of state.groups) {
     if (!activities.has(group.activityId) || !profiles.has(group.submittedByUserId)) return invalid('报名组的活动或提交者不存在。')
@@ -48,8 +53,11 @@ function assertInvariants(state) {
     if (!unique(activity.pickupPoints.map(p => p.id)) || !unique(activity.routeSnapshot.points.map(p => p.id))) return invalid('集合点或路线节点标识重复。')
     if (activity.routeId && !state.routes.some(r => r.id === activity.routeId && r.ownerId === activity.ownerId)) return invalid('活动关联的私有路线不属于发起者。')
     if (activity.phase !== 'draft' && activity.phase !== 'cancelled') {
+      // 与 activity.js validateInput(full) 同源（2026-10-14 快速创建）：发布门只拦
+      // 标题/时间/集合点；路线节点与风险可整体为空（发布后补），但填了的条目必须完整。
       if (!activity.title.trim() || !activity.startAt || !activity.endAt || !activity.deadlineAt || !activity.pickupPoints.length
-        || !activity.routeSnapshot.points.length || !activity.routeSnapshot.risks.length) return invalid('发布活动需要完整的时间、集合点、路线与风险说明。')
+        || activity.routeSnapshot.points.some(p => !p.name.trim())
+        || activity.routeSnapshot.risks.some(r => !r.title.trim() || !r.advice.trim())) return invalid('发布活动需要完整的时间与集合信息，已填写的路线与风险条目必须完整。')
       if (Date.parse(activity.deadlineAt) > Date.parse(activity.startAt) || Date.parse(activity.startAt) >= Date.parse(activity.endAt)) return invalid('活动截止、开始和结束时间顺序不正确。')
     }
     const roster = state.signups.filter(s => s.activityId === activity.id)
@@ -112,6 +120,9 @@ function assertInvariants(state) {
     const ids = new Set(state.signups.filter(s => s.groupId === group.id && s.status === 'confirmed').map(s => s.id))
     const cars = new Set(state.assignments.filter(a => ids.has(a.signupId)).map(a => a.vehicleId))
     if (cars.size > 1) return failure('GROUP_SCOPE', '同行组需要安排同车；请先明确记录允许分开。')
+  }
+  for (const task of state.tasks) {
+    if (!activities.has(task.activityId) || !task.title.trim()) return invalid('任务必须属于存在的活动，且有标题。')
   }
   for (const member of state.memberships) {
     if (!activities.has(member.activityId) || !profiles.has(member.userId)) return invalid('协作授权所属活动或账号不存在。')

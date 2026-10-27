@@ -1,7 +1,10 @@
 /* 复用 app.wxss 中 .person-row 体系；插槽操作换行在名称下方 */
+/* 头像尺寸与首字占位（.avatar 44）必须一致：40 与 44 并排时两种头像的行高差 4px。
+   姓名取 --text-input（16/600）：行名是这一屏要读的主信息，14 与副行只差一级、层级不清。 */
 .avatar-img {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  flex: 0 0 40px;
+  flex: 0 0 44px;
 }
+.person-row__body .person-row__heading .person-name { font-size: var(--text-input); }

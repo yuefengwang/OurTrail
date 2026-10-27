@@ -1,0 +1,177 @@
+{
+  "cwd": "C:/Users/thinkbook/AppData/Local/Temp/opencode/ourtrail-crosspage-a215-baseline",
+  "ranAt": "2026-10-23T11:18:20.668Z",
+  "rows": [
+    {
+      "test": "check",
+      "exit": 0,
+      "summary": [
+        "  ✓ node --check 全部通过（如有 ✗ 见上）",
+        "  ✓ WXML 配平检查完成（如有 ✗ 见上）",
+        "  ✓ 相对 require 全部可解析（246 处，如有 ✗ 见上）",
+        "ALL CHECKS PASSED"
+      ]
+    },
+    {
+      "test": "check-handlers",
+      "exit": 0,
+      "summary": []
+    },
+    {
+      "test": "home-collab-list-test",
+      "exit": 0,
+      "summary": [
+        "passed=26 failed=0"
+      ]
+    },
+    {
+      "test": "scenario-discover-test",
+      "exit": 0,
+      "summary": [
+        "passed=40 failed=0 skipped=0"
+      ]
+    },
+    {
+      "test": "a20-owner-hero-test",
+      "exit": 0,
+      "summary": [
+        "passed=32 failed=0"
+      ]
+    },
+    {
+      "test": "scenario-workspace-test",
+      "exit": 0,
+      "summary": [
+        "passed=114 failed=0 skipped=0"
+      ]
+    },
+    {
+      "test": "scenario-vehicle-test",
+      "exit": 0,
+      "summary": [
+        "passed=57 failed=0 skipped=0"
+      ]
+    },
+    {
+      "test": "scenario-staff-test",
+      "exit": 0,
+      "summary": [
+        "passed=25 failed=0 skipped=0"
+      ]
+    },
+    {
+      "test": "scenario-tasks-test",
+      "exit": 0,
+      "summary": [
+        "passed=24 failed=0 skipped=0"
+      ]
+    },
+    {
+      "test": "scenario-me-test",
+      "exit": 0,
+      "summary": [
+        "passed=145 failed=0 skipped=0"
+      ]
+    },
+    {
+      "test": "routes-test",
+      "exit": 0,
+      "summary": [
+        "routes-test: passed=75 failed=0"
+      ]
+    },
+    {
+      "test": "discover-filter-test",
+      "exit": 0,
+      "summary": [
+        "passed=21 failed=0"
+      ]
+    },
+    {
+      "test": "journey-graph-test",
+      "exit": 0,
+      "summary": [
+        "==== passed=15 failed=0 skipped=0 ===="
+      ]
+    },
+    {
+      "test": "b4-pad-final-value-test",
+      "exit": 1,
+      "summary": [
+        "  ✗ T5.2 规范文档里被写成**完整声明**的这份公式，数值全部相同（design-system.md 0 处 / 0 份文档共 0 处）：两处文档各写一套数就是第二个真值源（）",
+        "  ✗ T6.1 注册表那一行读得出（读不出就谈不上单一真值源）（）",
+        "  ✗ T6.3 注册表自己也得盖得住遮挡物（93px 是由底栏声明算出的下限，不是偏好）",
+        "passed=29 failed=3",
+        "✗ T5.2 规范文档里被写成**完整声明**的这份公式，数值全部相同（design-system.md 0 处 / 0 份文档共 0 处）：两处文档各写一套数就是第二个真值源（）",
+        "✗ T6.1 注册表那一行读得出（读不出就谈不上单一真值源）（）",
+        "✗ T6.3 注册表自己也得盖得住遮挡物（93px 是由底栏声明算出的下限，不是偏好）"
+      ]
+    },
+    {
+      "test": "swx1-style-gates-test",
+      "exit": 1,
+      "summary": []
+    },
+    {
+      "test": "swx2-style-gates-test",
+      "exit": 0,
+      "summary": [
+        "passed=110 failed=0"
+      ]
+    },
+    {
+      "test": "t4-e08-test",
+      "exit": 0,
+      "summary": [
+        "==== passed=41 failed=0 ===="
+      ]
+    },
+    {
+      "test": "e08-remaining-test",
+      "exit": 0,
+      "summary": [
+        "==== passed=79 failed=0 ===="
+      ]
+    },
+    {
+      "test": "m02-class-scope-test",
+      "exit": 1,
+      "summary": [
+        "  ✗ PV5 四个章节标题：字号/字重终值来自 app.wxss（16px/600），段距不钉出处（容器节奏合法）（5 个节点；16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss ｜ 16px←app.wxss 600←app.wxss）",
+        "  ✗ D0 规范文档可读（C:\\Users\\thinkbook\\AppData\\Local\\Temp\\opencode\\ourtrail-crosspage-a215-baseline\\.agents\\skills\\ourtrail-ui\\references\\design-system.md）",
+        "  ✗ D1 design-system.md 的字号表里有且只有一行 `.card-label`（登记处两份 = 文档侧双真值源）（0 行）",
+        "  ✗ D2 文档那一行的数值 = 代码解出的终值（15px/600/12px；文档说别的 ⇒ 红）（row=\"\"）",
+        "  ✗ D3 登记说明写清它是「卡内小标题」语义且五页共用（否则下一个维护者继续当它是 me 私有）（）",
+        "passed=61 failed=5"
+      ]
+    },
+    {
+      "test": "ui-consistency-test",
+      "exit": 0,
+      "summary": [
+        "passed=17 failed=0"
+      ]
+    },
+    {
+      "test": "e2e-panel-sync-test",
+      "exit": 0,
+      "summary": [
+        "passed=40 failed=0 bugs=0"
+      ]
+    },
+    {
+      "test": "scenario-activity-test",
+      "exit": 0,
+      "summary": [
+        "passed=189 failed=0 skipped=0"
+      ]
+    },
+    {
+      "test": "activity-l2-structure-test",
+      "exit": 0,
+      "summary": [
+        "passed=83 failed=0"
+      ]
+    }
+  ]
+}

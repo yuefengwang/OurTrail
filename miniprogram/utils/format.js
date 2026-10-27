@@ -73,6 +73,23 @@ function relativeDeadline(iso) {
 
 const PHASE_LABELS = { draft: '草稿', published: '行前准备', gathering: '正在集合', active: '正在同行', closing: '返程报平安', archived: '已归档', cancelled: '已取消' }
 const STATUS_LABELS = { pending: '待审核', confirmed: '已确认', waitlisted: '候补中', rejected: '未通过', cancelled: '已取消', removed: '已移除' }
+// 路线难度是组织者标注，不从里程/爬升自动推导；空值统一说「未标注」，不印假星级。
+const DIFFICULTY_LABELS = { easy: '轻松', moderate: '中等', hard: '挑战' }
+const TASK_STATUS_LABELS = { todo: '待办', doing: '进行中', done: '已完成' }
+const TASK_CATEGORY_LABELS = { gear: '公共装备', food: '食物采购', logistics: '行程记录', other: '其他' }
+const TASK_CATEGORY_OPTIONS = [
+  { value: 'gear', label: TASK_CATEGORY_LABELS.gear },
+  { value: 'food', label: TASK_CATEGORY_LABELS.food },
+  { value: 'logistics', label: TASK_CATEGORY_LABELS.logistics },
+  { value: 'other', label: TASK_CATEGORY_LABELS.other },
+]
+const DIFFICULTY_OPTIONS = [
+  { value: '', label: '未标注' },
+  { value: 'easy', label: DIFFICULTY_LABELS.easy },
+  { value: 'moderate', label: DIFFICULTY_LABELS.moderate },
+  { value: 'hard', label: DIFFICULTY_LABELS.hard },
+]
+function difficultyLabel(value) { return DIFFICULTY_LABELS[value] || '' }
 const DEPARTURE_LABELS = { unknown: '出发待核实', joined: '已随队', not_departed: '未出发', coordinating: '协调中' }
 const INCIDENT_LABELS = { late: '迟到', withdrawal: '提前退出同行', injury: '伤病', other: '其他需要协助' }
 const UNASSIGNED_LABELS = { no_vehicle: '尚无可用车辆', pickup_mismatch: '上车点不匹配', group_too_large: '整组人数超过可用容量', no_seat: '可用座位不足' }
@@ -238,7 +255,7 @@ function cloudPositionReason(reason) {
 const CLOUD_WINDOW_NOTES = {
   'clipped-above': '窗外上方还有云带',
   'clipped-below': '窗外下方还有云带',
-  'no-deck': '实测高度范围内没有有意义云量',
+  'no-deck': '实测高度范围内没有 ≥80% 成层云带',
 }
 function cloudWindowNote(key) {
   if (!key) return ''
@@ -258,6 +275,8 @@ function pointOutsideLabel(side, deltaText) { return ELEV_SUBJECT + '在剖面' 
 module.exports = {
   pad, WEEK, cnParts, dateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
   minutesLabel, relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
+  DIFFICULTY_LABELS, DIFFICULTY_OPTIONS, difficultyLabel,
+  TASK_STATUS_LABELS, TASK_CATEGORY_LABELS, TASK_CATEGORY_OPTIONS,
   UNASSIGNED_LABELS, TRIP_MODE_LABELS, TRIP_MODE_HINTS, TRIP_MODE_OPTIONS, RETURN_PLAN_LABELS,
   PICKUP_MISSING, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase, windDirText,
   ELEV_SUBJECT, ELEV_SOURCE_LABELS, ELEV_MODEL_SUFFIX, elevSourceLabel, elevLineLabel, resolveElev, elevBasis,

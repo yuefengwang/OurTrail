@@ -27,6 +27,19 @@ const PATHS = {
   alert: 'M10.3 4.5a2 2 0 0 1 3.4 0l7 12A2 2 0 0 1 19 20H5a2 2 0 0 1-1.7-3.5zM12 9v4M12 16v.2',
   download: 'M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5',
   settings: 'M10 3h4l.6 2.5 2 .9L19 5l2 3.5-1.9 1.7v2.6l1.9 1.7-2 3.5-2.4-1.4-2 .9L14 21h-4l-.6-3.5-2-.9L5 18l-2-3.5 1.9-1.7v-2.6L3 8.5 5 5l2.4 1.4 2-.9zM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+  // 装备图标：与 utils/equipment-icons.js 的 key 一一对应
+  boot: 'M5 4v10l-1 2v3h16v-2c0-2-2-3-4-4l-3-1-2-4V4zM4 16h11',
+  poles: 'M7 3v16M5 21h4M17 3v16M15 21h4M7 7h10',
+  rain: 'M7 15h10a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9-1.5A3.5 3.5 0 0 0 7 15ZM8 18l-1 3M12 18l-1 3M16 18l-1 3',
+  water: 'M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z',
+  headlamp: 'M4 8a8 8 0 0 1 16 0v2h-3V8a5 5 0 0 0-10 0v2H4zM7 13h10M9 17l-1 3M15 17l1 3',
+  firstaid: 'M4 8h16v12H4zM9 8V5h6v3M12 11v6M9 14h6',
+  food: 'M7 3v7a2 2 0 0 0 4 0V3M9 10v11M17 3c-2 0-3 2-3 4s1 3 3 3v11',
+  tent: 'M12 3 3 21h18zM12 21V9M8 15l4-3 4 3',
+  sleep: 'M6 3h8a4 4 0 0 1 4 4v14H6zM6 3v18M10 8h4M10 12h4',
+  power: 'M4 8h13v8H4zM17 10h3v4h-3M7 10v4',
+  id: 'M3 6h18v12H3zM7 15v-2a2 2 0 0 1 4 0v2M9 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3M14 10h4M14 14h3',
+  backpack: 'M7 8a5 5 0 0 1 10 0v12H7zM10 8V5h4v3M7 12h10M10 16h4',
 }
 
 // 品牌图形（自定义 viewBox）
@@ -120,3 +133,5 @@ Component({
     },
   },
 })
+
+module.exports = { PATHS }

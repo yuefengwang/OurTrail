@@ -1,0 +1,9 @@
+{
+  "segClass": "segmented tabs-line",
+  "tabsLine": true,
+  "cardBorder": "1px solid rgb(222, 227, 219)",
+  "primaryLabels": [
+    "预览自动分车方案",
+    "开始集合"
+  ]
+}

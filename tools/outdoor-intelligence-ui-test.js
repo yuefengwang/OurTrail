@@ -17,6 +17,14 @@ const UMG = require('../miniprogram/utils/meteogram-svg.js')
 const WCFF = require('../miniprogram/utils/weather-cloud-field.js')
 const W = require('../cloudfunctions/trailApi/lib/weather.js')
 
+/* tier 词表在本套件里只允许有一份。
+ * 真值出处 = miniprogram/utils/oi-presentation.js 的 tierOf()：确定 / 重点关注 / 值得关注 / 条件一般。
+ * 这条曾经真的漂过：本文件一处写「很值得关注」（产品里任何地方都不发这个词），另一处写「重点关注」，
+ * 于是只要线上数据出一个 strong 项（CLOUD_SEA STRONG，或 confidence 高 + rank primary），
+ * 那条旧断言必然红——而它被当成"偶发网络红"挂了很久。产品改名时这条门**应该**报红（词汇漂移是缺陷），
+ * 但报红之后要改的是"两处一起对齐到 tierOf"，不是删断言，也不是只改其中一处。 */
+const TIER_WORDS = ['确定', '重点关注', '值得关注', '条件一般']
+
 const TIMES = []
 for (let h = 0; h < 24; h++) TIMES.push('2026-10-07T' + (h < 10 ? '0' : '') + h + ':00')
 
@@ -91,8 +99,8 @@ async function main() {
   const emeCard = OIP.buildOiCard(emeOi, { width: 375 })
   check('items 非空且字段齐全', emeCard.items.length > 0 && emeCard.items.every(it =>
     it.timeText && it.title && it.tierText && it.tierClass && it.summaryText !== undefined && Number.isFinite(it.hour)))
-  check('tier ∈ {确定, 很值得关注, 值得关注, 条件一般}', emeCard.items.every(it =>
-    ['确定', '很值得关注', '值得关注', '条件一般'].indexOf(it.tierText) >= 0))
+  check('tier ∈ tierOf 的四个词', emeCard.items.every(it =>
+    TIER_WORDS.indexOf(it.tierText) >= 0), '实际读到：' + [...new Set(emeCard.items.map(it => it.tierText))].join('|'))
   check('列表排序：primary 在前', (() => {
     for (let i = 1; i < emeCard.items.length; i++) {
       if (emeCard.items[i - 1].rank === 'primary' && emeCard.items[i].rank !== 'primary') continue
@@ -122,7 +130,10 @@ async function main() {
   }
   const anyItem = emeCard.items[0]
   OIP.applySelection(emeCard, anyItem.hour)
-  check('任意条目可选（selIndex 指向含该小时的窗口）', emeCard.selIndex >= 0)
+  // 这条以前失败时不带任何读数，只能靠人回来挖 ⇒ 把触发它的那条数据一起印出来
+  check('任意条目可选（selIndex 指向含该小时的窗口）', emeCard.selIndex >= 0,
+    'anchor hour=' + anyItem.hour + ' ｜ timeText=' + JSON.stringify(anyItem.timeText)
+    + ' ｜ type=' + anyItem.type + ' ｜ items=' + emeCard.items.length)
 
   /* ---------- 三海拔差异 ---------- */
   section('三海拔：同一管线不同解读')
@@ -180,11 +191,11 @@ async function main() {
 
   /* ---------- Phase 3：tier / 跨零点 / now / 折叠提升 ---------- */
   section('Phase 3：tier 连续化 / 跨零点 / 进行中 / 折叠提升')
-  check('tier 全集 ∈ {确定, 重点关注, 值得关注, 条件一般}', (() => {
+  check('tier 全集 ∈ tierOf 的四个词（含折叠区）', (() => {
     const tiers = new Set()
     ;[emeCard].forEach(c2 => c2.items.concat(c2.moreItems || []).forEach(it => tiers.add(it.tierText)))
-    return ['确定', '重点关注', '值得关注', '条件一般'].some(t2 => tiers.has(t2)) &&
-      [...tiers].every(t2 => ['确定', '重点关注', '值得关注', '条件一般'].indexOf(t2) >= 0)
+    return TIER_WORDS.some(t2 => tiers.has(t2)) &&
+      [...tiers].every(t2 => TIER_WORDS.indexOf(t2) >= 0)
   })(), [...new Set(emeCard.items.concat(emeCard.moreItems || []).map(it => it.tierText))].join('/'))
   check('跨零点：timeLabel 产生「今晚 HH:mm → 次日 HH:mm」', (() => {
     const label = OIP.timeLabel('22:30', '02:40')
@@ -200,10 +211,20 @@ async function main() {
     const mk = OIP.buildOiCard({ conditions: [], opportunities: [{ type: 'MILKY_WAY', from: '22:30', to: '02:40', confidence: '中', rank: 'primary', evidence: [] }], meta: {} }, { width: 375 })
     return mk.items.length === 1 && mk.items[0].timeText === '今晚 22:30 → 次日 02:40'
   })())
-  check('跨零点窗口在时间轴上画两段（今晚段 + 次日段）', (() => {
+  /* 2026-10-21 C7 **替换**旧断言「跨零点窗口在时间轴上画两段（tapZones===2）」：
+     计划 §5.3 明确「次日段画在今日最左端是谎」。新判据更强——不仅要求只有 1 个可点区，
+     还要求它的起点/宽度正好是今晚段 [from,24:00)、SVG 里也只有一组矩形（两笔），
+     且列表文案仍完整说明「今晚 … → 次日 …」（后半夜信息没有藏起来）。 */
+  check('跨零点窗口在时间轴上只画今晚段（tapZones=1、几何=[from,24:00)、SVG 无次日段）', (() => {
     const mk = OIP.buildOiCard({ conditions: [], opportunities: [{ type: 'MILKY_WAY', from: '22:30', to: '02:40', confidence: '中', rank: 'primary', evidence: [] }], meta: {} }, { width: 375 })
-    return mk.tapZones.length === 2
-  })())
+    const fromMin = 22 * 60 + 30
+    const z = mk.tapZones
+    return z.length === 1 &&
+      +z[0].left === +(fromMin / 1440 * 100).toFixed(2) &&
+      +z[0].width === +((1440 - fromMin) / 1440 * 100).toFixed(2) &&
+      (mk.timelineSvg.match(/<rect/g) || []).length === 2 &&
+      mk.items[0].timeText === '今晚 22:30 → 次日 02:40'
+  })(), JSON.stringify(OIP.buildOiCard({ conditions: [], opportunities: [{ type: 'MILKY_WAY', from: '22:30', to: '02:40', confidence: '中', rank: 'primary', evidence: [] }], meta: {} }, { width: 375 }).tapZones))
   check('nowMin 提供时，「进行中」标记落在包含 now 的窗口', (() => {
     const mk = OIP.buildOiCard({ conditions: [], opportunities: [{ type: 'IN_CLOUD', from: '15:00', to: '18:00', confidence: '高', rank: 'secondary', evidence: [] }], meta: {} }, { width: 375, nowMin: 16 * 60 })
     return mk.items[0].live === true
@@ -212,6 +233,29 @@ async function main() {
     const mk = OIP.buildOiCard({ conditions: [], opportunities: [{ type: 'IN_CLOUD', from: '15:00', to: '18:00', confidence: '高', rank: 'secondary', evidence: [] }], meta: {} }, { width: 375, nowMin: 20 * 60 })
     return mk.items[0].live === false
   })())
+  /* C7：跨零点窗口的「进行中」只按今晚段判——次日凌晨 01:00 不是今晚 23:00 的延续，
+     那半截不在这张 24h 图上。 */
+  const crossOpp = [{ type: 'MILKY_WAY', from: '23:00', to: '04:00', confidence: '中', rank: 'primary', evidence: [] }]
+  const crossCardAt = (m) => OIP.buildOiCard({ conditions: [], opportunities: crossOpp, meta: {} }, { width: 375, nowMin: m })
+  check('跨零点 now=23:30 ⇒ 进行中；now=01:00 ⇒ 不是（只按今晚段判）',
+    crossCardAt(23 * 60 + 30).items[0].live === true && crossCardAt(60).items[0].live === false)
+  check('跨零点 applySelection：hour=23 命中，hour=01 不命中（次日段不在今日图内）', (() => {
+    const c1 = crossCardAt(null)
+    OIP.applySelection(c1, 23)
+    const hit23 = c1.selIndex === 0
+    const c2 = crossCardAt(null)
+    OIP.applySelection(c2, 1)
+    return hit23 && c2.selIndex === -1
+  })())
+  check('跨零点 item 的 fromMin/toMin 与 timeText 同源（排序/命中不反解文案）', (() => {
+    const it = crossCardAt(null).items[0]
+    return it.fromMin === 23 * 60 && it.toMin === 4 * 60 &&
+      it.timeText === OIP.timeLabel('23:00', '04:00') &&
+      it.timeText === '今晚 23:00 → 次日 04:00'
+  })(), JSON.stringify(crossCardAt(null).items[0]))
+  check('24h 卡 item 保留 fromMin/toMin（horizon 的剥离不能反向删掉 24h 的字段）',
+    Number.isFinite(crossCardAt(null).items[0].fromMin) &&
+      Number.isFinite(crossCardAt(null).items[0].toMin))
   check('折叠提升：选中折叠区窗口 → 自动出现在卡面', (() => {
     const mk = OIP.buildOiCard({ conditions: [], opportunities: [
       { type: 'MILKY_WAY', from: '00:00', to: '04:00', confidence: '中', rank: 'primary', evidence: [] },
@@ -232,12 +276,30 @@ async function main() {
   const mk = (from, to, at) => OIP.buildOiCard({ conditions: [], opportunities: [{ type: 'MILKY_WAY', from: from, to: to, confidence: '中', rank: 'primary', evidence: at ? [{ fact: 'x', at: at }] : [] }], meta: {} }, { width: 375 })
   check('银河 00–05 → focus 02:00（中点）', mk('00:00', '05:00').items[0].anchor.focusLabel === '02:00')
   check('云海 05–09 → focus 07:00（中点）', mk('05:00', '09:00').items[0].anchor.focusLabel === '07:00')
-  check('跨零点 23–01 → focus 00:00（不得出现负时间/24:00）', (() => {
+  /* 2026-10-21 C7 **替换**旧断言「跨零点 23–01 → focus 00:00」与
+     「23–05 + 证据 at 02:00 → focus 02:00」。旧规则把次日段也当成可锚定的区间，
+     于是「看图」会跳到今天并不存在/尚未发生的时段（计划 §5.3：时间轴只画今晚段）。
+     新判据更强：锚点必须落在今晚可见段 [from,24:00) 内、endHour 固定 24、
+     次日证据即使存在也不得被采用；非跨零点的锚点逐项不变（下面单独一行阳性对照）。 */
+  check('跨零点 23–01 → 锚点只落在今晚段（focus 23:00 / start 23 / end 24）', (() => {
     const a = mk('23:00', '01:00').items[0].anchor
-    return a.focusHour === 0 && a.startHour === 23 && a.endHour === 1
+    return a.focusHour === 23 && a.startHour === 23 && a.endHour === 24
+  })(), JSON.stringify(mk('23:00', '01:00').items[0].anchor))
+  check('跨零点 23–05 + 次日证据 at 02:00 → 不采用，回退今晚段中点 23:00',
+    mk('23:00', '05:00', '02:00').items[0].anchor.focusHour === 23,
+    JSON.stringify(mk('23:00', '05:00', '02:00').items[0].anchor))
+  check('跨零点 20–04 + 今日可见段证据 at 21:00 → 采用（锚点仍在今晚段内）', (() => {
+    const a = mk('20:00', '04:00', '21:00').items[0].anchor
+    return a.focusHour === 21 && a.startHour === 20 && a.endHour === 24
   })())
-  check('跨零点 23–05 + 证据 at 02:00 → focus 02:00（证据优先于中点）',
-    mk('23:00', '05:00', '02:00').items[0].anchor.focusHour === 2)
+  check('跨零点 20–04 + 次日证据 at 02:00 → 回退今晚段中点 22:00', (() => {
+    const a = mk('20:00', '04:00', '02:00').items[0].anchor
+    return a.focusHour === 22 && a.endHour === 24
+  })())
+  check('阳性对照：非跨零点 anchor 逐项不变（05–09 ⇒ start 5 / end 9 / focus 7）', (() => {
+    const a = mk('05:00', '09:00').items[0].anchor
+    return a.startHour === 5 && a.endHour === 9 && a.focusHour === 7
+  })())
   check('证据 at 在窗外 → 回退中点', (() => {
     const a = mk('05:00', '09:00', '13:00').items[0].anchor
     return a.focusHour === 7

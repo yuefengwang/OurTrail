@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-21",
+  "method": "微信开发者工具自动化端口 9431；小程序 App 环境 wx.cloud.callFunction + 真页面 reLaunch。数据级读数，不是像素截图。",
+  "action": {
+    "point": { "lat": 30, "lng": 103, "elevation": 500 },
+    "ok": true,
+    "status": "ready",
+    "sources": {
+      "spatial": "ok",
+      "terrain": "ok",
+      "atmosphere": "ok",
+      "lightPollution": "ok"
+    },
+    "lightPollution": { "source": "darkskysites", "sqm": 20.01, "bortle": 6 },
+    "spatialDirs": 8,
+    "terrainDirs": 16,
+    "atmosphere": { "sevenTimer": "ok", "air": "ok" }
+  },
+  "pageChengdu": {
+    "point": { "lat": 30, "lng": 103, "elevation": 500, "name": "验证点" },
+    "dayCards": 7,
+    "condOverall": { "score": 0, "label": "条件较差", "stars": "★★☆☆☆" },
+    "condSilent": {
+      "count": 5,
+      "titles": "晨昏光染、云海、星空、银河、彩虹",
+      "note": "真实夜况：中高云约 50%、低云 60–98%、降水 1 mm；五项沉默是正确行为，不是接线失败。"
+    }
+  },
+  "pageLitang": {
+    "point": { "lat": 30.0, "lng": 100.27, "elevation": 4000, "name": "理塘验证点" },
+    "dayCards": 7,
+    "condOverall": { "score": 66, "label": "条件一般", "stars": "★★★☆☆" },
+    "condSilent": {
+      "count": 3,
+      "titles": "晨昏光染、云海、彩虹"
+    },
+    "cards": [
+      {
+        "key": "star",
+        "stars": "★★★☆☆",
+        "text": "天文暗夜 21:00-23:00 / 次日 00:00-06:00（10 小时，今晚入夜到次日晨），夜间晴朗，但月光偏亮，星空条件一般（暗夜晴空 100%，盈凸月月照 77%，月亮在夜段 7/10 小时在地平线上（最高 48°）；CAMS 气溶胶低、7Timer 透明度好、seeing 好；光污染中等（DarkSkySites.com，模型估算））。",
+        "evidence": [
+          "夜段高层云 0% · 中层云 0%",
+          "夜段观察点上方云量峰值 平均 0%",
+          "月照 77%（盈凸月）",
+          "CAMS 气溶胶 AOD 0.06",
+          "7Timer 透明度 2/8（越小越好） · seeing 3/8（越小越好）",
+          "天空亮度 Bortle 4 · SQM 20.82（DarkSkySites.com，模型估算）"
+        ]
+      },
+      {
+        "key": "galaxy",
+        "stars": "★★★☆☆",
+        "text": "银心在夜段最高约 9°，但月光偏亮（月亮在银心可见时段 1/1 小时在地平线上（最高 48°））；银心方向云约 0%（方向为模式粗判）；CAMS 气溶胶低、7Timer 透明度好、seeing 好；光污染中等（DarkSkySites.com，模型估算），银河不建议抱太大期望。",
+        "evidence": [
+          "夜段高层云 0% · 中层云 0%",
+          "夜段观察点上方云量峰值 平均 0%",
+          "月照 77%（盈凸月）",
+          "CAMS 气溶胶 AOD 0.06",
+          "7Timer 透明度 2/8（越小越好） · seeing 3/8（越小越好）",
+          "天空亮度 Bortle 4 · SQM 20.82（DarkSkySites.com，模型估算）"
+        ]
+      }
+    ],
+    "skyContext": {
+      "hasSpatial": true,
+      "hasTerrain": true,
+      "hasAtmosphere": true,
+      "hasLightPollution": true,
+      "lightPollution": { "source": "darkskysites", "sqm": 20.82, "bortle": 4 }
+    }
+  },
+  "notes": [
+    "光污染 key 已在云函数环境变量设置；线上 getSkyContext 四源全 ok。",
+    "7Timer 官方图例：透明度与 seeing 都是数值越小/越蓝越好；透明度 2/8 是“好”，不是“差”。",
+    "DarkSkySites 为模型值，卡片已写“DarkSkySites.com，模型估算”。",
+    "页面级证据是 data 读数；未截像素截图，真机 UI 仍记 UNVERIFIED。",
+    "成都点是多云负例；理塘点是新输入的阳性对照。"
+  ]
+}

@@ -31,7 +31,7 @@ Component({
   data: {
     loading: true,
     denied: '',
-    countersLine: '',
+    counters: { confirmed: 0, pending: 0, waitlisted: 0 },
     search: '',
     statusOptions: STATUS_FILTERS,
     // 协作授权弹层的两个 picker 数据源：常量此前只存在模块作用域、从未挂进 data，
@@ -59,6 +59,11 @@ Component({
     accessOpen: false,
     memberships: [],
     vehicles: [],
+    // 「负责车辆」下拉的三态（读取中 / 读取失败 / 确实没有车辆），由 applyVehicles 一处翻译。
+    // 初始为「读取中」：本组件挂载后那条 readTransport 还没落地之前，下拉不该假装成空列表。
+    vehicleLoading: true,
+    vehicleFailed: false,
+    vehicleEmpty: false,
     roleIndex: 0,
     mUserId: '',
     expires: { date: '', time: '' },
@@ -66,6 +71,8 @@ Component({
     caps: {},
     vehicleIndex: -1,
     editingId: '',
+    revokeId: '',
+    revokeText: '',
     error: '',
     message: '',
     busy: false,
@@ -157,24 +164,89 @@ Component({
         canReview: allPending && phase === 'published',
         canPromote: allWaitlisted && phase === 'published',
         canCancel: allCurrentUntravelled && ['published', 'gathering'].indexOf(phase) !== -1,
-        countersLine: '已确认 ' + v.counters.confirmed + ' · 待审核 ' + v.counters.pending + ' · 候补 ' + v.counters.waitlisted + '。仅显示你有权查看的人员。',
+        counters: v.counters,
       })
     },
 
     loadTransport() {
-      api.readOr('readTransport', { activityId: this.data.activityId }).then(result => {
-        const groups = result.groups
+      // 这条 readTransport 是「负责车辆」下拉的唯一出处。它此前被当两件事用：
+      // 协作授权弹层直接读 this.data.transportVehicles，而那份数据是这条**并发读**的产物，
+      // 两个读没有先后保证 ⇒ readAccess 先回时下拉恒为空，页面再给出「先去分车添加车辆」的错误指引（C-20）。
+      // 现在：读的结果显式带状态（成功/失败），弹层装配必须等它落地。
+      // _vehicleState 只记「上一条读落地的结果」，刷新期间界面上保留上一份候选（不清空、不假装在加载）。
+      const gen = (this._transportGen || 0) + 1
+      this._transportGen = gen
+      const p = api.readOr('readTransport', { activityId: this.data.activityId }).then(result => {
+        if (this._transportGen !== gen) return { ok: false, stale: true }
+        this._transportRead = null
+        const rows = (this.view && this.view.rows) || []
+        const groups = (result.groups || [])
           .filter(g => g.signupIds.length > 1)
           .map(g => ({
             id: g.id,
             keepTogether: g.keepTogether,
             names: g.signupIds.map(id => {
-              const r = this.view.rows.find(x => x.signupId === id)
+              const r = rows.find(x => x.signupId === id)
               return r ? r.name : ''
             }).filter(Boolean).join('、'),
           }))
-        this.setData({ groups, transportVehicles: result.vehicles })
-      }).catch(() => {})
+        const vehicles = result.vehicles || []
+        this.applyVehicles('ready', vehicles)
+        this.setData({ groups })
+        return { ok: true, vehicles }
+      }).catch(e => {
+        if (this._transportGen !== gen) return { ok: false, stale: true }
+        this._transportRead = null
+        // 读取失败**不写成**「这场活动还没有车辆」：读故障与空态是两件事（同 notices 页那类缺陷）。
+        this.applyVehicles('failed', null)
+        return { ok: false, error: e }
+      })
+      this._transportRead = p
+      return p
+    },
+
+    // 下拉候选与保存要用的 id 只在这一处装配：两者来自同一次读，绝不允许 range 来自 A、ids 来自 B。
+    // 三条布尔由这次算出的 list 直接翻译，不回头读 this.data 里刚写进去的值。
+    applyVehicles(state, list) {
+      const vehicles = state === 'failed' ? [] : (list || [])
+      this._vehicleState = state
+      this._transportVehicles = vehicles
+      this.transportVehicleIds = vehicles.map(v => v.id)
+      this.setData({
+        vehicles: vehicles.map(v => v.label),
+        vehicleLoading: false,
+        vehicleFailed: state === 'failed',
+        vehicleEmpty: state === 'ready' && !vehicles.length,
+      })
+    },
+
+    // 弹层的显式依赖收口：正在飞的那一条就等它（不另发第二条读，免得造出第二个真值源）；
+    // 已经读成功就用已在位的那份；从没读起过才开始第一条。失败态不在这里自动重试——
+    // 重试是界面上那颗按钮的显式动作（读可以重试，写绝不自动重发，铁律 24）。
+    ensureTransport() {
+      if (this._transportRead) return this._transportRead
+      if (this._vehicleState === 'ready') return Promise.resolve({ ok: true, vehicles: this._transportVehicles || [] })
+      if (this._vehicleState === 'failed') return Promise.resolve({ ok: false })
+      return this.loadTransport()
+    },
+
+    onRetryVehicles() {
+      this.loadTransport().then(read => {
+        // 重试成功后，正在调整的既有授权要按新读到的列表重新回显它原来那辆车，
+        // 否则用户会看到「请选择车辆」，以为刚才的授权凭空没了。
+        if (!read || !read.ok || !this.data.editingId) return
+        const m = (this.data.memberships || []).find(x => x.id === this.data.editingId)
+        if (m && m.vehicleId) this.setData({ vehicleIndex: this.transportVehicleIds.indexOf(m.vehicleId) })
+      })
+    },
+
+    // 「读不到车辆」与「确实没有车辆」必须分岔说话：前者让人重试，后者才让人去分车区添加车辆。
+    vehicleBlockReason() {
+      if (this.data.vehicleLoading) return '车辆列表正在读取，请等它读完再保存。'
+      if (this.data.vehicleFailed) return '车辆列表这次没有读到——这不代表这场活动没有车辆，请点「重新读取车辆列表」后再保存。'
+      if (this.data.vehicleEmpty) return '这场活动还没有车辆：请先在分车区添加车辆，再把车辆联络授权给车长。'
+      if (this.data.vehicleIndex < 0 || !this.transportVehicleIds) return '请选择负责车辆。'
+      return ''
     },
 
     onSearch(e) { this.setData({ search: e.detail.value }, () => this.render()) },
@@ -306,21 +378,31 @@ Component({
 
     // ---- 同行组约束 ----
     onToggleGroup(e) {
+      // 这是一条写命令，与同文件其它写点（onBatchConfirm/onExportConfirm/onRevokeConfirm/onAccessSave）
+      // 同一套在途守卫：busy 与 busyAt 成对置位、then/catch 两路都复位。
+      // 残留姿态的宽限期判据只有一个出处 J.busyStale —— 组件不写第二个 8000、不自己算时间差。
+      if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+        this.setData({ busy: false, busyAt: 0 })
+        console.warn('[busy] 同行组约束：清掉一个超过宽限期没落地的写状态，本次操作照常放行')
+      }
+      if (this.data.busy) return
       const { id, keep } = e.currentTarget.dataset
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({ type: 'group.setTogether', activityId: this.data.activityId, groupId: id, keepTogether: !keep }, this.revision, this)
         .then(res => {
           this.revision = res.revision
+          this.setData({ busy: false, busyAt: 0 })
           api.toast('同行组约束已保存')
           this.loadTransport()
         })
-        .catch(err => this.setData({ error: api.errorText(err) }))
+        .catch(err => this.setData({ busy: false, busyAt: 0, error: api.errorText(err) }))
     },
 
     // ---- 协作授权 ----
     onAccessOpen() { this.setData({ accessOpen: true }, () => this.loadAccess()) },
     onAccessClose() { this.setData({ accessOpen: false }) },
     loadAccess() {
-      api.readOr('readAccess', { activityId: this.data.activityId }).then(result => {
+      const access = api.readOr('readAccess', { activityId: this.data.activityId }).then(result => {
         const memberships = result.memberships.map(m => ({
           id: m.id,
           role: m.role,
@@ -331,10 +413,13 @@ Component({
           capabilities: m.role === 'staff' ? m.capabilities : [],
           vehicleId: m.role === 'vehicle_contact' ? m.vehicleId : '',
         }))
-        const vehicles = (this.data.transportVehicles || []).map(v => v.label)
-        this.transportVehicleIds = (this.data.transportVehicles || []).map(v => v.id)
-        this.setData({ memberships, vehicles, accessError: '' })
+        this.setData({ memberships, accessError: '' })
       }).catch(e => this.setData({ accessError: api.errorText(e) }))
+      // 车辆候选是本弹层的**显式依赖**，与名单读取并发等齐。等的是那条唯一的 readTransport：
+      // ensureTransport 复用正在飞的同一条，既不另发第二次读，也不再顺带取它写进 data 的值（C-20）。
+      // 候选的装配点在那条读落地的地方（applyVehicles），所以「谁先落地谁先说话」不会印出错的东西；
+      // 这里的等齐给出的是「弹层两项依赖都到位」的时刻。
+      return Promise.all([access, this.ensureTransport()]).then(() => true)
     },
     onEditMembership(e) {
       const id = e.currentTarget.dataset.id
@@ -349,18 +434,31 @@ Component({
         expires: { date: F.dtFull(m.expiresAt).slice(0, 10), time: F.dtFull(m.expiresAt).slice(11, 16) },
         scopeIndex: m.scope && m.scope.kind === 'all' ? 1 : 0,
         caps,
-        vehicleIndex: m.vehicleId ? this.transportVehicleIds.indexOf(m.vehicleId) : -1,
+        // 候选还没落地时（那条 readTransport 在飞）没有 id 可查：回显成「未选」，
+        // 保存那条会被 vehicleBlockReason 挡下，绝不会把既有授权的 vehicleId 静默丢掉。
+        vehicleIndex: m.vehicleId ? (this.transportVehicleIds || []).indexOf(m.vehicleId) : -1,
       })
     },
-    onRevokeMembership(e) {
+    // 撤销不可回退且影响的是第三方，按 me.js 的 onRemoveAsk/Cancel/Confirm 三步做（询问→确认→执行）。
+    onRevokeAsk(e) {
       const id = e.currentTarget.dataset.id
+      const m = (this.data.memberships || []).find(x => x.id === id)
+      if (!m) return
+      this.setData({ revokeId: id, revokeText: m.userId + '（' + m.roleLabel + ' · 截止 ' + m.expiresLabel + '）' })
+    },
+    onRevokeCancel() { this.setData({ revokeId: '', revokeText: '' }) },
+    onRevokeConfirm() {
+      const id = this.data.revokeId
+      if (!id || this.data.busy) return
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({ type: 'membership.revoke', activityId: this.data.activityId, membershipId: id }, this.revision, this)
         .then(res => {
           this.revision = res.revision
+          this.setData({ busy: false, revokeId: '', revokeText: '' })
           api.toast('授权已撤销')
           this.loadAccess()
         })
-        .catch(err => this.setData({ error: api.errorText(err) }))
+        .catch(err => this.setData({ busy: false, error: api.errorText(err), revokeId: '', revokeText: '' }))
     },
     onRole(e) { this.setData({ roleIndex: Number(e.detail.value) }) },
     onMUserId(e) { this.setData({ mUserId: e.detail.value }) },
@@ -385,6 +483,7 @@ Component({
       this.setData({ editingId: '', roleIndex: 0, mUserId: '', expires: { date: '', time: '' }, scopeIndex: 0, caps: {}, vehicleIndex: -1 })
     },
     onAccessSave() {
+      if (this.data.busy) return
       const userId = this.data.mUserId.trim()
       const expiresAt = this.data.expires.date && this.data.expires.time
         ? this.data.expires.date + 'T' + this.data.expires.time + ':00+08:00' : ''
@@ -398,9 +497,12 @@ Component({
         this.setData({ error: '请选择工作能力和有效的分管范围（可先在名单里勾选人员）。' })
         return
       }
-      if (role === 'vehicle_contact' && (this.data.vehicleIndex < 0 || !this.transportVehicleIds)) {
-        this.setData({ error: '请选择负责车辆（先在分车里添加车辆）。' })
-        return
+      if (role === 'vehicle_contact') {
+        const blocked = this.vehicleBlockReason()
+        if (blocked) {
+          this.setData({ error: blocked })
+          return
+        }
       }
       const membershipId = this.data.editingId || ('membership-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8))
       const membership = role === 'staff' ? {
@@ -411,14 +513,16 @@ Component({
         role, id: membershipId, activityId: this.data.activityId, userId, expiresAt,
         vehicleId: this.transportVehicleIds[this.data.vehicleIndex],
       }
+      // busy 只能在校验全过之后置：校验失败要先 return，否则一次填错就把按钮锁成「看着能点、点了没反应」。
+      this.setData({ busy: true, busyAt: Date.now(), error: '' })
       api.dispatchAndSync({ type: 'membership.save', activityId: this.data.activityId, membership }, this.revision, this)
         .then(res => {
           this.revision = res.revision
-          this.setData({ editingId: membershipId, message: '授权已保存。' })
+          this.setData({ busy: false, editingId: membershipId, message: '授权已保存。' })
           api.toast('授权已保存')
           this.loadAccess()
         })
-        .catch(err => this.setData({ error: api.errorText(err) }))
+        .catch(err => this.setData({ busy: false, error: api.errorText(err) }))
     },
   },
 })

@@ -4,24 +4,25 @@
     <status-panel kind="loading" title="正在载入" detail="正在连接预演工具。" />
   </block>
 
-  <view wx:else class="stack">
-    <view>
-      <text class="eyebrow">开发工具 · 仅白名单账号</text>
-      <text class="page-title">单人全流程预演</text>
-      <text class="muted" style="display:block;margin-top:4px;">演员由预演工具注入。审核、分车、阶段推进等组织者动作，请到各业务页亲手完成——预演走的就是真实数据链路。</text>
+  <view wx:else class="stack-sections">
+    <view class="section-head">
+      <text class="kicker">开发工具 · 仅白名单账号</text>
+      <text class="page-title" style="display:block;margin-top:4px;">单人全流程预演</text>
+      <text class="section-sub">演员由预演工具注入。审核、分车、阶段推进等组织者动作，请到各业务页亲手完成——预演走的就是真实数据链路。</text>
     </view>
 
     <view wx:if="{{message}}" class="callout">{{message}}</view>
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
 
     <view class="card stack-gap3">
-      <view class="card-header">
+      <view class="section-head">
+        <text class="kicker">预演</text>
         <text class="section-title">预演活动</text>
       </view>
       <block wx:if="{{activity}}">
         <view class="cluster" style="justify-content:space-between;">
-          <text style="font-weight:600;min-width:0;word-break:break-all;">{{activity.title}}</text>
-          <text class="badge neutral">{{activity.phase}}</text>
+          <text class="row-title" style="min-width:0;word-break:break-all;">{{activity.title}}</text>
+          <text class="badge neutral">{{activity.phaseText}}</text>
         </view>
         <text class="small muted">容量 {{activity.capacity}} · 报名 {{activity.signups}} 行 · 未结异常 {{activity.openIncidents}}</text>
       </block>
@@ -34,7 +35,7 @@
         <view class="cluster" style="justify-content:space-between;">
           <view class="cluster" style="gap:8px;min-width:0;">
             <text class="badge neutral tabular">{{item.stage}}</text>
-            <text style="font-weight:600;">{{item.title}}</text>
+            <text class="row-title">{{item.title}}</text>
           </view>
           <text class="badge {{item.status === 'done' ? 'success' : item.status === 'ready' ? 'warning' : 'neutral'}}">{{item.status === 'done' ? '已完成' : item.status === 'ready' ? '可执行' : '被挡住'}}</text>
         </view>
@@ -44,7 +45,8 @@
     </view>
 
     <view class="card stack-gap3" wx:if="{{actors.length}}">
-      <view class="card-header">
+      <view class="section-head">
+        <text class="kicker">演员</text>
         <text class="section-title">演员名册</text>
       </view>
       <view wx:for="{{actors}}" wx:key="id" class="cluster" style="justify-content:space-between;">
@@ -54,7 +56,8 @@
     </view>
 
     <view class="card stack-gap3">
-      <view class="card-header">
+      <view class="section-head">
+        <text class="kicker">权限</text>
         <text class="section-title">开发者白名单</text>
       </view>
       <text class="small muted">你的身份码：<text class="tabular">{{caller || '（未知）'}}</text>。开发者从「我的」页复制身份码发给你，粘贴到下面添加即生效，无需重新部署。</text>

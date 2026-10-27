@@ -1,5 +1,7 @@
 {
   "navigationBarTitleText": "活动工作台",
+  "navigationBarBackgroundColor": "#F5F5F0",
+  "navigationBarTextStyle": "black",
   "usingComponents": {
     "icon": "/components/icon/icon",
     "overlay": "/components/overlay/overlay",

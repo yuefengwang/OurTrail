@@ -1,0 +1,89 @@
+{
+  "startedAt": "2026-10-21T03:31:54.395Z",
+  "imageChecks": [
+    {
+      "ok": true,
+      "data": {
+        "pass": true
+      }
+    },
+    {
+      "ok": true,
+      "data": {
+        "pass": true
+      }
+    }
+  ],
+  "activityId": "activity-mvhk379eod5ttp",
+  "detail": {
+    "stack": [
+      "pages/activity/activity"
+    ],
+    "loading": false,
+    "denied": "",
+    "title": "[预演] 详情图文展示验证",
+    "contentView": [
+      {
+        "type": "text",
+        "paragraphs": [
+          "第一段：这是从云端读回的正文。",
+          "第二段：同一段文字里用空行分段。"
+        ]
+      },
+      {
+        "type": "images",
+        "layout": "double",
+        "count": 2
+      },
+      {
+        "type": "text",
+        "paragraphs": [
+          "第三段：图片后面的正文，顺序应与保存时一致。"
+        ]
+      }
+    ],
+    "autoSummary": "",
+    "coverIsReal": true,
+    "sectionNav": [
+      "sec-intro",
+      "sec-itinerary",
+      "meeting-block",
+      "sec-safety",
+      "sec-equipment",
+      "sec-fee"
+    ],
+    "shotTop": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\08-detail-top.png",
+    "shotIntro": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\09-detail-intro.png",
+    "shotImages": "D:\\OurTrail\\docs\\ui-ux-redesign\\evidence\\create-flow-2026-10-21\\10-detail-images.png"
+  },
+  "cleanupActivity": {
+    "status": "done",
+    "result": {
+      "ok": true,
+      "data": {
+        "targetIds": [],
+        "replayed": false,
+        "revision": 5639
+      }
+    }
+  },
+  "cleanupFiles": {
+    "status": "done",
+    "result": {
+      "errMsg": "cloud.deleteFile:ok",
+      "fileList": [
+        {
+          "fileID": "cloud://cloud1-d9ghcm034574b9d55.636c-cloud1-d9ghcm034574b9d55-1495136950/activity-media/capture/1792553514826-ridge.jpg",
+          "status": 1,
+          "errMsg": "STORAGE_FILE_NONEXIST"
+        },
+        {
+          "fileID": "cloud://cloud1-d9ghcm034574b9d55.636c-cloud1-d9ghcm034574b9d55-1495136950/activity-media/capture/1792553516488-valley.jpg",
+          "status": 1,
+          "errMsg": "STORAGE_FILE_NONEXIST"
+        }
+      ]
+    }
+  },
+  "endedAt": "2026-10-21T03:32:30.636Z"
+}

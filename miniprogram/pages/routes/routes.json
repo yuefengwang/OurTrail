@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "路线库",
+  "navigationBarBackgroundColor": "#F5F5F0",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "status-panel": "/components/status-panel/status-panel"
+  },
+  "enablePullDownRefresh": true
+}

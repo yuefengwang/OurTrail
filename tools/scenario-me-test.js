@@ -14,6 +14,8 @@
 // 统计与最近活动（utils/me-view 纯函数）。历史已修问题（紧急联系字段映射、取号取消提示）
 // 的 skipped 闸门已删除，相关断言转为真实校验（skipped 恒为 0）。
 'use strict'
+const fs = require('fs')
+const path = require('path')
 const ME_PATH = require.resolve('../miniprogram/pages/me/me.js')
 const DRAFT_PATH = require.resolve('../miniprogram/utils/draft.js')
 const api = require('../miniprogram/utils/api')
@@ -128,10 +130,10 @@ function draftOf(env, id) {
 function homeView(activities, kind) {
   return { view: { kind: kind || 'home', activities: activities || [] }, revision: 2, now: '2026-09-29T09:00:00+08:00' }
 }
-// 首页带位置授权行（me 页 positionRows 的来源）
+// 首页带位置授权行（me 页 positionRows 的来源）：一行有效、一行已过期（D-05）
 const homeWithPosition = () => homeView([
   { title: '活动A', meta: { positionRows: [{ activityId: 'a1', activityTitle: '活动A', signupId: 's1', name: '领队' }] } },
-  { title: '活动B', meta: {} },
+  { title: '活动B', meta: { positionRows: [{ activityId: 'a2', activityTitle: '活动B', signupId: 's2', name: '陈屿', expired: true }] } },
 ])
 
 // 装一台「我的」页：wx 桩 + api 网络桩 + 真页面 onShow（me.js 无 onLoad，onShow 即 reload）。
@@ -246,9 +248,17 @@ async function scenario1() {
       === JSON.stringify([{ id: 'c1', name: '李四', avatar: 'cloud://c1.jpg' }]),
       JSON.stringify(page.data.companions))
     check('位置授权行带「活动名 · 角色」标签与撤回所需的 activityId/signupId',
-      page.data.positionRows.length === 1 && page.data.positionRows[0].label === '活动A · 领队'
+      page.data.positionRows.length === 2 && page.data.positionRows[0].label === '活动A · 领队'
       && page.data.positionRows[0].activityId === 'a1' && page.data.positionRows[0].signupId === 's1',
       JSON.stringify(page.data.positionRows))
+    check('D-05：有效行 expired=false、过期行 expired=true（flag 透传到页面）',
+      page.data.positionRows[0].expired === false && page.data.positionRows[1].expired === true
+      && page.data.positionRows[1].label === '活动B · 陈屿',
+      JSON.stringify(page.data.positionRows))
+    const meWxml = fs.readFileSync(path.join(__dirname, '..', 'miniprogram', 'pages', 'me', 'me.wxml'), 'utf8')
+    const validLine = meWxml.split('\n').find(l => l.includes('本次活动的位置授权仍然有效')) || ''
+    check('D-05：模板按 item.expired 分岔，「仍然有效」不再是恒真文案',
+      validLine.includes('item.expired') && meWxml.includes('已过期（活动已结束）'), validLine.trim())
     check('revision 取自档案读（后续 CAS 基准）', page.revision === 7, String(page.revision))
     check('完整档案已激活', page.data.activated === true, String(page.data.activated))
   }

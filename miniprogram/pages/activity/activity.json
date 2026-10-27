@@ -1,10 +1,17 @@
 {
   "navigationBarTitleText": "活动详情",
+  "navigationBarBackgroundColor": "#F5F5F0",
+  "navigationBarTextStyle": "black",
   "usingComponents": {
+    "activity-hero": "/components/activity-hero/activity-hero",
+    "chapter": "/components/chapter/chapter",
+    "equipment-grid": "/components/equipment-grid/equipment-grid",
+    "fact-grid": "/components/fact-grid/fact-grid",
     "icon": "/components/icon/icon",
     "overlay": "/components/overlay/overlay",
     "status-panel": "/components/status-panel/status-panel",
     "form-field": "/components/form-field/form-field",
-    "person-row": "/components/person-row/person-row"
+    "person-row": "/components/person-row/person-row",
+    "route-profile": "/components/route-profile/route-profile"
   }
 }

@@ -214,10 +214,40 @@ Page({
     })
   },
   onGpxClose() { this.setData({ gpxOpen: false }) },
+  // 预览删除只动 data.gpxPoints；_gpxParsed 始终保留完整解析结果，「恢复全部」据此还原。
+  onGpxRemove(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    const points = this.data.gpxPoints || []
+    if (!Number.isInteger(index) || index < 0 || index >= points.length) return
+    const next = points.slice()
+    next.splice(index, 1)
+    this.setData({
+      gpxPoints: next,
+      gpxMeta: Object.assign({}, this.data.gpxMeta, {
+        hasTime: next.some(p => p.time && Number.isFinite(Date.parse(p.time))),
+      }),
+    })
+  },
+  onGpxReset() {
+    const parsed = this._gpxParsed
+    if (!parsed || !parsed.ok) return
+    this.setData({
+      gpxPoints: parsed.points,
+      gpxMeta: Object.assign({}, this.data.gpxMeta, {
+        hasTime: parsed.points.some(p => p.time && Number.isFinite(Date.parse(p.time))),
+      }),
+    })
+  },
   onGpxApply() {
     const parsed = this._gpxParsed
-    if (!parsed || !parsed.points || parsed.points.length < 2) return
-    const set = WP.fromGpx(parsed, this.data.gpxMeta && this.data.gpxMeta.fileName)
+    const points = this.data.gpxPoints || []
+    if (!parsed || !parsed.ok) return
+    if (points.length < 2) {
+      api.toast('至少保留 2 个节点才能存为轨迹点组')
+      return
+    }
+    // 以预览里实际保留的点为准；直接传 _gpxParsed 会把刚删掉的节点又存回去。
+    const set = WP.fromGpx(Object.assign({}, parsed, { points }), this.data.gpxMeta && this.data.gpxMeta.fileName)
     if (!set) return
     const r = wpStore.saveTrack(set)
     if (!r.ok) {

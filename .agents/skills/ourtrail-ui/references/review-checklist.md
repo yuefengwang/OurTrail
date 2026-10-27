@@ -1,8 +1,14 @@
-# UI 交付前审查清单
+# UI 交付与审查清单（按证据层组织）
 
-按受影响范围选择检查项。此清单用于发现风险，不替代任务验收，也不要求每个小改动都补齐整套全站设计材料。多页面或导航重构还要对照 [redesign-workflow.md](redesign-workflow.md) 的阶段交付物。
+**用法**：先按 SKILL.md §2 定模式，再选档。M3 只读审计跑 T1–T4（T5–T7 记"未执行"）；M1/M2 至少 T1–T4 + 任何结构/样式改动后的 T5 或 T6；M4 就是 T5–T7 本身。
+**铁规矩**：任何一档没跑就写 `NOT_RUN`，跑不动写 `INCONCLUSIVE` / `ENV-ABORT`。**不许把未执行的检查标通过**，也不许把 T1 的通过写成"界面正常"。
+
+每行的三段含义：**对象**＝要看的东西；**判据**＝怎样算过；**证据**＝交付时要留下什么（行号 / 命令 + 退出码 / 截图路径 / DOM 读数）。
+
+**范围自选**：按受影响范围选档，不要求每个小改动都补齐整套全站设计材料。本清单用于发现风险，**不替代任务验收**。多页面或导航重构还要对照 [redesign-workflow.md](redesign-workflow.md) 的阶段交付物。
 
 ## 设计与范围（多页面/流程重构）
+
 - [ ] 页面清单、导航和组件归属来自当前 `app.json` / 实际代码；与文档不一致处已注明
 - [ ] 关键角色、用户任务、入口/出口和跨页状态已梳理
 - [ ] 每个迁移/合并/拆分页面都有明确理由；已识别无主入口与重复职责
@@ -11,53 +17,115 @@
 - [ ] 设计方案明确区分产品/服务端契约变更与纯前端体验调整
 - [ ] 阶段范围、依赖、验收条件和回退点可审阅
 
-## 结构与作用域
-- [ ] 组件使用全局类时，样式隔离设置已验证；自包含组件没有无理由依赖全局选择器
-- [ ] 新颜色按实际设计系统方案登记，并同步所有相关消费者；重大改版可调整旧 token，但需迁移映射
-- [ ] `node tools/check.js` ALL PASSED
+## T1 静态代码审查（无需运行，可复核）
 
-## 页面完整性（每个页面四态）
-- [ ] denied：用 status-panel 表达拒绝原因；只有可恢复的拒绝才提供重试，否则说明可行去向（若有）
-- [ ] loading：status-panel kind=loading（骨架）
-- [ ] empty：status-panel kind=empty，文案解释"为什么空、下一步做什么"
-- [ ] 错误：dispatch 失败有可见反馈（callout danger 或 toast），不静默
+| 对象 | 判据 | 证据 |
+|---|---|---|
+| 全局静态门 | `node tools/check.js` 与 `node tools/check-handlers.js`（可加页名只测一页）均 exit 0 | 命令 + 输出末行 `ALL CHECKS PASSED` |
+| 新组件作用域 | 引用了全局类的组件有 `options: { styleIsolation: 'apply-shared' }`，且 `options` 键在该 `Component()` 内只出现 1 次 | `file:line`；`grep -c "^\s*options:"` ≤1 |
+| 具名 slot | 用了 `<slot name=…>` 的组件必须 `multipleSlots: true` | wxml 行号 + js 行号 |
+| 组件注册 | 组件在**页面 json** 用根绝对路径注册；WXML 里出现的自定义标签都已注册（`check.js` 步骤 5 与 5b 正反双向） | 页面 json 行号 / check.js 退出码 |
+| 新页面注册 | 四件套齐全 + 已进 `app.json` `pages`；若是 tab 页，`tabBar` 与本页 wxss 的底部留白都要在 | `app.json` 行号 + 页 wxss 行号 |
+| handler 解析 | 所有 `bind*/catch*` 指向存在的 handler（含工厂造出来的） | `check-handlers.js` 输出 |
+| 状态词单源 | 页面 JS/WXML 里没有新打的中文状态词字面量；WXML 不比较服务端枚举原文（改读布尔） | `journey-graph-test.js` 退出码（**唯一常驻门**） |
+| 提交路径 | 写命令走 `api.dispatchAndSync(payload, this.revision, this)`；裸 `dispatch` 必须能写出"本页不再展示刚改的数据 + revision 链自行推进"的理由（现存唯一合法例：`pages/signup/signup.js:378`） | 调用点行号 + 例外说明 |
+| revision 契约 | `this.revision/now/view` 是实例属性、不进 `data`；每次读写后刷新 | 页 js 行号 |
+| 溢出与数字 | 长文本 `word-break`/省略；时间里程人数用 `.tabular` | wxml/wxss 行号 |
 
-## 交互
-- [ ] 自定义触控目标尽量满足项目触控尺寸基线；自定义 view/button 交互有合适的触碰反馈（如 `hover-class`），原生控件、地图标记与画布控件按各自交互能力验证
-- [ ] 禁用态 = `.disabled` + bindtap 置空 + handler 内 busy/条件守卫（三层一致）
-- [ ] 提交类按钮在 busy 期间不可重复触发
-- [ ] 数据提交用 `api.dispatchAndSync`，CONFLICT 自动重读
-- [ ] 危险操作（取消报名/删车/移除/取消活动）：dialog 确认 + 需要原因的必填原因
-- [ ] 输入框用了正确键盘（number/digit/nickname），placeholder 说明格式
-- [ ] 失焦自动保存的场景：保存成功/失败都有反馈（toast + 状态行）
-- [ ] 关键操作可由清楚的控件触发，反馈与服务端真实结果一致
-- [ ] 用户取消、返回、重复点击、等待和重试的行为经过考虑
+## T2 设计系统一致性
 
-## 文案
-- [ ] 状态文案解释"现在怎样 + 接下来会怎样"，不用甩锅式空话
-- [ ] 数字/时间用 `.tabular`；时间统一北京时间（utils/format.js）
-- [ ] 演示/合规措辞：不承诺救援/保险；零金额表述保持
+| 对象 | 判据 | 证据 |
+|---|---|---|
+| 复用优先 | 新写的类/色/字号在 `app.wxss` 或 `design-system.md` 里没有等价物（全局搜过） | 搜过的类名清单 |
+| 颜色 | 组件与页面 wxss 不出现新的色字面量；`var(--x, #literal)` 兜底与注释不计；tab-bar 是唯一允许的字面量区 | 行号；新语义色已进 `app.wxss` 并登记 `design-system.md` |
+| 已知债不扩大 | 不新增 `home/discover/weather/activity/overlay` 那类字面量副本（清单见 `design-system.md` §现状色值债登记） | diff 内 0 新命中 |
+| 天相/图表配色 | 改 `MARK_STYLE` 同步 `sky.js` `hourMarks`；画布字面量带 `// = --token` 注释 | 两处行号；`weather-page-test.js` 交叉核对退出码 |
+| 对比度 | 正文对 ≥4.5:1、描边 ≥3:1；`--muted` 不再调淡；色块上文字用 `inkOn()` 判 | 配对计算或引用 `layout.js:106-113` |
+| 触控与节奏 | 新可点主目标引用 `--touch-target`/`--action-height`；纵向用 `.stack` 而非随意 margin | 行号；豁免要写理由 |
+| 座位网格 | 仍是 4 座 + 1 过道，宽度表达式未回退成 `25%` | `app.wxss:406/:425` 或页面覆写行号 |
+| 底部留白 | Tab 页用 `calc(32px + 84px + env(safe-area-inset-bottom))`；含 `.sticky-action` 的页用 `.page.has-sticky`（120px） | 页 wxss 行号 |
+| 弹层 | overlay 内超高内容可滚动；关闭态是 `pointer-events:none` + 延迟隐藏，不拦截整页点击 | 组件 wxml/wxss 行号 |
+| 空态 | 空态插图为语义图标（`status-panel` 内置），加载↔空态切换时布局不跳动 | wxml 行号 |
+| 窄视口与动态内容 | 375·390·414 宽度下，动态内容与长文本无遮挡/截断；重要信息不只靠颜色表达 | 截图或 DOM 读数 |
 
-## 布局细节
-- [ ] Tab 页/sticky 页底部留白正确（84px 规则 / has-sticky）
-- [ ] 长文本溢出处理（姓名/地址/备注 word-break 或 ellipsis）
-- [ ] 弹层内容超高可滚动（overlay 内 scroll-view），关闭态不拦截点击
-- [ ] 座位网格改动后行对齐仍是 4+过道
-- [ ] 空态插图为语义图标（status-panel 内置），布局不跳动
-- [ ] 动态内容、窄视口和长文本下无遮挡/截断；重要信息不只靠颜色表达
+## T3 交互与状态
 
-## 视觉层次（refactoring-ui 诊断表，损害大头）
-- [ ] 一页最多一个实心主按钮；同级批量动作全部次要样式，主样式只出现在确认弹窗里
-- [ ] 页面上的危险操作用文字样式（tertiary），红色主按钮只出现在确认弹窗内
-- [ ] 卡片不叠用"边框 + 底色差"；两者都有时去掉边框
-- [ ] 空态下隐藏无功能的筛选项/分段控件
-- [ ] 强调靠字重与颜色，不靠放大字号；字重两档：正文 400/500、强调 600（700 仅 page-title）
-- [ ] 数据避免 `label: value` 罗列——标签合并进值或降为次级文本
-- [ ] 对比度抽查 ≥4.5:1（正文对），输入框/勾选框描边 ≥3:1；新增颜色必须验一组配对
-- [ ] 图标不放大远离原始尺寸；需要大图标时放进色块圆底
+| 对象 | 判据 | 证据 |
+|---|---|---|
+| 四态 | denied / loading / empty / error 齐备，用 `<status-panel>`；empty 的 detail 说明"为什么空 + 下一步"。纯静态页（`staff`/`privacy`/`cloud-field-poc`）可豁免并写明 | wxml 行号；豁免说明 |
+| denied 有出路 | 拒绝态屏上有重试或返回出口（`journey-graph-test.js` 查这条） | 行号 / 门退出码 |
+| 六态之 offline 与 submitting | 离线/超时走 `<status-panel kind="offline">` 或兜底横幅；`busy` 期间不可重复触发 | 行号 + 触发路径 |
+| 禁用三层 | `.disabled` + `bindtap` 置空 + handler 守卫，三者一致 | 三处行号 |
+| hover | 所有可点元素 `hover-class="button-hover"` | 行号 |
+| 危险操作 | 入口为文字/次要样式 → `overlay kind="dialog"` 确认 → 需后果处自陈影响范围 → 需要原因则必填。**确认弹窗内的红实心是允许的** | wxml 行号 |
+| 键盘与格式 | `number/digit/nickname` 正确，placeholder 说明格式 | 行号 |
+| 失焦自动保存 | 成功与失败都有反馈（toast + 状态行），失败不静默 | 行号 |
+| 中断与重试 | 用户取消、返回、重复点击、等待与重试的行为都经过考虑 | 触发路径说明 |
+| 面板间失效 | 宿主页绑定 `bind:written` 并重键 `sync-key`，否则兄弟面板必撞 CAS CONFLICT | 页 js 行号 |
 
-## 回归
-- [ ] 跑 `node cloudfunctions/trailApi/smoke-test.js`（涉及 domain/投影时）
-- [ ] 模拟器走一遍受影响页面的四态
-- [ ] 涉及页面结构、组件或样式时，按 E2E playbook 完成至少一个真实渲染/交互后果核验；覆盖范围与未验证项如实记录
-- [ ] 多 agent 场景：改动同步登记到 SYNC.md 变更日志
+## T4 视觉层级与信息密度（可静态判的部分）
+
+| 对象 | 判据 | 证据 |
+|---|---|---|
+| 主任务 | 一句话说得清，且首屏有推进路径 | 写在交付说明里 |
+| 层级 | 强调靠字重/颜色，不靠放大字号；字重四档（400/500/600/700 仅 page-title） | wxss 行号 |
+| 卡片预算 | 单对象详情 ≤2 张同级卡；≥5 张同级且无 section 分级 ⇒ 记发现（现存：`me` 9、`route` 8、`editor` 11 且嵌套） | 行号区间 + 计数 |
+| 主按钮预算 | 一屏一个"唯一推进动作"；互斥分支/弹层各算一次并能指认互斥证据 | 行号 + `wx:if` 条件 |
+| 边框叠用 | 容器不同时具备边框与底色差 | wxss 行号 |
+| 空态控件 | 空态下隐藏无功能的筛选项/分段 | wxml 条件 |
+| `label: value` | ≥3 行同构罗列 ⇒ 合并进值或降为次级文本 | 行号 |
+| 重复句 | 同一说明不在多行重印，上提为区块说明一次 | 行号 |
+
+> T4 里"看起来挤不挤"属主观，按 `audit-verification.md` 的 E4 处理：可写建议，不计缺陷数、不定严重度。
+
+## T5 渲染截图视觉审查
+
+- [ ] 环境记录：工具与基础库（3.8.12）/ WebView 渲染 / 视口宽度（375·390·414）/ 数据来源（真实云端或注入 + 载荷与生产字段对照）——缺任一项则截图不作数（模板 `audit-verification.md` §5）
+- [ ] bundle 新鲜：改过代码后 `close`+`open` 重编译再截图，且新鲜度可自证（新文案出现在屏上，或 `SYNC.md:560` 的 `bundleFresh` 探针）
+- [ ] 门槛链先断言再截：例如天气页需 `denied=''`、`loading=false`、`loadingWeather=false`、`dayCards.length>0`、`unified!=null`、`oiCard!=null`；不满足就是元素根本不在 DOM 里
+- [ ] 多用例打穿缓存：每例 `reLaunch` + 不同 `updatedAt`，两例读数必须互不相同，相同则整批判**无效**并移入 `invalid/`（不删除、不重跑充数）
+- [ ] 逐条判读写清依据：叠压/截断/重叠/对比度结论要指到具体元素与其 `wx:if` 条件（注意 T1 的 `.timeline-card` 兜底块陷阱）
+- [ ] 自动化截图不等于判据：`tools/e2e-ui-test.js` 的截图明文"仅作 Evidence"（`:25/:990`），默认落在仓库外临时目录
+- [ ] 三档宽度都要覆盖的元素（图表标签、图例、长文案行）分别截图，命名含宽度
+
+## T6 开发者工具 / 自动化交互验证
+
+- [ ] 一条 UI PASS 必须由**一次真实 tap/input + 它的后果观测**构成（`docs/e2e-mp/automation-playbook.md:188`，实现 `tools/e2e-result.js:87-100`）
+- [ ] 观测后果用对象自身状态读数（`planOpen` / `planChanged.length` / `busy` / `el.text()`），**不用元素数量、不用同名泛指元素**（铁律 21）
+- [ ] `data` 读数不是像素证据：需要"用户看得见"的结论必须有 DOM 文本或截图（铁律 32⑥a）
+- [ ] 门槛不过 / 通道退化 ⇒ INCONCLUSIVE（exit 2），**永远不是 PASS**；无开发者工具那台机器记 ENV-ABORT
+- [ ] 驱动脚本放仓库外运行（本仓库零 npm 依赖是铁律），路径含中文或空格时按 `docs/e2e-mp/README.md` 的调用形态
+- [ ] 会话僵死（`cli auto` 挂起、端口从不 LISTENING）按 playbook 恢复；`quit`/`close` 会动共享会话，须先获负责人授权
+- [ ] 跑完 `disconnect`，不留悬挂会话
+
+## T7 真机专项（模拟器测不到的）
+
+- [ ] 底部安全区与 tabBar 遮挡（列表末行 + 删除按钮可点）
+- [ ] 系统字体放大后的断裂（一行多标量的行、按钮文案、图例）
+- [ ] 真机内核下的 WXSS 表现（本项目未证实 `color-mix()`/`dvh` 等，若新代码用到必须先验）
+- [ ] 原生 `map` 的圆角与同层渲染降级（低版本基础库圆角失效是接受项，但**不许在 map 上叠普通 view**）
+- [ ] 键盘类型与 `nickname`/`chooseAvatar`/`getPhoneNumber` 的真实弹授权流程（隐私声明缺失会直接报 scope 错）
+- [ ] 弱网/超时：写操作结果未知时**只重读不自动重发**（铁律 24），读操作才允许自动重试
+- [ ] 云函数改动后部署核对：`cloudfunctions/` 有改动就必须重新部署 `trailApi`，并复核云端超时是否仍为 20 秒（控制台值是唯一权威，CLI 部署不继承）
+- [ ] 深色模式：本项目实测无 `darkmode` 配置 ⇒ 真机深色下页面仍走浅色是预期，别当 bug 报，也别自行加 `@media (prefers-color-scheme)`
+
+## T8 回归与登记
+
+- [ ] 涉及 domain/投影：`node cloudfunctions/trailApi/smoke-test.js`；动过 `cloudfunctions/trailApi/domain/*` 或 `store.js`：`node tools/sync-lab.js` 后跑 `node tools/lab-dryrun-test.js`
+- [ ] 受影响页面的 T1–T4 全跑，T5/T6 至少一项（结构或样式改动过就必须有一档运行时证据）
+- [ ] 模拟器走一遍受影响页面的四态；覆盖范围与未验证项如实记录
+- [ ] `SYNC.md` 变更日志登记（含根因与测试计数），动云函数标「需重新部署 trailApi」
+- [ ] 多 Agent：改动清单与发现分列；他人文件未改（`git status` 复核）；争议项保留并注明双方证据档
+
+## 最小必跑（一页改动的底线）
+
+```bash
+node tools/check.js && node tools/check-handlers.js <页名>
+node tools/journey-graph-test.js          # 状态词与页面图闭合
+# 涉及 domain/投影再加：
+node cloudfunctions/trailApi/smoke-test.js
+```
+
+**这套门只覆盖 T1 的一小部分**（apply-shared、色值、四态、触控、token 登记都没有闸门）——其余判据靠本清单逐条核。
+
+> 出处说明：T4 的分层判据沿用本项目自写的可执行规则（历史上署名"refactoring-ui 诊断表"）。`refactoring-ui` 与 `design-system` 属用户级安装的 skill，**不在仓库里**，任何 agent 不得把它们的内容当作本清单的依赖或据此改判；署名只作来源凭证保留。

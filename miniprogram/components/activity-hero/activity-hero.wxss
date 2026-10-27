@@ -1,0 +1,31 @@
+/* 活动详情首屏组件：只做「封面全出血 + 标题抬进照片下沿」这几条页面级微调。
+   全局 .hero-cover 仍由 app.wxss 定义（路线库详情等页共用），这里只加作用域覆盖。 */
+.act-hero.hero-cover {
+  border-radius: 0;
+}
+
+/* 详情首屏媒体 320（2026-10-26 style-B，全局 .hero-cover-media 240 不动）：
+   参考板的活动详情是「照片占首屏上半」；只在本组件作用域加高，路线库等其它 hero 不受影响。 */
+.act-hero.hero-cover .hero-cover-media {
+  height: 320px;
+}
+
+/* 标题块向上叠 72px：照片 240px 定高，下沿露出信息区森林底。
+   选择器带 .act-hero.hero-cover 三节是为了稳定压过 app.wxss 的 .hero-cover-body（同属性同名规则）。 */
+.act-hero.hero-cover .hero-cover-body {
+  margin-top: -72px;
+  padding-bottom: 28px;
+  gap: 8px;
+}
+
+.act-hero__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.act-hero__route {
+  font-size: var(--text-body);
+  line-height: 20px;
+  color: var(--on-forest-muted);
+}

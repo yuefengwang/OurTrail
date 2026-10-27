@@ -6,15 +6,20 @@ const crypto = require('crypto')
 const {
   fetchForecast, gcjToWgs, isWeatherFreeAction, weatherCacheKey, resolvePointQuery, pointResponse, PROVIDER,
 } = require('./lib/weather')
+const { fetchSpatial } = require('./lib/spatial')
+const { fetchHorizon } = require('./lib/terrain')
+const { fetchAtmosphere } = require('./lib/atmosphere')
+const { fetchLightPollution, apiKey: lightPollutionKey } = require('./lib/light-pollution')
 const store = require('./store')
 const { canonicalPayload, deepClone, genId, ERROR_CODES } = require('./domain/contracts')
 const { reduceCommand } = require('./domain/commands')
 const { assertInvariants } = require('./domain/invariants')
 const {
   selectView, selectSensitive, selectContact, selectSignupForm, selectTransport,
-  selectAccess, selectNoticeManagement, selectExport,
+  selectAccess, selectNoticeManagement, selectExport, selectRoutes,
 } = require('./domain/selectors')
 const { planAssignments } = require('./domain/allocation')
+const { isActivityMediaFileId, removedActivityFiles } = require('./domain/files')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -103,6 +108,21 @@ async function actionReadExport(payload, openid) {
   return selectExport(state, { userId: openid }, payload.activityId, payload.signupIds || [], payload.mode, String(payload.purpose || ''), nowIso())
 }
 
+// V2 路线库：我的路线列表（无 routeId）与单条路线（带 routeId）。
+// 形状在入口就判：routeId 缺省/非字符串按「列表」处理，非字符串一律 INVALID_INPUT，
+// 不留给 selector 抛 TypeError（那会被归类成 INTERNAL，而这是客户端入参问题）。
+async function actionReadRoutes(payload, openid) {
+  let routeId = null
+  if (payload && payload.routeId !== undefined && payload.routeId !== null) {
+    if (typeof payload.routeId !== 'string' || !payload.routeId) fail('INVALID_INPUT', '路线标识无效。')
+    routeId = payload.routeId
+  }
+  const state = await store.loadState(db)
+  const result = selectRoutes(state, { userId: openid }, routeId)
+  if (!result.ok) fail(result.error.code, result.error.message)
+  return Object.assign({ revision: state.revision, now: nowIso() }, result.value)
+}
+
 async function actionPreviewAssignments(payload, openid) {
   const state = await store.loadState(db)
   const result = planAssignments(state, { userId: openid }, payload.activityId, nowIso())
@@ -143,11 +163,25 @@ async function actionDispatch(payload, openid) {
     // 以读取时的 revision 做 CAS；期间被他人写入则报 CONFLICT，客户端重读后再试
     const persisted = await store.persistState(db, before, result.value.state, before.revision, now)
     revision = persisted.revision
+    // 写后清理：只删「写入前被活动引用、写入后已无人引用」的图片。
+    // 事务已提交，删除失败只记日志，不回滚业务结果；未保存草稿的上传是孤儿，留给未来的 GC。
+    const removed = removedActivityFiles(before, result.value.state)
+    if (removed.length) {
+      try {
+        await cloud.deleteFile({ fileList: removed })
+      } catch (e) {
+        console.warn('[file-gc] 删除未引用图片失败：', (e && (e.errMsg || e.message)) || e)
+      }
+    }
   }
   return { targetIds, replayed, revision }
 }
 
 /* ---------- 天气（真实 Open-Meteo，带缓存） ---------- */
+
+// 陈旧兜底时长：外呼失败时，12 小时内的旧预报仍好过一面错误墙（云层时过境迁，
+// 更旧的不再冒充"现在的天气"）。命中的返回体带 stale/staleAt，客户端据此标注时效。
+const STALE_MAX_MS = 12 * 3600000
 
 async function getCachedForecast(lat, lng, date) {
   const key = weatherCacheKey(lat, lng, date)
@@ -155,16 +189,203 @@ async function getCachedForecast(lat, lng, date) {
   if (cached && cached.data && Date.now() - new Date(cached.data.fetchedAt).getTime() < 30 * 60000) {
     return cached.data.forecast
   }
-  const forecast = await fetchForecast(lat, lng, date)
-  await db.collection('weather_cache').doc(key).set({
-    data: { forecast, fetchedAt: new Date() },
-  }).catch(() => null)
-  return forecast
+  try {
+    const forecast = await fetchForecast(lat, lng, date)
+    await db.collection('weather_cache').doc(key).set({
+      data: { forecast, fetchedAt: new Date() },
+    }).catch(() => null)
+    return forecast
+  } catch (e) {
+    // Open-Meteo 超时/5xx：山里信号与服务抖动是常态，有旧数据就软降级——
+    // 页面显示"X 小时前的预报"加重新查询入口，而不是"天气暂不可用"的错误墙
+    const age = cached && cached.data
+      ? Date.now() - new Date(cached.data.fetchedAt).getTime() : Infinity
+    if (cached && cached.data && cached.data.forecast && age < STALE_MAX_MS) {
+      return Object.assign({}, cached.data.forecast, {
+        stale: true,
+        staleAt: new Date(cached.data.fetchedAt).toISOString(),
+      })
+    }
+    throw e
+  }
+}
+
+/* 方向性天气（Slice 2）：8 方位 × 3 距离的云/降水聚合。
+   与天气主体分开缓存（同一 weather_cache 集合，键前缀 s_），失败时最多回退 2 小时旧数据；
+   spatial 是“方向粗判”，不是雷达，客户端必须按可缺省字段处理。 */
+const SPATIAL_TTL_MS = 30 * 60000
+const SPATIAL_STALE_MAX_MS = 2 * 3600000
+
+async function getCachedSpatial(lat, lng, date, endDate) {
+  const key = 's_' + lat.toFixed(2) + '_' + lng.toFixed(2) + '_' + date + '_' + endDate
+  const cached = await db.collection('weather_cache').doc(key).get().catch(() => null)
+  const age = cached && cached.data ? Date.now() - new Date(cached.data.fetchedAt).getTime() : Infinity
+  if (cached && cached.data && age < SPATIAL_TTL_MS) {
+    return { spatial: cached.data.spatial, stale: false }
+  }
+  try {
+    const spatial = await fetchSpatial(lat, lng, date, endDate)
+    await db.collection('weather_cache').doc(key).set({
+      data: { spatial, fetchedAt: new Date() },
+    }).catch(() => null)
+    return { spatial, stale: false }
+  } catch (e) {
+    if (cached && cached.data && cached.data.spatial && age < SPATIAL_STALE_MAX_MS) {
+      return { spatial: cached.data.spatial, stale: true, staleAt: new Date(cached.data.fetchedAt).toISOString() }
+    }
+    throw e
+  }
+}
+
+/* 地形地平线（Slice 4）：90 m DEM 静态数据，按点缓存 30 天。
+   不含树木/建筑；客户端只拿方位角剖面，不拿原始高程网格。 */
+const TERRAIN_TTL_MS = 30 * 86400000
+
+async function getCachedTerrain(lat, lng, elevation) {
+  const eKey = Number.isFinite(elevation) ? Math.round(elevation) : 'na'
+  const key = 't_' + lat.toFixed(2) + '_' + lng.toFixed(2) + '_' + eKey
+  const cached = await db.collection('weather_cache').doc(key).get().catch(() => null)
+  const age = cached && cached.data ? Date.now() - new Date(cached.data.fetchedAt).getTime() : Infinity
+  if (cached && cached.data && cached.data.terrain && age < TERRAIN_TTL_MS) {
+    return { terrain: cached.data.terrain, stale: false }
+  }
+  try {
+    const terrain = await fetchHorizon(lat, lng, Number.isFinite(elevation) ? elevation : null)
+    await db.collection('weather_cache').doc(key).set({
+      data: { terrain, fetchedAt: new Date() },
+    }).catch(() => null)
+    return { terrain, stale: false }
+  } catch (e) {
+    if (cached && cached.data && cached.data.terrain) {
+      return { terrain: cached.data.terrain, stale: true, staleAt: new Date(cached.data.fetchedAt).toISOString() }
+    }
+    throw e
+  }
+}
+
+/* 大气透明度/seeing/气溶胶（Slice 3）：7Timer 3 天 + CAMS 5 天，按点/日期缓存 3 小时。
+   两者都是可选增强：一个源失败只丢一个字段，全缺返回 sources 标记，客户端保持旧口径。 */
+const ATMOSPHERE_TTL_MS = 3 * 3600000
+const ATMOSPHERE_STALE_MAX_MS = 6 * 3600000
+
+async function getCachedAtmosphere(lat, lng, date, endDate) {
+  const key = 'a_' + lat.toFixed(2) + '_' + lng.toFixed(2) + '_' + date + '_' + endDate
+  const cached = await db.collection('weather_cache').doc(key).get().catch(() => null)
+  const age = cached && cached.data ? Date.now() - new Date(cached.data.fetchedAt).getTime() : Infinity
+  if (cached && cached.data && cached.data.atmosphere && age < ATMOSPHERE_TTL_MS) {
+    return { atmosphere: cached.data.atmosphere, stale: false }
+  }
+  try {
+    const atmosphere = await fetchAtmosphere(lat, lng, date, endDate)
+    const ok = !!(atmosphere && atmosphere.sources &&
+      (atmosphere.sources.sevenTimer === 'ok' || atmosphere.sources.air === 'ok'))
+    if (ok) {
+      await db.collection('weather_cache').doc(key).set({
+        data: { atmosphere, fetchedAt: new Date() },
+      }).catch(() => null)
+      return { atmosphere, stale: false }
+    }
+    if (cached && cached.data && cached.data.atmosphere && age < ATMOSPHERE_STALE_MAX_MS) {
+      return { atmosphere: cached.data.atmosphere, stale: true, staleAt: new Date(cached.data.fetchedAt).toISOString() }
+    }
+    return { atmosphere, stale: false }
+  } catch (e) {
+    if (cached && cached.data && cached.data.atmosphere && age < ATMOSPHERE_STALE_MAX_MS) {
+      return { atmosphere: cached.data.atmosphere, stale: true, staleAt: new Date(cached.data.fetchedAt).toISOString() }
+    }
+    throw e
+  }
+}
+
+/* 光污染（Slice 5）：静态数据，按点缓存 30 天；无 key/401 明确返回 missing，不冒充天空暗。
+   密钥只从云函数环境变量 DARKSKY_API_KEY 读取（控制台配置，不入库）。
+   DarkSkySites 免费额度 30k/月（项目共享）。缓存过期才重新取；另设一道全局月预算，
+   接近额度时只停光污染这一源，方向云/地形/大气照常工作——不让一个模型的额度拖垮整条上下文。 */
+const LIGHT_POLLUTION_TTL_MS = 30 * 86400000
+const LIGHT_POLLUTION_MONTHLY_BUDGET = 25000
+
+async function spendLightPollutionBudget() {
+  const month = nowIso().slice(0, 7)
+  const key = 'lq_' + month
+  const doc = await db.collection('weather_cache').doc(key).get().catch(() => null)
+  const count = doc && doc.data ? Number(doc.data.count) || 0 : 0
+  if (count >= LIGHT_POLLUTION_MONTHLY_BUDGET) return false
+  await db.collection('weather_cache').doc(key).set({ data: { count: count + 1, month } }).catch(() => null)
+  return true
+}
+
+async function getCachedLightPollution(lat, lng) {
+  const key = 'l_' + lat.toFixed(2) + '_' + lng.toFixed(2)
+  const cached = await db.collection('weather_cache').doc(key).get().catch(() => null)
+  const age = cached && cached.data ? Date.now() - new Date(cached.data.fetchedAt).getTime() : Infinity
+  const cachedLP = cached && cached.data ? cached.data.lightPollution : null
+  if (cachedLP && age < LIGHT_POLLUTION_TTL_MS) {
+    return { lightPollution: cachedLP, stale: false }
+  }
+  const fallbackStale = () => cachedLP
+    ? { lightPollution: cachedLP, stale: true, staleAt: new Date(cached.data.fetchedAt).toISOString() }
+    : { lightPollution: null, reason: 'unavailable', stale: false }
+  if (!lightPollutionKey()) {
+    return cachedLP ? fallbackStale() : { lightPollution: null, reason: 'no-key', stale: false }
+  }
+  if (!(await spendLightPollutionBudget())) {
+    return cachedLP
+      ? fallbackStale()
+      : { lightPollution: null, reason: 'budget', stale: false }
+  }
+  let got
+  try {
+    got = await fetchLightPollution(lat, lng)
+  } catch (e) {
+    got = { lightPollution: null, reason: 'unavailable' }
+  }
+  if (got.lightPollution) {
+    await db.collection('weather_cache').doc(key).set({
+      data: { lightPollution: got.lightPollution, fetchedAt: new Date() },
+    }).catch(() => null)
+    return { lightPollution: got.lightPollution, stale: false }
+  }
+  if (cachedLP) return fallbackStale()
+  return { lightPollution: null, reason: got.reason || 'unavailable', stale: false }
+}
+
+/* 天相上下文有 4 个外部源（其中 DarkSkySites 有 30k/月额度），不能让它成为免登录的无限放大器。
+   按 openid 做每日粗略配额（60 次/天）；get/set 有轻微竞态，作为防滥用上限足够。
+   注意：成功取到的源会被 s_/t_/a_/l_ 缓存吸收，但失败结果不缓存（下次仍会重试），
+   所以配额按请求数而不是按外呼数计——宁可少给，不让上游被放大。 */
+const SKY_CONTEXT_DAILY_LIMIT = 60
+async function spendSkyQuota(openid) {
+  const who = openid ? sha256(openid).slice(0, 16) : 'anon'
+  const day = nowIso().slice(0, 10)
+  const key = 'q_' + who + '_' + day
+  const doc = await db.collection('weather_cache').doc(key).get().catch(() => null)
+  const count = doc && doc.data ? Number(doc.data.count) || 0 : 0
+  if (count >= SKY_CONTEXT_DAILY_LIMIT) return false
+  await db.collection('weather_cache').doc(key).set({ data: { count: count + 1, day } }).catch(() => null)
+  return true
+}
+
+// 活动模式天气只需要一个活动的路线快照。此前这里走 store.loadState（15 个集合 + meta
+// 全量读）——天气页每次进入都要为一次坐标查找付全状态加载，冷启动时段这正是
+// 用户等待与 -504003 超时的成分之一。改为按 docId 直读（recordKey 对 activities
+// 就是 record.id，与 loadCollection 读到的是同一份文档）。
+// 读故障与"文档不存在"必须分开：后者是 NOT_FOUND，前者原样抛出交 main 归类，
+// 不把"这一刻读不出来"冒充成"活动不存在"（store.ensureMeta 的同款纪律）。
+async function loadActivityDoc(activityId) {
+  if (typeof activityId !== 'string' || !activityId) return null
+  let res = null
+  let readError = null
+  try {
+    res = await db.collection(store.COLLECTIONS.activities).doc(activityId).get()
+  } catch (e) { readError = e }
+  if (res && res.data) return res.data
+  if (readError && /not exists/i.test(String((readError && (readError.errMsg || readError.message)) || ''))) return null
+  if (readError) throw readError
+  return null
 }
 
 async function actionGetWeather(payload) {
-  const state = await store.loadState(db)
-  const activity = state.activities.find(a => a.id === payload.activityId)
+  const activity = await loadActivityDoc(payload.activityId)
   if (!activity) fail('NOT_FOUND', '找不到此活动。')
   const point = activity.routeSnapshot.points.find(p => p.id === payload.pointId)
   if (!point) return { status: 'unavailable', message: '找不到该路线节点，暂时无法展示天气。' }
@@ -203,6 +424,9 @@ async function actionGetWeather(payload) {
       // Weather V2 additive：多高度云量剖面（缺失 = null，旧客户端不读，新客户端降级）
       cloudLevels: forecast.cloudLevels || null,
       pointElevation: forecast.elevation,
+      // 陈旧兜底标记：为 true 时 staleAt 是数据的实际取数时间，页面必须标注"不是实时"
+      stale: !!forecast.stale,
+      staleAt: forecast.stale ? forecast.staleAt : undefined,
     }
   } catch (e) {
     return { status: 'unavailable', message: (e && e.message) || '天气服务暂时不可用。' }
@@ -254,7 +478,120 @@ async function actionGetWeatherByPoint(payload) {
   }
 }
 
+/* 方向性天气（Slice 2）：给天相卡提供“银心方位/反日方向的云和降水”。
+   只读、免 OPENID；输入校验/纠偏复用天气的 resolvePointQuery。
+   失败返回 status:'unavailable'，客户端保持无 spatial 的旧口径，绝不把缺测当 0。 */
+async function actionGetSkyContext(payload, openid) {
+  const now = nowIso()
+  const q = resolvePointQuery(payload, now.slice(0, 10))
+  if (!q.ok) {
+    if (q.status === 'out_of_range') return { status: 'out_of_range', spatial: null }
+    fail(q.code || 'INVALID_INPUT', q.message || '坐标无效。')
+  }
+  if (!(await spendSkyQuota(openid))) {
+    return {
+      status: 'unavailable',
+      reason: 'rate_limited',
+      updatedAt: now,
+      date: q.date,
+      spatial: null,
+      terrain: null,
+      atmosphere: null,
+      lightPollution: null,
+      sources: { spatial: 'missing', terrain: 'missing', atmosphere: 'missing', lightPollution: 'missing' },
+      message: '今天的天气增强查询次数已用完（每天 ' + SKY_CONTEXT_DAILY_LIMIT +
+        ' 次）。天相卡先按云量/月照的旧口径判断，明天再试。',
+    }
+  }
+  try {
+    const endDate = new Date(Date.parse(q.date + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10)
+    /* Number(null) === 0：只接受真正的 number，否则“没有海拔”会被当成海平面 0 m，
+       DEM 地平线从 0 起算会造出 70°+ 的假山脊。 */
+    const rawElev = payload && payload.elevation
+    const elevation = typeof rawElev === 'number' && Number.isFinite(rawElev)
+      && rawElev > -500 && rawElev < 9000 ? rawElev : null
+    const [spatialRes, terrainRes, atmRes, lpRes] = await Promise.allSettled([
+      getCachedSpatial(q.wgs.lat, q.wgs.lng, q.date, endDate),
+      getCachedTerrain(q.wgs.lat, q.wgs.lng, elevation),
+      getCachedAtmosphere(q.wgs.lat, q.wgs.lng, q.date, endDate),
+      getCachedLightPollution(q.wgs.lat, q.wgs.lng),
+    ])
+    const spatialOK = spatialRes.status === 'fulfilled' && !!spatialRes.value.spatial
+    const terrainOK = terrainRes.status === 'fulfilled' && !!terrainRes.value.terrain
+    const atmosphere = atmRes.status === 'fulfilled' ? atmRes.value.atmosphere : null
+    const atmosphereOK = !!(atmosphere && atmosphere.sources &&
+      (atmosphere.sources.sevenTimer === 'ok' || atmosphere.sources.air === 'ok'))
+    const lp = lpRes.status === 'fulfilled' ? lpRes.value.lightPollution : null
+    const lightPollutionOK = !!(lp && (Number.isFinite(lp.sqm) || Number.isFinite(lp.bortle)))
+    const status = (spatialOK || terrainOK || atmosphereOK || lightPollutionOK) ? 'ready' : 'unavailable'
+    return {
+      status,
+      updatedAt: now,
+      date: q.date,
+      endDate,
+      spatial: spatialOK ? spatialRes.value.spatial : null,
+      terrain: terrainOK ? terrainRes.value.terrain : null,
+      atmosphere: atmosphereOK ? atmosphere : null,
+      lightPollution: lightPollutionOK ? lp : null,
+      sources: {
+        spatial: spatialOK ? 'ok' : 'missing',
+        terrain: terrainOK ? 'ok' : 'missing',
+        atmosphere: atmosphereOK ? 'ok' : 'missing',
+        lightPollution: lightPollutionOK ? 'ok' : 'missing',
+      },
+      lightPollutionReason: lightPollutionOK ? null
+        : (lpRes.status === 'fulfilled' ? (lpRes.value.reason || 'unavailable') : 'unavailable'),
+      stale: {
+        spatial: !!(spatialOK && spatialRes.value.stale),
+        terrain: !!(terrainOK && terrainRes.value.stale),
+        atmosphere: !!(atmosphereOK && atmRes.value.stale),
+        lightPollution: !!(lightPollutionOK && lpRes.value.stale),
+      },
+      message: status === 'unavailable' ? '方向天气、地形、大气与光污染数据暂时不可用。' : undefined,
+    }
+  } catch (e) {
+    return {
+      status: 'unavailable',
+      updatedAt: now,
+      date: q.date,
+      spatial: null,
+      terrain: null,
+      atmosphere: null,
+      lightPollution: null,
+      message: (e && e.message) || '方向天气、地形、大气与光污染数据暂时不可用。',
+    }
+  }
+}
+
 /* ---------- 路由 ---------- */
+
+/* ---------- 活动图片安全检查（UGC 图，公开发现可见） ---------- */
+// 客户端先 wx.cloud.uploadFile，再把 fileID 送进来。只返回 pass/reason，不回传图片内容。
+// 未授权/接口不可用时返回 {pass:false, reason:'unavailable'}——失败关闭，不静默放行。
+async function actionCheckImage(payload) {
+  const fileID = String((payload && payload.fileID) || '')
+  if (!isActivityMediaFileId(fileID)) fail('INVALID_INPUT', '图片标识无效。')
+  const contentType = payload && payload.contentType === 'image/png' ? 'image/png' : 'image/jpeg'
+  let file
+  try {
+    file = await cloud.downloadFile({ fileID })
+  } catch (e) {
+    return { pass: false, reason: 'read_failed' }
+  }
+  const buffer = file && file.fileContent
+  if (!buffer || !buffer.length) return { pass: false, reason: 'read_failed' }
+  // imgSecCheck 的同步接口只收 1MB 以内的图片；客户端压缩到 1280px/70 后通常远低于此。
+  if (buffer.length > 1024 * 1024) return { pass: false, reason: 'too_large' }
+  try {
+    await cloud.openapi.security.imgSecCheck({ media: { contentType, value: buffer } })
+    return { pass: true }
+  } catch (e) {
+    const errCode = e && (e.errCode !== undefined ? e.errCode : e.code)
+    if (errCode === 87014) return { pass: false, reason: 'unsafe' }
+    console.warn('[checkImage] unavailable:', errCode, e && (e.errMsg || e.message))
+    return { pass: false, reason: 'unavailable' }
+  }
+}
 
 const ROUTES = {
   read: actionRead,
@@ -269,7 +606,10 @@ const ROUTES = {
   dispatch: actionDispatch,
   getWeather: actionGetWeather,
   getWeatherByPoint: actionGetWeatherByPoint,
+  getSkyContext: actionGetSkyContext,
   getPhoneNumber: actionGetPhoneNumber,
+  readRoutes: actionReadRoutes,
+  checkImage: actionCheckImage,
 }
 
 // 一次请求一行结构化日志（可观测性的唯一落点：本轮改造之前整个后端零 console 调用，

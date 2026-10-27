@@ -134,36 +134,7 @@ section('6. 月相')
   check('照亮度峰值出现在月龄 14–15 天（' + bestAge + '）', bestAge > 13.5 && bestAge < 15.5, '峰值月龄 ' + bestAge)
 }
 
-section('7. 银心季节与方位')
-{
-  check('7 月为银心季', A.galaxySeason('2026-07-15') === true)
-  check('1 月不是银心季', A.galaxySeason('2026-01-15') === false)
-  check('12 月不是银心季', A.galaxySeason('2026-12-15') === false)
-  const b1 = A.galaxyBearing('2026-07-15', 22)
-  const b2 = A.galaxyBearing('2026-07-15', 25)
-  const b3 = A.galaxyBearing('2026-07-15', 28)
-  check('银心方位随时推移（' + b1 + '→' + b2 + '→' + b3 + '）', b1 < b2 && b2 < b3)
-  check('入夜在东南（105–130°）', b1 >= 100 && b1 <= 135)
-  check('凌晨在西南（215–240°）', b3 >= 210 && b3 <= 245)
-  check('非银心季返回 null', A.galaxyBearing('2026-01-15', 23) === null)
-  check('跨零点仍单调（01:00 接 24:00）', A.galaxyBearing('2026-07-15', 1) === A.galaxyBearing('2026-07-15', 25))
-}
-
-section('8. 观星结论')
-{
-  const clear = [{ t: '22:00', cloud: { low: 5, mid: 10, high: 15 }, precip: 0 }]
-  const cloudy = [{ t: '22:00', cloud: { low: 80, mid: 90, high: 95 }, precip: 1 }]
-  const dark = A.moonInfo('2026-07-15')
-  const okStar = A.starSight(clear, { illumination: 10, name: '残月' }, true)
-  const badStar = A.starSight(cloudy, { illumination: 10, name: '残月' }, true)
-  check('晴朗 + 月照低 → 星空条件好', okStar.star.tone === 'success', okStar.star.text)
-  check('晴朗 + 银心季 + 月照低 → 银河概率大', okStar.galaxy.tone === 'success', okStar.galaxy.text)
-  check('多云 → 观星条件差', badStar.star.tone === 'warning' && /条件差/.test(badStar.star.text), badStar.star.text)
-  check('无数据 → 数据不足', /数据不足/.test(A.starSight([], dark, true).star.text))
-  check('非银心季文案', /不在银心季节/.test(A.starSight(clear, { illumination: 10, name: '残月' }, false).galaxy.text))
-}
-
-section('9. 方位短语与工具函数')
+section('7. 方位短语与工具函数')
 {
   check('0° → 正北', A.bearingLabel(0) === '正北')
   check('90° → 正东', A.bearingLabel(90) === '正东')
@@ -173,6 +144,44 @@ section('9. 方位短语与工具函数')
   check('cnToMs 固定 +08:00', A.cnToMs('2026-09-28', '06:00') === Date.parse('2026-09-27T22:00:00Z'))
   check('hhmm 归一化跨日', A.hhmm(1500) === '01:00')
   check('horizonDip 海平面为 0', A.horizonDip(0) === 0)
+}
+
+section('8. 月球与银心位置（2026-10 新增）')
+{
+  // 北极星：高度≈纬度、方位≈正北，用来验赤道→地平换算
+  const polaris = A.equatorialToHorizontal(37.95, 89.26, 30.67, 104.07, Date.parse('2026-07-15T14:00:00Z'))
+  check('北极星高度≈纬度（' + polaris.altitude + '）', Math.abs(polaris.altitude - 30.67) < 0.8)
+  check('北极星方位≈正北（' + polaris.azimuth + '）', polaris.azimuth < 2 || polaris.azimuth > 358)
+
+  // 满月：当地午夜应高挂，正午应在地平线下；升落接近日落/日出
+  const fullMidnight = A.moonPosition(Date.parse('2026-09-26T00:00:00+08:00'), 30.67, 104.07)
+  const fullNoon = A.moonPosition(Date.parse('2026-09-26T12:00:00+08:00'), 30.67, 104.07)
+  const fullTimes = A.moonTimes('2026-09-26', 30.67, 104.07, 500)
+  check('满月午夜在地平线上（' + fullMidnight.altitude + '°）', fullMidnight.altitude > 30)
+  check('满月正午在地平线下（' + fullNoon.altitude + '°）', fullNoon.altitude < -30)
+  check('满月月出在傍晚（' + fullTimes.rise + '）', fullTimes.rise && Number(fullTimes.rise.slice(0, 2)) === 18)
+  check('满月月落在清晨（' + fullTimes.set + '）', fullTimes.set && Number(fullTimes.set.slice(0, 2)) === 6)
+
+  // 新月：午夜应在地平线下，正午应在地平线上
+  const newMidnight = A.moonPosition(Date.parse('2026-09-11T00:00:00+08:00'), 30.67, 104.07)
+  const newNoon = A.moonPosition(Date.parse('2026-09-11T12:00:00+08:00'), 30.67, 104.07)
+  check('新月午夜在地平线下（' + newMidnight.altitude + '°）', newMidnight.altitude < 0)
+  check('新月正午在地平线上（' + newNoon.altitude + '°）', newNoon.altitude > 20)
+
+  // 银心：7 月午夜前后在南方高空；1 月午夜在地平线下；4 点前后落到地平线
+  const g22 = A.galaxyPosition(Date.parse('2026-07-15T22:00:00+08:00'), 30.67, 104.07)
+  const g00 = A.galaxyPosition(Date.parse('2026-07-16T00:00:00+08:00'), 30.67, 104.07)
+  const g02 = A.galaxyPosition(Date.parse('2026-07-16T02:00:00+08:00'), 30.67, 104.07)
+  const g04 = A.galaxyPosition(Date.parse('2026-07-16T04:00:00+08:00'), 30.67, 104.07)
+  const gJan = A.galaxyPosition(Date.parse('2026-01-15T00:00:00+08:00'), 30.67, 104.07)
+  check('7 月 22 点银心在东南方（' + g22.altitude + '°/' + g22.azimuth + '°）',
+    g22.altitude > 20 && g22.azimuth > 130 && g22.azimuth < 180)
+  check('7 月午夜银心近正南（' + g00.altitude + '°/' + g00.azimuth + '°）',
+    g00.altitude > 20 && g00.azimuth > 170 && g00.azimuth < 210)
+  check('7 月凌晨 2 点银心转西南（' + g02.altitude + '°/' + g02.azimuth + '°）',
+    g02.altitude > 5 && g02.azimuth > 200 && g02.azimuth < 235)
+  check('7 月 4 点银心落到地平线附近（' + g04.altitude + '°）', Math.abs(g04.altitude) < 5)
+  check('1 月午夜银心在地平线下（' + gJan.altitude + '°）', gJan.altitude < -50)
 }
 
 console.log('\npassed=' + passed + ' failed=' + failed)

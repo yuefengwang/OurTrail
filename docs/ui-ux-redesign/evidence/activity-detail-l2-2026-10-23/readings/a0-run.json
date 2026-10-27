@@ -1,0 +1,80 @@
+{
+  "side": "a0",
+  "ws": "ws://127.0.0.1:9421",
+  "capturedAt": "2026-10-23T09:53:53.914Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "fixtureManifest": {
+    "generatedAt": "2026-10-23T09:48:28.040Z",
+    "label": "baseline-A1-renderView-e05e559",
+    "fixtureNow": "2026-09-29T09:00:00+08:00",
+    "gitHead": "e05e5591e66387de72a2b08c823403c0df14f4df",
+    "source": "miniprogram/pages/activity/activity.js#renderView",
+    "sourceSha256": "82061c062d532821577a6d4e1cc05b3e9449f822c0a9c1b4fae5ac74164a8b38",
+    "coverFileIdStandIn": "/assets/photos/cover-ridge.jpg",
+    "note": "页面 data 全部由真实 renderView 产出；视图夹具只填服务端投影字段。coverFileId 用本地实拍图代替 cloud:// fileID（渲染路径等价，非线上数据形状）。",
+    "scenarios": {
+      "rich": {
+        "title": "青城后山 · 周末轻徒步",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": null,
+        "routeStats": null,
+        "rows": 3,
+        "dataSha256": "3003e75c35267d81ce7b827bd58ffab70bcfc8952d36ac5a16ed6a8a9a5b20d2"
+      },
+      "sparse": {
+        "title": "城区周边 · 傍晚散步",
+        "coverFailed": false,
+        "coverIsReal": false,
+        "infoFacts": null,
+        "routeStats": null,
+        "rows": 0,
+        "dataSha256": "cf7e034303e1df71dbb2e47df4b1f566596f4bd223916efc3ce7d6350e554099"
+      },
+      "long-title": {
+        "title": "青城后山泰安古镇经又一村至白云寺环线轻装徒步暨秋季山脊云海观测与同行者集合出发安排说明会（含备用路线与雨天改线方案，请务必阅读集合时间、装备清单与退出规则后再报名）这是一个用于验证极值换行与不截断的超长标题样例，长度已超过一百个汉字，不应出现省略号或横向溢出。",
+        "coverFailed": false,
+        "coverIsReal": true,
+        "infoFacts": null,
+        "routeStats": null,
+        "rows": 3,
+        "dataSha256": "0b3bb155082990773ec195e48c32ebcbeefb428b56ad16dbb7b2ab04749914fe"
+      },
+      "cover-failed": {
+        "title": "青城后山 · 雨天备案",
+        "coverFailed": true,
+        "coverIsReal": true,
+        "infoFacts": null,
+        "routeStats": null,
+        "rows": 3,
+        "dataSha256": "3f8e2d85cb9f34e501d659b9ca8794a66c4fe7728ebedd63385bee9d0a93ccc1"
+      }
+    }
+  },
+  "results": [
+    {
+      "scenario": "rich",
+      "status": "VALID",
+      "screenshot": "a0-rich-top.png",
+      "gates": {
+        "loadingFalse": true,
+        "titleIntact": true,
+        "selectorFound": true
+      },
+      "markers": {
+        "secFactsPresent": true,
+        "infoCardGone": true,
+        "heroSelectable": true,
+        "coverFailedClass": false
+      }
+    }
+  ]
+}

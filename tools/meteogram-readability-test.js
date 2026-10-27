@@ -218,8 +218,8 @@ function cloudTexts (svg) {
 }
 {
   const clear = renderDeck([], 3000, 24, 390)
-  check('晴空（实测包络内没有有意义云量）：图上写明原因，不再是一片空白让人读成「没数据」',
-    /实测高度范围内没有有意义云量/.test(clear.svg) && clear.geo.profile.decks.length === 0)
+  check('晴空（实测包络内没有 ≥80% 成层云带）：图上写明原因，不再是一片空白让人读成「没数据」',
+    /实测高度范围内没有 ≥80% 成层云带/.test(clear.svg) && clear.geo.profile.decks.length === 0)
   check('晴空也印出自己的高度范围（这一行画的到底是哪一段）',
     new RegExp('剖面 ' + clear.geo.profile.lo.toLocaleString('en-US') + '–' + clear.geo.profile.hi.toLocaleString('en-US') + ' m').test(clear.svg),
     JSON.stringify([clear.geo.profile.lo, clear.geo.profile.hi]))
@@ -250,9 +250,9 @@ function cloudTexts (svg) {
 }
 {
   const g = renderDeck([{ lo: 3150, hi: 3850, cov: 85 }], 3500, 24, 390)
-  const ticks = [...g.svg.matchAll(/<text x="33" y="([-\d.]+)" text-anchor="end" font-size="7.5" fill="#5F6E66">([\d,]+)<\/text>/g)]
-    .map(m => ({ y: +m[1], v: +m[2].replace(/,/g, '') }))
-    .filter(t => t.y >= ROW.y - 2 && t.y <= ROW.y + ROW.h + 2)
+  const ticks = [...g.svg.matchAll(/<text x="([-\d.]+)" y="([-\d.]+)" text-anchor="end" font-size="7.5" fill="#5F6E66">([\d,]+)<\/text>/g)]
+    .map(m => ({ x: +m[1], y: +m[2], v: +m[3].replace(/,/g, '') }))
+    .filter(t => t.x === g.geo.L - 5 && t.y >= ROW.y - 2 && t.y <= ROW.y + ROW.h + 2)
   check('云行刻度全部落在窗内、互不重复、且是 250 的倍数',
     ticks.length >= 2 && ticks.every(t => t.v >= g.geo.profile.lo && t.v <= g.geo.profile.hi && t.v % 250 === 0) &&
       new Set(ticks.map(t => t.v)).size === ticks.length, JSON.stringify(ticks.map(t => t.v)))
@@ -271,7 +271,7 @@ function cloudTexts (svg) {
   ]
   cases.forEach(([nm, r]) => {
     const ts = cloudTexts(r.svg)
-    const rowTexts = ts.filter(t => /剖面|窗外|此点|有意义云量/.test(t.txt))
+    const rowTexts = ts.filter(t => /剖面|窗外|此点|成层云带/.test(t.txt))
     let overlap = null
     rowTexts.forEach((a, i) => rowTexts.slice(i + 1).forEach(b => {
       if (Math.abs(a.y - b.y) < 6 && a.x0 < b.x1 - 1 && b.x0 < a.x1 - 1) overlap = [a.txt, b.txt]
@@ -280,6 +280,46 @@ function cloudTexts (svg) {
       rowTexts.every(t => t.x0 >= 0 && t.x1 <= W - 2 && t.y >= ROW.y && t.y <= ROW.y + ROW.h) && !overlap,
       overlap ? '重叠 ' + JSON.stringify(overlap) : JSON.stringify(rowTexts.map(t => [t.txt, +t.x0.toFixed(0), +t.x1.toFixed(0), t.y])))
   })
+})
+
+/* ---------- 9 左侧 gutter：指标标题不越进刻度列（2026-10-21 真机截图） ---------- */
+section('9 左侧 gutter：指标标题与刻度不叠字')
+;[375, 390, 414].forEach(W => {
+  const r = renderDeck([{ lo: 3150, hi: 3850, cov: 85 }], 3500, 24, W)
+  const texts = [...r.svg.matchAll(/<text x="([-\d.]+)" y="([-\d.]+)"([^>]*)>([^<]*)<\/text>/g)].map(m => {
+    const attrs = m[3]
+    const fs = +((attrs.match(/font-size="([\d.]+)"/) || [0, 0])[1])
+    const txt = m[4]
+    const anchor = /text-anchor="end"/.test(attrs) ? 'end' : /text-anchor="middle"/.test(attrs) ? 'middle' : 'start'
+    const w = estWidth(txt, fs)
+    const x = +m[1]
+    return {
+      txt: txt, x: x, y: +m[2],
+      x0: anchor === 'end' ? x - w : anchor === 'middle' ? x - w / 2 : x,
+      x1: anchor === 'end' ? x : anchor === 'middle' ? x + w / 2 : x + w,
+    }
+  })
+  /* 判宽用 gutter 里的**所有**文本，不只白名单里的 8 个：否则有人把标题改回
+     一整行（旧写法）时，白名单一条都匹配不上 ⇒ titles 为空 ⇒ every() 恒真，
+     宽度门会假绿。白名单只负责「四条指标两行都在」，宽度与碰撞两条必须自己
+     证明输入非空。 */
+  const gutter = texts.filter(t => t.x === 0)
+  const titles = gutter.filter(t => /^(温度|°C|降水|mm\/h|云量|高度 m|风|km\/h)$/.test(t.txt))
+  const widest = gutter.reduce((a, b) => (b.x1 > a.x1 ? b : a), { x1: 0, txt: '' })
+  check(W + 'px：4 个指标 × 指标/单位两行都在（不是靠删标题躲重叠）',
+    titles.length === 8, JSON.stringify(titles.map(t => t.txt)))
+  check(W + 'px：gutter 里所有文本右缘不越进刻度列（旧写法「降水 mm/h」「云量 · 高度 m」≈52px > ' + (r.geo.L - 6) + 'px）',
+    gutter.length >= 8 && gutter.every(t => t.x1 <= r.geo.L - 6),
+    'gutter=' + gutter.length + ' 最宽=' + widest.txt + ' x1=' + widest.x1.toFixed(1))
+  check(W + 'px：标题与刻度字形不重叠（同一水平列且纵向相距 <14px 时）',
+    (() => {
+      const ticks = texts.filter(t => Math.abs(t.x - (r.geo.L - 5)) < 0.01)
+      let hit = null
+      gutter.forEach(a => ticks.forEach(b => {
+        if (Math.abs(a.y - b.y) < 14 && a.x0 < b.x1 - 0.5 && b.x0 < a.x1 - 0.5) hit = [a.txt, b.txt]
+      }))
+      return !hit
+    })(), JSON.stringify(gutter.map(t => [t.txt, +t.x1.toFixed(1)])))
 })
 
 console.log('\npassed=' + passed + ' failed=' + failed)

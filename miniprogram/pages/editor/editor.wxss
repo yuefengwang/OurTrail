@@ -1,1 +1,51 @@
 /* 编辑器 */
+
+/* M-07：快捷估算 chip（当天往返 / 2 天 / 3 天 / 5 天 / 出发前 N 天 / 与出发同时 / 提前 30 分…）
+   是"省掉滚轮"的捷径按钮，editor.wxml 里 10 处全部带 bindtap，而全局 .chip 只有约 30px 高
+   （行高 18 + padding 6×2）。创建流程常在移动中单手使用，这里把纵向 padding 提到 13px：
+   18 + 13×2 = 44 = var(--touch-target)，字号与圆角不动（app.wxss 的 .chip 定义本身不属本批写入集）。
+   横向 padding 保持 14px：chip 之间只有 8px gap，横向加宽会先撞上"相邻热区重叠"那一类误触。 */
+.chip { padding: 13px 14px; }
+
+/* 风景/腐败指数：选中态复用全局 chip 形态，只换底色与字色（token 内） */
+.chip.on { background: var(--forest); color: var(--paper); }
+
+/* 可点的折叠行整行都是热区，纵向至少 44px；避免只剩右侧小字可点。 */
+.cluster-row-tap { min-height: var(--touch-target); }
+
+/* 底栏主操作吃剩余宽度；「上一步 / 继续完善」保持文字按钮的自然宽度。 */
+.sticky-action .button.text { flex: 0 0 auto; }
+
+/* 步骤指示的完成态记号（T007）：只加一个 ✓，不碰 .seg 既有尺寸/配色/字重
+   （swx1 §1 钉着 .seg 的 min-height 与终值，这里写任何高度都会撞门）。 */
+.seg.done::before {
+  content: '✓';
+  margin-right: 4px;
+  font-size: 11px;
+  color: var(--forest);
+}
+
+/* 四步页签在 306px 宽、四步全部完成（带 ✓）时最紧：横向 padding 从 4px 收到 2px，
+   只影响本页，避免 .segmented 的 flex-wrap 把页签拆成两行。 */
+.segmented.tabs-line .seg { padding-left: 2px; padding-right: 2px; }
+
+/* 步内分组（T007）：与报名页 .part-group 同构——组内 8px、组间 16px。
+   卡内标题已说明这一段是什么，不再叠一层 .kicker 眉题。
+   注意：这里不得出现抬升 .cluster 纵向尺寸的规则（swx2 §7b 的 DEFERRED 判据
+   盯着 .cluster 行高；M-07 的 44px 补救在 .cluster-row-tap 上，各管各的）。 */
+.step-group { display: flex; flex-direction: column; gap: 8px; }
+.step-group + .step-group { margin-top: 16px; }
+
+/* 第 1 步的路线捷径：一行事实 + 一组文字动作；完整路线面只在第 2 步，不重复整张卡。
+   热区仍守 44px（--touch-target），文字动作自身的高度由全局 .button.text 决定。 */
+.route-shortcut { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-height: var(--touch-target); }
+.route-shortcut-text { flex: 1; min-width: 0; }
+
+/* 缺项分组清单：组名与步骤名各占一端；组与组之间 6px，与 callout 内既有行距同量级。 */
+.readiness-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 6px; }
+
+/* 卡内子项（路线节点 / 风险提示）：用发丝线分行，不再在卡里再套一张 .card。
+   首项没有顶线，末项与父卡 padding 之间由 .subrow 的 12px 自己收口。 */
+.subrows { display: flex; flex-direction: column; }
+.subrow { padding: 12px 0; }
+.subrow + .subrow { border-top: 1px solid var(--line); }

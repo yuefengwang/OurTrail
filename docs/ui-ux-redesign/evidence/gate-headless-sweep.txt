@@ -1,0 +1,78 @@
+﻿HEADLESS 2026-10-17T03:25:23.5924774+08:00
+astro-test.js exit=0 passed=60 failed=0
+cloud-field-geometry-test.js exit=0 passed=206 failed=0
+cloud-field-svg-test.js exit=0 passed=29 failed=0
+cloud-layer-facts-test.js exit=0 passed=45 failed=0
+cloud-position-test.js exit=0 passed=62 failed=0
+cold-start-work-test.js exit=0   i 璇绘暟锛氭敞鍏?RTT=8ms 鏃讹紝14 娆￠泦鍚堣鐨勫嘲鍊煎苟鍙?14锛屽閽?16ms锛涙敼閫犲墠锛堜覆琛?await锛夊悓涓€鎺㈤拡瀹炴祴宄板€?1銆佸閽熲増228ms銆?passed=10 failed=0
+e2e-client-cas-test.js exit=0 passed=54 failed=0 bugs=1 drift=0
+e2e-concurrency-test.js exit=0 passed=50 failed=0 bugs=0 inconclusive=4 drift=0
+e2e-domain-negative-test.js exit=0 passed=86 failed=0
+e2e-fault-probe-test.js exit=0 passed=34 failed=0
+SKIP(device) e2e-golden-path-test.js
+e2e-interleave-test.js exit=0 passed=67 failed=0 inconclusive=3
+e2e-panel-sync-test.js exit=0 passed=40 failed=0 bugs=0
+e2e-permission-test.js exit=0 passed=96 failed=0
+e2e-release-gap-test.js exit=0 passed=51 failed=0
+e2e-revision-guard-test.js exit=0 passed=16 failed=0
+e2e-test.js exit=0 passed=72 failed=0
+SKIP(device) e2e-ui-state-test.js
+SKIP(device) e2e-ui-test.js
+elevation-semantics-test.js exit=0 passed=34 failed=0
+failure-semantics-test.js exit=0 ==== passed=44 failed=0 inconclusive=2 ====
+fixround2-assertions-test.js exit=0 passed=83 failed=0
+g2-platform-gate-test.js exit=0 ==== passed=15 failed=0 ====
+g2-toast-copy-test.js exit=0 ==== passed=13 failed=0 ====
+gpx-test.js exit=0 passed=57 failed=0
+journey-graph-test.js exit=0 ==== passed=15 failed=0 skipped=0 ====
+journey-test.js exit=0 ==== passed=155 failed=0 ====
+lab-dryrun-test.js exit=0 passed=165 failed=0 skipped=0
+lifecycle-allocation-test.js exit=0 ==== passed=109 failed=0 ====
+lifecycle-cancellation-test.js exit=0 ==== passed=71 failed=0 ====
+lifecycle-concurrency-test.js exit=0 ==== passed=126 failed=0 ====
+lifecycle-fuzz-test.js exit=0 ==== passed=47 failed=0 ====
+lifecycle-projection-test.js exit=0 ==== passed=132 failed=0 ====
+lifecycle-transitions-test.js exit=0 ==== passed=214 failed=0 ====
+meta-revision-guard-test.js exit=0 passed=18 failed=0
+meteogram-draw-test.js exit=0 passed=30 failed=0
+meteogram-multiday-test.js exit=0 passed=48 failed=0
+meteogram-readability-test.js exit=0 passed=77 failed=0
+meteogram-svg-test.js exit=0 passed=25 failed=0
+oi-claim-gate-test.js exit=0 passed=26 failed=0
+outdoor-cloud-sea-test.js exit=0 passed=32 failed=0
+outdoor-intelligence-test.js exit=0 passed=35 failed=0
+outdoor-intelligence-ui-test.js exit=0 passed=47 failed=0
+overlay-semantics-test.js exit=0 passed=35 failed=0
+quick-create-test.js exit=0 passed=65 failed=0
+receipt-window-test.js exit=0 ==== passed=19 failed=0 inconclusive=2 ====
+roam-scrubber-test.js exit=0 passed=33 failed=0
+route-schedule-test.js exit=0 passed=41 failed=0
+routes-test.js exit=0 routes-test: passed=68 failed=0
+scenario-activity-test.js exit=0 passed=136 failed=0 skipped=0
+scenario-api-test.js exit=0 passed=29 failed=0 skipped=0
+scenario-discover-test.js exit=0 passed=21 failed=0 skipped=0
+scenario-editor-test.js exit=0 passed=153 failed=0 skipped=0
+scenario-lab-test.js exit=0 passed=20 failed=0 skipped=0
+scenario-me-test.js exit=0 passed=143 failed=0 skipped=0
+scenario-notices-test.js exit=0 passed=67 failed=0 skipped=0
+scenario-signup-test.js exit=0 passed=104 failed=0 skipped=0
+scenario-staff-test.js exit=0 passed=25 failed=0 skipped=0
+scenario-vehicle-test.js exit=0 passed=57 failed=0 skipped=0
+scenario-workspace-test.js exit=0 passed=114 failed=0 skipped=0
+sky-test.js exit=0 passed=82 failed=0
+space-time-draw-test.js exit=0 passed=55 failed=0
+space-time-test.js exit=0 passed=109 failed=0
+style-semantics-test.js exit=0 passed=92 failed=0
+trailapilab-test.js exit=0 passed=25 failed=0 skipped=0
+trip2-gates-test.js exit=0 passed=76 failed=0
+trip-mode-test.js exit=0 passed=78 failed=0
+watch-points-test.js exit=0 passed=37 failed=0
+weather-cloud-field-test.js exit=0 passed=31 failed=0
+weather-model-test.js exit=0 passed=82 failed=0
+weather-page-test.js exit=0 passed=189 failed=0
+weather-resilience-test.js exit=0 ==== passed=45 failed=0 ====
+weather-v2-test.js exit=0 passed=67 failed=0
+weather-v2-visual-audit-test.js exit=0 passed=43 failed=0
+workspace-gate-test.js exit=0 ==== passed=43 failed=0 skipped=0 ====
+SUMMARY pass=72 fail=0
+DONE

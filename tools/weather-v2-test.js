@@ -8,7 +8,7 @@
 //   3. Evidence——每张条件卡的事实清单非空，每条含事实文案与合法锚点小时
 //   4. Optional 字段缺失降级——旧返回体（无 windDir/pressure/dewPoint）整页装配不炸、显示 '—'
 //   5. 视图切片——24/48/72h；非法 span 回落 24h；chartSeries 的 7 天语义不受影响
-//   6. 总评均分——light 不参与；「有戏项均值」规则与 weather-model.judge 同源
+//   6. 总评均分——light 不参与；「有戏项均值」规则与 conditions.overallGrade 一致
 'use strict'
 
 let passed = 0
@@ -105,6 +105,10 @@ section('2. 云海可见性：Agenda 只给看得见的窗口')
   check('凌晨簇窗口起点 = 民用晨光（' + sun.civilDawn + '，非天文晨光 ' + sun.astroDawn + '）',
     !!dawnEvent && sky.hourMin(dawnEvent.window.slice(0, 5)) === civilDawnMin,
     dawnEvent && dawnEvent.window)
+  /* 簇末 08 时覆盖 [08:00,09:00)，窗口终点必须补满这一小时再与暮光取交集。
+     只测起点会让"+60 去掉"在单小时簇之外漏网（多时段簇仍能过）。 */
+  check('凌晨簇窗口终点 = 簇末小时 +60 分钟（08 时 → 09:00）',
+    !!dawnEvent && dawnEvent.window.slice(-5) === '09:00', dawnEvent && dawnEvent.window)
   check('02:00（民用晨光前）不进任何窗口',
     seaEvents.every(e => {
       const from = sky.hourMin(e.window.slice(0, 5))
@@ -296,6 +300,174 @@ section('2c. 天文暗夜始的 sub 只在真有银河小时时说，否则只�
       .match(/银河与深空窗口/g) || []).length === 1)
 }
 
+/* ---------- 2d. 跨夜日程（F4 阶段二 · 保守方案） ---------- */
+
+section('2d. 跨夜日程：galaxy/star 按今晚序列聚类，次日事件标「次日」并排在今日之后')
+{
+  const D = '2026-10-06'
+  const D2 = '2026-10-07'
+  const hourOf = (d, hh) => ({
+    d, t: String(hh).padStart(2, '0') + ':00', temp: 8, pop: 0, precip: 0, showers: 0,
+    code: 2, wind: 5, rh: 55, cloud: { low: 5, mid: 5, high: 5 }, band: null,
+  })
+  const dayDetail = () => {
+    const out = []
+    for (let hh = 0; hh < 24; hh++) out.push(hourOf(D, hh))
+    return out
+  }
+  const seqOf = spans => {
+    const out = []
+    spans.forEach(sp => { for (let hh = sp[0]; hh <= sp[1]; hh++) out.push(hourOf(sp[2] || D, hh)) })
+    return out
+  }
+  const marksFor = (hours, keys) => {
+    const m = {}
+    hours.forEach(h => { m[h.d + 'T' + h.t] = keys })
+    return m
+  }
+  const sunOf = (over) => Object.assign({
+    astroDawn: '05:20', sunrise: '06:10', sunset: '18:50', astroDusk: '19:40',
+    civilDawn: '05:50', civilDusk: '19:10',
+  }, over || {})
+
+  // ① 跨零点：今晚 20–23 + 次日 00–05 连成一簇，窗口 = 今晚 … → 次日 …
+  {
+    const night = seqOf([[20, 23, D], [0, 5, D2]])
+    const events = agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks: marksFor(night, ['galaxy']),
+      sun: null, win: null, nightHours: night,
+    })
+    check('跨零点银河簇 → 一条事件、窗口「今晚 20:00 → 次日 05:00」',
+      events.length === 1 && events[0].key === 'galaxy' &&
+      events[0].t === '20:00' && events[0].window === '今晚 20:00 → 次日 05:00',
+      JSON.stringify(events))
+    check('跨零点事件不加 dayOffset（它从今晚开始，排序用起点）',
+      events.length === 1 && !('dayOffset' in events[0]))
+  }
+
+  // ② 同日簇：窗口仍是旧格式，不加 dayOffset
+  {
+    const night = seqOf([[21, 23, D]])
+    const events = agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks: marksFor(night, ['star']),
+      sun: null, win: null, nightHours: night,
+    })
+    check('同日夜间簇 → 窗口保持旧格式「21:00–23:00」且无 dayOffset',
+      events.length === 1 && events[0].window === '21:00–23:00' && !('dayOffset' in events[0]),
+      JSON.stringify(events))
+  }
+
+  // ③ 纯次日簇：t = 「次日 HH:mm」，dayOffset=1，且排在所有今日事件之后
+  {
+    const detail = dayDetail()
+    const marks = marksFor(seqOf([[2, 5, D2]]), ['star'])
+    // 今日两个事件（01:00 / 23:00 彩虹），验证今日内部相对顺序不变
+    marks[D + 'T01:00'] = ['rainbow']
+    marks[D + 'T23:00'] = ['rainbow']
+    const events = agenda.buildDayAgenda({
+      date: D, detail, marks, sun: null, win: null,
+      nightHours: seqOf([[2, 5, D2]]),
+    })
+    const today = events.filter(e => e.t.indexOf('次日 ') !== 0)
+    const last = events[events.length - 1] || {}
+    check('纯次日簇：t = 「次日 02:00」、window = 「次日 02:00–05:00」、dayOffset=1',
+      last.t === '次日 02:00' && last.window === '次日 02:00–05:00' && last.dayOffset === 1,
+      JSON.stringify(events))
+    check('纯次日事件排在全部今日事件之后，今日事件相对顺序不变（01:00 → 23:00）',
+      events.length === 3 && today.length === 2 &&
+      today[0].t === '01:00' && today[1].t === '23:00',
+      JSON.stringify(events.map(e => e.t)))
+  }
+
+  // ④ 前夜尾段：今日 00–05 的 star 是昨夜，不是今晚
+  {
+    const tail = seqOf([[0, 5, D]])
+    const tonight = seqOf([[21, 23, D]])
+    const marks = Object.assign(marksFor(tail, ['star']), marksFor(tonight, ['galaxy']))
+    const withNight = agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks, sun: null, win: null, nightHours: tonight,
+    })
+    const withoutNight = agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks, sun: null, win: null,
+    })
+    check('有今晚序列：今日 00–05 的 star 尾段整条被移除（不留同名条目）',
+      !withNight.some(e => e.key === 'star') &&
+      withNight.some(e => e.key === 'galaxy' && e.t === '21:00'),
+      JSON.stringify(withNight))
+    check('阳性对照（不传 nightHours）：同一份数据里 00–05 star 窗口照旧存在',
+      withoutNight.some(e => e.key === 'star' && e.window === '00:00–05:00'),
+      JSON.stringify(withoutNight.map(e => e.key + '@' + e.t)))
+  }
+
+  // ⑤ 「天文暗夜始」的机会句问的是今晚序列，不是当日尾段
+  {
+    const tonightGalaxy = seqOf([[21, 23, D], [0, 0, D2]])
+    const tailGalaxy = seqOf([[0, 5, D]])
+    const duskOf = (events) => (events.filter(e => e.title === '天文暗夜始')[0] || {}).sub || null
+
+    const subTonightOnly = duskOf(agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks: marksFor(tonightGalaxy, ['galaxy']),
+      sun: sunOf(), win: null, nightHours: tonightGalaxy,
+    }))
+    check('今晚有银河、今日 detail 没有 ⇒ 机会句出现', subTonightOnly === '银河与深空窗口', String(subTonightOnly))
+
+    const subTailOnly = duskOf(agenda.buildDayAgenda({
+      date: D, detail: dayDetail(),
+      marks: Object.assign(marksFor(tailGalaxy, ['galaxy']), marksFor(seqOf([[21, 23, D]]), ['star'])),
+      sun: sunOf(), win: null, nightHours: seqOf([[21, 23, D]]),
+    }))
+    check('今晚没有银河、只有今日尾段有 ⇒ 机会句为空（尾段不是今晚）', subTailOnly === null, String(subTailOnly))
+
+    const subOld = duskOf(agenda.buildDayAgenda({
+      date: D, detail: dayDetail(), marks: marksFor(tailGalaxy, ['galaxy']),
+      sun: sunOf(), win: null,
+    }))
+    check('不传 nightHours 时旧行为逐字节相同：今日尾段有银河 ⇒ 机会句出现',
+      subOld === '银河与深空窗口', String(subOld))
+  }
+
+  // ⑥ 无 nightHours：整份事件数组与手写期望逐字节相同（含字段集合）
+  {
+    const detail = dayDetail()
+    const marks = {
+      [D + 'T10:00']: ['cloudSea'], [D + 'T11:00']: ['cloudSea'],
+      [D + 'T15:00']: ['rainbow'],
+    }
+    const input = { date: D, detail, marks, sun: sunOf(), win: null }
+    const a = agenda.buildDayAgenda(input)
+    const b = agenda.buildDayAgenda(input)
+    const expected = [
+      { t: '05:20', title: '天文晨光始', sub: '天空开始变亮', l2: false },
+      { t: '06:10', title: '日出', sub: null, l2: false },
+      { t: '10:00', title: '云海观察窗口', sub: null, l2: true, key: 'cloudSea', window: '10:00–12:00' },
+      { t: '15:00', title: '彩虹可能', sub: null, l2: true, key: 'rainbow', window: '15:00' },
+      { t: '18:50', title: '日落', sub: null, l2: false },
+      { t: '19:40', title: '天文暗夜始', sub: null, l2: false },
+    ]
+    check('不传 nightHours：事件数组与手写期望逐字节相同（两次调用也一致）',
+      JSON.stringify(a) === JSON.stringify(expected) && JSON.stringify(b) === JSON.stringify(expected),
+      JSON.stringify(a))
+    check('不传 nightHours：任何事件都没有 dayOffset 字段（形状不变）',
+      a.every(e => !('dayOffset' in e)))
+  }
+
+  // ⑦ 形状门：没有日期 / 不递增的列表不得被当成「今晚」
+  check('isNightSequence：空数组 / 缺 d / 不递增 一律 false',
+    agenda.isNightSequence([]) === false &&
+    agenda.isNightSequence([{ t: '21:00' }]) === false &&
+    agenda.isNightSequence([hourOf(D, 23), hourOf(D, 1)]) === false &&
+    agenda.isNightSequence(seqOf([[20, 23, D], [0, 5, D2]])) === true)
+  check('isNightKey 只认 galaxy/star',
+    agenda.isNightKey('galaxy') && agenda.isNightKey('star') &&
+    !agenda.isNightKey('cloudSea') && !agenda.isNightKey('rainbow'))
+  check('isSpanningNightEvent 只认「跨零点 / 纯次日」的 galaxy/star（同日窗口继续由 OI 卡表达）',
+    agenda.isSpanningNightEvent({ l2: true, key: 'galaxy', dayOffset: 1, window: '次日 02:00–05:00' }) &&
+    agenda.isSpanningNightEvent({ l2: true, key: 'star', window: '今晚 23:00 → 次日 04:00' }) &&
+    !agenda.isSpanningNightEvent({ l2: true, key: 'galaxy', window: '20:00–22:00' }) &&
+    !agenda.isSpanningNightEvent({ l2: true, key: 'cloudSea', window: '今晚 23:00 → 次日 04:00' }) &&
+    !agenda.isSpanningNightEvent({ l2: false, key: 'galaxy', window: '今晚 23:00 → 次日 04:00' }))
+}
+
 /* ---------- 3. Evidence：每张卡都有事实与锚点 ---------- */
 
 section('3. Evidence 事实清单（factsFor）')
@@ -332,8 +504,72 @@ section('3. Evidence 事实清单（factsFor）')
     && cond.factsFor('cloudSea', ctx).some(f => f.fact.indexOf('低层云带') !== -1))
   check('galaxy 证据含月照',
     cond.factsFor('galaxy', ctx).some(f => f.fact.indexOf('月照') !== -1))
+  /* F1（2026-10-21）：证据行里的「光污染未计入」也必须覆盖 undefined。
+     页面的三个真实状态——首屏、getSkyContext 整体失败、配额用尽——传的正是 undefined；
+     旧实现只认 `=== null`，于是缺测在最需要披露的时候恰好从证据里消失。
+     三态成对：没传 / 显式 null / 有读数，缺一不可（有读数那侧是阳性对照）。 */
+  const lpFacts = extra => cond.factsFor('star', Object.assign({}, ctx, extra))
+  const absent = lpFacts({})
+  const explicitNull = lpFacts({ lightPollution: null })
+  const undefinedKey = lpFacts({ lightPollution: undefined })
+  const withReading = lpFacts({ lightPollution: { bortle: 2, sqm: 21.8 } })
+  const lim = list => list.filter(f => f.kind === 'night-limit')
+  check('光污染缺字段（不传）⇒ 证据里点名「未计入」且 kind=night-limit',
+    lim(absent).length === 1 && /光污染未计入/.test(lim(absent)[0].fact), JSON.stringify(absent))
+  check('光污染显式 null ⇒ 同样点名「未计入」', lim(explicitNull).length === 1, JSON.stringify(explicitNull))
+  check('光污染字段值是 undefined ⇒ 与不传同解（页面真实形态）',
+    lim(undefinedKey).length === 1, JSON.stringify(undefinedKey))
+  check('光污染有读数 ⇒ 给出天空亮度、且不再说「未计入」（阳性对照）',
+    withReading.some(f => f.kind === 'light-pollution' && /Bortle 2/.test(f.fact))
+    && lim(withReading).length === 0, JSON.stringify(withReading))
   check('未知 key 返回空数组（不抛异常）', cond.factsFor('nope', ctx).length === 0)
   check('detail 为空返回空数组', cond.factsFor('cloudSea', { date: DATE, detail: [], days: [], elevation: ELEV }).length === 0)
+}
+
+/* ---------- 3b. 跨夜证据锚点（F4 阶段一） ---------- */
+
+section('3b. 跨夜证据锚点：只有 at 变完整日期，事实文本不动')
+{
+  /* 与 sky-test §23 同一立场，这里从**页面会传的 ctx 形状**再钉一次：
+     detail 是所选日 24h、night 是 sky.summarize 产出的跨夜序列。 */
+  const makeDay = (d) => {
+    const out = []
+    for (let hh = 0; hh < 24; hh++) {
+      out.push({
+        d, t: String(hh).padStart(2, '0') + ':00', temp: 12, pop: 0, precip: 0, showers: 0,
+        code: 2, wind: 6, rh: 60, cloud: { low: 0, mid: 0, high: 0 }, band: null,
+      })
+    }
+    return out
+  }
+  const d1 = makeDay('2026-07-15')
+  const d2 = makeDay('2026-07-16')
+  d1[22].cloud = { low: 20, mid: 20, high: 20 }
+  d1[23].cloud = { low: 20, mid: 20, high: 20 }
+  d2[0].cloud = { low: 10, mid: 10, high: 10 }
+  const skyOut = sky.summarize({
+    date: '2026-07-15', lat: COORD.lat, lng: COORD.lng, elevation: ELEV, elevOK: true,
+    detail: d1, series: d1.concat(d2), days: [], heading: null,
+    lightPollution: { bortle: 2, sqm: 21.8 },
+  })
+  const galaxy = skyOut.items.filter(i => i.key === 'galaxy')[0]
+  const star = skyOut.items.filter(i => i.key === 'star')[0]
+  const fctx = {
+    date: '2026-07-15', detail: d1, days: [], elevation: ELEV,
+    sun: skyOut.sun, moon: skyOut.moon, night: skyOut.night,
+  }
+  const base = cond.factsFor('galaxy', fctx)
+  const withItem = cond.factsFor('galaxy', Object.assign({}, fctx, { item: galaxy }))
+  check('跨夜 item.at 落在次日（' + galaxy.at + '）', galaxy.at.slice(0, 10) === '2026-07-16', galaxy.at)
+  check('跨夜证据的 at 全部变成完整日期，且 === item.at',
+    withItem.length > 0 && withItem.every(f => f.at === galaxy.at), JSON.stringify(withItem))
+  check('跨夜证据的 fact/kind/顺序与不传 item 时逐字节相同（只改锚点，不改事实）',
+    withItem.length === base.length
+      && withItem.every((f, i) => f.fact === base[i].fact && f.kind === base[i].kind)
+      && base.every(f => /^\d{2}:\d{2}$/.test(f.at)), JSON.stringify({ base, withItem }))
+  check('非跨夜（star 的 at 就在所选日）仍输出 HH:mm，与旧形态一致',
+    cond.factsFor('star', Object.assign({}, fctx, { item: star }))
+      .every(f => /^\d{2}:\d{2}$/.test(f.at)))
 }
 
 /* ---------- 4. Optional 字段缺失降级 ---------- */
@@ -398,7 +634,7 @@ section('5. buildViewSeries：24/48/72h 切窗，7 天契约不动')
   check('buildChartSeries 仍是 7 天 168 条', page.buildChartSeries(series, '2026-10-06').length === 168)
 }
 
-/* ---------- 6. 总评均分（light 不参与，规则同 weather-model.judge） ---------- */
+/* ---------- 6. 总评均分（light 不参与，规则同 conditions.overallGrade） ---------- */
 
 section('6. overallGrade 与星级语言')
 {
@@ -412,24 +648,133 @@ section('6. overallGrade 与星级语言')
   check('light 不参与均分；无戏项不拉低（(80+50)/2 = 65 → 条件一般）',
     g.score === 65 && g.label === '条件一般', JSON.stringify(g))
   check('星级映射：65 → ★★★☆☆（3 星）', g.stars === '★★★☆☆', g.stars)
-  check('≥70 → ★★★★☆（最高四星，第五颗永远空着）',
-    cond.starsOf(100) === '★★★★☆' && cond.overallGrade([{ key: 'cloudSea', score: 90 }]).stars === '★★★★☆')
+  /* 纯映射：≥70 就是四星（第五颗永远空着）。
+     旧断言把「单项 90 ⇒ 总评四星」写在同一句里，C4/F5 起单项只能到 69——
+     替换理由：星级映射是纯函数，能不能拿四星取决于**有几个 live 项**，两件事分开测；
+     合并测会让契约自相矛盾（映射说 90 是四星、总评说 90 只能 69）。 */
+  check('星级纯映射：≥70 → ★★★★☆，69 → ★★★☆☆（最高四星，第五颗永远空着）',
+    cond.starsOf(100) === '★★★★☆' && cond.starsOf(70) === '★★★★☆' && cond.starsOf(69) === '★★★☆☆')
   check('<45 → ★★☆☆☆（最低两星，不打一星）', cond.starsOf(10) === '★★☆☆☆')
-  check('空清单 → 条件较差不炸', cond.overallGrade([]).label === '条件较差')
-  check('全为 light → 用其余项（空）走较差档', cond.overallGrade([{ key: 'light', score: 100 }]).label === '条件较差')
+  check('空清单 → 数据不足，不冒充条件较差', (() => {
+    const e = cond.overallGrade([])
+    return e.label === '数据不足' && e.insufficient === true && e.stars === ''
+  })())
+  check('全为 light → 同样数据不足', (() => {
+    const e = cond.overallGrade([{ key: 'light', score: 100 }])
+    return e.label === '数据不足' && e.insufficient === true
+  })())
+  /* 弃权不是否定：全 unknown 是「没数据」，不是「条件较差」，也不是 0 分均值。 */
+  check('全 unknown → 数据不足（不是条件较差，也不是 0 分）', (() => {
+    const e = cond.overallGrade([
+      { key: 'cloudSea', score: 80, verdict: 'unknown' },
+      { key: 'star', score: 90, verdict: 'unknown' },
+    ])
+    return e.label === '数据不足' && e.insufficient === true && e.stars === ''
+  })())
+  /* ---------- F5（C4）：4 星要求 ≥2 个 live 项 ----------
+     docs/superpowers/specs/2026-10-21-sky-phenomena-inference-fix-plan.md §6：
+     4 星是「两件独立好事」的语言，单个 live 项不得独自把总评推成 ≥70（cap69）。
+     下面每条都配阳性对照（双项 80+80 不变）——只测"被压下去了"的话，
+     无条件 cap 也能全绿，分不清闸在判还是一刀切。 */
+  check('单项 80 ⇒ 69 / ★★★☆☆ / 条件一般（不是 80 / 四星）', (() => {
+    const r = cond.overallGrade([{ key: 'cloudSea', score: 80, verdict: 'possible' }])
+    return r.score === 69 && r.tone === 'warning' && r.label === '条件一般' && r.stars === '★★★☆☆'
+  })(), JSON.stringify(cond.overallGrade([{ key: 'cloudSea', score: 80, verdict: 'possible' }])))
+  check('双项 80+80 ⇒ 80 / ★★★★☆（阳性对照：证明不是无条件封顶）', (() => {
+    const r = cond.overallGrade([
+      { key: 'cloudSea', score: 80, verdict: 'possible' },
+      { key: 'rainbow', score: 80, verdict: 'possible' },
+    ])
+    return r.score === 80 && r.tone === 'success' && r.label === '条件较好' && r.stars === '★★★★☆'
+  })())
+  check('一个 live 90 + 一个非 live 20 ⇒ 69（计数看 live，不是 dedup/known 总数）', (() => {
+    const r = cond.overallGrade([
+      { key: 'cloudSea', score: 90, verdict: 'possible' },
+      { key: 'rainbow', score: 20, verdict: 'possible' },
+    ])
+    return r.score === 69 && r.stars === '★★★☆☆'
+  })())
+  check('单项 90 + excluded 64 ⇒ 69（excluded 不凑成"第二件好事"）', (() => {
+    const r = cond.overallGrade([
+      { key: 'star', score: 90, verdict: 'possible' },
+      { key: 'cloudSea', score: 64, verdict: 'excluded' },
+    ])
+    return r.score === 69 && r.stars === '★★★☆☆'
+  })())
+  check('单项但 <70（65）不触发 cap：65 原样（阳性对照的近邻）', (() => {
+    const r = cond.overallGrade([{ key: 'cloudSea', score: 65, verdict: 'possible' }])
+    return r.score === 65 && r.stars === '★★★☆☆'
+  })())
+  /* 边界：单项 69.6 若先 grade 再 cap/或 cap 后重新 grade 写错，会舍入成 70/四星。
+     正确顺序是「cap → grade」：69 封顶之后才分档，不能先四舍五入到 70。 */
+  check('单项 69.6 ⇒ cap 后 grade 为 69 / ★★★☆☆（不得舍入成 70/四星）', (() => {
+    const r = cond.overallGrade([{ key: 'cloudSea', score: 69.6, verdict: 'possible' }])
+    return r.score === 69 && r.tone === 'warning' && r.label === '条件一般' && r.stars === '★★★☆☆'
+  })())
+  /* 三项 80：少数派写 `live.length !== 2` 时会被误 cap；三项必须原样 80/四星。 */
+  check('三项 80+80+80 ⇒ 80 / ★★★★☆（≥2 live 的正向边界）', (() => {
+    const r = cond.overallGrade([
+      { key: 'cloudSea', score: 80, verdict: 'possible' },
+      { key: 'rainbow', score: 80, verdict: 'possible' },
+      { key: 'alpenglow', score: 80, verdict: 'possible' },
+    ])
+    return r.score === 80 && r.stars === '★★★★☆'
+  })())
+
   /* 沉默闸（第十轮）：页面上已经不出现的卡，不能再替总评投票。
      被排除的云海可以攥着 64 分（≥45 会进 live），旧规则下它会把 90 的星空拉成 77——
-     看不见的证据决定看得见的结论。 */
-  check('excluded 的高分项不进 live（只剩星空 90 说话）', (() => {
-    const g2 = cond.overallGrade([
-      { key: 'cloudSea', score: 64, tone: 'warning', label: '条件一般', verdict: 'excluded' },
+     看不见的证据决定看得见的结论。
+     替换（C4/F5）：旧断言期望「只剩星空 90 ⇒ 90」，等于又把单项推成四星。
+     新判据保留原意图（excluded 不投票）并加强：改 excluded 的分数（0/64/100）
+     结果必须不变——证明 69 不是被那张看不见的卡"拉低"的，它根本没进池子。 */
+  check('excluded 的高分项不投票：只剩星空 90 ⇒ 69，且改 excluded 分数不影响结果', (() => {
+    const run = s => cond.overallGrade([
+      { key: 'cloudSea', score: s, tone: 'warning', label: '条件一般', verdict: 'excluded' },
       { key: 'star', score: 90, tone: 'success', label: '条件较好', verdict: 'possible' },
     ])
-    return g2.score === 90
+    const a = run(64)
+    return a.score === 69 && a.stars === '★★★☆☆'
+      && run(0).score === 69 && run(100).score === 69
   })(), JSON.stringify(cond.overallGrade([
     { key: 'cloudSea', score: 64, verdict: 'excluded' },
     { key: 'star', score: 90, verdict: 'possible' },
   ])))
+  /* 替换（C4/F5）：旧断言期望「unknown 80 + 星空 90 ⇒ 90」；单项四星现在不成立。
+     原意图（unknown 不投票、缺测不是 0 分）保留并加强：改 unknown 的分数
+     （0/80/100）结果必须完全不变——若它投票，至少有一个变体不同。 */
+  check('unknown 不投票：只剩星空 90 ⇒ 69，且改 unknown 分数不影响结果', (() => {
+    const run = s => cond.overallGrade([
+      { key: 'cloudSea', score: s, verdict: 'unknown' },
+      { key: 'star', score: 90, verdict: 'possible' },
+    ])
+    const a = run(80)
+    return a.score === 69 && a.stars === '★★★☆☆'
+      && run(0).score === 69 && run(100).score === 69
+  })())
+  check('全部被判不成立 → 条件较差，不是数据不足', (() => {
+    const g6 = cond.overallGrade([
+      { key: 'star', score: 0, verdict: 'excluded' },
+      { key: 'cloudSea', score: 64, verdict: 'excluded' },
+    ])
+    return g6.label === '条件较差' && g6.insufficient === false && !!g6.stars
+  })())
+  /* 替换（C4/F5）：旧断言期望「星空 60 + 银河 90 ⇒ 90」。去重仍然成立（银河优先），
+     但去重后只剩**一个** live 类，所以必须 69。这条同时钉住「只算一次」：
+     若双计，(60+90)/2 = 75 ⇒ 四星；断言不等于 75 才算真的证明去重没被绕过。 */
+  check('星空/银河去重后只剩一个 live 类 ⇒ 69，且 ≠ 75（双计会得 75/四星）', (() => {
+    const g4 = cond.overallGrade([
+      { key: 'star', score: 60, verdict: 'possible' },
+      { key: 'galaxy', score: 90, verdict: 'possible' },
+    ])
+    return g4.score === 69 && g4.score !== 75 && g4.stars === '★★★☆☆'
+  })())
+  check('银河 unknown 时星空仍可代表夜空：star 60 ⇒ 60（单项但 <70，不触发 cap）', (() => {
+    const g5 = cond.overallGrade([
+      { key: 'star', score: 60, verdict: 'possible' },
+      { key: 'galaxy', score: 90, verdict: 'unknown' },
+    ])
+    return g5.score === 60 && g5.stars === '★★★☆☆'
+  })())
   /* 反向：没有 verdict 的旧形状必须照常参与（isSilent 失败开放）。
      上面那组 65 分的用例就是这一条的活证据，这里再点名一次，免得以后有人
      把"缺 verdict"当成"已被沉默"来减卡。 */

@@ -203,3 +203,19 @@
 B 层三套需开发者工具、不计入门禁，且本轮两轮的归宿分别是 **INCONCLUSIVE**（原生 picker 不可自动化）与
 **FLAKY**（真云端读滞后导致的一次假红）。
 ⇒ **主链与并发/一致性已具备正式 gate 的形状；缺口集中在"授权/通知/异常/座位调整"这四族 A 层空白与 23 条真云端零覆盖命令。**
+
+---
+
+## 7. 2026-10-20 增补：协作任务（`task.*`）
+
+`commands.js` 现有 **46 条命令**（本表主体仍按 2026-10-07 的 39 条生成，属于历史快照）。新增 4 条：
+
+| 命令 | domain | 页面 | A 层信封 | 真云端 |
+|---|---|---|---|---|
+| `task.create` | `tools/tasks-test.js` | `tools/scenario-tasks-test.js` | `tools/e2e-task-test.js` | 2026-10-20 手工 CRUD 通过 |
+| `task.update` | `tools/tasks-test.js` | `tools/scenario-tasks-test.js` | `tools/e2e-task-test.js` | 未单独跑（同一命令族） |
+| `task.status` | `tools/tasks-test.js` | `tools/scenario-tasks-test.js` | `tools/e2e-task-test.js` | 2026-10-20 手工 CRUD 通过 |
+| `task.remove` | `tools/tasks-test.js` | `tools/scenario-tasks-test.js` | `tools/e2e-task-test.js` | 2026-10-20 手工 CRUD 通过 |
+
+任务命令的 owner-only/参与者只读/取消后只读/草稿级联由 `tasks-test` 27 条覆盖；页面装配与命令形状由 `scenario-tasks` 24 条覆盖。
+**A 层信封已补**：`e2e-task-test` **28** 条覆盖 owner 创建/read、非 owner 403、路人 denied、陈旧 revision CONFLICT、同 requestId 重放、`REQUEST_REUSED`、参与者只读、update/status/remove、草稿删除级联；真实云端另用真实活动跑通 create→status→remove。工具文件数 `ls tools/*-test.js | wc -l` = **100**。

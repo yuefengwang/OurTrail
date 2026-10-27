@@ -1,8 +1,12 @@
 {
   "navigationBarTitleText": "发现活动",
+  "navigationBarBackgroundColor": "#F5F5F0",
+  "navigationBarTextStyle": "black",
   "enablePullDownRefresh": true,
   "usingComponents": {
     "icon": "/components/icon/icon",
+    "overlay": "/components/overlay/overlay",
+    "form-field": "/components/form-field/form-field",
     "status-panel": "/components/status-panel/status-panel",
     "activity-card": "/components/activity-card/activity-card"
   }

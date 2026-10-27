@@ -4,6 +4,7 @@ Component({
   options: { styleIsolation: 'apply-shared' },
   data: {
     selected: 0,
+    hidden: false,
     list: [
       { pagePath: '/pages/home/home', text: '活动', icon: 'activity' },
       { pagePath: '/pages/weather-hub/weather-hub', text: '天气', icon: 'sun' },

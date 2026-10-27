@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page {{showSticky ? 'has-sticky' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="无法查看此活动" detail="{{denied}}" actionLabel="回到我的活动" bind:action="goHome" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在核对活动安排。" />
@@ -10,101 +10,231 @@
       <text style="display:block;margin-top:4px;">此预览不会发布活动，也不会替你报名。</text>
     </view>
 
-    <view class="hero stack" style="gap:12px;">
-      <image class="trail-art" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjQwIiBmaWxsPSJub25lIiBzdHJva2U9IiNENkVBOEEiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTEzNS0yMEM0MCAzMSAyMjAgNTEgMTI2IDEwN1MzNSAxNzkgMTMyIDI2MCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTTE4My0yMEM4OCAzMSAxNjQgNzggODQgMTIzUzkyIDIwMSAxNzkgMjYwIiBzdHJva2Utd2lkdGg9IjEuMjUiLz48L3N2Zz4=" mode="aspectFit" />
-      <view class="cluster hero-body">
-        <text class="badge on-forest">{{badgeText}}</text>
-        <text class="small muted tabular">{{startAtLabel}}</text>
-      </view>
-      <text class="page-title hero-body">{{title}}</text>
-      <text class="muted hero-body">{{routeTitle}}</text>
-      <view class="metrics hero-body">
-        <view class="metric">
-          <text class="metric-value">{{distance}}<text class="metric-unit">km</text></text>
-          <text class="metric-label">路线里程</text>
-        </view>
-        <view class="metric">
-          <text class="metric-value">{{ascent}}<text class="metric-unit">m</text></text>
-          <text class="metric-label">累计爬升</text>
-        </view>
-        <view class="metric">
-          <text class="metric-value">{{confirmed}}<text class="metric-unit">/ {{capacity}}</text></text>
-          <text class="metric-label">已确认人数</text>
-        </view>
-      </view>
-    </view>
-
-    <view wx:if="{{!isDraft}}" class="callout {{stateTone}}">
-      <text class="callout-title">{{stateTitle}}</text>
-      <text style="display:block;margin-top:4px;">{{stateDetail}}</text>
-      <!-- 时间锚点单独一行、前面带形状标记：户外强光下不能只靠颜色区分「现在该做的那件事」 -->
-      <text wx:if="{{milestone}}" class="small tabular" style="display:block;margin-top:6px;">● {{milestone}}</text>
-      <text wx:if="{{countersLine}}" class="small" style="display:block;margin-top:4px;">{{countersLine}}</text>
-      <text wx:if="{{howLine}}" class="small" style="display:block;margin-top:4px;">{{howLine}}</text>
-    </view>
-
-    <view class="form-actions">
-      <view wx:if="{{isOwner}}" class="button primary" hover-class="button-hover" bindtap="onWorkspace" style="flex:1;">
-        <text>{{isDraft ? '返回编辑与发布' : '进入工作台'}}</text>
-        <icon name="arrow" size="18" color="#FFFFFF" />
-      </view>
-      <button
-        wx:elif="{{canSubmit}}"
-        class="button primary"
-        style="flex:1;"
-        hover-class="button-hover"
-        bindtap="onSignup"
-      >填写报名资料</button>
-      <view wx:elif="{{canSelfSheet}}" class="button primary" hover-class="button-hover" bindtap="onSelfSheet" style="flex:1;">{{selfButton}}</view>
-      <view wx:elif="{{nextActionTarget === 'meeting'}}" class="button primary" hover-class="button-hover" bindtap="onNextAction" style="flex:1;">{{nextActionLabel}}</view>
-      <!-- 分享是次要动作，给它 text 权重：一屏只留一个 primary，拇指落在哪个上一目了然 -->
-      <button class="button text" hover-class="button-hover" open-type="share">
-        <icon name="copy" size="18" color="#163E35" />
-        <text>分享</text>
+    <!-- 发布成功只出现一次：从编辑器带 published=1 进来，读完这一条就收回，
+         把「现在最该做的事」（发到群里）提到首屏，而不是让发起人自己找分享入口。 -->
+    <view wx:if="{{justPublished && isOwner}}" class="callout success">
+      <text class="callout-title">活动已发布</text>
+      <text style="display:block;margin-top:4px;">把链接发到群里，同行的人就能报名。还没填的图文与风险，之后随时能补。</text>
+      <button class="button primary block" style="margin-top:12px;" hover-class="button-hover" open-type="share">
+        <icon name="copy" size="18" color="#FFFFFF" />
+        <text>分享给同行的人</text>
+      </button>
+      <!-- 这一屏没有底栏，但改前顶部那枚「进入工作台」必须仍能找到；
+           分享保持唯一 primary，工作台退为文字次操作。 -->
+      <button class="button text block" style="margin-top:8px;" hover-class="button-hover" bindtap="onWorkspace">
+        <text>进入工作台</text>
+        <icon name="arrow" size="18" color="#163E35" />
       </button>
     </view>
 
-    <view wx:if="{{rows.length}}" class="stack" style="gap:0;">
-      <view class="card-header">
-        <text class="section-title">我与同行人</text>
-        <text class="small muted">每个人，独立确认</text>
+    <!-- 首屏：全出血封面（媒体 320）+ 抬进照片下沿的纸面板。
+         事实格与状态卡同处一块 .sheet-top：它们是「值不值得去 / 现在该做什么」的唯一出口，
+         事实区（sec-facts）已并入这里，首屏读数不再重复印第二份。 -->
+    <view class="act-top">
+      <view class="activity-hero-bleed">
+        <activity-hero
+          title="{{title}}"
+          routeTitle="{{routeTitle}}"
+          leader="{{leader}}"
+          badgeText="{{badgeText}}"
+          startAtLabel="{{startAtLabel}}"
+          cover="{{cover}}"
+          coverIsReal="{{coverIsReal}}"
+          coverFailed="{{coverFailed}}"
+          bind:covererror="onCoverError"
+          bind:fallbackerror="onFallbackCoverError"
+        />
       </view>
-      <person-row
-        wx:for="{{rows}}"
-        wx:key="signupId"
-        name="{{item.name}}"
-        avatar="{{item.avatar}}"
-        status="{{item.statusLabel}}"
-        tone="{{item.tone}}"
-        subtitle="{{item.subtitle}}"
-      >
-        <view class="button {{item.isPrimary ? 'secondary' : 'text'}}" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="onToggleRow">
-          {{item.isPrimary ? '当前查看' : '切换查看'}}
-        </view>
-        <view class="button text" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="openSheet">
-          <text>资料与操作</text>
-          <icon name="arrow" size="16" color="#163E35" />
-        </view>
-      </person-row>
-    </view>
-
-    <view class="stack" style="gap:0;">
-      <text class="section-title">这一次的安排</text>
-      <text>{{description}}</text>
-      <view class="list-row"><view class="list-main"><text>{{times[0].label}}</text></view><text class="tabular">{{times[0].value}}</text></view>
-      <view class="list-row"><view class="list-main"><text>{{times[1].label}}</text></view><text class="tabular">{{times[1].value}}</text></view>
-      <view class="list-row"><view class="list-main"><text>{{times[2].label}}</text></view><text class="tabular">{{times[2].value}}</text></view>
-      <text wx:if="{{organizerIntro}}" class="small muted">{{organizerIntro}}</text>
-    </view>
-
-    <view id="meeting-block" class="stack" style="gap:0;">
-      <view class="card-header">
-        <text class="section-title">路线与集合</text>
-        <view class="button text" hover-class="button-hover" bindtap="onWeather">
-          <icon name="cloud" size="18" color="#163E35" />
-          <text>天气参考</text>
+      <!-- 负上边距由全局 .sheet-top 给；.act-top 是 flex 列，不会被外边距合并吃掉 -->
+      <view class="sheet-top act-sheet">
+        <fact-grid wx:if="{{infoFacts.length}}" items="{{infoFacts}}" variant="card" />
+        <text wx:if="{{photoNote}}" class="photo-note act-photo-note">{{photoNote}}</text>
+        <view wx:if="{{!isDraft}}" class="callout {{stateTone}}">
+          <text class="callout-title">{{stateTitle}}</text>
+          <text style="display:block;margin-top:4px;">{{stateDetail}}</text>
+          <!-- 时间锚点单独一行、前面带形状标记：户外强光下不能只靠颜色区分「现在该做的那件事」 -->
+          <text wx:if="{{milestone}}" class="small tabular" style="display:block;margin-top:6px;">● {{milestone}}</text>
+          <text wx:if="{{countersLine}}" class="small" style="display:block;margin-top:4px;">{{countersLine}}</text>
+          <text wx:if="{{howLine}}" class="small" style="display:block;margin-top:4px;">{{howLine}}</text>
         </view>
       </view>
+    </view>
+
+    <!-- 同行评分：从事实区搬出来的可选观感信息，不参与章节编号，也不占主信息卡的格子 -->
+    <view wx:if="{{sceneryRating || funRating}}" class="stack">
+      <text class="kicker">同行评分</text>
+      <view class="act-rating__row">
+        <view wx:if="{{sceneryRating}}" class="cluster act-rating__item">
+          <text class="small muted">风景</text>
+          <view class="star-row"><text wx:for="{{ratingOptions}}" wx:key="*this" class="star {{item <= sceneryRating ? 'on' : ''}}">★</text></view>
+        </view>
+        <view wx:if="{{funRating}}" class="cluster act-rating__item">
+          <text class="small muted">腐败</text>
+          <view class="star-row"><text wx:for="{{ratingOptions}}" wx:key="*this" class="star {{item <= funRating ? 'on' : ''}}">★</text></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 分区锚点（S5）：吸顶下划线分段条，外观复用全局 .segmented.tabs-line。
+         只做阅读跳转，不隐藏任何内容，也不替主操作做决定；当前项由 IntersectionObserver
+         逐锚点观测得出（activity.js setupAnchorObserver），点按仍走 onSectionNav → pageScrollTo，
+         目标取段内第一个真实存在的 id，滚到位后高亮由 observer 自己收敛。 -->
+    <view class="section-nav" aria-label="活动章节">
+      <view class="segmented tabs-line">
+        <view
+          wx:for="{{anchorGroups}}"
+          wx:key="key"
+          class="seg {{item.key === anchorActive ? 'on' : ''}}"
+          data-id="{{item.target}}"
+          bindtap="onSectionNav"
+        >{{item.label}}</view>
+      </view>
+    </view>
+
+    <!-- 正文：章节之间 40px（.stack-sections），章节标题到内容 12px（chapter 默认 gap），
+         章节内部用自己的 .stack / .stack-gap3。id 留在页面外层，section-nav 与 pageScrollTo 的锚点不变。 -->
+    <view class="stack-sections">
+
+    <view wx:if="{{description || contentView.length || highlights.length}}" id="sec-intro">
+      <chapter no="{{secNo.intro}}" kicker="活动简介" title="这一次，去哪里">
+        <view class="stack">
+          <text wx:if="{{description}}" class="lede">{{description}}</text>
+          <block wx:for="{{contentView}}" wx:key="index" wx:for-index="blockIndex">
+            <block wx:if="{{item.type === 'text'}}">
+              <text wx:for="{{item.paragraphs}}" wx:for-item="p" wx:key="index" class="article-p">{{p}}</text>
+            </block>
+            <view wx:else class="article-images {{item.layout}}">
+              <view wx:for="{{item.images}}" wx:for-item="img" wx:for-index="imageIndex" wx:key="fileid" class="article-cell">
+                <image wx:if="{{!img.error}}" class="article-img" src="{{img.fileid}}" mode="{{item.layout === 'single' ? 'widthFix' : 'aspectFill'}}" lazy-load data-fileid="{{img.fileid}}" data-block-index="{{blockIndex}}" data-image-index="{{imageIndex}}" bindtap="onPreviewImage" binderror="onContentImageError" />
+                <view wx:else class="article-img-failed"><text>图片加载失败</text></view>
+              </view>
+            </view>
+          </block>
+          <view wx:if="{{highlights.length}}" class="stack" style="gap:8px;">
+            <text class="kicker">推荐理由</text>
+            <view wx:for="{{highlights}}" wx:key="index" class="highlight-row">
+              <text class="highlight-dot">•</text>
+              <text class="highlight-text">{{item}}</text>
+            </view>
+          </view>
+        </view>
+      </chapter>
+    </view>
+
+    <!-- 同行人不编号：编号只给「阅读顺序里的章节」，人与状态不是章节 -->
+    <view wx:if="{{rows.length}}" id="sec-peers">
+      <chapter kicker="同行人" title="我与同行人" sub="每个人，独立确认">
+        <view class="person-list">
+          <person-row
+            wx:for="{{rows}}"
+            wx:key="signupId"
+            name="{{item.name}}"
+            avatar="{{item.avatar}}"
+            status="{{item.statusLabel}}"
+            tone="{{item.tone}}"
+            subtitle="{{item.subtitle}}"
+          >
+            <view class="button {{item.isPrimary ? 'secondary' : 'text'}}" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="onToggleRow">
+              {{item.isPrimary ? '当前查看' : '切换查看'}}
+            </view>
+            <view class="button text" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="openSheet">
+              <text>资料与操作</text>
+              <icon name="arrow" size="16" color="#163E35" />
+            </view>
+          </person-row>
+        </view>
+      </chapter>
+    </view>
+
+    <!-- 行程：节点时间轴从路线区迁入这里，与「几点出发、几天」在同一个章节读；
+         路线区只保留指标、地图、剖面与上车点。 -->
+    <view id="sec-itinerary">
+      <chapter no="{{secNo.itinerary}}" kicker="行程安排" title="这一次的安排">
+        <view class="stack">
+          <view wx:if="{{points.length}}" class="timeline">
+            <view
+              wx:for="{{points}}"
+              wx:key="id"
+              class="timeline-item"
+              hover-class="{{item.coordinates ? 'button-hover' : 'none'}}"
+              bindtap="onPointLocate"
+              data-index="{{index}}"
+            >
+              <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
+                <view style="min-width:0;">
+                  <text class="eyebrow">{{item.kindLabel}}</text>
+                  <text style="display:block;font-weight:600;margin-top:2px;">{{item.name}}</text>
+                  <text wx:if="{{item.scheduleLabel}}" class="small tabular" style="display:block;margin-top:2px;">{{item.scheduleLabel}}</text>
+                </view>
+                <block wx:if="{{item.coordinates}}">
+                  <view
+                    wx:if="{{item.kind === 'checkpoint'}}"
+                    class="button text"
+                    hover-class="button-hover"
+                    catchtap="onPointWeather"
+                    data-index="{{index}}"
+                  >天气</view>
+                  <view
+                    wx:else
+                    class="button text"
+                    hover-class="button-hover"
+                    catchtap="onOpenLocation"
+                    data-lat="{{item.coordinates.lat}}"
+                    data-lng="{{item.coordinates.lng}}"
+                    data-name="{{item.name}}"
+                  >导航</view>
+                </block>
+              </view>
+            </view>
+          </view>
+          <text wx:if="{{scheduleBasis}}" class="small muted">{{scheduleBasis}}</text>
+          <text wx:if="{{organizerIntro}}" class="small muted">{{organizerIntro}}</text>
+        </view>
+      </chapter>
+    </view>
+
+    <view wx:if="{{!isDraft}}" id="sec-weather">
+      <chapter no="{{secNo.weather}}" kicker="天气" title="出发日天气" sub="只看出发日的天气事实；不构成出发许可。" gap="{{8}}">
+      <view class="card stack-gap3">
+        <block wx:if="{{weatherLoading}}">
+          <text class="small muted">正在查询出发日天气…</text>
+        </block>
+        <block wx:elif="{{weatherBrief.ready}}">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="badge {{weatherBrief.tone}}">{{weatherBrief.phraseLabel}}</text>
+            <text class="small muted">{{weatherBrief.dayLabel}}</text>
+          </view>
+          <text wx:if="{{weatherBrief.hourText}}" class="lede">{{weatherBrief.hourText}}</text>
+          <text class="small muted">{{weatherBrief.dayText}}</text>
+          <text wx:if="{{weatherBrief.pointText}}" class="small muted">{{weatherBrief.pointText}}</text>
+          <view wx:if="{{weatherBrief.staleText}}" class="callout warning">
+            <text class="small">{{weatherBrief.staleText}}</text>
+          </view>
+          <view wx:if="{{weatherBrief.riskText}}" class="callout warning">
+            <text class="callout-title">风险提示</text>
+            <text style="display:block;margin-top:4px;">{{weatherBrief.riskText}}</text>
+          </view>
+          <view class="cluster">
+            <view class="button text" hover-class="button-hover" bindtap="onWeather">查看路线天气</view>
+            <view wx:if="{{weatherBrief.riskText}}" class="button text" hover-class="button-hover" data-id="sec-safety" bindtap="onSectionNav">看下方风险</view>
+          </view>
+        </block>
+        <block wx:else>
+          <text class="small muted">{{weatherBrief.text || '正在准备天气信息…'}}</text>
+          <view wx:if="{{weatherBrief.retry}}" class="button text" hover-class="button-hover" bindtap="onWeatherRetry">重新查询</view>
+        </block>
+      </view>
+      </chapter>
+    </view>
+
+    <view id="meeting-block">
+      <chapter no="{{secNo.route}}" kicker="路线与集合" title="怎么去 · 在哪集合">
+        <view class="stack">
+      <!-- 路线四指标：里程 / 爬升 / 最高海拔 / 预计时长。缺值的项不占格子（组件侧过滤空值） -->
+      <view wx:if="{{routeStats.length}}" class="act-route-stats">
+        <fact-grid items="{{routeStats}}" variant="stats" />
+      </view>
+      <text wx:if="{{routeStatsNote}}" class="small muted act-route-stats-note">{{routeStatsNote}}</text>
       <view wx:if="{{map.visible}}" class="map-card">
         <map
           class="map-canvas"
@@ -119,42 +249,19 @@
           bindmarkertap="onMapMarkerTap"
         />
       </view>
-      <view class="timeline" style="margin-top:12px;">
-        <view
-          wx:for="{{points}}"
-          wx:key="id"
-          class="timeline-item"
-          hover-class="{{item.coordinates ? 'button-hover' : 'none'}}"
-          bindtap="onPointLocate"
-          data-index="{{index}}"
-        >
-          <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
-            <view style="min-width:0;">
-              <text class="eyebrow">{{item.kindLabel}}</text>
-              <text style="display:block;font-weight:700;margin-top:2px;">{{item.name}}</text>
-            </view>
-            <block wx:if="{{item.coordinates}}">
-              <view
-                wx:if="{{item.kind === 'checkpoint'}}"
-                class="button text"
-                hover-class="button-hover"
-                catchtap="onPointWeather"
-                data-index="{{index}}"
-              >天气</view>
-              <view
-                wx:else
-                class="button text"
-                hover-class="button-hover"
-                catchtap="onOpenLocation"
-                data-lat="{{item.coordinates.lat}}"
-                data-lng="{{item.coordinates.lng}}"
-                data-name="{{item.name}}"
-              >导航</view>
-            </block>
-          </view>
+      <view class="stack" style="gap:8px;">
+        <view class="section-head">
+          <text class="kicker">剖面</text>
+          <text class="section-title">海拔怎么走</text>
+          <text class="section-sub">高程来自 GPX 或路线节点；节点剖面不是连续地形。</text>
+        </view>
+        <view class="card">
+          <route-profile track="{{track}}" points="{{points}}" />
         </view>
       </view>
-      <view wx:for="{{pickups}}" wx:key="id" class="list-row" style="margin-top:12px;">
+      <!-- 空路线（发布门允许路线整体后补）：说清「缺什么、补了有什么用」，不长成空白 -->
+      <text wx:if="{{!points.length}}" class="small muted">组织者还没有填写路线节点。途中清点与进度确认会用到它们，发布后可随时补上。</text>
+      <view wx:for="{{pickups}}" wx:key="id" class="list-row">
         <view class="list-main">
           <text>{{item.name}}</text>
           <text class="list-sub">{{item.address}}</text>
@@ -173,40 +280,97 @@
           >导航</view>
         </view>
       </view>
-    </view>
-
-    <view class="stack" style="gap:12px;">
-      <text class="section-title">风险提示</text>
-      <block wx:if="{{risks.length}}">
-        <view wx:for="{{risks}}" wx:key="id" class="callout warning">
-          <text class="callout-title">{{item.title}}</text>
-          <text style="display:block;margin-top:4px;">{{item.advice}}</text>
         </view>
-      </block>
-      <text wx:else class="muted">组织者尚未补充具体风险；户外活动存在天气与路况变化。</text>
+      </chapter>
     </view>
 
-    <view class="stack" style="gap:12px;">
-      <text class="section-title">出发前，检查装备</text>
-      <view class="cluster">
-        <text wx:for="{{equipment}}" wx:key="index" class="badge neutral">{{item}}</text>
-        <text wx:if="{{!equipment.length}}" class="muted">组织者未填写装备清单。</text>
+    <view id="sec-safety">
+      <chapter no="{{secNo.safety}}" kicker="安全" title="风险提示">
+        <view class="stack">
+          <block wx:if="{{risks.length}}">
+            <view wx:for="{{risks}}" wx:key="id" class="callout warning">
+              <text class="callout-title">{{item.title}}</text>
+              <text style="display:block;margin-top:4px;">{{item.advice}}</text>
+            </view>
+          </block>
+          <text wx:else class="muted">组织者尚未补充具体风险；户外活动存在天气与路况变化。</text>
+        </view>
+      </chapter>
+    </view>
+
+    <view id="sec-equipment">
+      <chapter no="{{secNo.equipment}}" kicker="装备" title="出发前，检查装备">
+        <equipment-grid required="{{equipment}}" suggested="{{equipmentSuggested}}" />
+      </chapter>
+    </view>
+
+    <view id="sec-fee">
+      <chapter no="{{secNo.fee}}" kicker="费用与约定" title="费用与退出约定">
+        <view class="stack">
+          <text wx:if="{{feeSummary}}" class="lede">{{feeSummary}}</text>
+          <view wx:if="{{feeIncludes.length}}" class="stack" style="gap:6px;">
+            <text class="field-label">费用包含</text>
+            <view wx:for="{{feeIncludes}}" wx:key="index" class="fee-line">· {{item}}</view>
+          </view>
+          <view wx:if="{{feeExcludes.length}}" class="stack" style="gap:6px;">
+            <text class="field-label">费用不含</text>
+            <view wx:for="{{feeExcludes}}" wx:key="index" class="fee-line">· {{item}}</view>
+          </view>
+          <text wx:if="{{feeNote}}" style="display:block;">{{feeNote}}</text>
+          <text wx:if="{{!feeSummary && !feeIncludes.length && !feeExcludes.length && !feeNote}}" class="muted">费用待组织者说明。</text>
+          <text wx:if="{{cancellationNote}}" class="muted">{{cancellationNote}}</text>
+          <text class="small muted">OurTrail 不收款，不处理支付或退款。</text>
+        </view>
+      </chapter>
+    </view>
+
+    <view wx:if="{{signupNote}}" id="sec-signup">
+      <chapter no="{{secNo.signup}}" kicker="报名后" title="进群与行前准备">
+        <text class="lede">{{signupNote}}</text>
+      </chapter>
+    </view>
+
+    <view wx:if="{{!isDraft}}" class="stack">
+      <view class="list-row" hover-class="button-hover" bindtap="onNotices">
+        <view class="list-main">
+          <text>活动通知</text>
+          <text class="list-sub">集合变更与最新安排</text>
+        </view>
+        <icon name="arrow" size="22" color="#163E35" />
+      </view>
+      <view class="list-row" hover-class="button-hover" bindtap="goTasks">
+        <view class="list-main">
+          <text>协作任务</text>
+          <text class="list-sub">装备、采购与记录的分工</text>
+        </view>
+        <icon name="arrow" size="22" color="#163E35" />
       </view>
     </view>
 
-    <view class="stack" style="gap:12px;">
-      <text class="section-title">费用与退出约定</text>
-      <text>{{feeNote}}</text>
-      <text wx:if="{{cancellationNote}}" class="muted">{{cancellationNote}}</text>
-      <text class="small muted">OurTrail 不收款，不处理支付或退款。</text>
+    <!-- 底部固定操作条（S3）：原顶部操作区整体下移，条件链与原来逐条同源
+         （isOwner → canSubmit → canSelfSheet → meeting），仍是互斥分支 ⇒ 一屏一个 primary。
+         justPublished 不出底栏：那一屏的唯一主操作是成功卡里的分享。
+         底栏里没有写操作（写都在同行状态弹层内），故不做 busy 禁用——写挂住时残留的 busy
+         会把导航变成「点了没反应」的死按钮；写期间底栏本就低于 overlay（z 50 < 200）。 -->
+    <view wx:if="{{showSticky}}" class="sticky-action act-sticky">
+      <button wx:if="{{!isDraft && !justPublished}}" class="button secondary act-sticky__share" hover-class="button-hover" open-type="share">
+        <icon name="copy" size="18" color="#163E35" />
+        <text>分享</text>
+      </button>
+      <view wx:if="{{isOwner}}" class="button primary" hover-class="button-hover" bindtap="onWorkspace">
+        <text>{{isDraft ? '返回编辑与发布' : '进入工作台'}}</text>
+        <icon name="arrow" size="18" color="#FFFFFF" />
+      </view>
+      <button
+        wx:elif="{{canSubmit}}"
+        class="button primary"
+        hover-class="button-hover"
+        bindtap="onSignup"
+      >填写报名资料</button>
+      <view wx:elif="{{canSelfSheet}}" class="button primary" hover-class="button-hover" bindtap="onSelfSheet">{{selfButton}}</view>
+      <view wx:elif="{{nextActionTarget === 'meeting'}}" class="button primary" hover-class="button-hover" bindtap="onNextAction">{{nextActionLabel}}</view>
     </view>
 
-    <view wx:if="{{!isDraft}}" class="list-row" hover-class="button-hover" bindtap="onNotices">
-      <view class="list-main">
-        <text>活动通知</text>
-        <text class="list-sub">集合变更与最新安排</text>
-      </view>
-      <icon name="arrow" size="22" color="#163E35" />
     </view>
   </view>
 

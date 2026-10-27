@@ -1,0 +1,417 @@
+{
+  "generatedAt": "2026-10-26T05:30:45.564Z",
+  "wsEndpoint": "ws://127.0.0.1:9434",
+  "systemInfo": {
+    "windowWidth": 390,
+    "windowHeight": 844,
+    "statusBarHeight": 47,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12"
+  },
+  "home": {
+    "systemInfo": {
+      "windowWidth": 390,
+      "windowHeight": 844,
+      "statusBarHeight": 47
+    },
+    "clientHeight": 844,
+    "documentHeight": 23673,
+    "usableBottom": 749,
+    "tabbarRect": {
+      "top": 749,
+      "left": 0,
+      "width": 390,
+      "height": 95
+    },
+    "brand": {
+      "statusBarHeight": 47,
+      "navBar": 40,
+      "height": 87,
+      "contentRightInset": 102,
+      "title": ""
+    },
+    "bar": {
+      "top": 0,
+      "left": 0,
+      "width": 390,
+      "height": 87
+    },
+    "spacer": {
+      "top": 24,
+      "left": 20,
+      "width": 350,
+      "height": 87
+    },
+    "barStyle": {
+      "pos": "fixed",
+      "bg": "rgb(245, 245, 240)",
+      "zindex": "90"
+    },
+    "nextUp": {
+      "id": "activity-muzgu3qdnx7wkq",
+      "title": "真机验证 出行方式",
+      "facts": [
+        "12/01 周二",
+        "剩 35 天",
+        "已确认 0/24",
+        "待审核 0 人"
+      ]
+    },
+    "cardCount": 158,
+    "nextRect": {
+      "top": 111,
+      "left": 20,
+      "width": 350,
+      "height": 106
+    },
+    "actRow": {
+      "top": 233,
+      "left": 20,
+      "width": 350,
+      "height": 48
+    },
+    "cardTitle": {
+      "top": 627,
+      "left": 37,
+      "width": 316,
+      "height": 30
+    },
+    "cardChips": {
+      "top": 690.6953125,
+      "left": 37,
+      "width": 316,
+      "height": 18
+    },
+    "roleTexts": [
+      "我组织的",
+      "我组织的",
+      "我组织的",
+      "我组织的"
+    ],
+    "chipText": "30.5 km\n·\n2883 m"
+  },
+  "discover": {
+    "cardCount": 50,
+    "chipText": "02/06 周六\n·\n6 km\n·\n200 m",
+    "hasRoleSlot": true
+  },
+  "notices": {
+    "headCount": 1,
+    "headText": "通知\n重要安排，不错过。\n站内发布、你已阅读与外部发送，是不同的记录。",
+    "kickerText": "通知",
+    "brand": {
+      "top": 0,
+      "left": 0,
+      "width": 390,
+      "height": 87
+    },
+    "hidden": 657,
+    "pull": {
+      "triggered": true
+    }
+  },
+  "me": {
+    "brand": {
+      "top": 0,
+      "left": 0,
+      "width": 390,
+      "height": 87
+    }
+  },
+  "activity": {
+    "id": "activity-muzgu3qdnx7wkq",
+    "groups": [
+      {
+        "key": "intro",
+        "label": "介绍",
+        "target": "sec-intro",
+        "ids": [
+          "sec-intro"
+        ]
+      },
+      {
+        "key": "itinerary",
+        "label": "行程",
+        "target": "sec-itinerary",
+        "ids": [
+          "sec-itinerary",
+          "sec-weather"
+        ]
+      },
+      {
+        "key": "route",
+        "label": "路线",
+        "target": "meeting-block",
+        "ids": [
+          "meeting-block"
+        ]
+      },
+      {
+        "key": "safety",
+        "label": "安全",
+        "target": "sec-safety",
+        "ids": [
+          "sec-safety"
+        ]
+      },
+      {
+        "key": "equipment",
+        "label": "装备",
+        "target": "sec-equipment",
+        "ids": [
+          "sec-equipment"
+        ]
+      },
+      {
+        "key": "terms",
+        "label": "约定",
+        "target": "sec-fee",
+        "ids": [
+          "sec-fee"
+        ]
+      }
+    ],
+    "segTexts": [
+      "介绍",
+      "行程",
+      "路线",
+      "安全",
+      "装备",
+      "约定"
+    ],
+    "nav": {
+      "top": 642.8984375,
+      "left": 20,
+      "width": 350,
+      "height": 55
+    },
+    "navPos": "sticky",
+    "navTop": "0px",
+    "navZ": "20",
+    "navHeight": 55,
+    "maxScroll": 1747,
+    "stickyAfter": {
+      "top": 1743.5,
+      "left": 20,
+      "width": 350,
+      "height": 55
+    },
+    "navScrollTop": 1743.5,
+    "activeTop": "intro",
+    "activeAfterScroll": "safety",
+    "pick": {
+      "id": "sec-safety",
+      "key": "safety",
+      "docTop": 1802.4921875,
+      "docBottom": 1933.4921875
+    },
+    "targetTop": 1743.4921875,
+    "pickVpTop": 59,
+    "expectedAfterScroll": "safety",
+    "tapActive": "safety",
+    "tapVpTop": 55,
+    "anchors": [
+      {
+        "id": "sec-intro",
+        "key": "intro",
+        "docTop": 713.8984375,
+        "docBottom": 795.8984375
+      },
+      {
+        "id": "sec-itinerary",
+        "key": "itinerary",
+        "docTop": 823.8984375,
+        "docBottom": 1027.8984375
+      },
+      {
+        "id": "sec-weather",
+        "key": "itinerary",
+        "docTop": 1055.8984375,
+        "docBottom": 1181.8984375
+      },
+      {
+        "id": "meeting-block",
+        "key": "route",
+        "docTop": 1209.8984375,
+        "docBottom": 1774.8984375
+      },
+      {
+        "id": "sec-safety",
+        "key": "safety",
+        "docTop": 1802.4921875,
+        "docBottom": 1933.4921875
+      },
+      {
+        "id": "sec-equipment",
+        "key": "equipment",
+        "docTop": 1960.9921875,
+        "docBottom": 2040.9921875
+      },
+      {
+        "id": "sec-fee",
+        "key": "terms",
+        "docTop": 2068.9921875,
+        "docBottom": 2182.9921875
+      }
+    ]
+  },
+  "exceptions": [],
+  "consoleErrors": [],
+  "checks": [
+    {
+      "name": "首页品牌栏在场（自定义导航 + 词标）",
+      "pass": true,
+      "extra": "{\"statusBarHeight\":47,\"navBar\":40,\"height\":87,\"contentRightInset\":102,\"title\":\"\"}"
+    },
+    {
+      "name": "品牌栏固定条贴顶、占位块与条等高（页面仍有唯一根 .page）",
+      "pass": true,
+      "extra": "{\"bar\":{\"top\":0,\"left\":0,\"width\":390,\"height\":87},\"spacer\":{\"top\":24,\"left\":20,\"width\":350,\"height\":87}}"
+    },
+    {
+      "name": "品牌栏 position=fixed / 纸底 / z-index 90",
+      "pass": true,
+      "extra": "{\"pos\":\"fixed\",\"zindex\":\"90\",\"bg\":\"rgb(245, 245, 240)\"}"
+    },
+    {
+      "name": "右侧给胶囊让位（contentRightInset > 0 且 = windowWidth - 胶囊左沿 + 8）",
+      "pass": true,
+      "extra": "{\"rightInset\":102,\"height\":87}"
+    },
+    {
+      "name": "页内不再有 .page-title",
+      "pass": true,
+      "extra": ""
+    },
+    {
+      "name": "「下一次同行」状态与数据一致：有未来活动 → 非空态；没有 → 邀请卡空态",
+      "pass": true,
+      "extra": "{\"nextUp\":{\"id\":\"activity-muzgu3qdnx7wkq\",\"title\":\"真机验证 出行方式\",\"facts\":[\"12/01 周二\",\"剩 35 天\",\"已确认 0/24\",\"待审核 0 人\"]},\"empty\":false}"
+    },
+    {
+      "name": "状态卡不把过期活动当成「下一次」（事实行里不出现「已过时」）",
+      "pass": true,
+      "extra": "[\"12/01 周二\",\"剩 35 天\",\"已确认 0/24\",\"待审核 0 人\"]"
+    },
+    {
+      "name": "状态卡事实行来自投影（日期 · 剩余 · 人数，组织者多一格待审核）",
+      "pass": true,
+      "extra": "[\"12/01 周二\",\"剩 35 天\",\"已确认 0/24\",\"待审核 0 人\"]"
+    },
+    {
+      "name": "首屏 A1①：状态卡整卡在可用区内（底边 = tab 栏上沿）",
+      "pass": true,
+      "extra": "{\"H\":844,\"usableBottom\":749,\"tabbarRect\":{\"top\":749,\"left\":0,\"width\":390,\"height\":95},\"nextRect\":{\"top\":111,\"left\":20,\"width\":350,\"height\":106}}"
+    },
+    {
+      "name": "首屏 A1①：动作行也在首屏内",
+      "pass": true,
+      "extra": "{\"usableBottom\":749,\"actRow\":{\"top\":233,\"left\":20,\"width\":350,\"height\":48}}"
+    },
+    {
+      "name": "首屏 A1①：首卡标题露出（标题底边 ≤ 可用底边）",
+      "pass": true,
+      "extra": "{\"usableBottom\":749,\"cardTitle\":{\"top\":627,\"left\":37,\"width\":316,\"height\":30}}"
+    },
+    {
+      "name": "首屏 A1①：首卡 chips 行至少部分露出（top < 可用底边）",
+      "pass": true,
+      "extra": "{\"usableBottom\":749,\"cardChips\":{\"top\":690.6953125,\"left\":37,\"width\":316,\"height\":18}}"
+    },
+    {
+      "name": "卡片归属短词（roleNote）在像素层出现，且只出现在组织者卡上",
+      "pass": true,
+      "extra": "[\"我组织的\",\"我组织的\",\"我组织的\",\"我组织的\"]"
+    },
+    {
+      "name": "chips 行是「日期 · 难度 · 距离 · 爬升」同一种串（不折行、不重复人数）",
+      "pass": true,
+      "extra": "\"30.5 km\\n·\\n2883 m\""
+    },
+    {
+      "name": "发现页卡片也走 chips 行（同一派生单源）",
+      "pass": true,
+      "extra": "\"02/06 周六\\n·\\n6 km\\n·\\n200 m\""
+    },
+    {
+      "name": "发现页卡片徽章是相位短词，不是「我组织的」长串",
+      "pass": true,
+      "extra": "\"02/06 周六\\n·\\n6 km\\n·\\n200 m\""
+    },
+    {
+      "name": "发现页没有品牌栏（原生返回栏页，D2）",
+      "pass": true,
+      "extra": ""
+    },
+    {
+      "name": "通知页品牌栏在场",
+      "pass": true,
+      "extra": "{\"top\":0,\"left\":0,\"width\":390,\"height\":87}"
+    },
+    {
+      "name": "分区头只有一处，且含「通知」二字与 20px 标题",
+      "pass": true,
+      "extra": "{\"count\":1,\"headText\":\"通知\\n重要安排，不错过。\\n站内发布、你已阅读与外部发送，是不同的记录。\"}"
+    },
+    {
+      "name": "页内不再有 .page-title",
+      "pass": true,
+      "extra": ""
+    },
+    {
+      "name": "条数/排序/未读说明降级为一行 12px caption（事实一条不少）",
+      "pass": true,
+      "extra": "{\"captionText\":\"共 677 条 · 最新的在最上面 · 左侧深色边线的是还没读的\",\"captionSize\":\"12px\"}"
+    },
+    {
+      "name": "我的页品牌栏在场、无 .page-title",
+      "pass": true,
+      "extra": "{\"meBrand\":{\"top\":0,\"left\":0,\"width\":390,\"height\":87},\"hasTitle\":false}"
+    },
+    {
+      "name": "详情页吸顶条 6 段（本活动有手写介绍/报名后须知）",
+      "pass": true,
+      "extra": "[\"介绍:sec-intro\",\"行程:sec-itinerary/sec-weather\",\"路线:meeting-block\",\"安全:sec-safety\",\"装备:sec-equipment\",\"约定:sec-fee\"]"
+    },
+    {
+      "name": "分段条 sticky / top 0 / z-index 20 / 纸底",
+      "pass": true,
+      "extra": "{\"navPos\":\"sticky\",\"navTop\":\"0px\",\"navZ\":\"20\"}"
+    },
+    {
+      "name": "分段条 6 个可点段且文案与 anchorGroups 一致",
+      "pass": true,
+      "extra": "[\"介绍\",\"行程\",\"路线\",\"安全\",\"装备\",\"约定\"]"
+    },
+    {
+      "name": "首段高亮在「介绍」",
+      "pass": true,
+      "extra": "\"intro\""
+    },
+    {
+      "name": "滚动后分段条仍贴在视口顶（sticky 生效）",
+      "pass": true,
+      "extra": "{\"navAfter\":{\"top\":1743.5,\"left\":20,\"width\":350,\"height\":55},\"navScrollTop\":1743.5}"
+    },
+    {
+      "name": "滚到「safety」段：标题停在吸顶条下方 4px（59px）",
+      "pass": true,
+      "extra": "{\"pick\":{\"id\":\"sec-safety\",\"key\":\"safety\",\"docTop\":1802.4921875,\"docBottom\":1933.4921875},\"targetTop\":1743.4921875,\"navScrollTop\":1743.5,\"pickVpTop\":59,\"NAV_H\":55}"
+    },
+    {
+      "name": "高亮 = 第一个与观测窗相交的段（几何算得的期望：safety）",
+      "pass": true,
+      "extra": "{\"active\":\"safety\",\"expectedAfterScroll\":\"safety\",\"navScrollTop\":1743.5}"
+    },
+    {
+      "name": "点「safety」段：落点在吸顶条下方 55px（标题不被条盖住）",
+      "pass": true,
+      "extra": "{\"tapVpTop\":55,\"NAV_H\":55,\"tapScrollTop\":1747,\"pick\":{\"id\":\"sec-safety\",\"key\":\"safety\",\"docTop\":1802.4921875,\"docBottom\":1933.4921875}}"
+    },
+    {
+      "name": "点段后高亮跟随到几何期望的段（safety）",
+      "pass": true,
+      "extra": "{\"tapActive\":\"safety\",\"expectedAfterTap\":\"safety\"}"
+    }
+  ]
+}

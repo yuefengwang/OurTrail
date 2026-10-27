@@ -4,12 +4,18 @@
     <status-panel kind="loading" title="正在载入" detail="正在读取现场名单。" />
   </block>
   <view wx:else class="stack">
-    <view class="callout warning">
-      <text class="callout-title">{{headline}}</text>
-      <text style="display:block;margin-top:4px;">签到、上车、出发与到家分别记录，不能相互替代。</text>
-      <view class="cluster" style="margin-top:8px;">
-        <text>待到家 {{pendingHome}} 人</text>
-        <text>未结异常 {{openIncidents}} 项</text>
+    <!-- 常驻头部是中性的（A-18）：分区标题 + 一句口径说明 + 计数。
+         语义色留给真的出事的时候（本面板下方的 danger 与 success、异常逐条的 warning 徽标）：
+         有色块常年在解释文字外面，用户学会忽略它，下一次它包住真告警时也没人再看。
+         「待到家」只在宿主没有把它印在头顶指标区时才出现在这里（A-17：同屏两份同名计数、
+         一种 26px 可点一种是一行小字，用户会去比较哪一份是旧的）；
+         「未结异常」两宿主都照旧出——那一格从来不是它。 -->
+    <view class="stack" style="gap:4px;">
+      <text class="section-title">{{headline}}</text>
+      <text class="small muted">签到、上车、出发与到家分别记录，不能相互替代。</text>
+      <view class="cluster" style="gap:12px;">
+        <text wx:if="{{showHomeCount}}" class="small muted">待到家 {{pendingHome}} 人</text>
+        <text class="small muted">未结异常 {{openIncidents}} 项</text>
       </view>
     </view>
 
@@ -37,7 +43,10 @@
         <view class="button text" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="openSheet">现场记录</view>
       </person-row>
     </view>
-    <text wx:if="{{!rows.length}}" class="muted">当前范围没有符合条件的人员。</text>
+    <!-- 空态按成因分支说话（C-18）：这一区是 40 人清点的工作面，领队一边搜一边勾，
+         「没有符合条件的人」有三种完全不同的意思，共用一句话会被读成「本场没人」。 -->
+    <status-panel wx:if="{{!rows.length}}" kind="empty" title="{{emptyTitle}}" detail="{{emptyDetail}}"
+      actionLabel="{{emptyAction}}" bind:action="onClearFilters" />
 
     <view class="stack" style="gap:12px;">
       <text class="section-title">异常与处理</text>
@@ -78,14 +87,18 @@
     <form-field label="逐人核实依据" hint="填写现场、电话核实的实际结果">
       <textarea class="textarea" value="{{note}}" maxlength="2000" bindinput="onNote" />
     </form-field>
-    <form-field wx:if="{{pointEnabled}}" label="路线节点">
-      <picker range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPoint">
-        <view class="picker {{pointIndex < 0 ? 'placeholder' : ''}}">
-          <text class="picker-value">{{pointIndex < 0 ? '选择节点' : pointLabels[pointIndex]}}</text>
-          <text class="picker-arrow">▾</text>
-        </view>
-      </picker>
-    </form-field>
+    <block wx:if="{{pointEnabled && pointLabels.length}}">
+      <form-field label="路线节点">
+        <picker range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPoint">
+          <view class="picker {{pointIndex < 0 ? 'placeholder' : ''}}">
+            <text class="picker-value">{{pointIndex < 0 ? '选择节点' : pointLabels[pointIndex]}}</text>
+            <text class="picker-arrow">▾</text>
+          </view>
+        </picker>
+      </form-field>
+    </block>
+    <!-- 空路线（发布后可后补）：节点选择器没有选项，挂上去就是点不动的死控件 -->
+    <text wx:if="{{pointEnabled && !pointLabels.length}}" class="small muted">这场活动还没有路线节点，暂不能确认到达节点。路线可在编辑里补，补上后即可记录。</text>
     <view
       wx:for="{{actions}}"
       wx:key="label"

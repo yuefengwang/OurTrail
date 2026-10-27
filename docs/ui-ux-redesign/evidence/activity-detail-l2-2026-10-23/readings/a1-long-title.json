@@ -1,0 +1,182 @@
+{
+  "side": "a1",
+  "scenario": "long-title",
+  "capturedAt": "2026-10-23T09:52:49.279Z",
+  "viewport": {
+    "windowWidth": 390,
+    "windowHeight": 753,
+    "pixelRatio": 3,
+    "SDKVersion": "3.8.12",
+    "platform": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1"
+  },
+  "fixture": {
+    "file": "fixtures\\baseline\\long-title.json",
+    "title": "青城后山泰安古镇经又一村至白云寺环线轻装徒步暨秋季山脊云海观测与同行者集合出发安排说明会（含备用路线与雨天改线方案，请务必阅读集合时间、装备清单与退出规则后再报名）这是一个用于验证极值换行与不截断的超长标题样例，长度已超过一百个汉字，不应出现省略号或横向溢出。"
+  },
+  "gates": {
+    "loadingFalse": true,
+    "titleIntact": true,
+    "selectorFound": true
+  },
+  "markers": {
+    "secFactsPresent": true,
+    "infoCardGone": true,
+    "heroSelectable": true,
+    "coverFailedClass": false
+  },
+  "geometry": {
+    "viewport": {
+      "windowWidth": 390,
+      "windowHeight": 753,
+      "pixelRatio": 3,
+      "SDKVersion": "3.8.12",
+      "platform": "devtools",
+      "model": "iPhone 12/13 (Pro)",
+      "system": "iOS 10.0.1"
+    },
+    "page": {
+      "left": 0,
+      "top": 0,
+      "width": 390,
+      "height": 4318
+    },
+    "hero": {
+      "left": 20,
+      "top": 24,
+      "width": 350,
+      "height": 914
+    },
+    "media": {
+      "left": 20,
+      "top": 24,
+      "width": 350,
+      "height": 240
+    },
+    "heroBody": {
+      "left": 20,
+      "top": 264,
+      "width": 350,
+      "height": 674
+    },
+    "titleBlockDeltaFromMediaBottom": 0,
+    "factRows": [
+      {
+        "box": {
+          "left": 20,
+          "top": 1380.48,
+          "width": 350,
+          "height": 47
+        },
+        "label": "活动时间",
+        "value": "10/3 08:00 – 10/3 18:00"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1427.48,
+          "width": 350,
+          "height": 47
+        },
+        "label": "集合",
+        "value": "东门集合点 · 10/3 07:30"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1474.48,
+          "width": 350,
+          "height": 47
+        },
+        "label": "人数",
+        "value": "3–20 人"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1521.48,
+          "width": 350,
+          "height": 47
+        },
+        "label": "强度",
+        "value": "中等"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 1568.48,
+          "width": 350,
+          "height": 68
+        },
+        "label": "报名后",
+        "value": "报名后请把紧急联系人填完整，出发前一天会在群里发集合提醒。"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 2168.48,
+          "width": 350,
+          "height": 47
+        },
+        "label": "出发时间",
+        "value": "10/3 08:00"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 2215.48,
+          "width": 350,
+          "height": 47
+        },
+        "label": "预计结束",
+        "value": "10/3 18:00"
+      },
+      {
+        "box": {
+          "left": 20,
+          "top": 2262.48,
+          "width": 350,
+          "height": 47
+        },
+        "label": "报名截止",
+        "value": "10/2 08:00"
+      }
+    ],
+    "overflow": {
+      "viewportWidth": 390,
+      "maxRight": 390,
+      "minLeft": 0,
+      "overflowRight": 0
+    }
+  },
+  "screenshot": {
+    "file": "a1-long-title-top.png",
+    "bytes": 147440,
+    "width": 306,
+    "height": 660
+  },
+  "status": "VALID",
+  "data": {
+    "title": "青城后山泰安古镇经又一村至白云寺环线轻装徒步暨秋季山脊云海观测与同行者集合出发安排说明会（含备用路线与雨天改线方案，请务必阅读集合时间、装备清单与退出规则后再报名）这是一个用于验证极值换行与不截断的超长标题样例，长度已超过一百个汉字，不应出现省略号或横向溢出。",
+    "infoFacts": 0,
+    "routeStats": 0,
+    "coverFailed": false,
+    "coverIsReal": true,
+    "factTime": "10/3 08:00 – 10/3 18:00",
+    "factPickup": "东门集合点 · 10/3 07:30",
+    "factPeople": "3–20 人",
+    "secNo": {
+      "intro": "01",
+      "facts": "02",
+      "peers": "03",
+      "itinerary": "04",
+      "weather": "05",
+      "route": "06",
+      "safety": "07",
+      "equipment": "08",
+      "fee": "09",
+      "signup": "10"
+    }
+  }
+}

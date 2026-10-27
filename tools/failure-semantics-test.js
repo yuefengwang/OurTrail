@@ -25,6 +25,8 @@ const CONFIG_PATH = require.resolve('../miniprogram/config')
 const trailApi = require('../cloudfunctions/trailApi/index')
 const store = require('../cloudfunctions/trailApi/store')
 const { ERROR_CODES } = require('../cloudfunctions/trailApi/domain/contracts')
+// A5 段要把「api.js 的分类」与「全站唯一翻译层的话术」放在一起比，两侧都是真模块，测试不重述任何一侧。
+const J = require('../miniprogram/utils/journey')
 
 let passed = 0, failed = 0, inconclusive = 0
 const fails = []
@@ -142,6 +144,40 @@ const PEER = 'o-semantics-peer'
     const e = await rejects(env.api.dispatchAndSync({ type: 'vehicle.save' }, undefined, page))
     check('缺 expectedRevision → NO_REVISION 且零调用', !!e && e.code === 'NO_REVISION' && env.calls.length === 0, 'calls=' + env.calls.length)
     check('NO_REVISION 不标 needRefresh（不是别人改了，是本页没读到）', e && !e.needRefresh)
+  }
+
+  section('A5. 同一次传输失败，api.js 的定性与 journey 的话术不许互相打脸（C-07）')
+  {
+    // 为什么放在这里：explain 的旧断言只验证「有没有文字」，于是一句
+    // 「这一条没有发到云端，原安排没被改动」可以一路绿灯——而 api.js 在同一条路径上
+    // 明确写着 结果未知（outcomeUnknown），事务很可能已经提交（铁律 24）。
+    // 这条门把两侧接起来：**真调 api.js 拿到那个错误对象，再喂给真 explain**，
+    // 不在测试里重述任何一层的分类逻辑。
+    const env = freshApi(() => transport('cloud.callFunction:fail -504003 FUNCTIONS_TIME_LIMIT invoke time limit'))
+    const page = makePage()
+    const e = await rejects(env.api.dispatchAndSync({ type: 'notice.publish', activityId: 'a1' }, 3, page))
+    const out = J.explain(e, {})
+    check('A5-0 有效性门：前提成立（这条错误确实被 api.js 判成结果未知，且真的重读过）',
+      !!e && e.code === 'NETWORK' && e.outcomeUnknown === true && page.reloads === 1,
+      JSON.stringify({ code: e && e.code, u: e && e.outcomeUnknown, r: page.reloads }))
+    check('A5-1 explain 拿到的还是同一个错误对象（没有中途换一个码，否则这条门测不到话术）',
+      !!out && !!out.title && out.title !== '这一步没有完成', JSON.stringify(out))
+    check('A5-2 explain 的结果未知话术不许断言「没发到云端 / 原安排没被改动 / 没保存」（凭空承诺＝违铁律 24）',
+      !/没被改动|没有发到云端|没发到云端|没有保存|没保存|不会生效|没有生效|没落库/.test(out.cause), out.cause)
+    check('A5-3 explain 把不确定性说出来，并给 api.js 实际执行的那个动作（重读对齐），不是「换个地方再试」',
+      /没拿到|可能已经生效|结果未|没确认|未确认/.test(out.cause) && /重读|最新安排/.test(out.cause), out.cause)
+    check('A5-4 explain 不许叫用户直接重发（连点＝第二次业务写）',
+      !/再试一次|稍后再试|重试即可|再点一次/.test(out.cause), out.cause)
+    // 反向对照：这条门不是把「没有保存」全仓禁掉。服务端明确回了信封并拒绝＝确定没落库，
+    // 那种失败**必须**还能说「没有保存」，否则就是另一侧的假话（用户会以为还要重试）。
+    const env2 = freshApi(() => srvErr('STORAGE_UNAVAILABLE', '这次修改没有保存，原安排未改变。'))
+    const page2 = makePage()
+    const e2 = await rejects(env2.api.dispatchAndSync({ type: 'vehicle.save', activityId: 'a1' }, 3, page2))
+    const out2 = J.explain(e2, {})
+    check('A5-5 服务端定性为「确实没落库」的那条仍是另一套话术（门没有一刀切）',
+      !!e2 && e2.outcomeUnknown === undefined && /没有保存/.test(out2.cause), JSON.stringify({ u: e2 && e2.outcomeUnknown, c: out2.cause }))
+    check('A5-6 明确拒绝不触发重读（只有结果未知才重读，两类语义各走各的路）',
+      page2.reloads === 0, 'reloads=' + page2.reloads)
   }
 
   /* ============ B. 服务端：归类与日志 ============ */

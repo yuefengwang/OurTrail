@@ -13,13 +13,17 @@
 | 模块 | 页面/组件 | 内容 |
 |---|---|---|
 | 活动 Tab | `pages/home` | 三视角合并列表（我的/最近/已结束）、协作任务入口、搜索、精选卡 |
-| 发现 | `pages/discover` | 已发布且未开始活动的只读发现列表、关键词搜索（ADR-0003，独立窄投影，不泄露 openid 与集合点） |
+| 发现 | `pages/discover` | 已发布且未开始活动的只读发现列表；关键词搜索、日期/难度筛选、最新发布/最近出发排序、列表/地图双视图（地图只取公开的路线节点坐标，不泄露 openid 与集合点） |
 | 通知 Tab | `pages/notices` | 全部与我有关的通知、已读、组织者发布/复制/投递记录 |
 | 我的 Tab | `pages/me` | 常用资料（微信头像/昵称/一键手机号同步，无验证码）、常用同行人、协作身份码、位置授权撤回 |
-| 活动详情 | `pages/activity` | 状态视图、我与同行人、路线/集合/风险/装备/费用、自助操作弹层、分享 |
-| 报名 | `pages/signup` | 多人整组报名、同行人授权、满员整组候补；编辑模式按用途读取 |
-| 编辑器 | `pages/editor` | 三步编辑（内容时间/路线集合/招募风险）、**GPX 轨迹导入**（自动解析节点/里程/爬升）、从我组织的活动复制、发布 |
+| 活动详情 | `pages/activity` | 状态视图、我与同行人、路线/集合/风险/装备（必带+建议）/费用、难度、分区锚点、海拔剖面、出发日天气摘要、自助操作弹层、分享 |
+| 报名 | `pages/signup` | 多人整组报名、同行人授权、满员整组候补；档案未补时页面内自动弹出微信资料门（头像/昵称/手机号，可手填）；编辑模式按用途读取 |
+| 编辑器 | `pages/editor` | 四步编辑（信息/路线/介绍/发布）、**GPX 轨迹导入**（自动解析节点/里程/爬升）、从我组织的活动复制、发布 |
 | 工作台 | `pages/workspace` | 总览待办、名单、分车、现场四分区；阶段推进（带门槛校验） |
+| 任务清单 | `pages/tasks` | 活动内协作 checklist：装备/采购/记录分工、负责人、截止日、待办/进行中/已完成；组织者写、参与者只读 |
+| 路线库 | `pages/routes` | 我的路线/协作路线分组；难度、距离爬升、节点、风险与引用计数；新建与打开 |
+| 路线详情 | `pages/route` | 概览与事实指标、地图、海拔剖面、节点、分段天气、风险提示、共享与引用活动；创建者管理入口 |
+| 路线编辑 | `pages/route-edit` | 路线资产的新建/编辑；可从编辑器带 `?routeId=` 预填发起活动 |
 | 名单面板 | `components/roster-panel` | 筛选、批量审核/递补/取消、导出（复制+审计）、协作授权管理 |
 | 分车面板 | `components/transport-panel` | 车辆档案、自动分车预览/提交、手动指派/交换、座位示意 |
 | 现场面板 | `components/field-panel` | 签到/出发核实/节点/到家/返程/异常/位置，组织者与协作共用 |
@@ -29,8 +33,15 @@
 | 天气查询 | `pages/weather` | 三种模式共用：活动流（节点→天气，含天气提醒草稿）与自由查询（单点/轨迹组，抵达日程、保存/分享降精度）；Open-Meteo 云函数代理+缓存、**天相结论卡**（云海/日照金山/星空/银河/彩虹/晨昏光） |
 | 天气全图 | `pages/weather-chart` | 横屏整屏看 7×24 小时 meteogram 时间坐标图（数据经 `utils/chart-store.js` 交接，不走 URL） |
 | 天相图表 | `components/meteogram` | canvas 自绘 meteogram：温度线/降水双柱/三层云量/天相窗口标记/日时轴（几何抽到 `layout.js` 供测试断言） |
-| 时空天相图 | `components/space-time` | **P4**：把「时间×数值」补成「时间×海拔」——云层带 + 逐节点天相渐变轨迹 + 主窗口括号 + 抵达净空。几何抽到 `layout.js`，天相判定复用 `utils/sky.js`（不自建阈值） |
-| 漫游滑块 | `components/roam-scrubber` | 拖动/播放走完这一天。**哑控件**：不认识天相也不认识轨迹，读数由 `space-time` 算好后经 slot 传入，避免同一份天相算两遍 |
+| 海拔剖面 | `components/route-profile` | 活动/路线详情：连续轨迹高程 / 节点高程 / 无数据三态；无连续高程时明确标「节点高程，非连续剖面」，不插值伪造地形 |
+| 按需资料门 | `components/profile-gate` | 报名/发布前自动弹出；微信头像、昵称、手机号授权 + 手填兜底；保存后自动继续原动作 |
+| 图文编辑器 | `components/content-editor` | 活动发布的段落/图片块、封面选择、并发 3 上传与 `imgSecCheck`；块数据交给页面保存 |
+| 活动头图 | `components/activity-hero` | 活动详情首屏：实拍封面 + 标题压进照片下沿；只报封面错误，回退决策留在页面 |
+| 品牌栏 | `components/brand-header` | 3 个 tab 页（首页/通知/我的；天气中心页留批次二）的自绘品牌行（`trailMark` + `OurTrail` + 可选页名）；高度由 `utils/header-layout.js` 从状态栏与胶囊菜单算，子页仍走原生导航 |
+| 下一次同行 | `components/next-up-card` | 首页状态卡：最近一场未开始的活动 + 一行事实；整卡可点、卡内不放实心按钮；空态是邀请卡 |
+| 章节 | `components/chapter` | 编号 + 眉题 + 标题 + 说明 + slot；活动/路线/我的三页复用 |
+| 事实指标 | `components/fact-grid` | 两列事实网格，信息卡与路线指标共用；空值不占格、奇数末项通栏 |
+| 装备清单 | `components/equipment-grid` | 必带/建议分组与图标；只去首尾空白与空项，不去重、不排序、不改写原文 |
 | 合规 | `pages/privacy` | 隐私指引（公众平台登记路径）。**全局授权弹窗已下线**：`components/privacy-popup` 组件文件按 2026-09-27 决策保留，但已从 `app.json` 注销、不再挂载 |
 
 ## 目录结构
@@ -41,8 +52,11 @@ miniprogram/
   app.json / app.js / app.wxss   设计系统（tokens + 组件样式全局化）在这里
   custom-tab-bar/                自定义底部导航（活动/天气/通知/我的）
   components/                    icon(SVG data URI)/overlay/status-panel/person-row/
-                                 form-field/activity-card/field-panel/roster-panel/
-                                 transport-panel/meteogram/space-time/privacy-popup(已注销，保留文件)
+                                 form-field/activity-card/activity-hero/chapter/
+                                 fact-grid/equipment-grid/field-panel/roster-panel/
+                                 transport-panel/meteogram/route-profile/
+                                 profile-gate/content-editor/brand-header/next-up-card/
+                                 privacy-popup(已注销，保留文件)
   utils/
     api.js           云函数调用封装（read/dispatch + Result 解包）
     draft.js         本地草稿 + 最近查看活动
@@ -50,21 +64,23 @@ miniprogram/
     notices-page.js  通知页共享逻辑（Tab 与活动内两处复用）
     gpx.js           GPX 解析 + GCJ↔WGS 坐标转换
     astro.js/sky.js  天文层与天相概率判断（纯计算，客户端侧）
-    weather-model.js P4 轨迹层编排：逐时插值/逐节点天相/连续段/评分（纯计算；**天相阈值一律委托 sky.js**）
     route-schedule.js  GPX 时间戳 → 各节点第几天抵达
     chart-store.js   天气页 → 横屏图页的内存交接
     watch-points.js  观察点/轨迹点组（纯 util，storage 注入；P3 独立天气）
     util.js          脱敏/距离/名单导出等纯函数
   pages/               home discover notices anotices me activity signup editor
-                       workspace staff vehicle weather weather-chart weather-hub privacy
+                       routes route route-edit workspace tasks staff vehicle
+                       weather weather-chart weather-hub privacy
                        lab（开发者预演面板，仅白名单账号可用，无入口——用编译模式直达）
+                       cloud-field-poc（等值带渲染核对页，无入口）
 cloudfunctions/trailApi/
-  index.js             13 个 action 路由（read/readForm/.../dispatch/getWeather/getWeatherByPoint/getPhoneNumber）
+  index.js             16 个 action 路由（read*/previewAssignments/dispatch/getWeather/
+                       getWeatherByPoint/getSkyContext/getPhoneNumber/readRoutes/checkImage）
   store.js             持久层：按集合存文档（ot_*），事务内 revision CAS
   domain/              由原型 domain 层逐段移植：
                        schema(校验器)/permissions/invariants/commands/
                        activity/signup/transport/field/profile/notices/
-                       allocation/selectors/contracts
+                       routes/tasks/files/allocation/selectors/contracts
   lib/weather.js       Open-Meteo 代理（沿用）
   smoke-test.js        领域层冒烟测试（node smoke-test.js，173 项）
 tools/                 零依赖 node 脚本，无 root package.json、无 npm test：
@@ -118,15 +134,17 @@ docs/prototypes/ourtrail-app/   v1 高仿真原型（React，设计基准；已�
 ## 测试
 
 无 root `package.json`、无 `node_modules/`、无 lint/format/typecheck。全部是零依赖 node 脚本，
-从仓库根目录裸跑，每个自报 `passed=N failed=N` 并以退出码表态：
+从仓库根目录裸跑，每个自报 `passed=N failed=N` 并以退出码表态。
+**当前清单与读数以 `AGENTS.md` 的 Gate recount 与 `SYNC.md` 为准**：2026-10-23 全量 sweep 实测
+110 套 / `passed=7002` / `failed=14` / 4 条已在干净 HEAD 复现的既有红；`tools/*-test.js` 共 114 个
+（2026-10-26 实测，含本批 `card-view` / `header-layout`），其中 3 套需要开发者工具。下面这份命令清单与逐套数字是 2026-10-08 的历史快照，保留作演进参照，
+**不要据此判断当前覆盖率**：
 
 ```bash
 node tools/check.js && node tools/check-handlers.js && \
 node cloudfunctions/trailApi/smoke-test.js && node tools/astro-test.js && \
 node tools/gpx-test.js && node tools/sky-test.js && node tools/route-schedule-test.js && \
 node tools/weather-page-test.js && node tools/watch-points-test.js && \
-node tools/weather-model-test.js && node tools/space-time-test.js && \
-node tools/space-time-draw-test.js && node tools/roam-scrubber-test.js && \
 node tools/weather-v2-test.js && node tools/meteogram-draw-test.js && \
 node tools/cloud-field-svg-test.js && node tools/weather-cloud-field-test.js && \
 node tools/meteogram-svg-test.js && node tools/meteogram-multiday-test.js && \
@@ -146,8 +164,6 @@ node tools/lab-dryrun-test.js
 共 **44 个套件**（断言总数是快照，2026-10-08 出行方式解耦后全量复跑测得 2845 —— 本仓库常有并行工作增删用例，**以各脚本自己打印的 `passed=N` 为准**）：
 `smoke` 167（领域层，不需 wx-server-sdk）· `astro` 60 · `gpx` 57 · `sky` 65 · `route-schedule` 41 ·
 `weather-page` 136（云函数→页面→组件契约）· `watch-points` 37 ·
-`weather-model` 82（P4 轨迹层编排）· `space-time` 109（P4 几何 + 漫游读数）·
-`space-time-draw` 55（执行真实 `draw()`，记录式 2D 上下文）· `roam-scrubber` 33（漫游控件定时器与事件）·
 Weather V2 渲染链（`weather-v2` 45 / `meteogram-draw` 30 / `cloud-field-svg` 27 /
 `weather-cloud-field` 29 / `meteogram-svg` 25 / `meteogram-multiday` 44 / `outdoor-cloud-sea` 20 /
 `outdoor-intelligence` 24 / `outdoor-intelligence-ui` 46 / `trip-mode` 78（出行方式 self/shared：
@@ -178,9 +194,9 @@ BUSINESS（后端状态对不对）与 UI（用户在界面上做没做成）各
 **注意**：需要 trailApiLab 部署版含批量重构与 timeout 20，否则 lab 阶段可能超时（脚本会幂等重试并给出指引）；
 沙盒活动收尾为 cancelled，可在预演面板 cleanup 清理。
 
-> `space-time-draw` / `roam-scrubber` 是 canvas 组件的**执行级**回归：
-> 它们真的把 `draw()` 跑起来并断言图元与色值，但**不等于视觉验证**——
-> 像素级效果与滑块手感仍需微信开发者工具真机确认。
+> `meteogram-draw-test` 是 canvas 组件的**执行级**回归：
+> 它真的把 `draw()` 跑起来并断言图元与色值，但**不等于视觉验证**——
+> 像素级效果仍需微信开发者工具真机确认。
 
 ## 上线检查清单（沿用 V1 要求）
 

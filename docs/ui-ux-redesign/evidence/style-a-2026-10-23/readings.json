@@ -1,0 +1,61 @@
+{
+  "pages": {
+    "home": {
+      "bundleFresh_tabsLine": 1,
+      "segCount": 4,
+      "onSeg": {
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "rgb(22, 62, 53)",
+        "weight": "600",
+        "borderBottom": "0px none rgb(22, 62, 53)"
+      },
+      "tabbar": {
+        "count": 4,
+        "activeBg": "rgba(0, 0, 0, 0)",
+        "activeColor": "rgb(22, 62, 53)",
+        "activeWeight": "600"
+      },
+      "cardCount": 156,
+      "cardsData": 156,
+      "cardGapPx": 11.6953125,
+      "repeatedCta_in_page_wxml": 0,
+      "plainCard": {
+        "border": "1px solid rgb(222, 227, 219)",
+        "bg": "rgb(255, 255, 255)",
+        "radius": "14px"
+      },
+      "featuredCard": {
+        "border": "1px solid rgb(18, 46, 40)",
+        "bg": "rgb(18, 46, 40)"
+      }
+    },
+    "discover": {
+      "tabsLinelessExpected": 0,
+      "cards": 50,
+      "cardGapPx": 11.6953125,
+      "listGapClass": 1,
+      "loading": false,
+      "denied": ""
+    },
+    "tasks": {
+      "bundleFresh_tabsLine": 1,
+      "segCount": 4,
+      "onSegBg": "rgba(0, 0, 0, 0)",
+      "loading": false,
+      "tasks": 0
+    },
+    "workspace": {
+      "bundleFresh_tabsLine": 1,
+      "segCount": 4,
+      "onSegBg": "rgba(0, 0, 0, 0)",
+      "loading": false,
+      "denied": ""
+    }
+  },
+  "validity": {
+    "bundleFreshAll": true,
+    "realCardsHome": true,
+    "realCardsDiscover": true
+  },
+  "timestamp": "2026-10-23T06:27:02.452Z"
+}

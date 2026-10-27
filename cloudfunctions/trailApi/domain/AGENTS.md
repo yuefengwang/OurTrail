@@ -1,6 +1,6 @@
 # domain/ — 业务内核
 
-13 modules, ~2409 lines of **pure JS with no `wx-server-sdk` import**（`wc -l` 实测，2026-10-04）. All authorization, all business rules, and every response shape the client ever sees live here. The client imports **none** of it — `SYNC.md:32` records that as a settled architecture decision (「客户端不引入 domain 代码」). Keeping the directory SDK-free is what lets `../smoke-test.js` run the whole reducer / invariants / selectors / allocation stack under plain Node.
+15 modules, ~2600 lines of **pure JS with no `wx-server-sdk` import**（`wc -l` 实测，2026-10-20）. All authorization, all business rules, and every response shape the client ever sees live here. The client imports **none** of it — `SYNC.md:32` records that as a settled architecture decision (「客户端不引入 domain 代码」). Keeping the directory SDK-free is what lets `../smoke-test.js` run the whole reducer / invariants / selectors / allocation stack under plain Node.
 
 | Module | LOC | Refs | Role |
 |---|---|---|---|
@@ -16,6 +16,8 @@
 | `allocation.js` | 93 | 3 | `planAssignments` — auto-分车 |
 | `profile.js` | 71 | 1 | `handleProfile`, `ensureMembershipId` |
 | `notices.js` | 52 | 2 | `handleNotices` |
+| `routes.js` | 82 | 1 | 路线资产 CRUD、引用保护、owner 双层授权 |
+| `tasks.js` | 80 | 1 | 协作任务 checklist：owner-only 写、活动内上限、服务端 evidence |
 | `contracts.js` | 40 | **12** | ERROR_CODES, `canonicalPayload`, `genId`, `deepClone` |
 
 `contracts.js` and `permissions.js` are the highest-centrality modules in the repo — a change there ripples everywhere.
@@ -57,7 +59,7 @@ Growth caps at `commands.js:89-136` **silently truncate history**: receipts ≤ 
 
 ## THE READ PATH — `selectors.js:246`
 
-`selectView` branches on `request.kind`: `profile` | `home` | `discover` | `notices` | `activity`; anything else returns `deniedView('FORBIDDEN')`. `activityView` at 373. `DETAIL_STATES` at 472 = 12 states: `new, pending, confirmed, ready, gathering, checked, active, closing, finished, waitlist, closed, cancelled`. Also exports `selectTransport`, `selectSignupForm`, `selectSensitive`, `selectContact`, `selectExport`, `selectAccess`, `selectNoticeManagement`.
+`selectView` branches on `request.kind`: `profile` | `me` | `home` | `discover` | `notices` | `activity` | `tasks`; anything else returns `deniedView('FORBIDDEN')`. `activityView` at 373. `DETAIL_STATES` at 472 = 12 states: `new, pending, confirmed, ready, gathering, checked, active, closing, finished, waitlist, closed, cancelled`. Also exports `selectTransport`, `selectSignupForm`, `selectSensitive`, `selectContact`, `selectExport`, `selectAccess`, `selectNoticeManagement`.
 
 **These are WHITELISTED PROJECTIONS — they BUILD a minimal per-perspective view; they never build a full object and filter afterwards.** An `activity` row is exactly 13 keys, and phone / medical / emergency are stripped. The driver view's serialized JSON is asserted to not contain `medical`, `emergency`, `consentExpiresAt`, or another vehicle's data. Widening a projection is a security change, not a convenience change.
 

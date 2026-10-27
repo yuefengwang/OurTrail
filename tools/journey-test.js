@@ -125,6 +125,34 @@ section('4. leaderQueue / transitionBlocker：先说拦路的，再说能做的'
 
   const draft = J.leaderQueue({ phase: 'draft', now: NOW, counters: {} })
   check('草稿唯一待办是发布', draft.items.length === 1 && draft.items[0].target === 'edit' && draft.items[0].blocking === true, JSON.stringify(draft))
+  // 2026-10-14 快速创建：发布门只剩标题/时间/集合点，草稿待办的 detail 要说实话
+  check('草稿待办 detail 与新发布门同口径（路线/风险可后补）',
+    /标题/.test(draft.items[0].detail) && /集合上车点/.test(draft.items[0].detail) && /发布后补/.test(draft.items[0].detail), draft.items[0].detail)
+
+  // 可后补路线：非阻塞待办，点名缺什么；完整时不摆；缺 completeness 键（旧视图）不摆
+  const partial = J.leaderQueue({ phase: 'published', now: NOW, startAt: START, meetingAt: MEET, vehicleTravel: 0,
+    counters: { pending: 0, waitlisted: 0, unassigned: 0, unchecked: 0, openIncidents: 0, pendingHome: 0 },
+    completeness: { route: true, points: false, risks: false, pickups: true } })
+  const routeItem = partial.items.find(i => i.id === 'route')
+  check('路线不完整时摆「完善路线与风险」且不拦路',
+    !!routeItem && routeItem.blocking === false && routeItem.target === 'edit', JSON.stringify(partial.items))
+  check('后补待办点名缺的具体项（节点/风险，不缺的不点）',
+    !!routeItem && /路线节点/.test(routeItem.detail) && /风险提示/.test(routeItem.detail) && !/路线名称/.test(routeItem.detail), routeItem && routeItem.detail)
+
+  const mixed = J.leaderQueue({ phase: 'published', now: NOW, startAt: START, meetingAt: MEET, vehicleTravel: 5,
+    counters: { pending: 2, waitlisted: 0, unassigned: 1, unchecked: 0, openIncidents: 0, pendingHome: 0 },
+    completeness: { route: false, points: false, risks: false, pickups: true } })
+  check('有拦路事时后补待办排在后面，primary 仍是拦路事',
+    mixed.items.map(i => i.id).join() === 'review,transport,route' && mixed.primary.id === 'review', JSON.stringify(mixed.items.map(i => i.id)))
+
+  const complete = J.leaderQueue({ phase: 'published', now: NOW, startAt: START, meetingAt: MEET, vehicleTravel: 0,
+    counters: { pending: 0, waitlisted: 0, unassigned: 0, unchecked: 0, openIncidents: 0, pendingHome: 0 },
+    completeness: { route: true, points: true, risks: true, pickups: true } })
+  check('路线完整时不摆后补待办', complete.items.length === 1 && complete.items[0].id === 'idle', JSON.stringify(complete.items))
+
+  const legacy = J.leaderQueue({ phase: 'published', now: NOW, startAt: START, meetingAt: MEET, vehicleTravel: 0,
+    counters: { pending: 0, waitlisted: 0, unassigned: 0, unchecked: 0, openIncidents: 0, pendingHome: 0 } })
+  check('旧视图没有 completeness 键：按无从判断处理，不摆待办', legacy.items.length === 1 && legacy.items[0].id === 'idle', JSON.stringify(legacy.items))
 
   check('集合前的门槛说清「谁挡着」', /待审核/.test(J.transitionBlocker({ next: 'gathering', counters: { pending: 2 } })), J.transitionBlocker({ next: 'gathering', counters: { pending: 2 } }))
   check('出发前的门槛提到车长任务页', /车长任务页/.test(J.transitionBlocker({ next: 'active', counters: {}, unassignedBoarding: 2 })), J.transitionBlocker({ next: 'active', counters: {}, unassignedBoarding: 2 }))
@@ -132,6 +160,24 @@ section('4. leaderQueue / transitionBlocker：先说拦路的，再说能做的'
   check('协调中也会挡住归档（与域内同一条件）', /协调中/.test(J.transitionBlocker({ next: 'archived', counters: {}, coordinating: 1 })))
   check('已出发后不能再取消', /不能再取消/.test(J.transitionBlocker({ next: 'cancelled', counters: {}, hasTravelFact: true })))
   check('没有门槛时返回空串（不硬造阻碍）', J.transitionBlocker({ next: 'closing', counters: {} }) === '')
+  /* —— C-05：「没有给出出发结论」这半句原来挂在 counters.unresolved 上，而那个键在投影里不存在，
+   * 于是这句话永不出口、真欠着结论的人一个都不提。现在它走页面交进来的 notVerified。 —— */
+  check('欠出发结论时把人数说出来（不是空泛一句「有人没给结论」）',
+    J.transitionBlocker({ next: 'active', counters: { unchecked: 0 }, notVerified: 3 }).indexOf('3 人没给出出发结论') !== -1,
+    J.transitionBlocker({ next: 'active', counters: { unchecked: 0 }, notVerified: 3 }))
+  check('只欠签到时只说签到（不把两件事混成一个数）',
+    /^还有 2 人没签到，/.test(J.transitionBlocker({ next: 'active', counters: { unchecked: 2 }, notVerified: 0 })),
+    J.transitionBlocker({ next: 'active', counters: { unchecked: 2 }, notVerified: 0 }))
+  check('签到与出发结论同时欠着时两个数都要出现（谁挡着说谁，不互相盖掉）',
+    /2 人没签到/.test(J.transitionBlocker({ next: 'active', counters: { unchecked: 2 }, notVerified: 3 }))
+    && /3 人没给出出发结论/.test(J.transitionBlocker({ next: 'active', counters: { unchecked: 2 }, notVerified: 3 })))
+  check('投影里没有的影子键不再承重：只给 counters.unresolved 一律不给说明（C-05 的反向钉）',
+    J.transitionBlocker({ next: 'active', counters: { unresolved: 5, unchecked: 0 } }) === ''
+    && J.transitionBlocker({ next: 'gathering', counters: { unresolved: 5 } }) === '',
+    JSON.stringify([J.transitionBlocker({ next: 'active', counters: { unresolved: 5, unchecked: 0 } }), J.transitionBlocker({ next: 'gathering', counters: { unresolved: 5 } })]))
+  check('缺 notVerified（旧页面没传这个键）时退回只看签到，不因少一个键就闭嘴报数',
+    /^还有 4 人没签到，/.test(J.transitionBlocker({ next: 'active', counters: { unchecked: 4 } })),
+    J.transitionBlocker({ next: 'active', counters: { unchecked: 4 } }))
 }
 
 /* ================= 5. 时间线只是投影 ================= */
@@ -159,7 +205,22 @@ section('6. explain：39 命令族会用到的每个错误码都有标题与原�
   }
   check(ERROR_CODES.length + ' 个错误码全部落到人话', missing.length === 0, JSON.stringify(missing))
   check('CONFLICT 说清「已被别人改过 + 已重读 + 再做一次」', /改过|更新/.test(J.explain({ code: 'CONFLICT', message: '' }, {}).cause))
-  check('网络失败明确「原安排没被改动」', /原安排没被改动/.test(J.explain({ code: 'NETWORK', message: '' }, {}).cause))
+  /* —— C-07：传输层失败＝结果未知，话术不得替用户断言「这条没落库」（铁律 24）——
+   * 旧断言把「原安排没被改动」钉成需求，等于让门替一句错误承诺背书：事务很可能已经提交，
+   * 用户据此再点一次就是第二次业务写。这里**替换**而非削弱：既要求不许承诺未落库，
+   * 也要求必须给出与 api.js 一致的恢复动作（先重读对齐），两者缺一条都红。 */
+  for (const code of ['NETWORK', 'OFFLINE']) {
+    const cause = J.explain({ code, message: '' }, {}).cause
+    check(code + ' 不得断言这条没发到云端或原安排没被改动（结果未知不是否定事实）',
+      !/没被改动|没有发到云端|没发到云端|没有生效|不会生效|没保存|没有保存/.test(cause), cause)
+    check(code + ' 说清「结果没确认」并给出重读对齐这一步',
+      /没拿到|没有确认|未确认|不确定/.test(cause) && /重读|最新安排/.test(cause), cause)
+    check(code + ' 不叫用户直接重试（那等于鼓励第二次写）',
+      !/再试一次|稍后再试|重试即可/.test(cause), cause)
+  }
+  check('结果未知与明确未落库是两句话（STORAGE_UNAVAILABLE 由服务端定性，可说没保存）',
+    /没有保存|未保存|没保存/.test(J.explain({ code: 'STORAGE_UNAVAILABLE', message: '' }, {}).cause)
+    && !/没拿到云端的回话/.test(J.explain({ code: 'STORAGE_UNAVAILABLE', message: '' }, {}).cause))
   check('座位类错误给出跳回分车区的动作', J.explain({ code: 'SEAT_TAKEN', message: 'm' }, {}).action.target === 'transport')
   check('安全收尾类错误给出跳向现场的动作', J.explain({ code: 'UNRESOLVED_SAFETY', message: 'm' }, { counters: { pendingHome: 2 } }).action.target === 'field')
   check('出发门槛带上「几个人没签到/没排车」的具体数', /1/.test(J.explain({ code: 'UNRESOLVED_DEPARTURE', message: 'm' }, { next: 'active', counters: { unchecked: 1, unassigned: 1 } }).cause))

@@ -1,6 +1,13 @@
 # OurTrail 设计系统参考（token 表 + 组件清单）
 
-来源：`app.wxss`（原型 tokens.css/components.css 移植）。这是当前代码基线的快照，不是不可变规范。局部改动优先找可复用 token；整体重设计可以提出 token 调整，但要确认对比度与语义，并同步 `app.wxss`、画布色板和所有消费者。
+来源：`app.wxss`（早期高仿真原型的 tokens.css/components.css 移植）。改动前先确认这里没有等价物。
+**实时值真身是 `miniprogram/app.wxss`**（2026-10-17 复测：671 行、`page` 块占 4–77 行、其上 **44 个自定义属性 = 29 色 + 15 数值**）。
+本表是它的登记副本，结构 2026-10-14 逐条复核过；**计数会漂，别信这里或 AGENTS.md 里任何一次写死的数**——
+要当前真值跑 `grep -c -- '--[a-z0-9-]*:' app.wxss` 与 `wc -l app.wxss`。两者不一致时按 `audit-verification.md` §0 判 STALE / DEBT。**
+
+规则类别：**P** 平台硬限制 · **A** 架构约束 · **S** 设计规范 · **R** 设计建议（可按页调整）。
+
+**本表是当前代码基线的快照，不是不可变规范。** 局部改动优先找可复用 token；整体重设计可以提出 token 调整，但要确认对比度与语义，并同步 `app.wxss`、画布色板和所有消费者。
 
 ## 颜色 token（page 级 CSS 变量，组件内可用 var()）
 
@@ -8,25 +15,59 @@
 |---|---|---|
 | `--forest` | #163E35 | 主色：主按钮底、导航栏、hero 卡底、强调文字 |
 | `--leaf` | #D6EA8A | 嫩叶：hero 上的徽标/强调（`.badge.on-forest` 底为 --leaf-on-forest #2D533F） |
-| `--paper` | #F5F5F0 | 页面底色 |
+| `--paper` | #F5F5F0 | 页面底色（冷近白；2026-10-23 由 `#F6F3EC` 暖纸收敛回来，`--muted` 其上 4.91:1） |
 | `--surface` / `--white` | #FFFFFF | 卡片/弹层底（`--white` 供画布色板引用） |
 | `--ink` | #202A26 | 正文 |
-| `--muted` | #5F6E66 | 次要文字（对比度 4.6:1，勿再调淡） |
+| `--muted` | #5F6E66 | 次要文字（`--paper` 上 4.91:1、白卡上 5.37:1，勿再调淡） |
 | `--line` | #DEE3DB | 边框/分隔线 |
 | `--control-line` | #8C9791 | 输入框边框；亦为「入云」天相色 |
 | `--danger/--warning/--info/--success` | #B43D3B / #8C5A12 / #346583 / #276145 | 语义色，配套 `-soft` 浅底 |
-| `--forest-soft` | #ECF0EF | 主色浅底（次按钮、头像底、选中 tab） |
+| `--forest-soft` | #ECF0EF | 主色浅底（次按钮、头像底）；**选中 tab 不再用它**（2026-10-23 改为透明底 + 森林绿字） |
 | `--success-soft` / `--warning-soft` / `--danger-soft` / `--info-soft` | #EBF0EE / #F4F0E9 / #FAF1F1 / #F0F3F6 | 语义色浅底 |
 | `--golden` | #D6A33C | **天相**：黄金/晚霞窗口。由 `MARK_STYLE.golden` 提升而来，改色须同步 |
 | `--blue-hour` | #6C7C93 | **天相**：蓝调时刻。同上，须同步 `MARK_STYLE.blueHour` |
 | `--chart-showers` / `--chart-wind` / `--chart-gust` | #2E8B8B / #3D8A7F / #9FC4D8 | **Weather V2 图例**：阵雨柱/风速线/阵风线。由 `meteogram-svg.js` `C` 色板提升，改色须同步 |
 | `--chart-in-cloud` | rgba(180,118,26,0.65) | **Weather V2 图例**：琥珀段「你在云中」。同上（`C.inCloud`） |
-| `--chart-ramp` | linear-gradient(#eeeeea→#d4d6d0→#b0b2ab→#84867f→#5a5c56) | **Weather V2 图例**：云量五档灰阶带。= `cloud-field-svg.js` `BANDS`（3 测试 pin），改色须同步 |
+| `--chart-ramp` | linear-gradient(90deg,#eeeeea→#d4d6d0→#b0b2ab→#84867f→#5a5c56) | **Weather V2 图例**：云量五档灰阶带。= `cloud-field-svg.js` `BANDS`（3 测试 pin），改色须同步 |
 | `--on-forest-muted` / `--on-forest-line` | #D0D8D7 / #4E6C65 | 森林底上的次要文字/线 |
 | `--leaf-on-forest` | #2D533F | 森林底上的嫩叶底；亦为「星空」天相色 |
-| `--focus` | #346583 | 聚焦态描边（= `--info`） |
+| `--forest-deep` | #122E28 | 编辑式 hero 照片压底 / 页头沉浸区（2026-10-16 重构新增） |
+| `--stone` | #EDEFEA | 冷中性次表面：搜索条、筛选 chip、分区带（2026-10-23 由暖米 #EDE9DE 收敛） |
+| `--stone-line` | #D9DED7 | 冷表面分隔线（2026-10-23 由 #DCD5C4 收敛；冷调用 `--line`） |
+| `--scrim-hero` | linear-gradient(…forest-deep 0→0.9) | hero 照片自下而上压底（新增） |
+| `--scrim-top` | linear-gradient(…forest-deep 0.6→0.4（45%）→0) | overlay 品牌栏顶部压深，200px 波段（2026-10-26 改档，原 0.3→0/40% 只够压状态栏一条边） |
 
-**天相色与 token 的对应（`MARK_STYLE` ↔ `app.wxss`）**
+**2026-10-16 编辑式重构**：`--paper` 由 `#F5F5F0` 暖调为 `#F6F3EC`；新增编辑式类
+`.display/.lede/.kicker/.hairline/.stack-sections/.section-head/.fact-row/.hero-cover*/.photo-note`，
+封面照片在 `assets/photos/`（Unsplash 授权，选择逻辑 `utils/covers.js`）。
+**2026-10-23 视觉收敛 A 已推翻暖调**：`--paper` 回到 `#F5F5F0`、石色改冷中性、卡片加 1px `--line`、
+内容分区改下划线页签（`.segmented.tabs-line`）、tabBar 选中态改透明底、活动卡去掉重复「查看活动安排」入口。
+现行完整登记见 `docs/ui-ux-redesign/design-system.md` §10（上句 10-16 描述仅作历史沿革）。
+设计规范全文：`docs/ui-ux-redesign/design-system.md`。
+
+> **`--focus` 已删除**（B-14，2026-10-14）：全仓 `var(--focus)` 引用实测 0 次，小程序里没有 `:focus-visible` 宿主吃它；
+> 它与 `--info` 同值（#346583），留着只会让读者以为聚焦环另有其色。要恢复聚焦环：先在 `app.wxss` 重新登记 + 本表同步，
+> **不要**顺手把 `--info` 当聚焦色用（那是语义色，不是状态色）。
+
+> 实测行号（`app.wxss`）：`--forest`:5 … `--success`:15、`--golden`:21、`--blue-hour`:22、`--chart-*`:27-31、`--surface`:33 … `--info-soft`:38、`--on-forest-*`:39-40、`--control-line`:41、`--focus`:42、`--leaf-on-forest`:43。29 个色 token 与上表逐值一致（VERIFIED）。`--chart-ramp` 代码里含 `90deg` 前缀，本表原省略，已补。
+
+## 数值 token（实测存在但此前未登记 — 2026-10-14 补录）
+
+| token | 值 | 行 | 消费现状 | 类别 |
+|---|---|---|---|---|
+| `--text-caption` | 12px | :45 | 页面级（如 `weather.wxss:197`）在用 | S |
+| `--text-body` | 14px | :46 | `app.wxss:60` 正文默认 | S |
+| `--text-input` | 16px | :47 | 输入框（防 iOS 聚焦缩放） | P |
+| `--text-title` | 18px | :48 | 标题级 | S |
+| `--radius-tag` | 5px | :50 | 被 `.badge`:161 / `.seg`:254 / `.code-text`:500 / `.progress`:485 / `.sk`:451 消费。**注意：`app.wxss` 里没有 `.tag` 选择器**，本表旧文的「tag 5」指的是这个 token | S |
+| `--radius-button` | 8px | :51 | `app.wxss:107` | S |
+| `--radius-card` | 14px | :52 | `app.wxss:84` `.card` | S |
+| `--radius-sheet` | 20px | :53 | 由 `overlay.wxss:39` 消费（`kind="sheet"`）。**`app.wxss` 内无 `.sheet` 选择器**（仅死代码 `privacy-popup.wxss:7` 有） | S |
+| `--touch-target` | 44px | :54 | 实测 5 处引用，全在 `app.wxss`（:130/131/317/325/475）；页面 wxss 0 引用（`roam-scrubber` 已随时空天相下线）⇒ 规则适用范围见 SKILL.md #8（R 档） | R |
+| `--action-height` | 48px | :55 | 实测 7 处，全在 `app.wxss`（:103/274/301/363/409/441/442）；`.button` 的 `min-height` 走它 | R |
+| `--motion` | 180ms | :56 | **仅 `overlay.wxss`:14/29/47/48 消费**，且都写成 `var(--motion, 180ms)`。此前本文件完全未登记它，而 `platform-pitfalls.md` §4 的代码块已在用 | S |
+
+## 天相色与 token 的对应（`MARK_STYLE` ↔ `app.wxss`）
 
 `components/meteogram/layout.js` 的 `MARK_STYLE` 是天相配色的**唯一来源**。8 个 key 全部有 token 了：
 
@@ -41,61 +82,146 @@
 | `golden` 黄金 | #D6A33C | `--golden` |
 | `blueHour` 蓝调 | #6C7C93 | `--blue-hour` |
 
+> 2026-10-14 实测：`layout.js:51-60` 的 8 个 key 与 `utils/sky.js` `hourMarks` 产出的 8 个 key（`inCloud, cloudSea, alpenglow, golden, blueHour, rainbow, star, galaxy`）**无分叉，色值与本表逐一对齐（VERIFIED）**。`sky.js:446` 的 `key:'light'` 属 `summarize`，不在 `hourMarks`，别误当第 9 个天相。
+
 **已知的历史坑，勿重犯：**
 
 - **温度线不许用红。** `--danger` #B43D3B 与 `alpenglow` 光染是同一色值，图例里的红色分不清是温度还是光染。温度线用 `--ink` 中性墨色。
-- **色块上的字用 `inkOn()` 判，不要写死白字。** 黄金 #D6A33C 这类浅色配白字对比度只有 ~1.9:1，图上浅色标记的白字一直看不清。
-- **天相 key 增删必须同批改三处**：`utils/sky.js` 的 `hourMarks`、`meteogram/layout.js` 的 `MARK_STYLE`、以及任何消费方（如 `space-time/layout.js`）。key 分叉会让图表**静默丢标记**。
+- **色块上的字用 `inkOn()` 判，不要写死白字。** 黄金 #D6A33C 这类浅色配白字对比度只有 ~1.9:1，图上浅色标记的白字一直看不清。判据实现：`components/meteogram/layout.js:106-113`（亮度 >0.55 走深墨）。
+- **天相 key 增删必须同批改两处**：`utils/sky.js` 的 `hourMarks` 与 `meteogram/layout.js` 的 `MARK_STYLE`。key 分叉会让图表**静默丢标记**（`space-time` 已下线，不再有第三个消费方）。
+- `meteogram.js:34` 的 `showers:'#2E8B8B'` 注释写「无 token」，但 `app.wxss:27` 现在已有同值的 `--chart-showers` ⇒ 注释已过时（画布仍不能取 `var()`，字面量本身保留是对的，只该把注释补成 `// = --chart-showers`）。登记为文档级 STALE，未改代码。
 
 局部改动不要散落未登记的字面量颜色。若设计审查确认需要新语义色：在 app.wxss 加 token、在本表登记，并同步所有消费者；不要为凑齐色板而新增无明确语义的颜色。
+
+## 现状色值债登记（DEBT，2026-10-14 实测）
+
+全 `miniprogram/` 的 wxss 原始命中 61 处 / 12 文件（含 `app.wxss` 自身的 29 处 token 定义，不计违规）。**真实违反规则的文件只有 5 个活文件**：
+
+| 文件 | 命中 | 性质 |
+|---|---|---|
+| `home.wxss` | 2 | `#5F6E66`、`#D0D8D7` 是 `--muted`/`--on-forest-muted` 的字面量副本 |
+| `discover.wxss` | 2 | 同上 |
+| `activity.wxss` | 1 | `#D0D8D7` = `--on-forest-muted` |
+| `weather.wxss` | 2 | `rgba(255,255,255,0.7)`（`:195`，森林底上的药丸标签底）+ `#8C5A12`（`:222` = `--warning`） |
+| `overlay.wxss` | 2 发明 + 4 兜底 | `rgba(22,62,53,0.38)`:27 遮罩、`rgba(22,62,53,0.06)`:42 阴影属发明色；:38/40/41/69 是 `var(--x,#literal)` 兜底 |
+
+**不算违反的**：`me.wxss` 4 处全是 `var(--x,#literal)` 兜底；`meteogram.wxss` 1 处在注释里；`custom-tab-bar/index.wxss` 5 处全字面量（规则明确允许的例外位）；`privacy-popup.wxss` 7 处属死代码。
+
+> 判据提醒：报"发明色值"前先确认那一行不是 `var()` 兜底、不是注释、不是 tab-bar、不是死代码（`audit-verification.md` §3 第 1 条）。债不属本轮修，但**新写的每一行不得再加**。
 
 ## 字号与行高
 
 | 类 | 值 | 用途 |
 |---|---|---|
-| `.page-title` | 28px/1.3 字重700 字距-0.6px | 页面大标题（仅 root 页与重要节点） |
+| `.page-title` | 24px/1.3 字重700 字距-0.6px（2026-10-26 由 28 收一档：tab 页不再印页标题，降档避免与品牌栏抢层级） | 页面大标题（下钻页与重要节点） |
 | `.section-title` | 16px/24 700 | 区块标题 |
 | `.eyebrow` | 12px/18 600 字距0.72px muted | 眉题（OURTRAIL · 一起走过） |
+| `.card-label` | 15px 600，`display: block`，`margin-bottom: 12px`（行高继承正文 22px） | **卡内小标题**：卡片里说「这一段是什么」的那一行（「活动时间」「节点 1」「上车点 1」「风险 1」「我的观察点」「导入 GPX 轨迹」…）。5 页 17 处在用（me 7 / editor 4 / route-edit 2 / weather 2 / weather-hub 2），唯一出处 `app.wxss` |
 | 正文 | 14px/22（page 默认） | |
 | `.small` | 12px/18 | 说明/副文本 |
 | 输入框 | 16px（防 iOS 聚焦缩放） | |
 | `.field-label` | 13px/18 400 muted | 表单标签是辅助信息，值才是主角 |
 
+- **`.card-label` 为什么现在才在 `app.wxss`（E-15 / M-02）**：它此前只在 `pages/me/me.wxss` 定义过一份。
+  小程序**页面 wxss 只作用于本页、全仓零 `@import`** ⇒ 另外四页写同一个类名其实命不中任何选择器，
+  卡内小标题全部掉回正文 14px/400，与卡内正文失去层级（编辑器一屏 5-10 张同型卡片时最难扫读定位）。
+  **规则**：跨页共用的语义类必须定义在 `app.wxss`；定义在单页 wxss 里就等于只给那一页用。
+  判据 `node tools/m02-class-scope-test.js`（逐作用域解「这个类在自己那一页/组件里到底有没有定义」+ 五页终值同出一源 + 影子改写）。
+- **`.card-label` 的 15px 不在字号 scale（12/14/16/18/28）上**：本批只做「搬到单源」，数值逐字承自旧定义、一字未动。
+  要不要收敛到 `.section-title`（16px/24 600）或 `.eyebrow`（12px/18 600 muted）是**视觉裁决**，
+  一次改动 5 页 17 处的观感且需要真机证据，不在本批范围内。它与 `.section-title` 的语义分工：
+  `.section-title` 把长页分成几段（页面级分区标题，右侧可带 `.section-sub`），`.card-label` 是**卡片内部**的小标题。
+
 ## 间距与圆角
 
-- 纵向节奏：`.stack` 16px、`.stack-gap3` 12px、`.form-actions` 12px；页面内边距 24/20。
-- 圆角：tag 5 / button 8 / card 14 / sheet 20。
-- 触控目标 ≥44px（`--touch-target`），主操作高 48px（`--action-height`）。
+- 纵向节奏：`.stack` 16px（`app.wxss:79`）、`.stack-gap3` 12px（:80）、`.form-actions` 12px（:135）；`.page` 内边距 `24px 20px 32px`（:68，上 24 / 左右 20 / 下 32）。
+- 圆角：tag 5 / button 8 / card 14 / sheet 20 —— 这四个是 **token**（见上表），不是同名选择器；消费方分别是 `.badge/.seg/.code-text`、`.button`、`.card`、`overlay.wxss`。
+- 触控目标 ≥44px（`--touch-target`），主操作高 48px（`--action-height`）：适用范围与例外见 SKILL.md §3 #8（R 档，非"全库已合规"）。
+- **底部留白归属**：`app.wxss` 的 `.page` 只给 `padding-bottom: 32px`；`.page.has-sticky` = `120px`（:72）；`calc(32px + 84px + env(safe-area-inset-bottom))` 写在**各 tab/root 页自己的 wxss**里（`home:2`、`notices:2`、`anotices:2`、`me:2`、`weather-hub:6`）。`app.wxss:482` 另有 `.tabbar-safe { height: calc(84px + env(...)) }` 作占位块。
 
 ## 组件清单（改 UI 先复用）
 
 | 组件/类 | 用法要点 |
 |---|---|
-| `.button` + `primary/secondary/danger/text/leaf` | view 或 button 均可；必须 `hover-class="button-hover"`；禁用态加 `.disabled` 并把 bindtap 置空串 |
-| `.card` / `.card-header` | 内容卡；header 用于"标题 + 右侧动作" |
+| `.button` + `primary/secondary/danger/text/leaf` | view 或 button 均可；必须 `hover-class="button-hover"`；禁用态加 `.disabled`（或原生 `disabled`）并把 bindtap 置空串 |
+| `.card` / `.card-header` | 内容卡；header 用于"标题 + 右侧动作"。**2026-10-23 起白底 + 1px `--line` 发丝边、零阴影**。`.notice-card` 自 2026-10-26 反过来：不是卡片，是消息流的一行（透明底 / 无圆角 / 只留底边发丝线，未读只切左侧 2px 边线颜色；正文 `.notice-body` 16/24） |
+| `.card.rows` | **行卡的唯一出处**（2026-10-26 style-B 5a）：卡内装 `.list-row` / `.person-row` 这类自带 18px 上下边距与发丝底边的行时，用 `class="card rows"` 把卡的竖向内边距收到 4px（左右仍 16px，行文字与卡外标题对齐）。此前它是 5 处逐字重复的内联 `style="padding:4px 16px;"`（me 3 / editor 2）；**页面不得再抄第 6 份内联变体**（判据 `tools/personal-route-layout-test.js`，含「个人页内联 style 数 ≤ 11」的棘轮，与 `b4-e05` 的 `INLINE_STYLE_BASELINE` 同族）。 |
 | `.badge` + `success/warning/danger/info/neutral/on-forest` | 状态徽标，文字承载语义 |
 | `.callout` + 同上变体 | 提示块（左边线 3px 语义色），`callout-title` 加粗 |
-| `<status-panel>` | denied/loading(skeleton)/empty/error/offline + 可选 actionLabel |
-| `<person-row>` | 头像（无头像回退首字）+ 姓名 + 徽标 + 副标题 + 操作插槽 |
-| `<form-field>` | label + slot + hint + error；错误时外层 `.field.invalid` |
-| `<overlay kind="sheet|dialog">` | 底部弹层/居中确认；内容放 `.stack`；危险操作用 dialog + danger 按钮 |
-| `<activity-card>` | 活动卡；`featured` 森林底 + 等高线装饰；`info` 属性传指标行 |
-| `.segmented > .seg(.on)` | 分段切换（工作台四分区、筛选） |
+| `<status-panel>` | denied/loading(skeleton)/empty/error/offline + 可选 actionLabel；**empty 必带"为什么空 + 下一步"** |
+| `<person-row>` | 头像（无头像回退首字）+ 姓名 + 徽标 + 副标题 + 操作插槽。**全站「人行」只有一个出处**（2026-10-26 style-B 5a）：activity / vehicle / roster-panel / field-panel 之外，`pages/me` 的常用同行人也从私有 `.list-row` + 36px `.avatar-img.sm` 换成它——组件内头像恒 44px（`person-row.wxss:4`），页面里不得再出现第二套人行头像尺寸或配套的无源字阶（判据 `personal-route-layout-test`） |
+| `<form-field>` | label + slot + hint + error；错误时外层 `.field.invalid`。`options` 只能写一次（该组件 wxss 是空的，全靠全局 `.field` 体系） |
+| `<overlay kind="sheet|dialog">` | 底部弹层/居中确认；内容放 `.stack`；危险操作用 dialog + danger 按钮。实测声明为 `multipleSlots: false`（不用具名 slot），改造成具名 slot 时必须同时改这个值 |
+| `<activity-card>` | 活动卡；`featured` 森林底/照片压底 + 等高线装饰。**卡片本体即入口**：2026-10-23 起不再印「查看活动安排」重复主入口；`collab` 非空时只出 leaf chip 协作行（leaf 只做点缀，不承载列表里的重复主操作）。**正文三槽（2026-10-26）**：`chips`（`utils/card-view.chipsOf` 派生，一行不折行，次序即截断优先级 日期 > 难度 > 距离 > 爬升）/ `people` + `pending`（人数只印一处，`pending` 只给组织者）/ `roleNote`（归属短词）+ `badge`（相位短词）。组件**不自己算**投影口径；`info`/`metrics`/`status` 三个旧属性已删除，调用方必须改传新槽位 |
+| `<brand-header>` | 一级 tab 页的品牌栏（2026-10-26）：宿主页 JSON 设 `navigationStyle: custom` 并注册本组件。**两层结构**：文档流占位块 + `position: fixed` 的条（占位让宿主页保留「唯一根节点」，不要为挂它改页骨架）。高度与右侧胶囊避让来自 `utils/header-layout.js`（实测 `getMenuButtonBoundingClientRect`，读不到走兜底），字符串 `OurTrail` + 可选 `title` 跟在词标右侧；`z-index: 90`（低于 overlay 200，高于详情页吸顶分段条 20）。**下钻页保留原生返回栏，不挂本组件** |
+| `<next-up-card>` | 首页「下一次同行」卡（2026-10-26）：输入是页面已派生的 `empty/activityId/title/facts`，整卡 `bind:open`；`empty` 时变邀请卡并在**卡内**给唯一 primary `bind:create`（此时页面的动作行只留次级按钮，同屏不许两个 primary）。不新增域字段、不额外发请求 |
+| `<route-profile>` | 活动/路线海拔剖面；输入 `track`（带可选 `ele`）与 `points`，输出连续/节点/无数据三态；SVG 由 `utils/route-profile.js` 生成并编码为 data-URI。**无连续高程时明确标「节点高程，非连续剖面」，不插值伪造地形**；组件用 `apply-shared` 读取 `.small/.muted/.tabular` |
+| `<profile-gate>` | 按需补资料 sheet：报名/发布前自动弹出；微信头像 `chooseAvatar`、昵称 `input type=nickname`、手机号 `getPhoneNumber` + 手填兜底；保存 `profile.save` 后由宿主重读或续跑原动作。**不要在浏览链路加门**；`getUserProfile` 已不保证返回真实头像昵称，不要用它冒充静默授权 |
+| `.segmented > .seg(.on)` | 分段切换（工作台四分区、首页筛选、编辑器步骤条、车辆页去/返程）。**可点高度取 `--touch-target`（44px），不许写死字面量**（M-06：这里曾是全站唯一硬编码 36px 的尺寸规则，补救只落在 weather-chart 一页）；未选中态文字是 `--ink` 压在 `--line` 轨道上（11.3:1，原 `--muted` 只有 4.12:1 未过自家 4.5:1 门），**选中与否由 `.seg.on` 的白底药丸 + `--forest` + 600 字重承担，不靠把未选中印淡**。**内容分区变体 `.segmented.tabs-line`**（2026-10-23）：去轨道/白底，文字 + 2px 森林绿下划线（`.on::after`），未选中 `--muted`、选中 `--forest` 600；类名仍是 `.segmented/.seg/.on`，E2E 选择器契约不变 |
 | `.list-row` + `.list-main/.list-sub` | 行列表（图标或箭头收尾） |
+| `.row-title` | **行内主标题**（与徽标/说明挤在同一个 `.cluster` 里的那个名称或分区标题文字）：`font-weight:600` + `overflow-wrap:anywhere` **必须在同一处**（2026-10-26 style-B 5b）。它来自一个真实缺口：`style="font-weight:600;"` 曾在 route / route-edit / editor / signup 内联抄了 13 份，而 M-16 的断词保护只写在 route 那一页的 `.route-node-name` 里 ⇒ 同一个"节点名/风险名/上车点名/参与人名"（都是 maxlength 80 的自由输入）在编辑器与报名页**没有**断词保护，一个无空格拉丁长串就会撑破行。需要块级或与眉题的间距时**再加页面类**（例：`class="row-title route-node-name"`，`.route-node-name` 只留 `display:block; margin-top:2px`）。**全仓判据**（2026-10-26 style-B 5c，`tools/personal-route-layout-test.js`）：独立的 `style="font-weight:600;"` 在**全部页面 + 全部组件的 wxml** 里必须为 0（14 处已收干）；复合内联字重只允许登记的那 2 处，逐条比对不是数个数 —— `editor.wxml:638`（带语义色的**文字动作**，不是行标题）与 `activity.wxml:166`（同族行标题，属已验收写集，登记后续项）。另有 `--text-title` + 26px + 600 这个三元组在 me / routes / staff 三页各抄一份，**判读为同值不同义（铁律 31②）未合并**，见到第四份要先判语义再谈收 |
 | `.timeline/.timeline-item` | 路线节点时间轴（::before 圆点） |
-| `.seat-grid/.seat(.occupied/.aisle/.selected)` | 座位示意：**4 座 + 1 过道 = 每行 5 列**，座位宽 `calc((100% - 48px) / 4)`、过道固定 16px，勿改回 25%（过道占位会错行） |
-| `.metrics/.metric` | 三列指标（hero 内自动反白） |
+| `.seat-grid/.seat(.occupied/.aisle/.selected)` | 座位示意：**4 座 + 1 过道 = 每行 5 列**，座位宽 `calc((100% - 48px) / 4)`、过道固定 16px，勿改回 25%（过道占位会错行）。定义在 `app.wxss` 的座位栅格段（**刻意不写行号**：`app.wxss` 从 502 行长到 670 行就把这类引用变成谎话，要定位请用 `grep -n "^\.seat"`） |
+| `.metrics/.metric` | 指标行，**默认三列**（activity/transport-panel/me/workspace 都是三列）；`pages/route` 详情头部是**四列**（公里/爬升米/节点/风险）——以实现为准登记（M-16）。hero 内自动反白；四列时每列约 67px，数字溢出由 `.metric-value` 的 `overflow-wrap: anywhere` 兜住（见下「长文本与数字的溢出策略」）。**紧凑档 `class="metrics compact …"`**（2026-10-26 style-B 5b，`app.wxss`）：`--text-title`(18) / 行距 24 / `letter-spacing:0`，专供四列横排；这一档曾在 `routes.wxss` 与 `route.wxss` 各存一份逐字相同的规则（`.card-label` 事故的同族），页面不得再抄第二份字号/行距/字距。`pages/me` 的 `.profile-stats` 另有一档只改字号（24px），**理由未登记、待裁决**，不要照抄 |
 | `.hero` | 森林底精选卡，子元素加 `.hero-body` 保证叠在装饰层上 |
-| `.tabbar/.tab(.on)` | 仅 custom-tab-bar 内使用（自包含样式） |
+| `.tabbar/.tab(.on)` | **唯一真值源是 `custom-tab-bar/index.wxss`，全部字面量**（platform-pitfalls §1 的例外条款）。`app.wxss` 里那份同名 var() 版已删（E-12）：`index.js` 声明 `apply-shared`，全局那份会以 (0,2,0) 压过组件的 (0,1,0)，等于让「导航控件的规格由谁决定」倒过来。**不要**在 `app.wxss` 或任何页面/组件 wxss 再写裸 `.tab`/`.tabbar`，也不要把这边改成 `var()`。**选中态（2026-10-23）**：`#163E35` 字 + 600 字重 + 透明底，已去掉 `#ECF0EF` 药丸底；`tools/swx1-style-gates-test.js` T2.6 钉这三个终值 |
 | `.code-text` | 身份码等等宽强调 |
-| `.tabular` | 数字对齐（时间/里程/人数） |
+| `.tabular` | 数字对齐（时间/里程/人数），`app.wxss:95` |
 | `.map-card/.map-canvas` | 原生 `map` 组件外框（260px、14px 圆角、`overflow:hidden`）。低版本基础库非同层渲染时圆角会失效，接受降级、**不在 map 上叠普通 view**。marker 图标用 `assets/markers/*.png`（`tools/gen-map-markers.js` 生成；iconPath 不支持 base64），序号用 marker `label`，信息用原生 callout，白底 forest 字。地图元素配色：轨迹线 `#163E35AA` 宽 4 `arrowLine`、降级虚线 `#8C9791AA` 宽 2 `dottedLine`；marker=起点 forest/途中白底 forest 描边/终点 leaf+forest 描边/上车点 info 蓝，均为圆点造型（选中态放大到 30 即可，无需单独图）。 |
-| `.section-head/.section-title/.section-sub` | 页面内分区标题（把长页分成几段，如天气页的"客观指标 / 结论"）。标题 700 正文号，右侧 `.section-sub` 12px muted |
-| `.sky-card/.sky-title/.sky-text` | 结论卡（天相判断等）。`.sky-look` 为 forest-soft 底的方向/时段条，左侧 `.sky-look-label` 是白底 forest 药丸标签 |
+| `.section-head/.section-title/.section-sub` | 页面内分区标题（把长页分成几段，如天气页的"客观指标 / 结论"）。标题 700 正文号，右侧 `.section-sub` 12px muted。**实测定义在 `pages/weather/weather.wxss:136/:139`，不是 `app.wxss`** ⇒ 跨页复用要先决定是否提升进全局（提升即新规范动作，需登记） |
+| `.cond-card` / `.cond-pheno` / `.cond-silent` / `.cond-label` / `.cond-grade` / `.cond-stars` / `.cond-why` / `.cond-main` / `.cond-strip` / `.cond-strip__pills` / `.cond-pill` / `.cond-pill__title` / `.cond-pill__stars` / `.point-meta` / `.sky-look` / `.sky-look-label` / `.sky-look-text` / `.ag-grade` / `.reason-note` | **天气结论卡实际类名**，全部定义在 `pages/weather/weather.wxss`（`:142` 起，`.sky-look*` 在 :180/:188/:197）。`.sky-look` 为 forest-soft 底的方向/时段条，左侧 `.sky-look-label` 是白底 forest 药丸标签，正文在 `.sky-look-text`；`.cond-silent` 是被沉默项的点名行，左边条降为分隔线色以免与 `.cond-card` 抢注意力。`.cond-strip*` / `.cond-pill*` 是首屏条件 strip（D7，2026-10-26）：卡本体 = `.card.cond-card.cond-strip`，pill = forest-soft 底圆角标签，**零新色值、不可点**（与明细卡同一批 `condCards` 字段，星串逐字节相同，由 `tools/page2-gates-test.js §5b` 钉）。`.point-meta` 是点卡的「坐标 · 海拔」caption 行（D7 补完同日：点卡从页首下移到图上方，226px → 两行，四项事实一个不少，由同套件 §5b 钉次序与事实） |
+| `.hour-strip` / `.hour-strip__item` / `.hour-strip__temp` / `.hour-strip__t` / `.pop-strip` / `.pop-strip__label` / `.pop-strip__row` / `.pop-strip__v` / `.brief-rows` | **天气页图前后两条读带**（Slice 4，2026-10-26，定义在 `pages/weather/weather.wxss`）。`.hour-strip` 是图**上方**的逐时摘要带：固定 **8 列**、步长 = 窗长 / 8（3 / 6 / 9 小时），每列「WMO 简字 / 温度 / 时刻」三级；简字复用 `.day-phrase` 的 tone（文字承载语义，**零新色值**），温度 `--ink`、时刻 `--muted`。`.pop-strip` 是图**下方**的降水概率行，用同一套 `flex:1 0 0` 等分 ⇒ 与摘要带按列对齐；整行由 `popShown` 控制（全缺不印），个别缺印「—」（缺测 ≠ 不会下雨）。**列表键必须带日期**（`d + 'T' + t`，模板 `wx:key="k"`）：48/72h 跨天，同一时刻会重复。`.brief-rows` 只是收掉 `.card` 与 `.fact-row` 叠出来的双份上下留白，行形态仍来自 `app.wxss` 的 `.fact-row`。判据 `tools/page2-gates-test.js §5b`、`tools/weather-page-test.js §8` |
+| `.lg` | 云场图例类，定义在 `components/meteogram/meteogram.wxss:22`（组件本地，不在全局） |
+
+> 旧版本本节曾登记 `.sky-card` / `.sky-title` / `.sky-text` 三个类 —— 2026-10-14 全库检索 **NOT_FOUND**，属文档 STALE，已按上表真实类名替换（原文的语义由 `.cond-*` 系列承接）。
+
+## 按钮禁用态：按变体分别定义（app.wxss `.button.X.disabled`）
+
+禁用态**不是一条通用规则**，而是「一条兜底 + 每个着色变体各一条」。`.button.disabled, .button[disabled]`
+只负责「没有变体的按钮被禁用」这种兜底场景；五个变体各有自己的禁用声明（类形态与 `[disabled]` 属性形态成对写）。
+原因：通用规则与 `.button.text` 同特异度 (0,2,0) 且写在后面，会把本来透明的文字链压成灰底灰边——
+**禁用态反而比可用态更抢眼（权重倒挂）**。
+
+| 族 | 禁用终值（层叠之后） | 表达 |
+|---|---|---|
+| 兜底 `.button.disabled` | `--line` 底 / `--line` 边 / `--muted` 字 | 灰底退后（无变体时的既有约定） |
+| `.button.primary` / `.secondary` / `.danger` / `.leaf` | 同上，逐字相同 | 实底族共用同一支禁用表达（`var()` 按引用读，不抄字面量） |
+| `.button.text` | `transparent` 底 / `transparent` 边 / `--muted` 字 | **文字链禁用后仍然没有填充**，只把文字从 `--forest` 降到 `--muted` |
+
+- **禁用族只许声明 `background` / `border-color` / `color`。** 按压反馈（`hover-class` 闪动、`pointer-events`）
+  是另一条问题（禁用态与按压态联动），不混进配色改动里；`pointer-events: none` 还会废掉「点禁用按钮问原因」这类未来交互。
+- **禁用族不要用 `opacity` 表达退后。** `opacity` 会与 `.button-hover { opacity: .82 }` 撞同一机制（连带改掉按压反馈），
+  并把 `--muted` 压到 3:1 以下——本表上方已写明「`--muted` 4.6:1 勿再调淡」。文字退后用 `--muted` 表达即可（`--paper` 上 4.9:1）。
+- **新增变体必须同时补两条禁用定义**（`.button.X.disabled` 与 `.button.X[disabled]`），否则
+  `node tools/style-semantics-test.js` §5 的变体词表闭合门会红；该词表是从 app.wxss 自身导出的，不是硬编码清单。
+- 判据：`node tools/style-semantics-test.js`（92 条：层叠终值解析 + 全站真实使用点普查 + 影子单源 + 等价重构不误伤）、
+  `node tools/style-mutate.js`（12 条回退变异 0 漏网 0 崩红 + 4 条等价重构控制全绿）。
+  真机像素维 NOT_RUN（无开发者工具授权）。
+
+## 长文本与数字的溢出策略（M-16）
+
+承载**用户自由输入**的全局类必须在 `app.wxss` 里就带上断行兜底——页面/组件 wxss 各写一份就是第 N 个真值源。
+现状（实测）：`.activity-card__title`（标题 maxlength=100）、`.person-row__heading .person-name`（姓名 maxlength=80）、
+`.metric .metric-value`（里程/爬升/人数等 26px 大数字）三处均为 `overflow-wrap: anywhere`。
+
+- **为什么是 `anywhere` 而不是 `break-word`**：这三处都在 flex 里（`.person-row__heading` 是 flex、`.activity-card` 是 flex column、
+  `.metric` 是 flex 项且 `min-width: 0`）。flex 项的 `min-width: auto` 取 **min-content**，而 `break-word` **不产生** min-content
+  断点 ⇒ 无空格长拉丁串照样把行撑爆，写了等于没写。`anywhere` 会把断点算进 min-content，才是"实际生效"的那一句。
+- **姓名/标题/指标数字一律"断行"不"截断"**：ellipsis 会吞掉用户要读的事实（`125…` 米），只适用于**有展开兜底**的读取场景
+  （现存唯一合规样板是 `.picker .picker-value`：截断 + 点开 picker 能看全）。
+- **中文不受影响**：CJK 默认逐字可断，加这句只改变无空格拉丁长串的行为；改后需以中文对照真机复验（本轮记 NOT_RUN）。
+- **变体规则不许擦掉兜底**：`.activity-card--featured .activity-card__title`、`.hero .metric .metric-value` 只覆盖
+  字号/字距/颜色这类**自己声明的属性**，按属性层叠不会擦掉 `overflow-wrap`。新增变体时若显式写回 `overflow-wrap: normal`，
+  判据 §3 会红。
+- **全仓既有合规点位（勿误伤）**：`.picker .picker-value`（app.wxss，完整 ellipsis 五件套）、`.code-text`（身份码，
+  `word-break: break-all`）、`.person-row__body { min-width: 0 }`、`overlay__title { min-width: 0 }`。
+
+判据：`node tools/swx1-style-gates-test.js`（解析 app.wxss/index.wxss 后按选择器匹配 + 特异度 + 书写次序**解出终值**再断言，
+不查源码文本；含「把兜底挪到别的规则里同样生效」的等价重构控制），变异 `node tools/swx1-style-gates-mutate.js`。
 
 ## canvas 自绘图表（meteogram）
 
-天气页 `<meteogram>` 是自绘图表，**画布内的颜色不能取 CSS 变量**（canvas 拿不到 `var()`），故在 `meteogram.js` 顶部 `const C` 维护一份字面量色板。凡是 `app.wxss` 已有 token 的值，`meteogram.js` 里都逐行标了 `// = --token` 来源——**照着标好的抄，不要凭记忆**。
+天气页 `<meteogram>` 是自绘图表，**画布内的颜色不能取 CSS 变量**（canvas 拿不到 `var()`），故在 `meteogram.js` 顶部 `const C` 维护一份字面量色板。凡是 `app.wxss` 已有 token 的值，`meteogram.js` 里都逐行标了 `// = --token` 来源——**照着标好的抄，不要凭记忆**（实测现有 11 条带源注释：:26 `--white`、:28 `--muted`、:31 `--ink`、:33/:35 `--info`、:37 `--blue-hour`、:39 `--control-line`、:43 `--forest`、:44 `--warning`、:46 `--success 12%`、:47 `--warning 14%`）。
 
 | 用途 | 色值 | token |
 |---|---|---|
@@ -103,7 +229,7 @@
 | 网格线 | `#E4E8E1` | 无 |
 | 轴文字 | `#5F6E66` | `--muted` |
 | 温度线 / 面积 | `#202A26` / `rgba(32,42,38,0.08)` | `--ink` 及其 8% |
-| 降水柱 / 阵雨柱 | `#346583` / `#2E8B8B` | `--info` / 无 |
+| 降水柱 / 阵雨柱 | `#346583` / `#2E8B8B` | `--info` / `--chart-showers`（注释待补） |
 | 三层云量 低/中/高 | `#346583` / `#6C7C93` / `#8C9791` | `--info` / `--blue-hour` / `--control-line` |
 | 所选日高亮带 / 左边线 | `rgba(22,62,53,0.12)` / `rgba(22,62,53,0.35)` | `--forest` 12% / 35% |
 | 当前时刻线 | `#163E35` | `--forest` |
@@ -119,8 +245,43 @@
 - 色块上的文字用 `layout.js` 的 `inkOn(hex)` 判亮暗，**不要写死白字**。
 
 
+## Tab 页底部留白（唯一规则 · B4-PAD 登记）
+
+页面根节点的底部留白只有**一条规则**，本节是它在全仓被写成完整声明的唯一一处（`- **公式**：` 那行是判据的锚点，改名要同步 `tools/b4-pad-final-value-test.js`）。
+
+- **公式**：`padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom))`
+- **基线**（非 tab 页用的那份）：`app.wxss` 的 `.page { padding: 24px 20px 32px }` ⇒ 底部 `32px`。基线**只在 app.wxss 一处**，子页不许重印。
+- **谁要留**：只由 `miniprogram/app.json` 的 `tabBar.list` 决定（实测 4 页：home / weather-hub / notices / me）。
+  **名单不在本文档里定义**——判据现场读 `app.json`，文档只登记这一句读法；将来加 tab 页，改 `app.json` 就要同时给那页加这条留白，否则判据红。
+- **不许谁留**：不在 `tabBar.list` 里的页面（`wx.navigateTo` 进来的子页）**没有固定 tabBar**，套上这份公式就凭空多出一截空白。
+  实例：`pages/anotices`（M-18 / E-03）抄了通知 Tab 页的 wxss，把 84px 带进了子页，页尾多约 84px——本轮已删掉那份覆盖，它回落到基线 32px。
+- **84px 是什么**：底栏自己占的竖直空间。它**不是**从样式表算出来的常数——`custom-tab-bar/index.wxss` 那份（唯一真值源）里
+  `padding 8px + padding-bottom 8px + border-top 1px + .tab 的 min-height 44px` 只推出 **61px**（再加安全区），84 比它多 23px 余量，
+  来源是 2026-09-30 那次「观察点列表最后几行被固定 tabBar 拦腰截断」的实测（`weather-hub.wxss` 顶部注释记着）。
+  **判据钉的是下界不是这个数**：留白必须 ≥ 基线 32px + 底栏实占 61px，且必须带 `env(safe-area-inset-bottom)`。
+  拿 61 去"优化"成 61 会削掉那 23px 实测余量 ⇒ 需要真机证据才许动，本轮未动。
+- **为什么四条 tab 页各写一行、没收进 `app.wxss`**（三条都实测撞过墙，不是偏好）：
+  ① 收进 `app.wxss` 的 `.page` 会让 16 个子页一起吃这份留白（就是 M-18 的缺陷放大 4 倍）；
+  ② 收进一条类规则（`.page.with-tabbar`）需要 4 个页面根节点都挂上那个类 ⇒ 要改 4 份 wxml，且 home 的条件类
+     在「没有卡片」那一支会把留白整个丢掉（判据 T7.3 就是这一支的红，实测会红）；
+  ③ 收成新 token 违反「不新增 token」（铁律 17），`@import` 被 `tools/swx2-style-gates-test.js` 的围栏判据挡着（P1.21）。
+  ⇒ 结论：**载体仍在各页自己那份 wxss，但"真值源"是上面这条被钉住的规则**：四份载体必须互相同构（T2.3）、
+  必须等于注册表这一行（T6.2）、非 tab 页必须一份都不带（T3.1）。任何一处单边漂移都会红，这才是"单一真值源"要防的事。
+- **`with-tabbar` 是假开关**：`pages/home/home.wxml:1` 用它做条件类，但全仓没有任何样式定义它 ⇒ 判据用「加上它整个赢家映射逐字不变」
+  证明它不产生任何样式（T4.3），而 tabBar 的存在与否由 `app.json` 决定、不由卡片数量决定 ⇒ 这个条件表达的是一个**永远不成立的前提**。
+  裁决：**删掉这个假开关**（动作归 `pages/home/home.wxml` 的 owner，见 `out/B4-PAD/requests.md`）；样式侧不补定义——补了就变成②那条路。
+- 判据：`node tools/b4-pad-final-value-test.js`（解析 app.wxss + 各页 wxss，按特异度与书写次序**解出终值**再断言；
+  padding 简写会展开成长方值；「该留多少」的下界由遮挡物自己的声明算），
+  变异自证 `node tools/b4-pad-final-value-mutate.js`。真机像素维 NOT_RUN（无开发者工具授权）。
+
 ## 页面模板
 
-- **root 页**（home/notices/me）：`.eyebrow` + `.page-title` + 一句 `.muted` 副标题开头；底部留白 `calc(32px + 84px + env(safe-area-inset-bottom))`。
-- **子页**：原生导航栏（深绿底白字），内容区从 `eyebrow + page-title` 或直接正文开始；操作区用 `.sticky-action`（固定底栏）或 `.form-actions`。
-- **工作台类**（workspace/staff）：顶部指标 `.metrics` + `.segmented` 分区 + 面板组件。
+- **root 页**（tabBar 页，名单见上节；实测 4 页）：`.eyebrow` + `.page-title` + 一句 `.muted` 副标题开头；底部留白按上节「Tab 页底部留白」那条公式，四条 tab 页各写一份且由判据钉成同构。**2026-10-26 起 3 页例外（首页 / 通知 / 我的）**：页内不再有 `.page-title`，身份由 `<brand-header>` 承担、分区由 `.section-head`（kicker + 20px `.list-head__title` + `.section-sub`）承担；天气中心页批次二再跟，别照抄这三页的形态到还没迁移的页。
+- **子页**：原生导航栏（深绿底白字），内容区从 `eyebrow + page-title` 或直接正文开始；底部留白**不写任何覆盖**，吃 `app.wxss` 的 `.page` 基线；操作区用 `.sticky-action`（固定底栏）或 `.form-actions`，用了固定底栏才挂 `.page.has-sticky`（120px）。
+- **工作台类**（workspace/staff）：顶部指标 `.metrics` + `.segmented` 分区 + 面板组件。；面板间写入失效靠 `sync-key` 与 `bind:written`（见 `miniprogram/AGENTS.md`）。
+- 新建页面的 5 步注册清单（目录四件套 → `app.json` `pages` → 页面 json 的 `usingComponents`（根绝对路径）→ 需要全局类时加 `styleIsolation` → `node tools/check.js`）**以 `miniprogram/AGENTS.md` 的「A new page requires 5 steps」为准**，本文件不重复维护。
+- 结构选型不默认 `.card`：先按 `ui-methodology.md` §2 的表判这屏在做什么。
+
+## 深色模式
+
+`app.json` 实测**无 `darkmode` 配置**（全库无 `darkmode.json`），`project.private.config.json:8` 为 `skylineRenderEnable: false` ⇒ 当前只有**一套配色 + WebView 渲染**。这是事实约束（A 类）：报"缺深色适配"属规范外的新需求，不是缺陷；真要做得先立项 token 双主题，而不是在页面里加 `@media (prefers-color-scheme)`。

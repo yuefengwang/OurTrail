@@ -11,6 +11,8 @@ const { handleTransport } = require('./transport')
 const { handleField } = require('./field')
 const { handleProfile, ensureMembershipId } = require('./profile')
 const { handleNotices } = require('./notices')
+const { handleRoutes } = require('./routes')
+const { handleTasks } = require('./tasks')
 
 const summaries = {
   'activity.create': '活动草稿已保存', 'activity.edit': '活动说明与安排已更新', 'activity.copy': '已复制为新的活动草稿',
@@ -26,6 +28,7 @@ const summaries = {
   'position.report': '已主动上报一次位置', 'position.revoke': '位置授权已撤回',
   'incident.report': '收到现场情况报备', 'incident.resolve': '现场情况已核实处理',
   'notice.publish': '站内通知已发布', 'notice.read': '已阅读站内通知', 'notice.delivery': '已记录通知渠道结果',
+  'task.create': '任务已添加', 'task.update': '任务内容已更新', 'task.status': '任务状态已更新', 'task.remove': '任务已删除',
   'export.record': '已记录名单导出用途', 'profile.save': '常用资料已保存', 'companion.save': '常用同行人已保存', 'companion.remove': '常用同行人已移除',
 }
 
@@ -45,8 +48,28 @@ function handle(state, command, context) {
       return handleProfile(state, command, context)
     case 'notice.publish': case 'notice.read': case 'notice.delivery': case 'export.record':
       return handleNotices(state, command, context)
+    case 'route.create': case 'route.update': case 'route.delete':
+      return handleRoutes(state, command, context)
+    case 'task.create': case 'task.update': case 'task.status': case 'task.remove':
+      return handleTasks(state, command, context)
     default:
       return failure('INVALID_INPUT', '不支持此操作。')
+  }
+}
+
+// D-03：自动通知的类型在写入端定死，读取端不按文案反猜。
+// 新增命令若没在这里登记，落 'unknown'——这是「类型未知」的显式事实，不是失败；
+// 取消只认真正转进 cancelled 的那一次流转，其余阶段流转都归行程变更。
+function noticeKindFor(p) {
+  switch (p.type) {
+    case 'activity.publish': return 'publish'
+    case 'signup.submit': return 'join'
+    case 'signup.review': case 'signup.promote': return 'review'
+    case 'signup.cancel': return 'cancel'
+    case 'activity.transition': return p.next === 'cancelled' ? 'cancel' : 'itinerary'
+    case 'activity.edit': case 'signup.edit': case 'group.setTogether': return 'itinerary'
+    default:
+      return p.type.indexOf('assignment.') === 0 ? 'itinerary' : 'unknown'
   }
 }
 
@@ -80,6 +103,7 @@ function recordChange(before, after, command, targetIds, context) {
   if (audience) {
     after.notices.push({
       id: context.id('notice'), activityId, audience, sourceEventId: eventId,
+      kind: noticeKindFor(p),
       content: summaries[p.type] + '，请打开活动查看最新安排。', publishedAt: context.now, readBy: {}, deliveries: [],
     })
   }

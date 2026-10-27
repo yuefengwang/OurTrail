@@ -348,16 +348,21 @@ async function scenario1() {
       g1.page.data.denied)
     const g2 = bootSignup({ options: { id: 'a1' }, profile: profileView({ profile: { person: { name: '', phone: '' } } }) })
     await settle(g2.page)
-    check('档案没姓名：指引先完善资料（Identity Hub 直达文案，04-onboarding §3）',
-      g2.page.data.denied === '请先完善姓名与联系电话，再来报名——大约 30 秒，报名表会自动带出这些信息。', g2.page.data.denied)
-    check('档案没姓名：profileGate 亮起（拦截卡带直达按钮）', g2.page.data.profileGate === true,
-      String(g2.page.data.profileGate))
+    check('档案没姓名：不抛红字 denied，交页面内微信资料门处理',
+      g2.page.data.denied === '' && g2.page.data.activityTitle === '青城后山 · 周末轻徒步', JSON.stringify({ d: g2.page.data.denied, t: g2.page.data.activityTitle }))
+    check('档案没姓名：profileGate + 自动弹层同时亮起', g2.page.data.profileGate === true && g2.page.data.profileGateOpen === true,
+      String(g2.page.data.profileGate) + '/' + String(g2.page.data.profileGateOpen))
     check('档案读到手即回填草稿账号段（draft.setOpenId，12 §3）',
       g2.env.store['ourtrail.openid'] === 'p1', String(g2.env.store['ourtrail.openid']))
-    check('onGoProfile 跳「我的」Tab（switchTab）', (() => {
-      g2.page.onGoProfile()
-      return g2.env.rec.nav.indexOf('/pages/me/me') !== -1
-    })(), JSON.stringify(g2.env.rec.nav))
+    check('关闭资料门：只收 sheet，不解除必填状态',
+      (() => { g2.page.onProfileGateClose(); return g2.page.data.profileGateOpen === false && g2.page.data.profileGate === true })())
+    check('重新打开资料门', (() => { g2.page.onOpenProfileGate(); return g2.page.data.profileGateOpen === true })())
+    check('资料保存后清门并重读报名表', (() => {
+      let reloads = 0
+      g2.page.reload = () => { reloads++; return Promise.resolve() }
+      g2.page.onProfileSaved()
+      return g2.page.data.profileGate === false && g2.page.data.profileGateOpen === false && reloads === 1
+    })())
     const g3 = bootSignup({ options: { id: 'a1' }, activity: { kind: 'denied', message: '活动信息不可用' } })
     await settle(g3.page)
     check('denied 视图透出原文', g3.page.data.denied === '活动信息不可用', g3.page.data.denied)

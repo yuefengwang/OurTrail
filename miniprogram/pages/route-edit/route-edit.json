@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "编辑路线",
+  "navigationBarBackgroundColor": "#F5F5F0",
+  "navigationBarTextStyle": "black",
+  "usingComponents": {
+    "icon": "/components/icon/icon",
+    "overlay": "/components/overlay/overlay",
+    "form-field": "/components/form-field/form-field",
+    "status-panel": "/components/status-panel/status-panel"
+  }
+}

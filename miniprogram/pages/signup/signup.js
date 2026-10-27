@@ -4,6 +4,7 @@
 const api = require('../../utils/api')
 const draft = require('../../utils/draft')
 const F = require('../../utils/format')
+const J = require('../../utils/journey')
 
 const noConsent = () => ({ dataUse: false, proxyAuthority: false, proxyHome: false })
 const personKey = ref => ref.kind === 'user' ? 'u:' + ref.userId : 'c:' + ref.companionId
@@ -18,6 +19,7 @@ Page({
     mode: 'new', // new | edit
     purposeGate: false,
     profileGate: false,
+    profileGateOpen: false,
     purpose: '',
     activityTitle: '',
     remaining: 0,
@@ -33,7 +35,10 @@ Page({
     failure: '',
     capacityAsk: false,
     busy: false,
+    busyAt: 0,
     expandedParts: {},
+    // 收合态授权徽标（T006）：key → '已勾/必勾' 文本；与 consent 同步刷新，不落草稿
+    consentBadge: {},
     // 编辑模式
     editForm: null,
     editPickupIndex: -1,
@@ -86,8 +91,18 @@ Page({
         return
       }
       if (this.mode === 'new' && !profile.person.name) {
-        // 档案未激活：给直达出口（与编辑器 profileGate 同型，editor.wxml 的范式）
-        this.setData({ loading: false, denied: '请先完善姓名与联系电话，再来报名——大约 30 秒，报名表会自动带出这些信息。', profileGate: true })
+        // 按需补资料：不跳「我的」，在本页自动弹出微信资料 sheet；关闭后保留重开入口。
+        this.setData({
+          loading: false,
+          denied: '',
+          profileGate: true,
+          profileGateOpen: true,
+          activityTitle: v.activity.title || '未命名活动',
+          remaining: Math.max(0, v.counters.remaining),
+          approvalHint: v.activity.approvalMode === 'manual'
+            ? '提交后等待组织者审核，以活动页状态为准。'
+            : '符合条件时自动确认，以实际提交结果为准。',
+        })
         return
       }
       const own = {
@@ -124,6 +139,8 @@ Page({
       this.setData({
         loading: false,
         denied: '',
+        profileGate: false,
+        profileGateOpen: false,
         activityTitle: v.activity.title || '未命名活动',
         remaining: Math.max(0, v.counters.remaining),
         approvalHint: v.activity.approvalMode === 'manual'
@@ -131,6 +148,7 @@ Page({
           : '符合条件时自动确认，以实际提交结果为准。',
         candidates: [own].concat(companions),
         participants: withTrip,
+        consentBadge: this.consentBadgeMap(withTrip),
         expandedParts,
         keepTogether,
         pickupOptions,
@@ -153,6 +171,9 @@ Page({
 
   // 渲染前的展示装饰：资料完整度徽标 + 上车点 picker 选中下标。
   // 草稿存原始参与者（不含装饰键），装饰只进 setData；complete 不含 medical（备注可选）。
+  // 注意：本方法的产出形状被 tools/scenario-signup-test.js 的夹具深比较钉住
+  //（complete/pickupIndex/tripSummary 一个不能多）——新增展示派生请放 consentBadgeMap，
+  // 不要往参与人对象上挂键。
   decorateParticipant(p) {
     const person = p.person || {}
     const emergency = person.emergency || {}
@@ -161,6 +182,21 @@ Page({
       pickupIndex: this.pickupIndexOf(p),
       tripSummary: this.tripLabel(p),
     })
+  },
+
+  // 收合态授权徽标（T006）：只数 validate() 真正会拦的必勾授权——dataUse，同行人再加
+  // proxyAuthority；proxyHome 是可选独立授权，不计入（否则徽标显示齐了却仍被 validate 拦下）。
+  // 放在并行 map 而不是参与人对象上：见 decorateParticipant 上面的形状钉点说明。
+  consentBadgeMap(participants) {
+    const map = {}
+    ;(participants || []).forEach(p => {
+      const consent = p.consent || {}
+      const isCompanion = !!(p.personRef && p.personRef.kind === 'companion')
+      const required = isCompanion ? 2 : 1
+      const granted = (consent.dataUse ? 1 : 0) + (isCompanion && consent.proxyAuthority ? 1 : 0)
+      map[p.key] = granted + '/' + required
+    })
+    return map
   },
 
   /** 出行方式变化后要重算的派生显示键：同车约束只对「需要乘车」的人生成意义。 */
@@ -229,7 +265,11 @@ Page({
       keepTogether: this.data.keepTogether,
     }, patch)
     if (patch.participants) {
-      patch = Object.assign({}, patch, { participants: patch.participants.map(p => this.decorateParticipant(p)) })
+      const decorated = patch.participants.map(p => this.decorateParticipant(p))
+      patch = Object.assign({}, patch, {
+        participants: decorated,
+        consentBadge: this.consentBadgeMap(decorated),
+      })
     }
     draft.setDraft(this.activityId, 'signup', next)
     this.setData(patch)
@@ -383,7 +423,22 @@ Page({
     return tasks.length ? run(0) : Promise.resolve(true)
   },
 
+  // 写命令入口的在途闸门：返回 true 表示「上一条写还在飞」，本次操作必须拦。
+  // busy 只是界面姿态、不是业务状态：一次提交的 promise 没能回来（云函数无响应、小程序挂起后恢复）
+  // 时，它绝不能把「提交报名」永久锁成「正在提交…、点了没反应」——超过宽限期就认定它是残留，
+  // 就地复位并放行本次操作。宽限期与 elapsed 判据只有一个出处 J.busyStale（铁律 31：页面不写
+  // 第二个 8000、不自己算时间差）。求值点放在写入口而不是 reload()：写悬死时 revision 不会前进，
+  // 挂在 reload 上的自愈正好等不到求值。
+  busyBlocks() {
+    if (this.data.busy && J.busyStale(this.data.busyAt, Date.now())) {
+      this.setData({ busy: false, busyAt: 0 })
+      console.warn('[busy] 清掉一个超过 8 秒没落地的写状态')
+    }
+    return !!this.data.busy
+  },
+
   submit(mode) {
+    if (this.busyBlocks()) return
     const errors = this.validate()
     const expandedParts = Object.assign({}, this.data.expandedParts)
     this.data.participants.forEach((p, i) => {
@@ -403,7 +458,7 @@ Page({
       keepTogether: this.data.keepTogether,
       mode,
     }
-    this.setData({ busy: true })
+    this.setData({ busy: true, busyAt: Date.now() })
     api.dispatchAndSync(payload, this.revision, this)
       .then(res => {
         if (res && res.revision) this.revision = res.revision
@@ -428,8 +483,17 @@ Page({
 
   onWaitlist() { this.submit('waitlist') },
 
-  // 档案未激活时的直达出口：去「我的」补全（编辑器 profileGate 同型；报名草稿在本机，回来接着填）
-  onGoProfile() { wx.switchTab({ url: '/pages/me/me' }) },
+  // 微信资料门：保存成功后重读报名表；关闭只收起 sheet，不解除「必须补资料」状态。
+  onProfileSaved() {
+    this.setData({ profileGate: false, profileGateOpen: false, denied: '' })
+    this.reload()
+  },
+  onOpenProfileGate() {
+    this.setData({ profileGateOpen: true })
+  },
+  onProfileGateClose() {
+    this.setData({ profileGateOpen: false })
+  },
 
   // denied 页必须给出路：有活动编号就回那场活动，没有就回首页，
   // 不能把人关在一屏红字里只能靠导航条返回（分享链接冷启动时没有上一页可回）。
@@ -531,6 +595,7 @@ Page({
   },
 
   onEditSubmit() {
+    if (this.busyBlocks()) return
     const form = this.data.editForm
     const errors = {}
     if (!form.person.name.trim()) errors.name = '请填写姓名'
@@ -541,7 +606,7 @@ Page({
     if (form.trip.mode === 'shared' && !form.trip.pickupPointId) errors.trip = '请选择上车点'
     this.setData({ errors })
     if (Object.keys(errors).length) return
-    this.setData({ busy: true })
+    this.setData({ busy: true, busyAt: Date.now() })
     api.dispatchAndSync({
       type: 'signup.edit',
       activityId: this.activityId,

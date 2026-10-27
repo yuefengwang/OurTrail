@@ -1,0 +1,131 @@
+{
+  "startedAt": "2026-10-23T08:07:29.807Z",
+  "cases": {
+    "A": {
+      "restored": {
+        "requiredGroups": [],
+        "draftRestored": true,
+        "stepLabels": [
+          "01 信息",
+          "02 路线",
+          "03 介绍",
+          "04 发布"
+        ]
+      },
+      "injected": {
+        "requiredGroups": [
+          {
+            "key": "title",
+            "label": "活动名称",
+            "step": 0,
+            "stepText": "01 信息"
+          },
+          {
+            "key": "time",
+            "label": "出发与报名时间",
+            "step": 0,
+            "stepText": "01 信息"
+          },
+          {
+            "key": "pickup",
+            "label": "集合上车点",
+            "step": 1,
+            "stepText": "02 路线"
+          }
+        ],
+        "requiredMissingText": "活动名称、出发与报名时间、集合上车点",
+        "fixture": "injected-blank-form"
+      },
+      "data": {
+        "step": 0,
+        "failure": "还差：活动名称、出发与报名时间、集合上车点。补齐后再发布。",
+        "requiredGroups": [
+          {
+            "key": "title",
+            "label": "活动名称",
+            "step": 0,
+            "stepText": "01 信息"
+          },
+          {
+            "key": "time",
+            "label": "出发与报名时间",
+            "step": 0,
+            "stepText": "01 信息"
+          },
+          {
+            "key": "pickup",
+            "label": "集合上车点",
+            "step": 1,
+            "stepText": "02 路线"
+          }
+        ]
+      },
+      "errorText": "还差：活动名称、出发与报名时间、集合上车点。补齐后再发布。",
+      "shot": "D:/OurTrail/docs/ui-ux-redesign/evidence/creation-flow-2026-10-23/A-editor-empty-preflight.png"
+    },
+    "B": {
+      "autoPickupIds": [
+        "pickup-mvkote5o-2j5i"
+      ],
+      "label": "去确认集合点",
+      "message": "已带入「验证路线 · 溪谷环线」，并按路线特征预填 2 条风险建议；并已用起点生成集合点，补一句集合位置说明即可。",
+      "pickups": [
+        {
+          "id": "pickup-mvkote5o-2j5i",
+          "name": "溪谷起点集合",
+          "address": "",
+          "lat": "30.9",
+          "lng": "103.5",
+          "meeting": {
+            "date": "2026-10-26",
+            "time": "07:30"
+          }
+        }
+      ],
+      "fixture": "injected-blank-form",
+      "badgeTexts": [
+        "验证路线 · 溪谷环线",
+        "1",
+        "自动生成"
+      ],
+      "shot": "D:/OurTrail/docs/ui-ux-redesign/evidence/creation-flow-2026-10-23/B-editor-auto-pickup.png",
+      "afterTimeEdit": {
+        "autoPickupIds": {},
+        "badgeTexts": [
+          "验证路线 · 溪谷环线",
+          "1"
+        ],
+        "time": "07:40"
+      },
+      "shot2": "D:/OurTrail/docs/ui-ux-redesign/evidence/creation-flow-2026-10-23/B2-editor-pickup-badge-cleared.png"
+    },
+    "C": {
+      "title": "测试活动",
+      "isOwner": true,
+      "justPublished": true,
+      "primaryLabels": [
+        "分享给同行的人"
+      ],
+      "successTexts": [
+        "活动已发布\n把链接发到群里，同行的人就能报名。还没填的图文与风险，之后随时能补。\n分享给同行的人",
+        "行前安排已就绪\n检查集合时间、出行方式与装备，出发当天见。\n● 集合 已过时（2026-10-09 15:00）\n待审核 0 人 · 候补 0 人 · 剩余 23 个名额\n自行前往集合点，不占活动车辆。"
+      ],
+      "fixture": "real-owner-activity",
+      "bannerText": "活动已发布\n把链接发到群里，同行的人就能报名。还没填的图文与风险，之后随时能补。\n分享给同行的人",
+      "shot": "D:/OurTrail/docs/ui-ux-redesign/evidence/creation-flow-2026-10-23/C-activity-published-banner.png"
+    },
+    "C2": {
+      "justPublished": false,
+      "primaryLabels": [
+        "进入工作台"
+      ],
+      "successTexts": [
+        "行前安排已就绪\n检查集合时间、出行方式与装备，出发当天见。\n● 集合 已过时（2026-10-09 15:00）\n待审核 0 人 · 候补 0 人 · 剩余 23 个名额\n自行前往集合点，不占活动车辆。"
+      ],
+      "celebrating": false,
+      "shot": "D:/OurTrail/docs/ui-ux-redesign/evidence/creation-flow-2026-10-23/C2-activity-normal-entry.png"
+    }
+  },
+  "draftSnapshotHad": true,
+  "ok": true
+}

@@ -36,10 +36,12 @@ const KIND = {
   /* —— 天空本身 —— */
   CLOUD_AMOUNT: 'cloud-amount',       // 低/中/高层云量
   SKY_CLARITY: 'sky-clarity',         // 「判过了是晴空」：此点与邻域云量都低
+  INVERSION: 'inversion',             // 低层逆温（温度随高度升高）
   VISIBILITY: 'visibility',
   HUMIDITY: 'humidity',
   MOONLIGHT: 'moonlight',
   SUNRISE_OVERLAP: 'sunrise-overlap', // 价值增强项，不是检测条件
+  LIGHT_POLLUTION: 'light-pollution', // 天空亮度（Bortle/SQM），有源时给出
   /* —— 数据与主张的边界（说清我们不知道什么）—— */
   DATA_COVERAGE: 'data-coverage',     // 实测覆盖到哪个高度（数据的事实，不是云的事实）
   ABSTAIN: 'abstain',                 // 这一小时为什么判不出（未知，不是"无云"）

@@ -1,8 +1,13 @@
 {
+  "navigationStyle": "custom",
   "navigationBarTitleText": "活动",
+  "navigationBarBackgroundColor": "#F5F5F0",
+  "navigationBarTextStyle": "black",
   "enablePullDownRefresh": true,
   "usingComponents": {
     "icon": "/components/icon/icon",
+    "brand-header": "/components/brand-header/brand-header",
+    "next-up-card": "/components/next-up-card/next-up-card",
     "activity-card": "/components/activity-card/activity-card",
     "status-panel": "/components/status-panel/status-panel"
   }

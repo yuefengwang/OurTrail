@@ -1,0 +1,56 @@
+== A 夹具有效性（先证明模型真的定位到这一行，红项才归因得清楚；铁律 33⑧/34⑥） ==
+  ✓ A1 加载态渲染树里恰有 1 个装着 value="schedule" 勾选框的 checkbox-group
+  ✓ A2 该 group 内的勾选框定位成功（目标控件存在）
+  ✓ A3 文案「按出发时刻推算」此刻在渲染树上（不是被条件挡掉的分支）
+  ✓ A4 渲染过程零求值失败（夹具字段与模板用法对齐；缺字段会让门假绿）
+  ✓ A5 反向对照：denied 态下这一行不在屏幕上（模型是条件渲染，不是全量解析源码）
+  ✓ A6 反向对照：loading 态下这一行不在屏幕上
+  ✓ A7 checked 走的是页面数据本身：scheduleMode=false ⇒ "false"，=true ⇒ "true"
+== B 触点结构：可点容器 = label.check-label，文案节点 = text.check-text（3 个数据形态各测） ==
+  ✓ B[推算关] 勾选框的可点容器是 <label>（不是裸控件旁挂文本）
+  ✓ B[推算关] 该 label 的 class 含 check-label（复用设计系统的整行触点）
+  ✓ B[推算关] 勾选框确在这个 label 的子树内（label 的命中区覆盖它）
+  ✓ B[推算关] 承载文案的是元素节点而不是裸文本（父节点不是 group 本身）
+  ✓ B[推算关] 文案节点是 <text> 且 class 含 check-text（flex:1 才撑满整行）
+  ✓ B[推算关] 文案节点是该 label 的**子节点**（不是 label 的兄弟、不是 group 的文本兄弟）
+  ✓ B[推算关] checkbox-group 的直接子节点里没有裸文本（缺陷本体形态已消失）
+  ✓ B[推算关] 本页**任何** group/radio-group 都不许挂裸文本（同类遗漏新增即红，不是一次性门）
+  ✓ B[推算关] 该文案在屏幕上只出现在 text.check-text 里（再打印一遍裸文本即红）
+  ✓ B[推算开] 勾选框的可点容器是 <label>（不是裸控件旁挂文本）
+  ✓ B[推算开] 该 label 的 class 含 check-label（复用设计系统的整行触点）
+  ✓ B[推算开] 勾选框确在这个 label 的子树内（label 的命中区覆盖它）
+  ✓ B[推算开] 承载文案的是元素节点而不是裸文本（父节点不是 group 本身）
+  ✓ B[推算开] 文案节点是 <text> 且 class 含 check-text（flex:1 才撑满整行）
+  ✓ B[推算开] 文案节点是该 label 的**子节点**（不是 label 的兄弟、不是 group 的文本兄弟）
+  ✓ B[推算开] checkbox-group 的直接子节点里没有裸文本（缺陷本体形态已消失）
+  ✓ B[推算开] 本页**任何** group/radio-group 都不许挂裸文本（同类遗漏新增即红，不是一次性门）
+  ✓ B[推算开] 该文案在屏幕上只出现在 text.check-text 里（再打印一遍裸文本即红）
+  ✓ B[owner视角] 勾选框的可点容器是 <label>（不是裸控件旁挂文本）
+  ✓ B[owner视角] 该 label 的 class 含 check-label（复用设计系统的整行触点）
+  ✓ B[owner视角] 勾选框确在这个 label 的子树内（label 的命中区覆盖它）
+  ✓ B[owner视角] 承载文案的是元素节点而不是裸文本（父节点不是 group 本身）
+  ✓ B[owner视角] 文案节点是 <text> 且 class 含 check-text（flex:1 才撑满整行）
+  ✓ B[owner视角] 文案节点是该 label 的**子节点**（不是 label 的兄弟、不是 group 的文本兄弟）
+  ✓ B[owner视角] checkbox-group 的直接子节点里没有裸文本（缺陷本体形态已消失）
+  ✓ B[owner视角] 本页**任何** group/radio-group 都不许挂裸文本（同类遗漏新增即红，不是一次性门）
+  ✓ B[owner视角] 该文案在屏幕上只出现在 text.check-text 里（再打印一遍裸文本即红）
+== C 事件归属：change 的载体仍是 checkbox-group，且解析到真实 handler ==
+  ✓ C1 bindchange 就在该 checkbox-group 上且值为 onScheduleMode（载体没挪走）
+  ✓ C2 label / text / checkbox 上没有任何 change|tap 绑定（事件发出位置没被改）
+  ✓ C3 该 group 只带 bindchange 一个事件绑定（没有第二个平行载体）
+  ✓ C4 handler onScheduleMode 在该页 route.js 真实定义（读文件核对，不跑公共闸）
+  ✓ C5 handler 取的是 group 的数组语义 e.detail.value（platform-pitfalls「checkbox-group / picker 的取值」条，不靠 checked 回读）
+  ✓ C6 本文件全部静态 bind*/catch* handler 都能在 route.js 解析到（改名/悬空即红）
+== D 没有新增内联 style（整行触点来自 .check-label 体系，不靠 style 覆盖） ==
+  ✓ D1 这一行的 group/checkbox/label/text 四个节点都没有 style 属性
+  ✓ D2 全页 style= 计数 ≤ 改前基线 15（单向门：A-23 收内联 style 只会让它变小）
+  ✓ D3 本页任何 .check-label 都不许带内联 style（roster-panel 的 style="padding:0" 是 A-23 同族，不是范本）
+  ✓ D4 没有为本行发明新类名：文案用的就是 app.wxss 里那个 check-text
+== E 引用的类是设计系统里现成的（不是 invented token；读 app.wxss，不写它） ==
+  ✓ E1 app.wxss 定义了 .check-label 规则
+  ✓ E2 .check-label 的 min-height 吃 var(--touch-target)（不是写死字面量）
+  ✓ E3 --touch-target 终值 ≥ 44px（44px 下限的静态那一半；像素那一半见 runtime-required.md）
+  ✓ E4 .check-label .check-text 的 flex: 1 存在（文案撑满 = 整行可点的依据）
+  ✓ E5 group 作为 .check-label 子元素也有 flex 规则（两种嵌套形态都由体系承载，不是巧合）
+
+passed=49 failed=0

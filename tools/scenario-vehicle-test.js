@@ -18,6 +18,7 @@
 'use strict'
 const fs = require('fs')
 const path = require('path')
+const { vehicleGuards } = require('./operations-layout-test')
 
 const PAGE_PATH = require.resolve('../miniprogram/pages/vehicle/vehicle.js')
 const api = require('../miniprogram/utils/api')
@@ -496,11 +497,8 @@ async function scenario6() {
       page.data.denied)
     // 操作入口由渲染层整体门控：denied/loading 占满整页，确认上车按 showBoard、发车/完成按 canOperate，
     // 被拒态下 WXML 不渲染任何按钮（handler 只能来自绑定，页面无需二次权限判断）。
-    check('渲染层门控：denied/loading 整页接管，动作按钮分别挂在 showBoard / canOperate 之后',
-      VEHICLE_WXML.indexOf('wx:elif="{{loading}}"') !== -1
-      && VEHICLE_WXML.indexOf('<view wx:else class="stack">') !== -1
-      && VEHICLE_WXML.indexOf('wx:if="{{item.showBoard}}"') !== -1
-      && VEHICLE_WXML.indexOf('wx:if="{{canOperate}}" class="form-actions"') !== -1)
+    check('渲染层门控：denied/loading 同级 else 正文，动作受 showBoard / canOperate 祖先保护且 busy 解绑',
+      vehicleGuards(VEHICLE_WXML))
     check('被拒后零命令、busy 空闲', env.cmds.length === 0 && page.data.busy === false)
   }
   {
@@ -562,8 +560,45 @@ async function scenario7() {
   }
 }
 
+async function scenarioOperations() {
+  section('8. L3 前置行动区：司机身份 / 缺口确认 / busy / 方向')
+  makeWx()
+  const view = vehicleView()
+  const env = installApi({ view })
+  const page = await boot()
+  check('紧凑头使用投影的服务司机姓名', page.data.driverLine === '司机 · 老司机')
+  check('缺口保留真实人数及姓名', page.data.pendingCount === 3 && page.data.pendingNames === view.vehicleTask.passengers.map(p => p.name).join('、'))
+  page.onDepartAsk()
+  check('缺口发车只开确认层，不提前写', page.data.departAsk && env.cmds.length === 0)
+  page.onDepartCancel()
+  check('回去清点只关弹层，不写命令', !page.data.departAsk && env.cmds.length === 0)
+  page.setData({ busy: true })
+  page.onDepartAsk(); page.onDepart(); page.onComplete()
+  check('前置动作 busy 守卫仍吞掉重复点击', !page.data.departAsk && env.cmds.length === 0)
+  page.setData({ busy: false })
+  view.vehicleTask.vehicle.drivers = [{ kind: 'participant', signupId: 'driver-not-in-passengers' }]
+  view.vehicleTask.passengers.forEach(p => { p.outboundBoarded = true })
+  await page.reload()
+  check('参与者司机姓名未投影时不虚构姓名或另读私有信息', page.data.driverLine === '司机 · 参与者司机' && env.reads.length === 2)
+  page.onDepartAsk()
+  await waitFor(() => env.cmds.length === 1 && !page.data.busy)
+  check('全员齐备不额外拦弹层，沿用原发车命令和 CAS', !page.data.departAsk
+    && env.cmds[0].payload.type === 'vehicle.depart' && env.cmds[0].payload.leg === 'outbound' && env.cmds[0].expectedRevision === 4)
+  view.activity.phase = 'active'
+  view.vehicleTask.passengers[0].departure = 'joined'
+  view.vehicleTask.passengers[0].returnBoardingApplies = true
+  await page.reload()
+  page.onLeg({ currentTarget: { dataset: { leg: 'return' } } })
+  await waitFor(() => page.data.leg === 'return' && page.data.pendingCount === 1)
+  check('返程行动区缺口随原 expected 集合重算', page.data.expectedCount === 1 && page.data.pendingCount === 1 && page.data.showPendingNotice)
+  page.onDepartAsk(); page.onDepart()
+  await waitFor(() => env.cmds.length === 2 && !page.data.busy)
+  check('返程确认仍携带本车、本程与最新 revision', env.cmds[1].payload.vehicleId === 'v1'
+    && env.cmds[1].payload.leg === 'return' && env.cmds[1].expectedRevision === 5)
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenarioOperations]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

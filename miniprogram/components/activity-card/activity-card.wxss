@@ -1,3 +1,151 @@
+/* 活动卡：图 + 标题 / chips / foot 三槽（2026-10-26 style-B）。
+   全局 token 在 app.wxss；这里只放卡片自身布局，色值一律引用 token，不抄字面量。 */
 .card-hover { opacity: 0.9; }
-.activity-card__meta { margin-top: -4px; }
-.affordance-leaf { border-radius: var(--radius-button, 8px); min-height: 44px; }
+
+/* ---- featured：定高媒体盒（文档流图片，最稳的绘制路径）+ 森林底信息区 ---- */
+.activity-card--featured {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  background: var(--forest-deep);
+  border-color: var(--forest-deep);
+}
+/* 媒体盒：featured 与普通卡共用（定高 px + 文档流 image，平台坑 §6 的稳绘制路径）。
+   featured 240（2026-10-26 style-B，148→240）：参考板首屏的活动卡是「照片占半屏」的形态。 */
+.activity-card__media {
+  position: relative;
+  height: 240px;
+  overflow: hidden;
+  background: var(--forest-deep);
+}
+.activity-card__cover {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.activity-card__scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--scrim-hero);
+  pointer-events: none;
+}
+.activity-card__cover-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.activity-card--featured .activity-card__title { font-size: 22px; line-height: 1.35; letter-spacing: -0.3px; }
+.activity-card--featured .activity-card__date { color: var(--on-forest-muted); }
+.activity-card--featured .activity-card__sub { color: var(--on-forest-muted); }
+.activity-card--featured .activity-card__chips { color: var(--on-forest-muted); }
+.activity-card--featured .activity-card__foot { color: var(--on-forest-muted); }
+
+/* ---- 普通卡：完整照片形态（未传 compact 的旧消费者） ---- */
+.activity-card.activity-card--plain { padding: 0; gap: 0; overflow: hidden; }
+/* 普通卡媒体 200（2026-10-26 style-B，168→200）：与 featured 同一个「图占上半」的比例语言 */
+.activity-card--plain .activity-card__media { height: 200px; background: var(--stone); }
+.activity-card__plain { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 16px; }
+
+/* ---- 紧凑行（首页/发现页）：80px 缩略图 + 标题列 ----
+   卡片回到留白内边距；缩略图只是锚点，标题列 flex:1 + min-width:0 保证长标题断行不撑破卡片。 */
+.activity-card.activity-card--compact { padding: 12px; gap: 10px; }
+.activity-card--compact .activity-card__plain { padding: 0; gap: 10px; }
+.activity-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+.activity-card__thumb {
+  position: relative;
+  flex: 0 0 80px;
+  width: 80px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: var(--radius-button);
+  background: var(--stone);
+}
+.activity-card__thumb .activity-card__cover { width: 100%; height: 100%; }
+.activity-card__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+/* 标题保持全局 18px/600（style-B 不降档）：紧凑列只有 ~250px，行高从 1.5 收到 24px
+   换一行字的空间，字重与字号不动。 */
+.activity-card__heading .activity-card__title { font-size: var(--text-title); line-height: 24px; letter-spacing: -0.2px; }
+/* 标题与相位徽章同一行：标题吃掉剩余宽度并断行，徽章永不被压扁。 */
+.activity-card__titlebar {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+.activity-card__titlebar .activity-card__title { flex: 1; min-width: 0; }
+.activity-card__status { flex: 0 0 auto; margin-top: 3px; }
+
+/* ---- 平铺行（发现页 2026-10-26）：去底色/边框/圆角，让结果读成一列行而不是一摞卡。
+   缩略图、内边距与所有排版仍由 compact 提供；flat 不覆盖 padding。
+   行底留一条发丝线——没有卡片边界后，行与行需要一个比 12px 空隙更硬的断点（参考板 01-2）。 */
+.activity-card.activity-card--flat {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+/* ---- 三槽正文 ----
+   chips 一行不折行（参考板的活动卡只有一行 chips）：溢出时由标题列整体的
+   min-width:0 + overflow:hidden 兜住，而不是把每一枚 chip 截成「…」——
+   截断优先级已经由 utils/card-view.chipsOf 的次序表达（日期在前、爬升垫底）。 */
+.activity-card__chips {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--text-caption);
+  line-height: 18px;
+  color: var(--muted);
+}
+.activity-card__chip { flex: 0 0 auto; }
+.activity-card__dot { flex: 0 0 auto; padding: 0 6px; color: var(--line); }
+.activity-card--featured .activity-card__dot { color: var(--on-forest-line); }
+
+/* sub 行：路线名；长文本断行不截断（与标题同款策略）。 */
+.activity-card__sub { overflow-wrap: anywhere; }
+
+/* foot：左「与活动的关系」细字，右人数。两边都缺时整行不出现（由模板判）。 */
+.activity-card__foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--text-caption);
+  line-height: 18px;
+  color: var(--muted);
+}
+.activity-card__role { flex: 0 0 auto; }
+.activity-card__count { margin-left: auto; text-align: right; }
+
+/* ---- 协作入口 ----
+   卡片整体可点，不再在卡内重复「查看活动安排」实心入口；leaf 只留给这些卡内子目的地。
+   触控目标读 token（44px），不硬编码。 */
+.activity-card__affordance { flex-wrap: wrap; }
+.collab-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.collab-leaf { flex: 0 0 auto; min-height: var(--touch-target); }
+
+/* ---- 照片加载失败：藏起照片，退回纯色/纯文字形态 ---- */
+.activity-card.cover-failed .activity-card__cover { display: none; }
+/* 普通卡整块媒体消失 ⇒ 退回纯文字卡（不留 168px 空洞）；featured 仍留森林底纯色 hero */
+.activity-card--plain.cover-failed .activity-card__media { display: none; }
+/* 紧凑卡则连缩略图一起收起，让标题列占满整行。 */
+.activity-card--compact.cover-failed .activity-card__thumb { display: none; }
