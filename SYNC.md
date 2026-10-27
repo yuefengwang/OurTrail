@@ -1416,3 +1416,25 @@ D2 前两版量错对象——真节点行套在 `<block wx:if="{{routeDetailsOp
 **`cloudfunctions/` 与业务代码本轮零改动**（合并进来的是远端 124 个提交的既有内容，不是本轮新写的）⇒ **不需要重新部署 trailApi**。
 
 **遗留待裁决（未自行改）**：本地分支删掉了 `docs/prototypes/ourtrail-app/`（React 原型树），但仓库里仍有 **11 个文件**引用该路径——根 `AGENTS.md:102/125/784`、`README.md`、`.gitignore`、`SYNC.md`（多处历史条目）、`cloudfunctions/trailApi/domain/AGENTS.md:25`、`docs/product/*`、`docs/skill-uplift/*`、`docs/superpowers/*`、`docs/ui-ux-redesign/*`。这些引用是「历史记录里的路径」还是「活约定」需要负责人分档处理：前者补一行「原型树已移除」的前向指针即可，后者要改写。**本轮不动**——擅自批量改文档会掩盖「哪些描述真的已失效」这件事。
+
+### 2026-10-27 · mac/ourtrail-explore-v3 同步到线上：两个云函数部署 + 客户端版本上传
+
+**为什么必须同步**：上一条把远端 124 个提交并进本分支后，线上落后于分支——`cloudfunctions/` 有 **32 个文件**改动（`domain/{activity,commands,files,invariants,notices,permissions,routes,schema,selectors,tasks}.js`、`index.js`、`store.js`、`lib/{atmosphere,light-pollution,spatial,terrain,weather}.js`、`config.json`），`miniprogram/` 有 **171 个文件**改动。客户端改动不会因云函数部署而生效，云函数改动也不会因重新编译小程序而生效，**两条链都得走**。
+
+**部署通道**（这台 Mac 上有 DevTools，与根 `AGENTS.md` 里「Mac 那台没装」的旧记录相反）：`/Applications/wechatwebdevtools.app/Contents/MacOS/cli`，`cli islogin` = `{"login":true}`，appid `wx1227a277a3f2f7ea`，环境 `cloud1-d9ghcm034574b9d55`。注意 `--names` 类命令必须同时给 `--project`，否则报「缺失参数 'project / appid' (code 31)」。
+
+**前置：`node tools/sync-lab.js`** —— 跑完 **17 个文件、零 diff**（合并后 lab 副本与生产本来就一致），`node --check` 全过。同步后静态门复跑全绿：`check.js` = `ALL CHECKS PASSED`（exit 0）、`check-handlers.js` = exit 0（既有死 handler `editor.onNumber` 仍 1 条）、`smoke-test` = **226/0**、`journey-graph-test` = **15/0**、`lab-dryrun-test` = **165/0**。`app.json` 的 21 个页面目录齐全，`miniprogram/` 下无未跟踪/被忽略文件。
+
+**云函数部署**：`cli cloud functions deploy --env cloud1-d9ghcm034574b9d55 --names trailApi trailApiLab --remote-npm-install --project <repo>` 一次成功——`trailApi` **28 files / 131.2 KB**、`trailApiLab` **22 files / 86.9 KB**，两个均 success。
+
+**部署后回读**（控制台值是超时的唯一权威）：`cli cloud functions info` = 两个函数均 **`Active` / `timeout 20` / `Nodejs16.13`**。**本轮 CLI 部署没有把超时降回 3 秒**——与 2026-09-30 记录的「CLI 部署不继承控制台超时」不同，这次部署前后都是 20，config.json 的 `"timeout": 20` 随包生效；**仍按惯例回读确认过，不靠假设**。
+
+**线上包 vs 工作树逐文件比对**：`cli cloud functions download` 两份到仓库外 `/tmp/ot-deploy-verify-20261027/`，`diff -r --strip-trailing-cr -x node_modules -x package-lock.json -x .DS_Store` 对工作树 —— **两个函数的差异均为空**（逐字节一致）。这是**包级证据**：证明线上跑的代码与分支一致，不等于已用真实账号跑过业务链。
+
+**客户端版本上传**：`cli upload --project <repo> --version 1.0.20261027 --desc "v3重构原型 + style-a/style-b 全站版式重构 + 天气交互原型；合并远端 master 124 提交，云函数已同步部署"` 成功，`Using AppID: wx1227a277a3f2f7ea`，包体 **1.3 MB（1350368 字节）**。
+
+**这一版对用户是否已生效——分两层，不要混说**：
+① **云函数已即时生效**（旧版本被替换），线上跑的代码与 `mac/ourtrail-explore-v3` 逐字节一致；
+② **客户端上传只到「开发版本」**，要进用户端还需在公众平台后台 **提交审核 → 审核通过 → 发布**，这一步 CLI 没有对应命令（`cli` 只有 upload / preview / auto 一类），**须由账号所有者本人操作**。本轮未代替执行提交审核。
+
+**未做 / 缺口**：① 未跑真机行为验证（合并进来的 171 个客户端文件是远端 124 个提交里 style-a/style-b 与天气原型的既有产物，其真机证据在各自的 evidence 包里；本轮只做「线上与分支一致」的包级核对，**不构成对这些页面渲染正确的独立复核**）；② 未用真实账号跑云端 CRUD（上一轮做过的「测试活动」真实链属 2026-10-20 那一版的证据）；③ 11 处 `docs/prototypes/ourtrail-app` 悬空引用仍待裁决；④ 仓库里 0 字节垃圾文件 `{const` 仍在线（随合并进了本分支），清理需另提提交。
