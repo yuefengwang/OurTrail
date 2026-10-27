@@ -1388,3 +1388,17 @@ D2 前两版量错对象——真节点行套在 `<block wx:if="{{routeDetailsOp
 读数 18 条全 PASS、截图 17 张、结构化 `readings*.json` 三份、四份驱动与四份原始日志入库，
 统一在 `docs/ui-ux-redesign/evidence/style-b-slice5-device-2026-10-26/README.md`（唯一索引）。
 `cloudfunctions/` 与业务代码**零改动**（本条只动文档与证据）⇒ 不需要重新部署；仍未 commit/push。
+
+### 2026-10-27 · 天气交互原型入库，供独立分支审阅
+
+**原因**：本轮天气交互原型此前仅保存在会话目录，其他开发者无法通过拉取仓库审阅；本次整理为独立预览包，不把演示功能混入生产小程序。
+
+新增 `docs/weather-ux/interactive-prototype-20261027/`：可编辑的 `weather.fragment.html`、浏览器直接打开的 `index.html`、可移植的 `verify.cjs` 与使用说明；天气文档索引新增入口。
+演示范围包括三种查询入口、逐时预报 / 云层剖面 / 沿途天气 / 日月天相、按天和抵达时刻安排节点、复制个人计划，以及地点 / 路线 / 行程分离保存。
+已确认边界：首期聚焦云层剖面；共用路线库但天气计划独立；活动带入只生成个人计划、不回写活动；云同步与本机缓存为目标方案，当前仅演示。
+
+**验证**：对入库包装页实际运行浏览器检查 **29/29 PASS**，含 320 / 375 / 390 / 414 px 布局、标签不重叠、日期越界、时间逆序、取消与复制隔离、收藏与导入保留、缺海拔 / 缺云层 / 离线状态；浏览器运行时错误 **0**。
+`node tools/check.js` 输出 `ALL CHECKS PASSED`；`node tools/check-handlers.js` 通过（既有死 handler `editor.onNumber` 仍为 1 条，未增加）。验证脚本的依赖与截图均放在仓库外，不引入项目 npm 依赖。
+
+**非生产交付**：天气与天相是样例数据，地图、登录、云同步和活动导入是流程模拟，GPX 仅本机抽样预览，不是完整轨迹存档。上述为浏览器原型验证，**不是微信真机或真实云端业务验收**。
+`miniprogram/`、`cloudfunctions/` 均零改动 ⇒ **无需部署 trailApi**。仅进入 `mac/weather-prototype-20261027` 审阅分支，不合并到 `master`。
