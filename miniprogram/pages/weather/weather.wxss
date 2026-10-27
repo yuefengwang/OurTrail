@@ -179,7 +179,7 @@
 /* 页级覆盖只补横向排布，方向仍沿用 app.wxss 的 column：
    「今日户外时间轴」「天相详解」两个区头是「标题 + 说明」两行，它们的正确形状就是竖排。
    需要「标题 | 行动」一行的是带按钮的那个区头，另见 .section-head.has-action。 */
-.section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 4px; }
+.section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-top: 4px; }
 /* 带行动的区头（逐时天气）：第一行「标题 | 全图展示」，来源说明整行落到第二行。
    竖排会让「全图展示」变成一条居中文字看着像副标题；挤在标题右列又会让
    「Open-Meteo.com」断在连字符处（真机 390 实测「Open-」/「Meteo.com」两行）。 */
@@ -360,3 +360,10 @@
    原来这两项是两条 .list-row（各 26px）+ 一条块级按钮，合计 226px，把首屏让给了身份重复；
    标签仍写出来（「坐标」「海拔」），不靠位置猜。色值/字号全部取既有 token。 */
 .point-meta { display: block; margin-top: 2px; font-size: var(--text-caption); line-height: 18px; color: var(--muted); }
+.weather-location { padding: 12px 0; border-bottom: 1px solid var(--line); }
+.weather-date { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.weather-tabs .seg { min-height: var(--touch-target); }
+.weather-time-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.weather-time-controls > picker { flex: 1; min-width: 120px; }
+.weather-time-controls .button { min-height: var(--touch-target); padding: 8px; }
+.weather-source { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line); }

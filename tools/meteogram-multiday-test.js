@@ -126,7 +126,7 @@ check('长窗包含短窗（两窗都未裁切时，72h 不会挤掉 48h 已画�
 /* ---------- Selection：跨日单一 crosshair ---------- */
 section('Selection：Day 1/2/3 单一 crosshair')
 const b72 = UMG.renderUnifiedBase(g72, { sunTimes: [{ rise: 7, set: 19 }, { rise: 7, set: 19 }, { rise: 7, set: 19 }] })
-check('base 含 2 条日界强线', (b72.svg.match(/stroke="#D3D5CD" stroke-width="1"/g) || []).length === 2)
+check('base 含 2 条日界强线', (b72.svg.match(/<line\b[^>]*stroke="#D3D5CD" stroke-width="1"/g) || []).length === 2)
 check('base 含 day header 三段（今天/明天/后天）', b72.svg.indexOf('今天') >= 0 && b72.svg.indexOf('明天') >= 0 && b72.svg.indexOf('后天') >= 0)
 const sel38 = UMG.renderUnifiedSelection(g72, { selectedAbs: 38 })   // Day2 14:00
 const x38 = g72.X(38).toFixed(1)

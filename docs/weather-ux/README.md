@@ -3,6 +3,8 @@
 2026-10-05 · **零生产代码改动**：本目录全部为新增设计与原型文件（git 状态：仅 `?? docs/weather-ux/`）。
 V1（信息架构与组件规格）+ V2（Meteoblue 集成调查与最终决策）两轮交付都在这里。
 
+**后续状态（2026-10-27）**：上述“零生产代码改动”指 10 月 5 日设计交付；本轮已修改真实小程序，范围与验收见 [小程序落地记录](production-implementation-20261027.md)。天气资产云同步、原始 GPX 云存档仍未实现，不要与原型混同。
+
 ## 核心原则
 
 > **Meteoblue 告诉用户"天气是什么"，OurTrail 告诉用户"什么时候值得出去"。**
@@ -13,7 +15,8 @@ V1（信息架构与组件规格）+ V2（Meteoblue 集成调查与最终决策�
 
 | 文档 | 内容 |
 |---|---|
-| [interactive-prototype-20261027/README.md](interactive-prototype-20261027/README.md) | **2026-10-27 天气交互原型**：三种查询入口、专业云层剖面、沿途天气、独立个人行程及保存流程；浏览器直接打开同目录 `index.html`，全部为演示数据 |
+| [production-implementation-20261027.md](production-implementation-20261027.md) | 小程序入口、云层剖面、沿途天气与本机行程落地；测试证据、未接入能力和实际验收入口 |
+| [interactive-prototype-20261027/README.md](interactive-prototype-20261027/README.md) | **2026-10-27 天气交互原型第二轮**：继承六项决策与新增 ABAA；单点／沿途分层、重复经过、跟随最新路线、原 GPX 只读核对及同步冲突流程。浏览器直接打开同目录 `index.html`，不代表小程序落地 |
 | [decision.md](decision.md) | **决策矩阵 + 最终推荐 + 十问十答 + 问题台账**（从这里开始读） |
 | [meteoblue-integration-v2.md](meteoblue-integration-v2.md) | Image API/Forecast API/Widget 严肃调查（官方 OpenAPI 规格实证、credits 算账、无中文发现） |
 | [meteoblue-visual-integration.md](meteoblue-visual-integration.md) | Meteoblue 截图专业性拆解（§2 七问）+ Option A/B/C 三方案 + 移动端 Meteogram UX |

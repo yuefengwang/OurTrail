@@ -1,160 +1,81 @@
 <view class="page">
   <brand-header />
   <view class="stack-sections">
-    <!-- D8（2026-10-26）：tab 页删除 28px 页标题，改用分区头三件套；
-         kicker 里的「天气」是删页标题的代价条款——原生标题栏不再出现，页面身份必须仍有字面。
-         （与 notices / home / me 同一处理，本页是第 4 个 tab 页。） -->
-    <view class="section-head">
-      <text class="kicker">天气</text>
-      <text class="list-head__title">先看天，再上山。</text>
-      <text class="section-sub">查过的点与轨迹会存住，下次不用重传。</text>
+    <view class="section-head"><text class="kicker">天气 · 行前参考</text><text class="list-head__title">先看天，再上山。</text><text class="section-sub">一个地点，看云与风；一段行程，看抵达时的天气。</text></view>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view class="weather-entry">
+      <view class="section-head"><text class="section-title">查一个地点</text><text class="section-sub">地图与坐标，同一套逐时预报与云层剖面</text></view>
+      <view class="button primary block" hover-class="button-hover" bindtap="onPickMap">地图选点查天气</view>
+      <view class="button text block" hover-class="button-hover" bindtap="onManualOpen">输入经纬度</view>
     </view>
-
-    <!-- 输入区：主行动唯一化——地图选点是唯一实心按钮 -->
-    <view class="button primary block" hover-class="button-hover" bindtap="onPickMap">地图选点查天气</view>
-    <view class="button secondary block" hover-class="button-hover" bindtap="onManualOpen">输入经纬度</view>
-
-    <!-- A-24：卡标题原先逐字重复下面那颗按钮的文案，多出一行不带信息。
-         现在标题承担「为什么」、按钮承担「做什么」，与 editor.wxml:169 / route-edit.wxml:30 同一分工。
-         ⚠ 复验 A-24 请剥掉注释再比字符串，否则本条注释会让重复看起来仍然存在。 -->
-    <view class="card">
-      <view class="card-header">
-        <text class="card-label">有 GPX 轨迹？逐点看天气</text>
+    <view class="weather-entry">
+      <view class="section-head"><text class="section-title">查一段行程</text><text class="section-sub">按天安排关键节点，默认看沿途天气</text></view>
+      <view class="hub-actions"><view class="button secondary" hover-class="button-hover" bindtap="onImportGpx">导入 GPX</view><view class="button secondary" hover-class="button-hover" bindtap="onRouteLibrary">从路线库选择</view></view>
+      <text class="small muted">把 GPX 发到任意聊天后选择。历史记录只作参考，不会替你填写本次抵达时间。</text>
+    </view>
+    <view class="section-head"><text class="kicker">我的天气资产</text><text class="section-title">保存，留给下一次出发</text><text class="section-sub">地点与行程目前仅本机保存；路线库沿用真实账户权限。天气资产云同步尚未接入。</text></view>
+    <view wx:if="{{plans.length}}" class="card">
+      <text class="card-label">个人天气行程</text>
+      <view wx:for="{{plans}}" wx:key="id" class="list-row" hover-class="button-hover" bindtap="onPlan" data-id="{{item.id}}">
+        <view class="list-main"><text>{{item.name}}</text><text class="list-sub tabular">{{item.startDate}} 出发 · {{item.visits.length}} 次经过 · 仅本机</text></view>
+        <view class="button text" hover-class="button-hover" catchtap="onDeleteTap" data-type="plan" data-id="{{item.id}}" data-name="{{item.name}}">删除</view>
       </view>
-      <text class="small" style="display:block;">导入轨迹，自动取出山路线上的标注点，逐点看天气与天相。</text>
-      <view class="button secondary block" style="margin-top:12px;" hover-class="button-hover" bindtap="onImportGpx">导入 GPX 轨迹</view>
-      <text class="small muted" style="display:block;margin-top:8px;">把 GPX 文件发到任意聊天，再点上面按钮选择。导入后展开轨迹，点任一节点名即可进入该点的天气与天相。</text>
     </view>
-
-<!-- 我的观察点：有数据才显示，空态不渲染空卡片。
-     A-23（合并自 master）：原先这张卡带一个把内边距归零的内联 style，.card-header 与 .list-row
-     自身都没有左右 padding ⇒ 横向留白被一起吃掉，标题与行内容贴到卡片圆角边。
-     现在横向留白回到 app.wxss 的 .card 单源，与同页另两张卡（GPX 卡、轨迹点组卡）一致；
-     观察点行组不再套第二张卡（卡中卡会把留白再收一层）。
-     ⚠ 复验请剥掉注释、按「节点 attrs + 层叠终值」判，别按整文件 grep。 -->
     <view wx:if="{{points.length}}" class="card">
-      <view class="card-header">
-        <view class="section-head">
-          <text class="kicker">已存</text>
-          <text class="section-title">我的观察点</text>
-        </view>
-        <text class="small muted tabular">{{points.length}}</text>
-      </view>
-      <view
-        wx:for="{{points}}"
-        wx:key="id"
-        class="list-row"
-        hover-class="button-hover"
-        bindtap="onPointTap"
-        data-id="{{item.id}}"
-      >
-        <view class="list-main">
-          <text>{{item.display}}</text>
-          <text class="list-sub tabular">{{item.subText}}</text>
-        </view>
-        <icon name="arrow" size="16" color="#5F6E66" />
-        <view class="button text" catchtap="onDeleteTap" data-type="point" data-id="{{item.id}}" data-name="{{item.display}}">删除</view>
+      <text class="card-label">常用地点</text>
+      <view wx:for="{{points}}" wx:key="id" class="hub-saved">
+        <view class="list-row" hover-class="button-hover" bindtap="onPointTap" data-id="{{item.id}}"><view class="list-main"><text>{{item.display}}</text><text class="list-sub tabular">{{item.subText}}</text></view><text>›</text></view>
+        <view class="hub-actions"><view class="button text" hover-class="button-hover" bindtap="onEditPoint" data-id="{{item.id}}">编辑</view><view class="button text" hover-class="button-hover" bindtap="onDeleteTap" data-type="point" data-id="{{item.id}}" data-name="{{item.display}}">删除</view></view>
       </view>
     </view>
-
-    <!-- 轨迹点组：收合式列表，节点行 = 名称 + 相对耗时 -->
-    <view wx:for="{{tracks}}" wx:key="id" class="card">
-      <view class="list-row" hover-class="button-hover" bindtap="onTrackToggle" data-id="{{item.id}}">
-        <view class="list-main">
-          <text>{{item.name}}</text>
-          <text class="list-sub tabular">{{item.statsText}}</text>
-        </view>
-        <text class="picker-arrow">{{trackOpen[item.id] ? '▴' : '▾'}}</text>
-      </view>
-      <view wx:if="{{trackOpen[item.id]}}" class="stack" style="gap:2px;padding:0 16px 12px;">
-        <view
-          wx:for="{{item.nodes}}"
-          wx:for-item="node"
-          wx:key="id"
-          class="list-row"
-          hover-class="button-hover"
-          bindtap="onTrackNodeTap"
-          data-set="{{item.id}}"
-          data-index="{{index}}"
-        >
-          <view class="list-main">
-            <text>{{node.name}}</text>
-            <text class="list-sub">{{node.label}}</text>
-          </view>
-          <icon name="arrow" size="16" color="#5F6E66" />
-        </view>
-        <view class="button text" hover-class="button-hover" catchtap="onDeleteTap" data-type="track" data-id="{{item.id}}" data-name="{{item.name}}">删除这组轨迹</view>
+    <view wx:if="{{tracks.length}}" class="card">
+      <text class="card-label">本机轨迹</text>
+      <view wx:for="{{tracks}}" wx:key="id" class="hub-saved">
+        <view class="list-row" hover-class="button-hover" bindtap="onTrackWeather" data-id="{{item.id}}"><view class="list-main"><text>{{item.name}}</text><text class="list-sub tabular">{{item.statsText}}</text><text class="list-sub">{{item.originalSaved ? '原始 GPX 已保留在本机' : '早期导入仅有节点，原始 GPX 未保存'}}</text></view><text>›</text></view>
+        <view class="hub-actions"><view class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSaveRoute'}}" data-id="{{item.id}}">存入路线库</view><view class="button text" hover-class="button-hover" bindtap="onDeleteTap" data-type="track" data-id="{{item.id}}" data-name="{{item.name}}">删除</view></view>
       </view>
     </view>
-
-    <text wx:if="{{!points.length && !tracks.length}}" class="small muted">还没有观察点。选一个点、输一组坐标或导一条轨迹，查过的点都能存住，下次免重传。</text>
+    <status-panel wx:if="{{!points.length && !tracks.length && !plans.length}}" kind="empty" title="还没有保存的地点或行程" detail="查询后主动保存常用地点，或导入轨迹安排一次行程。最近查询不会自动加入收藏。" />
+    <view wx:if="{{recent.length}}">
+      <view class="section-head"><text class="section-title">最近查询</text><text class="section-sub">只记在本机，不代表已收藏，也不会上传</text></view>
+      <view wx:for="{{recent}}" wx:key="id" class="list-row" hover-class="button-hover" bindtap="onRecent" data-id="{{item.id}}"><view class="list-main"><text>{{item.name || '坐标地点'}}</text><text class="list-sub tabular">{{item.lat}}, {{item.lng}}</text></view><text>›</text></view>
+    </view>
   </view>
-
-  <!-- 手动输入经纬度 -->
-  <overlay open="{{manualOpen}}" kind="dialog" title="输入经纬度" bind:close="onManualClose">
+  <overlay open="{{manualOpen}}" kind="sheet" title="{{manualEditId ? '编辑常用地点' : '输入经纬度'}}" bind:close="onManualClose">
     <view class="stack">
       <view wx:if="{{manualError}}" class="callout danger">{{manualError}}</view>
-      <form-field label="名称（可选）">
-        <input class="input" value="{{manual.name}}" bindinput="onManualName" placeholder="如：四姑娘山大峰" />
-      </form-field>
-      <form-field label="纬度">
-        <input class="input" type="digit" value="{{manual.lat}}" bindinput="onManualLat" placeholder="31.0632" />
-      </form-field>
-      <form-field label="经度">
-        <input class="input" type="digit" value="{{manual.lng}}" bindinput="onManualLng" placeholder="102.9085" />
-      </form-field>
-      <form-field label="海拔（可选，影响天相判断）" hint="米。有真实海拔时，云海与晨昏光的判断更准。">
-        <input class="input" type="digit" value="{{manual.ele}}" bindinput="onManualEle" placeholder="4250" />
-      </form-field>
-      <view class="list-row" bindtap="onManualWgs">
-        <view class="list-main">
-          <text>这是 GPS 原始坐标（WGS-84）</text>
-          <text class="list-sub">从奥维/两步路等导出的坐标多为 WGS-84；微信地图里的坐标不用勾</text>
-        </view>
-        <checkbox checked="{{manual.wgs}}" color="#163E35" />
-      </view>
-      <view class="button primary block" hover-class="button-hover" bindtap="onManualSubmit">保存并查询</view>
+      <form-field label="地点名称（可选）"><input class="input" value="{{manual.name}}" maxlength="60" bindinput="onManualName" placeholder="如：四姑娘山大峰" /></form-field>
+      <form-field label="纬度（先填纬度）"><input class="input" type="text" value="{{manual.lat}}" bindinput="onManualLat" placeholder="31.0632，范围 -90–90" /></form-field>
+      <form-field label="经度"><input class="input" type="text" value="{{manual.lng}}" bindinput="onManualLng" placeholder="102.9085，范围 -180–180" /></form-field>
+      <form-field label="海拔（可选，米）" hint="不知道请留空，将明确标注模型估算；不会把空值当成 0 米。"><input class="input" type="text" value="{{manual.ele}}" bindinput="onManualEle" placeholder="如：4250" /></form-field>
+      <view class="list-row" hover-class="button-hover" bindtap="onManualWgs"><view class="list-main"><text>GPS 原始坐标（WGS-84）</text><text class="list-sub">{{manual.wgs ? '查询前转换为 GCJ-02' : '当前按微信地图坐标 GCJ-02 读取'}}</text></view><checkbox checked="{{manual.wgs}}" /></view>
+      <text class="small muted">首期面向国内徒步，预报统一使用北京时间。查询不等于保存。</text>
+      <view class="button primary block" hover-class="button-hover" bindtap="onManualSubmit">{{manualEditId ? '保存修改' : '确认位置并查询'}}</view>
     </view>
   </overlay>
-
-  <!-- GPX 预览 -->
-  <overlay open="{{gpxOpen}}" kind="sheet" title="导入 GPX 轨迹" bind:close="onGpxClose">
+  <overlay open="{{gpxOpen}}" kind="sheet" title="核对轨迹关键节点" bind:close="onGpxClose">
     <view class="stack">
       <view wx:if="{{gpxError}}" class="callout danger">{{gpxError}}</view>
-      <block wx:if="{{gpxMeta && !gpxError}}">
-        <view class="callout">
-          <text class="callout-title">{{gpxMeta.fileName}}</text>
-          <text style="display:block;margin-top:4px;">解析出 {{gpxMeta.count}} 个路线节点{{gpxMeta.count > gpxPoints.length ? '，保留 ' + gpxPoints.length + ' 个' : ''}}{{gpxMeta.distanceKm > 0 ? ' · 全程约 ' + gpxMeta.distanceKm + ' km' : ''}}{{gpxMeta.hasElevation ? ' · 累计爬升约 ' + gpxMeta.ascentM + ' m' : ''}}{{gpxMeta.hasTime ? ' · 含时刻（可推算抵达日）' : ''}}。</text>
-        </view>
-        <view class="stack" style="gap:4px;">
-          <text class="small muted">确认前可先核对各节点，多余的可以删掉：</text>
-          <view wx:for="{{gpxPoints}}" wx:key="index" class="list-row">
-            <view class="list-main">
-              <text>{{item.name}}</text>
-              <text class="list-sub tabular">{{item.coordinates.lat}}, {{item.coordinates.lng}}</text>
-            </view>
-            <view class="button text" hover-class="button-hover" catchtap="onGpxRemove" data-index="{{index}}">删除</view>
-          </view>
-        </view>
-        <view wx:if="{{gpxMeta.count > gpxPoints.length}}" class="button text block" hover-class="button-hover" bindtap="onGpxReset">恢复全部节点</view>
-        <text wx:if="{{!(gpxPoints.length >= 2)}}" class="small muted">至少保留 2 个节点才能存为轨迹点组。</text>
-        <view class="button primary block {{gpxPoints.length >= 2 ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{gpxPoints.length >= 2 ? 'onGpxApply' : ''}}">存为轨迹点组</view>
+      <block wx:if="{{gpxMeta}}">
+        <text class="section-title">{{gpxMeta.fileName}}</text><text class="small muted">保留 {{gpxPoints.length}} / {{gpxMeta.count}} 个候选节点 · 约 {{gpxMeta.distanceKm}} km · 爬升 {{gpxMeta.ascentM}} m。候选不是全部轨迹采样点，抵达时间由你另行安排。</text>
+        <view wx:for="{{gpxPoints}}" wx:key="index" class="list-row"><view class="list-main"><text>{{item.name}}</text><text class="list-sub tabular">{{item.coordinates.lat}}, {{item.coordinates.lng}}</text></view><view class="button text" hover-class="button-hover" catchtap="onGpxRemove" data-index="{{index}}">移除</view></view>
+        <view wx:if="{{gpxMeta.count > gpxPoints.length}}" class="button text block" hover-class="button-hover" bindtap="onGpxReset">恢复全部候选节点</view>
+        <text class="small muted">至少保留两个节点。原始 GPX 保存在本机文件区，筛选节点不改原文件；不会上传原文件。</text>
+        <view class="button primary block {{gpxPoints.length >= 2 && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{gpxPoints.length >= 2 && !busy ? 'onGpxApply' : ''}}">{{busy ? '正在保存…' : '保存轨迹，查看沿途天气'}}</view>
       </block>
-      <block wx:elif="{{gpxError}}">
-        <text class="small muted">请确认文件是标准 GPX（含 wpt/rtept/trkpt）后重试。</text>
-      </block>
-      <block wx:else>
-        <text class="small muted">正在读取文件…</text>
-      </block>
+      <view wx:if="{{gpxError}}" class="button secondary block" hover-class="button-hover" bindtap="onImportGpx">重新选择 GPX</view>
     </view>
   </overlay>
-
-  <!-- 删除确认 -->
-  <overlay open="{{deleteOpen}}" kind="dialog" title="{{deleteInfo.type === 'track' ? '删除这组轨迹？' : '删除这个观察点？'}}" bind:close="onDeleteClose">
+  <overlay open="{{routeOpen}}" kind="sheet" title="复用活动路线库" bind:close="onRouteClose">
     <view class="stack">
-      <text>将删除「{{deleteInfo.name}}」{{deleteInfo.type === 'track' ? '及其全部节点，不可恢复。' : '，不可恢复。'}}</text>
-      <view class="button danger block" hover-class="button-hover" bindtap="onDeleteConfirm">删除</view>
-      <view class="button text block" hover-class="button-hover" bindtap="onDeleteClose">先留着</view>
+      <status-panel wx:if="{{routeLoading}}" kind="loading" title="正在读取路线" detail="只显示你有权限查看的路线。" />
+      <status-panel wx:elif="{{routeError}}" kind="error" title="路线暂未取到" detail="{{routeError}}" action-label="重试" bind:action="onRouteLibrary" />
+      <status-panel wx:elif="{{!routes.length}}" kind="empty" title="暂无可用路线" detail="可先导入 GPX，再存入你账户下的私有路线库。" />
+      <view wx:else><view wx:for="{{routes}}" wx:key="id" class="list-row" hover-class="button-hover" bindtap="onChooseRoute" data-id="{{item.id}}"><view class="list-main"><text>{{item.title}}</text><text class="list-sub">{{item.pointCount}} 个节点 · {{item.distanceKm}} km</text></view><text>›</text></view></view>
+      <text class="small muted">复用路线不等于共享个人行程；路线更新后按节点标识匹配，不自动改你的时间安排。</text>
     </view>
+  </overlay>
+  <overlay open="{{deleteOpen}}" kind="dialog" title="删除这个本机条目？" bind:close="onDeleteClose">
+    <view class="stack"><text>删除「{{deleteInfo.name}}」后无法恢复，不影响云端路线或活动。删除轨迹也会移除本机原始文件；有行程引用时不允许删除。</text><view class="button danger block" hover-class="button-hover" bindtap="onDeleteConfirm">确认删除</view><view class="button text block" hover-class="button-hover" bindtap="onDeleteClose">先留着</view></view>
   </overlay>
 </view>

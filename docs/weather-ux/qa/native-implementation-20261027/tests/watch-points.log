@@ -1,0 +1,45 @@
+== 1. 纯度与 CRUD 往返 ==
+  ✓ 无 wx 的 Node 下可直接加载（纯度规则验收）
+  ✓ savePoint ok 且生成 wp- 前缀 id
+  ✓ createdAt 落库
+  ✓ listPoints 读回一条
+  ✓ ele=null 与 eleSource 原样保留
+  ✓ listPoints 返回拷贝（外部改不污染存储）
+== 2. 更新 / 删除 / 容量 ==
+  ✓ 带已有 id 保存 = 更新（不增行）
+  ✓ 更新沿用原 id 与 createdAt
+  ✓ 更新字段生效
+  ✓ deletePoint 生效
+  ✓ 单点容量 20 拒绝且不挤掉旧数据
+  ✓ 轨迹组容量 10 拒绝
+  ✓ deleteTrack 生效
+  ✓ getTrack 命中
+  ✓ getTrack 未命中返回 null
+== 3. 去重网格与坐标文案 ==
+  ✓ 3dp 网格内同 key
+  ✓ 3dp 网格外不同 key
+  ✓ coordName 文案
+== 4. fromGpx：parseGpx → TrackSet 组装 ==
+  ✓ 组名去 .gpx 后缀
+  ✓ wt- 前缀 id + importedAt
+  ✓ distanceKm/ascentM 取顶层（恒为数字）
+  ✓ hasEle 取 stats.hasElevation（字段名映射：parseGpx 的 hasElevation → 组的 hasEle）
+  ✓ hasTime 遍历 points 判定（stats 不给）
+  ✓ count = 点数
+  ✓ 每点生成稳定 id（窗口缓存按点判定）
+  ✓ ele 四舍五入 + eleSource=gpx
+  ✓ time 透传不丢失（§5.4 抵达日程的原料）
+  ✓ 无名点保留空串（查询页兜底起点/终点）
+  ✓ 无时间戳轨迹 hasTime=false
+  ✓ 非法 parsed 返回 null
+  ✓ 单点不成组
+== 5. 分享降精度（P3 §5.3 决策 (b)） ==
+  ✓ lat/lng 降到 3dp
+  ✓ 与原值确有差异（精度真的降了）
+  ✓ 3dp 网格内两点落同一分享坐标（百米级，足够定位山头）
+== 6. 手动 WGS 入库链路（调用方转换后存储） ==
+  ✓ 入库的是转换后的 GCJ 值，不是 WGS 原值
+  ✓ GCJ 值可被 gpx.gcjToWgs 还原（链路自洽）
+  ✓ 非数坐标拒绝
+
+passed=37 failed=0

@@ -5,6 +5,10 @@
    缺失时观察点列表最后几行被固定 tabBar 拦腰截断、删除按钮点不到（2026-09-30 实测复现）。
    本页在 app.json 的 tabBar.list 内 ⇒ 必须留；判据 tools/b4-pad-final-value-test.js §2 逐页解终值。 */
 .page { padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom)); }
+.weather-entry { display: flex; flex-direction: column; gap: 12px; padding: 16px 0; border-top: 1px solid var(--line); }
+.hub-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.hub-actions .button { flex: 1; min-height: var(--touch-target); }
+.hub-saved + .hub-saved { margin-top: 8px; border-top: 1px solid var(--line); }
 
 /* A-23（2026-10-14 修复轮批次 3）：「我的观察点」卡的横向留白由 app.wxss 的 .card
    （padding:16px）单源承载，本页那张卡已去掉把内边距归零的内联 style。

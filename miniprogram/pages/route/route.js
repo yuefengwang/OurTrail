@@ -324,6 +324,9 @@ Page({
   onEdit() {
     wx.navigateTo({ url: '/pages/route-edit/route-edit?id=' + this.routeId })
   },
+  onWeatherPlan() {
+    wx.navigateTo({ url: '/pages/weather-plan/weather-plan?route=' + encodeURIComponent(this.routeId) })
+  },
 
   // ---- 用这条路发起活动（仅 owner）：编辑器带 routeId 预填 ----
   // 协作者看不到这个按钮：域层 activity.create 校验 routeId 必须属于发起者本人。

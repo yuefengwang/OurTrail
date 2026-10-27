@@ -32,7 +32,7 @@ const UMG = require('../../utils/meteogram-svg.js')
 const OI = require('../../utils/outdoor-intelligence.js')
 const OIP = require('../../utils/oi-presentation.js')
 
-const wpStore = WP.createWatchPoints(draft.wxStorage)
+const wpStore = WP.createWatchPoints(draft.durableStorage)
 
 // Cloud Field 卡的纯函数工具（页面局部）
 function cfPad(n) { return (n < 10 ? '0' : '') + n }
@@ -121,6 +121,12 @@ function buildSunLines(series, coords, elevation) {
 
 Page({
   data: {
+    weatherTab: 'cloud',
+    cloudWindow: 'auto',
+    selectedTime: '00:00',
+    selectedHourIndex: 0,
+    hourOptions: [],
+    tabOptions: [{ key: 'hourly', label: '逐时预报' }, { key: 'cloud', label: '云层剖面' }, { key: 'sky', label: '日月天相' }],
     loading: true,
     denied: '',
     mode: 'activity',
@@ -191,7 +197,13 @@ Page({
     this.mode = 'activity'
     this.localKind = ''
     this.setId = ''
-    if (o.set) {
+    this.routeId = o.route || ''
+    this.routePointId = o.node || ''
+    this.initialTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(o.time || '') ? o.time.slice(0, 2) + ':00' : ''
+    if (o.route) {
+      this.mode = 'local'
+      this.localKind = 'route'
+    } else if (o.set) {
       this.mode = 'local'
       this.localKind = 'track'
       this.setId = String(o.set)
@@ -207,14 +219,14 @@ Page({
     // 自由查询单点入参（hub 直达 / 分享落地共用）
     this.localPoint = null
     if (this.mode === 'local' && this.localKind === 'point') {
-      const lat = Number(o.lat)
-      const lng = Number(o.lng)
+      const lat = o.lat !== undefined && String(o.lat).trim() ? Number(o.lat) : NaN
+      const lng = o.lng !== undefined && String(o.lng).trim() ? Number(o.lng) : NaN
       const ok = Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
       let name = ''
       if (o.name) {
         try { name = decodeURIComponent(String(o.name)) } catch (e) { name = String(o.name) }
       }
-      const ele = Number(o.ele)
+      const ele = o.ele !== undefined && String(o.ele).trim() ? Number(o.ele) : NaN
       this.localPoint = ok ? {
         id: 'wp-local',
         name,
@@ -234,6 +246,41 @@ Page({
     this.reload()
   },
 
+  onUnload() { this._wxToken = (this._wxToken || 0) + 1 },
+
+  onWeatherTab(event) {
+    const tab = event.currentTarget.dataset.tab
+    if (!this.data.tabOptions.some(item => item.key === tab)) return
+    this.setData({ weatherTab: tab }, () => this.probeStageWidth())
+  },
+
+  onCloudWindow(event) {
+    const window = event.currentTarget.dataset.window
+    if (['auto', 'low', 'high'].indexOf(window) < 0) return
+    this.setData({ cloudWindow: window }, () => this.refreshViewCards())
+  },
+
+  onHourStep(event) {
+    const rows = this.data.chartView || []
+    const selected = this.data.chartPick
+    const current = selected ? rows.findIndex(row => row.d === selected.date && row.t === selected.t) : 0
+    const next = Math.max(0, Math.min(rows.length - 1, current + Number(event.currentTarget.dataset.step)))
+    if (rows[next]) this.selectHour(rows[next].d, rows[next].t)
+  },
+
+  onHourPicker(event) {
+    const row = this.data.chartView[Number(event.detail.value)]
+    if (row) this.selectHour(row.d, row.t)
+  },
+
+  onCloudDrag(event) {
+    const now = Date.now()
+    if (this._lastDrag && now - this._lastDrag < 80) return
+    this._lastDrag = now
+    const touch = event.touches && event.touches[0]
+    if (touch) this.onCfTap({ detail: { x: Number.isFinite(touch.clientX) ? touch.clientX : touch.pageX } })
+  },
+
   // ---- 模式感知取点（P3 §5.2 评审补：此页原把 this.view… 内联读了 5 处，
   // local 模式没有 this.view，必须统一入口，一处分流）----
   getPoints() {
@@ -245,6 +292,15 @@ Page({
   },
 
   resolveContext() {
+    if (this.localKind === 'route') {
+      return api.readRoutes(this.routeId).then(response => {
+        const route = response.route
+        const point = route && (route.points || []).find(item => item.id === this.routePointId)
+        if (!point) return { denied: '路线节点已移除或没有查看权限，请返回沿途天气重新选择。' }
+        this._lastResult = null
+        return { points: [point], sched: [], hasStart: false, pointIndex: 0, isOwner: false, title: point.name, initialDate: this.userPickedDate ? this.data.date : '' }
+      })
+    }
     if (this.mode === 'activity') {
       if (!this.activityId) return Promise.resolve({ denied: '缺少活动编号。' })
       return api.read({ kind: 'activity', activityId: this.activityId, perspective: 'participant' }).then(res => {
@@ -256,7 +312,12 @@ Page({
         this.view = res.view
         const a = res.view.activity
         const points = a.routeSnapshot.points
-        const sched = RS.schedule(points, a.startAt)
+        if (this.routePointId) {
+          const index = points.findIndex(point => point.id === this.routePointId)
+          if (index < 0) return { denied: '活动路线已移除此节点，请返回沿途天气重新安排。' }
+          this.initialPoint = index
+        }
+        const sched = []
         return {
           points,
           sched,
@@ -307,14 +368,8 @@ Page({
     // 基准日 = 入口日期或今天，**会话内固定**——若跟着"当前所选日期"走，切节点会把日期
     // 带到抵达日、抵达日又成新基准，整个行程逐次前漂。切日只是查看，换基准从 hub 重进。
     this._baseDate = this.initialDate || F.cnToday()
-    let sched = RS.schedule(points, null)
-    let hasStart = false
-    const anchor = points.find(p => p.time && Number.isFinite(Date.parse(p.time)))
-    if (anchor) {
-      const startAt = this._baseDate + 'T' + RS.clockOf(RS.minutesOfDay(anchor.time)) + ':00+08:00'
-      sched = RS.schedule(points, startAt)
-      hasStart = true
-    }
+    const sched = []
+    const hasStart = false
     return Promise.resolve({
       points, sched, hasStart,
       pointIndex: Math.max(0, Math.min(this.pickInitialPoint(points.length), points.length - 1)),
@@ -355,7 +410,7 @@ Page({
           return label ? pt.name + '（' + label + '）' : pt.name
         }),
         schedule: ctx.sched,
-        scheduleBasis: RS.basisText(ctx.sched, ctx.hasStart),
+        scheduleBasis: '这里只切换浏览地点，不修改个人行程；GPX 历史时刻不作为本次抵达时间。',
         spanDays: RS.spanDays(ctx.sched),
         pointIndex: ctx.pointIndex,
         date,
@@ -800,6 +855,7 @@ Page({
       chartNow,
       chartElev: Number.isFinite(elevation) ? elevation : null,
       chartView: viewSeries,
+      hourOptions: viewSeries.map(row => row.d.slice(5) + ' ' + row.t),
       hourStrip: hourStrip.items,
       popShown: hourStrip.popShown,
       cloudFieldMissing: !!this._cloudFieldMissing,
@@ -817,6 +873,11 @@ Page({
         : agendaView,
     }), () => {
       this.probeStageWidth()
+      if (!this.data.chartPick && viewSeries.length) {
+        const selected = viewSeries.find(row => row.d === this.data.date && row.t === this.initialTime) || viewSeries[0]
+        this.initialTime = ''
+        this.selectHour(selected.d, selected.t)
+      }
       /* A-07：改过日期之后，把主图带回视口——原来这条链路上一次滚动都没有，
          用户在页尾换完日期看到的是空白，图在几屏之上。
          一次性闩：只有 onDate / onDayTap 会置位（首屏、切节点、点「重新查询」都不滚），
@@ -849,12 +910,13 @@ Page({
     const detail = (result.series || []).slice(startIdx, startIdx + horizon)
     if (detail.length < 24) return null
     const effHorizon = Math.min(horizon, detail.length)
-    const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' + this.cfWidth() + '|h' + effHorizon + '|' + (this.elevSource || 'na')
+    const key = (result.updatedAt || '') + '|' + this.data.date + '|' + Math.round(elevation) + '|' + this.cfWidth() + '|h' + effHorizon + '|' + (this.elevSource || 'na') + '|' + this.data.cloudWindow + '|' + (this.getPoints()[this.data.pointIndex] || {}).id
     if (!this._unified || this._unified.key !== key) {
       const geo = UMG.buildUnified({
         surface: detail, cloudField: field,
         userAltitude: elevation, width: this.cfWidth(),
         elevSource: this.elevSource || null, horizon: effHorizon,
+        cloudWindow: this.data.cloudWindow,
         dayLabels: this.cfDayLabels(this.data.date, effHorizon),
       })
       const base = UMG.renderUnifiedBase(geo, {
@@ -883,6 +945,9 @@ Page({
         : elevShown ? F.cloudLegendElev()
           : F.pointOutsideLabel(gp.pointOutside, cfFmtM(gp.pointOutsideDelta)),
       readout: '点图上任意小时查看读数。',
+      rangeText: '显示窗 ' + gp.lo + '–' + gp.hi + ' m · 高度为海拔，不是离地高度',
+      coverageText: field.covered ? '本窗有效数据高度包络 ' + Math.round(field.covered.lo) + '–' + Math.round(field.covered.hi) + ' m（逐小时范围可不同）' : '高度覆盖未知',
+      gapCount: field.meta.gapHours.length,
     }
     const pick = this.data.chartPick
     if (pick && this.cfDateOffset(pick.date) >= 0) {
@@ -914,15 +979,18 @@ Page({
     card.stKey = st.key || ''
     const dayLabel = (u.geo.days && u.geo.days[Math.floor(hour / 24)]) ? u.geo.days[Math.floor(hour / 24)].label : ''
     const timePrefix = hour >= 24 ? dayLabel + ' ' : ''
-    const precip = (row.precip || 0) + (row.showers || 0)
+    const precip = row.precip
     card.r1 = timePrefix + cfPad(hour % 24) + ':00 · ' + (row.temp == null ? '—' : Math.round(row.temp)) + '° ' + F.weatherPhrase(row.code).label +
-      (precip >= 0.05 ? ' · 降水 ' + (Math.round(precip * 10) / 10) + ' mm' : '')
+      ' · 小时累计降水 ' + (Number.isFinite(precip) ? (Math.round(precip * 10) / 10) : '—') + ' mm'
     if (st.span) card.r2 = '云量 ' + st.span.peak + '% · 云区 ' + cfFmtM(st.span.lo) + '–' + cfFmtM(st.span.hi) + ' m'
     /* null 守卫：cUser 在用户海拔不可采样时为 null、userAlt 在 elevation 缺失时为 undefined，
        裸拼串会把 null/undefined 打到屏上（真机 bug 现场见上）。 */
     else card.r2 = '海拔 ' + (userAlt != null ? cfFmtM(userAlt) : '—') + ' m 云量 ' + (st.cUser != null ? st.cUser + '%' : '—')
     card.r3 = st.key ? st.word : ''
     card.r4 = '风 ' + (row.wind == null ? '—' : Math.round(row.wind)) + ' km/h · 阵 ' + (row.gust == null ? '—' : Math.round(row.gust)) + (row.windDir != null ? ' · ' + F.windDirText(row.windDir) : '')
+    if (u.geo.cf.coveredByHour && !u.geo.cf.coveredByHour[hour]) {
+      card.r2 = '此小时云层数据缺测，不代表晴空'
+    }
     return card.r1
   },
 
@@ -1203,7 +1271,7 @@ Page({
       if (hour > 23) return
       this.selectHour(this.data.date, cfPad(hour) + ':00')
     }
-    this.ensureMeteogramVisible()
+    this.setData({ weatherTab: this.data.unified ? 'cloud' : 'hourly' }, () => this.ensureMeteogramVisible())
   },
 
   /* Visual Fidelity：首次渲染后实测 stage 宽，校准 cfWidth 常数（防 CSS 漂移）；偏差 >1px 重建 */
@@ -1229,7 +1297,8 @@ Page({
   ensureMeteogramVisible() {
     if (typeof wx === 'undefined' || !wx.createSelectorQuery) return
     if (!this.data.dayCards || !this.data.dayCards.length) return
-    const sel = this.data.unified ? '.cloud-field-card' : '.timeline-card'
+    const sel = this.data.weatherTab === 'sky' ? '.agenda' : this.data.weatherTab === 'hourly' ? '.timeline-card' : this.data.unified ? '.cloud-field-card' : ''
+    if (!sel || this.data.loadingWeather) return
     try {
       wx.createSelectorQuery().in(this).select(sel).boundingClientRect(function (rect) {
         if (!rect) return
@@ -1321,9 +1390,7 @@ Page({
       || fallback
     if (!h) return
     this.selectHour(h.d, h.t)
-    if (typeof wx !== 'undefined' && wx.pageScrollTo) {
-      wx.pageScrollTo({ selector: '.timeline-card', duration: 300, fail: () => {} })
-    }
+    this.setData({ weatherTab: this.data.unified ? 'cloud' : 'hourly' }, () => this.ensureMeteogramVisible())
   },
 
   // 节点的前进/山脊走向（用前后节点连线求方位角），供日照金山"往哪看"粗判
@@ -1431,10 +1498,12 @@ Page({
     if (span !== 24 && span !== 48 && span !== 72) return
     // 带与图同窗同源：切窗时两处一起重建，不许一条走新窗口、一条留在旧窗口
     const viewSeries = this.buildViewSeries(this._chartSeries || [], span)
+    if (viewSeries.length < span) { api.toast('当前数据不足这个时长，请选择较短窗口'); return }
     const hourStrip = this.buildHourStrip(viewSeries)
     this.setData({
       viewSpan: span,
       chartView: viewSeries,
+      hourOptions: viewSeries.map(row => row.d.slice(5) + ' ' + row.t),
       hourStrip: hourStrip.items,
       popShown: hourStrip.popShown,
       chartPick: null,
@@ -1469,10 +1538,6 @@ Page({
     this.setData({ unified: unified, cloudFieldMissing: !!this._cloudFieldMissing, oiCard: oiCard, oiHorizon: oiHorizon })
   },
 
-  // 关闭小时浮条
-  onChipClose() {
-    this.setData({ chartPick: null, hourChip: null })
-  },
 
   buildDetailRows(detail) {
     // V2 Numbers：全字段折叠表。optional 字段（体感/风向/气压/露点/云带）缺失时显示 '—'，
@@ -1482,8 +1547,8 @@ Page({
       phrase: F.weatherPhrase(h.code),
       temp: h.temp == null ? '—' : Math.round(h.temp),
       feels: h.feels == null ? '—' : Math.round(h.feels),
-      pop: h.pop == null ? 0 : h.pop,
-      precip: ((h.precip || 0) + (h.showers || 0)).toFixed(1),
+      pop: h.pop == null ? '—' : h.pop,
+      precip: Number.isFinite(h.precip) ? h.precip.toFixed(1) : '—',
       wind: h.wind == null ? '—' : Math.round(h.wind),
       windDir: F.windDirText(h.windDir) || '—',
       rh: h.rh == null ? '—' : Math.round(h.rh),
@@ -1537,8 +1602,8 @@ Page({
     // 降水 = 本小时「雨 + 阵雨」；旧返回体可能没有 showers，那就只加在的那一项，
     // 不把缺失字段当 0 相加（那是给缺测编数）。
     const precip = (detail || [])
-      .filter(h => typeof h.precip === 'number' || typeof h.showers === 'number')
-      .map(h => (typeof h.precip === 'number' ? h.precip : 0) + (typeof h.showers === 'number' ? h.showers : 0))
+      .filter(h => Number.isFinite(h.precip))
+      .map(h => h.precip)
     return [
       { k: '温度', v: range(nums(h => h.temp), '°C') },
       { k: '降水量', v: range(precip, ' mm/h', 1) },
@@ -1596,13 +1661,15 @@ Page({
     }
     this.setData({
       chartPick: { date, t },
+      selectedTime: date.slice(5) + ' ' + t,
+      selectedHourIndex: this.data.chartView.indexOf(h),
       hourChip: {
         t,
         phrase: F.weatherPhrase(h.code),
         temp: h.temp == null ? '—' : Math.round(h.temp),
         feels: h.feels == null ? '—' : Math.round(h.feels),
-        pop: h.pop == null ? 0 : h.pop,
-        precip: (((h.precip || 0) + (h.showers || 0)) * 10).toFixed(1) / 1,
+        pop: h.pop == null ? '—' : h.pop,
+        precip: Number.isFinite(h.precip) ? Math.round(h.precip * 10) / 10 : '—',
         wind: h.wind == null ? '—' : Math.round(h.wind),
         windDir: F.windDirText(h.windDir),
         rh: h.rh == null ? '—' : Math.round(h.rh),
@@ -1658,7 +1725,9 @@ Page({
       eleSource: point.eleSource || 'manual',
     }
     const save = (replaceId) => {
-      const r = wpStore.savePoint(replaceId ? Object.assign({ id: replaceId }, input) : input)
+      let r
+      try { r = wpStore.savePoint(replaceId ? Object.assign({ id: replaceId }, input) : input) }
+      catch (err) { api.toast('本机保存失败，请清理空间后重试'); return }
       if (!r.ok) {
         api.toast(r.reason === 'cap' ? '最多存 ' + WP.POINTS_CAP + ' 个观察点，先删一个' : '坐标无效，无法保存')
         return
@@ -1674,7 +1743,7 @@ Page({
         confirmText: '替换',
         cancelText: '并存',
         success: res => { if (res.confirm) save(nearby.id); else save(null) },
-        fail: () => save(null),
+        fail: () => api.toast('未完成确认，没有保存'),
       })
       return
     }

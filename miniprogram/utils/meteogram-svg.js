@@ -140,6 +140,7 @@ function buildUnified(opts) {
   /* 云场：冻结数学（复用导出） */
   const column = CFF.makeColumnSampler(cf)
   const cloudSample = (t, alt) => CFF.sampleAtStations(column, cf.times.length, t, alt)
+  if (cf.coveredByHour) cloudSample.coverageAt = column.coverageAt
   const cloud = {
     top: ROWS.cloud.y, bot: ROWS.cloud.y + ROWS.cloud.h,
     covered: cf.covered || null,
@@ -155,6 +156,15 @@ function buildUnified(opts) {
     sample: cloudSample, covered: cloud.covered, hours: horizon,
     queryAlt: cloud.userAlt, basis: elevBasis,
   })
+  const window = opts.cloudWindow === 'low' ? { lo: 0, hi: 4000 } : opts.cloudWindow === 'high' ? { lo: 3000, hi: 7000 } : null
+  if (window) {
+    cloud.profile = Object.assign({}, cloud.profile, window, {
+      clippedAbove: (cloud.profile.decks || []).some(deck => deck.hi > window.hi),
+      clippedBelow: (cloud.profile.decks || []).some(deck => deck.lo < window.lo),
+      pointOutside: cloud.userAlt == null ? null : cloud.userAlt < window.lo ? 'below' : cloud.userAlt > window.hi ? 'above' : null,
+      pointOutsideDelta: cloud.userAlt == null ? null : cloud.userAlt < window.lo ? window.lo - cloud.userAlt : cloud.userAlt > window.hi ? cloud.userAlt - window.hi : null,
+    })
+  }
   cloud.elevBasis = elevBasis
   cloud.yAlt = a => cloud.bot - (a - cloud.profile.lo) / (cloud.profile.hi - cloud.profile.lo) * (cloud.bot - cloud.top)
 
@@ -424,8 +434,19 @@ function renderUnifiedBase(geo, opts) {
      外扩一圈的出血本来就必须靠裁切才成立（铁律 25），这一轮补上定义。 */
   s += '<defs><clipPath id="cfclipu"><rect x="' + geo.L + '" y="' + cloud.top + '" width="' + geo.plotW + '" height="' + (cloud.bot - cloud.top) + '"/></clipPath></defs>'
   s += '<g clip-path="url(#cfclipu)">' + bands + '</g>'
+  s += '<defs><pattern id="missing-cloud" width="6" height="6" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="' + C.night + '"/><path d="M0,6 L6,0" stroke="' + C.frame + '" stroke-width="1"/></pattern></defs>'
+  if (geo.cf.coveredByHour) {
+    geo.cf.coveredByHour.forEach(function (coverage, hour) {
+      const top = coverage ? Math.max(cloud.top, Math.min(cloud.bot, cloud.yAlt(coverage.hi))) : cloud.bot
+      const bottom = coverage ? Math.max(cloud.top, Math.min(cloud.bot, cloud.yAlt(coverage.lo))) : cloud.bot
+      const mask = (start, height) => '<rect data-missing-hour="' + hour + '" x="' + fmt(geo.x0(hour)) + '" y="' + fmt(start) + '" width="' + fmt(geo.plotW / HZ + 0.2) + '" height="' + fmt(Math.max(0, height)) + '" fill="url(#missing-cloud)"/>'
+      s += mask(cloud.top, top - cloud.top)
+      if (coverage) s += mask(bottom, cloud.bot - bottom)
+    })
+  }
   s += CFF.renderProfileChrome({
     profile: cloud.profile, yAlt: cloud.yAlt, L: geo.L, plotW: geo.plotW,
+    hasMissing: !!(geo.cf.coveredByHour && geo.cf.coveredByHour.some(coverage => !coverage)),
     rowTop: cloud.top, rowBot: cloud.bot,
     userAlt: cloud.userAlt, elevSource: cloud.elevSource, inRuns: geo.inRuns,
     xA: function (h) { return geo.x0(h) }, xB: function (h) { return geo.x0(h + 1) },

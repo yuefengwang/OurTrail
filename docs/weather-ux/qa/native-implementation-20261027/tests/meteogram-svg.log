@@ -1,0 +1,40 @@
+
+== TimeScale：四变量共享同一 time → x ==
+  ✓ X(h) 线性且等距（每 2h 间距 = plotW/12）
+  ✓ X(0) 在绘图区左缘中心
+  ✓ 云场网格与 surface 行共用同一映射（t=6.5 处网格 x = X(6)）
+  ✓ 海拔线 y 与云场行在同一行内（2000m 贴行底）
+
+== Crosshair：单根、贯穿、位置正确 ==
+  ✓ crosshair 只有一根竖线
+  ✓ crosshair x = X(6)（温度/降水/云场/风 共用）
+  ✓ 时间牌 06:00 存在
+  ✓ crosshair 高度贯穿四变量（从温度行到时间轴）
+
+== 语义保持：温度墨色 / 降水双柱 / 风箭头 / 图标 ==
+  ✓ 温度线 = 中性墨 #202A26（非红，生产决定）
+  ✓ 降水双柱 = info 蓝 + showers 青
+  ✓ 风向箭头存在（指向吹去方向）
+  ✓ 天气图标 glyphs 存在
+  ✓ 云场等值带五档灰阶齐全
+  ✓ YOU 海拔线存在（3079m）
+  ✓ 无 blur/filter/foreignObject（小程序 SVG 安全）
+
+== Cloud State：3079 / 3500 / 500 回归 ==
+  ✓ 峨眉山 01h：冻结数据下状态合法（in/ok/mid/null 之一）
+  ✓ 理塘 16h：状态合法
+  ✓ 成都 500m：用户低于全部云层 → 云在头顶
+  ✓ 6000m：用户高于全部云层 → 云在脚下
+
+== 375 / 390 / 414 ==
+  ✓ 375px：构建 + 生成正常，crosshair 等距
+  ✓ 390px：构建 + 生成正常，crosshair 等距
+  ✓ 414px：构建 + 生成正常，crosshair 等距
+
+== 性能（Node 稳态） ==
+  ✓ 统一几何构建 < 300ms
+  ✓ 基础 SVG 生成 < 60ms
+  ✓ 选中切换 < 10ms
+  build=2ms base=0ms sel=0ms paths=5 KB=45
+
+passed=25 failed=0

@@ -35,6 +35,7 @@
       </view>
     </view>
 
+    <view class="button secondary block" hover-class="button-hover" bindtap="onWeatherPlan">查看沿途天气，安排个人行程</view>
     <view wx:if="{{map.visible}}" class="map-card">
       <map
         class="map-canvas"

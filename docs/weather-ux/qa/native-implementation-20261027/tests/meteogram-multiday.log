@@ -1,0 +1,70 @@
+
+== TimeScale：24/48/72 ==
+  ✓ 24h 默认不变（x0(12) = 中点）
+  ✓ 48h：x0(24) = 水平中点（日界）
+  ✓ 72h：x0(36) = 水平中点
+  ✓ 48h 列宽 = plotW/48，72h = plotW/72
+
+== Geometry：48h / 72h 构建 ==
+  ✓ 48h 等值带 path ≥ 3
+  ✓ 72h 等值带 path ≥ 3
+  ✓ 72h 几何点数 > 48h（信息密度保持）
+  ✓ 72h dayBounds = [24, 48]
+  ✓ 48h dayBounds = [24]
+  ✓ 72h days 标签 + 每日 hi/lo
+  ✓ 高度映射在一张图内是单一仿射函数（跨日不可能各用一套尺度）
+  ✓ 显示窗是数据的确定函数：同参数重复构建完全一致（切来回不漂移）
+  ✓ 长窗包含短窗（两窗都未裁切时，72h 不会挤掉 48h 已画出的云带）
+
+== Selection：Day 1/2/3 单一 crosshair ==
+  ✓ base 含 2 条日界强线
+  ✓ base 含 day header 三段（今天/明天/后天）
+  ✓ selectedAbs=38 → crosshair x = X(38)
+  ✓ Day2 14:00 日期牌「明天 14:00」
+  ✓ Day1 02:00 无日期前缀（当天）
+  ✓ Day3 22:00 日期牌「后天 22:00」
+  ✓ 全图只有一根 crosshair 线
+
+== YOU 海拔：单线贯穿 + 点在窗外时写明差多少米 ==
+  ✓ YOU 标签只出现一次
+  ✓ 500m 在 72h 窗外下方：不画参考线，边注写明还差多少米
+  ✓ 500m 那种「点在窗外」绝不被画成琥珀入云交线
+  ✓ 6200m 在窗外上方：同样不画假线，边注朝上并给出高差
+  ✓ 窗范围自己印在图上（读者不必猜这一行画的是哪一段高度）
+
+== Evidence：机会 → focusAbs → 正确日期的 crosshair ==
+  ✓ horizon 卡：groups 按日分组（3 组）
+  ✓ Day2 机会锚点 focusAbs = 24 + focusHour
+  ✓ focusAbs → horizon 卡高亮命中该窗口
+  ✓ focusAbs → crosshair 落在 Day2 区段（x > 日界）
+  ✓ 48/72h 时间轴 tapZones 用 absHour
+  ✓ horizon item 不含 24h 内部字段 fromMin/toMin（形状与改前一致）
+
+== 缺失与部分日 ==
+  ✓ cloudLevels 缺失 → buildCloudFieldRange null（classic fallback）
+  ✓ 部分日（60h）：nT=60，dayBounds=[24,48]，days=3
+  ✓ 部分日：base 正常生成
+
+== 24h 回归（horizon 默认） ==
+  ✓ 24h：dayBounds 空 / 单 day / 轴步 2h
+  ✓ 24h：单日夜渐变 + 每 2h 轴 + 每小时风箭头
+  ✓ 24h 旧签名 selectedTime 仍可用（16:00 牌）
+
+== 375 / 390 / 414 ==
+  ✓ 375px × 72h：构建/生成/选中正常
+  ✓ 390px × 72h：构建/生成/选中正常
+  ✓ 414px × 72h：构建/生成/选中正常
+  ✓ 375px × 48h：构建/生成/选中正常
+  ✓ 390px × 48h：构建/生成/选中正常
+
+== Determinism / Performance（Node） ==
+  ✓ 确定性：同输入两次构建一致
+  24h calc=2ms · 48h calc=2ms · 72h calc=4ms · 72h svgKB=68.1 · sel=0ms
+  ✓ 24h 构建 < 300ms
+  ✓ 48h 构建 < 300ms
+  ✓ 72h 构建 < 300ms
+  ✓ 72h SVG 生成 < 100ms
+  ✓ 72h SVG 体积 < 160KB（移动端合理）
+  ✓ 选中更新 < 5ms
+
+passed=49 failed=0

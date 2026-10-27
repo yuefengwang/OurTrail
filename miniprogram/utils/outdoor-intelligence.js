@@ -665,6 +665,7 @@ function buildOutdoorIntelligence(ctx) {
     full.cloudField.sample = function (t, alt) {
       return CFF.sampleAtStations(column, full.cloudField.times.length, t, alt)
     }
+    if (full.cloudField.coveredByHour) full.cloudField.sample.coverageAt = column.coverageAt
   }
   if (!full.marks) {
     /* sky.hourMarks 返回 {'HH:mm': [key]}；页面级契约是 {'dateTHH:mm': [key]}

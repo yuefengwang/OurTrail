@@ -46,12 +46,16 @@ function makeColumnSampler(cf) {
   var nA = cf.altitudes.length
   var a0 = cf.altitudes[0]
   var da = (cf.altitudes[nA - 1] - a0) / (nA - 1)
-  return function column(h, alt) {
+  function column(h, alt) {
+    if (column.isMissing(h)) return NaN
     var af = Math.max(0, Math.min(nA - 1.001, (alt - a0) / da))
     var j0 = Math.floor(af), j1 = Math.min(nA - 1, j0 + 1), fa = af - j0
     var v = cf.values[h][j0] * (1 - fa) + cf.values[h][j1] * fa
     return Math.max(0, Math.min(100, v))
   }
+  column.isMissing = function (hour) { return !!(cf.meta && cf.meta.gapHours && cf.meta.gapHours.indexOf(hour) !== -1) }
+  column.coverageAt = function (hour) { return cf.coveredByHour ? cf.coveredByHour[Math.floor(hour)] || null : cf.covered || null }
+  return column
 }
 
 /* 时间维 CR：h1 为站，h0/h2/h3 为邻站（端点复制） */
@@ -59,6 +63,13 @@ function sampleAt(column, nT, t, alt) {
   var h1 = Math.max(0, Math.min(nT - 1, Math.floor(t)))
   var ft = Math.max(0, Math.min(nT - 1, t)) - h1
   var h0 = Math.max(0, h1 - 1), h2 = Math.min(nT - 1, h1 + 1), h3 = Math.min(nT - 1, h1 + 2)
+  if (column.isMissing) {
+    if (column.isMissing(h1)) return NaN
+    if (ft === 0) return column(h1, alt)
+    if (column.isMissing(h2)) return NaN
+    if (column.isMissing(h0)) h0 = h1
+    if (column.isMissing(h3)) h3 = h2
+  }
   return cr4(column(h0, alt), column(h1, alt), column(h2, alt), column(h3, alt), ft)
 }
 
@@ -80,7 +91,10 @@ function buildGrid(sample, nT, opts) {
   for (var j = 0; j < na; j++) {
     var row = []
     var alt = lo + j * AS
-    for (var i = 0; i < nt; i++) row.push(sample(i * TS, alt))
+    for (var i = 0; i < nt; i++) {
+      var value = sample(i * TS, alt)
+      row.push(Number.isFinite(value) ? value : 0)
+    }
     g.push(row)
   }
   for (var r = 0; r < 1; r++) {
@@ -294,6 +308,7 @@ function denseSpanAt(sample, h, lo, hi) {
 }
 
 function inferState(sample, h, userAlt, coverage, opts) {
+  if (sample.coverageAt) coverage = sample.coverageAt(h)
   var asked = opts && opts.basis
   var basis = (asked === 'measured' || asked === 'estimated' || asked === 'none')
     ? asked : (Number.isFinite(userAlt) ? 'measured' : 'none')
@@ -566,7 +581,7 @@ function renderProfileChrome (o) {
   /* 云带被窗裁掉的那一侧：一句边注，空白就不再是「没有云」 */
   if (p.clippedAbove) s += '<text x="' + (o.L + 4) + '" y="' + (o.rowTop + 9).toFixed(1) + '" font-size="7.5" fill="' + o.colors.muted + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">▲ ' + F.cloudWindowNote('clipped-above') + '</text>'
   if (p.clippedBelow) s += '<text x="' + (o.L + 4) + '" y="' + (o.rowBot - 3).toFixed(1) + '" font-size="7.5" fill="' + o.colors.muted + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">▼ ' + F.cloudWindowNote('clipped-below') + '</text>'
-  if (!p.decks.length && !p.fallback) s += '<text x="' + (o.L + 4) + '" y="' + (o.rowTop + 9).toFixed(1) + '" font-size="7.5" fill="' + o.colors.muted + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.cloudWindowNote('no-deck') + '</text>'
+  if (!p.decks.length && !p.fallback && !o.hasMissing) s += '<text x="' + (o.L + 4) + '" y="' + (o.rowTop + 9).toFixed(1) + '" font-size="7.5" fill="' + o.colors.muted + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.cloudWindowNote('no-deck') + '</text>'
   /* 窗范围自证：图例里的「此点海拔/琥珀段」说的是哪一段高度，写在图上而不是猜。
      放顶边正中：左边是「窗外上方还有云带」、右边是「此点在剖面上方 …」，三段各占其位不重叠。 */
   s += '<text x="' + (o.L + o.plotW / 2).toFixed(1) + '" y="' + (o.rowTop + 9).toFixed(1) + '" text-anchor="middle" font-size="7" fill="' + o.colors.muted + '" stroke="#fff" stroke-width="2.5" paint-order="stroke">' + F.profileRangeLabel(num(lo), num(hi)) + '</text>'
@@ -601,6 +616,7 @@ function buildGeometry(cf, opts) {
   var column = makeColumnSampler(cf)
   var nT = cf.times.length
   var sample = function (t, alt) { return sampleAt(column, nT, t, alt) }
+  if (cf.coveredByHour) sample.coverageAt = column.coverageAt
   var covered = cf.covered || altExtent(cf.altitudes) || null
   var userAlt = Number.isFinite(opts.userAltitude) ? opts.userAltitude : null
   /* 查询点：没有可信海拔就没有锚点。旧写法在这里塞了个 3500 的假值——

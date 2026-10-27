@@ -69,6 +69,7 @@ function fromGpx(parsed, fileName) {
       hasTime: points.some(p => p.time && Number.isFinite(Date.parse(p.time))),
     },
     points,
+    track: (parsed.track || []).map(point => Object.assign({}, point)),
   }
 }
 
@@ -98,9 +99,9 @@ function createWatchPoints(storage) {
     // 否则追加。容量超限返回 {ok:false, reason:'cap'}，由调用方给明确提示，不静默挤掉。
     savePoint(input) {
       const list = readList(POINTS_KEY)
-      const lat = Number(input.lat)
-      const lng = Number(input.lng)
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      const lat = input.lat
+      const lng = input.lng
+      if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
         return { ok: false, reason: 'invalid' }
       }
       const existing = input.id ? list.find(p => p.id === input.id) : null

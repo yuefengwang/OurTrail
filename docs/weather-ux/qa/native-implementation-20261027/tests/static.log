@@ -1,0 +1,50 @@
+== JS 语法 ==
+  ✓ node --check 全部通过（如有 ✗ 见上）
+== WXML 标签配平 ==
+  ✓ WXML 配平检查完成（如有 ✗ 见上）
+== WXSS ==
+  ✓ WXSS 检查完成
+== app.json ==
+  ✓ pages 文件齐全（22 页）
+  ✓ 权限描述长度检查完成（≤30 字）
+  ✓ 自定义 tabBar：pages/home/home, pages/weather-hub/weather-hub, pages/notices/notices, pages/me/me
+== 组件引用 ==
+  ✓ 组件引用检查完成
+== 组件注册（反向） ==
+  ✓ 组件注册反向检查完成（清单 20 个组件）
+== 旧页清理 ==
+  ✓ 旧页已删除
+== require 可解析 ==
+  ✓ 相对 require 全部可解析（257 处，如有 ✗ 见上）
+== 勾选框事件载体 ==
+  ✓ 不再有裸 checkbox 绑 change
+== WXML 非法事件属性名 ==
+  ✓ 没有「少了 bind/catch 前缀的事件属性」（扫了 44 个 wxml）
+== 新门自证（合成夹具：正例必红、反例必绿）==
+  ✓ 11 组夹具全部符合预期 ⇒ 下面四条门不是读不出东西的空门
+== R1 固定底栏与页尾留白必须配对（platform-pitfalls §5） ==
+  ✓ R1 命中 0 ｜ 用固定底栏的页面 6 个；app.wxss 要求的留白 = 120px
+== R2 同一个 Component() 里同名键不得出现两次（AGENTS.md 铁律 1，事故 daa0508） ==
+  ✓ R2 命中 0 ｜ 扫了 21 个含 Component() 的文件
+== R3 声明具名 slot 的组件必须 multipleSlots:true（P4 真机事故：内容被静默丢弃） ==
+  ✓ R3 命中 0 ｜ 具名 slot 声明 0 处
+== R4 用了 app.wxss 的类就必须 opt-in styleIsolation:apply-shared（铁律 14） ==
+  ✓ R4 命中 0 ｜ app.wxss 类名 139 个；检查了 21 个组件模板
+== T5b 新门自证（合成夹具：正例必红、反例必绿）==
+  ✓ 36 组夹具全部符合预期 ⇒ 下面 5 条门不是读不出东西的空门
+== G3 WXML 裸事件名属性必须带 bind/catch 前缀（与第 8 步的连字符口径互补，不重叠） ==
+  ✓ G3 命中 0 ｜ 扫了 44 个 wxml、4528 个裸词属性；组件标签 20 个
+== G6 页尾留白必须与 app.json 的 tabBar 身份一致（tab 页要让、子页不得白让；platform-pitfalls §5） ==
+  ✓ G6 命中 0 ｜ tab 页 4 / 子页 18（名单现场读自 app.json tabBar.list）；遮挡物需要 61px+安全区，出处 padding-top 8 + padding-bottom 8 + border-top 1 + .tab 高 44
+== G7 WXSS 不支持特性黑名单（color-mix / :root / dvh·svh·lvh / backdrop-filter / :has / 通配选择器） ==
+  ✓ G7 命中 0 ｜ 扫了 44 个 wxss，黑名单 6 类；命中 0 处（其中 0 处进红）
+== G8 position: sticky 必须同一选择器带 top/bottom/left/right 之一且值非 auto（E-06：死声明看着像吸住） ==
+  ✓ G8 命中 0 ｜ 扫了 44 个 wxss；position:sticky 的规则块 1 处（另有 0 处靠同选择器的另一块补齐偏移）
+== G11 同一 wxss 内同一条选择器文本不得把关键布局属性写两遍（后写覆盖前写；E-01 本体） ==
+  ✓ G11 命中 0 ｜ 扫了 44 个 wxss；选择器 748 个，其中关键布局属性双写 0 处
+== G10 类作用域自证（合成作用域：正例必红、反例必绿）==
+  ✓ 10 组合成作用域全部符合预期 ⇒ 下面这条门不是读不出东西的空门
+== G10 WXML 用的每个 class token 必须在它真正生效的那层样式表里有定义（逐作用域判、不汇池；E-15/E-16 本体） ==
+  ✓ G10 命中 0 ｜ 作用域单元 43 个（页面 22 / 组件 20 / custom-tab-bar 1）；静态 class token 3335 个；app.wxss 定义 139 个类名
+
+ALL CHECKS PASSED

@@ -1,0 +1,19 @@
+PASS fresh mini-program bundle has two query scenarios
+PASS native text discloses absent weather cloud sync
+PASS empty coordinate input visibly rejected
+PASS manual query navigates to actual cloud detail
+PASS cloud profile gate and gap metadata reached
+PASS cloud display window switches through tap
+PASS next hour button updates linked readout
+PASS missing hour is not read as clear sky
+PASS hourly tab renders canvas and hides cloud profile
+PASS astronomy tab renders agenda, no weather chart
+PASS library route opens along-route overview with hourly readings
+PASS GPX does not auto-fill itinerary arrival times
+PASS arrival editor saves independent local itinerary
+PASS copy starts a separate unsaved itinerary
+PASS route node drilldown resolves stable node and arrival hour
+PASS revoked route permission blocks cached rows
+PASS no cloud data retains weather and explains unavailable profile
+PASS no production cloud writes attempted
+PASS local test plan is in isolated mock storage

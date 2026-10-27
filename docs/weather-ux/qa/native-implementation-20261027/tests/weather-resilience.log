@@ -1,0 +1,61 @@
+== 1. 本地天气缓存：容量 / 时效 / 只收 ready / 深拷贝 ==
+  ✓ put → get 往返，savedAt 与 ageMs 齐全
+  ✓ 取出的是深拷贝：改返回值不动缓存
+  ✓ 换点（scope 不同）不误命中
+  ✓ 换日期不误命中
+  ✓ 非 ready 形状不入库（unavailable 没有展示价值）
+  ✓ 存储损坏 → null 且不抛
+  ✓ CAP=6：只留最近 6 条
+  ✓ 淘汰的是最旧（scope0/1 不在，scope7 在）
+  ✓ ageText 分档
+  ✓ MAX_AGE_MS = 12 小时（更旧的旧预报不冒充现在的天气）
+  ✓ 假钟可注入：ageMs 按注入时钟算
+== 2. 天气页：瞬时故障自动重试、失败软降级、分场景话术 ==
+== 3. 云函数：外呼失败陈旧兜底 / 新鲜缓存零外呼 / 活动模式不再全量加载 ==
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+  ✓ ① 瞬时失败后自动重试并成功：数据照常展示
+  ✓ ① 重试期间有"正在重试"提示（不是静默转圈）
+  ✓ ① 成功后无错误态残留
+  ✓ ② 持续失败：恰好 3 次尝试后放弃（不无限重试）
+  ✓ ② 失败文案点名"山里常见"并给下一步
+  ✓ ② 界面无开发者术语
+  ✓ ② 失败面板用 error 样式（与"没有数据"的 empty 区分开）
+  ✓ ② 数据区保持空（不拿旧窗口冒充）
+  ✓ ③ 连不上时展示 3 小时前的缓存数据（不是错误墙）
+  ✓ ③ 横幅写明时效与出路
+  ✓ ③ 页脚"更新时间"用数据本身的取数时间（不拿本次响应冒充）
+  ✓ ③ 软降级不写 _lastResult（否则重试会被 covers() 直接复用旧数据）
+  ✓ ③ 手动"重新查询"真的再次外呼（3 次尝试）
+  ✓ ④ 13 小时前的缓存不用：仍走错误文案
+  ✓ ⑤ out_of_range 只调一次（不重试）
+  ✓ ⑤ 沿用"临近出发再核实"的既有文案
+  ✓ ⑤ out_of_range 不是错误（empty 样式）
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+  ✓ ⑥ unavailable 也重试，第二次成功
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+  ✓ ⑦ 成功后写入本地缓存（scope=点id@2dp网格）
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+  ✓ ⑧ 迟到响应被令牌作废：页面保留第二次的数据
+{"ev":"api","a":"getWeatherByPoint","c":"","rid":"","u":"","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+  ✓ ① 新鲜缓存命中：零外呼且 stale=false
+{"ev":"api","a":"getWeatherByPoint","c":"","rid":"","u":"","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+  ✓ ② 外呼失败 + 3 小时旧缓存 → ready 且 stale=true
+  ✓ ② staleAt = 数据的实际取数时间（页面据此标注时效）
+  ✓ ② 软降级返回的就是旧缓存的数据
+  ✓ ② 外呼确实发生过（不是绕过失败）
+{"ev":"api","a":"getWeatherByPoint","c":"","rid":"","u":"","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+  ✓ ③ 13 小时前的缓存不兜底：unavailable 而非 ready
+  ✓ ③ 不出现 stale 标记（没有东西被当成旧数据展示）
+{"ev":"api","a":"getWeatherByPoint","c":"","rid":"","u":"","ok":1,"code":"","ms":0,"rp":0,"rev":0,"det":""}
+  ✓ ④ 无缓存外呼失败 → unavailable（不伪造 ready）
+{"ev":"api","a":"getWeather","c":"","rid":"","u":"","ok":1,"code":"","ms":1,"rp":0,"rev":0,"det":""}
+  ✓ ⑤ 活动模式天气正常返回
+  ✓ ⑤ 只碰 ot_activities 与 weather_cache（不再 15 集合全量加载）
+  ✓ ⑤ 全量状态集合零读取（ot_signups 等从未被碰）
+  ✓ ⑤ 新鲜缓存 ⇒ 零外呼
+{"ev":"api","a":"getWeather","c":"","rid":"","u":"","ok":0,"code":"NOT_FOUND","ms":0,"rp":0,"rev":0,"det":""}
+  ✓ ⑤ 活动不存在 → NOT_FOUND（与改造前同一语义）
+{"ev":"api","a":"getWeather","c":"","rid":"","u":"","ok":0,"code":"INTERNAL","ms":0,"rp":0,"rev":0,"det":"Error: document.get:fail -502004 read timeout\n    at Object.get (/Users/tushiyu/git/OurTrail/tools/weather-resilience-test.js:421:37)\n    at loadActivityDoc (/Users/tushiyu/git/OurTrail/cloudfunctions/trailApi/index.js:379:77)\n    at actionGetWeather (/Users/tushiyu/git/OurTrail/cloudfunctions/trail"}
+  ✓ ⑥ 读故障归类 INTERNAL，不冒充"找不到此活动"
+
+==== passed=45 failed=0 ====

@@ -1,0 +1,71 @@
+<view class="page">
+  <status-panel wx:if="{{denied}}" kind="denied" title="暂不能读取路线" detail="{{denied}}" action-label="重新读取" bind:action="reload" />
+  <status-panel wx:elif="{{loading}}" kind="loading" title="正在读取路线" detail="核对最新路线与关键节点，不使用过期路线代替。" />
+  <view wx:else class="stack">
+    <view class="section-head">
+      <text class="kicker">{{editing ? '编辑个人行程' : '沿途天气'}} · 北京时间</text>
+      <text class="page-title">{{plan.name}}</text>
+      <text class="section-sub">{{sourceNote}}</text>
+    </view>
+    <view wx:if="{{error}}" class="callout danger">{{error}}</view>
+    <view wx:if="{{routeChanged}}" class="callout warning">路线有更新：按稳定节点标识使用最新位置。个人日期、时间和经过顺序未改变；新增节点需手动添加，已删除节点需处理。</view>
+    <text wx:if="{{plan.startHint}}" class="small muted">{{plan.startHint}}</text>
+    <block wx:if="{{!editing}}">
+      <view class="form-actions">
+        <view class="button primary" hover-class="button-hover" bindtap="onEdit">安排行程</view>
+        <view class="button secondary" hover-class="button-hover" bindtap="onSave">{{saved ? '保存行程' : '保存到本机'}}</view>
+        <view class="button text" hover-class="button-hover" bindtap="onCopy">复制</view>
+      </view>
+      <view class="card stack">
+        <text class="section-title">未安排节点的浏览时刻</text>
+        <view class="plan-controls">
+          <picker mode="date" value="{{browseDate}}" bindchange="onBrowseDate"><view class="picker tabular">{{browseDate}} ▾</view></picker>
+          <picker mode="time" value="{{browseTime}}" bindchange="onBrowseTime"><view class="picker tabular">{{browseTime}} ▾</view></picker>
+        </view>
+        <text class="small muted">只改变浏览，不修改行程。已安排的节点始终按计划时刻查询。分钟按所在小时预报显示，不插值制造分钟精度。</text>
+      </view>
+      <view class="plan-day__heading"><text class="section-title">按天查看</text><view class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onRetry'}}">{{busy ? '查询中…' : '刷新天气'}}</view></view>
+      <view wx:for="{{days}}" wx:key="day" wx:for-item="day" class="plan-day">
+        <view class="plan-day__heading"><text class="section-title">{{day.label}}</text><text class="small muted tabular">{{day.date}}</text></view>
+        <view wx:for="{{day.visits}}" wx:key="id" class="plan-stop {{item.available ? '' : 'plan-stop--missing'}}">
+          <view class="list-row" hover-class="button-hover" bindtap="{{item.available ? 'onNode' : ''}}" data-id="{{item.id}}">
+            <view class="list-main"><text>{{item.name}} · {{item.actionLabel}}</text><text class="list-sub tabular">{{item.timeLabel}}</text></view><text wx:if="{{item.available}}" class="small">详情 ›</text>
+          </view>
+          <text wx:if="{{item.issue}}" class="small plan-issue">{{item.issue}}</text>
+          <block wx:else><text class="plan-weather">{{item.weather ? item.weather.text : '等待查询…'}}</text><text wx:if="{{item.weather && item.weather.stamp}}" class="small muted">{{item.weather.stamp}}</text></block>
+        </view>
+      </view>
+      <text class="small muted">天气是行前参考，不是出发许可。出发前核实当地气象与路况。个人计划不会自动公开。</text>
+    </block>
+    <block wx:else>
+      <form-field label="行程名称"><input class="input" value="{{plan.name}}" maxlength="60" bindinput="onName" /></form-field>
+      <form-field label="出发日期（第 1 天）"><picker mode="date" value="{{plan.startDate}}" bindchange="onStartDate"><view class="picker">{{plan.startDate}} ▾</view></picker></form-field>
+      <form-field label="编辑哪一天" hint="同一节点可多次经过；营地次日出发请另加一次。历史 GPX 时刻不作为本次安排。"><picker range="{{dayOptions}}" value="{{editDay - 1}}" bindchange="onEditDay"><view class="picker">第 {{editDay}} 天 ▾</view></picker></form-field>
+      <view wx:for="{{rows}}" wx:key="id" wx:if="{{item.day === editDay}}" class="card stack">
+        <text class="section-title">{{item.name}}</text>
+        <text wx:if="{{item.issue}}" class="small plan-issue">{{item.issue}}</text>
+        <form-field label="路线节点"><picker range="{{pointOptions}}" range-key="name" bindchange="onVisit" data-id="{{item.id}}" data-field="pointId"><view class="picker">{{item.name}} · 重新选择 ▾</view></picker></form-field>
+        <view class="plan-controls">
+          <picker range="{{dayOptions}}" value="{{item.day - 1}}" bindchange="onVisit" data-id="{{item.id}}" data-field="day"><view class="picker">第 {{item.day}} 天 ▾</view></picker>
+          <picker mode="time" value="{{item.time || '09:00'}}" bindchange="onVisit" data-id="{{item.id}}" data-field="time"><view class="picker tabular">{{item.time || '待安排时间'}} ▾</view></picker>
+        </view>
+        <view class="form-actions">
+          <view class="button text" hover-class="button-hover" bindtap="onVisitAction" data-id="{{item.id}}" data-action="departure">{{item.departure ? '出发 → 改为抵达' : '抵达 → 改为出发'}}</view>
+          <view class="button text" hover-class="button-hover" bindtap="onVisitAction" data-id="{{item.id}}" data-action="clear">清空时间</view>
+        </view>
+        <view class="form-actions">
+          <view class="button text" hover-class="button-hover" bindtap="onVisitAction" data-id="{{item.id}}" data-action="up">上移</view>
+          <view class="button text" hover-class="button-hover" bindtap="onVisitAction" data-id="{{item.id}}" data-action="down">下移</view>
+          <view class="button text" hover-class="button-hover" bindtap="onVisitAction" data-id="{{item.id}}" data-action="remove">移除此经过</view>
+        </view>
+      </view>
+      <view class="button secondary block" hover-class="button-hover" bindtap="onAddOpen">添加第 {{editDay}} 天的经过</view>
+      <view class="button primary block" hover-class="button-hover" bindtap="onSave">保存个人行程</view>
+      <view class="button text block" hover-class="button-hover" bindtap="onCancelEdit">取消本次修改</view>
+    </block>
+  </view>
+  <view wx:if="{{denied}}" class="button text block" hover-class="button-hover" bindtap="onBack">返回选择路线</view>
+  <overlay open="{{addOpen}}" kind="sheet" title="添加一次经过" bind:close="onAddClose">
+    <view class="stack"><text class="small muted">可重复选择同一节点。新增经过不自动填写抵达时间。</text><view wx:for="{{pointOptions}}" wx:key="id" class="list-row" hover-class="button-hover" bindtap="onAdd" data-id="{{item.id}}"><text>{{item.name}}</text><text>添加 ＋</text></view></view>
+  </overlay>
+</view>

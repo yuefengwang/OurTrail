@@ -164,18 +164,18 @@ section('§4 少于 2 点不可保存')
 section('§5 模板接线（按钮存在且三层一致）')
 {
   const wxml = fs.readFileSync(path.join(__dirname, '..', 'miniprogram', 'pages', 'weather-hub', 'weather-hub.wxml'), 'utf8')
-  const start = wxml.indexOf('title="导入 GPX 轨迹"')
+  const start = wxml.indexOf('title="核对轨迹关键节点"')
   const end = wxml.indexOf('</overlay>', start)
   const block = start >= 0 && end > start ? wxml.slice(start, end) : ''
   check('GPX 预览块存在（判据输入不是空串）', block.length > 0)
   check('每个节点行有删除控件：catchtap=onGpxRemove + data-index 传当前下标',
     /catchtap="onGpxRemove"/.test(block) && /data-index="\{\{index\}\}"/.test(block))
   check('删除后出现「恢复全部节点」入口（误删有退路）',
-    /bindtap="onGpxReset"/.test(block) && /恢复全部节点/.test(block))
+    /bindtap="onGpxReset"/.test(block) && /恢复全部候选节点/.test(block))
   check('保留数 <2 时主按钮 disabled 且 bindtap 置空（三层一致的前两层）',
-    /gpxPoints\.length >= 2 \? '' : 'disabled'/.test(block) &&
-    /gpxPoints\.length >= 2 \? 'onGpxApply' : ''/.test(block))
-  check('头部在删除后显示「保留 N 个」', /'，保留 ' \+ gpxPoints\.length \+ ' 个'/.test(block))
+    /gpxPoints\.length >= 2 && !busy \? '' : 'disabled'/.test(block) &&
+    /gpxPoints\.length >= 2 && !busy \? 'onGpxApply' : ''/.test(block))
+  check('头部显示保留数与候选总数', /保留 \{\{gpxPoints.length\}\} \/ \{\{gpxMeta.count\}\}/.test(block))
 }
 
 console.log('\npassed=' + passed + ' failed=' + failed)

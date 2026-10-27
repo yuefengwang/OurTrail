@@ -1787,12 +1787,23 @@ html&gt;body{padding:0}&lt;/style&gt;
 })();
 &lt;/script&gt;
 &lt;div id=&quot;ot-weather-preview&quot; class=&quot;viz-dotted-background&quot;&gt;
-  &lt;div class=&quot;ot-preview-note&quot;&gt;交互原型 · 示例天气，非实际预报&lt;/div&gt;
+  &lt;div class=&quot;ot-preview-note&quot;&gt;交互原型 · 第二轮 · 所有天气、地图与同步均为演示&lt;/div&gt;
+  &lt;details class=&quot;ot-preview-tools&quot;&gt;
+    &lt;summary&gt;验收工具 · 切换异常与路线变更&lt;/summary&gt;
+    &lt;label&gt;数据状态&lt;select id=&quot;ot-demo-scenario&quot;&gt;&lt;option value=&quot;normal&quot;&gt;正常示例&lt;/option&gt;&lt;option value=&quot;partial&quot;&gt;部分小时云层缺测&lt;/option&gt;&lt;option value=&quot;missing&quot;&gt;全部云层缺测&lt;/option&gt;&lt;option value=&quot;outside&quot;&gt;超出预报范围&lt;/option&gt;&lt;option value=&quot;offline&quot;&gt;离线，有旧缓存&lt;/option&gt;&lt;option value=&quot;expired&quot;&gt;离线，缓存已过期&lt;/option&gt;&lt;option value=&quot;loading&quot;&gt;天气加载中&lt;/option&gt;&lt;option value=&quot;error&quot;&gt;天气请求失败&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;
+    &lt;div&gt;&lt;button type=&quot;button&quot; data-demo=&quot;update&quot;&gt;模拟路线更新&lt;/button&gt;&lt;button type=&quot;button&quot; data-demo=&quot;revoke&quot;&gt;模拟失去路线权限&lt;/button&gt;&lt;button type=&quot;button&quot; data-demo=&quot;conflict&quot;&gt;模拟同步冲突&lt;/button&gt;&lt;button type=&quot;button&quot; data-demo=&quot;activity&quot;&gt;活动入口&lt;/button&gt;&lt;button type=&quot;button&quot; data-demo=&quot;reset&quot;&gt;重置演示&lt;/button&gt;&lt;/div&gt;
+    &lt;p&gt;仅改变本原型，不访问账户、地图或天气服务。样例预报基准日：2026-10-27，北京时间。&lt;/p&gt;
+  &lt;/details&gt;
   &lt;div id=&quot;ot-weather-app&quot; aria-label=&quot;OurTrail 天气交互原型&quot;&gt;&lt;/div&gt;
 &lt;/div&gt;
 &lt;style&gt;
 #ot-weather-preview{padding:16px 8px 24px}
 #ot-weather-preview .ot-preview-note{max-width:390px;margin:0 auto 12px;font-size:12px;color:var(--muted-foreground);letter-spacing:.04em}
+#ot-weather-preview .ot-preview-tools{max-width:390px;margin:0 auto 14px;color:var(--foreground);font:12px/1.6 -apple-system,BlinkMacSystemFont,&quot;PingFang SC&quot;,sans-serif}
+#ot-weather-preview .ot-preview-tools summary{min-height:32px}
+#ot-weather-preview .ot-preview-tools label{display:grid;gap:6px;margin:8px 0}
+#ot-weather-preview .ot-preview-tools select,#ot-weather-preview .ot-preview-tools button{min-height:44px;font:inherit;color:inherit;background:var(--background);border:1px solid var(--border);border-radius:6px;padding:6px 10px}
+#ot-weather-preview .ot-preview-tools div{display:flex;gap:6px;flex-wrap:wrap}
 #ot-weather-app{--ot-paper:light-dark(#f5f5f0,#19251f);--ot-surface:light-dark(#fff,#202e27);--ot-ink:light-dark(#202a26,#edf1e9);--ot-muted:light-dark(#5f6e66,#aebdb2);--ot-forest:light-dark(#163e35,#bbd7c9);--ot-on-forest:light-dark(#fff,#17382b);--ot-leaf:light-dark(#d6ea8a,#405331);--ot-line:light-dark(#dee3db,#3b4d40);--ot-stone:light-dark(#edefea,#2d3c32);--ot-soft:light-dark(#ecf0ef,#283e34);--ot-warn:light-dark(#8c5a12,#e3ba73);--ot-warn-bg:light-dark(#f4f0e9,#3b3428);--ot-blue:light-dark(#346583,#8fbbd3);--ot-rain:light-dark(#6f9dbb,#8fbbd3);--ot-temp:light-dark(#b26b56,#dda28e);--ot-wind:light-dark(#3d8a7f,#82bbad);--ot-gust:light-dark(#9fc4d8,#b4c9d4);--ot-danger:light-dark(#b43d3b,#eeaba6);--ot-cloud1:light-dark(#eeeeea,#303e35);--ot-cloud2:light-dark(#d4d6d0,#4b5b50);--ot-cloud3:light-dark(#b0b2ab,#708073);--ot-cloud4:light-dark(#84867f,#9bac9e);--ot-cloud5:light-dark(#5a5c56,#cfdbd0);max-width:390px;margin:auto;background:var(--ot-paper);color:var(--ot-ink);border:1px solid var(--ot-line);border-radius:22px;overflow:hidden;position:relative;font:14px/1.55 -apple-system,BlinkMacSystemFont,&quot;PingFang SC&quot;,&quot;Microsoft YaHei&quot;,sans-serif;box-shadow:0 14px 38px #00000009;min-width:0}
 #ot-weather-app *{box-sizing:border-box}
 #ot-weather-app button,#ot-weather-app input,#ot-weather-app select{font:inherit;color:inherit}
@@ -1877,8 +1888,8 @@ html&gt;body{padding:0}&lt;/style&gt;
 #ot-weather-app .ot-readout .ot-caption{text-align:right}
 #ot-weather-app .ot-chart{width:100%;position:relative;touch-action:pan-y}
 #ot-weather-app .ot-chart svg{display:block;width:100%;overflow:visible}
-#ot-weather-app .ot-chart text{font-family:inherit;font-variant-numeric:tabular-nums;font-size:11px;fill:var(--ot-muted)}
-#ot-weather-app .ot-chart .ot-axis-heading{fill:var(--ot-ink);font-size:11px;font-weight:500}
+#ot-weather-app .ot-chart text{font-family:inherit;font-variant-numeric:tabular-nums;font-size:12px;fill:var(--ot-muted)}
+#ot-weather-app .ot-chart .ot-axis-heading{fill:var(--ot-ink);font-size:12px;font-weight:500}
 #ot-weather-app .ot-chart .ot-value-label{fill:var(--ot-forest)}
 #ot-weather-app .ot-chart .ot-reference{stroke:var(--ot-forest);stroke-dasharray:4 3;stroke-width:1.2}
 #ot-weather-app .ot-legend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--ot-muted);margin:8px 0}
@@ -1914,6 +1925,22 @@ html&gt;body{padding:0}&lt;/style&gt;
 #ot-weather-app .ot-local-nav{display:flex;justify-content:space-around;border-top:1px solid var(--ot-line);background:var(--ot-surface);padding:6px 8px}
 #ot-weather-app .ot-local-nav button{font-size:11px;display:flex;align-items:center;gap:6px;min-height:44px;color:var(--ot-muted)}
 #ot-weather-app .ot-local-nav button[aria-current=&quot;page&quot;]{color:var(--ot-forest);font-weight:600}
+#ot-weather-app .ot-asset-row{display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--ot-line)}
+#ot-weather-app .ot-asset-row .ot-saved-item{border:0;flex:1;min-width:0}
+#ot-weather-app .ot-visit{border-bottom:1px solid var(--ot-line);padding:16px 0}
+#ot-weather-app .ot-visit:first-of-type{padding-top:0}
+#ot-weather-app .ot-visit .ot-field{margin-bottom:10px}
+#ot-weather-app .ot-visit-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#ot-weather-app .ot-visit-actions{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+#ot-weather-app .ot-warning-text{color:var(--ot-warn)}
+#ot-weather-app .ot-danger-text{color:var(--ot-danger)}
+#ot-weather-app .ot-rule-list{padding-left:18px;font-size:12px;color:var(--ot-muted)}
+#ot-weather-app .ot-rule-list li{margin:8px 0}
+#ot-weather-app .ot-chart-scope{margin:8px 0 14px;font-size:12px;color:var(--ot-muted)}
+#ot-weather-app .ot-source{overflow-wrap:anywhere}
+#ot-weather-app .ot-original{display:block;width:100%;min-height:240px;padding:12px;border:1px solid var(--ot-line);border-radius:8px;background:var(--ot-surface);color:var(--ot-ink);font:12px/1.6 ui-monospace,monospace;resize:vertical}
+#ot-weather-app .ot-field:has(#ot-height-window){display:flex;align-items:center;gap:12px;margin-bottom:8px}
+#ot-weather-app #ot-height-window{flex:1;width:0;margin-top:0;font-size:14px}
 @media(max-width:370px){#ot-weather-preview{padding:8px 0 16px}#ot-weather-app .ot-heading,#ot-weather-app .ot-section{padding-left:14px;padding-right:14px}#ot-weather-app .ot-plan-stop,#ot-weather-app .ot-plan-columns{grid-template-columns:1fr 62px 85px;gap:5px}#ot-weather-app .ot-tab{font-size:12px}#ot-weather-app .ot-stop-weather{gap:8px}}
 @media(prefers-reduced-motion:no-preference){#ot-weather-app button{transition:background .15s,color .15s}}
 &lt;/style&gt;
@@ -1931,13 +1958,14 @@ html&gt;body{padding:0}&lt;/style&gt;
     screen:&#x27;weather&#x27;,mode:&#x27;route&#x27;,tab:&#x27;route&#x27;,homeTab:&#x27;plans&#x27;,pointId:&#x27;lookout&#x27;,day:1,hour:13,period:24,date:&#x27;2026-10-31&#x27;,
     startDate:&#x27;2026-10-31&#x27;,planName:&#x27;格聂 · 周末两日徒步&#x27;,routeName:&#x27;格聂两日路线&#x27;,points:basePoints,
     stops:[{id:&#x27;s1&#x27;,pointId:&#x27;start&#x27;,day:1,time:&#x27;08:00&#x27;},{id:&#x27;s2&#x27;,pointId:&#x27;lookout&#x27;,day:1,time:&#x27;13:30&#x27;},{id:&#x27;s3&#x27;,pointId:&#x27;camp&#x27;,day:1,time:&#x27;17:00&#x27;},{id:&#x27;s4&#x27;,pointId:&#x27;camp&#x27;,day:2,time:&#x27;08:00&#x27;},{id:&#x27;s5&#x27;,pointId:&#x27;pass&#x27;,day:2,time:&#x27;11:00&#x27;},{id:&#x27;s6&#x27;,pointId:&#x27;end&#x27;,day:2,time:&#x27;16:00&#x27;}],
-    savedPoints:[&#x27;lookout&#x27;],savedPlan:true,savedRoute:true,signedIn:true,scenario:&#x27;normal&#x27;,customPoint:null,fromActivity:false,toast:&#x27;&#x27;,draft:null,importPoints:null,importName:&#x27;&#x27;,pickerChoice:&#x27;lookout&#x27;
+    savedPoints:[&#x27;lookout&#x27;],savedPlan:true,savedRoute:true,signedIn:false,scenario:&#x27;normal&#x27;,customPoint:null,fromActivity:false,toast:&#x27;&#x27;,draft:null,importPoints:null,importName:&#x27;&#x27;,pickerChoice:&#x27;lookout&#x27;,activeStopId:null,cloudLinked:false,syncStatus:&#x27;local&#x27;,recentQueries:[],conflict:null,management:null,confirmation:null,heightWindow:&#x27;auto&#x27;,routeUpdates:[],mapFailed:false
   };
   initial.currentRouteId=&#x27;route-base&#x27;;
   initial.currentPlanId=&#x27;plan-base&#x27;;
   initial.favoritePlaces=[structuredClone(basePoints[1])];
-  initial.routeRecords=[{id:&#x27;route-base&#x27;,name:initial.routeName,points:structuredClone(basePoints)}];
-  initial.planRecords=[{id:&#x27;plan-base&#x27;,routeId:&#x27;route-base&#x27;,name:initial.planName,startDate:initial.startDate,routeName:initial.routeName,points:structuredClone(basePoints),stops:structuredClone(initial.stops)}];
+  initial.stops=initial.stops.map(stop=&gt;Object.assign({},stop,{event:stop.id===&#x27;s1&#x27;||stop.id===&#x27;s4&#x27;?&#x27;depart&#x27;:&#x27;arrive&#x27;,pointSnapshot:structuredClone(basePoints.find(location=&gt;location.id===stop.pointId))}));
+  initial.routeRecords=[{id:&#x27;route-base&#x27;,name:initial.routeName,points:structuredClone(basePoints),revision:1,accessible:true,sourceName:&#x27;格聂两日路线.gpx&#x27;,sourceKind:&#x27;sample&#x27;}];
+  initial.planRecords=[{id:&#x27;plan-base&#x27;,routeId:&#x27;route-base&#x27;,name:initial.planName,startDate:initial.startDate,stops:structuredClone(initial.stops)}];
   let state=structuredClone(initial);
   const settings={width:390,scenario:&#x27;normal&#x27;,scene:&#x27;沿途天气&#x27;};
   let drawnWidth=0;
@@ -1946,6 +1974,9 @@ html&gt;body{padding:0}&lt;/style&gt;
   let chartObserver;
   let framePending=false;
   let chartGeometry=null;
+  let pendingOriginal=null;
+  const originalFiles=new Map();
+  const uniqueId=prefix=&gt;prefix+&#x27;-&#x27;+Date.now()+&#x27;-&#x27;+Math.random().toString(36).slice(2,7);
   const clone=value=&gt;JSON.parse(JSON.stringify(value));
   const escape=value=&gt;String(value==null?&#x27;&#x27;:value).replace(/[&amp;&lt;&gt;&quot;&#x27;]/g,character=&gt;({&#x27;&amp;&#x27;:&#x27;&amp;amp;&#x27;,&#x27;&lt;&#x27;:&#x27;&amp;lt;&#x27;,&#x27;&gt;&#x27;:&#x27;&amp;gt;&#x27;,&#x27;&quot;&#x27;:&#x27;&amp;quot;&#x27;,&quot;&#x27;&quot;:&#x27;&amp;#39;&#x27;}[character]));
   const icon=name=&gt;&#x27;&lt;i data-lucide=&quot;&#x27;+name+&#x27;&quot; class=&quot;ot-icon&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&#x27;;
@@ -1955,14 +1986,36 @@ html&gt;body{padding:0}&lt;/style&gt;
   const pad=value=&gt;String(value).padStart(2,&#x27;0&#x27;);
   const timeLabel=hour=&gt;pad(Math.floor(hour)%24)+&#x27;:00&#x27;;
   const point=()=&gt;state.mode===&#x27;point&#x27;&amp;&amp;state.customPoint?state.customPoint:state.points.find(item=&gt;item.id===state.pointId)||state.points[0];
-  const byId=pointId=&gt;state.points.find(item=&gt;item.id===pointId)||state.points[0];
+  const byId=pointId=&gt;state.points.find(item=&gt;item.id===pointId);
+  const routeRecord=()=&gt;state.routeRecords.find(route=&gt;route.id===state.currentRouteId);
+  const stopPoint=stop=&gt;byId(stop.pointId)||stop.pointSnapshot;
+  const routeAvailable=()=&gt;routeRecord()&amp;&amp;routeRecord().accessible!==false;
+  const maxDay=()=&gt;Math.max(1,...state.stops.map(stop=&gt;stop.day));
+  const eventLabel=stop=&gt;stop.event===&#x27;depart&#x27;?&#x27;预计出发&#x27;:&#x27;预计抵达&#x27;;
+  const syncLabel=()=&gt;({local:&#x27;仅本机 · 演示&#x27;,pending:&#x27;待同步 · 演示&#x27;,synced:&#x27;已同步 · 演示&#x27;,conflict:&#x27;同步冲突 · 待处理&#x27;})[state.syncStatus];
+  const cloudMissing=hour=&gt;state.scenario===&#x27;missing&#x27;||state.scenario===&#x27;partial&#x27;&amp;&amp;hour%24&gt;=8&amp;&amp;hour%24&lt;=10;
+  const weatherUnavailable=()=&gt;[&#x27;expired&#x27;,&#x27;error&#x27;,&#x27;loading&#x27;].includes(state.scenario);
+  const pointAltitude=()=&gt;point().ele;
+  const cloudWindow=()=&gt;state.heightWindow===&#x27;low&#x27;?{low:0,high:5000}:state.heightWindow===&#x27;high&#x27;?{low:3000,high:8000}:pointAltitude()!=null&amp;&amp;pointAltitude()&lt;1800?{low:0,high:5000}:{low:1800,high:6500};
+  const coveredHeight={low:600,high:6200};
+  function dirtyAssets(){if(state.syncStatus!==&#x27;conflict&#x27;)state.syncStatus=state.cloudLinked?&#x27;pending&#x27;:&#x27;local&#x27;;}
+  function addRecent(kind,record){
+    const key=kind+&#x27;:&#x27;+record.id;
+    state.recentQueries=[{key,kind,id:record.id,name:record.name||record.planName,location:kind===&#x27;point&#x27;?clone(record):null},...state.recentQueries.filter(item=&gt;item.key!==key)].slice(0,6);
+  }
+  function loadLatestRoute(){
+    const route=routeRecord();
+    state.routeUpdates=route&amp;&amp;route.updates?clone(route.updates):[];
+    if(route&amp;&amp;route.accessible!==false){state.points=clone(route.points);state.routeName=route.name;}
+  }
   const forecastAllowed=date=&gt;{const diff=(Date.parse(date+&#x27;T00:00:00Z&#x27;)-Date.parse(&#x27;2026-10-27T00:00:00Z&#x27;))/86400000;return diff&gt;=0&amp;&amp;diff&lt;=14&amp;&amp;state.scenario!==&#x27;outside&#x27;;};
+  const availableHours=()=&gt;Math.max(0,Math.min(72,(Date.parse(&#x27;2026-11-12T00:00:00Z&#x27;)-Date.parse(state.date+&#x27;T00:00:00Z&#x27;))/3600000));
   function cloudAmount(hour,altitude,offset){
     const phase=hour+offset*1.8;
     const lowerCenter=2850+260*Math.sin(phase/4)+230*Math.cos(phase/7);
     const upperCenter=4950+350*Math.sin((phase+5)/6);
-    const lower=95*Math.exp(-Math.pow((altitude-lowerCenter)/440,2))*(.67+.28*Math.cos((phase-4)/5));
-    const upper=72*Math.exp(-Math.pow((altitude-upperCenter)/650,2))*(.62+.36*Math.cos((phase-17)/6));
+    const lower=98*Math.exp(-Math.pow((altitude-lowerCenter)/720,4))*(.82+.16*Math.cos((phase-4)/5));
+    const upper=88*Math.exp(-Math.pow((altitude-upperCenter)/640,2))*(.72+.26*Math.cos((phase-17)/6));
     const bridge=76*Math.exp(-Math.pow((phase%24-17)/3.1,2)-Math.pow((altitude-3700)/920,2));
     return Math.max(0,Math.min(100,lower+upper+bridge));
   }
@@ -1971,26 +2024,32 @@ html&gt;body{padding:0}&lt;/style&gt;
     const shift=((Date.parse(date+&#x27;T00:00:00Z&#x27;)-Date.parse(&#x27;2026-10-31T00:00:00Z&#x27;))/86400000)*1.4;
     const sampleHour=hour+shift+locationIndex*.35;
     const rain=Math.max(0,Math.sin((sampleHour-12)/4))*2.8;
-    const temp=9+5*Math.sin((sampleHour-8)*Math.PI/12)-(Number(location.ele||3500)-3500)/230;
+    const temp=9+5*Math.sin((sampleHour-8)*Math.PI/12)-((location.ele==null?3500:Number(location.ele))-3500)/230;
     const wind=8+9*Math.exp(-Math.pow(((sampleHour%24)-16)/4.7,2))+locationIndex*.8;
-    const total=Array.from({length:24},(_,index)=&gt;cloudAmount(sampleHour,2100+index*200,locationIndex));
-    const cloud=Math.round(Math.max.apply(null,total));
+    const cloud=Math.round(70+24*Math.sin((sampleHour+2)/8));
     return {temperature:Math.round(temp),rain:Number(rain.toFixed(1)),probability:Math.round(rain/2.8*65),wind:Math.round(wind),gust:Math.round(wind*1.65),cloud,pointCloud:location.ele==null?null:Math.round(cloudAmount(sampleHour,location.ele,locationIndex)),offset:locationIndex,phase:sampleHour,weather:rain&gt;1?&#x27;阵雨&#x27;:cloud&gt;65?&#x27;多云&#x27;:&#x27;晴间多云&#x27;};
   }
   function restore(saved){
-    const restored=saved&amp;&amp;saved.privateContent&amp;&amp;saved.privateContent.version===1?saved.privateContent.state:null;
+    const restored=saved&amp;&amp;saved.privateContent&amp;&amp;saved.privateContent.version===2?saved.privateContent.state:null;
     if(restored&amp;&amp;Array.isArray(restored.points)&amp;&amp;restored.points.length&amp;&amp;Array.isArray(restored.stops)){
       state=Object.assign(clone(initial),restored,{toast:&#x27;&#x27;,draft:null,importPoints:null});
-      if([&#x27;home&#x27;,&#x27;weather&#x27;,&#x27;plan&#x27;,&#x27;coordinate&#x27;,&#x27;map&#x27;,&#x27;import&#x27;,&#x27;activity&#x27;].indexOf(state.screen)&lt;0)state.screen=&#x27;weather&#x27;;
+      if([&#x27;home&#x27;,&#x27;weather&#x27;,&#x27;plan&#x27;,&#x27;coordinate&#x27;,&#x27;map&#x27;,&#x27;import&#x27;,&#x27;activity&#x27;,&#x27;sync&#x27;,&#x27;manage&#x27;,&#x27;route-info&#x27;,&#x27;original&#x27;,&#x27;confirm&#x27;].indexOf(state.screen)&lt;0)state.screen=&#x27;weather&#x27;;
       if(state.screen===&#x27;plan&#x27;||state.screen===&#x27;import&#x27;)state.screen=&#x27;weather&#x27;;
+      if(state.screen===&#x27;confirm&#x27;)state.screen=&#x27;home&#x27;;
+      loadLatestRoute();
     }
   }
   restore(window.openai&amp;&amp;window.openai.widgetState);
   function remember(){
     if(!window.openai||!window.openai.setWidgetState)return;
-    const snapshot=Object.assign({},state,{toast:&#x27;&#x27;,draft:null,importPoints:null});
+    const snapshot=Object.assign({},state,{toast:&#x27;&#x27;,draft:null,importPoints:null,confirmation:null});
     writeRevision+=1;
-    window.openai.setWidgetState({modelContent:{prototype:&#x27;OurTrail 天气&#x27;,screen:state.screen,mode:state.mode,tab:state.tab,day:state.day,scenario:state.scenario},privateContent:{version:1,writerId,writeRevision,state:snapshot}}).catch(()=&gt;{});
+    const saved={modelContent:{prototype:&#x27;OurTrail 天气 · 第二轮&#x27;,screen:state.screen,mode:state.mode,tab:state.tab,day:state.day,scenario:state.scenario,decisions:&#x27;ABAA&#x27;},privateContent:{version:2,writerId,writeRevision,state:snapshot}};
+    if(new TextEncoder().encode(JSON.stringify(saved)).length&lt;16000)window.openai.setWidgetState(saved).catch(()=&gt;{});
+    else{
+      state.toast=&#x27;演示状态超出会话记忆上限，本次修改仅在当前页面内，刷新可能丢失；请勿当作正式保存。&#x27;;
+      const notice=document.createElement(&#x27;div&#x27;);notice.className=&#x27;ot-toast&#x27;;notice.setAttribute(&#x27;role&#x27;,&#x27;status&#x27;);notice.textContent=state.toast;root.prepend(notice);
+    }
   }
   window.addEventListener(&#x27;openai:set_globals&#x27;,event=&gt;{
     const saved=event.detail&amp;&amp;event.detail.globals&amp;&amp;event.detail.globals.widgetState;
@@ -1998,87 +2057,101 @@ html&gt;body{padding:0}&lt;/style&gt;
     if(saved){restore(saved);render();}
   });
   function header(){
-    const labels={home:&#x27;天气&#x27;,weather:state.mode===&#x27;route&#x27;?&#x27;天气首页&#x27;:&#x27;天气首页&#x27;,plan:&#x27;返回天气&#x27;,coordinate:&#x27;天气首页&#x27;,map:&#x27;天气首页&#x27;,import:&#x27;天气首页&#x27;,activity:&#x27;天气首页&#x27;};
-    const back=state.screen===&#x27;home&#x27;?&#x27;&lt;span class=&quot;ot-caption&quot;&gt;山野天气 · 随行而查&lt;/span&gt;&#x27;:action(&#x27;back&#x27;,icon(&#x27;chevron-left&#x27;)+labels[state.screen],&#x27;ot-back&#x27;);
-    return &#x27;&lt;header class=&quot;ot-brand&quot;&gt;&lt;span&gt;OURTRAIL · 同行&lt;/span&gt;&lt;span class=&quot;ot-capsule&quot; aria-hidden=&quot;true&quot;&gt;··· │ ⊙&lt;/span&gt;&lt;/header&gt;&lt;nav class=&quot;ot-nav&quot;&gt;&#x27;+back+action(&#x27;sync&#x27;,icon(state.signedIn?&#x27;cloud-check&#x27;:&#x27;cloud-off&#x27;),&#x27;ot-icon-button&#x27;,&#x27;aria-label=&quot;&#x27;+(state.signedIn?&#x27;查看同步演示状态&#x27;:&#x27;模拟登录并同步&#x27;)+&#x27;&quot;&#x27;)+&#x27;&lt;/nav&gt;&#x27;;
+    const label=state.screen===&#x27;weather&#x27;&amp;&amp;state.mode===&#x27;route&#x27;&amp;&amp;state.tab!==&#x27;route&#x27;?&#x27;沿途天气&#x27;:[&#x27;plan&#x27;,&#x27;route-info&#x27;].includes(state.screen)?&#x27;返回行程&#x27;:&#x27;天气首页&#x27;;
+    const back=state.screen===&#x27;home&#x27;?&#x27;&lt;span class=&quot;ot-caption&quot;&gt;山野天气 · 随行而查&lt;/span&gt;&#x27;:action(&#x27;back&#x27;,icon(&#x27;chevron-left&#x27;)+label,&#x27;ot-back&#x27;);
+    return &#x27;&lt;header class=&quot;ot-brand&quot;&gt;&lt;span&gt;OURTRAIL · 同行&lt;/span&gt;&lt;span class=&quot;ot-capsule&quot; aria-hidden=&quot;true&quot;&gt;··· │ ⊙&lt;/span&gt;&lt;/header&gt;&lt;nav class=&quot;ot-nav&quot;&gt;&#x27;+back+action(&#x27;sync&#x27;,icon(state.cloudLinked?&#x27;cloud-check&#x27;:&#x27;cloud-off&#x27;)+syncLabel(),&#x27;ot-link&#x27;,&#x27;aria-label=&quot;查看保存与同步&quot;&#x27;)+&#x27;&lt;/nav&gt;&#x27;;
   }
   function footer(){
     return &#x27;&lt;footer class=&quot;ot-footer&quot;&gt;&lt;span&gt;示例数据 · 非出行依据&lt;/span&gt;&lt;span&gt;&#x27;+icon(&#x27;lock-keyhole&#x27;)+&#x27; 个人计划 · 不回写活动&lt;/span&gt;&lt;/footer&gt;&#x27;;
   }
   function localNav(){
-    return &#x27;&lt;nav class=&quot;ot-local-nav&quot; aria-label=&quot;天气模块导航&quot;&gt;&#x27;+action(&#x27;home&#x27;,icon(&#x27;house&#x27;)+&#x27;天气首页&#x27;,&#x27;&#x27;,&#x27;aria-current=&quot;&#x27;+(state.screen===&#x27;home&#x27;?&#x27;page&#x27;:&#x27;false&#x27;)+&#x27;&quot;&#x27;)+action(&#x27;open-plan&#x27;,icon(&#x27;route&#x27;)+&#x27;我的行程&#x27;,&#x27;&#x27;,&#x27;aria-current=&quot;&#x27;+(state.screen===&#x27;weather&#x27;&amp;&amp;state.mode===&#x27;route&#x27;?&#x27;page&#x27;:&#x27;false&#x27;)+&#x27;&quot;&#x27;)+action(&#x27;favorites&#x27;,icon(&#x27;bookmark&#x27;)+&#x27;常用地点&#x27;,&#x27;&#x27;)+&#x27;&lt;/nav&gt;&#x27;;
+    return &#x27;&lt;nav class=&quot;ot-local-nav&quot; aria-label=&quot;天气模块导航&quot;&gt;&#x27;+action(&#x27;home&#x27;,icon(&#x27;house&#x27;)+&#x27;天气首页&#x27;,&#x27;&#x27;,&#x27;aria-current=&quot;&#x27;+(state.screen===&#x27;home&#x27;?&#x27;page&#x27;:&#x27;false&#x27;)+&#x27;&quot;&#x27;)+action(&#x27;plans&#x27;,icon(&#x27;route&#x27;)+&#x27;我的行程&#x27;,&#x27;&#x27;)+action(&#x27;favorites&#x27;,icon(&#x27;bookmark&#x27;)+&#x27;常用地点&#x27;,&#x27;&#x27;)+&#x27;&lt;/nav&gt;&#x27;;
+  }
+  function assetRow(kind,record,subtitle,openAction){
+    const idAttribute=kind===&#x27;plan&#x27;?&#x27;plan&#x27;:kind===&#x27;route&#x27;?&#x27;route&#x27;:&#x27;point&#x27;;
+    return &#x27;&lt;div class=&quot;ot-asset-row&quot;&gt;&#x27;+action(openAction,&#x27;&lt;span class=&quot;ot-item-icon&quot;&gt;&#x27;+icon(kind===&#x27;place&#x27;?&#x27;map-pin&#x27;:kind===&#x27;plan&#x27;?&#x27;calendar-days&#x27;:&#x27;route&#x27;)+&#x27;&lt;/span&gt;&lt;span class=&quot;ot-item-body&quot;&gt;&lt;strong&gt;&#x27;+escape(record.name)+&#x27;&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+subtitle+&#x27;&lt;/p&gt;&lt;/span&gt;&#x27;+icon(&#x27;chevron-right&#x27;),&#x27;ot-saved-item&#x27;,&#x27;data-&#x27;+idAttribute+&#x27;=&quot;&#x27;+escape(record.id)+&#x27;&quot;&#x27;)+action(&#x27;manage&#x27;,icon(&#x27;ellipsis&#x27;),&#x27;ot-icon-button&#x27;,&#x27;data-kind=&quot;&#x27;+kind+&#x27;&quot; data-id=&quot;&#x27;+escape(record.id)+&#x27;&quot; aria-label=&quot;管理&#x27;+escape(record.name)+&#x27;&quot;&#x27;)+&#x27;&lt;/div&gt;&#x27;;
   }
   function home(){
-    const tabs=[[&#x27;plans&#x27;,&#x27;出行计划&#x27;],[&#x27;points&#x27;,&#x27;常用地点&#x27;],[&#x27;routes&#x27;,&#x27;保存路线&#x27;]];
+    const tabs=[[&#x27;plans&#x27;,&#x27;天气行程&#x27;],[&#x27;points&#x27;,&#x27;常用地点&#x27;],[&#x27;routes&#x27;,&#x27;路线库&#x27;]];
     let listing=&#x27;&#x27;;
     if(state.homeTab===&#x27;plans&#x27;){
-      listing=state.planRecords.map(plan=&gt;action(&#x27;open-plan&#x27;,&#x27;&lt;span class=&quot;ot-item-icon&quot;&gt;&#x27;+icon(&#x27;calendar-days&#x27;)+&#x27;&lt;/span&gt;&lt;span class=&quot;ot-item-body&quot;&gt;&lt;strong&gt;&#x27;+escape(plan.name)+&#x27;&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+dateShort(plan.startDate)+&#x27;起 · &#x27;+Math.max.apply(null,plan.stops.map(stop=&gt;stop.day))+&#x27;天 · 个人计划&lt;/p&gt;&lt;/span&gt;&#x27;+icon(&#x27;chevron-right&#x27;),&#x27;ot-saved-item&#x27;,&#x27;data-plan=&quot;&#x27;+plan.id+&#x27;&quot;&#x27;)).join(&#x27;&#x27;)||empty(&#x27;还没有出行计划&#x27;,&#x27;选择一条路线，再安排哪天到哪个节点。&#x27;,action(&#x27;route-library&#x27;,&#x27;从路线开始&#x27;));
+      listing=state.planRecords.map(plan=&gt;assetRow(&#x27;plan&#x27;,plan,dateShort(plan.startDate)+&#x27;起 · &#x27;+Math.max(1,...plan.stops.map(stop=&gt;stop.day))+&#x27;天 · 仅自己&#x27;,&#x27;open-plan&#x27;)).join(&#x27;&#x27;)||empty(&#x27;还没有天气行程&#x27;,&#x27;选择一条路线，再安排哪天到哪个节点。&#x27;,action(&#x27;route-library&#x27;,&#x27;从路线开始&#x27;));
     }else if(state.homeTab===&#x27;points&#x27;){
       listing=state.favoritePlaces.map(location=&gt;{
-        return action(&#x27;open-point&#x27;,&#x27;&lt;span class=&quot;ot-item-icon&quot;&gt;&#x27;+icon(&#x27;map-pin&#x27;)+&#x27;&lt;/span&gt;&lt;span class=&quot;ot-item-body&quot;&gt;&lt;strong&gt;&#x27;+escape(location.name)+&#x27;&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+(location.ele==null?&#x27;海拔未提供&#x27;:location.ele.toLocaleString()+&#x27; m&#x27;)+&#x27; · 已保存地点&lt;/p&gt;&lt;/span&gt;&#x27;+icon(&#x27;chevron-right&#x27;),&#x27;ot-saved-item&#x27;,&#x27;data-point=&quot;&#x27;+escape(location.id)+&#x27;&quot;&#x27;);
+        return assetRow(&#x27;place&#x27;,location,(location.ele==null?&#x27;海拔未提供&#x27;:location.ele.toLocaleString()+&#x27; m&#x27;)+&#x27; · 主动收藏&#x27;,&#x27;open-point&#x27;);
       }).join(&#x27;&#x27;)||empty(&#x27;还没有常用地点&#x27;,&#x27;地图选点或输入坐标后，可以保存到这里。&#x27;,action(&#x27;map&#x27;,&#x27;地图选点&#x27;));
     }else{
-      listing=state.routeRecords.map(route=&gt;action(&#x27;open-route&#x27;,&#x27;&lt;span class=&quot;ot-item-icon&quot;&gt;&#x27;+icon(&#x27;route&#x27;)+&#x27;&lt;/span&gt;&lt;span class=&quot;ot-item-body&quot;&gt;&lt;strong&gt;&#x27;+escape(route.name)+&#x27;&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+route.points.length+&#x27;个关键点 · 共用路线库 · 仅自己&lt;/p&gt;&lt;/span&gt;&#x27;+icon(&#x27;chevron-right&#x27;),&#x27;ot-saved-item&#x27;,&#x27;data-route=&quot;&#x27;+route.id+&#x27;&quot;&#x27;)).join(&#x27;&#x27;)||empty(&#x27;还没有保存路线&#x27;,&#x27;导入一条 GPX，或从活动带入路线。&#x27;,action(&#x27;import&#x27;,&#x27;导入轨迹&#x27;));
+      listing=state.routeRecords.map(route=&gt;assetRow(&#x27;route&#x27;,route,route.accessible===false?&#x27;访问权限已失效&#x27;:route.points.length+&#x27;个关键点 · 活动与天气共用 · 私有&#x27;,&#x27;open-route&#x27;)).join(&#x27;&#x27;)||empty(&#x27;还没有保存路线&#x27;,&#x27;导入一条 GPX，或从活动带入路线。&#x27;,action(&#x27;import&#x27;,&#x27;导入轨迹&#x27;));
     }
-    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;WEATHER / 山野天气&lt;/div&gt;&lt;h1&gt;看清天气，再出发。&lt;/h1&gt;&lt;p&gt;一个地点，一段路线，或一场计划中的徒步。&lt;/p&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&#x27;+action(&#x27;map&#x27;,&#x27;&lt;span&gt;&lt;strong&gt;地图选点&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;找到你想去的山野&lt;/p&gt;&lt;/span&gt;&#x27;+icon(&#x27;map-pin&#x27;),&#x27;ot-entry-primary&#x27;)+&#x27;&lt;div class=&quot;ot-entry-secondary&quot;&gt;&#x27;+action(&#x27;coordinate&#x27;,icon(&#x27;crosshair&#x27;)+&#x27;输入经纬度&#x27;)+action(&#x27;import&#x27;,icon(&#x27;file-up&#x27;)+&#x27;导入轨迹&#x27;)+&#x27;&lt;/div&gt;&lt;/section&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;div class=&quot;ot-section-title&quot;&gt;&lt;h2&gt;最近使用&lt;/h2&gt;&lt;span class=&quot;ot-caption&quot;&gt;无需重新查询&lt;/span&gt;&lt;/div&gt;&#x27;+action(&#x27;open-plan&#x27;,&#x27;&lt;div class=&quot;ot-row&quot;&gt;&lt;span class=&quot;ot-chip leaf&quot;&gt;个人行程&lt;/span&gt;&#x27;+icon(&#x27;arrow-up-right&#x27;)+&#x27;&lt;/div&gt;&lt;h3&gt;&#x27;+escape(state.planName)+&#x27;&lt;/h3&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+dateShort(state.startDate)+&#x27;出发 · 查看每天抵达节点时的天气&lt;/p&gt;&#x27;,&#x27;ot-highlight&#x27;)+&#x27;&lt;/section&gt;&lt;div class=&quot;ot-tabs&quot; role=&quot;tablist&quot; aria-label=&quot;已保存内容&quot;&gt;&#x27;+tabs.map(item=&gt;action(&#x27;home-tab&#x27;,item[1],&#x27;ot-tab&#x27;,&#x27;role=&quot;tab&quot; id=&quot;ot-home-&#x27;+item[0]+&#x27;&quot; aria-controls=&quot;ot-home-list&quot; aria-selected=&quot;&#x27;+(state.homeTab===item[0])+&#x27;&quot; data-tab=&quot;&#x27;+item[0]+&#x27;&quot;&#x27;)).join(&#x27;&#x27;)+&#x27;&lt;/div&gt;&lt;section id=&quot;ot-home-list&quot; class=&quot;ot-section&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;ot-home-&#x27;+state.homeTab+&#x27;&quot;&gt;&#x27;+listing+&#x27;&lt;p class=&quot;ot-source&quot;&gt;&#x27;+(state.signedIn?&#x27;云同步流程演示 · 不会上传到真实账户&#x27;:&#x27;本机缓存演示 · 登录后可同步&#x27;)+&#x27;&lt;/p&gt;&lt;/section&gt;&#x27;;
+    const recent=state.recentQueries.map(item=&gt;action(&#x27;recent&#x27;,&#x27;&lt;span class=&quot;ot-item-body&quot;&gt;&lt;strong&gt;&#x27;+escape(item.name)+&#x27;&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+(item.kind===&#x27;point&#x27;?&#x27;单点查询&#x27;:&#x27;路线／行程&#x27;)+&#x27; · 仅本机历史，不代表已收藏&lt;/p&gt;&lt;/span&gt;&#x27;+icon(&#x27;chevron-right&#x27;),&#x27;ot-saved-item&#x27;,&#x27;data-key=&quot;&#x27;+escape(item.key)+&#x27;&quot;&#x27;)).join(&#x27;&#x27;);
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;WEATHER / 山野天气&lt;/div&gt;&lt;h1&gt;看清天气，再出发。&lt;/h1&gt;&lt;p&gt;一个地点，一段路线，或一场计划中的徒步。&lt;/p&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&#x27;+action(&#x27;map&#x27;,&#x27;&lt;span&gt;&lt;strong&gt;地图选点&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;找到你想去的山野&lt;/p&gt;&lt;/span&gt;&#x27;+icon(&#x27;map-pin&#x27;),&#x27;ot-entry-primary&#x27;)+&#x27;&lt;div class=&quot;ot-entry-secondary&quot;&gt;&#x27;+action(&#x27;coordinate&#x27;,icon(&#x27;crosshair&#x27;)+&#x27;输入经纬度&#x27;)+action(&#x27;import&#x27;,icon(&#x27;file-up&#x27;)+&#x27;导入轨迹&#x27;)+&#x27;&lt;/div&gt;&#x27;+action(&#x27;route-library&#x27;,&#x27;从已有路线开始 &#x27;+icon(&#x27;arrow-right&#x27;),&#x27;ot-link&#x27;)+&#x27;&lt;/section&gt;&lt;div class=&quot;ot-tabs&quot; role=&quot;tablist&quot; aria-label=&quot;主动保存的内容&quot;&gt;&#x27;+tabs.map(item=&gt;action(&#x27;home-tab&#x27;,item[1],&#x27;ot-tab&#x27;,&#x27;role=&quot;tab&quot; id=&quot;ot-home-&#x27;+item[0]+&#x27;&quot; aria-controls=&quot;ot-home-list&quot; aria-selected=&quot;&#x27;+(state.homeTab===item[0])+&#x27;&quot; data-tab=&quot;&#x27;+item[0]+&#x27;&quot;&#x27;)).join(&#x27;&#x27;)+&#x27;&lt;/div&gt;&lt;section id=&quot;ot-home-list&quot; class=&quot;ot-section&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;ot-home-&#x27;+state.homeTab+&#x27;&quot;&gt;&#x27;+listing+&#x27;&lt;p class=&quot;ot-source&quot;&gt;&#x27;+syncLabel()+&#x27; · 仅模拟状态，不连接真实云端。&lt;/p&gt;&lt;/section&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;div class=&quot;ot-section-title&quot;&gt;&lt;h2&gt;最近查询&lt;/h2&gt;&#x27;+(recent?action(&#x27;clear-recents&#x27;,&#x27;清除&#x27;,&#x27;ot-link&#x27;):&#x27;&#x27;)+&#x27;&lt;/div&gt;&#x27;+(recent||&#x27;&lt;p class=&quot;ot-caption&quot;&gt;暂无查询记录。查询后自动记录在本机，不会自动收藏或同步。&lt;/p&gt;&#x27;)+&#x27;&lt;/section&gt;&#x27;;
   }
   function routeHeading(){
-    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;&#x27;+icon(&#x27;route&#x27;)+&#x27;路线天气 &lt;span class=&quot;ot-chip&quot;&gt;个人计划&lt;/span&gt;&lt;/div&gt;&lt;h1&gt;&#x27;+escape(state.planName)+&#x27;&lt;/h1&gt;&lt;p&gt;&#x27;+dateShort(state.startDate)+&#x27;出发 · &#x27;+state.points.length+&#x27;个地点 · &#x27;+Math.max.apply(null,state.stops.map(stop=&gt;stop.day))+&#x27;天&lt;/p&gt;&lt;div class=&quot;ot-row-wrap&quot;&gt;&#x27;+action(&#x27;edit-plan&#x27;,icon(&#x27;calendar-clock&#x27;)+&#x27;编辑行程&#x27;,&#x27;ot-link&#x27;)+action(&#x27;copy-plan&#x27;,icon(&#x27;copy&#x27;)+&#x27;复制计划&#x27;,&#x27;ot-link&#x27;)+&#x27;&lt;/div&gt;&lt;/div&gt;&#x27;;
+    if(state.tab!==&#x27;route&#x27;)return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;&#x27;+icon(&#x27;map-pin&#x27;)+&#x27;节点天气 · &#x27;+escape(state.planName)+&#x27;&lt;/div&gt;&lt;h1&gt;&#x27;+escape(point().name)+&#x27;&lt;/h1&gt;&lt;p&gt;此地点随时间变化的云层，不是整条路线的空间剖面。&lt;/p&gt;&lt;/div&gt;&#x27;;
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;&#x27;+icon(&#x27;route&#x27;)+&#x27;沿途天气 &lt;span class=&quot;ot-chip&quot;&gt;&#x27;+(state.savedPlan?&#x27;个人计划&#x27;:&#x27;未保存行程&#x27;)+&#x27;&lt;/span&gt;&lt;/div&gt;&lt;h1&gt;&#x27;+escape(state.planName)+&#x27;&lt;/h1&gt;&lt;p&gt;&#x27;+dateShort(state.startDate)+&#x27;出发 · &#x27;+state.stops.length+&#x27;次经过 · &#x27;+maxDay()+&#x27;天&lt;/p&gt;&lt;div class=&quot;ot-row-wrap&quot;&gt;&#x27;+action(&#x27;edit-plan&#x27;,icon(&#x27;calendar-clock&#x27;)+(state.savedPlan?&#x27;编辑行程&#x27;:&#x27;安排并保存&#x27;),&#x27;ot-link&#x27;)+action(&#x27;copy-plan&#x27;,icon(&#x27;copy&#x27;)+&#x27;复制计划&#x27;,&#x27;ot-link&#x27;)+action(&#x27;route-info&#x27;,&#x27;路线信息&#x27;,&#x27;ot-link&#x27;)+&#x27;&lt;/div&gt;&lt;/div&gt;&#x27;;
   }
   function pointHeading(){
     const location=point();
     const saved=state.favoritePlaces.some(place=&gt;place.id===location.id);
-    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;&#x27;+icon(&#x27;map-pin&#x27;)+&#x27;单点天气&lt;/div&gt;&lt;div class=&quot;ot-row&quot;&gt;&lt;h1&gt;&#x27;+escape(location.name)+&#x27;&lt;/h1&gt;&#x27;+action(&#x27;favorite&#x27;,icon(saved?&#x27;bookmark-check&#x27;:&#x27;bookmark&#x27;),&#x27;ot-icon-button&#x27;,&#x27;aria-label=&quot;&#x27;+(saved?&#x27;取消收藏地点&#x27;:&#x27;收藏地点&#x27;)+&#x27;&quot;&#x27;)+&#x27;&lt;/div&gt;&lt;p&gt;&#x27;+(location.ele==null?&#x27;海拔未提供&#x27;:Number(location.ele).toLocaleString()+&#x27; m · &#x27;+(location.manual?&#x27;手填海拔&#x27;:&#x27;示例轨迹海拔&#x27;))+&#x27; · &#x27;+location.lat.toFixed(4)+&#x27;°N, &#x27;+location.lng.toFixed(4)+&#x27;°E&lt;/p&gt;&lt;/div&gt;&#x27;;
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;&#x27;+icon(&#x27;map-pin&#x27;)+&#x27;单点天气&lt;/div&gt;&lt;div class=&quot;ot-row&quot;&gt;&lt;h1&gt;&#x27;+escape(location.name)+&#x27;&lt;/h1&gt;&#x27;+action(&#x27;favorite&#x27;,icon(saved?&#x27;bookmark-check&#x27;:&#x27;bookmark&#x27;),&#x27;ot-icon-button&#x27;,&#x27;aria-label=&quot;&#x27;+(saved?&#x27;管理已收藏地点&#x27;:&#x27;收藏地点&#x27;)+&#x27;&quot;&#x27;)+&#x27;&lt;/div&gt;&lt;p&gt;&#x27;+(location.ele==null?&#x27;海拔未提供&#x27;:Number(location.ele).toLocaleString()+&#x27; m · &#x27;+(location.manual?&#x27;手填海拔&#x27;:&#x27;示例轨迹海拔&#x27;))+&#x27;&lt;/p&gt;&lt;p&gt;纬度 &#x27;+location.lat.toFixed(4)+&#x27; · 经度 &#x27;+location.lng.toFixed(4)+&#x27; · &#x27;+escape(location.coordinateSystem||&#x27;WGS-84&#x27;)+&#x27;&lt;/p&gt;&#x27;+action(&#x27;map&#x27;,&#x27;重新选点&#x27;,&#x27;ot-link&#x27;)+&#x27;&lt;/div&gt;&#x27;;
   }
   function tabs(){
     const items=[[&#x27;hourly&#x27;,&#x27;逐时预报&#x27;],[&#x27;cloud&#x27;,&#x27;云层剖面&#x27;]];
-    if(state.mode===&#x27;route&#x27;)items.push([&#x27;route&#x27;,&#x27;沿途天气&#x27;]);
     items.push([&#x27;astro&#x27;,&#x27;日月天相&#x27;]);
     return &#x27;&lt;div class=&quot;ot-tabs&quot; role=&quot;tablist&quot; aria-label=&quot;天气详情模块&quot;&gt;&#x27;+items.map(item=&gt;action(&#x27;tab&#x27;,item[1],&#x27;ot-tab&#x27;,&#x27;role=&quot;tab&quot; id=&quot;ot-tab-&#x27;+item[0]+&#x27;&quot; aria-controls=&quot;ot-weather-panel&quot; aria-selected=&quot;&#x27;+(state.tab===item[0])+&#x27;&quot; data-tab=&quot;&#x27;+item[0]+&#x27;&quot;&#x27;)).join(&#x27;&#x27;)+&#x27;&lt;/div&gt;&#x27;;
   }
   function weather(){
-    return (state.mode===&#x27;route&#x27;?routeHeading():pointHeading())+tabs()+&#x27;&lt;div id=&quot;ot-weather-panel&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;ot-tab-&#x27;+state.tab+&#x27;&quot;&gt;&#x27;+(state.tab===&#x27;route&#x27;?routeOverview():pointDetail())+&#x27;&lt;/div&gt;&#x27;;
+    if(state.mode===&#x27;route&#x27;&amp;&amp;state.tab===&#x27;route&#x27;)return routeHeading()+routeOverview();
+    return (state.mode===&#x27;route&#x27;?routeHeading():pointHeading())+tabs()+&#x27;&lt;div id=&quot;ot-weather-panel&quot; role=&quot;tabpanel&quot; aria-labelledby=&quot;ot-tab-&#x27;+state.tab+&#x27;&quot;&gt;&#x27;+pointDetail()+&#x27;&lt;/div&gt;&#x27;;
   }
   function routeOverview(){
-    const maxDay=Math.max.apply(null,state.stops.map(stop=&gt;stop.day));
     const stops=state.stops.filter(stop=&gt;stop.day===state.day);
     const date=dateAdd(state.startDate,state.day-1);
-    const days=Array.from({length:maxDay},(_,index)=&gt;action(&#x27;day&#x27;,&#x27;D&#x27;+(index+1)+&#x27; · &#x27;+dateShort(dateAdd(state.startDate,index)),&#x27;ot-day-button&#x27;,&#x27;aria-pressed=&quot;&#x27;+(state.day===index+1)+&#x27;&quot; data-day=&quot;&#x27;+(index+1)+&#x27;&quot;&#x27;)).join(&#x27;&#x27;);
-    const missing=state.scenario===&#x27;unscheduled&#x27;;
-    const banner=!forecastAllowed(date)?&#x27;&lt;div class=&quot;ot-notice&quot;&gt;&#x27;+icon(&#x27;calendar-clock&#x27;)+&#x27;&lt;span&gt;暂未进入预报范围。行程已保留，临近出发再查。&lt;/span&gt;&lt;/div&gt;&#x27;:missing?&#x27;&lt;div class=&quot;ot-notice&quot;&gt;&#x27;+icon(&#x27;clock-3&#x27;)+&#x27;&lt;span&gt;尚未安排抵达时间。可逐点查当天预报，不代表抵达时天气。&lt;/span&gt;&lt;/div&gt;&#x27;:&#x27;&lt;div class=&quot;ot-notice ot-info&quot;&gt;&#x27;+icon(&#x27;clock-3&#x27;)+&#x27;&lt;span&gt;按各节点预计抵达时刻查询，不是把同一时刻的天气铺满路线。&lt;/span&gt;&lt;/div&gt;&#x27;;
+    const days=Array.from({length:maxDay()},(_,index)=&gt;action(&#x27;day&#x27;,&#x27;D&#x27;+(index+1)+&#x27; · &#x27;+dateShort(dateAdd(state.startDate,index)),&#x27;ot-day-button&#x27;,&#x27;aria-pressed=&quot;&#x27;+(state.day===index+1)+&#x27;&quot; data-day=&quot;&#x27;+(index+1)+&#x27;&quot;&#x27;)).join(&#x27;&#x27;);
+    const missing=stops.some(stop=&gt;!stop.time);
+    const banner=!forecastAllowed(date)?&#x27;&lt;div class=&quot;ot-notice&quot;&gt;&#x27;+icon(&#x27;calendar-clock&#x27;)+&#x27;&lt;span&gt;暂未进入预报范围。行程已保留，临近出发再查。&lt;/span&gt;&lt;/div&gt;&#x27;:missing?&#x27;&lt;div class=&quot;ot-notice&quot;&gt;&#x27;+icon(&#x27;clock-3&#x27;)+&#x27;&lt;span&gt;部分经过尚未安排时间。可以逐点查天气，不代表抵达时天气。&lt;/span&gt;&lt;/div&gt;&#x27;:&#x27;&lt;div class=&quot;ot-notice ot-info&quot;&gt;&#x27;+icon(&#x27;clock-3&#x27;)+&#x27;&lt;span&gt;按各次经过的计划时间查逐小时预报，时间安排不会写回路线。&lt;/span&gt;&lt;/div&gt;&#x27;;
+    const updates=state.routeUpdates.length?&#x27;&lt;div class=&quot;ot-notice&quot; style=&quot;margin-bottom:12px&quot;&gt;&#x27;+icon(&#x27;git-pull-request&#x27;)+&#x27;&lt;span&gt;路线已更新，个人时间未改。&#x27;+action(&#x27;route-info&#x27;,&#x27;查看变更与待处理节点&#x27;,&#x27;ot-link&#x27;)+&#x27;&lt;/span&gt;&lt;/div&gt;&#x27;:&#x27;&#x27;;
+    const permission=!routeAvailable()?&#x27;&lt;div class=&quot;ot-notice&quot; style=&quot;margin-bottom:12px&quot;&gt;&#x27;+icon(&#x27;lock-keyhole&#x27;)+&#x27;&lt;span&gt;路线访问权限已失效。仅保留已有计划记录，不能继续当作最新路线查询。&lt;/span&gt;&lt;/div&gt;&#x27;:&#x27;&#x27;;
+    const unavailable=weatherUnavailable()?&#x27;&lt;div class=&quot;ot-notice&quot;&gt;&#x27;+icon(&#x27;cloud-off&#x27;)+&#x27;&lt;span&gt;&#x27;+({loading:&#x27;天气正在加载，计划仍可编辑。&#x27;,error:&#x27;天气请求失败，请重试；不会显示假结果。&#x27;,expired:&#x27;天气缓存已过期，离线时不展示旧预报；计划仍保留。&#x27;})[state.scenario]+action(&#x27;retry-weather&#x27;,&#x27;重试演示&#x27;,&#x27;ot-link&#x27;)+&#x27;&lt;/span&gt;&lt;/div&gt;&#x27;:state.scenario===&#x27;offline&#x27;?&#x27;&lt;div class=&quot;ot-notice&quot;&gt;离线缓存演示 · 上次更新 10月27日 08:00，不代表最新预报。&lt;/div&gt;&#x27;:&#x27;&#x27;;
     const list=stops.map(stop=&gt;{
-      const location=byId(stop.pointId);
-      const hour=stop.time?Number(stop.time.slice(0,2))+Number(stop.time.slice(3))/60:12;
+      const location=stopPoint(stop);
+      const removed=!byId(stop.pointId);
+      const hour=stop.time?Number(stop.time.slice(0,2)):12;
       const data=forecast(location,hour,date);
-      const timed=stop.time&amp;&amp;!missing;
-      const ready=timed&amp;&amp;forecastAllowed(date);
-      return &#x27;&lt;div class=&quot;ot-stop&quot;&gt;&lt;div class=&quot;ot-stop-time ot-num&quot;&gt;&#x27;+(timed?escape(stop.time):&#x27;待安排&#x27;)+&#x27;&lt;small&gt;&#x27;+(timed?&#x27;预计抵达&#x27;:&#x27;点开查询&#x27;)+&#x27;&lt;/small&gt;&lt;/div&gt;&#x27;+action(&#x27;node&#x27;,&#x27;&lt;div class=&quot;ot-row&quot;&gt;&lt;span class=&quot;ot-stop-name&quot;&gt;&#x27;+escape(location.name)+&#x27;&lt;/span&gt;&#x27;+icon(&#x27;chevron-right&#x27;)+&#x27;&lt;/div&gt;&lt;div class=&quot;ot-caption&quot;&gt;&#x27;+(location.ele==null?&#x27;海拔未提供&#x27;:location.ele.toLocaleString()+&#x27; m&#x27;)+&#x27; · &#x27;+escape(location.kind||&#x27;关键点&#x27;)+&#x27;&lt;/div&gt;&#x27;+(ready?&#x27;&lt;div class=&quot;ot-stop-weather&quot;&gt;&lt;span&gt;&#x27;+icon(data.rain&gt;1?&#x27;cloud-rain&#x27;:&#x27;cloud-sun&#x27;)+data.temperature+&#x27;° &#x27;+data.weather+&#x27;&lt;/span&gt;&lt;span&gt;&#x27;+icon(&#x27;droplets&#x27;)+data.probability+&#x27;%&lt;/span&gt;&lt;span&gt;&#x27;+icon(&#x27;wind&#x27;)+data.wind+&#x27; km/h&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ot-stop-note&quot;&gt;&#x27;+(data.gust&gt;=28?&#x27;阵风约 &#x27;+data.gust+&#x27; km/h · 留意暴露路段&#x27;:&#x27;云量 &#x27;+data.cloud+&#x27;% · 查看云层与海拔关系&#x27;)+&#x27;&lt;/div&gt;&#x27;:&#x27;&lt;div class=&quot;ot-stop-note&quot;&gt;&#x27;+(timed?&#x27;尚无该日期的可用预报&#x27;:&#x27;未设置抵达时刻 · 可查看整天变化&#x27;)+&#x27;&lt;/div&gt;&#x27;),&#x27;ot-stop-body&#x27;,&#x27;data-stop=&quot;&#x27;+stop.id+&#x27;&quot;&#x27;)+&#x27;&lt;/div&gt;&#x27;;
+      const timed=Boolean(stop.time);
+      const ready=timed&amp;&amp;forecastAllowed(date)&amp;&amp;!removed&amp;&amp;routeAvailable()&amp;&amp;!weatherUnavailable();
+      const missingReason=removed?&#x27;节点已从路线移除 · 时间保留，点击处理&#x27;:!routeAvailable()?&#x27;无路线访问权限&#x27;:weatherUnavailable()?&#x27;当前无可用天气结果&#x27;:timed?&#x27;尚无该日期的可用预报&#x27;:&#x27;未安排时间 · 点开查当天变化&#x27;;
+      return &#x27;&lt;div class=&quot;ot-stop&quot; data-visit=&quot;&#x27;+stop.id+&#x27;&quot;&gt;&lt;div class=&quot;ot-stop-time ot-num&quot;&gt;&#x27;+(timed?escape(stop.time):&#x27;待安排&#x27;)+&#x27;&lt;small&gt;&#x27;+eventLabel(stop)+&#x27;&lt;/small&gt;&lt;/div&gt;&#x27;+action(removed?&#x27;edit-plan&#x27;:&#x27;node&#x27;,&#x27;&lt;div class=&quot;ot-row&quot;&gt;&lt;span class=&quot;ot-stop-name&quot;&gt;&#x27;+escape(location.name)+&#x27;&lt;/span&gt;&#x27;+icon(&#x27;chevron-right&#x27;)+&#x27;&lt;/div&gt;&lt;div class=&quot;ot-caption&quot;&gt;&#x27;+(location.ele==null?&#x27;海拔未提供&#x27;:location.ele.toLocaleString()+&#x27; m&#x27;)+&#x27; · &#x27;+escape(location.kind||&#x27;关键点&#x27;)+&#x27;&lt;/div&gt;&#x27;+(ready?&#x27;&lt;div class=&quot;ot-stop-weather&quot;&gt;&lt;span&gt;&#x27;+icon(data.rain&gt;1?&#x27;cloud-rain&#x27;:&#x27;cloud-sun&#x27;)+data.temperature+&#x27;° &#x27;+data.weather+&#x27;&lt;/span&gt;&lt;span&gt;&#x27;+icon(&#x27;droplets&#x27;)+data.probability+&#x27;%&lt;/span&gt;&lt;span&gt;&#x27;+icon(&#x27;wind&#x27;)+data.wind+&#x27; km/h&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ot-stop-note&quot;&gt;参考 &#x27;+timeLabel(hour)+(stop.time.slice(3)!==&#x27;00&#x27;?&#x27; / &#x27;+timeLabel(hour+1):&#x27;&#x27;)+&#x27; 逐小时预报 · 示例&lt;/div&gt;&#x27;:&#x27;&lt;div class=&quot;ot-stop-note &#x27;+(removed?&#x27;ot-warning-text&#x27;:&#x27;&#x27;)+&#x27;&quot;&gt;&#x27;+missingReason+&#x27;&lt;/div&gt;&#x27;),&#x27;ot-stop-body&#x27;,&#x27;data-stop=&quot;&#x27;+stop.id+&#x27;&quot; &#x27;+(!routeAvailable()?&#x27;disabled&#x27;:&#x27;&#x27;))+&#x27;&lt;/div&gt;&#x27;;
     }).join(&#x27;&#x27;);
-    return &#x27;&lt;section class=&quot;ot-section&quot;&gt;&lt;div class=&quot;ot-section-title&quot;&gt;&lt;h2&gt;沿途天气&lt;/h2&gt;&lt;span class=&quot;ot-caption&quot;&gt;地点 × 抵达时间&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ot-date-controls&quot;&gt;&lt;div class=&quot;ot-row-wrap&quot;&gt;&#x27;+days+&#x27;&lt;/div&gt;&lt;/div&gt;&#x27;+banner+&#x27;&lt;div class=&quot;ot-timeline&quot;&gt;&#x27;+list+&#x27;&lt;/div&gt;&#x27;+action(&#x27;edit-plan&#x27;,icon(&#x27;sliders-horizontal&#x27;)+&#x27;调整每天的节点与时间&#x27;,&#x27;ot-button ot-full&#x27;)+&#x27;&lt;p class=&quot;ot-source&quot;&gt;降水显示概率，风速单位 km/h。所有读数为交互示例。&lt;/p&gt;&lt;/section&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;div class=&quot;ot-row&quot;&gt;&lt;div&gt;&lt;h3&gt;路线可以反复用，计划各自保存&lt;/h3&gt;&lt;p class=&quot;ot-caption&quot;&gt;这次的日期和抵达时间，不修改路线原始记录。&lt;/p&gt;&lt;/div&gt;&#x27;+icon(&#x27;route&#x27;)+&#x27;&lt;/div&gt;&#x27;+action(&#x27;route-library&#x27;,&#x27;查看共用路线库 &#x27;+icon(&#x27;arrow-right&#x27;),&#x27;ot-link&#x27;)+&#x27;&lt;/section&gt;&#x27;;
+    return &#x27;&lt;section class=&quot;ot-section&quot;&gt;&lt;div class=&quot;ot-section-title&quot;&gt;&lt;h2&gt;每天走到哪里&lt;/h2&gt;&lt;span class=&quot;ot-caption&quot;&gt;北京时间&lt;/span&gt;&lt;/div&gt;&#x27;+updates+permission+&#x27;&lt;div class=&quot;ot-date-controls&quot;&gt;&lt;div class=&quot;ot-row-wrap&quot;&gt;&#x27;+days+&#x27;&lt;/div&gt;&lt;/div&gt;&#x27;+banner+unavailable+&#x27;&lt;div class=&quot;ot-timeline&quot;&gt;&#x27;+(list||empty(&#x27;这一天还没有安排节点&#x27;,&#x27;进入编辑，为这一天添加经过。&#x27;))+&#x27;&lt;/div&gt;&#x27;+action(&#x27;edit-plan&#x27;,icon(&#x27;sliders-horizontal&#x27;)+&#x27;调整每天的节点与时间&#x27;,&#x27;ot-button ot-full&#x27;,&#x27;&#x27;+(!routeAvailable()?&#x27;disabled&#x27;:&#x27;&#x27;))+&#x27;&lt;p class=&quot;ot-source&quot;&gt;降水显示概率，风速单位 km/h。每次经过独立记录，原 GPX 时间不会被改写。&lt;/p&gt;&lt;/section&gt;&#x27;;
   }
   function pointSelector(){
-    return state.mode===&#x27;route&#x27;?&#x27;&lt;label class=&quot;ot-caption&quot; for=&quot;ot-node&quot;&gt;当前节点&lt;/label&gt;&lt;select id=&quot;ot-node&quot; class=&quot;ot-node-select&quot; aria-label=&quot;切换天气节点&quot;&gt;&#x27;+state.points.map(location=&gt;&#x27;&lt;option value=&quot;&#x27;+escape(location.id)+&#x27;&quot; &#x27;+(location.id===state.pointId?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;&#x27;+escape(location.name)+&#x27; · &#x27;+(location.ele==null?&#x27;海拔未知&#x27;:location.ele.toLocaleString()+&#x27; m&#x27;)+&#x27;&lt;/option&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/select&gt;&#x27;:&#x27;&#x27;;
+    return state.mode===&#x27;route&#x27;?&#x27;&lt;label class=&quot;ot-caption&quot; for=&quot;ot-node&quot;&gt;当前经过 · 同一节点可多次经过&lt;/label&gt;&lt;select id=&quot;ot-node&quot; class=&quot;ot-node-select&quot; aria-label=&quot;切换天气经过&quot;&gt;&#x27;+state.stops.filter(stop=&gt;byId(stop.pointId)).map(stop=&gt;&#x27;&lt;option value=&quot;&#x27;+stop.id+&#x27;&quot; &#x27;+(stop.id===state.activeStopId?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;D&#x27;+stop.day+&#x27; &#x27;+escape(stopPoint(stop).name)+&#x27; · &#x27;+eventLabel(stop)+&#x27; &#x27;+(stop.time||&#x27;待安排&#x27;)+&#x27;&lt;/option&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/select&gt;&#x27;:&#x27;&#x27;;
   }
   function pointDetail(){
     const location=point();
-    const arrival=state.stops.find(stop=&gt;stop.pointId===location.id&amp;&amp;stop.day===state.day);
-    const base=&#x27;&lt;section class=&quot;ot-section&quot;&gt;&#x27;+pointSelector()+&#x27;&lt;div class=&quot;ot-date-controls&quot;&gt;&lt;label class=&quot;ot-inline-label&quot;&gt;查询日期&lt;input id=&quot;ot-query-date&quot; type=&quot;date&quot; value=&quot;&#x27;+state.date+&#x27;&quot; aria-label=&quot;查询日期&quot;&gt;&lt;/label&gt;&lt;span class=&quot;ot-caption&quot;&gt;北京时间&lt;/span&gt;&lt;/div&gt;&#x27;+(state.mode===&#x27;route&#x27;?&#x27;&lt;div class=&quot;ot-arrival&quot;&gt;&#x27;+icon(&#x27;clock-3&#x27;)+(arrival&amp;&amp;arrival.time&amp;&amp;state.scenario!==&#x27;unscheduled&#x27;?&#x27;计划抵达 &#x27;+dateShort(dateAdd(state.startDate,arrival.day-1))+&#x27; &#x27;+arrival.time+&#x27; · 浏览不改计划&#x27;:&#x27;未安排该节点抵达时间&#x27;)+&#x27;&lt;/div&gt;&#x27;:&#x27;&#x27;);
+    const arrival=state.stops.find(stop=&gt;stop.id===state.activeStopId);
+    const base=&#x27;&lt;section class=&quot;ot-section&quot;&gt;&#x27;+pointSelector()+(state.mode===&#x27;route&#x27;?&#x27;&lt;div class=&quot;ot-arrival&quot;&gt;&#x27;+icon(&#x27;clock-3&#x27;)+(arrival&amp;&amp;arrival.time?&#x27;计划&#x27;+(arrival.event===&#x27;depart&#x27;?&#x27;出发&#x27;:&#x27;抵达&#x27;)+&#x27; &#x27;+dateShort(dateAdd(state.startDate,arrival.day-1))+&#x27; &#x27;+arrival.time:&#x27;这次经过尚未安排时间&#x27;)+&#x27; · 浏览不改计划&lt;/div&gt;&#x27;:&#x27;&#x27;)+&#x27;&lt;div class=&quot;ot-date-controls&quot;&gt;&lt;label class=&quot;ot-inline-label&quot;&gt;浏览日期&lt;input id=&quot;ot-query-date&quot; type=&quot;date&quot; value=&quot;&#x27;+state.date+&#x27;&quot; aria-label=&quot;查询日期&quot;&gt;&lt;/label&gt;&lt;span class=&quot;ot-caption&quot;&gt;北京时间&lt;/span&gt;&lt;/div&gt;&#x27;;
     if(!forecastAllowed(state.date))return base+empty(&#x27;暂未进入预报范围&#x27;,&#x27;可以先保存行程，临近出发再查看天气。当前页面不会用示例预报填补无数据日期。&#x27;,action(&#x27;available-date&#x27;,&#x27;查看演示可用日期&#x27;,&#x27;ot-button ot-primary&#x27;))+&#x27;&lt;/section&gt;&#x27;;
     if(state.tab===&#x27;astro&#x27;)return base+astro()+&#x27;&lt;/section&gt;&#x27;;
+    if(weatherUnavailable())return base+empty(state.scenario===&#x27;loading&#x27;?&#x27;天气加载中&#x27;:state.scenario===&#x27;expired&#x27;?&#x27;离线且天气缓存已过期&#x27;:&#x27;天气请求失败&#x27;,&#x27;地点与行程仍然保留。此处不使用样例数值填补失败结果。&#x27;,action(&#x27;retry-weather&#x27;,&#x27;重试演示&#x27;,&#x27;ot-button ot-primary&#x27;))+&#x27;&lt;/section&gt;&#x27;;
     const data=forecast(location,state.hour,state.date);
     const cloudMissing=state.scenario===&#x27;missing&#x27;;
     const offline=state.scenario===&#x27;offline&#x27;;
-    return base+(offline?&#x27;&lt;div class=&quot;ot-notice&quot;&gt;&#x27;+icon(&#x27;cloud-off&#x27;)+&#x27;&lt;span&gt;离线缓存演示 · 显示上次结果，不代表最新天气。&lt;/span&gt;&lt;/div&gt;&#x27;:&#x27;&#x27;)+&#x27;&lt;div class=&quot;ot-summary&quot;&gt;&lt;div class=&quot;ot-temperature ot-num&quot; id=&quot;ot-main-temperature&quot;&gt;&#x27;+data.temperature+&#x27;&lt;span&gt;°C&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;h3 id=&quot;ot-main-weather&quot;&gt;&#x27;+data.weather+&#x27;&lt;/h3&gt;&lt;p id=&quot;ot-main-detail&quot;&gt;降水 &#x27;+data.rain+&#x27; mm/h · 风速 &#x27;+data.wind+&#x27; km/h&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;ot-chart-head&quot;&gt;&lt;h3&gt;&#x27;+(state.tab===&#x27;cloud&#x27;?&#x27;云层 × 海拔&#x27;:&#x27;逐时综合预报&#x27;)+&#x27;&lt;/h3&gt;&lt;div class=&quot;ot-period&quot; aria-label=&quot;预报时长&quot;&gt;&#x27;+[24,48,72].map(period=&gt;action(&#x27;period&#x27;,period+&#x27;h&#x27;,&#x27;&#x27;,&#x27;aria-pressed=&quot;&#x27;+(state.period===period)+&#x27;&quot; data-period=&quot;&#x27;+period+&#x27;&quot;&#x27;)).join(&#x27;&#x27;)+&#x27;&lt;/div&gt;&lt;/div&gt;&lt;div id=&quot;ot-readout&quot; class=&quot;ot-readout&quot; aria-live=&quot;polite&quot;&gt;&#x27;+readout()+&#x27;&lt;/div&gt;&#x27;+(cloudMissing?&#x27;&lt;div class=&quot;ot-notice&quot;&gt;&#x27;+icon(&#x27;cloud-alert&#x27;)+&#x27;&lt;span&gt;云层廓线缺失：云层区域不绘制；温度、降水和风仍可查看。&lt;/span&gt;&lt;/div&gt;&#x27;:&#x27;&#x27;)+&#x27;&lt;div class=&quot;ot-chart&quot; id=&quot;ot-chart&quot; role=&quot;group&quot; aria-label=&quot;可点击选择时刻的天气图表&quot;&gt;&lt;/div&gt;&lt;div class=&quot;ot-legend&quot;&gt;&lt;span&gt;云量&lt;/span&gt;&lt;span&gt;少&lt;/span&gt;&lt;span class=&quot;ot-ramp&quot;&gt;&lt;/span&gt;&lt;span&gt;多&lt;/span&gt;&lt;span&gt;20 / 40 / 60 / 80 / 95%&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ot-legend&quot;&gt;&lt;span&gt;&lt;span class=&quot;ot-swatch&quot; style=&quot;background:var(--ot-temp)&quot;&gt;&lt;/span&gt;温度&lt;/span&gt;&lt;span&gt;&lt;span class=&quot;ot-swatch&quot; style=&quot;background:var(--ot-rain);height:7px&quot;&gt;&lt;/span&gt;降水&lt;/span&gt;&lt;span&gt;&lt;span class=&quot;ot-swatch&quot; style=&quot;background:var(--ot-wind)&quot;&gt;&lt;/span&gt;风速&lt;/span&gt;&lt;span&gt;&lt;span class=&quot;ot-swatch&quot; style=&quot;background:var(--ot-gust)&quot;&gt;&lt;/span&gt;阵风&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ot-time-control&quot;&gt;&#x27;+action(&#x27;previous-hour&#x27;,icon(&#x27;chevron-left&#x27;),&#x27;ot-icon-button&#x27;,&#x27;aria-label=&quot;前一小时&quot;&#x27;)+&#x27;&lt;input id=&quot;ot-hour&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;&#x27;+(state.period-1)+&#x27;&quot; step=&quot;1&quot; value=&quot;&#x27;+state.hour+&#x27;&quot; aria-label=&quot;选择预报小时&quot;&gt;&#x27;+action(&#x27;next-hour&#x27;,icon(&#x27;chevron-right&#x27;),&#x27;ot-icon-button&#x27;,&#x27;aria-label=&quot;后一小时&quot;&#x27;)+&#x27;&lt;/div&gt;&lt;div class=&quot;ot-caption&quot; style=&quot;text-align:center&quot;&gt;点击图表或拖动时间轴 · 各项读数同步&lt;/div&gt;&lt;div id=&quot;ot-detail-facts&quot;&gt;&#x27;+facts(data)+&#x27;&lt;/div&gt;&lt;p class=&quot;ot-source&quot;&gt;云层为示例模式剖面，不是卫星实况。纵轴为海拔高度；显示窗外可能仍有云层。&lt;/p&gt;&lt;/section&gt;&#x27;;
+    const window=cloudWindow();
+    const windowNote=location.ele==null?&#x27;海拔未知，不画地点参考线&#x27;:location.ele&lt;window.low?&#x27;地点在显示窗下方 &#x27;+Math.round(window.low-location.ele)+&#x27; m&#x27;:location.ele&gt;window.high?&#x27;地点在显示窗上方 &#x27;+Math.round(location.ele-window.high)+&#x27; m&#x27;:&#x27;地点参考线 &#x27;+location.ele+&#x27; m&#x27;;
+    return base+(offline?&#x27;&lt;div class=&quot;ot-notice&quot;&gt;&#x27;+icon(&#x27;cloud-off&#x27;)+&#x27;&lt;span&gt;离线缓存演示 · 上次更新 10月27日 08:00，不代表最新天气。&lt;/span&gt;&lt;/div&gt;&#x27;:&#x27;&#x27;)+&#x27;&lt;div class=&quot;ot-summary&quot;&gt;&lt;div class=&quot;ot-temperature ot-num&quot; id=&quot;ot-main-temperature&quot;&gt;&#x27;+data.temperature+&#x27;&lt;span&gt;°C&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;h3 id=&quot;ot-main-weather&quot;&gt;&#x27;+data.weather+&#x27;&lt;/h3&gt;&lt;p id=&quot;ot-main-detail&quot;&gt;小时降水 &#x27;+data.rain+&#x27; mm · 风速 &#x27;+data.wind+&#x27; km/h&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;ot-chart-head&quot;&gt;&lt;h3&gt;&#x27;+(state.tab===&#x27;cloud&#x27;?&#x27;垂直云量预报&#x27;:&#x27;逐时综合预报&#x27;)+&#x27;&lt;/h3&gt;&lt;div class=&quot;ot-period&quot; aria-label=&quot;预报时长&quot;&gt;&#x27;+[24,48,72].map(period=&gt;action(&#x27;period&#x27;,period+&#x27;h&#x27;,&#x27;&#x27;,&#x27;aria-pressed=&quot;&#x27;+(state.period===period)+&#x27;&quot; data-period=&quot;&#x27;+period+&#x27;&quot;&#x27;)).join(&#x27;&#x27;)+&#x27;&lt;/div&gt;&lt;/div&gt;&lt;label class=&quot;ot-field&quot;&gt;显示高度窗口&lt;select id=&quot;ot-height-window&quot;&gt;&lt;option value=&quot;auto&quot; &#x27;+(state.heightWindow===&#x27;auto&#x27;?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;自适应地点&lt;/option&gt;&lt;option value=&quot;low&quot; &#x27;+(state.heightWindow===&#x27;low&#x27;?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;低层 · 0–5,000 m&lt;/option&gt;&lt;option value=&quot;high&quot; &#x27;+(state.heightWindow===&#x27;high&#x27;?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;高层 · 3,000–8,000 m&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;p class=&quot;ot-chart-scope&quot;&gt;显示窗 &#x27;+window.low.toLocaleString()+&#x27;–&#x27;+window.high.toLocaleString()+&#x27; m 海拔&lt;br&gt;&#x27;+windowNote+&#x27;&lt;br&gt;样例有效范围 600–6,200 m；窗外可能仍有云。&lt;/p&gt;&lt;div id=&quot;ot-readout&quot; class=&quot;ot-readout&quot; aria-live=&quot;polite&quot;&gt;&#x27;+readout()+&#x27;&lt;/div&gt;&#x27;+(cloudMissing||state.scenario===&#x27;partial&#x27;?&#x27;&lt;div class=&quot;ot-notice&quot;&gt;&#x27;+icon(&#x27;cloud-alert&#x27;)+&#x27;&lt;span&gt;&#x27;+(cloudMissing?&#x27;云层廓线缺失：不绘制云层&#x27;:&#x27;每日 08–10 时云层缺测：斜线遮罩，不借用相邻小时&#x27;)+&#x27;；温度、降水和风仍可查看。&lt;/span&gt;&lt;/div&gt;&#x27;:&#x27;&#x27;)+&#x27;&lt;div class=&quot;ot-chart&quot; id=&quot;ot-chart&quot; role=&quot;group&quot; aria-label=&quot;可点击选择时刻的天气图表&quot;&gt;&lt;/div&gt;&lt;div class=&quot;ot-legend&quot;&gt;&lt;span&gt;分层云量&lt;/span&gt;&lt;span class=&quot;ot-ramp&quot;&gt;&lt;/span&gt;&lt;span&gt;10 / 25 / 50 / 75 / 90%&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ot-legend&quot;&gt;&lt;span&gt;&lt;span class=&quot;ot-swatch&quot; style=&quot;background:var(--ot-temp)&quot;&gt;&lt;/span&gt;2 m 温度&lt;/span&gt;&lt;span&gt;&lt;span class=&quot;ot-swatch&quot; style=&quot;background:var(--ot-rain);height:7px&quot;&gt;&lt;/span&gt;小时降水&lt;/span&gt;&lt;span&gt;&lt;span class=&quot;ot-swatch&quot; style=&quot;background:var(--ot-wind)&quot;&gt;&lt;/span&gt;10 m 风&lt;/span&gt;&lt;span&gt;&lt;span class=&quot;ot-swatch&quot; style=&quot;background:var(--ot-gust)&quot;&gt;&lt;/span&gt;阵风&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ot-time-control&quot;&gt;&#x27;+action(&#x27;previous-hour&#x27;,icon(&#x27;chevron-left&#x27;),&#x27;ot-icon-button&#x27;,&#x27;aria-label=&quot;前一小时&quot;&#x27;)+&#x27;&lt;input id=&quot;ot-hour&quot; type=&quot;range&quot; min=&quot;0&quot; max=&quot;&#x27;+(state.period-1)+&#x27;&quot; step=&quot;1&quot; value=&quot;&#x27;+state.hour+&#x27;&quot; aria-label=&quot;选择预报小时&quot;&gt;&#x27;+action(&#x27;next-hour&#x27;,icon(&#x27;chevron-right&#x27;),&#x27;ot-icon-button&#x27;,&#x27;aria-label=&quot;后一小时&quot;&#x27;)+&#x27;&lt;/div&gt;&lt;label class=&quot;ot-field&quot;&gt;直接选择浏览时刻&lt;select id=&quot;ot-exact-hour&quot;&gt;&#x27;+Array.from({length:state.period},(_,hour)=&gt;&#x27;&lt;option value=&quot;&#x27;+hour+&#x27;&quot; &#x27;+(hour===state.hour?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;&#x27;+dateShort(dateAdd(state.date,Math.floor(hour/24)))+&#x27; &#x27;+timeLabel(hour)+&#x27;&lt;/option&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/select&gt;&lt;/label&gt;&lt;div id=&quot;ot-detail-facts&quot;&gt;&#x27;+facts(data)+&#x27;&lt;/div&gt;&lt;p class=&quot;ot-source&quot;&gt;合成样例数据，不是卫星实况或真实预报。海拔以模式位势高度为目标口径；灰阶表示分层云量，不是含水量。曲线平滑只用于阅读，不代表分钟级或连续高度实测。&lt;/p&gt;&lt;/section&gt;&#x27;;
   }
   function readout(){
     const location=point();
     const data=forecast(location,state.hour,state.date);
-    const descriptor=state.scenario===&#x27;missing&#x27;?&#x27;云层数据缺失&#x27;:data.pointCloud==null?&#x27;缺少海拔，无法判读位置&#x27;:data.pointCloud&gt;=60?&#x27;可能处于云中&#x27;:&#x27;地点高度附近云量较少&#x27;;
-    return &#x27;&lt;div&gt;&lt;strong class=&quot;ot-num&quot;&gt;&#x27;+dateShort(dateAdd(state.date,Math.floor(state.hour/24)))+&#x27; &#x27;+timeLabel(state.hour)+&#x27;&lt;/strong&gt;&lt;p&gt;&#x27;+descriptor+&#x27;&lt;/p&gt;&lt;/div&gt;&lt;div class=&quot;ot-caption ot-num&quot;&gt;&#x27;+(state.scenario===&#x27;missing&#x27;?&#x27;云量 —&#x27;:&#x27;总云量 &#x27;+data.cloud+&#x27;%&#x27;)+&#x27;&lt;br&gt;&#x27;+(location.ele==null?&#x27;海拔待补充&#x27;:location.ele.toLocaleString()+&#x27; m 参考线&#x27;)+&#x27;&lt;/div&gt;&#x27;;
+    const unsupported=location.ele!=null&amp;&amp;(location.ele&lt;coveredHeight.low||location.ele&gt;coveredHeight.high);
+    const descriptor=cloudMissing(state.hour)?&#x27;该小时云层缺测&#x27;:data.pointCloud==null?&#x27;缺少海拔，无法判读位置&#x27;:unsupported?&#x27;地点超出有效高度范围&#x27;:data.pointCloud&gt;=60?&#x27;模型示例：该高度云量较多&#x27;:&#x27;模型示例：该高度云量较少&#x27;;
+    return &#x27;&lt;div&gt;&lt;strong class=&quot;ot-num&quot;&gt;&#x27;+dateShort(dateAdd(state.date,Math.floor(state.hour/24)))+&#x27; &#x27;+timeLabel(state.hour)+&#x27;&lt;/strong&gt;&lt;p&gt;&#x27;+descriptor+&#x27;&lt;/p&gt;&lt;/div&gt;&lt;div class=&quot;ot-caption ot-num&quot;&gt;总云量 &#x27;+data.cloud+&#x27;%&lt;br&gt;&#x27;+(location.ele==null?&#x27;海拔待补充&#x27;:location.ele.toLocaleString()+&#x27; m 海拔&#x27;)+&#x27;&lt;/div&gt;&#x27;;
   }
   function facts(data){
     const location=point();
-    return &#x27;&lt;div class=&quot;ot-facts&quot;&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;降水量 / 概率&lt;/p&gt;&lt;strong class=&quot;ot-num&quot;&gt;&#x27;+data.rain+&#x27; mm/h · &#x27;+data.probability+&#x27;%&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;风速 / 阵风&lt;/p&gt;&lt;strong class=&quot;ot-num&quot;&gt;&#x27;+data.wind+&#x27; / &#x27;+data.gust+&#x27; km/h&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;地点高度处云量&lt;/p&gt;&lt;strong class=&quot;ot-num&quot;&gt;&#x27;+(state.scenario===&#x27;missing&#x27;||location.ele==null?&#x27;无法判断&#x27;:data.pointCloud+&#x27;%&#x27;)+&#x27;&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;预报性质&lt;/p&gt;&lt;strong&gt;示例模式数据&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;&#x27;;
+    return &#x27;&lt;div class=&quot;ot-facts&quot;&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;前一小时降水 / 概率&lt;/p&gt;&lt;strong class=&quot;ot-num&quot;&gt;&#x27;+data.rain+&#x27; mm · &#x27;+data.probability+&#x27;%&lt;/strong&gt;&lt;p&gt;&#x27;+timeLabel(state.hour+23)+&#x27;–&#x27;+timeLabel(state.hour)+&#x27;（00 时跨日）&lt;/p&gt;&lt;/div&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;10 m 风速 / 阵风&lt;/p&gt;&lt;strong class=&quot;ot-num&quot;&gt;&#x27;+data.wind+&#x27; / &#x27;+data.gust+&#x27; km/h&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;地点高度处云量&lt;/p&gt;&lt;strong class=&quot;ot-num&quot;&gt;&#x27;+(cloudMissing(state.hour)||location.ele==null||location.ele&lt;coveredHeight.low||location.ele&gt;coveredHeight.high?&#x27;— · 无可用读数&#x27;:data.pointCloud+&#x27;%&#x27;)+&#x27;&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;数据性质&lt;/p&gt;&lt;strong&gt;合成示例 · 非实况&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;&#x27;;
   }
   function astro(){
     return &#x27;&lt;div style=&quot;margin-top:20px&quot;&gt;&lt;div class=&quot;ot-section-title&quot;&gt;&lt;h2&gt;日月天相&lt;/h2&gt;&lt;span class=&quot;ot-chip&quot;&gt;示例时刻&lt;/span&gt;&lt;/div&gt;&lt;svg class=&quot;ot-sun-dial&quot; viewBox=&quot;0 0 320 146&quot; role=&quot;img&quot; aria-label=&quot;日照时段示意，日出07:24、日落18:31&quot;&gt;&lt;path d=&quot;M22 119 Q160 -44 298 119&quot; fill=&quot;none&quot; stroke=&quot;var(--ot-line)&quot; stroke-width=&quot;2&quot; stroke-dasharray=&quot;4 4&quot;/&gt;&lt;path d=&quot;M22 119 Q95 37 160 38 Q228 37 298 119L22 119Z&quot; fill=&quot;var(--ot-warn-bg)&quot;/&gt;&lt;line x1=&quot;22&quot; x2=&quot;298&quot; y1=&quot;119&quot; y2=&quot;119&quot; stroke=&quot;var(--ot-line)&quot;/&gt;&lt;circle cx=&quot;160&quot; cy=&quot;38&quot; r=&quot;8&quot; fill=&quot;var(--ot-warn)&quot;/&gt;&lt;text x=&quot;22&quot; y=&quot;140&quot; fill=&quot;var(--ot-muted)&quot; font-size=&quot;12&quot;&gt;07:24 日出&lt;/text&gt;&lt;text x=&quot;298&quot; y=&quot;140&quot; fill=&quot;var(--ot-muted)&quot; font-size=&quot;12&quot; text-anchor=&quot;end&quot;&gt;18:31 日落&lt;/text&gt;&lt;text x=&quot;160&quot; y=&quot;90&quot; fill=&quot;var(--ot-ink)&quot; font-size=&quot;14&quot; text-anchor=&quot;middle&quot;&gt;日照约 11 小时&lt;/text&gt;&lt;/svg&gt;&lt;div class=&quot;ot-facts&quot;&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;晨间黄金时段&lt;/p&gt;&lt;strong&gt;07:24 — 08:03&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;傍晚黄金时段&lt;/p&gt;&lt;strong&gt;17:51 — 18:31&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;月出 / 月落&lt;/p&gt;&lt;strong&gt;22:10 / 12:46&lt;/strong&gt;&lt;/div&gt;&lt;div class=&quot;ot-fact&quot;&gt;&lt;p&gt;地形遮挡&lt;/p&gt;&lt;strong&gt;未提供 · 不作推断&lt;/strong&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;ot-notice ot-info&quot; style=&quot;margin-top:18px&quot;&gt;&#x27;+icon(&#x27;info&#x27;)+&#x27;&lt;span&gt;天文时刻与能否看见日月是两回事。实际可见性还取决于云层与地形。&lt;/span&gt;&lt;/div&gt;&lt;p class=&quot;ot-source&quot;&gt;本页时间固定为交互样例，未计算当前地点与日期的真实天相。&lt;/p&gt;&lt;/div&gt;&#x27;;
@@ -2088,20 +2161,53 @@ html&gt;body{padding:0}&lt;/style&gt;
   }
   function editPlan(){
     const draft=state.draft;
-    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;ITINERARY / 个人行程&lt;/div&gt;&lt;h1&gt;哪天，到哪一站？&lt;/h1&gt;&lt;p&gt;沿用路线，只安排这次出行的日期和抵达时间。&lt;/p&gt;&lt;/div&gt;&lt;form id=&quot;ot-plan-form&quot;&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;label class=&quot;ot-field&quot;&gt;计划名称&lt;input id=&quot;ot-plan-name&quot; name=&quot;name&quot; value=&quot;&#x27;+escape(draft.name)+&#x27;&quot; maxlength=&quot;40&quot; required&gt;&lt;/label&gt;&lt;label class=&quot;ot-field&quot;&gt;出发日期&lt;input id=&quot;ot-start-date&quot; name=&quot;date&quot; type=&quot;date&quot; value=&quot;&#x27;+draft.date+&#x27;&quot; required&gt;&lt;/label&gt;&lt;div class=&quot;ot-notice ot-info&quot;&gt;&#x27;+icon(&#x27;lock-keyhole&#x27;)+&#x27;&lt;span&gt;&#x27;+(state.fromActivity?&#x27;已从活动带入路线和出发时间，修改不会回写活动。&#x27;:&#x27;这是你的个人天气计划，修改不会影响活动或路线库。&#x27;)+&#x27;&lt;/span&gt;&lt;/div&gt;&lt;/section&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;div class=&quot;ot-section-title&quot;&gt;&lt;h2&gt;关键节点&lt;/h2&gt;&lt;span class=&quot;ot-caption&quot;&gt;时间可留空&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;ot-plan-columns&quot;&gt;&lt;span&gt;节点&lt;/span&gt;&lt;span&gt;第几天&lt;/span&gt;&lt;span&gt;抵达时间&lt;/span&gt;&lt;/div&gt;&#x27;+draft.stops.map(stop=&gt;{
-      const location=byId(stop.pointId);
-      return &#x27;&lt;div class=&quot;ot-plan-stop&quot;&gt;&lt;div&gt;&lt;strong&gt;&#x27;+escape(location.name)+&#x27;&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+(location.ele==null?&#x27;海拔未提供&#x27;:location.ele.toLocaleString()+&#x27; m&#x27;)+&#x27;&lt;/p&gt;&lt;/div&gt;&lt;select data-edit-day=&quot;&#x27;+stop.id+&#x27;&quot; aria-label=&quot;&#x27;+escape(location.name)+&#x27;第几天&quot;&gt;&#x27;+[1,2,3,4,5,6,7].map(day=&gt;&#x27;&lt;option value=&quot;&#x27;+day+&#x27;&quot; &#x27;+(day===stop.day?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;D&#x27;+day+&#x27;&lt;/option&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/select&gt;&lt;input type=&quot;time&quot; step=&quot;60&quot; value=&quot;&#x27;+stop.time+&#x27;&quot; data-edit-time=&quot;&#x27;+stop.id+&#x27;&quot; aria-label=&quot;&#x27;+escape(location.name)+&#x27;抵达时间&quot;&gt;&lt;/div&gt;&#x27;;
-    }).join(&#x27;&#x27;)+&#x27;&lt;p class=&quot;ot-source&quot;&gt;同一营地可在相邻两天重复出现。GPX 历史时间不作为本次出发日期，也不会被改写。&lt;/p&gt;&lt;div id=&quot;ot-plan-error&quot; class=&quot;ot-error&quot; role=&quot;alert&quot;&gt;&lt;/div&gt;&lt;/section&gt;&lt;div class=&quot;ot-actions&quot;&gt;&#x27;+action(&#x27;save-plan&#x27;,icon(&#x27;check&#x27;)+&#x27;保存个人计划&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+action(&#x27;cancel-plan&#x27;,&#x27;取消，保留原计划&#x27;,&#x27;ot-button ot-full&#x27;)+&#x27;&lt;/div&gt;&lt;/form&gt;&#x27;;
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;ITINERARY / 个人行程&lt;/div&gt;&lt;h1&gt;哪天，到哪一站？&lt;/h1&gt;&lt;p&gt;每次经过单独安排；同一营地可以当晚抵达、次日出发。&lt;/p&gt;&lt;/div&gt;&lt;form id=&quot;ot-plan-form&quot;&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;label class=&quot;ot-field&quot;&gt;计划名称&lt;input id=&quot;ot-plan-name&quot; name=&quot;name&quot; value=&quot;&#x27;+escape(draft.name)+&#x27;&quot; maxlength=&quot;40&quot; required&gt;&lt;/label&gt;&lt;label class=&quot;ot-field&quot;&gt;出发日期&lt;input id=&quot;ot-start-date&quot; name=&quot;date&quot; type=&quot;date&quot; value=&quot;&#x27;+draft.date+&#x27;&quot; required&gt;&lt;/label&gt;&lt;div class=&quot;ot-notice ot-info&quot;&gt;&#x27;+icon(&#x27;lock-keyhole&#x27;)+&#x27;&lt;span&gt;&#x27;+(state.fromActivity?&#x27;已从活动带入路线和出发时间，修改不会回写活动。&#x27;:&#x27;这是你的个人天气计划，修改不会影响活动或路线库。&#x27;)+&#x27;&lt;/span&gt;&lt;/div&gt;&lt;/section&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;div class=&quot;ot-section-title&quot;&gt;&lt;h2&gt;经过安排&lt;/h2&gt;&lt;span class=&quot;ot-caption&quot;&gt;时间可留空 · 北京时间&lt;/span&gt;&lt;/div&gt;&#x27;+draft.stops.map((stop,index)=&gt;{
+      const location=stopPoint(stop),removed=!byId(stop.pointId);
+      return &#x27;&lt;div class=&quot;ot-visit&quot; data-edit-visit=&quot;&#x27;+stop.id+&#x27;&quot;&gt;&lt;label class=&quot;ot-field&quot;&gt;第 &#x27;+(index+1)+&#x27; 次经过&#x27;+(removed?&#x27; · 原节点已移除，请重新选择&#x27;:&#x27;&#x27;)+&#x27;&lt;select data-edit-point=&quot;&#x27;+stop.id+&#x27;&quot; aria-label=&quot;第&#x27;+(index+1)+&#x27;次经过节点&quot;&gt;&#x27;+(removed?&#x27;&lt;option value=&quot;&#x27;+escape(stop.pointId)+&#x27;&quot; selected disabled&gt;&#x27;+escape(location.name)+&#x27;（待处理）&lt;/option&gt;&#x27;:&#x27;&#x27;)+state.points.map(candidate=&gt;&#x27;&lt;option value=&quot;&#x27;+escape(candidate.id)+&#x27;&quot; &#x27;+(candidate.id===stop.pointId?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;&#x27;+escape(candidate.name)+&#x27;&lt;/option&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/select&gt;&lt;/label&gt;&lt;div class=&quot;ot-visit-controls&quot;&gt;&lt;label class=&quot;ot-field&quot;&gt;第几天&lt;select data-edit-day=&quot;&#x27;+stop.id+&#x27;&quot; aria-label=&quot;第&#x27;+(index+1)+&#x27;次经过第几天&quot;&gt;&#x27;+[1,2,3,4,5,6,7].map(day=&gt;&#x27;&lt;option value=&quot;&#x27;+day+&#x27;&quot; &#x27;+(day===stop.day?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;D&#x27;+day+&#x27;&lt;/option&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/select&gt;&lt;/label&gt;&lt;label class=&quot;ot-field&quot;&gt;经过类型&lt;select data-edit-event=&quot;&#x27;+stop.id+&#x27;&quot;&gt;&lt;option value=&quot;arrive&quot; &#x27;+(stop.event!==&#x27;depart&#x27;?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;抵达&lt;/option&gt;&lt;option value=&quot;depart&quot; &#x27;+(stop.event===&#x27;depart&#x27;?&#x27;selected&#x27;:&#x27;&#x27;)+&#x27;&gt;出发&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;/div&gt;&lt;label class=&quot;ot-field&quot;&gt;预计时刻（可留空）&lt;input type=&quot;time&quot; step=&quot;60&quot; value=&quot;&#x27;+stop.time+&#x27;&quot; data-edit-time=&quot;&#x27;+stop.id+&#x27;&quot; aria-label=&quot;第&#x27;+(index+1)+&#x27;次经过时间&quot;&gt;&lt;/label&gt;&lt;div class=&quot;ot-visit-actions&quot;&gt;&#x27;+action(&#x27;move-visit&#x27;,icon(&#x27;arrow-up&#x27;),&#x27;ot-icon-button&#x27;,&#x27;data-stop=&quot;&#x27;+stop.id+&#x27;&quot; data-direction=&quot;-1&quot; aria-label=&quot;上移第&#x27;+(index+1)+&#x27;次经过&quot; &#x27;+(index===0?&#x27;disabled&#x27;:&#x27;&#x27;))+action(&#x27;move-visit&#x27;,icon(&#x27;arrow-down&#x27;),&#x27;ot-icon-button&#x27;,&#x27;data-stop=&quot;&#x27;+stop.id+&#x27;&quot; data-direction=&quot;1&quot; aria-label=&quot;下移第&#x27;+(index+1)+&#x27;次经过&quot; &#x27;+(index===draft.stops.length-1?&#x27;disabled&#x27;:&#x27;&#x27;))+action(&#x27;remove-visit&#x27;,&#x27;移除此经过&#x27;,&#x27;ot-link ot-danger-text&#x27;,&#x27;data-stop=&quot;&#x27;+stop.id+&#x27;&quot; &#x27;+(draft.stops.length===1?&#x27;disabled&#x27;:&#x27;&#x27;))+&#x27;&lt;/div&gt;&lt;/div&gt;&#x27;;
+    }).join(&#x27;&#x27;)+action(&#x27;add-visit&#x27;,icon(&#x27;plus&#x27;)+&#x27;添加一次经过&#x27;,&#x27;ot-button ot-full&#x27;)+&#x27;&lt;p class=&quot;ot-source&quot;&gt;添加节点不会自动填入抵达时间。路线更新不改个人顺序；GPX 历史时间仅供参考，不覆盖原记录。&lt;/p&gt;&lt;div id=&quot;ot-plan-error&quot; class=&quot;ot-error&quot; role=&quot;alert&quot;&gt;&lt;/div&gt;&lt;/section&gt;&lt;div class=&quot;ot-actions&quot;&gt;&#x27;+action(&#x27;save-plan&#x27;,icon(&#x27;check&#x27;)+&#x27;保存个人计划&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+action(&#x27;cancel-plan&#x27;,&#x27;取消，保留原计划&#x27;,&#x27;ot-button ot-full&#x27;)+&#x27;&lt;/div&gt;&lt;/form&gt;&#x27;;
+  }
+  function syncPage(){
+    let content=&#x27;&#x27;;
+    if(!state.signedIn)content=&#x27;&lt;p class=&quot;ot-muted&quot;&gt;未登录也可以查询、收藏和保存行程。本机数据尚未绑定任何账户。&lt;/p&gt;&#x27;+action(&#x27;login-demo&#x27;,&#x27;模拟登录演示账户&#x27;,&#x27;ot-button ot-primary ot-full&#x27;);
+    else if(!state.cloudLinked)content=&#x27;&lt;h3&gt;是否把本机保存导入演示账户？&lt;/h3&gt;&lt;p class=&quot;ot-source&quot;&gt;包含 &#x27;+state.favoritePlaces.length+&#x27; 个地点、&#x27;+state.routeRecords.length+&#x27; 条路线、&#x27;+state.planRecords.length+&#x27; 个行程。最近查询不入云；原文件在正式版私有存档，本原型不上传。&lt;/p&gt;&#x27;+action(&#x27;confirm-sync&#x27;,&#x27;确认导入并模拟同步&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+action(&#x27;keep-local&#x27;,&#x27;暂不导入，继续本机使用&#x27;,&#x27;ot-link&#x27;);
+    else if(state.conflict)content=&#x27;&lt;div class=&quot;ot-notice&quot;&gt;&#x27;+icon(&#x27;copy&#x27;)+&#x27;&lt;span&gt;同一个计划存在两版修改，不会自动覆盖。&lt;/span&gt;&lt;/div&gt;&lt;h3 style=&quot;margin-top:16px&quot;&gt;&#x27;+escape(state.conflict.local.name)+&#x27;&lt;/h3&gt;&lt;ul class=&quot;ot-rule-list&quot;&gt;&lt;li&gt;本机版：&#x27;+state.conflict.local.startDate+&#x27;，&#x27;+state.conflict.local.stops.length+&#x27; 次经过&lt;/li&gt;&lt;li&gt;云端示例版：&#x27;+state.conflict.remote.startDate+&#x27;，&#x27;+state.conflict.remote.stops.length+&#x27; 次经过&lt;/li&gt;&lt;/ul&gt;&#x27;+action(&#x27;keep-both&#x27;,&#x27;保留两版，生成独立副本&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+action(&#x27;home&#x27;,&#x27;稍后处理&#x27;,&#x27;ot-link&#x27;);
+    else content=&#x27;&lt;div class=&quot;ot-notice ot-info&quot;&gt;&#x27;+icon(&#x27;cloud-check&#x27;)+&#x27;&lt;span&gt;&#x27;+syncLabel()+&#x27;。地点、路线、行程的保存状态与天气缓存分别管理。&lt;/span&gt;&lt;/div&gt;&lt;p class=&quot;ot-source&quot;&gt;演示账户 · 仅自己可见。共用路线库表示活动与天气共用资产，不表示个人行程公开。&lt;/p&gt;&#x27;+action(&#x27;retry-sync&#x27;,&#x27;模拟同步待保存内容&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+action(&#x27;logout-demo&#x27;,&#x27;退出演示账户&#x27;,&#x27;ot-link&#x27;);
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;STORAGE / 保存与同步&lt;/div&gt;&lt;h1&gt;常用的，随时再用。&lt;/h1&gt;&lt;p&gt;全部为流程模拟，不会登录或上传真实账户。&lt;/p&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&#x27;+content+&#x27;&lt;/section&gt;&#x27;;
+  }
+  function routeInfo(){
+    const route=routeRecord();
+    if(!route)return &#x27;&lt;section class=&quot;ot-section&quot;&gt;&#x27;+empty(&#x27;路线不可用&#x27;,&#x27;返回路线库选择其他路线。&#x27;,action(&#x27;route-library&#x27;,&#x27;路线库&#x27;))+&#x27;&lt;/section&gt;&#x27;;
+    const availableOriginal=originalFiles.has(route.id);
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;ROUTE / 共用路线资产&lt;/div&gt;&lt;h1&gt;&#x27;+escape(route.name)+&#x27;&lt;/h1&gt;&lt;p&gt;版本 &#x27;+route.revision+&#x27; · &#x27;+(route.accessible===false?&#x27;访问失效&#x27;:&#x27;仅自己 · 活动与天气共用&#x27;)+&#x27;&lt;/p&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;h2&gt;原始 GPX&lt;/h2&gt;&lt;p class=&quot;ot-source&quot;&gt;&#x27;+escape(route.sourceName||&#x27;未提供原文件&#x27;)+&#x27;&lt;/p&gt;&lt;div class=&quot;ot-notice ot-info&quot;&gt;&#x27;+icon(&#x27;file-lock-2&#x27;)+&#x27;&lt;span&gt;目标：完整私有留存。当前原型：&#x27;+(availableOriginal?&#x27;原文件仅在本次页面会话内存中，未上传，刷新后需重选。&#x27;:route.sourceKind===&#x27;sample&#x27;?&#x27;仅示例文件元信息，不存在云端原文件。&#x27;:&#x27;只有文件元信息；请重新导入原文件，本原型不提供持久存档。&#x27;)+&#x27;&lt;/span&gt;&lt;/div&gt;&#x27;+(availableOriginal?action(&#x27;view-original&#x27;,&#x27;查看本次原文件&#x27;,&#x27;ot-link&#x27;):&#x27;&#x27;)+&#x27;&lt;/section&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;h2&gt;跟随最新路线&lt;/h2&gt;&lt;p class=&quot;ot-source&quot;&gt;地点内容更新，个人出发日期、经过顺序和时间不自动更改。&lt;/p&gt;&#x27;+(state.routeUpdates.length?&#x27;&lt;ul class=&quot;ot-rule-list&quot;&gt;&#x27;+state.routeUpdates.map(message=&gt;&#x27;&lt;li&gt;&#x27;+escape(message)+&#x27;&lt;/li&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/ul&gt;&#x27;:&#x27;&lt;p class=&quot;ot-caption&quot;&gt;暂无待核对变更。可以使用顶部验收工具模拟路线更新。&lt;/p&gt;&#x27;)+action(&#x27;edit-plan&#x27;,&#x27;检查并调整我的经过安排&#x27;,&#x27;ot-button ot-full&#x27;,route.accessible===false?&#x27;disabled&#x27;:&#x27;&#x27;)+action(&#x27;route-library&#x27;,&#x27;返回路线库&#x27;,&#x27;ot-link&#x27;)+&#x27;&lt;/section&gt;&#x27;;
+  }
+  function originalPage(){
+    const original=originalFiles.get(state.currentRouteId);
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;ORIGINAL / 原始文件&lt;/div&gt;&lt;h1&gt;原轨迹不被改写&lt;/h1&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&#x27;+(original?&#x27;&lt;label class=&quot;ot-field&quot;&gt;&#x27;+escape(original.name)+&#x27; · 原始内容（只读）&lt;textarea id=&quot;ot-original-text&quot; class=&quot;ot-original&quot; readonly&gt;&#x27;+escape(original.text)+&#x27;&lt;/textarea&gt;&lt;/label&gt;&lt;p class=&quot;ot-source&quot;&gt;筛选节点和个人时间都不会修改这里的原始内容。文件仅留在本次页面内存，不代表云端存档，刷新后需重选。&lt;/p&gt;&#x27;:empty(&#x27;本次会话没有原文件&#x27;,&#x27;刷新后只恢复元信息，需要重新选择 GPX 文件。&#x27;))+action(&#x27;route-info&#x27;,&#x27;返回路线信息&#x27;,&#x27;ot-button ot-full&#x27;)+&#x27;&lt;/section&gt;&#x27;;
+  }
+  function managedRecord(){
+    if(!state.management)return null;
+    const records=state.management.kind===&#x27;place&#x27;?state.favoritePlaces:state.management.kind===&#x27;route&#x27;?state.routeRecords:state.planRecords;
+    return records.find(record=&gt;record.id===state.management.id);
+  }
+  function managePage(){
+    const record=managedRecord();
+    if(!record)return &#x27;&lt;section class=&quot;ot-section&quot;&gt;&#x27;+empty(&#x27;内容已不存在&#x27;,&#x27;返回首页选择其他内容。&#x27;,action(&#x27;home&#x27;,&#x27;天气首页&#x27;))+&#x27;&lt;/section&gt;&#x27;;
+    const kind=state.management.kind;
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;LIBRARY / 保存管理&lt;/div&gt;&lt;h1&gt;&#x27;+({place:&#x27;常用地点&#x27;,route:&#x27;路线资产&#x27;,plan:&#x27;个人天气行程&#x27;})[kind]+&#x27;&lt;/h1&gt;&lt;p&gt;&#x27;+escape(record.name)+&#x27;&lt;/p&gt;&lt;/div&gt;&lt;form id=&quot;ot-manage-form&quot;&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;label class=&quot;ot-field&quot;&gt;名称&lt;input name=&quot;name&quot; value=&quot;&#x27;+escape(record.name)+&#x27;&quot; maxlength=&quot;40&quot; required&gt;&lt;/label&gt;&#x27;+(kind===&#x27;place&#x27;?&#x27;&lt;div class=&quot;ot-form-row&quot;&gt;&lt;label class=&quot;ot-field&quot;&gt;纬度&lt;input name=&quot;latitude&quot; type=&quot;number&quot; step=&quot;any&quot; min=&quot;-90&quot; max=&quot;90&quot; value=&quot;&#x27;+record.lat+&#x27;&quot; required&gt;&lt;/label&gt;&lt;label class=&quot;ot-field&quot;&gt;经度&lt;input name=&quot;longitude&quot; type=&quot;number&quot; step=&quot;any&quot; min=&quot;-180&quot; max=&quot;180&quot; value=&quot;&#x27;+record.lng+&#x27;&quot; required&gt;&lt;/label&gt;&lt;/div&gt;&lt;label class=&quot;ot-field&quot;&gt;海拔 m（选填）&lt;input name=&quot;elevation&quot; type=&quot;number&quot; min=&quot;-500&quot; max=&quot;9000&quot; value=&quot;&#x27;+(record.ele==null?&#x27;&#x27;:record.ele)+&#x27;&quot;&gt;&lt;/label&gt;&lt;p class=&quot;ot-caption&quot;&gt;坐标系 &#x27;+escape(record.coordinateSystem||&#x27;WGS-84&#x27;)+&#x27; · 原型不执行真实转换&lt;/p&gt;&#x27;:&#x27;&#x27;)+&#x27;&lt;div id=&quot;ot-manage-error&quot; class=&quot;ot-error&quot; role=&quot;alert&quot;&gt;&lt;/div&gt;&#x27;+action(&#x27;save-asset&#x27;,&#x27;保存修改&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+(kind===&#x27;plan&#x27;?action(&#x27;manage-plan-edit&#x27;,&#x27;编辑日期与经过安排&#x27;,&#x27;ot-link&#x27;)+action(&#x27;manage-plan-copy&#x27;,&#x27;复制为新的行程&#x27;,&#x27;ot-link&#x27;):kind===&#x27;route&#x27;?action(&#x27;manage-route-info&#x27;,&#x27;查看原文件与路线更新&#x27;,&#x27;ot-link&#x27;):&#x27;&#x27;)+action(&#x27;delete-asset&#x27;,&#x27;删除&#x27;+({place:&#x27;常用地点&#x27;,route:&#x27;路线&#x27;,plan:&#x27;行程&#x27;})[kind],&#x27;ot-link ot-danger-text&#x27;)+&#x27;&lt;p class=&quot;ot-source&quot;&gt;删除个人行程不会删除路线。被行程引用的路线需要先解除引用。&lt;/p&gt;&lt;/section&gt;&lt;/form&gt;&#x27;;
+  }
+  function confirmationPage(){
+    const confirmation=state.confirmation;
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;h1&gt;&#x27;+escape(confirmation.title)+&#x27;&lt;/h1&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;p class=&quot;ot-muted&quot;&gt;&#x27;+escape(confirmation.message)+&#x27;&lt;/p&gt;&lt;div class=&quot;ot-row-wrap&quot; style=&quot;margin-top:20px&quot;&gt;&#x27;+action(&#x27;confirm-operation&#x27;,&#x27;确认&#x27;,&#x27;ot-button ot-primary&#x27;)+action(&#x27;cancel-operation&#x27;,&#x27;取消&#x27;)+&#x27;&lt;/div&gt;&lt;/section&gt;&#x27;;
   }
   function coordinate(){
     return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;POINT / 单点查询&lt;/div&gt;&lt;h1&gt;输入经纬度&lt;/h1&gt;&lt;p&gt;地图选点和手动坐标，进入同一种天气详情。&lt;/p&gt;&lt;/div&gt;&lt;form id=&quot;ot-coordinate-form&quot;&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;label class=&quot;ot-field&quot;&gt;地点名称（选填）&lt;input name=&quot;name&quot; placeholder=&quot;例如：山顶观景点&quot; maxlength=&quot;40&quot;&gt;&lt;/label&gt;&lt;div class=&quot;ot-form-row&quot;&gt;&lt;label class=&quot;ot-field&quot;&gt;纬度&lt;input name=&quot;latitude&quot; type=&quot;number&quot; step=&quot;any&quot; min=&quot;-90&quot; max=&quot;90&quot; value=&quot;29.8400&quot; required&gt;&lt;/label&gt;&lt;label class=&quot;ot-field&quot;&gt;经度&lt;input name=&quot;longitude&quot; type=&quot;number&quot; step=&quot;any&quot; min=&quot;-180&quot; max=&quot;180&quot; value=&quot;99.7200&quot; required&gt;&lt;/label&gt;&lt;/div&gt;&lt;div class=&quot;ot-form-row&quot;&gt;&lt;label class=&quot;ot-field&quot;&gt;海拔 m（选填）&lt;input name=&quot;elevation&quot; type=&quot;number&quot; step=&quot;1&quot; min=&quot;-500&quot; max=&quot;9000&quot; placeholder=&quot;用于云层位置判断&quot;&gt;&lt;/label&gt;&lt;label class=&quot;ot-field&quot;&gt;坐标系&lt;select name=&quot;coordinateSystem&quot;&gt;&lt;option value=&quot;wgs84&quot;&gt;WGS-84 / GPS&lt;/option&gt;&lt;option value=&quot;gcj02&quot;&gt;GCJ-02 / 地图&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;/div&gt;&lt;div class=&quot;ot-notice ot-info&quot;&gt;&#x27;+icon(&#x27;info&#x27;)+&#x27;&lt;span&gt;坐标用于流程演示，不会查询真实天气。未填海拔时不判断地点与云层的相对位置。&lt;/span&gt;&lt;/div&gt;&lt;div id=&quot;ot-coordinate-error&quot; class=&quot;ot-error&quot; role=&quot;alert&quot;&gt;&lt;/div&gt;&#x27;+action(&#x27;query-point&#x27;,&#x27;查看这个地点的天气&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+&#x27;&lt;/section&gt;&lt;/form&gt;&#x27;;
   }
   function mapPicker(){
-    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;MAP / 地图选点&lt;/div&gt;&lt;h1&gt;选择查询地点&lt;/h1&gt;&lt;p&gt;正式版调用小程序地图选点；此处演示返回结果。&lt;/p&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;div class=&quot;ot-notice ot-info&quot;&gt;&#x27;+icon(&#x27;map&#x27;)+&#x27;&lt;span&gt;未接入真实地图服务。选择一个示例点，体验选点后的查询和收藏。&lt;/span&gt;&lt;/div&gt;&#x27;+state.points.slice(0,3).map(location=&gt;&#x27;&lt;label class=&quot;ot-picker-option&quot;&gt;&lt;input name=&quot;ot-map-point&quot; type=&quot;radio&quot; value=&quot;&#x27;+location.id+&#x27;&quot; &#x27;+(state.pickerChoice===location.id?&#x27;checked&#x27;:&#x27;&#x27;)+&#x27;&gt;&lt;span&gt;&lt;strong&gt;&#x27;+escape(location.name)+&#x27;&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+location.lat.toFixed(4)+&#x27;°N, &#x27;+location.lng.toFixed(4)+&#x27;°E · &#x27;+(location.ele==null?&#x27;海拔未提供&#x27;:location.ele.toLocaleString()+&#x27; m&#x27;)+&#x27;&lt;/p&gt;&lt;/span&gt;&lt;/label&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;div style=&quot;margin-top:18px&quot;&gt;&#x27;+action(&#x27;confirm-map&#x27;,&#x27;确认地点，查看天气&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+&#x27;&lt;/div&gt;&lt;/section&gt;&#x27;;
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;MAP / 地图选点&lt;/div&gt;&lt;h1&gt;选择查询地点&lt;/h1&gt;&lt;p&gt;正式版调用小程序地图选点；此处演示返回结果。&lt;/p&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;div class=&quot;ot-notice ot-info&quot;&gt;&#x27;+icon(&#x27;map&#x27;)+&#x27;&lt;span&gt;未接入真实地图服务。选择一个示例点，体验选点后的查询和收藏。&lt;/span&gt;&lt;/div&gt;&#x27;+(state.mapFailed?&#x27;&lt;div class=&quot;ot-notice&quot; style=&quot;margin-top:12px&quot;&gt;定位失败演示：仍可选择地点，或改用经纬度输入。&lt;/div&gt;&#x27;:&#x27;&#x27;)+basePoints.slice(0,3).map(location=&gt;&#x27;&lt;label class=&quot;ot-picker-option&quot;&gt;&lt;input name=&quot;ot-map-point&quot; type=&quot;radio&quot; value=&quot;&#x27;+location.id+&#x27;&quot; &#x27;+(state.pickerChoice===location.id?&#x27;checked&#x27;:&#x27;&#x27;)+&#x27;&gt;&lt;span&gt;&lt;strong&gt;&#x27;+escape(location.name)+&#x27;&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;纬度 &#x27;+location.lat.toFixed(4)+&#x27; · 经度 &#x27;+location.lng.toFixed(4)+&#x27; · &#x27;+(location.ele==null?&#x27;海拔未提供&#x27;:location.ele.toLocaleString()+&#x27; m&#x27;)+&#x27;&lt;/p&gt;&lt;/span&gt;&lt;/label&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;div style=&quot;margin-top:18px&quot;&gt;&#x27;+action(&#x27;confirm-map&#x27;,&#x27;确认地点，查看天气&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+&#x27;&lt;/div&gt;&lt;div class=&quot;ot-row-wrap&quot;&gt;&#x27;+action(&#x27;map-fail&#x27;,&#x27;演示定位失败&#x27;,&#x27;ot-link&#x27;)+action(&#x27;coordinate&#x27;,&#x27;手动输入&#x27;,&#x27;ot-link&#x27;)+action(&#x27;cancel-map&#x27;,&#x27;取消选点&#x27;,&#x27;ot-link&#x27;)+&#x27;&lt;/div&gt;&lt;/section&gt;&#x27;;
   }
   function importPage(){
     const nodes=state.importPoints;
-    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;TRACK / 导入路线&lt;/div&gt;&lt;h1&gt;&#x27;+(nodes?&#x27;核对关键节点&#x27;:&#x27;把路线带进天气&#x27;)+&#x27;&lt;/h1&gt;&lt;p&gt;路线保存在共用路线库；日期和时间由个人计划管理。&lt;/p&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&#x27;+(nodes?&#x27;&lt;h3&gt;&#x27;+escape(state.importName)+&#x27;&lt;/h3&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+nodes.length+&#x27;个示例／采样关键点&lt;/p&gt;&#x27;+nodes.map(location=&gt;&#x27;&lt;label class=&quot;ot-picker-option&quot;&gt;&lt;input type=&quot;checkbox&quot; data-import-point=&quot;&#x27;+location.id+&#x27;&quot; checked&gt;&lt;span&gt;&lt;strong&gt;&#x27;+escape(location.name)+&#x27;&lt;/strong&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+(location.ele==null?&#x27;未提供海拔&#x27;:location.ele.toLocaleString()+&#x27; m&#x27;)+&#x27;&lt;/p&gt;&lt;/span&gt;&lt;/label&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;div id=&quot;ot-import-error&quot; class=&quot;ot-error&quot; role=&quot;alert&quot;&gt;&lt;/div&gt;&#x27;+action(&#x27;confirm-import&#x27;,&#x27;保存路线，查看沿途天气&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+&#x27;&lt;p class=&quot;ot-source&quot;&gt;本原型只保存关键点用于交互演示，不作为真实 GPX 存档。&lt;/p&gt;&#x27;:&#x27;&lt;label class=&quot;ot-field&quot;&gt;选择 GPX 文件&lt;input id=&quot;ot-gpx-file&quot; type=&quot;file&quot; accept=&quot;.gpx,application/gpx+xml&quot;&gt;&lt;/label&gt;&#x27;+action(&#x27;sample-import&#x27;,icon(&#x27;file-route&#x27;)+&#x27;使用示例 GPX&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+&#x27;&lt;p class=&quot;ot-source&quot;&gt;支持本机读取不超过 2 MB 的 GPX 作预览；不会上传文件。原型最多采样 6 个关键点。&lt;/p&gt;&lt;div id=&quot;ot-import-error&quot; class=&quot;ot-error&quot; role=&quot;alert&quot;&gt;&lt;/div&gt;&#x27;)+&#x27;&lt;/section&gt;&#x27;;
+    return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;TRACK / 导入路线&lt;/div&gt;&lt;h1&gt;&#x27;+(nodes?&#x27;核对关键节点&#x27;:&#x27;把路线带进天气&#x27;)+&#x27;&lt;/h1&gt;&lt;p&gt;路线保存在共用路线库；日期和时间由个人计划管理。&lt;/p&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&#x27;+(nodes?&#x27;&lt;label class=&quot;ot-field&quot;&gt;路线名称&lt;input id=&quot;ot-import-name&quot; value=&quot;&#x27;+escape(state.importName.replace(/\.gpx$/i,&#x27;&#x27;))+&#x27;&quot; maxlength=&quot;40&quot;&gt;&lt;/label&gt;&lt;p class=&quot;ot-caption&quot;&gt;&#x27;+nodes.length+&#x27;个候选节点，不是全部轨迹采样点。勾选并调整名称。&lt;/p&gt;&#x27;+nodes.map(location=&gt;&#x27;&lt;div class=&quot;ot-visit&quot;&gt;&lt;label class=&quot;ot-picker-option&quot;&gt;&lt;input type=&quot;checkbox&quot; data-import-point=&quot;&#x27;+location.id+&#x27;&quot; checked&gt;&lt;span&gt;保留 &#x27;+escape(location.name)+&#x27; · &#x27;+(location.ele==null?&#x27;海拔未提供&#x27;:location.ele.toLocaleString()+&#x27; m&#x27;)+&#x27;&lt;/span&gt;&lt;/label&gt;&lt;label class=&quot;ot-field&quot;&gt;节点名称&lt;input data-import-name=&quot;&#x27;+location.id+&#x27;&quot; value=&quot;&#x27;+escape(location.name)+&#x27;&quot; maxlength=&quot;40&quot;&gt;&lt;/label&gt;&#x27;+(location.gpxTime?&#x27;&lt;p class=&quot;ot-caption&quot;&gt;GPX 原始记录：&#x27;+escape(location.gpxTime)+&#x27;，仅供参考。&lt;/p&gt;&#x27;:&#x27;&#x27;)+&#x27;&lt;/div&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;div class=&quot;ot-notice ot-info&quot;&gt;&#x27;+icon(&#x27;file-lock-2&#x27;)+&#x27;&lt;span&gt;目标：原始 GPX 完整私有留存。这里仅在本次页面会话保留文件，未上传云端；节点筛选不修改原文件。&lt;/span&gt;&lt;/div&gt;&lt;div id=&quot;ot-import-error&quot; class=&quot;ot-error&quot; role=&quot;alert&quot;&gt;&lt;/div&gt;&#x27;+action(&#x27;confirm-import&#x27;,&#x27;保存路线，查看沿途天气&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+&#x27;&lt;p class=&quot;ot-source&quot;&gt;不生成抵达时间；可先查询，再安排与保存个人行程。&lt;/p&gt;&#x27;:&#x27;&lt;label class=&quot;ot-field&quot;&gt;选择 GPX 文件&lt;input id=&quot;ot-gpx-file&quot; type=&quot;file&quot; accept=&quot;.gpx,application/gpx+xml&quot;&gt;&lt;/label&gt;&#x27;+action(&#x27;sample-import&#x27;,icon(&#x27;file-route&#x27;)+&#x27;使用示例 GPX&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+&#x27;&lt;p class=&quot;ot-source&quot;&gt;本原型只读取不超过 2 MB 的本机 GPX，最多抽样 6 个候选点。刷新后原文件需重选，不冒充完整云端存档。&lt;/p&gt;&lt;div id=&quot;ot-import-error&quot; class=&quot;ot-error&quot; role=&quot;alert&quot;&gt;&lt;/div&gt;&#x27;)+&#x27;&lt;/section&gt;&#x27;;
   }
   function activity(){
     return &#x27;&lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;ACTIVITY / 活动入口演示&lt;/div&gt;&lt;h1&gt;周末一起走进山野&lt;/h1&gt;&lt;p&gt;活动出发：10月31日 08:00 · 示例活动&lt;/p&gt;&lt;/div&gt;&lt;section class=&quot;ot-section&quot;&gt;&lt;div class=&quot;ot-section-title&quot;&gt;&lt;h2&gt;天气与行程&lt;/h2&gt;&lt;span class=&quot;ot-chip&quot;&gt;活动路线&lt;/span&gt;&lt;/div&gt;&lt;p class=&quot;ot-muted&quot; style=&quot;margin-bottom:16px&quot;&gt;从活动带入路线和出发时间，生成你自己的天气计划。&lt;/p&gt;&#x27;+action(&#x27;from-activity&#x27;,&#x27;查看沿途天气&#x27;,&#x27;ot-button ot-primary ot-full&#x27;)+&#x27;&lt;p class=&quot;ot-source&quot;&gt;你之后调整出发日或节点时间，都不会改变原活动。&lt;/p&gt;&lt;/section&gt;&#x27;;
@@ -2109,9 +2215,14 @@ html&gt;body{padding:0}&lt;/style&gt;
   function render(){
     if(chartObserver)chartObserver.disconnect();
     drawnWidth=0;
+    if(forecastAllowed(state.date)){state.period=Math.min(state.period,availableHours());state.hour=Math.min(state.hour,state.period-1);}
     root.style.maxWidth=settings.width+&#x27;px&#x27;;
-    const views={home,weather,plan:editPlan,coordinate,map:mapPicker,import:importPage,activity};
-    root.innerHTML=header()+(state.toast?&#x27;&lt;div class=&quot;ot-toast&quot; role=&quot;status&quot;&gt;&#x27;+escape(state.toast)+&#x27;&lt;/div&gt;&#x27;:&#x27;&#x27;)+views[state.screen]()+footer()+localNav();
+    const views={home,weather,plan:editPlan,coordinate,map:mapPicker,import:importPage,activity,sync:syncPage,manage:managePage,&#x27;route-info&#x27;:routeInfo,original:originalPage,confirm:confirmationPage};
+    root.innerHTML=header()+(state.toast?&#x27;&lt;div class=&quot;ot-toast&quot; role=&quot;status&quot;&gt;&#x27;+escape(state.toast)+&#x27;&lt;/div&gt;&#x27;:&#x27;&#x27;)+views[state.screen]()+footer()+([&#x27;plan&#x27;,&#x27;confirm&#x27;].includes(state.screen)?&#x27;&#x27;:localNav());
+    const scenarioControl=document.getElementById(&#x27;ot-demo-scenario&#x27;);
+    if(scenarioControl)scenarioControl.value=state.scenario;
+    root.querySelectorAll(&#x27;[data-period]&#x27;).forEach(button=&gt;{button.disabled=Number(button.dataset.period)&gt;availableHours();});
+    if(root.querySelector(&#x27;.ot-chart-scope&#x27;)&amp;&amp;availableHours()&lt;72)root.querySelector(&#x27;.ot-chart-scope&#x27;).append(&#x27; 预报末端仅剩 &#x27;+availableHours()+&#x27; 小时，较长时窗不可用。&#x27;);
     if(globalThis.lucide)globalThis.lucide.createIcons({attrs:{width:18,height:18,&#x27;stroke-width&#x27;:1.65,class:&#x27;ot-icon&#x27;}});
     const chart=root.querySelector(&#x27;#ot-chart&#x27;);
     if(chart){
@@ -2121,15 +2232,19 @@ html&gt;body{padding:0}&lt;/style&gt;
       });
       chartObserver.observe(chart);
       drawChart(Math.round(chart.getBoundingClientRect().width)||340);
+      updateHour(state.hour);
     }
   }
   function contourPaths(period,location,threshold,chartLeft,chartTop,chartWidth,chartHeight){
     const columns=97,rows=53;
+    const window=cloudWindow();
     const locationIndex=Math.max(0,state.points.findIndex(item=&gt;item.id===location.id));
     const dateShift=((Date.parse(state.date+&#x27;T00:00:00Z&#x27;)-Date.parse(&#x27;2026-10-31T00:00:00Z&#x27;))/86400000)*1.4;
     const values=Array.from({length:rows},(_,row)=&gt;Array.from({length:columns},(_,column)=&gt;{
       if(row===0||row===rows-1||column===0||column===columns-1)return 0;
-      return cloudAmount((column-1)/(columns-3)*(period-1)+dateShift+locationIndex*.35,6500-(row-1)/(rows-3)*4700,locationIndex);
+      const sample=(column-1)/(columns-3)*(period-1),hour=Math.floor(sample),fraction=sample-hour;
+      const altitude=window.high-(row-1)/(rows-3)*(window.high-window.low);
+      return cloudAmount(hour+dateShift+locationIndex*.35,altitude,locationIndex)*(1-fraction)+cloudAmount(hour+1+dateShift+locationIndex*.35,altitude,locationIndex)*fraction;
     }));
     const edges=[];
     const cases={1:[[3,0]],2:[[0,1]],3:[[3,1]],4:[[1,2]],5:[[3,2],[0,1]],6:[[0,2]],7:[[3,2]],8:[[2,3]],9:[[2,0]],10:[[0,3],[1,2]],11:[[2,1]],12:[[1,3]],13:[[1,0]],14:[[0,3]]};
@@ -2179,50 +2294,57 @@ html&gt;body{padding:0}&lt;/style&gt;
     const chart=root.querySelector(&#x27;#ot-chart&#x27;);
     if(!chart||!width)return;
     const location=point(),large=state.tab===&#x27;cloud&#x27;;
-    const left=48,right=10,plotWidth=width-left-right;
+    const left=64,right=10,plotWidth=width-left-right;
     const cloudTop=large?28:161,cloudHeight=large?260:178;
     const tempTop=large?cloudTop+cloudHeight+35:25;
     const rainTop=large?tempTop+68:96;
     const windTop=large?rainTop+66:cloudTop+cloudHeight+32;
     const bottom=windTop+61,height=bottom+32;
     const horizontal=hour=&gt;left+hour/(state.period-1)*plotWidth;
-    const vertical=altitude=&gt;cloudTop+(6500-altitude)/4700*cloudHeight;
+    const window=cloudWindow();
+    const vertical=altitude=&gt;cloudTop+(window.high-altitude)/(window.high-window.low)*cloudHeight;
     const series=Array.from({length:state.period},(_,hour)=&gt;forecast(location,hour,state.date));
     const tempMinimum=Math.floor((Math.min.apply(null,series.map(item=&gt;item.temperature))-2)/5)*5;
     const tempMaximum=Math.ceil((Math.max.apply(null,series.map(item=&gt;item.temperature))+2)/5)*5;
     const tempY=temperature=&gt;tempTop+45-(temperature-tempMinimum)/(tempMaximum-tempMinimum)*40;
     const windMaximum=Math.ceil(Math.max.apply(null,series.map(item=&gt;item.gust))/10)*10;
     const windY=wind=&gt;windTop+43-wind/windMaximum*38;
-    let content=&#x27;&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 &#x27;+width+&#x27; &#x27;+height+&#x27;&quot; width=&quot;&#x27;+width+&#x27;&quot; height=&quot;&#x27;+height+&#x27;&quot; role=&quot;img&quot; aria-label=&quot;&#x27;+escape(location.name)+&#x27;的&#x27;+state.period+&#x27;小时示例天气图，横轴为北京时间，云层纵轴为海拔米&quot;&gt;&lt;defs&gt;&lt;clipPath id=&quot;ot-cloud-clip&quot;&gt;&lt;rect x=&quot;&#x27;+left+&#x27;&quot; y=&quot;&#x27;+cloudTop+&#x27;&quot; width=&quot;&#x27;+plotWidth+&#x27;&quot; height=&quot;&#x27;+cloudHeight+&#x27;&quot;/&gt;&lt;/clipPath&gt;&lt;/defs&gt;&#x27;;
-    const tickCount=width&lt;330?4:5;
+    const validTop=Math.max(cloudTop,vertical(coveredHeight.high)),validBottom=Math.min(cloudTop+cloudHeight,vertical(coveredHeight.low));
+    const gaps=Array.from({length:state.period},(_,hour)=&gt;hour).filter(hour=&gt;cloudMissing(hour)).map(hour=&gt;({left:Math.max(left,horizontal(hour-.5)),right:Math.min(left+plotWidth,horizontal(hour+.5))}));
+    let content=&#x27;&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; viewBox=&quot;0 0 &#x27;+width+&#x27; &#x27;+height+&#x27;&quot; width=&quot;&#x27;+width+&#x27;&quot; height=&quot;&#x27;+height+&#x27;&quot; role=&quot;img&quot; aria-label=&quot;&#x27;+escape(location.name)+&#x27;的&#x27;+state.period+&#x27;小时示例天气图，横轴为北京时间，云层纵轴为海拔米&quot;&gt;&lt;defs&gt;&lt;clipPath id=&quot;ot-cloud-clip&quot;&gt;&lt;rect x=&quot;&#x27;+left+&#x27;&quot; y=&quot;&#x27;+validTop+&#x27;&quot; width=&quot;&#x27;+plotWidth+&#x27;&quot; height=&quot;&#x27;+(validBottom-validTop)+&#x27;&quot;/&gt;&lt;/clipPath&gt;&lt;pattern id=&quot;ot-gap-pattern&quot; width=&quot;7&quot; height=&quot;7&quot; patternUnits=&quot;userSpaceOnUse&quot;&gt;&lt;rect width=&quot;7&quot; height=&quot;7&quot; fill=&quot;var(--ot-stone)&quot;/&gt;&lt;path d=&quot;M0 7L7 0&quot; stroke=&quot;var(--ot-line)&quot;/&gt;&lt;/pattern&gt;&lt;mask id=&quot;ot-cloud-mask&quot;&gt;&lt;rect x=&quot;&#x27;+left+&#x27;&quot; y=&quot;&#x27;+cloudTop+&#x27;&quot; width=&quot;&#x27;+plotWidth+&#x27;&quot; height=&quot;&#x27;+cloudHeight+&#x27;&quot; fill=&quot;white&quot;/&gt;&#x27;+gaps.map(gap=&gt;&#x27;&lt;rect x=&quot;&#x27;+gap.left+&#x27;&quot; y=&quot;&#x27;+cloudTop+&#x27;&quot; width=&quot;&#x27;+(gap.right-gap.left)+&#x27;&quot; height=&quot;&#x27;+cloudHeight+&#x27;&quot; fill=&quot;black&quot;/&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/mask&gt;&lt;/defs&gt;&#x27;;
+    const tickCount=state.period&gt;24?(width&lt;330?3:4):(width&lt;330?4:5);
     const ticks=Array.from({length:tickCount},(_,index)=&gt;Math.round(index*(state.period-1)/(tickCount-1)));
     for(let hour=0;hour&lt;state.period;hour++){
-      if(hour%24&lt;6||hour%24&gt;=19)content+=&#x27;&lt;rect x=&quot;&#x27;+horizontal(hour).toFixed(2)+&#x27;&quot; y=&quot;10&quot; width=&quot;&#x27;+(plotWidth/(state.period-1)+.2).toFixed(2)+&#x27;&quot; height=&quot;&#x27;+(bottom-10)+&#x27;&quot; fill=&quot;var(--ot-stone)&quot; opacity=&quot;.33&quot;/&gt;&#x27;;
+      if(hour%24&lt;6||hour%24&gt;=19)content+=&#x27;&lt;rect x=&quot;&#x27;+horizontal(hour).toFixed(2)+&#x27;&quot; y=&quot;10&quot; width=&quot;&#x27;+Math.min(plotWidth/(state.period-1),left+plotWidth-horizontal(hour)).toFixed(2)+&#x27;&quot; height=&quot;&#x27;+(bottom-10)+&#x27;&quot; fill=&quot;var(--ot-stone)&quot; opacity=&quot;.33&quot;/&gt;&#x27;;
     }
     ticks.forEach(hour=&gt;{
       content+=&#x27;&lt;line x1=&quot;&#x27;+horizontal(hour)+&#x27;&quot; x2=&quot;&#x27;+horizontal(hour)+&#x27;&quot; y1=&quot;12&quot; y2=&quot;&#x27;+bottom+&#x27;&quot; stroke=&quot;var(--ot-line)&quot; opacity=&quot;.5&quot;/&gt;&#x27;;
-      const label=state.period===24?pad(hour)+&#x27;:00&#x27;:(Math.floor(hour/24)+1)+&#x27;日 &#x27;+pad(hour%24)+&#x27;时&#x27;;
+      const label=state.period===24?pad(hour)+&#x27;:00&#x27;:(hour&lt;24?&#x27;当日&#x27;:Math.floor(hour/24)===1?&#x27;次日&#x27;:&#x27;后日&#x27;)+&#x27; &#x27;+pad(hour%24)+&#x27;时&#x27;;
       content+=&#x27;&lt;text x=&quot;&#x27;+horizontal(hour)+&#x27;&quot; y=&quot;&#x27;+(bottom+22)+&#x27;&quot; text-anchor=&quot;&#x27;+(hour===0?&#x27;start&#x27;:hour===state.period-1?&#x27;end&#x27;:&#x27;middle&#x27;)+&#x27;&quot;&gt;&#x27;+label+&#x27;&lt;/text&gt;&#x27;;
     });
     content+=&#x27;&lt;text x=&quot;0&quot; y=&quot;&#x27;+(cloudTop+8)+&#x27;&quot; class=&quot;ot-axis-heading&quot;&gt;海拔 m&lt;/text&gt;&#x27;;
+    if(validTop&gt;cloudTop)content+=&#x27;&lt;rect class=&quot;ot-no-height&quot; x=&quot;&#x27;+left+&#x27;&quot; y=&quot;&#x27;+cloudTop+&#x27;&quot; width=&quot;&#x27;+plotWidth+&#x27;&quot; height=&quot;&#x27;+(validTop-cloudTop)+&#x27;&quot; fill=&quot;url(#ot-gap-pattern)&quot;/&gt;&#x27;;
+    if(validBottom&lt;cloudTop+cloudHeight)content+=&#x27;&lt;rect class=&quot;ot-no-height&quot; x=&quot;&#x27;+left+&#x27;&quot; y=&quot;&#x27;+validBottom+&#x27;&quot; width=&quot;&#x27;+plotWidth+&#x27;&quot; height=&quot;&#x27;+(cloudTop+cloudHeight-validBottom)+&#x27;&quot; fill=&quot;url(#ot-gap-pattern)&quot;/&gt;&#x27;;
     if(state.scenario!==&#x27;missing&#x27;){
-      content+=&#x27;&lt;g clip-path=&quot;url(#ot-cloud-clip)&quot;&gt;&#x27;;
-      [20,40,60,80,95].forEach((threshold,index)=&gt;{content+=&#x27;&lt;path d=&quot;&#x27;+contourPaths(state.period,location,threshold,left,cloudTop,plotWidth,cloudHeight)+&#x27;&quot; fill=&quot;var(--ot-cloud&#x27;+(index+1)+&#x27;)&quot;/&gt;&#x27;;});
+      content+=&#x27;&lt;g clip-path=&quot;url(#ot-cloud-clip)&quot; mask=&quot;url(#ot-cloud-mask)&quot;&gt;&#x27;;
+      [10,25,50,75,90].forEach((threshold,index)=&gt;{content+=&#x27;&lt;path d=&quot;&#x27;+contourPaths(state.period,location,threshold,left,cloudTop,plotWidth,cloudHeight)+&#x27;&quot; fill=&quot;var(--ot-cloud&#x27;+(index+1)+&#x27;)&quot;/&gt;&#x27;;});
       content+=&#x27;&lt;/g&gt;&#x27;;
+      gaps.forEach(gap=&gt;{content+=&#x27;&lt;rect class=&quot;ot-missing-hour&quot; x=&quot;&#x27;+gap.left+&#x27;&quot; y=&quot;&#x27;+cloudTop+&#x27;&quot; width=&quot;&#x27;+(gap.right-gap.left)+&#x27;&quot; height=&quot;&#x27;+cloudHeight+&#x27;&quot; fill=&quot;url(#ot-gap-pattern)&quot;/&gt;&#x27;;});
     }else{
       content+=&#x27;&lt;rect x=&quot;&#x27;+left+&#x27;&quot; y=&quot;&#x27;+cloudTop+&#x27;&quot; width=&quot;&#x27;+plotWidth+&#x27;&quot; height=&quot;&#x27;+cloudHeight+&#x27;&quot; fill=&quot;var(--ot-stone)&quot; opacity=&quot;.5&quot;/&gt;&lt;text x=&quot;&#x27;+(left+plotWidth/2)+&#x27;&quot; y=&quot;&#x27;+(cloudTop+cloudHeight/2)+&#x27;&quot; text-anchor=&quot;middle&quot;&gt;云层数据缺失&lt;/text&gt;&#x27;;
     }
-    [2000,3000,4000,5000,6000].forEach(altitude=&gt;{
+    Array.from({length:9},(_,index)=&gt;index*1000).filter(altitude=&gt;altitude&gt;window.low+100&amp;&amp;altitude&lt;window.high-100).forEach(altitude=&gt;{
       content+=&#x27;&lt;text x=&quot;&#x27;+(left-8)+&#x27;&quot; y=&quot;&#x27;+(vertical(altitude)+4)+&#x27;&quot; text-anchor=&quot;end&quot;&gt;&#x27;+altitude+&#x27;&lt;/text&gt;&lt;line x1=&quot;&#x27;+left+&#x27;&quot; x2=&quot;&#x27;+(width-right)+&#x27;&quot; y1=&quot;&#x27;+vertical(altitude)+&#x27;&quot; y2=&quot;&#x27;+vertical(altitude)+&#x27;&quot; stroke=&quot;var(--ot-line)&quot; opacity=&quot;.55&quot;/&gt;&#x27;;
     });
-    if(location.ele!=null&amp;&amp;location.ele&gt;=1800&amp;&amp;location.ele&lt;=6500){
+    if(location.ele!=null&amp;&amp;location.ele&gt;=window.low&amp;&amp;location.ele&lt;=window.high){
       const referenceY=vertical(location.ele);
-      content+=&#x27;&lt;line class=&quot;ot-reference&quot; x1=&quot;&#x27;+left+&#x27;&quot; x2=&quot;&#x27;+(width-right)+&#x27;&quot; y1=&quot;&#x27;+referenceY+&#x27;&quot; y2=&quot;&#x27;+referenceY+&#x27;&quot;/&gt;&lt;rect x=&quot;&#x27;+(width-right-89)+&#x27;&quot; y=&quot;&#x27;+(referenceY-19)+&#x27;&quot; width=&quot;89&quot; height=&quot;17&quot; fill=&quot;var(--ot-surface)&quot; opacity=&quot;.92&quot;/&gt;&lt;text x=&quot;&#x27;+(width-right-3)+&#x27;&quot; y=&quot;&#x27;+(referenceY-6)+&#x27;&quot; text-anchor=&quot;end&quot; class=&quot;ot-value-label&quot;&gt;地点 &#x27;+location.ele+&#x27; m&lt;/text&gt;&#x27;;
+      const labelY=Math.max(cloudTop+16,Math.min(cloudTop+cloudHeight-5,referenceY-6));
+      content+=&#x27;&lt;line class=&quot;ot-reference&quot; x1=&quot;&#x27;+left+&#x27;&quot; x2=&quot;&#x27;+(width-right)+&#x27;&quot; y1=&quot;&#x27;+referenceY+&#x27;&quot; y2=&quot;&#x27;+referenceY+&#x27;&quot;/&gt;&lt;rect x=&quot;&#x27;+(width-right-96)+&#x27;&quot; y=&quot;&#x27;+(labelY-13)+&#x27;&quot; width=&quot;96&quot; height=&quot;17&quot; fill=&quot;var(--ot-surface)&quot; opacity=&quot;.92&quot;/&gt;&lt;text x=&quot;&#x27;+(width-right-3)+&#x27;&quot; y=&quot;&#x27;+labelY+&#x27;&quot; text-anchor=&quot;end&quot; class=&quot;ot-value-label&quot;&gt;地点 &#x27;+location.ele+&#x27; m&lt;/text&gt;&#x27;;
     }
     content+=&#x27;&lt;text x=&quot;0&quot; y=&quot;&#x27;+(tempTop+7)+&#x27;&quot; class=&quot;ot-axis-heading&quot;&gt;温度 °C&lt;/text&gt;&lt;text x=&quot;&#x27;+(left-8)+&#x27;&quot; y=&quot;&#x27;+(tempTop+24)+&#x27;&quot; text-anchor=&quot;end&quot;&gt;&#x27;+tempMaximum+&#x27;°&lt;/text&gt;&lt;text x=&quot;&#x27;+(left-8)+&#x27;&quot; y=&quot;&#x27;+(tempTop+47)+&#x27;&quot; text-anchor=&quot;end&quot;&gt;&#x27;+tempMinimum+&#x27;°&lt;/text&gt;&#x27;;
     const line=(field,verticalFunction)=&gt;series.map((item,index)=&gt;(index?&#x27;L&#x27;:&#x27;M&#x27;)+horizontal(index).toFixed(2)+&#x27;,&#x27;+verticalFunction(item[field]).toFixed(2)).join(&#x27;&#x27;);
     content+=&#x27;&lt;path d=&quot;&#x27;+line(&#x27;temperature&#x27;,tempY)+&#x27;&quot; fill=&quot;none&quot; stroke=&quot;var(--ot-temp)&quot; stroke-width=&quot;1.8&quot; stroke-linejoin=&quot;round&quot;/&gt;&#x27;;
-    content+=&#x27;&lt;text x=&quot;0&quot; y=&quot;&#x27;+(rainTop+6)+&#x27;&quot; class=&quot;ot-axis-heading&quot;&gt;降水&lt;/text&gt;&lt;text x=&quot;0&quot; y=&quot;&#x27;+(rainTop+20)+&#x27;&quot;&gt;mm/h&lt;/text&gt;&lt;text x=&quot;&#x27;+(left-8)+&#x27;&quot; y=&quot;&#x27;+(rainTop+43)+&#x27;&quot; text-anchor=&quot;end&quot;&gt;0&lt;/text&gt;&#x27;;
+    content+=&#x27;&lt;text x=&quot;0&quot; y=&quot;&#x27;+(rainTop+6)+&#x27;&quot; class=&quot;ot-axis-heading&quot;&gt;降水&lt;/text&gt;&lt;text x=&quot;0&quot; y=&quot;&#x27;+(rainTop+20)+&#x27;&quot;&gt;mm/小时&lt;/text&gt;&lt;text x=&quot;&#x27;+(left-8)+&#x27;&quot; y=&quot;&#x27;+(rainTop+43)+&#x27;&quot; text-anchor=&quot;end&quot;&gt;0&lt;/text&gt;&#x27;;
     series.forEach((item,index)=&gt;{
       if(item.rain&lt;=0)return;
       const barWidth=Math.max(1,plotWidth/state.period*.68),barHeight=item.rain/4*36;
@@ -2244,11 +2366,16 @@ html&gt;body{padding:0}&lt;/style&gt;
     const mainWeather=root.querySelector(&#x27;#ot-main-weather&#x27;);
     if(mainWeather)mainWeather.textContent=data.weather;
     const mainDetail=root.querySelector(&#x27;#ot-main-detail&#x27;);
-    if(mainDetail)mainDetail.textContent=&#x27;降水 &#x27;+data.rain+&#x27; mm/h · 风速 &#x27;+data.wind+&#x27; km/h&#x27;;
+    if(mainDetail)mainDetail.textContent=&#x27;小时降水 &#x27;+data.rain+&#x27; mm · 风速 &#x27;+data.wind+&#x27; km/h&#x27;;
     const details=root.querySelector(&#x27;#ot-detail-facts&#x27;);
     if(details)details.innerHTML=facts(data);
     const slider=root.querySelector(&#x27;#ot-hour&#x27;);
     if(slider)slider.value=state.hour;
+    const exact=root.querySelector(&#x27;#ot-exact-hour&#x27;);
+    if(exact)exact.value=state.hour;
+    const previous=root.querySelector(&#x27;[data-action=&quot;previous-hour&quot;]&#x27;),next=root.querySelector(&#x27;[data-action=&quot;next-hour&quot;]&#x27;);
+    if(previous)previous.disabled=state.hour===0;
+    if(next)next.disabled=state.hour===state.period-1;
     if(chartGeometry){
       const guide=root.querySelector(&#x27;#ot-cursor-line&#x27;),dot=root.querySelector(&#x27;#ot-temp-dot&#x27;);
       if(guide){guide.setAttribute(&#x27;x1&#x27;,chartGeometry.horizontal(state.hour));guide.setAttribute(&#x27;x2&#x27;,chartGeometry.horizontal(state.hour));}
@@ -2256,82 +2383,148 @@ html&gt;body{padding:0}&lt;/style&gt;
     }
   }
   function openPoint(pointId,tab){
-    state.screen=&#x27;weather&#x27;;state.mode=&#x27;point&#x27;;state.pointId=pointId;state.tab=tab||&#x27;hourly&#x27;;state.customPoint=state.favoritePlaces.find(place=&gt;place.id===pointId)||null;state.hour=13;state.period=24;state.date=&#x27;2026-10-31&#x27;;
+    const location=state.favoritePlaces.find(place=&gt;place.id===pointId)||byId(pointId)||basePoints.find(place=&gt;place.id===pointId)||state.customPoint;
+    if(!location)return;
+    state.screen=&#x27;weather&#x27;;state.mode=&#x27;point&#x27;;state.pointId=location.id;state.tab=tab||&#x27;hourly&#x27;;state.customPoint=clone(location);state.hour=13;state.period=24;state.date=&#x27;2026-10-31&#x27;;state.heightWindow=&#x27;auto&#x27;;addRecent(&#x27;point&#x27;,location);
   }
   function openRoute(){
     state.screen=&#x27;weather&#x27;;state.mode=&#x27;route&#x27;;state.tab=&#x27;route&#x27;;state.day=1;state.customPoint=null;state.date=state.startDate;
   }
   function beginEdit(){
+    if(!routeAvailable()){notify(&#x27;路线权限失效，请先选择可用路线。&#x27;);return;}
     state.draft={id:state.currentPlanId,name:state.planName,date:state.startDate,stops:clone(state.stops)};
     state.screen=&#x27;plan&#x27;;
+  }
+  function selectPlan(planId){
+    const selected=state.planRecords.find(plan=&gt;plan.id===planId);
+    if(!selected){notify(&#x27;该行程已删除，请重新选择。&#x27;);state.screen=&#x27;home&#x27;;return;}
+    state.currentPlanId=selected.id;state.currentRouteId=selected.routeId;loadLatestRoute();state.stops=clone(selected.stops);state.planName=selected.name;state.startDate=selected.startDate;state.savedPlan=true;state.fromActivity=Boolean(selected.fromActivity);state.pointId=state.points[0].id;openRoute();addRecent(&#x27;plan&#x27;,selected);
+  }
+  function selectRoute(routeId){
+    const selected=state.routeRecords.find(route=&gt;route.id===routeId);
+    if(!selected||selected.accessible===false){notify(&#x27;这条路线不可访问，请选择其他路线。&#x27;);state.screen=&#x27;home&#x27;;return;}
+    state.currentRouteId=selected.id;state.currentPlanId=null;loadLatestRoute();state.planName=selected.name+&#x27; · 我的行程&#x27;;state.startDate=&#x27;2026-10-31&#x27;;state.fromActivity=false;
+    state.stops=state.points.map((location,index)=&gt;({id:uniqueId(&#x27;visit&#x27;),pointId:location.id,pointSnapshot:clone(location),day:1,time:&#x27;&#x27;,event:index===0?&#x27;depart&#x27;:&#x27;arrive&#x27;}));state.savedPlan=false;state.pointId=state.points[0].id;openRoute();addRecent(&#x27;route&#x27;,selected);notify(&#x27;路线已载入。尚未安排时间，可以先逐点查询。&#x27;);
+  }
+  function selectStop(stopId){
+    const stop=state.stops.find(item=&gt;item.id===stopId);
+    if(!stop||!byId(stop.pointId)||!routeAvailable())return;
+    state.pointId=stop.pointId;state.activeStopId=stop.id;state.day=stop.day;state.date=dateAdd(state.startDate,stop.day-1);state.hour=stop.time?Number(stop.time.slice(0,2)):12;state.period=24;state.tab=&#x27;hourly&#x27;;state.heightWindow=&#x27;auto&#x27;;
+    if(stop.time&amp;&amp;stop.time.slice(3)!==&#x27;00&#x27;)notify(&#x27;计划 &#x27;+stop.time+&#x27; · 参考相邻整点 &#x27;+timeLabel(state.hour)+&#x27; / &#x27;+timeLabel(state.hour+1)+&#x27;，不冒充分钟级预报。&#x27;);
+  }
+  function simulateRouteUpdate(){
+    const route=routeRecord();
+    if(!route||route.accessible===false)return notify(&#x27;没有可更新的路线，请先选择有权限的路线。&#x27;);
+    if(state.scenario===&#x27;offline&#x27;||state.scenario===&#x27;expired&#x27;)return notify(&#x27;离线时不能检查最新路线，当前只保留缓存。&#x27;);
+    if(route.revision&gt;1)return notify(&#x27;这条路线的示例变更已应用，重置演示后可重试。&#x27;);
+    const moved=route.points[1]||route.points[0],removed=route.points.find(location=&gt;location.id===&#x27;pass&#x27;)||route.points[route.points.length&gt;2?route.points.length-1:0];
+    route.points=route.points.filter(location=&gt;location.id!==removed.id).map(location=&gt;location.id===moved.id?Object.assign({},location,{lat:location.lat+.002,name:location.name+&#x27;（位置更新）&#x27;}):location);
+    const added={id:uniqueId(&#x27;water&#x27;),name:&#x27;新增补给点&#x27;,lat:29.87,lng:99.705,ele:3650,kind:&#x27;补给点&#x27;};
+    route.points.splice(1,0,added);
+    route.revision+=1;
+    state.routeUpdates=[&#x27;节点位置更新：&#x27;+moved.name+&#x27;，天气改查新坐标，原安排时间不变。&#x27;,&#x27;移除节点：&#x27;+removed.name+&#x27;，已有经过保留为待处理，不继续显示有效天气。&#x27;,&#x27;新增补给点：未加入个人行程，需在编辑中主动添加。&#x27;,&#x27;路线节点顺序有变化：个人经过顺序未重排，请核对。&#x27;];
+    route.updates=clone(state.routeUpdates);
+    loadLatestRoute();state.tab=&#x27;route&#x27;;state.mode=&#x27;route&#x27;;state.screen=&#x27;weather&#x27;;notify(&#x27;已模拟读取最新路线。没有更改个人日期、顺序或抵达时间。&#x27;);
   }
   function notify(message){state.toast=message;}
   root.addEventListener(&#x27;click&#x27;,event=&gt;{
     const button=event.target.closest(&#x27;[data-action]&#x27;);
     if(!button)return;
     const name=button.dataset.action;
-    if(name===&#x27;save-plan&#x27;||name===&#x27;query-point&#x27;){
+    if(name===&#x27;save-plan&#x27;||name===&#x27;query-point&#x27;||name===&#x27;save-asset&#x27;){
       const form=button.closest(&#x27;form&#x27;);
       if(form.reportValidity())form.dispatchEvent(new Event(&#x27;submit&#x27;,{bubbles:true,cancelable:true}));
       return;
     }
     state.toast=&#x27;&#x27;;
     if(name===&#x27;home&#x27;){state.screen=&#x27;home&#x27;;}
-    else if(name===&#x27;back&#x27;){if(state.screen===&#x27;plan&#x27;){state.draft=null;state.screen=&#x27;weather&#x27;;}else state.screen=&#x27;home&#x27;;}
+    else if(name===&#x27;back&#x27;){
+      if(state.screen===&#x27;plan&#x27;){state.confirmation={type:&#x27;discard&#x27;,title:&#x27;放弃本次编辑？&#x27;,message:&#x27;已保存的计划保持不变，本次尚未保存的编辑会被丢弃。&#x27;,returnScreen:&#x27;plan&#x27;};state.screen=&#x27;confirm&#x27;;}
+      else if(state.screen===&#x27;weather&#x27;&amp;&amp;state.mode===&#x27;route&#x27;&amp;&amp;state.tab!==&#x27;route&#x27;){state.tab=&#x27;route&#x27;;}
+      else if(state.screen===&#x27;route-info&#x27;){state.screen=&#x27;weather&#x27;;state.mode=&#x27;route&#x27;;state.tab=&#x27;route&#x27;;}
+      else if(state.screen===&#x27;confirm&#x27;){state.screen=state.confirmation.returnScreen;state.confirmation=null;}
+      else state.screen=&#x27;home&#x27;;
+    }
+    else if(name===&#x27;plans&#x27;){state.screen=&#x27;home&#x27;;state.homeTab=&#x27;plans&#x27;;}
     else if(name===&#x27;favorites&#x27;){state.screen=&#x27;home&#x27;;state.homeTab=&#x27;points&#x27;;}
     else if(name===&#x27;route-library&#x27;){state.screen=&#x27;home&#x27;;state.homeTab=&#x27;routes&#x27;;}
     else if(name===&#x27;home-tab&#x27;){state.homeTab=button.dataset.tab;}
     else if(name===&#x27;open-plan&#x27;){
-      const selected=state.planRecords.find(plan=&gt;plan.id===(button.dataset.plan||state.currentPlanId))||state.planRecords[0];
-      if(selected){
-        state.currentPlanId=selected.id;state.currentRouteId=selected.routeId;state.points=clone(selected.points);state.stops=clone(selected.stops);state.planName=selected.name;state.startDate=selected.startDate;state.routeName=selected.routeName;state.savedPlan=true;state.pointId=state.points[0].id;openRoute();state.scenario=settings.scenario;
-      }else{state.screen=&#x27;home&#x27;;state.homeTab=&#x27;plans&#x27;;}
+      selectPlan(button.dataset.plan||state.currentPlanId);
     }
     else if(name===&#x27;open-route&#x27;){
-      const selected=state.routeRecords.find(route=&gt;route.id===button.dataset.route)||state.routeRecords[0];
-      state.currentRouteId=selected.id;state.currentPlanId=null;state.points=clone(selected.points);state.routeName=selected.name;state.planName=selected.name+&#x27; · 待安排行程&#x27;;
-      state.stops=state.points.map((location,index)=&gt;({id:&#x27;route-&#x27;+index,pointId:location.id,day:1,time:&#x27;&#x27;}));state.savedPlan=false;state.pointId=state.points[0].id;openRoute();state.scenario=&#x27;unscheduled&#x27;;notify(&#x27;路线已载入 · 可以先逐点查询，也可以安排个人行程。&#x27;);
+      selectRoute(button.dataset.route);
     }
     else if(name===&#x27;open-point&#x27;){openPoint(button.dataset.point);}
-    else if(name===&#x27;map&#x27;){state.screen=&#x27;map&#x27;;state.pickerChoice=state.points[0].id;}
+    else if(name===&#x27;map&#x27;){state.mapReturn=state.screen;state.screen=&#x27;map&#x27;;state.mapFailed=false;state.pickerChoice=basePoints[0].id;}
+    else if(name===&#x27;map-fail&#x27;){state.mapFailed=true;}
+    else if(name===&#x27;cancel-map&#x27;){state.screen=state.mapReturn||&#x27;home&#x27;;}
     else if(name===&#x27;coordinate&#x27;){state.screen=&#x27;coordinate&#x27;;}
-    else if(name===&#x27;import&#x27;){state.screen=&#x27;import&#x27;;state.importPoints=null;}
+    else if(name===&#x27;import&#x27;){state.screen=&#x27;import&#x27;;state.importPoints=null;pendingOriginal=null;}
     else if(name===&#x27;confirm-map&#x27;){openPoint(state.pickerChoice);notify(&#x27;地图返回结果演示 · 未调用真实地图服务。&#x27;);}
     else if(name===&#x27;tab&#x27;){state.tab=button.dataset.tab;}
     else if(name===&#x27;day&#x27;){state.day=Number(button.dataset.day);state.date=dateAdd(state.startDate,state.day-1);}
-    else if(name===&#x27;node&#x27;){
-      const stop=state.stops.find(item=&gt;item.id===button.dataset.stop);
-      state.pointId=stop.pointId;state.day=stop.day;state.date=dateAdd(state.startDate,stop.day-1);state.hour=stop.time?Number(stop.time.slice(0,2)):12;state.period=24;state.tab=&#x27;hourly&#x27;;
-      if(stop.time&amp;&amp;stop.time.slice(3)!==&#x27;00&#x27;)notify(&#x27;计划抵达 &#x27;+stop.time+&#x27; · 图表选中相邻整点 &#x27;+timeLabel(state.hour)+&#x27;，不冒充分钟级预报。&#x27;);
-    }else if(name===&#x27;edit-plan&#x27;){beginEdit();}
+    else if(name===&#x27;node&#x27;){selectStop(button.dataset.stop);}
+    else if(name===&#x27;edit-plan&#x27;){beginEdit();}
     else if(name===&#x27;cancel-plan&#x27;){state.draft=null;state.screen=&#x27;weather&#x27;;}
-    else if(name===&#x27;copy-plan&#x27;){beginEdit();state.draft.id=null;state.draft.name+=&#x27; · 副本&#x27;;notify(&#x27;复制为新的个人计划，保存前可调整日期。&#x27;);}
+    else if(name===&#x27;copy-plan&#x27;){beginEdit();if(state.draft){state.draft.id=null;state.draft.name+=&#x27; · 副本&#x27;;notify(&#x27;复制为新行程，原日期和时间仅作起点，请核对并调整。&#x27;);}}
+    else if(name===&#x27;add-visit&#x27;){const location=state.points[0];state.draft.stops.push({id:uniqueId(&#x27;visit&#x27;),pointId:location.id,pointSnapshot:clone(location),day:state.draft.stops.at(-1)?.day||1,time:&#x27;&#x27;,event:&#x27;arrive&#x27;});}
+    else if(name===&#x27;remove-visit&#x27;){if(state.draft.stops.length&gt;1)state.draft.stops=state.draft.stops.filter(stop=&gt;stop.id!==button.dataset.stop);}
+    else if(name===&#x27;move-visit&#x27;){const index=state.draft.stops.findIndex(stop=&gt;stop.id===button.dataset.stop),destination=index+Number(button.dataset.direction);if(destination&gt;=0&amp;&amp;destination&lt;state.draft.stops.length){const moved=state.draft.stops.splice(index,1)[0];state.draft.stops.splice(destination,0,moved);}}
     else if(name===&#x27;period&#x27;){state.period=Number(button.dataset.period);state.hour=Math.min(state.hour,state.period-1);}
     else if(name===&#x27;previous-hour&#x27;){updateHour(state.hour-1);remember();return;}
     else if(name===&#x27;next-hour&#x27;){updateHour(state.hour+1);remember();return;}
     else if(name===&#x27;favorite&#x27;){
       const location=point();
       const existing=state.favoritePlaces.findIndex(place=&gt;place.id===location.id);
-      if(existing&gt;=0){state.favoritePlaces.splice(existing,1);notify(&#x27;已取消常用地点。&#x27;);}
+      if(existing&gt;=0){state.management={kind:&#x27;place&#x27;,id:location.id};state.screen=&#x27;manage&#x27;;}
       else{
-        state.favoritePlaces.push(clone(location));notify(&#x27;地点已保存在原型状态中 · 云端同步仅作演示。&#x27;);
+        state.favoritePlaces.push(clone(location));dirtyAssets();notify(&#x27;地点已加入主动收藏 · &#x27;+syncLabel());
       }
-    }else if(name===&#x27;sync&#x27;){state.signedIn=true;notify(&#x27;模拟已登录 · 同步流程演示完成，未连接真实账户。&#x27;);}
+    }else if(name===&#x27;sync&#x27;){state.screen=&#x27;sync&#x27;;}
+    else if(name===&#x27;login-demo&#x27;){state.signedIn=true;notify(&#x27;已模拟登录，尚未导入本机资产。&#x27;);}
+    else if(name===&#x27;confirm-sync&#x27;){if([&#x27;offline&#x27;,&#x27;expired&#x27;].includes(state.scenario)){notify(&#x27;当前离线，尚未导入。恢复网络后重试。&#x27;);}else{state.cloudLinked=true;state.syncStatus=&#x27;synced&#x27;;notify(&#x27;已模拟确认导入；未真实上传任何文件或数据。&#x27;);}}
+    else if(name===&#x27;keep-local&#x27;){state.screen=&#x27;home&#x27;;notify(&#x27;本机数据保持独立，尚未绑定账户同步。&#x27;);}
+    else if(name===&#x27;retry-sync&#x27;){if([&#x27;offline&#x27;,&#x27;expired&#x27;].includes(state.scenario)){state.syncStatus=&#x27;pending&#x27;;notify(&#x27;离线无法同步，修改保留在本机待同步。&#x27;);}else{state.syncStatus=&#x27;synced&#x27;;notify(&#x27;同步成功仅为演示，不连接真实云端。&#x27;);}}
+    else if(name===&#x27;logout-demo&#x27;){state.signedIn=false;state.cloudLinked=false;state.syncStatus=&#x27;local&#x27;;state.conflict=null;notify(&#x27;已退出演示账户；原型样例仍留本机，正式版需按账户隔离。&#x27;);}
+    else if(name===&#x27;keep-both&#x27;){if(state.conflict){const remote=clone(state.conflict.remote);remote.id=uniqueId(&#x27;plan&#x27;);remote.name+=&#x27; · 云端版本副本&#x27;;state.planRecords.push(remote);state.conflict=null;state.syncStatus=&#x27;synced&#x27;;notify(&#x27;已保留本机版及独立副本，两版均未被覆盖。&#x27;);}}
+    else if(name===&#x27;route-info&#x27;){state.screen=&#x27;route-info&#x27;;}
+    else if(name===&#x27;view-original&#x27;){state.screen=&#x27;original&#x27;;}
+    else if(name===&#x27;manage&#x27;){state.management={kind:button.dataset.kind,id:button.dataset.id};state.screen=&#x27;manage&#x27;;}
+    else if(name===&#x27;manage-plan-edit&#x27;||name===&#x27;manage-plan-copy&#x27;){selectPlan(state.management.id);beginEdit();if(name===&#x27;manage-plan-copy&#x27;&amp;&amp;state.draft){state.draft.id=null;state.draft.name+=&#x27; · 副本&#x27;;}}
+    else if(name===&#x27;manage-route-info&#x27;){selectRoute(state.management.id);state.screen=&#x27;route-info&#x27;;}
+    else if(name===&#x27;delete-asset&#x27;){
+      const record=managedRecord(),references=state.management.kind===&#x27;route&#x27;?state.planRecords.filter(plan=&gt;plan.routeId===record.id).length:0;
+      if(references){notify(&#x27;该路线被 &#x27;+references+&#x27; 个个人行程引用，请先删除这些行程或更换关联路线。&#x27;);}
+      else{state.confirmation={type:&#x27;delete&#x27;,title:&#x27;确认删除&#x27;+record.name+&#x27;？&#x27;,message:state.management.kind===&#x27;plan&#x27;?&#x27;只删除个人天气行程，不删除路线、不修改活动。&#x27;:&#x27;仅删除这项主动保存，不清除最近查询；本原型不执行真实云端删除。&#x27;,returnScreen:&#x27;manage&#x27;};state.screen=&#x27;confirm&#x27;;}
+    }
+    else if(name===&#x27;clear-recents&#x27;){state.confirmation={type:&#x27;recents&#x27;,title:&#x27;清除最近查询？&#x27;,message:&#x27;只清除本机查询历史，主动保存的地点、路线和行程不受影响。&#x27;,returnScreen:&#x27;home&#x27;};state.screen=&#x27;confirm&#x27;;}
+    else if(name===&#x27;cancel-operation&#x27;){state.screen=state.confirmation.returnScreen;state.confirmation=null;}
+    else if(name===&#x27;confirm-operation&#x27;){
+      if(state.confirmation.type===&#x27;discard&#x27;){state.draft=null;state.screen=&#x27;weather&#x27;;}
+      else if(state.confirmation.type===&#x27;recents&#x27;){state.recentQueries=[];state.screen=&#x27;home&#x27;;}
+      else{const kind=state.management.kind,key=kind===&#x27;place&#x27;?&#x27;favoritePlaces&#x27;:kind===&#x27;route&#x27;?&#x27;routeRecords&#x27;:&#x27;planRecords&#x27;;state[key]=state[key].filter(record=&gt;record.id!==state.management.id);if(kind===&#x27;route&#x27;)originalFiles.delete(state.management.id);dirtyAssets();state.screen=&#x27;home&#x27;;state.homeTab=kind===&#x27;place&#x27;?&#x27;points&#x27;:kind===&#x27;route&#x27;?&#x27;routes&#x27;:&#x27;plans&#x27;;}
+      state.confirmation=null;notify(&#x27;操作完成（原型）。&#x27;);
+    }
+    else if(name===&#x27;recent&#x27;){const record=state.recentQueries.find(item=&gt;item.key===button.dataset.key);if(record.kind===&#x27;point&#x27;){state.customPoint=clone(record.location);openPoint(record.id);}else if(record.kind===&#x27;plan&#x27;)selectPlan(record.id);else selectRoute(record.id);}
+    else if(name===&#x27;retry-weather&#x27;){state.scenario=&#x27;normal&#x27;;notify(&#x27;已切回正常样例，不代表真实请求成功。&#x27;);}
     else if(name===&#x27;available-date&#x27;){state.date=&#x27;2026-10-31&#x27;;state.scenario=&#x27;normal&#x27;;}
-    else if(name===&#x27;sample-import&#x27;){state.importPoints=clone(basePoints);state.importName=&#x27;格聂两日路线.gpx&#x27;;}
+    else if(name===&#x27;sample-import&#x27;){state.importPoints=clone(basePoints);state.importName=&#x27;格聂两日路线.gpx&#x27;;pendingOriginal=null;}
     else if(name===&#x27;confirm-import&#x27;){
       const selected=Array.from(root.querySelectorAll(&#x27;[data-import-point]:checked&#x27;)).map(input=&gt;input.dataset.importPoint);
       if(selected.length&lt;2){root.querySelector(&#x27;#ot-import-error&#x27;).textContent=&#x27;至少保留两个关键节点。&#x27;;return;}
-      state.points=state.importPoints.filter(location=&gt;selected.indexOf(location.id)&gt;=0);
-      state.routeName=state.importName.replace(/\.gpx$/i,&#x27;&#x27;);
+      const selectedPoints=state.importPoints.filter(location=&gt;selected.indexOf(location.id)&gt;=0),routeName=(root.querySelector(&#x27;#ot-import-name&#x27;).value||&#x27;&#x27;).trim();
+      if(!routeName||selectedPoints.some(location=&gt;!location.name.trim())){root.querySelector(&#x27;#ot-import-error&#x27;).textContent=&#x27;请填写路线和所选节点名称。&#x27;;return;}
+      state.points=selectedPoints;state.routeName=routeName;
       state.planName=state.routeName+&#x27; · 待安排行程&#x27;;
-      state.stops=state.points.map((location,index)=&gt;({id:&#x27;import-&#x27;+index,pointId:location.id,day:1,time:&#x27;&#x27;}));
-      state.pointId=state.points[0].id;state.savedRoute=true;state.savedPlan=false;state.currentPlanId=null;state.currentRouteId=&#x27;route-&#x27;+Date.now();
-      state.routeRecords.push({id:state.currentRouteId,name:state.routeName,points:clone(state.points)});
-      openRoute();state.scenario=&#x27;unscheduled&#x27;;state.importPoints=null;
+      state.stops=state.points.map((location,index)=&gt;({id:uniqueId(&#x27;visit&#x27;),pointId:location.id,pointSnapshot:clone(location),day:1,time:&#x27;&#x27;,event:index===0?&#x27;depart&#x27;:&#x27;arrive&#x27;}));
+      state.pointId=state.points[0].id;state.savedRoute=true;state.savedPlan=false;state.currentPlanId=null;state.currentRouteId=uniqueId(&#x27;route&#x27;);state.startDate=&#x27;2026-10-31&#x27;;state.fromActivity=false;state.routeUpdates=[];
+      state.routeRecords.push({id:state.currentRouteId,name:state.routeName,points:clone(state.points),revision:1,accessible:true,sourceName:state.importName,sourceKind:pendingOriginal?&#x27;file&#x27;:&#x27;sample&#x27;});
+      if(pendingOriginal)originalFiles.set(state.currentRouteId,pendingOriginal);
+      pendingOriginal=null;dirtyAssets();openRoute();state.importPoints=null;
       notify(&#x27;路线已保存到原型路线库。尚未安排抵达时间，可直接逐点查询。&#x27;);
     }else if(name===&#x27;from-activity&#x27;){
-      state.points=clone(basePoints);state.stops=state.points.map((location,index)=&gt;({id:&#x27;activity-&#x27;+index,pointId:location.id,day:1,time:index===0?&#x27;08:00&#x27;:&#x27;&#x27;}));state.currentPlanId=null;state.currentRouteId=&#x27;route-base&#x27;;state.savedPlan=false;state.startDate=&#x27;2026-10-31&#x27;;state.planName=&#x27;活动路线 · 我的天气计划&#x27;;state.routeName=initial.routeName;state.fromActivity=true;openRoute();
+      selectRoute(&#x27;route-base&#x27;);if(routeAvailable()){state.stops[0].time=&#x27;08:00&#x27;;state.startDate=&#x27;2026-10-31&#x27;;state.planName=&#x27;活动路线 · 我的天气计划&#x27;;state.fromActivity=true;}
       notify(&#x27;已带入示例活动路线与出发时间，当前计划仅属于你。&#x27;);
     }
     render();remember();
@@ -2339,6 +2532,7 @@ html&gt;body{padding:0}&lt;/style&gt;
   root.addEventListener(&#x27;input&#x27;,event=&gt;{
     const target=event.target;
     if(target.id===&#x27;ot-hour&#x27;){updateHour(Number(target.value));}
+    if(target.dataset.importName&amp;&amp;state.importPoints){state.importPoints.find(location=&gt;location.id===target.dataset.importName).name=target.value;}
     if(state.draft){
       if(target.id===&#x27;ot-plan-name&#x27;)state.draft.name=target.value;
       if(target.id===&#x27;ot-start-date&#x27;)state.draft.date=target.value;
@@ -2347,30 +2541,37 @@ html&gt;body{padding:0}&lt;/style&gt;
   });
   root.addEventListener(&#x27;change&#x27;,async event=&gt;{
     const target=event.target;
-    if(target.id===&#x27;ot-node&#x27;){state.pointId=target.value;render();remember();}
+    if(target.id===&#x27;ot-node&#x27;){const tab=state.tab;selectStop(target.value);state.tab=tab;render();remember();}
     else if(target.id===&#x27;ot-query-date&#x27;&amp;&amp;target.value){state.date=target.value;render();remember();}
     else if(target.name===&#x27;ot-map-point&#x27;){state.pickerChoice=target.value;}
     else if(target.dataset.editDay&amp;&amp;state.draft){state.draft.stops.find(stop=&gt;stop.id===target.dataset.editDay).day=Number(target.value);}
+    else if(target.dataset.editEvent&amp;&amp;state.draft){state.draft.stops.find(stop=&gt;stop.id===target.dataset.editEvent).event=target.value;}
+    else if(target.dataset.editPoint&amp;&amp;state.draft){const stop=state.draft.stops.find(item=&gt;item.id===target.dataset.editPoint);stop.pointId=target.value;stop.pointSnapshot=clone(byId(target.value));}
+    else if(target.id===&#x27;ot-height-window&#x27;){state.heightWindow=target.value;render();remember();}
+    else if(target.id===&#x27;ot-exact-hour&#x27;){updateHour(Number(target.value));remember();}
     else if(target.id===&#x27;ot-hour&#x27;){remember();}
     else if(target.id===&#x27;ot-gpx-file&#x27;&amp;&amp;target.files[0]){
       const file=target.files[0],error=root.querySelector(&#x27;#ot-import-error&#x27;);
       if(file.size&gt;2*1024*1024){error.textContent=&#x27;原型预览上限为 2 MB，请使用较小的 GPX。&#x27;;return;}
       try{
-        const documentData=new DOMParser().parseFromString(await file.text(),&#x27;application/xml&#x27;);
+        const originalText=await file.text();
+        if(state.screen!==&#x27;import&#x27;||!target.isConnected)return;
+        const documentData=new DOMParser().parseFromString(originalText,&#x27;application/xml&#x27;);
         if(documentData.querySelector(&#x27;parsererror&#x27;))throw new Error(&#x27;GPX 文件格式无法解析。&#x27;);
-        const raw=Array.from(documentData.getElementsByTagNameNS(&#x27;*&#x27;,&#x27;trkpt&#x27;));
-        const routePoints=raw.length?raw:Array.from(documentData.getElementsByTagNameNS(&#x27;*&#x27;,&#x27;rtept&#x27;));
-        const valid=routePoints.filter(element=&gt;Number.isFinite(Number(element.getAttribute(&#x27;lat&#x27;)))&amp;&amp;Number.isFinite(Number(element.getAttribute(&#x27;lon&#x27;)))&amp;&amp;Math.abs(Number(element.getAttribute(&#x27;lat&#x27;)))&lt;=90&amp;&amp;Math.abs(Number(element.getAttribute(&#x27;lon&#x27;)))&lt;=180);
+        const waypoints=Array.from(documentData.getElementsByTagNameNS(&#x27;*&#x27;,&#x27;wpt&#x27;)),routePoints=Array.from(documentData.getElementsByTagNameNS(&#x27;*&#x27;,&#x27;rtept&#x27;)),trackPoints=Array.from(documentData.getElementsByTagNameNS(&#x27;*&#x27;,&#x27;trkpt&#x27;));
+        const candidates=waypoints.length&gt;=2?waypoints:routePoints.length&gt;=2?routePoints:trackPoints;
+        const valid=candidates.filter(element=&gt;[&#x27;lat&#x27;,&#x27;lon&#x27;].every(attribute=&gt;element.hasAttribute(attribute)&amp;&amp;element.getAttribute(attribute).trim()!==&#x27;&#x27;&amp;&amp;Number.isFinite(Number(element.getAttribute(attribute))))&amp;&amp;Math.abs(Number(element.getAttribute(&#x27;lat&#x27;)))&lt;=90&amp;&amp;Math.abs(Number(element.getAttribute(&#x27;lon&#x27;)))&lt;=180);
         if(valid.length&lt;2)throw new Error(&#x27;至少需要两个有效轨迹点。&#x27;);
         const count=Math.min(6,valid.length);
         state.importPoints=Array.from({length:count},(_,index)=&gt;{
           const element=valid[Math.round(index*(valid.length-1)/(count-1))];
           const elevationElement=element.getElementsByTagNameNS(&#x27;*&#x27;,&#x27;ele&#x27;)[0];
           const nameElement=element.getElementsByTagNameNS(&#x27;*&#x27;,&#x27;name&#x27;)[0];
+          const timeElement=element.getElementsByTagNameNS(&#x27;*&#x27;,&#x27;time&#x27;)[0];
           const elevation=elevationElement&amp;&amp;elevationElement.textContent.trim()!==&#x27;&#x27;?Number(elevationElement.textContent):null;
-          return {id:&#x27;gpx-&#x27;+index,name:nameElement?nameElement.textContent.slice(0,40):(index===0?&#x27;轨迹起点&#x27;:index===count-1?&#x27;轨迹终点&#x27;:&#x27;关键点 &#x27;+index),lat:Number(element.getAttribute(&#x27;lat&#x27;)),lng:Number(element.getAttribute(&#x27;lon&#x27;)),ele:Number.isFinite(elevation)?Math.round(elevation):null,kind:&#x27;GPX采样点&#x27;};
+          return {id:uniqueId(&#x27;gpx&#x27;),name:nameElement&amp;&amp;nameElement.textContent.trim()?nameElement.textContent.slice(0,40):(index===0?&#x27;轨迹起点&#x27;:index===count-1?&#x27;轨迹终点&#x27;:&#x27;候选点 &#x27;+index),lat:Number(element.getAttribute(&#x27;lat&#x27;)),lng:Number(element.getAttribute(&#x27;lon&#x27;)),ele:Number.isFinite(elevation)?Math.round(elevation):null,kind:waypoints.length&gt;=2?&#x27;GPX航点&#x27;:&#x27;GPX候选点&#x27;,coordinateSystem:&#x27;WGS-84&#x27;,gpxTime:timeElement?timeElement.textContent.trim():null};
         });
-        state.importName=file.name;render();
+        state.importName=file.name;pendingOriginal={name:file.name,text:originalText};render();
       }catch(problem){error.textContent=problem.message||&#x27;读取失败，请换一个 GPX 文件。&#x27;;}
     }
   });
@@ -2382,27 +2583,40 @@ html&gt;body{padding:0}&lt;/style&gt;
       if(!draft.name.trim()||!draft.date){error.textContent=&#x27;请填写计划名称与出发日期。&#x27;;return;}
       let previous=-1,previousDay=0;
       for(const stop of draft.stops){
+        if(!byId(stop.pointId)){error.textContent=&#x27;有节点已从最新路线移除，请重新选择或移除此经过。&#x27;;return;}
         const value=(stop.day-1)*1440+(stop.time?Number(stop.time.slice(0,2))*60+Number(stop.time.slice(3)):0);
         if(stop.day&lt;previousDay){error.textContent=&#x27;节点所属日期须按路线顺序递增。&#x27;;return;}
         if(stop.time&amp;&amp;value&lt;previous){error.textContent=&#x27;节点抵达时间须按路线顺序递增；跨天请调整“第几天”。&#x27;;return;}
         previousDay=stop.day;
         if(stop.time)previous=value;
       }
-      state.planName=draft.name.trim();state.startDate=draft.date;state.stops=clone(draft.stops);state.currentPlanId=draft.id||&#x27;plan-&#x27;+Date.now();state.savedPlan=true;state.scenario=&#x27;normal&#x27;;
-      const saved={id:state.currentPlanId,routeId:state.currentRouteId,name:state.planName,startDate:state.startDate,routeName:state.routeName,points:clone(state.points),stops:clone(state.stops)};
+      state.planName=draft.name.trim();state.startDate=draft.date;state.stops=clone(draft.stops);state.currentPlanId=draft.id||uniqueId(&#x27;plan&#x27;);state.savedPlan=true;
+      const saved={id:state.currentPlanId,routeId:state.currentRouteId,name:state.planName,startDate:state.startDate,stops:clone(state.stops),fromActivity:state.fromActivity};
       const existing=state.planRecords.findIndex(plan=&gt;plan.id===saved.id);
       if(existing&gt;=0)state.planRecords[existing]=saved;else state.planRecords.push(saved);
-      state.draft=null;openRoute();
+      state.draft=null;dirtyAssets();openRoute();
       notify(&#x27;个人计划已保存（原型）· 不会修改活动或原始轨迹。&#x27;);
       render();remember();
     }else if(event.target.id===&#x27;ot-coordinate-form&#x27;){
       const data=new FormData(event.target);
-      const latitude=Number(data.get(&#x27;latitude&#x27;)),longitude=Number(data.get(&#x27;longitude&#x27;));
+      const latitudeText=String(data.get(&#x27;latitude&#x27;)).trim(),longitudeText=String(data.get(&#x27;longitude&#x27;)).trim();
+      const latitude=Number(latitudeText),longitude=Number(longitudeText);
       const elevation=String(data.get(&#x27;elevation&#x27;)).trim();
-      if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)&gt;90||Math.abs(longitude)&gt;180){root.querySelector(&#x27;#ot-coordinate-error&#x27;).textContent=&#x27;请填写有效经纬度。&#x27;;return;}
+      if(!latitudeText||!longitudeText||!Number.isFinite(latitude)||!Number.isFinite(longitude)||Math.abs(latitude)&gt;90||Math.abs(longitude)&gt;180){root.querySelector(&#x27;#ot-coordinate-error&#x27;).textContent=&#x27;请填写有效经纬度，空白不能当作 0。&#x27;;return;}
+      if(elevation!==&#x27;&#x27;&amp;&amp;(!Number.isFinite(Number(elevation))||Number(elevation)&lt;-500||Number(elevation)&gt;9000)){root.querySelector(&#x27;#ot-coordinate-error&#x27;).textContent=&#x27;海拔应在 -500 至 9000 米之间，未知请留空。&#x27;;return;}
       state.customPoint={id:&#x27;manual-&#x27;+Date.now(),name:String(data.get(&#x27;name&#x27;)).trim()||&#x27;坐标查询点&#x27;,lat:latitude,lng:longitude,ele:elevation===&#x27;&#x27;?null:Number(elevation),manual:true,coordinateSystem:data.get(&#x27;coordinateSystem&#x27;)};
-      state.pointId=state.customPoint.id;state.mode=&#x27;point&#x27;;state.screen=&#x27;weather&#x27;;state.tab=&#x27;cloud&#x27;;state.date=&#x27;2026-10-31&#x27;;state.hour=13;state.period=24;state.scenario=&#x27;normal&#x27;;
+      state.pointId=state.customPoint.id;state.mode=&#x27;point&#x27;;state.screen=&#x27;weather&#x27;;state.tab=&#x27;hourly&#x27;;state.date=&#x27;2026-10-31&#x27;;state.hour=13;state.period=24;state.heightWindow=&#x27;auto&#x27;;addRecent(&#x27;point&#x27;,state.customPoint);notify(&#x27;坐标系已记录，原型未执行真实转换或天气查询。&#x27;);
       render();remember();
+    }else if(event.target.id===&#x27;ot-manage-form&#x27;){
+      const data=new FormData(event.target),record=managedRecord(),name=String(data.get(&#x27;name&#x27;)).trim(),error=root.querySelector(&#x27;#ot-manage-error&#x27;);
+      if(!name){error.textContent=&#x27;名称不能为空。&#x27;;return;}
+      if(state.management.kind===&#x27;place&#x27;){
+        const latitudeText=String(data.get(&#x27;latitude&#x27;)).trim(),longitudeText=String(data.get(&#x27;longitude&#x27;)).trim(),elevationText=String(data.get(&#x27;elevation&#x27;)).trim();
+        if(!latitudeText||!longitudeText||!Number.isFinite(Number(latitudeText))||!Number.isFinite(Number(longitudeText))||Math.abs(Number(latitudeText))&gt;90||Math.abs(Number(longitudeText))&gt;180){error.textContent=&#x27;请填写有效经纬度。&#x27;;return;}
+        if(elevationText!==&#x27;&#x27;&amp;&amp;(!Number.isFinite(Number(elevationText))||Number(elevationText)&lt;-500||Number(elevationText)&gt;9000)){error.textContent=&#x27;请检查海拔范围。&#x27;;return;}
+        record.lat=Number(latitudeText);record.lng=Number(longitudeText);record.ele=elevationText===&#x27;&#x27;?null:Number(elevationText);record.manual=true;
+      }
+      record.name=name;dirtyAssets();notify(&#x27;已保存修改（原型）· &#x27;+syncLabel());render();remember();
     }
   });
   root.addEventListener(&#x27;keydown&#x27;,event=&gt;{
@@ -2429,6 +2643,25 @@ html&gt;body{padding:0}&lt;/style&gt;
     });
   });
   root.addEventListener(&#x27;pointerup&#x27;,event=&gt;{if(event.target.closest(&#x27;#ot-chart-hit&#x27;))remember();});
+  document.getElementById(&#x27;ot-demo-scenario&#x27;).addEventListener(&#x27;change&#x27;,event=&gt;{
+    state.scenario=event.target.value;settings.scenario=state.scenario;state.toast=&#x27;&#x27;;render();remember();
+  });
+  document.getElementById(&#x27;ot-weather-preview&#x27;).addEventListener(&#x27;click&#x27;,event=&gt;{
+    const button=event.target.closest(&#x27;[data-demo]&#x27;);
+    if(!button)return;
+    state.toast=&#x27;&#x27;;
+    if(button.dataset.demo===&#x27;update&#x27;)simulateRouteUpdate();
+    else if(button.dataset.demo===&#x27;revoke&#x27;){
+      const route=routeRecord();
+      if(route){route.accessible=false;state.screen=&#x27;weather&#x27;;state.mode=&#x27;route&#x27;;state.tab=&#x27;route&#x27;;notify(&#x27;已模拟失去路线访问权限。缓存与个人安排仍保留，但不声称路线最新。&#x27;);}
+    }else if(button.dataset.demo===&#x27;conflict&#x27;){
+      const local=state.planRecords.find(plan=&gt;plan.id===state.currentPlanId)||state.planRecords[0];
+      if(local){state.signedIn=true;state.cloudLinked=true;state.syncStatus=&#x27;conflict&#x27;;const remote=clone(local);remote.startDate=dateAdd(remote.startDate,1);state.conflict={local:clone(local),remote};state.screen=&#x27;sync&#x27;;}
+      else notify(&#x27;先保存一个个人行程，再演示冲突。&#x27;);
+    }else if(button.dataset.demo===&#x27;activity&#x27;){state.screen=&#x27;activity&#x27;;}
+    else if(button.dataset.demo===&#x27;reset&#x27;){state=clone(initial);settings.scenario=&#x27;normal&#x27;;pendingOriginal=null;originalFiles.clear();}
+    render();remember();
+  });
   render();
   if(globalThis.Tweak){
     const tweak=new Tweak({container:root,onChange:()=&gt;{
@@ -2441,7 +2674,7 @@ html&gt;body{padding:0}&lt;/style&gt;
       render();
     }});
     tweak.addSelect(settings,&#x27;scene&#x27;,{label:&#x27;查看场景&#x27;,options:[&#x27;沿途天气&#x27;,&#x27;天气首页&#x27;,&#x27;单点云层&#x27;,&#x27;行程编辑&#x27;,&#x27;活动入口&#x27;]});
-    tweak.addSelect(settings,&#x27;scenario&#x27;,{label:&#x27;数据状态&#x27;,options:[{label:&#x27;正常示例&#x27;,value:&#x27;normal&#x27;},{label:&#x27;云层缺测&#x27;,value:&#x27;missing&#x27;},{label:&#x27;超出预报范围&#x27;,value:&#x27;outside&#x27;},{label:&#x27;离线缓存&#x27;,value:&#x27;offline&#x27;},{label:&#x27;未安排时间&#x27;,value:&#x27;unscheduled&#x27;}]});
+    tweak.addSelect(settings,&#x27;scenario&#x27;,{label:&#x27;数据状态&#x27;,options:[{label:&#x27;正常示例&#x27;,value:&#x27;normal&#x27;},{label:&#x27;部分云层缺测&#x27;,value:&#x27;partial&#x27;},{label:&#x27;全部云层缺测&#x27;,value:&#x27;missing&#x27;},{label:&#x27;超出预报范围&#x27;,value:&#x27;outside&#x27;},{label:&#x27;离线旧缓存&#x27;,value:&#x27;offline&#x27;},{label:&#x27;离线缓存过期&#x27;,value:&#x27;expired&#x27;},{label:&#x27;加载中&#x27;,value:&#x27;loading&#x27;},{label:&#x27;请求失败&#x27;,value:&#x27;error&#x27;}]});
     tweak.addSlider(settings,&#x27;width&#x27;,{label:&#x27;小程序宽度&#x27;,min:320,max:430,step:1,unit:&#x27;px&#x27;});
   }
 })();

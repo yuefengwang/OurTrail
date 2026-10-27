@@ -90,4 +90,8 @@ const wxStorage = {
 module.exports = {
   getDraft, setDraft, clearDraft, getOpened, rememberActivity, setOpenId, wxOpenId,
   wxStorage,
+  durableStorage: {
+    get: wxStorage.get,
+    set(key, value) { wx.setStorageSync(key, value) },
+  },
 }

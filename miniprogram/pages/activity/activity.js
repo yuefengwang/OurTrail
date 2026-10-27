@@ -852,7 +852,7 @@ Page({
   },
 
   onWeather() {
-    wx.navigateTo({ url: '/pages/weather/weather?id=' + this.activityId })
+    wx.navigateTo({ url: '/pages/weather-plan/weather-plan?activity=' + this.activityId })
   },
   goTasks() {
     if (!this.activityId) return

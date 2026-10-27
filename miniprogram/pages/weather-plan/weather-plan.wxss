@@ -1,0 +1,13 @@
+.plan-controls { display: flex; gap: 12px; }
+.plan-controls > picker { flex: 1; min-width: 0; }
+.plan-controls .picker { min-height: var(--touch-target); overflow-wrap: anywhere; }
+.plan-day { border-top: 1px solid var(--line); }
+.plan-day__heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 16px 0 8px; }
+.plan-stop { padding: 8px 0 16px 16px; border-left: 2px solid var(--forest); border-bottom: 1px solid var(--line); }
+.plan-stop--missing { border-left-color: var(--warning); }
+.plan-stop .list-row { min-height: var(--touch-target); }
+.plan-stop .small { display: block; }
+.plan-weather { display: block; margin-bottom: 4px; color: var(--ink); }
+.plan-issue { color: var(--warning); }
+.form-actions { flex-wrap: wrap; }
+.form-actions .button { flex-basis: 80px; }

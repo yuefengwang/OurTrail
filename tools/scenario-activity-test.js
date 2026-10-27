@@ -1206,8 +1206,8 @@ async function scenario8() {
     check('无日期时天气 URL 不带 date 参数',
       env.rec.nav.indexOf('/pages/weather/weather?id=a1&point=0') !== -1, JSON.stringify(env.rec.nav))
     env.page.onWeather()
-    check('天气卡「查看路线天气」入口 → 天气页（不带 point）',
-      env.rec.nav.indexOf('/pages/weather/weather?id=a1') !== -1, JSON.stringify(env.rec.nav))
+    check('天气卡「查看路线天气」入口 → 个人沿途天气行程',
+      env.rec.nav.indexOf('/pages/weather-plan/weather-plan?activity=a1') !== -1, JSON.stringify(env.rec.nav))
     env.page.onNotices()
     check('「活动通知」入口 → 活动通知页', env.rec.nav.indexOf('/pages/anotices/anotices?id=a1') !== -1,
       JSON.stringify(env.rec.nav))

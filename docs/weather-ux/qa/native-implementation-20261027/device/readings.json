@@ -1,0 +1,140 @@
+{
+  "date": "2026-10-27T14:14:25.073Z",
+  "source": "controlled forecast and API mocks; native WeChat renderer",
+  "checks": [
+    {
+      "name": "fresh mini-program bundle has two query scenarios",
+      "pass": true
+    },
+    {
+      "name": "native text discloses absent weather cloud sync",
+      "pass": true
+    },
+    {
+      "name": "empty coordinate input visibly rejected",
+      "pass": true
+    },
+    {
+      "name": "manual query navigates to actual cloud detail",
+      "pass": true
+    },
+    {
+      "name": "cloud profile gate and gap metadata reached",
+      "pass": true
+    },
+    {
+      "name": "cloud display window switches through tap",
+      "pass": true
+    },
+    {
+      "name": "next hour button updates linked readout",
+      "pass": true
+    },
+    {
+      "name": "missing hour is not read as clear sky",
+      "pass": true
+    },
+    {
+      "name": "hourly tab renders canvas and hides cloud profile",
+      "pass": true
+    },
+    {
+      "name": "astronomy tab renders agenda, no weather chart",
+      "pass": true
+    },
+    {
+      "name": "library route opens along-route overview with hourly readings",
+      "pass": true
+    },
+    {
+      "name": "GPX does not auto-fill itinerary arrival times",
+      "pass": true
+    },
+    {
+      "name": "arrival editor saves independent local itinerary",
+      "pass": true
+    },
+    {
+      "name": "copy starts a separate unsaved itinerary",
+      "pass": true
+    },
+    {
+      "name": "route node drilldown resolves stable node and arrival hour",
+      "pass": true
+    },
+    {
+      "name": "revoked route permission blocks cached rows",
+      "pass": true
+    },
+    {
+      "name": "no cloud data retains weather and explains unavailable profile",
+      "pass": true
+    },
+    {
+      "name": "no production cloud writes attempted",
+      "pass": true
+    },
+    {
+      "name": "local test plan is in isolated mock storage",
+      "pass": true
+    }
+  ],
+  "screenshots": [
+    "01-hub.png",
+    "02-cloud.png",
+    "03-cloud-missing.png",
+    "04-hourly.png",
+    "05-sky.png",
+    "06-along-route.png",
+    "07-plan-saved.png",
+    "08-permission-denied.png",
+    "09-cloud-unavailable.png"
+  ],
+  "errors": [],
+  "system": {
+    "brand": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1",
+    "platform": "devtools",
+    "benchmarkLevel": -1,
+    "pixelRatio": 3,
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "windowWidth": 390,
+    "windowHeight": 844,
+    "statusBarHeight": 47,
+    "safeArea": {
+      "top": 47,
+      "left": 0,
+      "right": 390,
+      "bottom": 810,
+      "width": 390,
+      "height": 763
+    },
+    "language": "zh_CN",
+    "version": "8.0.5",
+    "fontSizeSetting": 16,
+    "SDKVersion": "3.8.12",
+    "host": {
+      "env": "WeChat"
+    },
+    "enableDebug": false,
+    "mode": "default",
+    "deviceOrientation": "portrait",
+    "bluetoothEnabled": true,
+    "locationEnabled": true,
+    "wifiEnabled": true,
+    "albumAuthorized": true,
+    "cameraAuthorized": true,
+    "locationAuthorized": true,
+    "microphoneAuthorized": true,
+    "notificationAuthorized": true,
+    "notificationAlertAuthorized": true,
+    "notificationBadgeAuthorized": true,
+    "notificationSoundAuthorized": true,
+    "phoneCalendarAuthorized": true,
+    "bluetoothAuthorized": true,
+    "locationReducedAccuracy": true,
+    "devicePixelRatio": 3
+  }
+}

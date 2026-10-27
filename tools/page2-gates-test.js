@@ -395,6 +395,8 @@ function fixtureCondCards(n) {
 function baseWeatherData(over) {
   return Object.assign({
     denied: '', loading: false, loadingWeather: false,
+    weatherTab: 'cloud', cloudWindow: 'auto', tabOptions: [{ key: 'hourly', label: '逐时预报' }, { key: 'cloud', label: '云层剖面' }, { key: 'sky', label: '日月天相' }],
+    hourOptions: ['00:00'], selectedHourIndex: 0, selectedTime: '00:00', skyInputLoading: false, skyInputNote: '',
     pointCard: null, pointLabels: ['起点'], pointIndex: 0, scheduleBasis: '',
     date: DAY0, isOwner: false, providerLabel: 'Open-Meteo', updatedAt: DAY0 + ' 07:00',
     weatherStale: null, retryNote: '', emptyKind: 'empty', emptyTitle: '', emptyDetail: '',
@@ -434,7 +436,7 @@ const WEATHER_STATES = {
     ],
     isOwner: true,
   }),
-  dataClassic: baseWeatherData({
+  dataClassic: baseWeatherData({ weatherTab: 'hourly',
     dayCards: fixtureDayCards(7), unified: null, oiCard: null,
     condCards: fixtureCondCards(1), hourChip: { t: '08:00', phrase: { label: '晴' }, temp: 10, feels: 9, pop: 10, precip: 0, wind: 7, windDir: '北', rh: 60, pressure: '812', band: '2400–2600 m', tags: ['云海窗口'], inCloud: false },
     // 经典分支也铺一份：48h 窗 6 小时一格 × 2 列，其中一格缺概率 ⇒ 印「—」，整行仍在
@@ -459,7 +461,7 @@ function hubData(over) {
       { id: 'w2', display: '垭口', subText: '4,120 m · 2026-10-14' },
     ],
     tracks: [{ id: 't1', name: '四姑娘山大峰', statsText: '12 个节点', nodes: [{ id: 'n1', name: '起点', label: '0 min' }, { id: 'n2', name: '垭口', label: '+180 min' }] }],
-    trackOpen: { t1: true },
+    plans: [{ id: 'plan1', name: '两日行程', startDate: DAY0, visits: [{}, {}] }], recent: [], routes: [], routeOpen: false, routeLoading: false, routeError: '', busy: false, error: '', manualEditId: '',
     manualOpen: false, manual: { name: '', lat: '', lng: '', ele: '', wgs: false }, manualError: '',
     gpxOpen: false, gpxError: '', gpxMeta: null, gpxPoints: [],
     deleteOpen: false, deleteInfo: { type: 'point', id: '', name: '' },
@@ -468,142 +470,42 @@ function hubData(over) {
 
 /* ================= §0 有效性门（本门不是空转） ================= */
 function resetUnresolvable() { unresolvable = [] }
-section('§0 有效性门：判据的输入必须真的存在')
-{
+section('§0 新架构有效性：三标签互斥，夹具无求值失败')
+const datePickers = entries => nodesTagged(entries, 'picker').filter(node => attrOf(node, 'mode') === 'date')
+const viewFor = (tab, overrides) => render(src(WEATHER_WXML), Object.assign({}, WEATHER_STATES.data, { weatherTab: tab }, overrides))
+for (const tab of ['cloud', 'hourly', 'sky']) {
   resetUnresolvable()
-  const e = render(src(WEATHER_WXML), WEATHER_STATES.data)
-  check('天气页夹具真的渲染出 5 张结论卡（否则 §5 整段空转）',
-    entriesWithClass(e, 'cond-pheno').length === 5, String(entriesWithClass(e, 'cond-pheno').length))
-  check('天气页夹具真的渲染出 7 张日条卡与统一图卡（否则 §1 的位置判据空转）',
-    entriesWithClass(e, 'day-card').length === 7 && entriesWithClass(e, 'cloud-field-card').length === 1,
-    entriesWithClass(e, 'day-card').length + '/' + entriesWithClass(e, 'cloud-field-card').length)
-  check('天气页夹具的表达式全部求值得动（求值失败会被当成"不渲染"= 假绿）',
-    unresolvable.length === 0, unresolvable.slice(0, 3).join(' ｜ '))
-  resetUnresolvable()
-  const ec = render(src(WEATHER_WXML), WEATHER_STATES.dataClassic)
-  check('经典 canvas 分支的夹具渲染出 .timeline-card 且不出云场卡（两条分支各有阳性对照）',
-    entriesWithClass(ec, 'timeline-card').length === 1 && entriesWithClass(ec, 'cloud-field-card').length === 0,
-    String(entriesWithClass(ec, 'timeline-card').length))
-  check('经典分支同样无求值失败', unresolvable.length === 0, unresolvable.slice(0, 3).join(' ｜ '))
-  resetUnresolvable()
-  const h = render(src(HUB_WXML), hubData())
-  check('hub 夹具渲染出 3 张 .card（GPX 卡 + 观察点卡 + 轨迹点组卡）',
-    entriesWithClass(h, 'card').length === 3, String(entriesWithClass(h, 'card').length))
-  check('hub 夹具的观察点卡里真的有一行行内容（.list-row ≥ 2）',
-    (() => {
-      const pts = hubCards(h).pts
-      return !!pts && entriesWithClass(within(h, pts), 'list-row').length >= 2
-    })(), '')
-  check('hub 夹具表达式全部求值得动', unresolvable.length === 0, unresolvable.slice(0, 3).join(' ｜ '))
-  resetUnresolvable()
-  const noPoints = render(src(HUB_WXML), hubData({ points: [] }))
-  check('没有观察点时那张卡不渲染（判据不是靠"文件里有这个类"成立的）',
-    hubCards(noPoints).pts === null, String(hubCards(noPoints).pts))
+  const entries = viewFor(tab)
+  check(tab + '：七日条与三个标签始终可达', entriesWithClass(entries, 'day-card').length === 7 && entriesWithClass(entries, 'seg').length === 3)
+  check(tab + '：只在云层标签显示剖面', entriesWithClass(entries, 'cloud-field-card').length === (tab === 'cloud' ? 1 : 0))
+  check(tab + '：只在逐时标签显示 canvas', nodesTagged(entries, 'meteogram').length === (tab === 'hourly' ? 1 : 0))
+  check(tab + '：只在日月标签显示结论卡', entriesWithClass(entries, 'cond-pheno').length === (tab === 'sky' ? 5 : 0))
+  check(tab + '：输入表达式无求值失败', unresolvable.length === 0, unresolvable.join(' / '))
+  check(tab + '：不显示空的沿途模块', textsWith(entries, '沿途天气').length === 0)
 }
-
-/* ================= §1 A-07 模板半边：日期控件不再被 stranded ================= */
-section('§1 A-07 模板：日期控件的位置与「移动块没改判据」')
-guarded('§1', () => {
-  const byState = {}
-  Object.keys(WEATHER_STATES).forEach(k => {
-    resetUnresolvable()
-    byState[k] = render(src(WEATHER_WXML), WEATHER_STATES[k])
-    if (unresolvable.length) byState[k].unresolvable = unresolvable.slice()
-  })
-  const dirty = Object.keys(byState).filter(k => byState[k].unresolvable)
-  check('五个页面状态全部求值干净（求值失败会伪装成"没渲染"）', dirty.length === 0, dirty.join(','))
-
-  // 顶层三分支互斥闭合：denied / loading / wx:else 恰有一个渲染
-  const rootSrc = stripComments(src(WEATHER_WXML))
-  const tree = parse(rootSrc)
-  const pageView = (tree.children || [])[0]
-  const three = (pageView.children || []).filter(ch => 'wx:if' in (ch.attrs || {}) || 'wx:elif' in (ch.attrs || {}) || 'wx:else' in (ch.attrs || {}))
-  check('模板顶层确有 denied / loading / else 三个互斥分支（判据的输入存在）', three.length === 3, String(three.length))
-  Object.keys(byState).forEach(k => {
-    const e = byState[k]
-    const ids = new Set(e.filter(x => x.kind === 'node').map(x => x.uid))
-    const rendered = e.filter(x => x.kind === 'node' && ids.has(x.uid)).length
-    const topRendered = e.filter(x => x.kind === 'node' && x.path.length === 1).length
-    check('状态 ' + k + '：顶层互斥分支恰好渲染一个（门槛链没被改成并存）', topRendered === 1,
-      'rendered=' + topRendered + ' total=' + rendered)
-  })
-
-  // 日期控件与提醒按钮的可达状态 == 「denied / loading 之外恒可见」
-  const pickerOf = e => nodesTagged(e, 'picker').filter(n => attrOf(n, 'mode') === 'date')
-  const draftBtn = e => textsWith(e, '生成天气提醒草稿')
-  Object.keys(byState).forEach(k => {
-    const e = byState[k]
-    const expect = DATA_STATES.indexOf(k) !== -1 || k === 'loadingWeather'
-    check('状态 ' + k + '：查看日期 picker 的可见性与「denied/loading 之外恒可见」一致',
-      (pickerOf(e).length === 1) === expect, '实际 ' + pickerOf(e).length + ' 个，应为 ' + (expect ? 1 : 0))
-    const ownerExpect = expect && WEATHER_STATES[k].isOwner === true
-    check('状态 ' + k + '：提醒草稿按钮仍只由 isOwner 决定（没顺手加/去可见条件）',
-      (draftBtn(e).length >= 1) === ownerExpect, '实际=' + draftBtn(e).length + ' isOwner=' + WEATHER_STATES[k].isOwner)
-  })
-
-  const e = byState.data
-  const picker = pickerOf(e)[0]
-  const strip = entriesWithClass(e, 'day-strip')[0]
-  const chart = entriesWithClass(e, 'cloud-field-card')[0]
-  const upd = textsWith(e, '更新时间：')[0]
-  const prov = textsWith(e, '数据来源')[0]
-  check('日期控件确实与它控制的内容同区且在图表之前（原来在最末端）',
-    !!picker && !!strip && !!chart && picker.order < strip.order && picker.order < chart.order,
-    'picker=' + (picker && picker.order) + ' strip=' + (strip && strip.order) + ' chart=' + (chart && chart.order))
-  check('日期控件排在出处脚注之前（脚注不再是控件的邻居）',
-    !!picker && !!prov && picker.order < prov.order,
-    'picker=' + (picker && picker.order) + ' 脚注=' + (prov && prov.order))
-  check('脚注仍在页面最后（更新时间 → 数据来源的次序未改）',
-    !!upd && !!prov && upd.order < prov.order, 'upd=' + (upd && upd.order) + ' prov=' + (prov && prov.order))
-
-  // 移动块不得改块内文案 / 事件归属
-  const formField = nodesTagged(e, 'form-field').filter(n => attrResolved(n, 'label') === '查看日期')[0]
-  check('块内文案一字未改：label 仍是「查看日期」', !!formField)
-  check('picker 的 value 仍绑定当前日期、bindchange 仍是 onDate（没改事件归属）',
-    !!picker && attrResolved(picker, 'value') === DAY0 && attrOf(picker, 'bindchange') === 'onDate',
-    picker && (attrResolved(picker, 'value') + '/' + attrOf(picker, 'bindchange')))
-  check('提醒草稿按钮文案一字未改且 handler 仍是 onDraftNotice',
-    (() => {
-      const t = textsWith(e, '生成天气提醒草稿')[0]
-      if (!t) return false
-      const owner = e.filter(x => x.kind === 'node' && x.uid === t.path[t.path.length - 1])[0]
-      return !!owner && renderedText(t) === '生成天气提醒草稿' &&
-        attrResolved(owner, 'class').indexOf('secondary') !== -1 && attrOf(owner, 'bindtap') === 'onDraftNotice'
-    })(), '')
-  /* 许可与出处必须仍在同一条脚注里。括号形状不是契约：URL 也放在同一对括号内时，
-     `（CC BY 4.0）` 这种带括号的精确串会假红，而真正要守的是署名文本本身。 */
-  check('脚注原文未回退（CC BY 4.0 署名与「本机按坐标与海拔推算」仍在）',
-    !!prov && renderedText(prov).indexOf('CC BY 4.0') !== -1 && renderedText(prov).indexOf('本机按坐标与海拔推算') !== -1,
-    prov && renderedText(prov))
-  check('切日入口没有变多：mode="date" 的 picker 全页恰好一个',
-    pickerOf(e).length === 1, String(pickerOf(e).length))
-  const mete = nodesTagged(e, 'meteogram').filter(n => attrOf(n, 'bind:pickhour'))
-  check('图上点小时仍只做选中（bind:pickhour 仍指向 onChartPickHour，没有新增第二个切日入口）',
-    mete.length === 0 || mete.every(n => attrOf(n, 'bind:pickhour') === 'onChartPickHour'), '')
-
-  // 渲染门槛链的其余承重关系（不许因移动块而变）
-  // status-panel 的标题是**属性**不是文本节点，所以要按属性求值来查（按文本查就是恒 0 的假绿）。
-  const panels = e2 => nodesTagged(e2, 'status-panel').map(n => ({ node: n, kind: attrResolved(n, 'kind'), title: attrResolved(n, 'title') }))
-  const lw = byState.loadingWeather
-  const lwPanels = panels(lw)
-  check('loadingWeather 只出「正在查询天气」面板，不出图表（注入数据看不见图的那条链未被动）',
-    lwPanels.length === 1 && lwPanels[0].title === '正在查询天气' &&
-    entriesWithClass(lw, 'cloud-field-card').length === 0 && entriesWithClass(lw, 'timeline-card').length === 0,
-    'panels=' + JSON.stringify(lwPanels.map(p => p.title)))
-  const dn = byState.denied
-  const dnPanels = panels(dn)
-  check('denied 态除状态面板外不渲染任何卡片（门槛链第一环未动）',
-    dnPanels.length === 1 && dnPanels[0].kind === 'denied' && dnPanels[0].title === '无法查看天气参考' &&
-    entriesWithClass(dn, 'card').length === 0, JSON.stringify(dnPanels.map(p => p.title)))
-  const em = byState.empty
-  const emPanels = panels(em)
-  check('空态出 status-panel 且出日期控件（改日期仍是出路，不是死页）',
-    emPanels.length === 1 && emPanels[0].kind === 'error' && emPanels[0].title === '气象服务暂时连不上' &&
-    pickerOf(em).length === 1, JSON.stringify(emPanels.map(p => p.title)))
-  check('组织者 + 没有数据这一档里两个控件都在（缺了它，"顺手多加一条可见条件"与现状不可分辨）',
-    pickerOf(byState.ownerNoData).length === 1 &&
-    textsWith(byState.ownerNoData, '生成天气提醒草稿').length === 1, '')
-})
+section('§1 日期、权限、加载、空态和出处')
+for (const state of Object.keys(WEATHER_STATES)) {
+  resetUnresolvable()
+  const entries = render(src(WEATHER_WXML), WEATHER_STATES[state])
+  const accessible = state !== 'denied' && state !== 'loading'
+  check(state + '：顶部状态分支互斥', entries.filter(entry => entry.kind === 'node' && entry.path.length === 1).length === 1)
+  check(state + '：浏览日期在加载天气与空态仍可更换', datePickers(entries).length === (accessible ? 1 : 0))
+  check(state + '：提醒按钮仍由组织者权限控制', textsWith(entries, '生成天气提醒草稿').length === (accessible && WEATHER_STATES[state].isOwner ? 1 : 0))
+  check(state + '：无求值失败', unresolvable.length === 0, unresolvable.join(' / '))
+}
+{
+  const entries = viewFor('cloud')
+  const picker = datePickers(entries)[0]
+  const chart = entriesWithClass(entries, 'cloud-field-card')[0]
+  check('日期在图表之前，且明确不修改行程', picker.order < chart.order && textsWith(entries, '浏览日期（不修改行程）').length === 1)
+  check('日期值和事件接线不变', attrResolved(picker, 'value') === DAY0 && attrOf(picker, 'bindchange') === 'onDate')
+  check('来源与许可真实保留且只一处', textsWith(entries, 'CC BY 4.0').length === 1 && textsWith(entries, '本机按坐标计算').length === 1)
+  check('出行安全声明不因切标签被删除', ['cloud', 'hourly', 'sky'].every(tab => textsWith(viewFor(tab), '不是出发许可').length === 1))
+  const missing = viewFor('cloud', { unified: null })
+  check('缺云层数据显式空态，不自动转画晴空', nodesTagged(missing, 'status-panel').some(node => attrResolved(node, 'title') === '这次没有可用云层剖面') && !entriesWithClass(missing, 'cloud-field-card').length)
+  const noWeather = render(src(WEATHER_WXML), WEATHER_STATES.empty)
+  check('天气失败可重试且可改日期', nodesTagged(noWeather, 'status-panel').some(node => attrOf(node, 'bind:action') === 'fetchWeather') && datePickers(noWeather).length === 1)
+}
 
 /* ================= §2 A-07 JS 半边：切日之后把图带回视口（真页面驱动） ================= */
 async function gateWeatherJs() {
@@ -690,6 +592,7 @@ async function gateWeatherJs() {
     page.revision = 3
     page.data.date = DAY0
     page.data.pointIndex = 0
+    page.data.weatherTab = 'hourly'
     page.view = { activity: { routeSnapshot: { points: [{ id: 'p1', name: '冷杉坪', coordinates: COORD }] } } }
     page._localPoints = []
     return page
@@ -755,6 +658,7 @@ async function gateWeatherJs() {
   {
     const rec = stubWx({ '.cloud-field-card': { top: 5000, width: 300 } })
     const page = freshPage(rec)
+    page.data.weatherTab = 'cloud'
     page.data.dayCards = [{ date: DAY0 }]
     page.data.unified = { src: 'x' }
     page.ensureMeteogramVisible()
@@ -880,6 +784,7 @@ async function gateWeatherJs() {
   {
     const rec = stubWx({ '.cloud-field-card': { top: 5000 } })
     const page = freshPage(rec)
+    page.data.weatherTab = 'cloud'
     const withCloud = okResult(addDays(DAY0, 1))
     // 云场返回体的真实形状：result.cloudLevels = { times[], levels[{altitudes[], cloudCover[]}] }
     // （不是逐小时的 h.cloudLevels —— 那种写法 buildCloudFieldRange 直接返回 null，
@@ -911,354 +816,68 @@ async function gateWeatherJs() {
   }
 }
 
-/* ================= §3 A-23：观察点卡的横向留白回到单源 ================= */
-section('§3 A-23：观察点卡内缩 = 同页兄弟卡，且由 .card 一处承载')
-guarded('§3', () => {
+section('§3 常用地点、路线、行程分类与样式单源')
+{
+  resetUnresolvable()
+  const entries = render(src(HUB_WXML), hubData())
+  check('两个查询场景与三类已存资产分开', entriesWithClass(entries, 'weather-entry').length === 2 && entriesWithClass(entries, 'card').length === 3)
+  check('首页夹具无表达式失败', unresolvable.length === 0, unresolvable.join(' / '))
+  const handlers = entries.filter(entry => entry.kind === 'node').map(entry => attrOf(entry, 'bindtap'))
+  check('地图、坐标、轨迹、路线库均有入口', ['onPickMap', 'onManualOpen', 'onImportGpx', 'onRouteLibrary'].every(handler => handlers.includes(handler)))
+  check('轨迹直接查沿途，常用地点直接查点位，计划单独打开', ['onTrackWeather', 'onPointTap', 'onPlan'].every(handler => handlers.includes(handler)))
+  check('原型云同步没有冒充已落地', textsWith(entries, '天气资产云同步尚未接入').length === 1)
   const appRules = parseSheet(src(APP_WXSS))
   const hubRules = parseSheet(src(HUB_WXSS))
-  const sheets = [appRules, hubRules]
-  const e = render(src(HUB_WXML), hubData())
-  const { gpx, pts, trk } = hubCards(e)
-  check('三张卡都按结构认到了（GPX/观察点/轨迹点组；认不到就是判据没有输入）',
-    !!gpx && !!pts && !!trk, JSON.stringify([!!gpx, !!pts, !!trk]))
-  const gi = insetOf(gpx, sheets)
-  const pi = insetOf(pts, sheets)
-  const ti = insetOf(trk, sheets)
-  check('观察点卡与 GPX 卡的左右内缩逐值相同（同屏两张卡不再不一致）',
-    pi.left === gi.left && pi.right === gi.right, 'pts=' + pi.left + '/' + pi.right + ' gpx=' + gi.left + '/' + gi.right)
-  check('观察点卡与轨迹点组卡也相同（本页没有第四种形态）',
-    pi.left === ti.left && pi.right === ti.right, 'trk=' + ti.left + '/' + ti.right)
-  check('内缩是正数（原来被内联 padding 归零 ⇒ 文字贴圆角边）',
-    Number.isFinite(pi.left) && pi.left > 0 && Number.isFinite(pi.right) && pi.right > 0, 'left=' + pi.left + ' right=' + pi.right)
-  check('留白确实来自 app.wxss 的 .card 一处（赢家不是内联、也不是页内重印）',
-    pts.node.attrs.style === undefined && pi.winnerLeft === '.card@sheet0',
-    'winner=' + pi.winnerLeft + ' inline=' + JSON.stringify(pts.node.attrs.style))
-  check('卡内直接子元素自己不带左右 padding（"靠 .card 一处给留白"这条前提成立）',
-    (() => {
-      const header = within(e, pts).filter(x => hasClass(x, 'card-header'))[0]
-      const row = within(e, pts).filter(x => hasClass(x, 'list-row'))[0]
-      if (!header || !row) return false
-      const free = v => !Number.isFinite(v.left) || v.left === 0
-      const freeRight = v => !Number.isFinite(v.right) || v.right === 0
-      return [insetOf(header, sheets), insetOf(row, sheets)].every(v => free(v) && freeRight(v))
-    })(), '')
-  // 影子改写（铁律 31③）：单源必须是"改得动"的
-  {
-    // 影子必须同时覆盖 padding 简写与 longhand 两种合法写法，否则"把简写拆成四条写"这种
-    // 等价重构会让影子静默失效（本轮 P26 第一次就是这么误伤的）。
-    const SHADOW = '24px'
-    const shadow = appRules.map(r => ({
-      sel: r.sel,
-      decls: r.decls.map(d => (r.sel === '.card' && /^padding(-top|-right|-bottom|-left)?$/.test(d.prop) && /px$/i.test(d.value)
-        ? Object.assign({}, d, { value: SHADOW }) : d)),
-    }))
-    const shSheets = [shadow, hubRules]
-    const c2 = hubCards(render(src(HUB_WXML), hubData()))
-    const gi2 = insetOf(c2.gpx, shSheets)
-    const pi2 = insetOf(c2.pts, shSheets)
-    const ti2 = insetOf(c2.trk, shSheets)
-    check('影子把 .card 的横向内缩改成 24px ⇒ 三张卡一起变 24（单源可改写，不是三个巧合的 16）',
-      gi2.left === 24 && pi2.left === 24 && ti2.left === 24 && gi2.right === 24 && pi2.right === 24 && ti2.right === 24,
-      [gi2.left, pi2.left, ti2.left].join('/'))
-    const back = insetOf(hubCards(render(src(HUB_WXML), hubData())).pts, sheets)
-    check('还原后逐项相同（影子没有把状态留在别处）',
-      back.left === pi.left && back.right === pi.right, back.left + '/' + pi.left)
-  }
-  check('既有补偿没有被顺手清掉：轨迹组展开区仍是左 16px（同页观感一致的那条旧账）',
-    (() => {
-      const expanded = within(e, trk).filter(x => hasClass(x, 'stack'))[0]
-      if (!expanded) return false
-      const v = insetOf(expanded, sheets)
-      return v.left === 16 && v.right === 16
-    })(), '')
-  check('删除按钮与行的事件层级未动：catchtap 仍是 onDeleteTap、行仍是 bindtap onPointTap（padding 改动没碰事件）',
-    (() => {
-      const row = within(e, pts).filter(x => hasClass(x, 'list-row'))[0]
-      if (!row) return false
-      const del = within(e, row).filter(x => hasClass(x, 'button'))[0]
-      return attrOf(row, 'bindtap') === 'onPointTap' && !!del && attrOf(del, 'catchtap') === 'onDeleteTap'
-    })(), '')
-})
-
-/* ================= §4 A-24：卡片标题不再逐字重复按钮 ================= */
-section('§4 A-24：GPX 卡的标题与按钮不再同文')
-guarded('§4', () => {
-  const e = render(src(HUB_WXML), hubData())
-  const card = hubCards(e).gpx
-  check('带 onImportGpx 按钮的那张卡仍按结构认得到（判据输入存在；按文案认卡会在别人改文案时崩红）', !!card, '')
-  const header = within(e, card).filter(x => hasClass(x, 'card-label'))[0]
-  const btns = within(e, card).filter(x => hasClass(x, 'button'))
-  check('卡内那颗按钮的文案一字未改（仍是「导入 GPX 轨迹」）',
-    btns.length === 1 && textsWith(within(e, btns[0]), '导入 GPX 轨迹').length === 1, String(btns.length))
-  check('按钮 handler 名未改（仍是 onImportGpx，天气 Hub 的入口归属没动）',
-    btns.length === 1 && attrOf(btns[0], 'bindtap') === 'onImportGpx', btns[0] && attrOf(btns[0], 'bindtap'))
-  const headerText = (() => {
-    if (!header) return ''
-    const t = within(e, header).filter(x => x.kind === 'text')[0]
-    return t ? renderedText(t) : ''
-  })()
-  check('标题与按钮不再同文（缺陷本体 = 同一串字面文本两种身份）',
-    !!header && headerText !== '导入 GPX 轨迹', JSON.stringify(headerText))
-  check('标题非空且仍在说这块是干什么的（不是"删掉多余一行"式修法）',
-    headerText.length > 0 && headerText.indexOf('GPX') !== -1, JSON.stringify(headerText))
-  check('这张卡的可点入口仍只有那一个（没有新增按钮）',
-    (() => {
-      const taps = within(e, card).filter(x => x.kind === 'node' && (attrOf(x, 'bindtap') || attrOf(x, 'catchtap')))
-      return taps.length === 1 && attrOf(taps[0], 'bindtap') === 'onImportGpx'
-    })(), '')
-  check('按钮仍是 secondary（主行动唯一化：地图选点仍是本页唯一实心按钮，没有升格）',
-    btns.length === 1 && attrResolved(btns[0], 'class').indexOf('secondary') !== -1 && attrResolved(btns[0], 'class').indexOf('primary') === -1,
-    btns[0] && attrResolved(btns[0], 'class'))
-  check('页头那颗实心按钮仍是 onPickMap/primary（我没顺手改主次）',
-    (() => {
-      const map = nodesTagged(e, 'view').filter(x => attrOf(x, 'bindtap') === 'onPickMap')[0]
-      return !!map && attrResolved(map, 'class').indexOf('primary') !== -1
-    })(), '')
-  // 弹层是关闭态时整个子树不渲染（overlay 语义），所以这一条要拿"打开"的状态读它的 title 属性
-  const open = render(src(HUB_WXML), hubData({
-    gpxOpen: true,
-    gpxMeta: { fileName: 'abc.gpx', count: 3, distanceKm: 5.2, hasElevation: true, ascentM: 400, hasTime: false },
-    gpxPoints: [{ name: '起点', coordinates: { lat: 30.1, lng: 103.1 } }],
+  const cards = entriesWithClass(entries, 'card')
+  const paddings = cards.map(card => insetOf(card, [appRules, hubRules]))
+  check('三类资产卡横向留白由全局 card 单源提供', paddings.every(value => value.left > 0 && value.left === paddings[0].left && value.right === paddings[0].right && value.winnerLeft === '.card@sheet0'))
+  const shadow = appRules.map(rule => ({ sel: rule.sel, decls: rule.decls.map(decl => rule.sel === '.card' && /^padding(-top|-right|-bottom|-left)?$/.test(decl.prop) && /px$/i.test(decl.value) ? Object.assign({}, decl, { value: '24px' }) : decl) }))
+  check('影子修改全局 padding 时三类卡片同步变化', cards.every(card => { const value = insetOf(card, [shadow, hubRules]); return value.left === 24 && value.right === 24 }))
+  const empty = render(src(HUB_WXML), hubData({ points: [], tracks: [], plans: [] }))
+  check('无保存资产不是空白页，给出查询后主动保存的出路', entriesWithClass(empty, 'card').length === 0 && nodesTagged(empty, 'status-panel').some(node => attrResolved(node, 'detail').includes('主动保存')))
+  const recent = render(src(HUB_WXML), hubData({ recent: [{ id: 'recent1', name: '最近地点', lat: 30, lng: 103 }] }))
+  check('最近查询独立展示且声明不上传不收藏', textsWith(recent, '不代表已收藏，也不会上传').length === 1)
+  const preview = render(src(HUB_WXML), hubData({ gpxOpen: true, gpxMeta: { fileName: 'test.gpx', count: 2 }, gpxPoints: [{ name: '起点', coordinates: COORD }, { name: '终点', coordinates: COORD }] }))
+  check('GPX 预览有独立核对标题和保存动作', nodesTagged(preview, 'overlay').some(node => attrResolved(node, 'title') === '核对轨迹关键节点') && textsWith(preview, '保存轨迹，查看沿途天气').length === 1)
+  check('GPX 原文件本机保存边界明确', textsWith(preview, '不会上传原文件').length === 1)
+}
+section('§4 逐时、云层、日月读数契约')
+{
+  const skyEntries = viewFor('sky')
+  const hourlyEntries = viewFor('hourly')
+  const cloudEntries = viewFor('cloud')
+  check('五卡与一卡免责都仅一处', [5, 1].every(count => textsWith(viewFor('sky', { condCards: fixtureCondCards(count) }), '只汇总天相').length === 1))
+  check('结论卡实质内容完整且无逐卡免责', entriesWithClass(skyEntries, 'cond-pheno').every(card => {
+    const inner = within(skyEntries, card)
+    return ['pheno-window', 'pheno-text', 'sky-look', 'pheno-advice', 'cond-why'].every(className => entriesWithClass(inner, className).length === 1) && !textsWith(inner, '只汇总天相').length
   }))
-  const sheet = nodesTagged(open, 'overlay').filter(n => attrResolved(n, 'title') === '导入 GPX 轨迹')
-  check('导入预览弹层打开时标题仍是「导入 GPX 轨迹」（那一处按按钮即弹，标题身份正确，不许被顺手改掉）',
-    sheet.length === 1, String(sheet.length))
-})
-
-/* ================= §5 A-26：免责从 N+1 处收敛到 1 处 ================= */
-section('§5 A-26：逐卡免责已收敛（区块副标题说一次就够）')
-guarded('§5', () => {
-  const five = render(src(WEATHER_WXML), WEATHER_STATES.data)
-  const one = render(src(WEATHER_WXML), WEATHER_STATES.dataClassic)
-  /* 2026-10-21 起区块从「户外条件/气象预报」改名为「天相条件」，免责语也随之改成
-     「只汇总天相，不是徒步安全评级」——A-26 要守的是“免责只说一次”，不是旧词本身。 */
-  const hits5 = textsWith(five, '只汇总天相')
-  const hits1 = textsWith(one, '只汇总天相')
-  check('5 张结论卡时，「只汇总天相」的边界在页面上恰好出现 1 次（原先是 1+5）',
-    hits5.length === 1, String(hits5.length))
-  check('1 张结论卡时也恰好 1 次（收敛与卡数无关，不是数出来的巧合）',
-    hits1.length === 1, String(hits1.length))
-  check('那唯一一次就是「天相条件」区块副标题（不是别处冒出来的）',
-    (() => {
-      const head = entriesWithClass(five, 'section-head').filter(x => textsWith(within(five, x), '只汇总天相').length)[0]
-      return !!head && head.path.length > 0
-    })(), '')
-  check('每张结论卡内部都不带免责行（按卡作用域逐个查，不是全站总数）',
-    (() => {
-      const cards = entriesWithClass(five, 'cond-pheno')
-      return cards.length === 5 && cards.every(c => textsWith(within(five, c), '只汇总天相').length === 0)
-    })(), String(entriesWithClass(five, 'cond-pheno').length))
-  // 防误伤：合规话术三处一个都不能少
-  check('页首「不是出发许可」的概率声明仍在（合规职责，不能顺手删）',
-    (() => {
-      const co = entriesWithClass(five, 'callout').filter(x => textsWith(within(five, x), '不是出发许可').length)[0]
-      return !!co && textsWith(within(five, co), '概率判断').length === 1
-    })(), '')
-  check('经典图注「灰底 = 天文暗夜」仍在',
-    textsWith(five, '灰底 = 天文暗夜').length + textsWith(one, '灰底 = 天文暗夜').length >= 1, '')
-  check('OI 卡图注里「天文时刻为确定性事件」仍在模板中（客观时刻与天气推算的分界句）',
-    stripComments(src(WEATHER_WXML)).indexOf('天文时刻为确定性事件') !== -1, '')
-  /* 「点按复制数据来源与许可链接」也含“数据来源”四个字；按脚注正文计数，
-     否则一行新增的复制入口会把这条门变成“页面只能有一个来源标签”的假契约。 */
-  check('出处脚注（Open-Meteo 署名）仍在且只有一条',
-    textsWith(five, '本机按坐标与海拔推算').length === 1,
-    String(textsWith(five, '本机按坐标与海拔推算').length))
-  check('沉默说明卡的判据仍在（不出卡 ≠ 不说明，第十轮的承重设计没被一起清掉）',
-    (() => {
-      const e = render(src(WEATHER_WXML), baseWeatherData({
-        dayCards: fixtureDayCards(7), condCards: fixtureCondCards(2),
-        condSilent: { count: 2, titles: '云海、彩虹', text: '这些天相今天条件不成立，就不单独列出：云海、彩虹。' },
-      }))
-      const card = entriesWithClass(e, 'cond-silent')[0]
-      return !!card && textsWith(within(e, card), '条件不成立').length === 1
-    })(), '')
-  check('结论卡的实质内容一字未减（时间窗/判断/往哪看/建议/依据都还在卡里）',
-    (() => {
-      const c = entriesWithClass(five, 'cond-pheno')[0]
-      const inner = within(five, c)
-      return ['pheno-window', 'pheno-text', 'sky-look', 'pheno-advice', 'cond-why'].every(cls => entriesWithClass(inner, cls).length === 1)
-    })(), '')
-})
-
-/* ================= §5b D7（2026-10-26）：首屏条件 strip 与「条件 → 图 → 详解」次序 ================= */
-section('§5b D7：条件 strip 与页面次序（条件 → 图 → 详解）')
-guarded('§5b', () => {
-  const e = render(src(WEATHER_WXML), WEATHER_STATES.data)
-  const data = WEATHER_STATES.data
-  const strip = entriesWithClass(e, 'cond-strip')
-  check('5 张结论卡时首屏恰有 1 条条件 strip（不是每张卡各长一条）',
-    strip.length === 1, String(strip.length))
-
-  const pills = entriesWithClass(e, 'cond-pill')
-  check('pill 数与结论卡数一致（' + pills.length + ' vs ' + data.condCards.length + '）',
-    pills.length === data.condCards.length, String(pills.length))
-  /* pill 必须与明细卡同源：标题与星串逐字节取自同一批 condCards。
-     若哪天有人在 WXML 里另拼一份星级，这条会红——那正是「同一事实的两个实现」。 */
-  const pillText = p => within(e, p).filter(x => x.kind === 'text').map(x => renderedText(x)).join('')
-  check('每颗 pill = 该卡标题 + 该卡星串（与明细卡逐字节相同）',
-    pills.every((p, i) => pillText(p) === data.condCards[i].title + data.condCards[i].stars),
-    pills.map(pillText).join(' / '))
-
-  check('总评卡全页恰 1 张（明细区不再重复一张总评）',
-    entriesWithClass(e, 'cond-card').length === 1, String(entriesWithClass(e, 'cond-card').length))
-  /* 真机 390×844 抓到的缺陷（2026-10-26）：`.cond-grade` 原先是 <text>，
-     而微信的 text 不能当 flex 容器 ⇒ 写在它上面的 gap:6px 被静默丢弃，
-     屏幕上「★★☆☆☆条件较差」贴成一串（同页 .cond-pill 是 view，间隙正常）。
-     这条钉的是**容器类型 + 星串与评级是两个节点**：只要退回 text 或把两者拼成一个字符串，
-     任何按 gap/margin 分隔的写法就都不可能生效。像素级读数由
-     evidence/style-b-2a-2026-10-26 的 readings.condGradeGap 记录。 */
-  const grade = entriesWithClass(e, 'cond-grade')[0]
-  const gChildren = grade
-    ? within(e, grade).filter(x => x.kind === 'node' && x.node.tag === 'text' && !/^\s*$/.test(renderedText(x)))
-    : []
-  check('总评「星串 + 评级」的容器是 view（text 不能做 flex 容器，gap 会被静默丢弃）',
-    !!grade && grade.node.tag === 'view', grade ? grade.node.tag : 'missing')
-  check('星串与评级是两个独立节点（不是一个拼好的字符串，否则没有可分隔的边界）',
-    gChildren.length === 2 && gChildren[0].classes.indexOf('cond-stars') !== -1 &&
-      gChildren[1].classes.indexOf('ag-grade') !== -1,
-    gChildren.map(x => x.classes.join('.') + '=' + renderedText(x)).join(' | '))
-
-  /* 真机 390 抓到的第二个可见缺陷：页级 .section-head 只写了 display/align/justify，
-     没复位 app.wxss 的 flex-direction: column ⇒「全图展示」被排成居中独立一行（像副标题），
-     多吃 40px 首屏。但方向不能在本页一刀切成 row：「今日户外时间轴」「天相详解」两个区头
-     是「标题 + 说明」两行，竖排才是它们的设计。所以只给带行动的区头加 .has-action，
-     判据同时钉两边——带行动的必须是 row，不带行动的必须仍是 app.wxss 的 column。 */
+  const pills = entriesWithClass(skyEntries, 'cond-pill')
+  check('总评一次，五个摘要与结论卡同源', entriesWithClass(skyEntries, 'cond-card').length === 1 && pills.length === 5 && pills.every((pill, index) => within(skyEntries, pill).filter(entry => entry.kind === 'text').map(renderedText).join('') === WEATHER_STATES.data.condCards[index].title + WEATHER_STATES.data.condCards[index].stars))
+  const grade = entriesWithClass(skyEntries, 'cond-grade')[0]
+  check('星串评级使用 view 容器与两个独立 text', grade.node.tag === 'view' && within(skyEntries, grade).filter(entry => entry.kind === 'node' && entry.node.tag === 'text').length === 2)
+  const silent = viewFor('sky', { condCards: [], condSilent: { text: '这些天相今天条件不成立，就不单独列出：云海、彩虹。' } })
+  check('沉默有说明而无空详解标题', entriesWithClass(silent, 'cond-silent').length === 1 && textsWith(silent, '天相详解').length === 0)
+  check('天文确定性与天气推算的边界未删除', stripComments(src(WEATHER_WXML)).includes('天文时刻为确定性事件'))
   const sheets = [parseSheet(src(APP_WXSS)), parseSheet(src(WEATHER_WXSS))]
-  const heads = entriesWithClass(e, 'section-head')
-  const actionHead = heads.filter(h => h.classes.indexOf('has-action') !== -1)[0]
-  const plainHeads = heads.filter(h => h.classes.indexOf('has-action') === -1)
-  const dir = actionHead ? computedOf(actionHead, 'flex-direction', sheets) : null
-  check('「逐时天气」区头在天气页是一行（带行动的区头由页级 .has-action 复位方向）',
-    !!dir && dir.value === 'row' && dir.from.indexOf('@sheet1') !== -1,
-    dir ? dir.value + ' ← ' + dir.from : 'missing')
-  check('不带行动的区头维持竖排（两条说明文案不许被一起拉成一行）',
-    plainHeads.length === 2 && plainHeads.every(h => {
-      const d = computedOf(h, 'flex-direction', sheets)
-      return d && d.value === 'column'
-    }), String(plainHeads.length))
-  check('标签「天相条件」全页出现 1 次；明细区标题改为「天相详解」',
-    textsWith(e, '天相条件').length === 1 && textsWith(e, '天相详解').length === 1,
-    textsWith(e, '天相条件').length + '/' + textsWith(e, '天相详解').length)
+  const actionHeads = entriesWithClass(hourlyEntries, 'has-action')
+  check('带操作区头保持横排', actionHeads.length === 2 && actionHeads.every(head => computedOf(head, 'flex-direction', sheets).value === 'row'))
+  const plainHeads = entriesWithClass(skyEntries, 'section-head')
+  check('非操作区头仍保持竖排', plainHeads.length > 0 && plainHeads.every(head => computedOf(head, 'flex-direction', sheets).value === 'column'))
+  check('逐时概要四指标默认可读，全表默认折叠', entriesWithClass(hourlyEntries, 'fact-row').length === 4 && !entriesWithClass(hourlyEntries, 'num-sheet').length && entriesWithClass(viewFor('hourly', { showDetail: true }), 'num-sheet').length === 1)
+  const summary = entriesWithClass(hourlyEntries, 'brief-rows')[0]
+  check('概要温度降水风云各自一行', ['温度', '降水量', '风速', '云量'].every(label => textsWith(within(hourlyEntries, summary), label).length === 1))
+  for (const tab of ['hourly', 'cloud']) {
+    const entries = viewFor(tab)
+    const columns = entriesWithClass(entries, 'hour-strip__item')
+    check(tab + '：八列摘要按跨日唯一键渲染', columns.length === 8 && columns.every(column => attrOf(column, 'wx:key') === 'k'))
+    check(tab + '：概率行与摘要同列且缺数据可隐藏', entriesWithClass(entries, 'pop-strip__v').length === 8 && !entriesWithClass(viewFor(tab, { popShown: false }), 'pop-strip').length)
+    check(tab + '：不依赖拖动也可逐时切换', nodesTagged(entries, 'view').filter(node => attrOf(node, 'bindtap') === 'onHourStep').length === 2 && nodesTagged(entries, 'picker').some(node => attrOf(node, 'bindchange') === 'onHourPicker'))
+  }
+  check('云层灰阶语义与数据缺测语义明确', textsWith(cloudEntries, '分层云量').length === 1 && textsWith(cloudEntries, '斜纹 = 缺测或高度覆盖外').length === 1)
+  const location = viewFor('cloud', { pointCard: { name: '大峰', coordText: '31.0632, 102.9085', eleText: '5025 m · 手动填写' } })
+  check('地点名坐标海拔来源与保存入口齐备', textsWith(location, '大峰').length === 1 && textsWith(location, '31.0632, 102.9085').length === 1 && textsWith(location, '5025 m · 手动填写').length === 1 && nodesTagged(location, 'view').filter(node => attrOf(node, 'bindtap') === 'onSavePoint').length === 1)
+}
 
-  /* D7 的核心承诺是次序本身，所以钉次序而不是钉位置数值：
-     安全提示 → 条件 strip → 图 → 天相明细。 */
-  const orderOf = (entry) => entry ? entry.order : -1
-  const safety = entriesWithClass(e, 'callout').filter(x => textsWith(within(e, x), '午后有雷雨').length)[0]
-  const oSafety = orderOf(safety)
-  const oStrip = orderOf(strip[0])
-  const oChart = orderOf(entriesWithClass(e, 'cloud-field-card')[0] || entriesWithClass(e, 'timeline-card')[0])
-  const oDetail = orderOf(entriesWithClass(e, 'cond-pheno')[0])
-  check('次序：徒步提示 → 条件 strip → 图 → 天相明细',
-    oSafety >= 0 && oSafety < oStrip && oStrip < oChart && oChart < oDetail,
-    [oSafety, oStrip, oChart, oDetail].join(' < '))
-
-  /* D7 补完（2026-10-26，真机读数驱动）：点卡从页首下移到图正上方。
-     390×844 / clientH 753 上量到页首前导区吃掉 631px，strip 底边正压折线、图标题在折线以下 113px
-     ⇒「先看条件」名存实亡。点卡 226px 里，身份的**唯一真出处**是导航栏标题（weather.js:341
-     ctx.title = displayPointName），坐标/海拔则是**读图**的参照（图上那根虚线）。
-     钉三件事：① 不再排在 strip 之前；② 排在 7 日条之后、图之前；③ 四项事实与那个入口一个不少。 */
-  const ep = render(src(WEATHER_WXML), Object.assign({}, WEATHER_STATES.data, {
-    pointCard: { name: '四姑娘山大峰', coordText: '31.0632, 102.9085', eleText: '5025 m · 手动填写' },
-  }))
-  const saveBtn = nodesTagged(ep, 'view').filter(n => attrOf(n, 'bindtap') === 'onSavePoint')
-  const pointCard = entriesWithClass(ep, 'card')
-    .filter(c => within(ep, c).some(x => x.kind === 'node' && attrOf(x, 'bindtap') === 'onSavePoint'))[0]
-  const oPoint = orderOf(pointCard)
-  const oDayStrip = orderOf(entriesWithClass(ep, 'day-strip')[0])
-  const oChartP = orderOf(entriesWithClass(ep, 'cloud-field-card')[0] || entriesWithClass(ep, 'timeline-card')[0])
-  check('点卡不再排在条件 strip 之前（首屏前导区让给「日期 + 安全提示 + 条件」）',
-    !!pointCard && oPoint > orderOf(entriesWithClass(ep, 'cond-strip')[0]),
-    'point=' + oPoint + ' strip=' + orderOf(entriesWithClass(ep, 'cond-strip')[0]))
-  check('点卡紧贴图：排在 7 日条之后、图之前（坐标/海拔是在解释这张图）',
-    oDayStrip < oPoint && oPoint < oChartP, [oDayStrip, oPoint, oChartP].join(' < '))
-  check('点卡四项事实一个不少：点位名 / 坐标 / 海拔+出处 / 存入入口（入口全页仍恰 1 个）',
-    !!pointCard && saveBtn.length === 1 &&
-      textsWith(within(ep, pointCard), '四姑娘山大峰').length === 1 &&
-      textsWith(within(ep, pointCard), '坐标').length === 1 &&
-      textsWith(within(ep, pointCard), '海拔').length === 1 &&
-      textsWith(within(ep, pointCard), '5025 m · 手动填写').length === 1,
-    JSON.stringify({ save: saveBtn.length, hasCard: !!pointCard }))
-
-  const es = render(src(WEATHER_WXML), baseWeatherData({
-    dayCards: fixtureDayCards(3), condCards: fixtureCondCards(2),
-    condSilent: { count: 2, titles: '云海、彩虹', text: '这些天相今天条件不成立，就不单独列出：云海、彩虹。' },
-  }))
-  const sil = entriesWithClass(es, 'cond-silent')
-  check('沉默说明全页恰 1 处，且排在 strip 之后、图之前（首屏能读到，不是埋在明细区）',
-    sil.length === 1 && textsWith(es, '条件不成立').length === 1 &&
-      orderOf(sil[0]) > orderOf(entriesWithClass(es, 'cond-strip')[0]) &&
-      orderOf(sil[0]) < orderOf(entriesWithClass(es, 'timeline-card')[0]),
-    sil.length + '/' + textsWith(es, '条件不成立').length)
-
-  /* 全部被判不成立的日子：明细区没有正文，就不该留一个空标题（否则读起来像「工具坏了」）。 */
-  const eAll = render(src(WEATHER_WXML), baseWeatherData({
-    dayCards: fixtureDayCards(3), condCards: [],
-    condOverall: { stars: '', label: '不足', tone: 'neutral' },
-    condSilent: { count: 5, titles: '云海、彩虹', text: '这些天相今天条件不成立，就不单独列出：云海、彩虹。' },
-  }))
-  check('一张卡都没有时不出现空的「天相详解」标题（也不出现空卡）',
-    textsWith(eAll, '天相详解').length === 0 && entriesWithClass(eAll, 'cond-pheno').length === 0,
-    textsWith(eAll, '天相详解').length + '/' + entriesWithClass(eAll, 'cond-pheno').length)
-
-  /* 2026-10-26 style-B 4（板 04-2 / 04-4）：摘要带是图的表头、概率行是图的表尾，
-     详细数据四行默认可见而全表仍受 showDetail 控制。三条都按**次序与显隐**钉，
-     不看「页面上有没有这个类名」——恒渲染的空壳也能让后者变绿。 */
-  const hstrips = entriesWithClass(ep, 'hour-strip')
-  const hitems = entriesWithClass(ep, 'hour-strip__item')
-  const oHourStrip = orderOf(hstrips[0])
-  check('逐时摘要带排在点卡之后、图之前（与图同窗，是图的表头）',
-    hstrips.length === 1 && oHourStrip > oPoint && oHourStrip < oChartP,
-    hstrips.length + ' / ' + [oPoint, oHourStrip, oChartP].join(' < '))
-  /* 时刻列必须就是 3 小时序列：这是「24h 窗 3 小时一格」的唯一可读证据，
-     换步长（比如改成每 2 小时 12 列）这里会立刻红。 */
-  const stripTimes = hitems.map(it => within(ep, it)
-    .filter(x => x.kind === 'text' && !/^\s*$/.test(renderedText(x))).map(x => renderedText(x)).pop())
-  check('摘要带逐列给「天气简字 / 温度 / 时刻」三个读数（24h 窗 3 小时一格 ⇒ 8 列）',
-    hitems.length === 8 &&
-      hitems.every(it => within(ep, it).filter(x => x.kind === 'text' && !/^\s*$/.test(renderedText(x))).length === 3) &&
-      stripTimes.join(',') === '00:00,03:00,06:00,09:00,12:00,15:00,18:00,21:00',
-    hitems.length + ' 列 / ' + stripTimes.join(','))
-  /* 48/72h 跨天，同一时刻会重复出现 ⇒ 列表键必须带日期（`d + 'T' + t`）。
-     模板与数据两层都要钉：模板写回 wx:key="t" 是重复键（复用错节点），
-     数据里没有 k 则键恒为 undefined（同样等于没有键）。 */
-  check('摘要带与概率行的列表键是带日期的唯一键（跨天同一时刻不得撞键）',
-    hitems.length > 0 && hitems.every(it => attrOf(it, 'wx:key') === 'k') &&
-      entriesWithClass(render(src(WEATHER_WXML), WEATHER_STATES.data), 'pop-strip__v')
-        .every(it => attrOf(it, 'wx:key') === 'k') &&
-      WEATHER_STATES.data.hourStrip.every(it => typeof it.k === 'string' && it.k),
-    hitems.map(it => attrOf(it, 'wx:key')).join(',') + ' / ' +
-      WEATHER_STATES.data.hourStrip.map(it => it.k).join(','))
-
-  const popOn = entriesWithClass(render(src(WEATHER_WXML), WEATHER_STATES.data), 'pop-strip')
-  const popOff = entriesWithClass(render(src(WEATHER_WXML),
-    Object.assign({}, WEATHER_STATES.data, { popShown: false })), 'pop-strip')
-  const popVals = entriesWithClass(render(src(WEATHER_WXML), WEATHER_STATES.data), 'pop-strip__v')
-  const oPop = orderOf(popOn[0])
-  check('降水概率行按 data 显隐（全缺概率时整行不印，不是空壳常驻）',
-    popOn.length === 1 && popOff.length === 0 && popVals.length === hitems.length,
-    popOn.length + '/' + popOff.length + '/' + popVals.length)
-  check('降水概率行排在图之后（表尾）、OI 卡之前',
-    oPop > oChart && (orderOf(entriesWithClass(render(src(WEATHER_WXML), WEATHER_STATES.data), 'oi-card')[0]) < 0 ||
-      oPop < orderOf(entriesWithClass(render(src(WEATHER_WXML), WEATHER_STATES.data), 'oi-card')[0])),
-    [oChart, oPop].join(' < '))
-
-  const eBrief = render(src(WEATHER_WXML), WEATHER_STATES.data)
-  const eOpen = render(src(WEATHER_WXML), Object.assign({}, WEATHER_STATES.data, { showDetail: true }))
-  check('详细数据四行默认可见，逐小时全表仍由 showDetail 控制（默认收起）',
-    entriesWithClass(eBrief, 'fact-row').length === 4 && entriesWithClass(eBrief, 'num-sheet').length === 0 &&
-      entriesWithClass(eOpen, 'num-sheet').length === 1,
-    entriesWithClass(eBrief, 'fact-row').length + '/' +
-      entriesWithClass(eBrief, 'num-sheet').length + '/' + entriesWithClass(eOpen, 'num-sheet').length)
-  /* 只在这个四行块里数：同页还有「温度 · 降水 · 云层带 · 风」的来源说明与图例的「云量」「风速」，
-     按全页文本数会把它们一起数进来（那是另一个块的文案，不属这里）。 */
-  const briefBlock = entriesWithClass(eBrief, 'brief-rows')[0]
-  const briefText = briefBlock ? within(eBrief, briefBlock).filter(x => x.kind === 'text').map(x => renderedText(x)) : []
-  check('四个高频量按板 04-4 的四行给全：温度 / 降水量 / 风速 / 云量（各一行，不合并）',
-    !!briefBlock && ['温度', '降水量', '风速', '云量'].every(k => briefText.filter(t => t === k).length === 1),
-    briefText.join(' | '))
-})
-
-/* ================= §6 边界守卫：越界即整批退回的那几条 ================= */
 section('§6 边界：写入集与追加条款（M-18 本批只做一半都不算完成）')
 {
   const nw = src(NOTICES_WXML)

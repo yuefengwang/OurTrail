@@ -29,8 +29,9 @@
 | 现场面板 | `components/field-panel` | 签到/出发核实/节点/到家/返程/异常/位置，组织者与协作共用 |
 | 协作任务 | `pages/staff` | 现场协作者的专属视角（field-panel staff 版） |
 | 本车任务 | `pages/vehicle` | 车辆联络人：去程/返程逐人清点、发车/完成 |
-| 天气 Tab | `pages/weather-hub` | 独立天气模块首页：地图选点 / 输入经纬度（含 WGS-84 开关）/ 导入 GPX 三种入口，本地观察点与轨迹点组管理（免档案、免活动） |
-| 天气查询 | `pages/weather` | 三种模式共用：活动流（节点→天气，含天气提醒草稿）与自由查询（单点/轨迹组，抵达日程、保存/分享降精度）；Open-Meteo 云函数代理+缓存、**天相结论卡**（云海/日照金山/星空/银河/彩虹/晨昏光） |
+| 天气 Tab | `pages/weather-hub` | 地图 / 经纬度单点查询，GPX 导入 / 共用路线库选择；常用地点、天气行程、本机轨迹、最近查询分离。天气资产云同步尚未接入 |
+| 天气查询 | `pages/weather` | 单点及路线节点详情：逐时 / 云层剖面 / 日月天相三个标签；真实天气 API，云层缺测遮罩、高度窗口、拖动与按钮选时。单点无沿途空模块 |
+| 个人天气行程 | `pages/weather-plan` | 默认沿途天气，按天手动安排每次经过与抵达 / 出发时间；重复节点、保存 / 复制、稳定节点 ID 匹配最新路线。当前仅本机保存，不回写活动 |
 | 天气全图 | `pages/weather-chart` | 横屏整屏看 7×24 小时 meteogram 时间坐标图（数据经 `utils/chart-store.js` 交接，不走 URL） |
 | 天相图表 | `components/meteogram` | canvas 自绘 meteogram：温度线/降水双柱/三层云量/天相窗口标记/日时轴（几何抽到 `layout.js` 供测试断言） |
 | 海拔剖面 | `components/route-profile` | 活动/路线详情：连续轨迹高程 / 节点高程 / 无数据三态；无连续高程时明确标「节点高程，非连续剖面」，不插值伪造地形 |
@@ -67,10 +68,11 @@ miniprogram/
     route-schedule.js  GPX 时间戳 → 各节点第几天抵达
     chart-store.js   天气页 → 横屏图页的内存交接
     watch-points.js  观察点/轨迹点组（纯 util，storage 注入；P3 独立天气）
+    weather-plans.js  个人天气行程、独立经过、逐时天气摘要、最近查询（storage 注入）
     util.js          脱敏/距离/名单导出等纯函数
   pages/               home discover notices anotices me activity signup editor
                        routes route route-edit workspace tasks staff vehicle
-                       weather weather-chart weather-hub privacy
+                       weather weather-chart weather-hub weather-plan privacy
                        lab（开发者预演面板，仅白名单账号可用，无入口——用编译模式直达）
                        cloud-field-poc（等值带渲染核对页，无入口）
 cloudfunctions/trailApi/

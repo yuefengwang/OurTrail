@@ -8,7 +8,7 @@
  *
  * 防御规则（Phase 1 §六/§十八）：
  *   ▸ cloudLevels 缺失/为空/异常 → 返回 null（页面隐藏云场卡，绝不抛错）；
- *   ▸ 某小时有效层 <2 → 该列用时间上最近可用列回填（渲染连续性；meta.gapHours 可查）；
+ *   ▸ 某小时有效层 <2 → 缺测；保留 gapHours，由渲染遮罩与判读弃权共同消费；
  *   ▸ 全部小时不可用 → null；
  *   ▸ cover 0–100 clamp、非有限值丢弃；NaN 永远不会进入 renderer。
  */
@@ -87,6 +87,7 @@ function buildCloudFieldRange(result, opts) {
     if (opts.date || opts.startDate) {
       const wantDate = opts.startDate || opts.date
       startIdx = cl.times.findIndex(t => String(t).slice(0, 10) === wantDate)
+      if (startIdx < 0) return null
     }
     const idx = []
     for (let i = (startIdx >= 0 ? startIdx : 0); i < cl.times.length && idx.length < want; i++) {
@@ -97,34 +98,26 @@ function buildCloudFieldRange(result, opts) {
     const altitudes = altitudesGrid()
     const values = []
     const gapHours = []
+    const coveredByHour = []
     let firstUsable = null
-    let lastUsable = null
     let coveredLo = null, coveredHi = null   // 真实数据覆盖的海拔范围（外插区域不属于数据）
     for (let r = 0; r < idx.length; r++) {
       const pairs = validPairs(cl, idx[r])
       if (pairs.length < 2) {
         gapHours.push(r)
-        values.push(null) // 占位，随后回填
+        coveredByHour.push(null)
+        values.push(altitudes.map(() => 0))
         continue
       }
       const lo = pairs[0].alt, hi = pairs[pairs.length - 1].alt
+      coveredByHour.push({ lo, hi })
       if (coveredLo === null || lo < coveredLo) coveredLo = lo
       if (coveredHi === null || hi > coveredHi) coveredHi = hi
       const row = resampleColumn(pairs, altitudes)
       if (firstUsable === null) firstUsable = r
-      lastUsable = r
       values.push(row)
     }
     if (firstUsable === null) return null
-    /* 缺失列回填：前导用首可用列，后缀用末可用列，中段用最近可用列（仅渲染连续性） */
-    for (let r = 0; r < values.length; r++) {
-      if (values[r]) continue
-      let near = null, dist = values.length
-      for (let k = 0; k < values.length; k++) {
-        if (values[k] && Math.abs(k - r) < dist) { dist = Math.abs(k - r); near = values[k] }
-      }
-      values[r] = near ? near.slice() : (lastUsable || firstUsable).slice()
-    }
 
     const userAlt = Number.isFinite(opts.userAltitude) ? Math.round(opts.userAltitude) : null
     return {
@@ -132,6 +125,7 @@ function buildCloudFieldRange(result, opts) {
       altitudes: altitudes,
       values: values,
       userAltitude: userAlt,
+      coveredByHour,
       /* 数据覆盖的海拔范围：覆盖范围之外（用户高于/低于全部层）时，
          云态必须按「覆盖区与用户的相对位置」推导，不得采样外插值 */
       covered: (coveredLo != null && coveredHi != null) ? { lo: Math.round(coveredLo), hi: Math.round(coveredHi) } : null,

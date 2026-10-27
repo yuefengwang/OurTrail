@@ -381,8 +381,8 @@ async function raceCases() {
     page.onPoint({ detail: { value: 1 } })
     await waitFor(() => calls.length > before)
     const second = calls[1]
-    const expect = RS.schedule(points, startAt)[1].arriveDate
-    check('切到第 2 天节点后日期 = ' + expect, !!second && second.date === expect,
+    const expect = '2026-10-03'
+    check('切节点不使用 GPX 历史时差推算本次抵达日', !!second && second.date === expect,
       second ? second.date : 'getWeather 未被调用')
     check('切节点后页面日期与请求一致', !!second && second.date === page.data.date, page.data.date)
     check('切节点未多发请求（共 ' + calls.length + ' 次）', calls.length === 2, 'calls=' + calls.length)
@@ -991,6 +991,7 @@ async function localCases() {
     get: k => (storageMap.has(k) ? storageMap.get(k) : null),
     set: (k, v) => storageMap.set(k, v),
   }
+  draft.durableStorage = draft.wxStorage
 
   const modalCalls = []
   const toasts = []
@@ -1106,11 +1107,11 @@ async function localCases() {
     check('轨迹组：不发起 api.read', readCalls.length === 0)
     const ok = await waitFor(() => page.data.pointLabels.length === 3)
     check('轨迹组：点集来自本地存储', ok)
-    check('轨迹组：锚点 08:00 + 基准日 10-03 展开第 2 天抵达', page.data.date === '2026-10-04', page.data.date)
-    check('轨迹组：picker 标签带第几天', /第2天/.test(page.data.pointLabels[2]), page.data.pointLabels[2])
+    check('轨迹组：不以历史 GPX 锚点自动安排第二天', page.data.date === '2026-10-03', page.data.date)
+    check('轨迹组：未安排时不显示推算抵达日', !/第2天/.test(page.data.pointLabels[2]) && page.data.schedule.length === 0, page.data.pointLabels[2])
     check('轨迹组：无静态点卡、无保存入口（节点已在组里）',
       page.data.pointCard === null && page.data.showSave === false)
-    check('轨迹组：查询按当前节点坐标', byPointCalls.some(c => c[0] === 30.96 && c[1] === 103.4901 && c[2] === '2026-10-04'))
+    check('轨迹组：查询按当前节点坐标与浏览日', byPointCalls.some(c => c[0] === 30.96 && c[1] === 103.4901 && c[2] === '2026-10-03'))
 
     // 防漂：用户切日后基准日固定——切到节点 1 日期回到它的抵达日，而非继续前漂
     const baseBefore = page._baseDate
@@ -1505,8 +1506,8 @@ async function stripCases() {
   check('缺读数整行印「—」，不拿 0 顶替（缺测 ≠ 无雨 / 无风 / 晴）',
     page.buildBriefRows([{ temp: null, wind: null, cloud: null }]).map(r => r.v).join('|') === '—|—|—|—',
     page.buildBriefRows([{ temp: null, wind: null, cloud: null }]).map(r => r.v).join('|'))
-  check('旧返回体没有 precip 只有 showers 时只用 showers（缺失字段不当 0 相加）',
-    page.buildBriefRows([{ showers: 1.5 }])[1].v === '1.5 mm/h',
+  check('没有总降水字段时保持缺测，不用部分阵雨冒充总量',
+    page.buildBriefRows([{ showers: 1.5 }])[1].v === '—',
     page.buildBriefRows([{ showers: 1.5 }])[1].v)
   check('全天同一数值时不印假区间（「12°C」而不是「12 – 12°C」）',
     page.buildBriefRows([{ temp: 12 }, { temp: 12 }])[0].v === '12°C',
