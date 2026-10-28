@@ -38,7 +38,7 @@ const HOUR = 10        // 合成场恒定不随时间变，判读固定在 10:00
 
 function fieldOf (decks, covered) {
   const altitudes = []
-  for (let a = 0; a <= 7000; a += 250) altitudes.push(a)
+  for (let a = 0; a <= 9750; a += 250) altitudes.push(a)
   const times = []
   for (let h = 0; h < 24; h++) times.push(h)
   return {
@@ -390,7 +390,24 @@ section('8 天象与位置判读不得随显示窗漂移')
     !/PROFILE|planProfile|\.profile|ALT0|ALT1/.test(body),
     (body.match(/PROFILE|ALT0|ALT1/g) || []).join(','))
   check('判读仍然只吃实测包络（covered 缺失一律 no-data，不退回显示窗）',
-    /if \(!covOk\) return unknown\('no-data'\)/.test(body) && /SCAN_MIN = 0, SCAN_MAX = 7000/.test(cfs))
+    /if \(!covOk\) return unknown\('no-data'\)/.test(body) && /SCAN_RANGE = \{ MIN: 0, MAX: 9750 \}/.test(cfs))
+  /* 静态门只证"写成了 9,750"，还得证这个上限真的被判读写到（铁律 30）：
+     300 hPa 档的卷云必须参与「云在上方」的结论，且影子改小上限后结论必须跟着变。 */
+  const hiDeck = () => fieldOf([{ lo: 9300, hi: 9600, cov: 88 }], { lo: 1000, hi: 9700 })
+  const atEverest = hiDeck()
+  const midAtTop = stateOf(atEverest, 8849, 'measured')
+  check('300 hPa 档参与判读：此点 8,849 + 9,300–9,600 卷云 ⇒ 云在上方（不是晴空）',
+    midAtTop.key === 'mid', JSON.stringify([midAtTop.key, midAtTop.reason]))
+  {
+    const snapMax = CFF.SCAN_RANGE.MAX
+    CFF.SCAN_RANGE.MAX = 8000
+    const cut = stateOf(atEverest, 8849, 'measured')
+    CFF.SCAN_RANGE.MAX = snapMax
+    const back = stateOf(atEverest, 8849, 'measured')
+    check('变异（SCAN_RANGE.MAX 9,750→8,000）让同一份数据读成「晴空」⇒ 上限是按引用读的、在承重',
+      cut.key === null && cut.reason === 'clear' && back.key === 'mid',
+      JSON.stringify([cut.key, cut.reason, back.key]))
+  }
 }
 
 console.log('\npassed=' + passed + ' failed=' + failed)

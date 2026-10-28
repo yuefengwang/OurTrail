@@ -285,3 +285,92 @@
 ## 深色模式
 
 `app.json` 实测**无 `darkmode` 配置**（全库无 `darkmode.json`），`project.private.config.json:8` 为 `skylineRenderEnable: false` ⇒ 当前只有**一套配色 + WebView 渲染**。这是事实约束（A 类）：报"缺深色适配"属规范外的新需求，不是缺陷；真要做得先立项 token 双主题，而不是在页面里加 `@media (prefers-color-scheme)`。
+
+## 天气页局部皮肤例外（D2 登记 · 2026-10-27）
+
+用户裁决 D2：天气页允许单独一套皮肤，**不**改全站主色、tab 文案、其余 20 页的卡片语言。生效范围只有三处：
+`pages/weather-hub`（屏 1 选源首页）、`components/weather-detail`、`components/weather-plan-sheet`。深链页 `pages/weather` 仍是旧长页，**不受**这套皮肤影响（P7 才决定下线或迁移）。
+
+变量定义在组件根节点（不是 `app.wxss` 的 `page` 块）：
+
+| 变量 | 值 | 用途 |
+|---|---|---|
+| `--w-green` | `#16783E` | 选中态 / 主行动 / 链接 |
+| `--w-green-soft` | `#EDF7ED` | 选中胶囊 / 有条件胶囊 |
+| `--w-bg` | `#FFFFFF` | 页面底色（无卡片） |
+| `--w-ink` | `#18211B` | 主文字 |
+| `--w-muted` | `#69716B` | 副文字 |
+| `--w-line` | `#E8ECE7` | 分割线 |
+| `--w-pale` | `#F5F7F4` | 次级按钮底 |
+| `--w-blue` / `--w-teal` / `--w-amber` | `#4186AA` / `#457E78` / `#A87928` | 图表变量与琥珀读数（复制于原型 v3） |
+
+三条可机器校验的边界（`tools/weather-v3-visual-test.js`）：
+
+1. **色值封闭表**：三份 wxss 里出现的每个色值都必须在判据的 `PALETTE` 里，新颜色要先登记再使用。
+2. **字号档**：只用 `9/10/11/12/13/14/16/17/18/21/24/25/26/34`；9–11px 只允许出现在轴、图例、日期条、副行（按选择器角色判）。
+3. **触控**：主/次行动 ≥44px；`<44px` 的次级控件必须逐个登记（现有：前后步进 34、两处文字链接 `.wv3-link` 与 `.wh-inline-link`、`.wp-time-clear`）。返回键是 `.brand-header__back`（44×44），与「主/次行动 ≥44」同档，不在次表里。
+
+组件 `options: { styleIsolation: 'apply-shared' }` 且**只写一次**（铁律 1）。`weather-plan-sheet` 在自己的 `.wp` 上重复声明 4 个同名变量——组件必须自包含（同 `custom-tab-bar`），静态门 `swx2 T2.1` 也要求 var() 在本文件有定义；值的唯一出处仍是上表。
+
+**下轮审查注意**：这三处出现"无卡片 / 比全站小一号的字"不是违规，是 D2 的登记例外；要改口径请改本条 + 判据，不要在页面里补卡片或放大字号。
+
+### 品牌固定条：`plain` 变体与返回键（D8/D9/D10 登记 · 2026-10-28）
+
+`components/brand-header` 现有三种外观（同一组件，不各画一份词标）：
+
+| `variant` | 底色 / 分隔线 | 词标色 | 用在 |
+|---|---|---|---|
+| 缺省（`bar`） | `var(--paper)` `#F5F5F0` + 1px `var(--line)` | `var(--forest)` `#163E35` | 其余 tab 页（home / me / notices） |
+| `overlay` | 透明，浮在 hero 图上 | 白 | 首页 hero |
+| `plain` | `var(--white)`，**无** border-bottom | `var(--ink)` `#202A26` | 天气两屏（`weather-hub` 屏 1、`weather-detail`） |
+
+`back` 布尔（默认 `false`）：为真时左侧出 `.brand-header__back`（44×44，`bindtap` → `bind:back`，图标 20px），**并隐藏 trailMark**——两者都在最左。按 20px 内容网格算：只有返回时词标落在 72px，再塞一个 trailMark 会推到 100px（再 +28，且挤掉点击区）；原型结构也是「返回 + 词标」。`title` 缺省时词标后不出现 `·` 分隔点。
+
+**几何只有一处**：`layoutFor()` 在 `measure()` 里算完后 `triggerEvent('ready', {height, navBar, statusBarHeight})`；`weather-detail` 把它存成 `data.chromeHeight`（首帧缺省 64），四视图 tab 用行内 `--wv3-chrome` 消费。样式表只写 `top: var(--wv3-chrome)`，不写字面量——G8 要求同选择器有非 auto 偏移（否则 sticky 等价 static），SWX2 又要求 var() 在本文件有定义，所以缺省值 `--wv3-chrome: 64px` 声明在 `.weather-v3` 根节点，真值由行内覆盖。**`--wv3-chrome` 是几何变量，不进上面那张皮肤表**（视觉门另立 `GEOMETRY` 表并要求它真的被 `var()` 消费）。
+
+**真机（2026-10-28 · 390×844 · 基础库 3.8.12）**：屏 1 bar 计算 `rgb(255,255,255)`、词标 `rgb(32,42,38)`、无 `.brand-header__back`；屏 2 返回键 44×44、返回态无 mark；tabs `position:sticky` + 计算 `top:87px`（=47 状态栏 + 40 导航，实测），滚 200 后 tabs 文档位 287=87+200、对照日期卡 169.195 不动。证据 `docs/ui-ux-redesign/evidence/weather-v3-fidelity-2026-10-28/README.md`。
+
+### 天气图标：5 类封闭（D6/D7 登记 · 2026-10-28）
+
+`format.weatherIcon(code)` 是 WMO 码 → 图标名的唯一出处，落在既有 `format.weatherPhrase`（码 → 中文/色调）旁边：
+
+| 类 | WMO 码 | 说明 |
+|---|---|---|
+| `sun` | 0 / 1 | 晴 / 少云 |
+| `cloud` | 2 / 3 / 45 / 48 | 多云 / 阴 / 雾（含冻雾） |
+| `rain` | 51–67 / 80–82 | 毛毛雨到阵雨（含冻雨） |
+| `snow` | 71–77 / 85 / 86 | 雪与阵雪 |
+| `storm` | 95 / 96 / 99 | 雷暴（含冰雹） |
+
+- **归并口径与中文标签可以不相等**：`weatherPhrase(1).label === '多云'` 而图标是 `sun`——文案与图形各自服务阅读，别为"对齐"去改另一半。
+- **缺码必须失败关闭**：`null` / `undefined` / 空串 / 纯空白 / 非数字 → `''`（模板 `wx:if` 不出图标）。`Number(null)===0`、`Number('')===0` 会把缺码画成晴天。
+- `icon` 组件对未登记名字**静默回落**到 `PATHS.activity` ⇒ 每个动态图标名都要 `wx:if` 守卫。
+- 尺寸：日期条 15px（选中 `#16783E`、未选 `#707971`）、读数 31px（`#18211B`）、沿途停靠 16px、`down` 18px（地点）/ 12px（节点）、`info` 14px。**31px 沿用的是 `PATHS` 的 `stroke-width:1.75`**（原型是 1.5）——`icon.js` 按 PATHS/ART 两档固定线宽，为单个尺寸开第三档不值得；这是已知的可见偏差。
+- 计划日期条（D1/D2…）**不带图标**：它是行程节奏，不是该日天气。
+- **真机（2026-10-28）**：真实 Open-Meteo 5 日卡全 `rain`（码 51/53）、读数 13:00 `rain`；生产形状注入覆盖 `sun/cloud/rain/snow/storm`，13:00 码 95 ⇒ 读数 `storm`；沿途停靠 2 个节点 × 16×16（渲染夹具；账号无计划 ⇒ 真实计划路径 NOT_RUN）。
+
+**未对齐项（登记不修）**：原型的速度/时段用自绘 range input；小程序只有原生 `<slider>`，轨道高度与拇指形状由平台决定，不做像素级追杀。
+
+### 入口图形词表：`next` / `back` / `up` / `down` / `check` / `pin` / `calendar` / `crosshair` / `upload` / `lock` / `cloudoff`（2026-10-28 补全）
+
+原型 `weather.js` 的 `sym` 注册表里，凡是"能点开一层"或"带语义的开场图形"都有对应词；第一轮只补了详情页，第二轮按原型逐处补齐全站。词表仍只有一处：`components/icon/icon.js` 的 `PATHS`，页面只给名字、尺寸、颜色。
+
+| 词 | 出处（原型 → 本仓库） | 尺寸 / 颜色 |
+|---|---|---|
+| `next` | 首页最近计划卡与三条资产行、地点弹层未选项、详情两条 link-row、停靠点名、节点弹层未选项、两个时段滑块的后一小时 | 16 `#8A968C`（列表）/ 17 `#16783E`（地点弹层）/ 18 `#6C7C70`（link-row）/ 14 `#8A968C`（停靠点）/ 19 `#16783E`（节点选项）/ 17 `#627568`（时段步进） |
+| `back` | 时段滑块的前一小时（与 `next` 成对） | 17 `#627568` |
+| `up` / `down` | 轨迹「展开/收起节点」（随 `trackOpen[item.id]` 切换）、计划出发日期 picker、页头地点（18）与节点（12） | `up/down` 11 `#16783E`；`down` 12 `#8B958C`、12 `#657168`、18 `#18211B` |
+| `check` | 地点弹层当前项（`item.current`）、节点弹层当前节点（`item.selected`） | 17 / 19 `#16783E` |
+| `pin` | 首页地图选点主键 19、资产行图标砖 18、页头节点行 12 | 见左 |
+| `calendar` | 「继续上次」标签 11、计划资产砖 18、越界提示条 14 | 11 `#2C5A38`、18 `#5F7A63`、14 `#7A5C1E` |
+| `crosshair` / `upload` | 首页两个次入口（输入经纬度 / 导入 GPX） | 16 `#16783E` |
+| `lock` | 计划弹层「只改这份行程、不回写路线」说明 | 13 `#69716B` |
+| `cloudoff` | 缓存时效条（显示上次结果不等于最新天气） | 14 `#7A5C1E` |
+
+- **资产行图标砖**：`38×38`、底色 `#EDF1E9`、图形 `18px #5F7A63`；个人计划与共享计划都用 `calendar`，常用地点 `pin`，路线与轨迹 `route`——计划行不得拿地点/路线图形凑数。
+- **文本字符不再承担箭头**：`›`、`▾`、`▴` 在这三处 skin 里零出现（`weather-v3-structure-test §2d` 常驻）。`up/down` 的文案与图形必须由同一个布尔派生，避免"文案说收起、图形指展开"。
+- **当前项只认投影给的布尔**：`current` / `selected` 在 JS 侧算好（地点按 `place.id` 前缀归一成 `p:`/`r:`/`cur` 三种 key），WXML 不比对 id 片段、不靠文案猜当前。
+- **时段步进是 `back`/`next` 一对**：两个滑块按钮同尺寸同色（17 `#627568`），不用带尾的 `arrow`——`arrow` 与左侧 chevron 不成对，也和原型 `icon('back')` / `icon('next')` 不一致。`weather-v3-structure-test §2d` 钉住"详情内零 `name=\"arrow\"`"。
+- **提示条图形由数据给**：沿途提示条读 `route.notice.icon/color`（`clock` 信息 / `calendar` 越界），模板里不写 `wx:if` 分支——理由同铁律 22。
+- **新增词先过两道**：`icon.js` 的 `PATHS` 必须是单条 `d`（首命令 `M`、无 `<`/`>`，否则 data-URI 当场截断），且 `tools/weather-v3-structure-test.js §2d` 的词表必须同批登记。
+

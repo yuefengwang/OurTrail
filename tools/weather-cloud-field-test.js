@@ -47,7 +47,7 @@ check('NaN cover 被 clamp/拒绝，不进 renderer', fNaN === null || fNaN.valu
 /* ---------- Adapter ---------- */
 section('Adapter：日期窗、层插值、clamp、高低海拔')
 const f24 = WCFF.buildCloudField({ cloudLevels: cl }, { date: '2026-10-07', userAltitude: 3500 })
-check('24h 窗口 + 统一海拔网格（0–7000/250）', f24 && f24.times.length === 24 && f24.altitudes.length === 29 && f24.altitudes[14] === 3500)
+check('24h 窗口 + 统一海拔网格（0–9750/250）', f24 && f24.times.length === 24 && f24.altitudes.length === 40 && f24.altitudes[14] === 3500)
 check('values[time][alt] 结构与 POC 渲染器契约一致', Array.isArray(f24.values) && Array.isArray(f24.values[0]) && f24.values[0].length === f24.altitudes.length)
 check('cover 全部 0–100 且有限', f24.values.every(r => r.every(v => Number.isFinite(v) && v >= 0 && v <= 100)))
 

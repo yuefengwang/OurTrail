@@ -232,7 +232,7 @@ Page({
           if (!res || res.status !== 'ready' || !day) {
             return Object.assign({}, r, { status: res && res.status === 'out_of_range' ? 'out-of-range' : 'failed' })
           }
-          const phrase = F.weatherPhrase(day.code)
+          const phrase = F.dayPhrase(day)
           return Object.assign({}, r, {
             status: 'ready',
             phrase: phrase.label,

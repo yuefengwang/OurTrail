@@ -7,6 +7,7 @@
     "icon": "/components/icon/icon",
     "brand-header": "/components/brand-header/brand-header",
     "form-field": "/components/form-field/form-field",
-    "overlay": "/components/overlay/overlay"
+    "overlay": "/components/overlay/overlay",
+    "weather-detail": "/components/weather-detail/weather-detail"
   }
 }

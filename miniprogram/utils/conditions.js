@@ -59,7 +59,12 @@ function buildCallouts(day, detail, elev) {
   }
   const inCloud = hours.some(h => h.band && Number.isFinite(elev)
     && h.band.base <= elev && elev <= h.band.top)
-  if (hours.some(h => Number.isFinite(h.visibility) && h.visibility < 1) || inCloud) {
+  // 雾只认云端的三证结论（45/48 + 湿度 + 能见度）。旧缓存没有 fog 字段（过渡态 ≤12h）时
+  // 回退旧的纯能见度表达式；有该字段就只信它，否则干霾会被重新读成雾。
+  const fogByProof = hours.some(h => h.fog === true)
+  const fogByLegacy = hours.some(h => h.fog === undefined
+    && Number.isFinite(h.visibility) && h.visibility < 1)
+  if (fogByProof || fogByLegacy || inCloud) {
     out.push({ tone: 'warning', title: '此点可能入云（雾），观景窗口有限' })
   }
   if (Number(d.precipProbMax) >= 60

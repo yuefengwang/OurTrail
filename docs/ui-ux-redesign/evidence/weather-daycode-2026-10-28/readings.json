@@ -1,0 +1,149 @@
+{
+  "url": "/pages/weather/weather?src=local&lat=30.30&lng=101.64&name=%E6%8A%98%E5%A4%9A%E5%B1%B1&ele=4298",
+  "at": "2026-10-28T06:38:15.750Z",
+  "checks": [
+    {
+      "name": "渲染门槛：dayCards 非空且不在 denied",
+      "ok": true,
+      "extra": null
+    },
+    {
+      "name": "unified 存在（cloudLevels 到达，否则回退经典图）",
+      "ok": true,
+      "extra": {
+        "keys": [
+          "src",
+          "selSrc",
+          "hour",
+          "stKey",
+          "r1",
+          "r2",
+          "r3",
+          "r4",
+          "legendIn",
+          "elevShown",
+          "legendElev",
+          "readout"
+        ]
+      }
+    },
+    {
+      "name": "OI 卡已装配（24h 视图）",
+      "ok": true,
+      "extra": {
+        "items": 1
+      }
+    },
+    {
+      "name": "dayCards 条数 ≥ 3",
+      "ok": true,
+      "extra": {
+        "n": 7
+      }
+    },
+    {
+      "name": "DOM 日卡渲染出来了",
+      "ok": true,
+      "extra": {
+        "n": 7
+      }
+    },
+    {
+      "name": "日卡无「雾」徽标",
+      "ok": true,
+      "extra": []
+    },
+    {
+      "name": "首张日卡文案来自 dayCode（晴/多云/阴）",
+      "ok": true,
+      "extra": {
+        "firstCard": "今 10/28 多云 13/-1° ☂ 0%"
+      }
+    },
+    {
+      "name": "无「入云（雾）」提示",
+      "ok": true,
+      "extra": []
+    }
+  ],
+  "dayCards": [
+    {
+      "date": "2026-10-28",
+      "phrase": "多云",
+      "tone": "success",
+      "tMax": 13,
+      "tMin": -1,
+      "pop": 0
+    },
+    {
+      "date": "2026-10-29",
+      "phrase": "晴",
+      "tone": "success",
+      "tMax": 13,
+      "tMin": 0,
+      "pop": 0
+    },
+    {
+      "date": "2026-10-30",
+      "phrase": "晴",
+      "tone": "success",
+      "tMax": 14,
+      "tMin": -1,
+      "pop": 0
+    },
+    {
+      "date": "2026-10-31",
+      "phrase": "晴",
+      "tone": "success",
+      "tMax": 14,
+      "tMin": 1,
+      "pop": 0
+    },
+    {
+      "date": "2026-11-01",
+      "phrase": "多云",
+      "tone": "success",
+      "tMax": 14,
+      "tMin": 1,
+      "pop": 45
+    },
+    {
+      "date": "2026-11-02",
+      "phrase": "毛毛雨",
+      "tone": "warning",
+      "tMax": 12,
+      "tMin": -2,
+      "pop": 50
+    },
+    {
+      "date": "2026-11-03",
+      "phrase": "阵雪",
+      "tone": "danger",
+      "tMax": 8,
+      "tMin": -2,
+      "pop": 48
+    }
+  ],
+  "cardTexts": [
+    "今 10/28 多云 13/-1° ☂ 0%",
+    "明 10/29 晴 13/0° ☂ 0%",
+    "周五 10/30 晴 14/-1° ☂ 0%",
+    "周六 10/31 晴 14/1° ☂ 0%",
+    "周日 11/1 多云 14/1° ☂ 45%",
+    "周一 11/2 毛毛雨 12/-2° ☂ 50%",
+    "周二 11/3 阵雪 8/-2° ☂ 48%"
+  ],
+  "hourTexts": [
+    "雾 1° 00:00",
+    "雾 0° 03:00",
+    "晴 -1° 06:00",
+    "多云 3° 09:00",
+    "多云 9° 12:00",
+    "晴 13° 15:00",
+    "晴 10° 18:00",
+    "多云 7° 21:00"
+  ],
+  "calloutTexts": [
+    "这是概率判断，不是出发许可。云层与云海为模型推算，具体山谷的云海与光染任何产品都无法保证——出发前请核实当地气象与路况。"
+  ]
+}

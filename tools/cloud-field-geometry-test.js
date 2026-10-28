@@ -424,8 +424,10 @@ check('没有实测包络 ⇒ 退回历史固定窗（fallback 可查，不拿�
 check('窗边界恒为 250 的整数倍（网格行数必须整除，否则 y 映射与网格错位、刻度出现 6,923 这种数）',
   [planLow, planHigh, planCross].every(x => x.p.lo % 250 === 0 && x.p.hi % 250 === 0),
   JSON.stringify([planLow.p, planHigh.p, planCross.p].map(x => [x.lo, x.hi])))
-check('跨度夹在 [MIN_SPAN, MAX_SPAN]（云带不至于压成一条线，也不至于撑满空白）',
-  [planLow, planHigh, planCross].every(x => x.p.hi - x.p.lo >= CFF.PROFILE.MIN_SPAN && x.p.hi - x.p.lo <= CFF.PROFILE.MAX_SPAN))
+check('跨度夹在 [MIN_SPAN, 轴宽]：上限就是物理轴的宽度（不再为可读性裁云）',
+  [planLow, planHigh, planCross].every(x => x.p.hi - x.p.lo >= CFF.PROFILE.MIN_SPAN && x.p.hi - x.p.lo <= CFF.PROFILE.MAX_SPAN) &&
+    CFF.PROFILE.MAX_SPAN === CFF.PROFILE.HI_CEIL - CFF.PROFILE.LO_FLOOR,
+  JSON.stringify([CFF.PROFILE.MIN_SPAN, CFF.PROFILE.MAX_SPAN, CFF.PROFILE.HI_CEIL, CFF.PROFILE.LO_FLOOR]))
 {
   const geo = CFF.buildGeometry(CROSS, { width: 375, plotHeight: 300, userAltitude: 3004 })
   const F = CFF.buildFieldGrid(geo.sample, geo.cf.times.length, { altLo: geo.profile.lo, altHi: geo.profile.hi })
@@ -449,16 +451,18 @@ check('可信高程把点框进窗；模型估算按 ±600 带框；没有高程
     planOf(deckField([{ lo: 2246, hi: 3371, cov: 95 }], { lo: 2000, hi: 6000 }), 489, 'estimated').p.lo]))
 check('裁切旗标只说「云带」，不说「点」：点在窗外而云全在窗内时，不得写出「窗外还有云带」这句假话',
   (() => {
+    /* 点取 10,500 m——高于剖面物理天花板（HI_CEIL 9,750），窗根本框不进来，
+       这才是「点真的在窗外」的形态；跨度够得着的点会被整窗平移带进来（见 14b）。 */
     const f = deckField([{ lo: 2500, hi: 3200, cov: 90 }], { lo: 2000, hi: 4000 })
-    const p = planOf(f, 6200, 'measured').p
+    const p = planOf(f, 10500, 'measured').p
     return p.pointOutside === 'above' && p.clippedAbove === false && p.clippedBelow === false
-  })(), JSON.stringify(planOf(deckField([{ lo: 2500, hi: 3200, cov: 90 }], { lo: 2000, hi: 4000 }), 6200, 'measured').p))
-check('超出跨度上限时保最强的那一层，其余如实报窗外（不静默丢弃）',
+  })(), JSON.stringify(planOf(deckField([{ lo: 2500, hi: 3200, cov: 90 }], { lo: 2000, hi: 4000 }), 10500, 'measured').p))
+check('三段高低差 5,400 m 的云必须同框：跨度上限与轴同宽 ⇒ 不存在「装不下」这种裁切',
   (() => {
     const f = deckField([{ lo: 600, hi: 1200, cov: 96 }, { lo: 3000, hi: 3600, cov: 40 }, { lo: 6000, hi: 6600, cov: 97 }], { lo: 500, hi: 6700 })
     const p = planOf(f, 3300, 'measured').p
-    const keep = (p.lo <= 600 && p.hi >= 1200) || (p.lo <= 6000 && p.hi >= 6600)
-    return keep && (p.clippedAbove || p.clippedBelow) && p.hi - p.lo <= CFF.PROFILE.MAX_SPAN
+    return p.lo <= 600 && p.hi >= 6600 && p.clippedAbove === false && p.clippedBelow === false &&
+      p.hi - p.lo <= CFF.PROFILE.MAX_SPAN
   })(), JSON.stringify((() => {
     const f = deckField([{ lo: 600, hi: 1200, cov: 96 }, { lo: 3000, hi: 3600, cov: 40 }, { lo: 6000, hi: 6600, cov: 97 }], { lo: 500, hi: 6700 })
     const p = planOf(f, 3300, 'measured').p
@@ -476,7 +480,7 @@ check('退化输入不抛、窗仍合法：NaN/Infinity/空数组/lo>hi/负海�
     ]
     return cases.every(c => {
       const p = planOf(c[0], c[1], c[2]).p
-      return Number.isFinite(p.lo) && Number.isFinite(p.hi) && p.hi > p.lo && p.lo >= 0 && p.hi <= 7000
+      return Number.isFinite(p.lo) && Number.isFinite(p.hi) && p.hi > p.lo && p.lo >= 0 && p.hi <= CFF.PROFILE.HI_CEIL
     })
   })())
 check('长时窗包含短时窗（同一批数据，48h 已画出的云不被 72h 挤掉）',
@@ -487,6 +491,115 @@ check('长时窗包含短时窗（同一批数据，48h 已画出的云不被 72
     return b.lo <= a.lo && b.hi >= a.hi && !a.clippedAbove && !b.clippedAbove
   })(), JSON.stringify([planOf(deckField([{ lo: 2200, hi: 2800, cov: 90 }, { lo: 4200, hi: 4800, cov: 88 }], { lo: 2000, hi: 6000 }, 24), 3500, 'measured', 24).p.lo,
     planOf(deckField([{ lo: 2200, hi: 2800, cov: 90 }, { lo: 4200, hi: 4800, cov: 88 }], { lo: 2000, hi: 6000 }, 72), 3500, 'measured', 72).p.hi]))
+/* ---------- 14b 高原天花板（2026-10-28）：5,000–8,000 m 必须够得着 ---------- */
+function alpineField (decks, covered, hours) {
+  const altitudes = []
+  for (let a = 0; a <= 9750; a += 250) altitudes.push(a)
+  const n = hours || 24
+  const times = []
+  for (let h = 0; h < n; h++) times.push(h)
+  const values = times.map(() => altitudes.map(a => {
+    let v = 0
+    decks.forEach(d => { if (a >= d.lo && a <= d.hi) v = Math.max(v, d.cov) })
+    return v
+  }))
+  return { times, altitudes, values, covered: covered, meta: { hours: n } }
+}
+check('7,900 m 此点 + 高空云层：窗把点和两层云一起框进来，刻度出现 8,000，且不需要报窗口裁切',
+  (() => {
+    const f = alpineField([{ lo: 1800, hi: 2400, cov: 90 }, { lo: 7400, hi: 8200, cov: 80 }], { lo: 1000, hi: 8600 })
+    const p = planOf(f, 7900, 'measured').p
+    const ticks = CFF.profileTicks(p.lo, p.hi)
+    return p.lo <= 1800 && p.hi >= 8200 && ticks.indexOf(8000) >= 0 && p.clippedBelow === false
+  })(), JSON.stringify((() => {
+    const f = alpineField([{ lo: 1800, hi: 2400, cov: 90 }, { lo: 7400, hi: 8200, cov: 80 }], { lo: 1000, hi: 8600 })
+    const p = planOf(f, 7900, 'measured').p
+    return [p.lo, p.hi, CFF.profileTicks(p.lo, p.hi), p.clippedBelow]
+  })()))
+check('低海拔此点 + 高空卷云：卷云必须进窗（抬天花板就是为它抬的），且不再报「窗外上方还有云带」',
+  (() => {
+    const f = alpineField([{ lo: 250, hi: 4350, cov: 92 }, { lo: 8000, hi: 8500, cov: 50 }], { lo: 150, hi: 8600 })
+    const p = planOf(f, 3099, 'measured').p
+    return p.lo <= 250 && p.hi >= 8500 && p.clippedAbove === false && p.hi - p.lo <= CFF.PROFILE.MAX_SPAN
+  })(), JSON.stringify((() => {
+    const f = alpineField([{ lo: 250, hi: 4350, cov: 92 }, { lo: 8000, hi: 8500, cov: 50 }], { lo: 150, hi: 8600 })
+    const p = planOf(f, 3099, 'measured').p
+    return [p.lo, p.hi, p.clippedAbove]
+  })()))
+/* 阳性对照：上限抬到 9,750 不等于「每天都画满」——把卷云抽掉，窗必须自己收回来。
+   没有这一条，上一句「卷云必须进窗」就分不清是规则在判还是无条件撑满。 */
+check('阳性对照：同一份数据抽掉 8,000 m 卷云后，窗收回低云附近（不是 0–9,750 满窗）',
+  (() => {
+    const f = alpineField([{ lo: 250, hi: 4350, cov: 92 }], { lo: 150, hi: 4350 })
+    const p = planOf(f, 3099, 'measured').p
+    return p.lo <= 250 && p.hi >= 4350 && p.hi <= 5000
+  })(), JSON.stringify((() => {
+    const f = alpineField([{ lo: 250, hi: 4350, cov: 92 }], { lo: 150, hi: 4350 })
+    const p = planOf(f, 3099, 'measured').p
+    return [p.lo, p.hi]
+  })()))
+check('判读真的爬到 8,000：此点 6,000 + 卷云 8,200–8,600 ⇒ 云在上方（不是晴空）',
+  (() => {
+    const f = alpineField([{ lo: 8200, hi: 8600, cov: 88 }], { lo: 1000, hi: 8600 })
+    const o = planOf(f, 6000, 'measured')
+    return CFF.inferState(o.sample, 10, 6000, f.covered, { basis: 'measured' }).key === 'mid'
+  })())
+/* 300 hPa 这一档（用户 2026-10-28 决定）：珠峰顶 8,849 m + 头顶 9,300–9,600 卷云。
+   真实数据里 300hPa 高度实测 8,498–9,765 m，所以天花板 9,750 才装得下这一层。 */
+check('珠峰顶 8,849 m：窗框得住点与 9,300–9,600 卷云，天花板不越 9,750',
+  (() => {
+    const f = alpineField([{ lo: 9300, hi: 9600, cov: 88 }], { lo: 1000, hi: 9700 })
+    const p = planOf(f, 8849, 'measured').p
+    const ticks = CFF.profileTicks(p.lo, p.hi)
+    return p.lo <= 8849 && p.hi >= 9300 && p.hi <= CFF.PROFILE.HI_CEIL &&
+      p.hi - p.lo <= CFF.PROFILE.MAX_SPAN && ticks.indexOf(9000) >= 0
+  })(), JSON.stringify((() => {
+    const f = alpineField([{ lo: 9300, hi: 9600, cov: 88 }], { lo: 1000, hi: 9700 })
+    const p = planOf(f, 8849, 'measured').p
+    return [p.lo, p.hi, CFF.profileTicks(p.lo, p.hi)]
+  })()))
+check('判读爬到 300 hPa 档：此点 8,849 + 9,300–9,600 卷云 ⇒ 云在上方',
+  (() => {
+    const f = alpineField([{ lo: 9300, hi: 9600, cov: 88 }], { lo: 1000, hi: 9700 })
+    const o = planOf(f, 8849, 'measured')
+    return CFF.inferState(o.sample, 10, 8849, f.covered, { basis: 'measured' }).key === 'mid'
+  })())
+/* 牙齿：9,750 这道天花板在承重——压回旧值 8,000 ⇒ 同一份数据的珠峰点必须变成「窗外」。 */
+{
+  const snap = Object.assign({}, CFF.PROFILE)
+  const f = alpineField([{ lo: 9300, hi: 9600, cov: 88 }], { lo: 1000, hi: 9700 })
+  CFF.PROFILE.HI_CEIL = 8000
+  const low = planOf(f, 8849, 'measured').p
+  Object.keys(snap).forEach(k => { CFF.PROFILE[k] = snap[k] })
+  const back = planOf(f, 8849, 'measured').p
+  check('变异（天花板 9,750→8,000）把珠峰点挤出窗外 ⇒ 天花板在承重；还原后点又回来',
+    low.pointOutside === 'above' && back.pointOutside == null && back.lo <= 8849,
+    JSON.stringify([low.lo, low.hi, low.pointOutside, back.lo, back.hi, back.pointOutside]))
+}
+check('此点高于全部云层但仍在轴内：窗自动把它含进来（不再被甩到窗外）',
+  (() => {
+    const f = alpineField([{ lo: 500, hi: 4350, cov: 92 }], { lo: 150, hi: 8600 })
+    const p = planOf(f, 7900, 'measured').p
+    return p.lo <= 500 && p.hi >= 7900 && p.hi - p.lo <= CFF.PROFILE.MAX_SPAN &&
+      p.pointOutside == null && p.clippedBelow === false
+  })(), JSON.stringify((() => {
+    const f = alpineField([{ lo: 500, hi: 4350, cov: 92 }], { lo: 150, hi: 8600 })
+    const p = planOf(f, 7900, 'measured').p
+    return [p.lo, p.hi, p.clippedBelow, p.pointOutside]
+  })()))
+/* 牙齿：裁切之所以不可达，正是「上限 = 轴宽」这个等式换来的。
+   把上限压回旧值 6,000 ⇒ 同一份低云+薄卷云的数据必须重新裁掉卷云并如实报窗外
+   （否则上面那条「卷云必须进窗」就是空断言）。 */
+{
+  const snap = Object.assign({}, CFF.PROFILE)
+  const f = alpineField([{ lo: 250, hi: 4350, cov: 92 }, { lo: 8000, hi: 8500, cov: 50 }], { lo: 150, hi: 8600 })
+  CFF.PROFILE.MAX_SPAN = 6000
+  const narrow = planOf(f, 3099, 'measured').p
+  Object.keys(snap).forEach(k => { CFF.PROFILE[k] = snap[k] })
+  check('变异（跨度上限 9,750→6,000）让卷云重新被裁掉 ⇒ 裁切不可达正是这个常量换来的',
+    narrow.clippedAbove === true && narrow.hi - narrow.lo <= 6000 && narrow.hi < 8500,
+    JSON.stringify([narrow.lo, narrow.hi, narrow.clippedAbove]))
+}
 /* 变异自证：显示窗若是「可调参数」，判读就必须对它完全无感。
    把 MAX_SPAN 与 PAD_M 改小/改大 → 窗必须变（证明这一节真的在测窗），
    而同一批场同一海拔的 inferState 结论必须逐字节不变（证明窗没有偷偷参与判读）。 */
@@ -514,7 +627,7 @@ check('长时窗包含短时窗（同一批数据，48h 已画出的云不被 72
   })
   Object.keys(snap).forEach(k => { CFF.PROFILE[k] = snap[k] })
   const restored = planOf(LOW, 4058, 'measured').p
-  check('变异（跨度上限 4000→1500、呼吸位 250→0）确实改变了显示窗（否则这一节是空断言）',
+  check('变异（跨度上限 9750→1500、呼吸位 250→0）确实改变了显示窗（否则这一节是空断言）',
     after.some((x, i) => x.w[0] !== base[i].w[0] || x.w[1] !== base[i].w[1]),
     JSON.stringify([base.map(x => x.w), after.map(x => x.w)]))
   check('同一变异下判读逐字节不变：显示窗不是判读输入（6 组 × key/reason/holds/cUser/span）',

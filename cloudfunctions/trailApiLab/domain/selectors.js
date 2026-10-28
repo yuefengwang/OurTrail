@@ -428,6 +428,47 @@ function selectRoutes(state, actor, routeId) {
   return { ok: true, value: { routes } }
 }
 
+function planVisible(plan, userId) {
+  return plan.ownerId === userId || (Array.isArray(plan.sharedWith) && plan.sharedWith.indexOf(userId) !== -1)
+}
+
+/**
+ * V3 个人计划读视图（实施文档 §8.3）。
+ * 白名单投影：**不回传 ownerId / sharedWith 原文**（不暴露他人身份码），
+ * 共享场景只给 isOwner=false + sharedBy=<显示名>（取不到回落「同行者」）。
+ */
+function selectPlans(state, actor, planId) {
+  if (actor.userId === null) return authRequired()
+  const nameOf = userId => {
+    const p = state.profiles.find(x => x.id === userId)
+    return (p && p.person && p.person.name) ? p.person.name : '同行者'
+  }
+  const plans = state.plans
+    .filter(p => planVisible(p, actor.userId))
+    .filter(p => !planId || p.id === planId)
+    .sort((a, b) => (b.updatedAt || '') < (a.updatedAt || '') ? -1 : (b.updatedAt || '') > (a.updatedAt || '') ? 1
+      : (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .map(p => {
+      const isOwner = p.ownerId === actor.userId
+      const row = {
+        id: p.id, routeId: p.routeId, name: p.name, startDate: p.startDate,
+        stops: (p.stops || []).map(s => ({ nodeIndex: s.nodeIndex, day: s.day, time: s.time })),
+        visibility: p.visibility || (p.sharedWith && p.sharedWith.length ? 'shared' : 'private'),
+        isOwner,
+        sharedBy: isOwner ? '' : nameOf(p.ownerId),
+        // 只给 owner 一个**数量**，用来表达「已分享给 N 位同行者」并据此提供「取消全部共享」。
+        // 名单原文不出投影（§8.3）；协作者连数量也不需要知道。
+        sharedCount: isOwner ? (p.sharedWith || []).length : 0,
+        updatedAt: p.updatedAt || null,
+      }
+      // 共享名单只给创建者（与 routeView 同一条界线）：owner 需要它来逐个取消分享；
+      // 被授权者只拿到 sharedBy 显示名，看不到任何人的身份码。
+      if (isOwner) row.sharedWith = (p.sharedWith || []).slice()
+      return row
+    })
+  return { ok: true, value: { kind: 'plans', plans } }
+}
+
 function hasStaffMembership(state, actor, activityId, now) {
   return actor.userId !== null && state.memberships.some(m => m.role === 'staff' && m.activityId === activityId
     && m.userId === actor.userId && Date.parse(now) < Date.parse(m.expiresAt))
@@ -576,6 +617,10 @@ function selectView(state, actor, request, now) {
   }
   if (request.kind === 'tasks') {
     const result = selectTasks(state, actor, request.activityId, now)
+    return result.ok ? result.value : deniedView(result.error.code, result.error.message)
+  }
+  if (request.kind === 'plans') {
+    const result = selectPlans(state, actor, request.planId || null)
     return result.ok ? result.value : deniedView(result.error.code, result.error.message)
   }
   if (request.kind === 'notices') {
@@ -797,5 +842,5 @@ function getDetailState(view, now) {
 
 module.exports = {
   selectView, selectSensitive, selectContact, selectSignupForm, selectTransport,
-  selectAccess, selectNoticeManagement, selectExport, selectRoutes, getDetailState, DETAIL_STATES,
+  selectAccess, selectNoticeManagement, selectExport, selectRoutes, selectPlans, getDetailState, DETAIL_STATES,
 }

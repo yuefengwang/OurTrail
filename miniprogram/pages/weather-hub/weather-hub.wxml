@@ -1,94 +1,190 @@
-<view class="page">
-  <brand-header />
-  <view class="stack-sections">
-    <!-- D8（2026-10-26）：tab 页删除 28px 页标题，改用分区头三件套；
-         kicker 里的「天气」是删页标题的代价条款——原生标题栏不再出现，页面身份必须仍有字面。
-         （与 notices / home / me 同一处理，本页是第 4 个 tab 页。） -->
-    <view class="section-head">
-      <text class="kicker">天气</text>
-      <text class="list-head__title">先看天，再上山。</text>
-      <text class="section-sub">查过的点与轨迹会存住，下次不用重传。</text>
+<view class="page wh-page">
+
+  <!-- 屏 1：选源首页 ------------------------------------------------------>
+  <block wx:if="{{screen === 'home'}}">
+    <!-- 与屏 2 同一条品牌固定条（plain：白底无分隔线、词标用 ink），两屏身份不跳 -->
+    <brand-header variant="plain" />
+
+    <view class="wh-header">
+      <text class="wh-eyebrow">山野天气</text>
+      <text class="wh-title">看清天气，再出发。</text>
+      <text class="wh-sub">一个地点，一段路线，或一场计划中的徒步。</text>
     </view>
 
-    <!-- 输入区：主行动唯一化——地图选点是唯一实心按钮 -->
-    <view class="button primary block" hover-class="button-hover" bindtap="onPickMap">地图选点查天气</view>
-    <view class="button secondary block" hover-class="button-hover" bindtap="onManualOpen">输入经纬度</view>
-
-    <!-- A-24：卡标题原先逐字重复下面那颗按钮的文案，多出一行不带信息。
-         现在标题承担「为什么」、按钮承担「做什么」，与 editor.wxml:169 / route-edit.wxml:30 同一分工。
-         ⚠ 复验 A-24 请剥掉注释再比字符串，否则本条注释会让重复看起来仍然存在。 -->
-    <view class="card">
-      <view class="card-header">
-        <text class="card-label">有 GPX 轨迹？逐点看天气</text>
-      </view>
-      <text class="small" style="display:block;">导入轨迹，自动取出山路线上的标注点，逐点看天气与天相。</text>
-      <view class="button secondary block" style="margin-top:12px;" hover-class="button-hover" bindtap="onImportGpx">导入 GPX 轨迹</view>
-      <text class="small muted" style="display:block;margin-top:8px;">把 GPX 文件发到任意聊天，再点上面按钮选择。导入后展开轨迹，点任一节点名即可进入该点的天气与天相。</text>
-    </view>
-
-<!-- 我的观察点：有数据才显示，空态不渲染空卡片。
-     A-23（合并自 master）：原先这张卡带一个把内边距归零的内联 style，.card-header 与 .list-row
-     自身都没有左右 padding ⇒ 横向留白被一起吃掉，标题与行内容贴到卡片圆角边。
-     现在横向留白回到 app.wxss 的 .card 单源，与同页另两张卡（GPX 卡、轨迹点组卡）一致；
-     观察点行组不再套第二张卡（卡中卡会把留白再收一层）。
-     ⚠ 复验请剥掉注释、按「节点 attrs + 层叠终值」判，别按整文件 grep。 -->
-    <view wx:if="{{points.length}}" class="card">
-      <view class="card-header">
-        <view class="section-head">
-          <text class="kicker">已存</text>
-          <text class="section-title">我的观察点</text>
+    <view class="wh-actions">
+      <view class="wh-primary" hover-class="wh-tap" bindtap="onPickMap">
+        <view class="wh-primary-title">
+          <icon name="pin" size="19" color="#16783E" />
+          <text>地图选点</text>
         </view>
-        <text class="small muted tabular">{{points.length}}</text>
+        <text class="wh-primary-sub">找到你想去的山野</text>
       </view>
-      <view
-        wx:for="{{points}}"
-        wx:key="id"
-        class="list-row"
-        hover-class="button-hover"
-        bindtap="onPointTap"
-        data-id="{{item.id}}"
-      >
-        <view class="list-main">
-          <text>{{item.display}}</text>
-          <text class="list-sub tabular">{{item.subText}}</text>
+      <view class="wh-row">
+        <view class="wh-row-btn" hover-class="wh-tap" bindtap="onManualOpen">
+          <icon name="crosshair" size="16" color="#16783E" />
+          <text>输入经纬度</text>
         </view>
-        <icon name="arrow" size="16" color="#5F6E66" />
-        <view class="button text" catchtap="onDeleteTap" data-type="point" data-id="{{item.id}}" data-name="{{item.display}}">删除</view>
+        <view class="wh-row-btn" hover-class="wh-tap" bindtap="onImportGpx">
+          <icon name="upload" size="16" color="#16783E" />
+          <text>导入 GPX 轨迹</text>
+        </view>
       </view>
     </view>
 
-    <!-- 轨迹点组：收合式列表，节点行 = 名称 + 相对耗时 -->
-    <view wx:for="{{tracks}}" wx:key="id" class="card">
-      <view class="list-row" hover-class="button-hover" bindtap="onTrackToggle" data-id="{{item.id}}">
-        <view class="list-main">
-          <text>{{item.name}}</text>
-          <text class="list-sub tabular">{{item.statsText}}</text>
+    <!-- 继续上次：最近一条个人计划（无则整块不出现） -->
+    <view wx:if="{{lastPlan}}" class="wh-recent">
+      <text class="wh-recent-title">继续上次</text>
+      <view class="wh-recent-btn" hover-class="wh-tap" bindtap="onOpenPlanFromRoute">
+        <view class="wh-recent-tag">
+          <icon name="calendar" size="11" color="#2C5A38" />
+          <text>{{lastPlan.isOwner ? '个人计划' : '共享计划'}}</text>
         </view>
-        <text class="picker-arrow">{{trackOpen[item.id] ? '▴' : '▾'}}</text>
+        <text class="wh-recent-name">{{lastPlan.name}}</text>
+        <text class="wh-recent-sub">{{lastPlan.subText}}</text>
+        <view class="wh-chev"><icon name="next" size="16" color="#8A968C" /></view>
       </view>
-      <view wx:if="{{trackOpen[item.id]}}" class="stack" style="gap:2px;padding:0 16px 12px;">
-        <view
-          wx:for="{{item.nodes}}"
-          wx:for-item="node"
-          wx:key="id"
-          class="list-row"
-          hover-class="button-hover"
-          bindtap="onTrackNodeTap"
-          data-set="{{item.id}}"
-          data-index="{{index}}"
-        >
-          <view class="list-main">
-            <text>{{node.name}}</text>
-            <text class="list-sub">{{node.label}}</text>
+    </view>
+
+    <!-- 资产三 tab -->
+    <view class="wh-tabs">
+      <view class="wh-tab {{homeTab === 'plans' ? 'on' : ''}}" hover-class="wh-tap" bindtap="onHomeTab" data-tab="plans">个人计划</view>
+      <view class="wh-tab {{homeTab === 'points' ? 'on' : ''}}" hover-class="wh-tap" bindtap="onHomeTab" data-tab="points">常用地点</view>
+      <view class="wh-tab {{homeTab === 'routes' ? 'on' : ''}}" hover-class="wh-tap" bindtap="onHomeTab" data-tab="routes">共用路线</view>
+    </view>
+
+    <view class="wh-list">
+      <!-- 个人计划：我创建的 / 共享给我的 -->
+      <block wx:if="{{homeTab === 'plans'}}">
+        <view wx:if="{{plansState === 'loading'}}" class="wh-quiet">正在读个人计划…</view>
+        <view wx:elif="{{plansState === 'denied'}}" class="wh-quiet">登录后才能保存与共享计划。天气查询不需要登录。</view>
+        <view wx:elif="{{plansState === 'error'}}" class="wh-quiet">
+          <text>个人计划暂时读不到。</text>
+          <view class="wh-inline-link" hover-class="wh-tap" bindtap="onRetryPlans">重新读取</view>
+        </view>
+        <block wx:else>
+          <view wx:for="{{plans}}" wx:key="id" class="wh-asset" hover-class="wh-tap" bindtap="onOpenPlan" data-id="{{item.id}}">
+            <view class="wh-asset-icon"><icon name="calendar" size="18" color="#5F7A63" /></view>
+            <view class="wh-asset-body">
+              <text class="wh-asset-name">{{item.name}}</text>
+              <text class="wh-asset-sub">{{item.subText}}</text>
+            </view>
+            <view class="wh-chev"><icon name="next" size="16" color="#8A968C" /></view>
           </view>
-          <icon name="arrow" size="16" color="#5F6E66" />
-        </view>
-        <view class="button text" hover-class="button-hover" catchtap="onDeleteTap" data-type="track" data-id="{{item.id}}" data-name="{{item.name}}">删除这组轨迹</view>
-      </view>
-    </view>
+          <view wx:if="{{sharedPlans.length}}" class="wh-group-head">共享给我的</view>
+          <view wx:for="{{sharedPlans}}" wx:key="id" class="wh-asset" hover-class="wh-tap" bindtap="onOpenPlan" data-id="{{item.id}}">
+            <view class="wh-asset-icon"><icon name="calendar" size="18" color="#5F7A63" /></view>
+            <view class="wh-asset-body">
+              <text class="wh-asset-name">{{item.name}}</text>
+              <text class="wh-asset-sub">{{item.subText}} · 只读</text>
+            </view>
+            <view class="wh-chev"><icon name="next" size="16" color="#8A968C" /></view>
+          </view>
+          <view wx:if="{{!plans.length && !sharedPlans.length}}" class="wh-quiet">还没有个人计划。先选一条路线，再安排哪天到哪个节点。</view>
+        </block>
+      </block>
 
-    <text wx:if="{{!points.length && !tracks.length}}" class="small muted">还没有观察点。选一个点、输一组坐标或导一条轨迹，查过的点都能存住，下次免重传。</text>
-  </view>
+      <!-- 常用地点 -->
+      <block wx:elif="{{homeTab === 'points'}}">
+        <view wx:for="{{points}}" wx:key="id" class="wh-asset" hover-class="wh-tap" bindtap="onOpenPoint" data-id="{{item.id}}">
+          <view class="wh-asset-icon"><icon name="pin" size="18" color="#5F7A63" /></view>
+          <view class="wh-asset-body">
+            <text class="wh-asset-name">{{item.display}}</text>
+            <text class="wh-asset-sub">{{item.subText}} · 已保存</text>
+          </view>
+          <view class="wh-chev"><icon name="next" size="16" color="#8A968C" /></view>
+          <view class="wh-asset-del" catchtap="onDeleteTap" data-type="point" data-id="{{item.id}}" data-name="{{item.display}}">删除</view>
+        </view>
+        <view wx:if="{{!points.length}}" class="wh-quiet">还没有常用地点。地图选点或输入坐标后，可以保存到这里。</view>
+      </block>
+
+      <!-- 共用路线：路线库 + 导入的轨迹点组 -->
+      <block wx:else>
+        <view wx:if="{{routesState === 'loading'}}" class="wh-quiet">正在读路线库…</view>
+        <view wx:for="{{routes}}" wx:key="id" class="wh-asset" hover-class="wh-tap" bindtap="onOpenRoute" data-id="{{item.id}}">
+          <view class="wh-asset-icon"><icon name="route" size="18" color="#5F7A63" /></view>
+          <view class="wh-asset-body">
+            <text class="wh-asset-name">{{item.title}}</text>
+            <text class="wh-asset-sub">{{item.pointCount}} 个关键点 · 路线库{{item.isOwner ? '' : ' · 共用'}}</text>
+          </view>
+          <view class="wh-chev"><icon name="next" size="16" color="#8A968C" /></view>
+        </view>
+
+        <view wx:for="{{tracks}}" wx:key="id" class="wh-track">
+          <view class="wh-asset" hover-class="wh-tap" bindtap="onOpenTrack" data-id="{{item.id}}">
+            <view class="wh-asset-icon"><icon name="route" size="18" color="#5F7A63" /></view>
+            <view class="wh-asset-body">
+              <text class="wh-asset-name">{{item.name}}</text>
+              <text class="wh-asset-sub">{{item.statsText}} · 导入轨迹</text>
+            </view>
+            <view class="wh-chev"><icon name="next" size="16" color="#8A968C" /></view>
+          </view>
+          <view class="wh-track-toggle" hover-class="wh-tap" bindtap="onTrackToggle" data-id="{{item.id}}">
+            <text>{{trackOpen[item.id] ? '收起节点' : '展开节点'}}</text>
+            <icon name="{{trackOpen[item.id] ? 'up' : 'down'}}" size="11" color="#16783E" />
+          </view>
+          <view wx:if="{{trackOpen[item.id]}}" class="wh-track-nodes">
+            <view
+              wx:for="{{item.nodes}}"
+              wx:for-item="node"
+              wx:for-index="nodeIndex"
+              wx:key="id"
+              class="wh-node-row"
+              hover-class="wh-tap"
+              bindtap="onOpenTrackNode"
+              data-set="{{item.id}}"
+              data-index="{{nodeIndex}}"
+            >
+              <text class="wh-node-name">{{node.name}}</text>
+              <text class="wh-node-sub">{{node.label}}</text>
+            </view>
+            <view class="wh-asset-del wh-track-del" catchtap="onDeleteTap" data-type="track" data-id="{{item.id}}" data-name="{{item.name}}">删除这组轨迹</view>
+          </view>
+        </view>
+        <view wx:if="{{!routes.length && !tracks.length && routesState !== 'loading'}}" class="wh-quiet">还没有共用路线。在路线库保存路线，或导入一条 GPX。</view>
+      </block>
+
+      <text class="wh-foot">天气来自公开预报服务；个人计划与共享状态保存在云端。山野信号不稳时，页面会显示最近一次取到的预报并标注时效。</text>
+    </view>
+  </block>
+
+  <!-- 屏 2：四视图详情（唯一实现）------------------------------------------>
+  <block wx:else>
+    <weather-detail
+      mode="tab"
+      can-back
+      place="{{place}}"
+      initial="{{initial}}"
+      plan-id="{{planId}}"
+      bind:openplace="onOpenPlace"
+      bind:screenback="onBackHome"
+      bind:planchange="onPlanChange"
+    />
+  </block>
+
+  <!-- 地点切换弹层 -->
+  <overlay open="{{placeOpen}}" kind="sheet" title="换一个地点" bind:close="onPlaceClose">
+    <view class="wh-place">
+      <input class="wh-search" value="{{placeQuery}}" bindinput="onPlaceQuery" placeholder="搜索地点或路线" />
+      <view
+        wx:for="{{placeList}}"
+        wx:key="key"
+        class="wh-place-row"
+        hover-class="wh-tap"
+        bindtap="onPickPlace"
+        data-key="{{item.key}}"
+      >
+        <view class="wh-place-body">
+          <text class="wh-place-name">{{item.name}}</text>
+          <text class="wh-place-sub">{{item.sub}}</text>
+        </view>
+        <view class="wh-chev">
+          <icon wx:if="{{item.current}}" name="check" size="17" color="#16783E" />
+          <icon wx:else name="next" size="17" color="#16783E" />
+        </view>
+      </view>
+      <view wx:if="{{!placeList.length}}" class="wh-quiet">没有匹配的地点。地点来自常用地点与路线库。</view>
+    </view>
+  </overlay>
 
   <!-- 手动输入经纬度 -->
   <overlay open="{{manualOpen}}" kind="dialog" title="输入经纬度" bind:close="onManualClose">

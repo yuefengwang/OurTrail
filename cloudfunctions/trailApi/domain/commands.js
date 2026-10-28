@@ -13,6 +13,7 @@ const { handleProfile, ensureMembershipId } = require('./profile')
 const { handleNotices } = require('./notices')
 const { handleRoutes } = require('./routes')
 const { handleTasks } = require('./tasks')
+const { handlePlans } = require('./plans')
 
 const summaries = {
   'activity.create': '活动草稿已保存', 'activity.edit': '活动说明与安排已更新', 'activity.copy': '已复制为新的活动草稿',
@@ -29,6 +30,7 @@ const summaries = {
   'incident.report': '收到现场情况报备', 'incident.resolve': '现场情况已核实处理',
   'notice.publish': '站内通知已发布', 'notice.read': '已阅读站内通知', 'notice.delivery': '已记录通知渠道结果',
   'task.create': '任务已添加', 'task.update': '任务内容已更新', 'task.status': '任务状态已更新', 'task.remove': '任务已删除',
+  'plan.create': '个人计划已保存', 'plan.update': '个人计划已更新', 'plan.delete': '个人计划已删除',
   'export.record': '已记录名单导出用途', 'profile.save': '常用资料已保存', 'companion.save': '常用同行人已保存', 'companion.remove': '常用同行人已移除',
 }
 
@@ -52,6 +54,8 @@ function handle(state, command, context) {
       return handleRoutes(state, command, context)
     case 'task.create': case 'task.update': case 'task.status': case 'task.remove':
       return handleTasks(state, command, context)
+    case 'plan.create': case 'plan.update': case 'plan.delete':
+      return handlePlans(state, command, context)
     default:
       return failure('INVALID_INPUT', '不支持此操作。')
   }

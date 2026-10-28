@@ -1438,3 +1438,296 @@ D2 前两版量错对象——真节点行套在 `<block wx:if="{{routeDetailsOp
 ② **客户端上传只到「开发版本」**，要进用户端还需在公众平台后台 **提交审核 → 审核通过 → 发布**，这一步 CLI 没有对应命令（`cli` 只有 upload / preview / auto 一类），**须由账号所有者本人操作**。本轮未代替执行提交审核。
 
 **未做 / 缺口**：① 未跑真机行为验证（合并进来的 171 个客户端文件是远端 124 个提交里 style-a/style-b 与天气原型的既有产物，其真机证据在各自的 evidence 包里；本轮只做「线上与分支一致」的包级核对，**不构成对这些页面渲染正确的独立复核**）；② 未用真实账号跑云端 CRUD（上一轮做过的「测试活动」真实链属 2026-10-20 那一版的证据）；③ 11 处 `docs/prototypes/ourtrail-app` 悬空引用仍待裁决；④ 仓库里 0 字节垃圾文件 `{const` 仍在线（随合并进了本分支），清理需另提提交。
+
+- 2026-10-27（**天气页 V3 按原型 1:1 落地：两屏宿主 + 四视图共享单元 + 个人计划 `ot_plans` + 7 套新门禁**）：**需要重新部署 trailApi 与 trailApiLab —— 本轮未部署**（`cloudfunctions/` 13 个文件已改，`node tools/sync-lab.js` 已跑、lab 副本 18 文件逐字节一致；旧服务端 schema 是 strict，会以 `INVALID_INPUT` 拒绝 `plan.*`，部署前首页「个人计划」只会显示"暂时读不到"）。设计输入与裁决：`docs/superpowers/specs/2026-10-27-weather-page-prototype-v3-implementation.md`（D1–D5 已闭合）；协同目录 `docs/ui-ux-redesign/agent-plan/weather-v3/`（README/state/contracts/tasks/handoffs）。
+
+  **做了什么**：`pages/weather-hub` 从"入口页"变成两屏宿主（屏 1 选源首页＝品牌行 + 地图选点/经纬度/GPX 三入口 + 继续上次 + 个人计划/常用地点/共用路线三 tab；屏 2 ＝共享详情单元，底栏常驻）。新增 `components/weather-detail`（四视图 tab + 吸顶 + 读数/图例/滑块 + 节点/帮助/计划弹层 + 六态）、`components/weather-plan-sheet`（编辑/分享两态）、`utils/weather-v3.js`（状态机）、`utils/weather-v3-hourly-svg.js`（42px/列五段图，`data:image/svg+xml`）、`utils/weather-v3-view.js`（装配纯函数）、`utils/weather-plans.js`（计划出口）。云层视图**整图复用**生产 `meteogram-svg.buildUnified`（用户 2026-10-27 指定：保留连续等值带，**不**做原型的 500m 格/hsl 灰阶格/斜线），未改 `meteogram-svg.js` / `cloud-field-svg.js`。后端新增 `domain/plans.js` + `Plan/PlanStop/PlanInput` + `plan.create/update/delete` + `canExecute` 分支（必须在 `requireActivity` 之前）+ `selectPlans`/`kind:'plans'` + `ot_plans` 三处注册。
+
+  **分享面按 §1.1.1 四条落地**（`tools/plans-test.js` 53）：被授权者 update/delete 均 FORBIDDEN（含 handler 层第二道）、取消分享后立即不可读、`visibility` 由 `sharedWith` 派生（客户端提交值忽略）、投影不给 `ownerId`、`sharedWith` 只给 owner（与 `routeView` 同一条界线，用于逐个取消），被授权者只有 `sharedBy` 显示名。复制＝读后 create，新 `ownerId` 是复制者。
+
+  **判据**：新增 `weather-v3-hourly-svg-test` 51、`weather-v3-structure-test` 79、`weather-v3-visual-test` 35、`plans-test` 53、`scenario-weather-v3-test` 49、`ab-weather-v3` 43、`mutate-weather-v3` 11（5 条变异 0 漏网：列宽 42→24、缺值当 0%、缺值补 0、逆序放行、possible→unknown）。A/B 与独立 oracle 对同一载荷逐项比对（选中时刻/窗口首尾/读数八项/计划日期条/云图读数行）零差异；唯一差异是天相六项收三卡（§5.6），并单独钉住"可见集合不变"。`smoke 262`（新增 §18 计划 39 条）、`lab-dryrun 165`、`weather-page 219`（旧页未动仍绿）。
+
+  **三处判据替换（逐条理由写在文件内）**：① `page2-gates` §0/§3/§4 的"hub 三张 `.card` + `.card` 单源"随 D2（允许无卡片皮肤）前提消失，改为"3 条资产行 + 3 个 tab + 无 `.card` + 留白由 `.wh-list` 单源（影子 20→24 一起动）+ GPX 入口唯一且非主行动"；② `m02-class-scope` 的 `.card-label` 单源从"恰好 5 页"改成"凡使用即查 + 下限 4"，并显式要求天气 Hub 退出该集合；③ `swx2 T2.1` 的 `var()` 定义从"只认 app.wxss page 块"扩到"app.wxss 或本文件"，并新增 T2.0 证明"谁都没定义的名字仍计 dead"。三处都是把判据改到**更贴近语义**，不是删断言换绿。
+
+  **未做 / UNVERIFIED**：真机 **NOT_RUN**（本轮无开发者工具自动化会话；结论上限 E1+E2，"渲染更好看"一律不成立），证据包 `docs/ui-ux-redesign/evidence/weather-v3-2026-10-27/README.md`；72h 逐时 SVG 解码耗时未测（>300ms 需降级 canvas）；深链页 `pages/weather` **仍是旧长页**（P1 允许暂留，P7 决定下线；风险 R3 的一半仍在：新老详情并存但不共享状态）；"从活动带入计划"未做；未跑全量 sweep，不编总数。设计系统例外登记在 `references/design-system.md` §17。
+
+  **全量 sweep（收尾补跑，117 个可无头套件，排除 3 个需开发者工具的 `e2e-ui*`）**：**114 套 exit 0，3 套 exit 1**，且这 3 条与天气线无因果关系——`cold-start-work 8/2`、`g2-platform-gate 14/1`（具名 slot 样本 0）、`trip2-gates 66/10`（`callFunction` 桩缺失）在 `git archive HEAD` 的干净副本上**同样的读数、同样的失败项**复现⇒登记为既有红，本轮未动。新门禁全部在 sweep 内且全绿（`weather-v3-*` 51/79/35、`plans` 53、`scenario-weather-v3` 49、`ab-weather-v3` 43、`mutate-weather-v3` 11）。断言总数不另立总账，一律以各脚本自打印 `passed=` 为准。
+
+### 2026-10-28 · 天气页永久停在「正在查询天气」：实例字段初始化放错了生命周期
+
+**现象**（用户真机截图，`pages/weather-hub` 屏 2）：只有地点名显示出来，`tabs` / `dayStrip` / `providerLabel` 全是初始值，加载态永不结束，也没有任何错误提示或可点的重试。
+
+**根因**：`components/weather-detail` 把实例字段（`ctx` / `_token` / `_routeToken` / `_nodeWeather` …）的初始化写在 `attached()` 里，而 `place` / `initial` 是父级在同一次 `setData` 中随 `screen:'detail'` 一起给出的 ⇒ 属性 observer 在 `attached` 之前就触发 `resetContext() → loadWeather()`，一次取数已经在途。`attached` 随后把 `this.ctx` 置空、`_token` 置零，回包到达时 `token !== this._token` 被当成过期丢弃；失败分支用同一个 token 判断，所以**连错误态都不会出现**。
+
+证据链（不靠猜）：`placeName` 只有两条赋值路径，`buildDetailView` 显然没跑（`providerLabel` 为空、`tabs` 为空）⇒ 一定是 `resetContext` 跑的；而 `resetContext` 紧接 `loadWeather()`，坐标必须有限（否则会落到 `emptyView('empty')` 而不是加载态）⇒ **请求发过、回调被弃**，不是参数缺失或装配失败。
+
+**修法**（`miniprogram/components/weather-detail/weather-detail.js`，2 处，与 observer/attached 的真实先后无关——`created` 早于两者，因此哪种顺序都不会再清掉在途状态）：
+1. 实例字段初始化搬到 `lifetimes.created()`；`attached()` 只留 `resetContext()` + `loadPlans()`。
+2. `loadWeather()` 的取数链补 `.catch()`：`.then(onOk, onErr)` 本身没有 catch，装配层（`buildDetailView` / `rebuild`）抛任何异常都会变成未处理的 rejection，页面同样永久停在加载态且不给一句话。现在落到 `emptyView('error', …)`，走既有的「重新查询」按钮；技术原文只进 `console.error`。
+
+**判据**：`tools/scenario-weather-v3-test.js` 49 → **53**。新增 §6b（装配层抛错必须落到错误态）与 §7（复现真机顺序：`created` → 属性 observer → `attached`，回包延迟 150 ms 晚于 attached，并带一条**有效性门**「取数必须在 attached 之前发出」——否则这条断言等于没测）。
+
+**牙齿**（两条都实测）：① 把 `attached()` 里的 `ctx = null` / `_token = 0` 加回去 ⇒ §7 两条红，读数正是现场形态 `{ready:false, loading:true, errorCode:''}`；② 把 catch 里的 `setData(...)` 换成 `void 0` ⇒ §6b 红 `{loading:true, code:''}`。还原后 53/0。
+
+**同批复跑**：`check.js` = ALL CHECKS PASSED（G10 命中 0）、`check-handlers.js` exit 0（死 handler 仍只有存量 `editor#onNumber`）、`weather-v3-structure 79`、`weather-v3-visual 35`、`weather-v3-hourly-svg 51`、`weather-hub-gpx 23`、`page2-gates 119` 全绿。
+
+**UNVERIFIED**：真机 / 开发者工具**未跑**（未获授权重开共享会话），结论上限 **E1 + E2** —— 与 2026-10-27 V3 首轮一致（那轮真机也是 NOT_RUN，这条 bug 就是随首轮进来的，首轮没被真机暴露）。**`cloudfunctions/` 零改动 ⇒ 不需要重新部署 trailApi**。
+
+**追加（同日）· 重试进度提示**（用户要求「加上重试进度提示」）：三次查询（首查 + 两次重试，间隔 1.2s / 2.6s，单次云端超时 20s）期间，加载面板原本是所有字都一模一样的一句静态说明，最长约 65s 没有任何进展；旧长页 `pages/weather` 早就有「网络不太稳，正在重试（第 N 次）…」。做法（**零新增 token / 零新增类 / 零新增色**）：
+- `utils/weather-v3-view.js`：`loadingView(retryNote)` 与 `emptyView` 都带上 `retryNote`——它**与加载态同进同出**，不另开一条写它的路径；空态/错误态一律清空，免得数据已经到齐、屏上还挂着一句「正在重试」。
+- `components/weather-detail`：重试分支 `setData(V.loadingView('网络不太稳，正在重试（第 N 次尝试，共 3 次）…'))`，N = **即将发出的第几次查询**（写「次尝试」不写「次重试」，否则「共 3 次」会被读成三次重试）；结果到手（含缓存兜底）时清零。
+- `weather-detail.wxml`：加载块加一行 `<text wx:if="{{retryNote}}" class="wv3-status-text">{{retryNote}}</text>`，复用既有 `.wv3-status-text`（`display:block`，天然换行），未新增 WXSS。
+
+**判据**：`tools/scenario-weather-v3-test.js` 53 → **59**：重试窗口内进度为「第 2 次尝试 / 共 3 次」、第二次失败后推进到「第 3 次」、三次都失败后 `retryNote` 随加载态一起清空、以及"失败一次后重试成功"用例（带有效性门：进度确实出现过，否则"进度消失"可能本来就没出现）。
+
+**牙齿**（实测）：把 `applyResult` 里的清零换成 `void 0` ⇒ 红，读数 `{note:'网络不太稳，正在重试（第 2 次尝试，共 3 次）…', ready:true, loading:false}`；还原后 59/0。`check.js` / `check-handlers.js` 与 `weather-v3-structure 79`、`weather-v3-visual 35`、`weather-v3-hourly-svg 51`、`weather-hub-gpx 23`、`page2-gates 119` 同批全绿。
+
+**真机**：仍 **NOT_RUN**（同上，未获授权重开共享开发者工具会话），结论上限 E1 + E2——新句子在 390 宽下的排版（第三行是否与上一行挤在一起）属未验证项。`cloudfunctions/` 零改动 ⇒ 不需要重新部署。
+
+### 2026-10-28 · 逐时预报空图 + 24/48/72 云层剖面不一致（用户真机截图）
+
+**现象**（用户三张真机截图）：① 逐时预报 tab 里表头、日期条、读数行、工具条、左轴列、时刻标签、图例、滑块都在，**只有图身是一块约 310 CSS px 的空白**；② 同一节点切 24h 与 48h，云层剖面的纵轴范围、云带密度、读数行全变（24h：3,000–4,500 m、云只贴右缘、写「此点在剖面下方 3,000 m」；48h：0–4,000 m、满屏云带、写「窗外上方还有云带」/「此点 0 m」）。
+
+**② 根因（可证，已修）**：`weather-v3-view.buildCloud` 把 `hours: horizon` 传给 `weather-cloud-field.buildCloudFieldRange`，而 `meteogram-svg` 又拿**结果数组长度**当 `planProfile` 的 `hours` ⇒ **显示窗由当前选中的 24/48/72 视图决定**。24h 只取前 24 小时数据，那一小段恰好只有 4,300 m 一层云，规划器遂把窗收敛到 3,000–4,500 并如实报「点在窗外下方」；48h 纳入了后面更厚的云层与 700/1,500 m 的云，窗扩到 0–4,000。**两个视图画的是同一时刻、同一地点，却因为窗口规划的范围不同而长成两张图**——这正是铁律 27①「显示窗属于显示层，不能变成判读输入」在**装配层**漏掉的同一条。
+
+**② 修法**（不改判读、不改阈值、不改 `planProfile`）：`weather-v3-view.js:113` 新增 `PLAN_HORIZON = 72`，`buildCloud` 用它单独构造一份**只给显示窗规划用**的云场（`planField`，`:121`）并与渲染用的 `field` 一起传给 `buildUnified`（`:130`）；`meteogram-svg.js:155-161` 改为 `planCf = opts.planField || cf`，规划用 `planCf.times.length` 的采样器，**渲染网格仍由 `horizon` 与 `profile.lo/hi` 生成**、`cloud.covered` 仍是渲染场（`inferState`/`denseSpanAt` 的输入一个字没动）。没有 `planField` 的老调用方（旧 `pages/weather`）走 `cf` 分支，行为逐字节不变。
+
+**② 实测（探针，非估计）**：同一载荷下 24/48/72 三视图现在都给出窗 **250–4250**、刻度 **1000/2000/3000/4000**、图例「此点在剖面下方 250 m」（点高程 0、实测覆盖自 700 m 起）——三项逐字相同。
+
+**① 根因（IDE 模拟器上二分定位，已修）**：第一版判断（"font-family / `hsl()` / 根节点 aria 里有一个让解码器解不出来"）**是错的，本轮用探针推翻并收回**。定位链：
+1. 用户授权重开共享会话后，用**生产数据**（峨眉山 29.5197/103.3317、3,099 m、Open-Meteo 实取）在模拟器上**复现同一块空白** —— 表头/日期条/读数行/左轴/时刻标签都在，只有 `<image>` 区域空。
+2. 把**最小 SVG**（一个 `<rect>`）注入同一个 `<image>` ⇒ 正常出墨；把生产 `hourlySrc` 原样注入 ⇒ 空白。**解码器本身没问题，是这份 SVG 本身非法。**
+3. 变体矩阵（`probe/bisect/`）：去渐变、去全部 `<text>`、去 `<defs>` 都仍空白；**把 `<g …>` 开闭标签整体去掉后立刻出墨** ⇒ 元凶在 `<g>` 上。
+4. 根因：`'<g data-seg="temp"">'` —— 开标签**多一个引号**（`data-seg="temp""`）。XML 非法 ⇒ 严格解析器丢弃整份文档 ⇒ 整块空白。而表头与刻度是 **DOM**（不是这张 SVG），照常渲染，所以现场看起来像"渲染没生效"而不是"图坏了"。
+5. 这个多余引号是**我上一轮删 `font-family` 时写坏的**（把 ` font-family="' + FONT + '">` 替换成了 `">`）。用户最初报障时的文件是**合法 XML**（原写法带 `font-family`），所以**手机那次空白的确切原因仍未证**：考古探针在模拟器上把 `font-family`、`hsl()`、`role`+`aria-label` 单独加回以及三者一起加回（`probe2/p4-all.png`）**都能正常出墨** ⇒ 手机解码器与模拟器可能不同，但这台机器上无法证。
+
+**① 修法**：
+- **修正引号**（4 处 `<g>`，`weather-v3-hourly-svg.js:180/:190/:209/:223`）—— 这是本轮真正的功能性修复。
+- 保留上一轮的特性集收窄，但**它在本机是等价的（p4-all 可证），不是修复证据**：`hsl()` 换等值 hex（`shadeHex`，`:61`）、`text()` 只留 `font-size`/`fill`/`text-anchor`、根节点只留 `xmlns`+尺寸（`:238`）。保留理由只有一个——手机端不可在本机证伪，向"三张真机通过的图"收敛是零代价的降风险。
+- 无障碍语义放在**宿主** `<image aria-label>`（`weather-detail.wxml:142`）：栅格化后的 SVG 内部对读屏不可达，这与解码无关，是正确位置。
+- **data URI 收紧到 RFC 3986**：`encodeURIComponent` 不转义 `!'()*`，统一由 `weather-v3-view.toUri`（`:26`）一处编码并逐字转义，`components/weather-detail` 的 `uri()` 委托过来，全仓只有一个 SVG 编码器。
+- 顺带修掉一个真 bug：`weather-v3.js:390` 日照弧 SVG **缺 `xmlns`**（同批其他图都有）。
+
+**判据**：`tools/weather-v3-hourly-svg-test.js` **53 → 70**。§4 新增 **XML 良构门**：开标签属性必须恰好是 `name="value"` 序列（`""`、漏引号一律红）——本轮的事故形态就是它；同段另断言全文件无 `font-family`/`hsl(`、根节点不带 `role`/`aria-label`、色值闭集、≥20 个 `<stop>` 全 hex。§4b 直测 `shadeHex`。§6 数据 URI 严格转义（前缀正确、无裸 `!'()*`、无裸 `#"`、`decodeURIComponent` 逐字还原）。§7 **跨视图一致性**：24/48/72 三档 `lo`/`hi`/刻度/`elevShown`/`rangeLabel`/`legendElev` 逐项相同，并带两条阳性对照（`planOf(24)` 与 `planOf(72)` 的输入场必须不同；24h 下点必须在窗外下方且 Δ≥2,000 m）。
+
+**牙齿（三条都实测，逐条还原后 70/0）**：① 把 `planField` 的 `hours: PLAN_HORIZON` 改回 `hours: horizon` ⇒ **69/4 红**，`lo/hi` 三档 = `[[3000,4500],[250,4250],[250,4250]]`、刻度退成两套，**与截图里 24h 的 3,000–4,500 完全一致**；② 去掉 `toUri` 的 `!'()*` 逐字转义 ⇒ **69/1 红**，读数 `["(",")","(",")","(",")"]`；③ 把那一个多余引号加回 `data-seg="temp"` ⇒ **69/1 红**，命中 `<g data-seg="temp"">`（这条正是本轮真机事故的机器判据）。
+
+**同批复跑**：`check.js` = `ALL CHECKS PASSED`（G3/G6/G7/G8/G11 命中 0，G10 作用域 44 单元 / 3512 class token / 139 app.wxss 类名）、`check-handlers.js` exit 0（死 handler 仍只有存量 `editor#onNumber`）、`weather-v3-hourly-svg 70`、`scenario-weather-v3 59`、`weather-v3-structure 79`、`weather-v3-visual 35`、`mutate-weather-v3 11`、`meteogram-svg 25`、`meteogram-multiday 49`、`meteogram-readability 86`、`cloud-position 62`、`cloud-field-geometry 206`、`weather-page 219`、`ab-weather-v3 43` 全绿（后两套专盯"旧页行为不变"）。
+
+**真机 VERIFIED（IDE 模拟器 390×844 等效视口，用户授权 `close --project` → `open` 重编译，未 `quit` IDE）**：驱动把真实地点（峨眉山 29.5197/103.3317、3,099 m）交给 `pages/weather-hub` 的 `goPoint`，走生产取数链（Open-Meteo 实回），然后：
+- **逐时预报出墨**：温度线+逐时标号、降水柱+概率、风速/阵风+风向、高/中/低云连续色带全部可见（`hourly-full-24.png`，24 列 / 1008×310 px，按元素 offset 定位滚动，整张图入镜）；72h 同样正常（`hourly-full-72.png`，72 列 / 3024×310 px）。
+- **图元清点**（设备上真实 SVG 解码落盘 `probe2/device-hourly-24.svg`，27,282 B）：temp 段 2 条 path（温度 + 体感）、precip 段 24 根 rect + 48 条 text、wind 段 2 条 path + 48 条 text、高/中/低云各 1 条连续色带 rect + 24 条 text；`hsl(` 0 处、`font-family` 0 处、多余引号 0 处。
+- **24/48/72 同一把尺**：三档读 DOM 文本 `range=剖面 0–4,000 m`、`legend=虚线 = 此点海拔` 逐字相同（`cloud-24/48/72.png`）；解码三档真实 SVG（`probe2/device-cloud-*.svg`）后 Y 轴刻度也逐字相同 `0 / 1,000 / 2,000 / 3,000 / 4,000`，三档都写 `此点 3,099 m`，差异只落在数据图元与时间标签（24h 逐时、48/72h 六小时一格）——同一把尺、不同的数据。
+- **污染自证**：三档 SVG 两两不同（`distinct=3`），说明 `period` 真的生效、不是复用同一张图后读到同一读数。
+- **日月天相**：日照弧渲染，07:08 / 18:33 / 白昼约 11 小时 25 分（`sky-arc.png`）——顺带证明 `xmlns` 修复有效。
+- 门槛链（`dayStrip` 非空、`hourlySrc` 非空、`cloud.src` 存在）在截图前先断言，避免"元素不在 DOM 里读数是假的"。证据包 `docs/ui-ux-redesign/evidence/weather-v3-2026-10-28/`（含 `readings.json`、`probe/bisect/`、`probe2/` 二分过程）。
+
+**未证 / 留待（不许读成"手机上已修好"）**：① **物理手机**未验证——本机只能驱动 IDE 模拟器；手机要看到这一版需上传开发版（进审核）或 `cli preview` 扫码，两者都未执行。② **用户最初那次手机空白的确切原因仍未证**：考古探针显示 `font-family`/`hsl()`/`role+aria` 在模拟器上都不致命，故不能宣称"就是它们"。③ 逐时图 72h 的解码耗时未测。`cloudfunctions/` 零改动 ⇒ 不需要重新部署 trailApi。
+
+### 2026-10-28 · 云层剖面抬到 300 hPa / 9,750 m（高原与雪山场景）
+
+**起因**（用户两问）：「云层的高度上限再放高一点…5000~8000 都是有意义的」→「为什么一定要设置云层的上限呢？返回的天气数据不支持吗？」。第二问把第一轮的一句错话逼出来并当场收回：**450 hPa 不是数据墙**。实测 Open-Meteo 对 300 hPa（以及一直低到 50 hPa ≈ 20.7 km）的 `cloud_cover_*hPa` 与 `geopotential_height_*hPa` 都返回有限值；天花板一直是**我们自己的请求层清单**，不是供应商的上限。本轮按用户裁定「加 300 hPa 并把天花板抬到 9750」。
+
+**四道天花板，逐道处理**（它们是四件事，只改一处会让上下层互相打架）：
+1. **请求层清单**（provider）：`cloudfunctions/trailApi/lib/weather.js:28` 新增 `PROFILE_CLOUD_LEVELS = CLOUD_LEVELS.concat([400, 350, 300])`，`buildCloudLevels` 改用它。**`CLOUD_LEVELS` 与 `cloudBandAt` 一行未动**——业务成带判据仍停在 450 hPa（≈6,700 m），抬显示天花板不顺带改天相结论（铁律 28）。
+2. **适配器网格**：`miniprogram/utils/weather-cloud-field.js:21` `ALT_MAX 7000→9750`（250 m 整数格点；实测中国境内 300 hPa 高 8,498–9,765 m）。`covered` 上界夹到 `ALT_MAX`；`resampleColumn` 在**实测范围之外仍置 0**，不外插。
+3. **判读范围**：`miniprogram/utils/cloud-field-svg.js:278` `SCAN_RANGE { MIN: 0, MAX: 9750 }` 并**导出**（`:837`），`inferState`/`denseSpanAt` 按引用读；`miniprogram/utils/outdoor-intelligence.js:197-205` 的 `peakCover` 改扫 `CFF.SCAN_RANGE.MIN..MAX`（250 m 步长）——否则 8,000 m 以上的卷云会「图上画着云带、卡片说晴空」（铁律 32⑥/33⑤ 那一类两处互相打脸）。
+4. **显示窗**：`cloud-field-svg.js:403` `HI_CEIL 9750`（与 `SCAN_RANGE` 同源注释）；`:401` `MAX_SPAN 4000→6000`。**⚠ 本节已被同日「追加」覆盖**：`MAX_SPAN` 最终取 `HI_CEIL = 9,750`，`窗外上方还有云带` 只剩 >9,750 一种成因（见下方「同日追加：决定 A」）。以下保留为当时的推理原文。跨度上限是**可读性决策，不是数据边界**：真实合并后的云带 151–5,201 m，6,000 框得下；故意不取 8,000——否则常年一条高空卷云就会把每一天的窗都撑到 8 km，把 2 km 以下的低层细节压扁。`ALT0/ALT1 = 2000/6000` 只剩「无实测数据时的兜底窗」一个身份。「点恰好落在窗外上方」时**只向上按 250 m 量化平移**窗口（`res.lo/res.hi` 已定之后），不去牺牲云带内容迁就低点。
+
+**新增判据**（都写进既有套件，不另开框架）：
+- `cloud-field-geometry` **+7**：7,900 m 此点 + 高空云层 ⇒ 点与云一起进窗、刻度出现 8,000；~~低海拔此点 + 高空卷云 ⇒ 不许把窗撑到 8,000 且如实报「窗外有云带」~~（**该条已由同日决定 A 反转**：卷云现在必须进窗，见下方追加）；判读真的爬到 8,000（6,000 + 8,200–8,600 ⇒ 云在上方，不是晴空）；珠峰顶 8,849 + 9,300–9,600 卷云 ⇒ 窗框得住、读成「云在上方」且天花板不越 9,750；跨度上限夹住时整窗平移（跨度不变、低端如实裁切）；两条**变异自证**：`HI_CEIL 9,750→8,000` 把珠峰点挤出窗外、`MAX_SPAN 6,000→8,000` 把低海拔的窗撑满——两道闸都承重。
+- `cloud-position` **+2**：8,849 + 9,300–9,600 ⇒ 云在上方（300 hPa 档真的参与判读）；变异 `SCAN_RANGE.MAX 9,750→8,000` 让同一份数据被读成「晴空」⇒ 上限是按引用读的、在承重。
+- `outdoor-intelligence` **+2**：9,300–9,600 m 的 20% 卷云 ⇒ 不印 CLEAR；**阳性对照**同一天没有高层卷云 ⇒ 照旧 CLEAR（不是在无条件取消晴空）。
+- `smoke` **+2**（§12b）：`buildCloudLevels` 含 300 hPa 层；9,700 m 的成层云**不**产生 `cloudBandAt` 带（业务判据仍停在 450 hPa）。
+- `weather-cloud-field`：网格用例 0–7,000/29 点 → **0–9,750/40 点**。
+
+**五处夹具重建（判据不动，只换夹具）**：上限 9,750 + `MAX_SPAN` 6,000 之后，「点在窗外」不再能靠随便给个 6,200 m 的点造出来——窗会为它上移。
+- `weather-page-test` §11b-H 与 `meteogram-readability`「旗标没说的就不许印」：点改 **10,200**（高于 `HI_CEIL`，物理上确实够不着）。
+- `meteogram-multiday`：below 用例改为「500 m 的点 vs 7,200 m 起的云带（covered 6,500–9,600）」——跨度超过 6,000 才真的框不下；above 用例改 10,200。
+- `weather-v3-hourly-svg` §7：云场改成 700/1,500/3,000/4,300/9,700 五层、day1 只有 9,700 m 有云。旧的「4,300 m 单层」在 `MAX_SPAN` 6,000 下 24h 与 72h 会规划出同一个窗，阳性对照（两档输入必须不同）就失效了。
+- `cloud-field-svg` 五档灰阶：格聂 mock 峰值 90.8%，窗从 1,500–5,500 变宽到 1,500–7,000 后，90% 那条**细缝的像素面积**落到 `AREA_MIN` 之下 ⇒ 第五档不再有填充。这是**夹具贴边，不是渲染丢了档**（同一份夹具在 HEAD 干净副本上是 29/0，已证过归属）。改成合成高斯场（0–9,750/250、峰值 100%、两侧衰减到 <10%），调色板与断言名一个字不动。**顺带如实记录一个视觉后果**：贴着 90% 峰值的场，窗变宽后最深那档可能消失（层次感变少）——真机未核验是否可感知。
+
+**同批复跑（读数一律取脚本自打印 passed=N）**：`smoke 264`、`weather-cloud-field 31`、`cloud-field-svg 29`、`cloud-field-geometry 214`、`cloud-position 64`、`outdoor-intelligence 53`、`outdoor-intelligence-ui 54`、`oi-claim-gate 26`、`cloud-layer-facts 45`、`outdoor-cloud-sea 32`、`meteogram-draw 30`、`meteogram-svg 25`、`meteogram-multiday 49`、`meteogram-readability 86`、`weather-page 219`、`weather-v3-hourly-svg 70`、`weather-v3-structure 79`、`weather-v3-visual 35`、`scenario-weather-v3 59`、`weather-v2 103`、`weather-v2-visual-audit 43`、`elevation-semantics 34`、`sky 280`、`weather-resilience 45`、`scenario-api 29`、`spatial 22`、`terrain 15`、`ab-weather-v3 43`、`mutate-weather-v3 11` 全绿；`check.js` = `ALL CHECKS PASSED`（G10 命中 0 / 作用域 44 单元 / 3,512 class token / 139 个 `app.wxss` 类名）、`check-handlers.js` exit 0（死 handler 仍只有存量 `editor#onNumber`）。
+
+**未证 / 留待**：① ~~**真机 NOT_RUN**——本轮未获授权重开共享开发者工具会话，且真实数据要看到新的高层云必须先部署 trailApi；因此「9,750 的轴在 390 宽下刻度文字不重叠」目前只有 375/390/414 的 Node 几何判据，**没有像素证据**（结论上限 E1 + E2）。~~（**同日追加已补**：一次授权重编译 + 注入 9 层载荷后，390 宽模拟器的像素与 SVG 读数都拿到了；**物理真机仍 NOT_RUN**，375/414 仍只有 Node 几何判据。）② 老 canvas 路径 `components/meteogram/layout.js` 的 `BAND_ALT_MAX = 6000` 未动——它吃的是业务 `cloudBandAt`（≤450 hPa），与剖面天花板无关。③ 剖面第五档在高对比场景下的可见性（见上）未做真机核验。④ **`cloudfunctions/` 已改 ⇒ 需要重新部署 trailApi**（`trailApiLab` 没有 `lib/weather.js` 副本，不需要 `sync-lab`）。
+
+### 2026-10-28 · 同日追加：决定 A —— 高云必须进窗（`MAX_SPAN` 语义改变）
+
+**触发**：用户给了 390 宽真机截图（72h 云层剖面 `剖面 0–5,250 m`、点 0 m、左上 `▲ 窗外上方还有云带`），问「这个展示效果还是有问题呀？」，并按 `/grill-me` 逐条裁定，**四问全选 A**。
+
+**根因（Node 复现，不是猜测）**：72h 剖面里低云 1,000–4,300 m + 高层 8,500–8,750 m ⇒ 旧 `MAX_SPAN 6000` 下窗是 **0–4,750 m**、`clippedAbove=true`，所有等值环最高点 4,376 m —— **高层云一条都没画出来**，左上那行边注是在替一张错的图打圆场。上限取 4,000 还是 6,000，都只是换一个裁切高度，没换规则。
+
+**四条决定**：
+1. **高云必须进窗**：`MAX_SPAN` 从「可读性上限」改语义为「必须装下实测全部云段」，上限取 `HI_CEIL = 9,750`；`窗外上方还有云带` 此后只能由 **>9,750 m** 的云产生。接受的代价：一条高空卷云会把整张图拉长——**包括 24h 与 48h**（`PLAN_HORIZON` 固定 72，规划窗不随时长裁云）。
+2. **线性轴、空白如实、行高仍是 190 px**（≈51 m/px，250 m 的薄层≈5 px）。断轴 / 迷你条 / 加高行全部否决——断轴会让刻度说谎，加高行会把下面几张卡挤出首屏。
+3. **两页同时放宽**：legacy `pages/weather` 与 V3 共用同一份 `planProfile`，**不新增 `maxSpan` 参数**分叉。
+4. **验证 = Node 门 + 一次授权重编译 + 注入载荷**（截图 + 读数），结论记 E3；物理真机 NOT_RUN。
+
+**实现**：`cloud-field-svg.js` `PROFILE.MAX_SPAN 6000→9750`，注释改写为「4,000/6,000 两代上限都是可读性取舍，代价是**静默裁云**」；文件头补一句前向指针：`MAX_SPAN` 抬到轴宽后「装不下」在 `[LO_FLOOR, HI_CEIL]` 内**已不可达**，`clippedAbove/Below` 与 `pointOutside` 三条分支保留为兜底，仍由影子变异钉住。**旗标与边注一条没删**——它们从「生产常态」降级为「将来放宽网格时的出口」，判据不许跟着松。
+另外修掉一个本轮探针挖出的真缺陷：`planProfile` 的锚点里，量化后 `lo === hi` 的退化云段算出的墨量恒为 0，一份真实薄层可能因此**输掉窗的竞争**。加半格补偿（`±GRID_M/2`）；对拍 600 个窗口只动 6 个、全部落在该场景，其余 594 个逐字节相同。
+
+**判据（重写，不删除；读数取脚本自打印 `passed=N`）**：
+- `cloud-field-geometry` **214→215**：跨度上限的断言从「≤ 6,000」改成「上限就是物理轴宽」并加 `MAX_SPAN === HI_CEIL - LO_FLOOR`；原「超出上限时保最强那层、其余报窗外」换成 **5,400 m 三段高低差必须同框**；7,900 m 此点用例改为「含进窗且不需要报裁切」；卷云用例**反转**（原来要求「不许撑到 8,000 并如实报窗外」，现在要求「必须进窗、不报窗外」）并配**阳性对照**（同一份数据抽掉 8,000 m 卷云 ⇒ 窗收回低云附近，不是无条件满窗）；「被跨度夹住」改成「点高于全部云层但仍在轴内 ⇒ 自动含进来」；`MAX_SPAN` 变异从 `4000→1500` 换成 **`9750→6000`**（卷云重新被裁掉 ⇒ 裁切不可达正是这个常量换来的）。
+- `meteogram-readability` **86→87**：低云 + 6,000 m 高层同框且图上不印「窗外」；**变异**（影子把 `MAX_SPAN` 压回 6,000）⇒ 同一份数据重新印出「窗外上方还有云带」，证明边注通路仍在、不是被删掉。
+- `meteogram-multiday` **49**（2 条重写）：500 m 的点 + 9 km 以上高层同框、参考线画在真实高度、不印「窗外」。
+- `weather-v3-hourly-svg` **70**（2 条重写）：卷云挪到第 3 天 ⇒ **24h 规划窗够不到 9,700、72h 够得到**，两档输入必须不同的阳性对照继续成立。第一次改这条时我按估计写了 `p24.hi <= 2500`，实跑是 `3000`（低云在 1,500 m 处 82%，按 `DECK_MIN 25` 在 ~2,550 m 交叉）⇒ 改成如实断言「够不到 9,700」而不是猜一个数。
+- `cloud-field-svg` **29**：只改注释（窗变宽后第二层云也会被框进来）。
+
+**同批复跑**：`cloud-field-geometry 215`、`meteogram-readability 87`、`meteogram-multiday 49`、`weather-v3-hourly-svg 70`、`cloud-field-svg 29`、`cloud-position 64`、`weather-page 219`、`weather-v2 103`、`weather-v2-visual-audit 43`、`weather-v3-structure 79`、`weather-v3-visual 35`、`scenario-weather-v3 59`、`weather-cloud-field 31`、`cloud-layer-facts 45`、`outdoor-intelligence 53`、`outdoor-intelligence-ui 54`、`outdoor-cloud-sea 32`、`oi-claim-gate 26`、`elevation-semantics 34`、`weather-resilience 45`、`smoke 264`、`lab-dryrun 165`、`plans 53`、`journey-graph 15` 全绿；`check.js` = `ALL CHECKS PASSED`、`check-handlers.js` 只余存量 `editor#onNumber`。
+
+**模拟器回读（一次授权重编译，未 `quit`；证据 `docs/ui-ux-redesign/evidence/weather-window-ceiling-2026-10-28/`）**：390×844 模拟器、端口 9421、`applyResult` 注入 7 天 × 9 层生产形状载荷（925…300 hPa，含 8,900 m 55% 与 9,700 m 45%）。驱动 **8/8 通过**：三档（24/48/72）窗**逐字相同** `剖面 750–9,750 m`；两档边注 `窗外上方/下方` 全为 false；灰阶带 4 条；此点在窗内；三档 SVG 长度 63,207 / 69,939 / 93,866（互不相同＝period 真的生效的污染自证）。**bundle 新鲜度由行为自证**：同一份载荷在旧 bundle 下必然出 `…–6,000 m` + 边注。SVG 原件复核：绘图区 `y 132..322`、刻度 1,000–9,000 相邻 **21.1 px**、顶刻度 `9,000` 距上沿 18.3 px 未被裁、`剖面` 标签与顶刻度水平分离。**注入前真实数据是 `剖面 0–5,500 m`**（云函数还没部署新档位）⇒ 真实数据外观仍 UNVERIFIED。
+
+**未证 / 留待**：① **物理真机 NOT_RUN**（只驱动了模拟器）。② 375 / 414 宽度仍只有 Node 几何判据。③ 真实数据要看到 8,000 m 以上卷云，**必须先部署 trailApi**（本批 `cloudfunctions/` 的改动仍是上节的 `PROFILE_CLOUD_LEVELS`，**需要重新部署 trailApi**）。④ 一条高空卷云会把 24h/48h 的图一起拉长到 9,750——这是决定 1 明确接受的代价，真机上是否可接受留用户裁决。
+
+### 2026-10-28 · 天气页 V3 UI 保真修正：品牌固定条（plain + 返回）+ tabs 吸顶 + 5 类天气图标
+
+**起因**：用户对照 `docs/prototypes/ourtrail-explore-v3`（设计基线）指出天气页仍有明显观感差距，并明确「云层剖面这块当前实现的确实比原型好」——所以本轮只改**没有被生产实现超越**的部分：品牌行、四视图 tab 的吸顶、日期条/读数/沿途停靠的天气图形。`/grill-me` 逐题裁定 D6–D10，**全部选 A**。
+
+**D6/D7（图标）**：日期条读云端 daily `code`（`buildCloudDays` → `days[].code`，链路 `outDays` 一直在，**没有云函数改动**）；读数与沿途停靠点各按当小时 `code` 出图标；**永不从中文标签反推**（铁律 19）。五类封闭：`sun` 0/1、`cloud` 2/3/45/48、`rain` 51–67 & 80–82、`snow` 71–77 & 85/86、`storm` 95/96/99；冻雨归 rain、冻雾归 cloud。`format.weatherIcon` 与 `weatherPhrase` 并排但**各自成立**：`weatherPhrase(1).label === '多云'` 而图标是 `sun`，别为"对齐"改另一半。缺码失败关闭（`null`/`undefined`/空串/纯空白/非数字 → `''`）——`Number(null)===0`、`Number('')===0` 会把缺码画成晴天。计划日期条（D1/D2…）**不带图标**（它是行程节奏，不是该日天气）。
+
+**D8/D9/D10（品牌固定条）**：`components/brand-header` 新增 `plain` 变体（白底 `--white`、无 border-bottom、词标 `--ink`）与 `back` 布尔（44×44 命中区、`bind:back`），天气两屏（`weather-hub` 屏 1、`weather-detail`）共用同一组件；home/me/notices 一分未动。屏 1 是根屏、**不传 `back`**；屏 2 的返回只在能返回时出现（`back="{{mode === 'deep' || canBack}}"`），复用既有 `onBack → triggerEvent('screenback')`。**`back` 为真时隐藏 trailMark**：两者都在最左，按 20px 网格算只有返回时词标在 72px，再塞一个会推到 100px（再 +28 且挤掉点击区）；原型结构也是「返回 + 词标」。这是与原 D10 描述「词标右移 ~28px」的**可见偏差**，如实登记在 `design-system.md`。
+
+**吸顶偏移：几何变量而非字面量**。`brand-header` 的 `measure()` 算完 `layoutFor()` 后 `triggerEvent('ready')`，`weather-detail` 存 `data.chromeHeight`（首帧 64），wxml 行内 `--wv3-chrome:{{chromeHeight}}px`，样式表只写 `top: var(--wv3-chrome)`。中间踩到两道既有门并都按语义解决，没有放宽断言：
+- `check.js` **G8** 要求 sticky 的**同一选择器**带非 auto 偏移 ⇒ 偏移必须真的写出来；
+- `swx2` **T2.1/T2.4** 要求每个 `var()` 在本文件或 `app.wxss` 有定义、且**不许**用 fallback 给死 token 打掩体 ⇒ 缺省值 `--wv3-chrome: 64px` 必须声明在 `.weather-v3` 根节点，`top` 里不能写 `var(--wv3-chrome, 0px)`。
+- 与皮肤表的边界：`--wv3-chrome` 是**几何**不是颜色，不进 §6.1 的 10 个 `--w-*`；`weather-v3-visual-test` 另立 `GEOMETRY` 表（1 项）并要求它真的被 `var()` 消费，防止变成"只定义不读"的第二真值源。
+
+**判据（新增全在既有四套里，读数取脚本自打印 `passed=`）**：
+- `weather-v3-structure-test` **79→98**：§2b「两屏同一身份 / 屏 1 无返回 / 屏 2 条件返回 / ready→chromeHeight→行内变量→样式表消费」六条；§2c「5 类白名单逐字相等 / 22 个码的映射表 / 7 种缺值失败关闭 / 码 1 与中文标签故意不等 / `PATHS` 真有 snow+storm+info+down / 日期条 icon 由 code 出 / 计划条无 icon / 读数 storm」八条。旧断言「吸顶带 `top:0`」按新事实重写为「写了偏移、但值只能是 `var(--wv3-chrome)`」。
+- `weather-v3-visual-test` **35→37**：`GEOMETRY` 闭合 + 消费性；返回键从已删除的 `.wv3-back`（38px）换成 `.brand-header__back`（44px）并移出次表。
+- `scenario-weather-v3` **59**、`weather-v3-hourly-svg` **70**、`ab-weather-v3` **43**、`mutate-weather-v3` **11**（5 条变异 0 漏网）不变且全绿；`weather-page 219`、`weather-v2 103`、`weather-resilience 45`、`weather-hub-gpx 23`、`nav-chrome 15`、`header-layout 38`、`swx1 45`、`swx2 111`、`t4-e08 41`、`m02 65`、`page2 119`、`b4-pad-final-value 33`、`ui-consistency 19`、`entry-layout 41`、`journey-graph 15`、`scenario-me 145`、`scenario-notices 105` 全绿。
+- 静态门：`check.js` = `ALL CHECKS PASSED`（G8/G10/G11 命中 0）、`check-handlers.js` exit 0（死 handler 仍只有存量 `editor#onNumber`）。
+- **牙齿自证（两条注入变异，各跑一次后按字节还原）**：把屏 2 的 `back` 改成恒真 ⇒ §2b 红；把 `pointDayStrip` 的 icon 改成空串 ⇒ §2c 红（同时 §4 的 code/icon 断言红）。还原后 `cmp` 与备份**逐字节相同**，套件回到 98/0。
+
+**登记为"不做"的偏差**：① 读数 31px 图标沿用 `PATHS` 的 `stroke-width:1.75`（原型 1.5）——`icon.js` 按 PATHS/ART 两档固定线宽，为单个尺寸开第三档不值得；② 原型的速度/时段是自绘 range input，小程序只有原生 `<slider>`，轨道与拇指由平台决定，不做像素级追杀；③ `读图说明`/`如何判断` 仍是绿色 11px（原型灰色 10px）——这条不在 D1–D10 的裁定范围内，本轮不动。
+
+**未证 / 留待（实现完成时）**：真机 NOT_RUN（当时未获授权重开共享开发者工具会话）⇒ 当时结论上限 **E1 + E2**；`cli preview` / 上传也未执行。`cloudfunctions/` **零改动 ⇒ 不需要重新部署**。未 commit / 未 push。
+
+**真机核验（2026-10-28 同日，用户授权「你来进行真机验证吧」）**：IDE 模拟器 iPhone 12/13 (Pro) 390×844、基础库 3.8.12、服务端口 33278、自动化 9425（`close --project` → `open` 重编译，未 `quit`）。驱动 `%LOCALAPPDATA%\Temp\opencode\mp-auto\v3-fidelity-drive.js` **41 条断言 0 失败**，证据 `docs/ui-ux-redesign/evidence/weather-v3-fidelity-2026-10-28/`（README + readings.json + 6 张截图）：
+- **bundle 新鲜度自证**（三处只存在于本轮代码）：屏 1 品牌条计算 `background-color: rgb(255,255,255)`（旧默认 `--paper` #F5F5F0）、屏 2 `.brand-header__back` 计算 **44×44**、`.wv3-tabs` 计算 `top: 87px` = `brand-header` 实测高度（47 状态栏 + 40 导航）。
+- 屏 1：白底固定条 + 词标 `rgb(32,42,38)`、**无返回键**、有 mark、三个 home tab；屏 2：返回键 44×44、plain 白底、返回态无 mark。
+- **吸顶**：`position: sticky`、计算 `top=87px`=实测 `chromeHeight`；用对照元素（日期卡文档坐标 169.195 滚动前后不变）证明 `element.offset()` 是**文档坐标**，tabs 280.195 →（滚 200）**287=87+200** → 滚到底 522 时 609，随后滚动截图里品牌条与 tabs 均在顶部、内容在其下滚过。
+- **真实 Open-Meteo 数据**（无注入）：5 日卡 `code` 51/53… 全部 `rain` 图标、读数 13:00 `rain`「毛毛雨」；DOM 图标数 5=5、读数图标 1↔`readout.icon`。
+- **5 类矩阵**：生产形状注入（与 `tools/ab-weather-v3.js` 同构）`code` 0/3/61/71/95/45/82 ⇒ `sun/cloud/rain/snow/storm` 五类齐全，13:00 逐时 95 ⇒ 读数 `storm`「雷暴」；每例 `reLaunch` + 与真实例 `updatedAt`/`dayStrip.code` 不同（污染自证）。
+- **沿途停靠点**：账号 **0 个计划** ⇒ 端到端数据路径 **NOT_RUN**（不为截图向真实账号写计划）；用真实 `buildRouteFlow` 产出视图注入真机，渲染分支成立：2 stops / 2 `.wv3-stop-weather` / 2 icon / 计算 **16×16**（`D2-route-stops-fixture.png`）。
+- 缺口如实保留：**真物理手机 NOT_RUN**；真实数据当日无 sun/snow/storm 自然样本（五类靠注入走真实装配链）；`cli preview` / 上传未执行。`cloudfunctions/` 仍零改动 ⇒ 不需要重新部署；未 commit / 未 push。
+
+### 2026-10-28 · 天气页 V3 图形入口补全：首页/两个弹层/详情缺口（用户对照原型第二轮）
+
+**起因**：用户看原型后追问「当前页面缺少很多 icon…肯定还存在很多别的 gap」。第一轮只修了详情页；本轮按原型 `weather.js` 的 `sym` 注册表**逐处**核对三处 surface（屏 1 首页、地点弹层、节点/计划弹层），把「能点开一层」却没有任何图形、以及当前项没有选中反馈的位置补齐。
+
+**补的图形（全部沿用原型同义词，不新造形状）**：
+- 首页：地图选点 `pin` 19（主键）、输入经纬度 `crosshair` 16、导入 GPX `upload` 16、「继续上次」标签 `calendar` 11、最近计划与资产行尾 `next` 16；资产行首改为 `38×38` 图标砖（`#EDF1E9` 底、`18px #5F7A63`）：两个计划 tab 都用 `calendar`、常用地点 `pin`、路线/轨迹 `route`。
+- 地点弹层：当前地点 `check` 17、其余 `next` 17。当前项由 JS 按 `place.id` 前缀（`point:`/`route:`/`track:`）归一成 `p:/r:/cur` 再算 `current` 布尔，**WXML 不比对 id 片段、不靠文案猜当前**；点当前项只关弹层，不重新取数、不复位滚动。
+- 节点弹层：当前节点 `check` 19、其余 `next` 19；`nodeOptions` 由投影算好 `selected`，页面不再循环里比 `nodeIndex`。
+- 详情：四处文本 `›` 全部换成 `next`（两条 link-row 18 `#6C7C70`、停靠点名 14 `#8A968C`、节点选项 19 `#16783E`）；页头节点行补 `pin` 12 `#657168`（原型 `#choose-node` 两态都以 pin 开头）；「读图说明」降为灰 10px 辅助入口（`wv3-link-quiet`），「如何判断」仍是章节头绿 11px。**时段步进**（逐时/云层两处滑块）原为左 `back`、右 `arrow`——一个 chevron 一个带尾箭头，既不对称也与原型 `icon('back')` + `icon('next')` 不一致；改为 `back`/`next` 一对 17px `#627568`，`§2d` 新增一条「详情内零 `name="arrow"`」（这是设备回读时才暴露的 gap，静态门原先只数了 `next` 的数量）。
+- 提示条：轨迹「展开/收起节点」的 `▾/▴` 换成 `down/up` 11（文案与图形同一布尔）；计划弹层出发日期 `down` 12；「不改原始记录」说明带 `lock` 13；缓存时效条带 `cloudoff` 14 `#7A5C1E`（原型 offlineBanner 同义）；沿途提示条按 `notice.icon/color` 出图（`clock` 信息 `#506650` / `calendar` 越界 `#7A5C1E`），模板不写 tone 分支。
+
+**词表仍只有一处**：`components/icon/icon.js` 的 `PATHS` 新增 `up` / `lock` / `cloudoff`（均为单条 `d`，首命令 `M`、无尖括号——data-URI 拼接遇到 `<`/`>` 会当场截断）；页面只给名字、尺寸、颜色。`design-system.md` §17 新增「入口图形词表」登记表与两条硬约束（文本字符不承担箭头、当前项只认投影布尔）。
+
+**判据（读数取脚本自打印 `passed=`）**：`weather-v3-structure-test` **98→124**，新增 §2d 共 **26** 条：词表 8 个词存在且是合法单 path；首页 4 个入口 + 图标砖 ≥5 且 `calendar×2/pin/route`；`[›▾▴]` 零出现；`trackOpen` 驱动 `up/down`；地点弹层 `current→check` 与 JS 三种 key；详情 `next` 恰好 6 处（四处入口 + 两个时段步进）与四档尺寸（18/14/19/17）、零 `name="arrow"`；`nodeOptions.selected`；`pin` 节点行；缓存条 `cloudoff` + `.wv3-banner{display:flex}`；沿途提示条 `notice.icon/color`；计划弹层 `down`/`lock`/`.wp-note-lock`。`weather-v3-visual-test 37`、`scenario-weather-v3 59`、`weather-v3-hourly-svg 70`、`page2-gates 119`、`weather-page 219`、`weather-v2 103`、`weather-brief 21`、`weather-resilience 45`、`weather-hub-gpx 23`、`swx1 45`、`swx2 111`、`t4-e08 41`、`nav-chrome 15`、`ui-consistency 19`、`journey-graph 15`、`b4-pad-final-value 33`、`entry-layout 41`、`header-layout 38`、`plans 53` 全绿；`check.js` ALL CHECKS PASSED（G10 44 单元 / 3507 token / 139 类名 / 命中 0），`check-handlers` exit 0（死 handler 仍只有存量 `editor#onNumber`）。
+
+**登记为"不复制"的原型差异**：① 演示数据胶囊（`demo-dot`，生产有真实 provider 标签与时效条）；② 地点弹层缩略图（生产地点没有配图）；③ 节点选项的 `distance km`（`route.points` 只有 `ele`，无里程字段——不凭空算）；④ 原型自绘导航与 `role=tablist`（平台 `navigationStyle:custom` + 胶囊规则）；⑤ 分层云量表与「读取高度」下拉（生产云层剖面已超越原型，按要求不回退）。
+
+**边界**：本轮未改 `cloudfunctions/`（工作树里那 12 个改动文件 + 两个未跟踪 `domain/plans.js` 属更早的云层天花板/计划功能工作，部署账记在那些轮次，不在本轮）；未 commit / 未 push。**真机已回读**（IDE 模拟器 306×660，服务端口 33278 / 自动化端口 9427；账号内真实 0 计划 / 1 地点 / 0 路线）：`cli close --project 'D:\OurTrail'` + `open --project` 重编译（**未 `quit`**），bundle 新鲜度由三处新图形自证（`.wh-asset-icon` 内含 `icon`、页头 `pin` 12、滑块 `["back","next"]`），驱动 **24 断言 / 0 失败**；截图 11 张 + 逐控件计算样式读数（图标砖 38×38 盒内含 18px 图形、页头 `pin` 12、`lock` 13、`down` 12、提示条 `clock`/`calendar`、`cloudoff` 14），证据 `docs/ui-ux-redesign/evidence/weather-v3-icons-2026-10-28/README.md`。**仍 NOT_RUN**：真物理手机；真实路线停靠点（账号 0 条路线，节点行用 1 个真实观察点 + 注入 `nodeOptions`）；计划弹层经 `callMethod('openEdit')` 打开而非真实点击（账号无计划，不往真实账号写测试数据）。**同轮量化但未改的跨页缺口**：13 个 WXML 里仍有 37 处 `class="picker-arrow"` 文本 `▾`、21 处文本 `›`、43 处 `▾/▴` 落在天气 V3 之外（editor / roster-panel / transport-panel / field-panel / discover / activity / anotices 等；V3 三处 surface 实测 0 命中）——同类问题，但改它要逐页真机回读，等裁决是否单开一轮。
+
+### 2026-10-28 · 天气日级现象码：白昼派生码 + 雾的三证门（与 meteoblue 对不上的根因修复）
+
+**起因**：用户拿 meteoblue 同一坐标（30.30N / 101.64E，折多山）的截图对比小程序天气页，指出「天气状况看起来并不完全一致」。核验结论见 `docs/weather-ux/qa/v2-meteoblue-consistency-2026-10-28/README.md`：温度/风力/降水与 meteoblue 基本一致（|ΔTmax|≤2℃、风速≤4 km/h），**不一致全部来自日级现象码**。
+
+**根因**（两层，各自独立）：
+1. `lib/weather.js:175` 把 Open-Meteo 的 `daily.weather_code` 直接当日徽标。该字段是**全天 24h 内最严重的码**（8 天样本逐日实测 = 当日逐时最大码，非文档口径）。高海拔夜间 00:00–03:00 的雾因此把整日染成「雾」：折多山 16 天里 7 天日码=雾，其中 5 天白昼 ≤3 码、日照 ≥6h。低海拔对照（成都 501 m）16 天 0 个雾小时 ⇒ 系统性发生在高山。
+2. 雾码本身缺物理佐证：43 个雾小时里 19 个 RH<90%（最低 51%；10-28 00:00 能见度 0.54 km 但 RH 67%）。`conditions.js` 只凭「能见度<1 km」就出「此点可能入云（雾）」，于是晴天页面挂着雾警告。
+
+**改法**（设计 `docs/superpowers/specs/2026-10-28-weather-day-code-design.md`）：
+- **云端派生**（投影层事实，不进页面文案）：`lib/weather.js` 新增 `fogConfirmed()`（45/48 **且** RH≥90 **且** 能见度<1 km，三证缺一不算）与 `representativeDayCode()`（白昼窗口 = provider 日出→日落，缺字段回退 08–18；窗口内剔除未佐证的雾后：恶劣天气 雷/冻雨/雪 一票否决 → 否则众数，并列取较大码 → 窗口无小时回退 provider 日码）。`fetchForecast` 给 `days[]` 增加 `dayCode`、`hourView` 增加 `fog`；**`days[].code`、逐时 `code`、`detail/series` 数值一律原值不动**。
+- **客户端只换渲染源**：`format.js` 新增 `dayCodeOf/dayPhrase`（只认 `typeof number`，`Number(null)` 会印成晴），天气页日卡、活动天气摘要、路线分段、V3 日条四处改读 `dayPhrase(day)`；`conditions.js` 入云提示改读 `h.fog === true`，**旧缓存无该字段时回退旧的能见度表达式**（过渡态 ≤12h，不放宽旧数据）。
+- **新增数字只有两个**：RH 90%（取在被证伪簇 67–89 与被证实簇 91–100 之间）与 1 km（由客户端移到服务端，非新数）。阈值常量集中在 `lib/weather.js` 一处。
+
+**实测结果**（同一份线上返回体，7 天）：10-28/10-29/11-01 雾→晴、10-30 雾→多云、10-31 多云→晴；**阳性对照** 11-02 仍「毛毛雨」、11-03 仍「阵雪」（一票否决生效，不是一刀切抹掉雾）。
+
+**判据**（读数取脚本自打印 `passed=`）：`smoke-test` **283**（新增 §15b 共 19 条：夜间雾/全天雾/干雾不进 pool/降水众数/阵雪一小时否决/日出日落窗口真正生效/缺日出回退/并列取较大码/fog 真值表 7 条/hourView 带 fog）；`weather-page-test` **227**（新增 §14 共 8 条：dayCode 出文案 / 旧返回体回退 / null 不印晴 / 恶劣天气不变 / 入云提示的三种数据形态）；A/B 对拍 `docs/weather-ux/qa/v2-meteoblue-consistency-2026-10-28/ab-daycode.js` **14/0**（tee 一次真实响应后回放给两版：days 除 `dayCode`、series/detail 除 `fog`、cloudLevels、elevation **逐字节相同**；日徽标确实改变；11-02/11-03 双向阳性对照；空改门）。**对拍器自身踩过一次坑并修掉**：第一版把 300 hPa 剖面天花板补丁打到了 `cloudBandAt` 而不是 `buildCloudLevels`，当场报出 series 150 附近的 band 假差异——正是铁律 28「抬显示天花板不得顺带改天相结论」；现在基线构造带两条门（含在途天花板改动、`cloudBandAt` 仍扫 `CLOUD_LEVELS`）。
+其余相关套件：`weather-v2 103`、`weather-brief 21`、`weather-resilience 45`、`scenario-activity 212`、`route-schedule 50`、`scenario-discover 60`、`weather-v3-*` 与 `scenario-weather-v3` 全绿；`check.js` ALL CHECKS PASSED，`check-handlers` exit 0（死 handler 仍只有存量 `editor#onNumber`）；`sync-lab` 18 文件无 diff。
+
+**`cloudfunctions/` 已改 ⇒ 已重新部署 trailApi（2026-10-28，用户选 A 批准后执行）**：`cli cloud functions deploy`——**30 files / 142.6 KB**；`info` 回读 **`Active` / `timeout 20` / `Nodejs16.13`**（CLI 部署这次没有把超时降回 3 秒，仍按惯例回读而非假设）；`cli cloud functions download` 到仓库外 `%TEMP%/opencode/deploy-daycode/` 后 `diff -r --strip-trailing-cr`（排除 `node_modules`/`package-lock.json`/`.DS_Store`）**差异为空**；在**下载下来的线上包**上直接跑它自带的 `smoke-test.js` = **283/0**（即上传的字节本身过门，不只是本地工作树）。
+**部署集合的如实记录**：`cloudfunctions/trailApi/` 是整目录上传，本轮**连带把工作区里在途的「V3 个人天气计划」一起推上线**（`domain/plans.js` 新增、`plan.create/update/delete`、`ot_plans` 集合、`selectors` 投影、`permissions` owner 判定）——这是部署前先量过并单独报告的事实，不是被夹带的。上线前该批判据全绿：`plans-test 53`、`smoke 283`、`lab-dryrun 165`、`e2e-test 72`、`e2e-permission 96`、`e2e-domain-negative 86`、`lifecycle-projection 146`、`lifecycle-fuzz 47`、`journey-graph 15` 全部 exit 0。`trailApiLab` **本轮未部署**（它的同批 domain 副本已由 `sync-lab` 同步、`lab-dryrun` 165/0；lab 是私有预演工具，不部署只意味着它的沙盒暂不认识 `plan.*`，不影响线上）。
+**真机已回读（VERIFIED，2026-10-28）**：`cli close --project 'D:\OurTrail'` → `open`（**未** `quit`）→ `auto --auto-port 9428`；驱动 `%TEMP%/opencode/mp-auto/drive-daycode.js` 打 `/pages/weather/weather?src=local&lat=30.30&lng=101.64&ele=4298`，**8 断言 / 0 失败**。像素读数（`docs/ui-ux-redesign/evidence/weather-daycode-2026-10-28/`）：7 日条 = 多云 / 晴 / 晴 / 晴 / 多云 / 毛毛雨 / 阵雪；**同一时刻生产路径 `daycode-probe.js` 打印的 provider 码是 45/45/45/1/45/51/85**（`live-probe.txt`）⇒ 5 天 provider 仍是雾而日卡一个雾都没有，这同时构成 **bundle 新鲜度自证**（旧客户端读 `day.code` 会渲染 5 张雾卡）；`hour-strip` 的 **00:00 与 03:00 仍是「雾」**，证明「夜间逐时不动」；页面上**没有**「此点可能入云（雾）」（那几个雾小时无一通过 RH≥90 + 能见度<1 km）。首轮驱动曾 0 卡（重编译后首次冷启动竞态，28s 内 `dayCards` 一直为空），30s 后复跑即稳定 —— 作废读数未计入证据。**真机仍是 IDE 模拟器**（非物理手机、未跑 375 宽）。不拿「代码路径正确」冒充像素证据；旧缓存/旧客户端回退路径由页面级断言覆盖。未 commit / 未 push。
+
+### 2026-10-28 · V3 逐时图：24h 一屏 + 分层云量改成色阶格 →（同日第二轮）连续色带
+
+**起因**：用户就 V3 逐时预报提两问——① 24/48/72h 区间内的数据能否一屏展示（把 x 轴压紧）；②「高中低云 + 数字 + 黑灰」到底是什么，是不是大家都认可的云图表示。用户的判断是两问可用同一处改动解决（重做分层云量展示）。逐题拷问后定为 **决定 A：只承诺 24h 一屏；48/72 沿用同一列宽横向滚动；三档都换成新的云量表达**。用户「确定选 A，直接改代码」。
+
+**改法**（`miniprogram/utils/weather-v3-hourly-svg.js` 为主）：
+- **列宽不再写死 42px**：`AXIS_W=49`、`FIT_HOURS=24`、`MIN_CELL=6`，`cellFor(width) = max(6, floor((width−49)/24×100)/100)`；图宽 = `cell × 列数`。实测落点：350 宽 ⇒ cell 12.54 / 24h 图宽 300.96（可用 301，**不横滑**）、48h 601.92、72h 902.88；335 ⇒ 11.91 / 285.84；240 ⇒ 7.95 / 190.8。向下取整到 0.01 是为了 `cell×24 ≤ 可用宽`，不因四舍五入多出半像素又冒出横向滚动。
+- **标注改稀疏**：`LABEL_EVERY=3`（温度/降水/概率/时间每 3 小时一标）、`DIR_EVERY=6`（风向文字更宽）。选中小时的精确数值本来就在图上方读数区，列内不再塞数字。第 0 列与每个 00:00 左对齐（日期标签比一列宽，居中会被视口左沿裁掉）。
+- **分层云量重做**：旧的三行数字 + 灰阶表改成**每小时一个小色块**（宽 `cell−1`、rx 1.5）——**此形态同日被用户否掉并改掉，见本节末「修正（同日第二轮）」；下面这条描述与三段读数保留原文，不删。** 按云量在**已登记的四个色阶**`#F0F2EF → #C4CCC3 → #7E8C80 → #354C3D` 上等分位插值（`cloudShade`），**零新增色值、零新增阈值**。缺读数画一条 1.5px 横线 `#a6b5ab`（不是空白、也不是 0% 的浅格）；0% 落到色阶最浅端。图例小色标复用 `.wv3-ramp` 同一条渐变（渐变数仍为 1）。
+- **数字挪到读数区**：`readoutOf` 新增 `cloudLine`（`高云 x · 中云 y · 低云 z%`），三层全缺时印「三层云量无读数」，不印「— %」这种像 0 的形状。
+- **把「这不是通用画法」写在屏幕上**：`weather-detail.wxml` 新增一句——高/中/低云是**模型按层给出的云量（0–100%）**，不是云底或云顶高度；一个小格是一小时，格内横线＝这一小时没有该层读数，不是 0%。仓库里没有可追溯的高度分层口径，所以文案只说「模型分层」，不冒充「云底/云顶」。
+- 几何单一出处：`hourlyCell` / `hourlyWidth` / `hourlyScrolls` / `hourCols` / `axis` 全由 `buildDetailView` 回填；WXML 用行内 `width:{{hourlyCell}}px`、`width:{{hourlyWidth}}px`，WXSS 的 `49px` 只是无数据兜底（structure 门盯两边同值）。`hourColsOf` 抽进 `weather-v3.js`，视图与点选共用一份节奏。
+
+**判据**（读数取脚本自打印 `passed=`，全部 exit 0）：
+- `weather-v3-hourly-svg-test` **89**（**第二轮后 100**；重写：`cellFor` 公式与 12.54 落点、240–460 七档宽度的「24h 必装下」全体断言、列宽单调与下限、图宽 300.96/601.92/902.88、标注节奏 8 个温度/8 个概率/24 根降水柱/4 个带方位风向、缺测 4 条横线与 20 个色块、`cloudShade` 端点与单调性、色集合封闭、无 `<defs>`/class/style/NaN）。
+- `scenario-weather-v3-test` **59**（真组件：24h `hourlyWidth === cellFor(350)*24` 且 `hourlyScrolls === false`；切 48h 同列宽且 `hourlyScrolls === true`）。
+- `ab-weather-v3` **47**（对拍：24/48/72 总宽都等于同一列宽×列数、滚动与否按档位、读数八项与 oracle 逐字一致；阳性对照换游标必须换图）。
+- `weather-v3-structure-test` **126**（第二轮后 127：图例要求 0%→100% 两端 + 笔记必须说「颜色在相邻小时之间过渡」且不许再说「一个小格是一小时」）、`weather-v3-visual-test` **38**（无新色值/新渐变/新字阶；`.wv3-hour` 作为小目标登记进 `SECONDARY_SMALL`，理由：精确选时有滑块与前后步进）。
+- `mutate-weather-v3` **12 / 0 漏网**（**第二轮后 13，新增 M7「退回逐格色块」**；6 条变异：M1 列宽退回固定 42 ⇒ 24h 变回滚动；M2 缺测当 0% ⇒ 横线归零；M6 云量深浅失效 ⇒ 色档塌成 1 档；另 M3–M5 读数补 0 / 计划逆序 / 三态压扁保持原样。锚点全部命中恰 1 次，先过「未变异副本基线一致」有效性门）。
+- 相邻套件复跑：`page2-gates 119`、`personal-route-layout 72`、`e08-remaining 79`、`m02-class-scope 65`、`b4-pad-final-value 33`、`g2-toast-copy 13`、`t2-m11 46`、`weather-hub-gpx 23` 全 0 失败；`check.js` ALL CHECKS PASSED（G10 作用域 44 / class token 3513 / app.wxss 类名 139，命中 0），`check-handlers` exit 0（死 handler 仍只有存量 `editor#onNumber`）。
+
+**边界**：`cloudfunctions/` 零改动 ⇒ **不需要重新部署**；未 commit / 未 push。48/72 一屏不是本决定的目标，仍靠横向滚动。
+
+**真机已回读（VERIFIED，2026-10-28，用户授权重编译；此读数属色块形态，第二轮色带形态的读数见本节末）**：`cli close --project 'D:\OurTrail'` → `open`（**未** `quit`）→ `auto --auto-port 9429`；驱动 `%TEMP%/opencode/mp-auto/v3-hourly-drive.js` 打 `/pages/weather-hub/weather-hub` → `goPoint(折多山 30.30N/101.64E/4298m)`，**27 断言 / 0 失败**，截图 4 张在 `docs/ui-ux-redesign/evidence/weather-v3-hourly-2026-10-28/`（`readings.json` 落盘；失败帧与探针帧隔离在 `invalid/`，修复前的像素被同名覆盖未留存，只保留文字读数）。
+- **读数分四层，不互相顶替**：data（`hourlyCell 12.54 / hourlyWidth 300.96 / hourlyScrolls false / 24 列 / axisWidth 49`）· DOM 文本（云量行、两句说明与 data 同字）· **真实布局**（`img.style('width')`=300.953px、`img.size()`=301×310、`scroll.scrollWidth()`=340 ≤ 视口 ⇒ 24h 真的一屏；48h `scrollWidth`=602 真的溢出，提示改口「左右滑动图表」）· 运行时 SVG（**色块形态读数（已过时）**：`data-seg="cloud-high"` 24 个 rect、≥3 种色档、根宽 = `round(hourlyWidth)`、云量段内无 text、无 `<defs>`/class/style/NaN；第二轮色带形态的读数见本节末）。
+- **真机抓到一个全部 Node 门都没抓到的渲染 bug**：首跑 26/1，唯一红是「小时条每格宽 = cell」，实测 `hour0.width = 25.4609px`（≈ 首列文字「10/28」的宽度），`probe-hour.js` 打出每格 `style="width:px"`——WXML 绑的是 `{{hourCell}}`，而组件 data 的键叫 `hourlyCell`，未定义插值渲染成空 ⇒ 第 0 列被文字撑到 25px、其余 23 列塌成 0（截图里标签挤成 `10/2803060912151821`）。**structure 门当时"过"是因为它把同一个错名写进了自己的正则**——门与代码同错，等于没门。修法：WXML 改绑 `hourlyCell`，structure 门同步期望 `{{hourlyCell}}`；重编译后复跑 `hour0.width = 12.5391px`、27/0。
+- 修复后受影响门禁复跑：`weather-v3-structure-test 126`、`weather-v3-visual-test 38`、`scenario-weather-v3-test 59`、`check.js` ALL CHECKS PASSED（G10 作用域 44 / token 3513 / 类名 139，命中 0）、`check-handlers` exit 0（死 handler 仍只有存量 `editor#onNumber`）。
+- **仍未覆盖**：IDE 模拟器（非物理手机）、未跑 375/414 宽、48/72 的滚动只验了 `scrollWidth` 与提示文案，未逐屏滑到底核对末端列；`{{...}}` 根标识符与组件 data 键的一致性仍**没有**门（本轮靠真机才发现，下一步可考虑做成通用静态门）。
+
+**修正（同日第二轮，用户追问「你不是说不是业界通用的展示吗？不是说要优化吗」）**
+
+**我上一轮做错了什么**：只把「数字」换成了「深浅」，三行仍是**每小时一个色块**的 3×24 网格——形状和旧表格一样，只是把像素填了色；更糟的是我还在 SVG 里**禁用了 `<defs>`/渐变**，而 V3 原型 `docs/prototypes/ourtrail-explore-v3/weather.js` 对这三行写的正是 **meteoblue 式连续色带**：`<linearGradient>` 每小时代一个 `stop`，相邻小时平滑过渡（原型注释原文 `each hour contributes a gradient stop, so neighbouring cover values blend instead of showing discrete cells`）。所以这不是"没优化"，是**相对设计基线退了一步**。上一轮"不用渐变"的理由是没证据真机能渲染渐变——这条证据其实仓库里就有：`meteogram-svg.js:297` 的 `#udn` 走同一套 `data:image/svg+xml` → `<image>` 路径，统一图已多轮真机验证，渐变在这个渲染器里是可用的。
+
+**改法**（仍只动 `miniprogram/utils/weather-v3-hourly-svg.js` + `weather-detail.wxml` 文案）：
+- `cloudCells` → `cloudBand`：把每行按"连续有读数的小时"切成若干段。**多小时段**出 `linearGradient`（`gradientUnits="userSpaceOnUse"`，x1/x2 落在首末列心，每小时一个 `stop` 在列心、颜色仍取已登记的 `cloudShade` 四站色阶）；**单小时孤岛**直接纯色 `fill`（不造退化渐变）；**缺测**把带切断，原位留 1.5px `#a6b5ab` 横线（断口 ≠ 0%）。`<defs>` 前置在三段之外，id 形如 `cb-high-0`，**每个 `url(#…)` 都必须能解析到定义**。
+- 图例补两端：`云量 0% [渐变条] 100%`（此前只有标签，读者无法从条本身判断方向）。
+- 说明句改口径：从「一个小格是一小时」改成「横向一小时一格、**颜色在相邻小时之间过渡**，带里那条横线＝这一小时没有该层读数，不是 0%」——形状变了，文案不能继续描述旧形状。
+- 零新增色值、零新增阈值；数字仍只在读数区（带内无 `text`）。
+
+**判据**（读数取脚本自打印 `passed=`，全部 exit 0）：
+- `weather-v3-hourly-svg-test` **100**（+11）：缺测段断言从"20 个色块 + 4 条横线"改为"高云带断成 2 段 + 4 条横线、中云不受影响整条 1 段"；新增 `<defs>` 只允许 `linearGradient/stop`、渐变数 = 多小时段数（实测 3：高 2 中 0 低 1）、`cb-high-0` 的 6 个 `stop` 偏移严格递增且颜色 ∈ `cloudShade(0..100)`、相邻 stop 颜色必须不同（防"渐变里全是同一色"这种假渐变）、单小时孤岛不出渐变、**每个 `url(#id)` 都有定义**；旧的"无 `<defs>`"门换成引用完整性门（那条门本身是错的，见上）。
+- `weather-v3-structure-test` **127**（+1）：图例必须同时出现 `0%` 与 `100%`，说明必须含「颜色在相邻小时之间过渡」且**不得再含**「一个小格是一小时」。
+- `mutate-weather-v3` **13 / 0 漏网**（7 条）：新增 **M7「退回逐格色块」**——把连续段扫描改成 `while (false)` ⇒ 每小时各成一段、渐变全消失；观测字段从色块改为 `cloudBands`（高云段数）与 `cloudStops`（首段去重色数），基线 `cloudDashes=4 / cloudBands=2 / cloudStops=8`；M2 锚点随实现迁移、M6 改判 `cloudStops`。
+- `weather-v3-visual-test` **38**、`scenario-weather-v3-test` **59**、`ab-weather-v3` **47** 复跑不变（视觉门仍无新色值/新字阶：渐变用的仍是已登记四站；`ab` 比的是读数与总宽，与云的画法解耦）。
+
+**真机已回读（VERIFIED，同日第二轮，用户此前授权重编译）**：`close --project 'D:\OurTrail'` → `open`（**未** `quit`）→ `auto --auto-port 9429`，驱动 `v3-hourly-drive.js` 云量段断言改为色带形态后 **31 断言 / 0 失败**，4 张截图同名覆盖在 `docs/ui-ux-redesign/evidence/weather-v3-hourly-2026-10-28/`。运行时 SVG 读数：高云 **1 段连续带覆盖 24 小时**（`rect` 数 1，不是 24）、三层「段数 ≡ 渐变数 ≡ 引用数」（high 1/1/1、mid 1/1/1、low 1/1/1）、渐变全部 `userSpaceOnUse`、`url(#…)` 全部可解析、stop 去重色档 ≥3、`defs` 只含 `linearGradient/stop`、根宽 = `round(hourlyWidth)`、带内无 text、无 class/style/NaN。像素层面 `hourly-24-chart.png` / `hourly-24-selected.png` 可见三段带的深浅**沿横向连续变化**（深区到浅区之间有过渡带）——单一纯色 `rect` 不可能产生这种读数，这也是"渐变真的被画出来、没有因未解析的 `url(#…)` 渲染成黑/空"的现场证据。
+- **首跑 28/2 的两条红都是探针缺陷，不是产品回归，已当场修正**：① "段数 = 渐变数"只数了高云一段却拿三层的渐变总数去比（3 ≠ 1）⇒ 改为逐行各比；② `defs` 子标签正则 `[ >]` 把 `defs>` 也算成未知标签 ⇒ 改为 `[\s>/]` 并剥净。两条都在改完驱动后复跑转绿，产品代码一行未动。
+- **仍未覆盖**：IDE 模拟器非物理手机、未跑 375/414；48/72 的色带未逐屏滑到底核对末端列；`<image>` 里 SVG 渐变的**颜色插值空间**（sRGB 线性插值）未与原型 `hsl` 口径逐像素比对——只保证两端色与中间 stop 落在同一色阶上。
+
+**边界**：`cloudfunctions/` 零改动 ⇒ **不需要重新部署**；未 commit / 未 push。上一轮"这是通用画法吗"的回答依旧成立：**逐格 3×24 网格不是**，本轮的连续分层云带才是（meteoblue 等天气图的常见表达）；但它表达的仍是**模型分层云量**，不是云底/云顶高度。
+
+**修正（同日第三轮，用户：「咱们先对齐下高中低云的展示形式吧。现在这个效果我都看不懂」→「这个图需要回答一个问题，什么叫高、什么叫中、什么叫低？上面的颜色又是什么意思？」）**
+
+**两问的答案落在屏幕上**（逐题拷问后用户答 **A** / **选A**）：
+- **高度区间写在行标签上**：`高云 ≥8km` / `中云 3–8km` / `低云 ≤3km`。区间来自**取数端点** Open-Meteo `/v1/forecast` 的官方口径（`cloud_cover_low`「Low level clouds and fog up to 3 km altitude」、mid「3 to 8 km」、high ≥8 km），同一页文档写明 *"Altitudes are approximate and in meters above sea level (not above ground)"* ⇒ 脚注写「高度是海平面以上（海拔）」，并且**明说不是这块云的云底或云顶**。历史接口用 2/6 km，所以区间只在当前端点下成立——注释里点了出处，不把它写成普遍事实。
+- **颜色含义**：图例标题从「云量」改为「云量（该层）」，并补 **50% 中点**（`0% / 50% / 100%`）；脚注写「颜色越深＝这一小时该层云量越多」。中点是否诚实有推导：CSS 四站渐变在 33.3%–66.7% 区间走 `#C4CCC3→#7E8C80`，`cloudShade` 在同一段也线性插值 ⇒ 条带几何中点恰等于 `cloudShade(50)`，所以**不需要第五个色值**（推导写在 `.wv3-lg-ticks` 旁的 WXSS 注释里）。
+- **带内数字**：每 3 小时印一个整数，与温度/概率同一节奏、同一条竖线（第 0 列按 `markX` 左对齐），**0 也印**、**缺读数那一小时不印**（横线已经是「没有读数」的记号，再印数会被读成 0）。字色不设魔法阈值：`cloudNumInk()` 按 WCAG 相对亮度取「白字 / 墨绿字」里对比度更高的一侧（白字从云量约 66–70 起生效），用的仍是已登记的 `#ffffff` 与 `ink`，**零新增色值、零新增业务阈值**。100 这种三位数在 12.54px 列里左右各溢约 1px，但相邻标注位相距 37.6px，不会互相压叠（写在 `cloudNumbers` 注释里）。
+
+**我上一轮的一句错话，当场收回**：拷问时我说过「行标签用 8px 单行就能塞进 49px 轴列」。两条都不成立——① 视觉门的字阶表不收 8px（WXSS 里 8px 是禁用的）；② 9px 下「高云 ≥8km」约 40px > 轴列可用的 36px。实际实现改成**每行两行 9px**（`.wv3-axis-row.is-compact` 的 `line-height:1.05` ⇒ 18.9px，落在 20px 行距内），真机盒模型实测每行 19px、节距 20px（见本节末）。
+
+**改法**（生产文件 4 个）：
+- `miniprogram/utils/weather-v3-hourly-svg.js`：新增 `CLOUD_LAYER_KM`（导出对象、**按引用**读）+ `cloudBounds()` 单源出 `{high:'≥8km', mid:'3–8km', low:'≤3km'}`；`cloudNumbers()` 在每段带内按 `LABEL_EVERY` 印整数；`cloudNumInk()` 按对比度选字色；`C.cloudNumLight` 只登记白字这一项。
+- `miniprogram/components/weather-detail/weather-detail.wxml`：三条云轴行改 `is-compact` 两行式（标签 + `{{cloudBounds.*}}`）、图例三分刻度、脚注重写。
+- `miniprogram/components/weather-detail/weather-detail.wxss`：`.is-compact` 两行紧凑、`.wv3-lg-{cloud,scale,ticks}` 三段（中点靠 `flex:1; text-align:center` 落在几何中点）。
+- `miniprogram/components/weather-detail/weather-detail.js`：`cloudBounds: HSV.cloudBounds()` 一行动画数据（WXML 里**没有** `\d\s*km` 字面量，门盯着）。
+
+**判据**（读数取脚本自打印 `passed=`，全部 exit 0）：
+- `weather-v3-hourly-svg-test` **100 → 112**：缺测段断言改为「8 个标注位 7 个有数且逐个对上数据」+「缺读数那一小时不印」；新增 §3b（0 印成 `0`、100 印成三位、字 x 在列心且首位为 2、y 落在 244–261、font-size 9、v=0 取 ink 而 v=100 取 `#ffffff`、白字段是连续后缀）；§5 新增区间原文与**影子**（`km.mid.max=7 ⇒ '3–7km'`，还原后逐项相同）。
+- `weather-v3-structure-test` **127 → 133**：刻度必须 `0%/50%/100%` 相邻有序、**并且几何上真的在中点**（容器与色带同宽 96px + 中间格 `left:50%; translateX(-50%)`，不得写回 `flex:1`——真机实测过 `flex:1` 会偏左 4.8px）、三层都必须绑 `{{cloudBounds.*}}`、WXML 不得出现 km 字面量、脚注必须同时含「颜色越深」「海平面以上」「不是这块云的云底或云顶」「不是 0%」「每 3 小时印一个整数」且不得再说「一个小格是一小时」、js 里必须有 `cloudBounds: HSV.cloudBounds()`。
+- `mutate-weather-v3` **13 → 16 / 0 漏网**：观测器新增 `cloudNums` / `cloudWhite` / `boundsMid`；新增 **M8**（标注节奏减半 ⇒ 数字变 4 个）、**M9**（字色恒取 ink ⇒ 深色带上没有白字）、**M10**（中云区间改成 0–3km ⇒ 行标签说错话）。基线同时要求 `cloudNums=7 / cloudWhite>0 / boundsMid='3–8km'`。
+- `weather-v3-visual-test` **38**、`scenario-weather-v3-test` **59**、`ab-weather-v3` **47** 复跑不变（新类不带新色值、不声明字号；`ab` 比读数与总宽，与云的画法解耦）。`check.js` ALL CHECKS PASSED（G10 作用域 44 / class token 3521 / app.wxss 类名 139，命中 0），`check-handlers weather-detail` 27 handlers 相符（死 handler 仍只有存量 `editor#onNumber`）。
+
+**边界**：`cloudfunctions/` 零改动 ⇒ **不需要重新部署**；未 commit / 未 push。
+
+**真机已回读（VERIFIED，2026-10-28 第三轮，用户答 A 后授权重编译）**：`close --project 'D:\OurTrail'` → `open`（**未** `quit`）→ `auto --auto-port 9429`，驱动 `v3-hourly-drive.js` **35 断言 / 0 失败**（`docs/ui-ux-redesign/evidence/weather-v3-hourly-2026-10-28/README.md` + `readings.json` + 6 张截图；改前的 5 张滚动帧隔离在 `invalid/`）。DOM 读数 `高云≥8km / 中云3–8km / 低云≤3km`、刻度 `0%50%100%`；盒模型 `每行 19px / 节距 20px`（两行 9px、line-height 9.45px）⇒「两行 9px 是否真装进 20px 行距」由 **UNVERIFIED 转 VERIFIED**，我在拷问时说的「8px 单行放得下」正式作废。带内整数高云 `0 0 0 36 35 2 0 41`、中云 `0×8`、低云 `12 7 2 1 1 0 0 0`（每行 8 个、24 列每 3 列一个、24h 无缺测），字色 **24/24** 与「该列真实 stop 色按 WCAG 对比度二选一」的独立复算一致。
+- **真机抓到一个产品缺陷**：`50%` 用 `flex:1` 居中时，中间格拿到的是两端标签之间的剩余空间（`0%` 宽 12 / `100%` 宽 22），实测中心 **123.2px** 而色带中点是 **128px** ⇒「补了 50% 中点」这句在几何上不成立（偏左 4.8px）。改成 `position:absolute; left:50%; translateX(-50%)` 后实测 **127.965px**，并补两条静态门防止改回 `flex:1`。**这正是"文案声称的几何"与"真实几何"分开测的价值**：静态门只看 DOM 顺序会全绿。
+- **两个探针缺陷，都在驱动里当场修正，不计产品红**：① 带内数字 y 断言写死 244–261（只对高云成立），中云/低云在 276/296 ⇒ 改为按行取 `top+12`；② 对比度断言第一版只比了 3 个数字——`<stop>` 的 `offset` 是 **0–1 相对值**，不是绝对 x，绝大多数数字因「最近 stop 超过半列」被静默跳过；改为 `x1 + offset × (x2 − x1)` 后 24/24 全部参与。**第一版是假绿**（`matched >= 3` 这种阈值本身就是我自己埋的漏洞），阈值改成「必须等于全部数字数」。
+- 改 WXSS 后复跑：`weather-v3-structure-test 133`、`weather-v3-visual-test 38`、`swx1 45`、`swx2 111`、`t4-e08 41`、`page2-gates 119`、`b4-pad-final-value 33` 全 exit 0；`check.js` ALL CHECKS PASSED。
+- **仍未覆盖**：物理手机、375/414 宽度、48/72 逐屏滑到末端列核对带内数字、`≥ / ≤` 字形只有 DOM 文本 + 页面内既存 `≥80%` 先例（未做像素级字形核对）、SVG 渐变插值空间未与原型逐像素比对。

@@ -26,8 +26,10 @@ for (let h = 0; h < 72; h++) {
   TIMES.push({ d: d, t: (h % 24 < 10 ? '0' : '') + (h % 24) + ':00' })
 }
 function altitudesGrid() {
+  /* 与生产网格同顶：300hPa 实测到 9,765 m，网格上界 9,750（weather-cloud-field.ALT_MAX）。
+     高云夹具（下面的「点在窗下」用例）需要 9 km 以上的格点。 */
   const g = []
-  for (let a = 0; a <= 7000; a += 250) g.push(a)
+  for (let a = 0; a <= 9750; a += 250) g.push(a)
   return g
 }
 function makeSurface(hours, opts) {
@@ -53,11 +55,13 @@ function makeSurface(hours, opts) {
   }
   return rows
 }
-function makeCloudField(hours, userAlt) {
+function makeCloudField(hours, userAlt, opts) {
+  opts = opts || {}
   const altitudes = altitudesGrid()
+  const base = opts.deckBase != null ? opts.deckBase : 2600
   const values = TIMES.slice(0, hours).map((_, h) => {
     /* 确定性云带：中心海拔随时间移动（Day1 低 2600 / Day2 中 3600 / Day3 高 4600） */
-    const center = 2600 + Math.floor(h / 24) * 1000 + Math.sin(h / 6) * 200
+    const center = base + Math.floor(h / 24) * 1000 + Math.sin(h / 6) * 200
     const thickness = 500
     return altitudes.map(alt => {
       const dist = Math.abs(alt - center)
@@ -70,14 +74,14 @@ function makeCloudField(hours, userAlt) {
     altitudes: altitudes,
     values: values,
     userAltitude: userAlt,
-    covered: { lo: 2000, hi: 6000 },
+    covered: opts.covered || { lo: 2000, hi: 6000 },
   }
 }
-function buildGeo(horizon, userAlt, width, surfaceHours) {
+function buildGeo(horizon, userAlt, width, surfaceHours, fieldOpts) {
   const hours = surfaceHours || horizon
   return UMG.buildUnified({
     surface: makeSurface(hours),
-    cloudField: makeCloudField(Math.min(hours, horizon), userAlt),
+    cloudField: makeCloudField(Math.min(hours, horizon), userAlt, fieldOpts),
     userAltitude: userAlt,
     width: width || 375,
     horizon: horizon,
@@ -141,18 +145,23 @@ check('全图只有一根 crosshair 线', (sel38.svg.match(/stroke="#163e35" str
 /* ---------- YOU 海拔 ---------- */
 section('YOU 海拔：单线贯穿 + 点在窗外时写明差多少米')
 check('YOU 标签只出现一次', (b72.svg.match(/此点 3,500 m/g) || []).length === 1)
-const g500 = buildGeo(72, 500)
+/* 天花板 9,750 且跨度上限 = 轴宽之后，「点被甩到窗外几千米」在轴内已经不可达：
+   低点会作为锚点被带进同一个窗（铁律 27：窗只选，不裁有效数据）。
+   原来这条断言钉的是「不画假线 + 边说差多少米」，现在钉的是**画在真实高度上的那条线**。 */
+const g500 = buildGeo(72, 500, 375, undefined, { deckBase: 7200, covered: { lo: 6500, hi: 9600 } })
 const b500 = UMG.renderUnifiedBase(g500, {})
 /* 旧写法：窗固定 2000–6000，500m 的点被 Math.max(ALT0,…) 钳到窗边画一条虚线，再补一句「（剖面下方）」。
-   线的位置是假的。现在要么把点框进窗里画在真实高度，要么根本不画线、只在窗边写明差多少米。 */
-check('500m 在 72h 窗外下方：不画参考线，边注写明还差多少米',
-  g500.profile.pointOutside === 'below' && b500.svg.indexOf('stroke-dasharray="4 3"') < 0 &&
-    /此点在剖面下方 [\d,]+ m/.test(b500.svg), b500.svg.slice(b500.svg.indexOf('此点在剖面'), b500.svg.indexOf('此点在剖面') + 40))
+   线的位置是假的。现在点直接落进 0–9,750 的窗里，虚线画在 500 m 的真实位置。 */
+check('500m 与 9 km 以上高层云同框：点在窗内，参考线画在真实高度，且不印「窗外」',
+  g500.profile.pointOutside == null && g500.profile.lo <= 500 && g500.profile.hi >= 9000 &&
+    b500.svg.indexOf('stroke-dasharray="4 3"') >= 0 && b500.svg.indexOf('此点 500 m') >= 0 &&
+    !/窗外(上方|下方)还有云带/.test(b500.svg), JSON.stringify([g500.profile.lo, g500.profile.hi, g500.profile.pointOutside]))
 check('500m 那种「点在窗外」绝不被画成琥珀入云交线',
   g500.inRuns.length === 0 && b500.svg.indexOf('rgba(180,118,26') < 0, g500.inRuns.length)
-const g6200 = buildGeo(72, 6200)
+/* 10,200 m 高于 HI_CEIL 9,750：物理上够不着，窗怎么平移都进不来。 */
+const g6200 = buildGeo(72, 10200)
 const b6200 = UMG.renderUnifiedBase(g6200, {})
-check('6200m 在窗外上方：同样不画假线，边注朝上并给出高差',
+check('10200m 在窗外上方：同样不画假线，边注朝上并给出高差',
   g6200.profile.pointOutside === 'above' && b6200.svg.indexOf('stroke-dasharray="4 3"') < 0 &&
     /此点在剖面上方 [\d,]+ m/.test(b6200.svg), String(g6200.profile.pointOutside))
 check('窗范围自己印在图上（读者不必猜这一行画的是哪一段高度）',

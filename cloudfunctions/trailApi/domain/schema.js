@@ -330,6 +330,23 @@ const TaskInput = specObj({
   title: specText, note: specText, category: TaskCategory, assigneeName: specText,
   dueAt: specOpt(specNull(specInstant)),
 })
+// V3 个人天气计划：路线 + 「哪天到哪个节点、几点到」。
+// 与 Task 的区别：计划不属于活动（不挂 activityId、不产事件/通知），是可分享的个人资产。
+// stop.time 允许空串 = 待安排（页面不许把空值补成 00:00 冒充抵达时刻）。
+// sharedWith/visibility 的推导在 plans.js（对齐 routes.normalize），客户端提交的 visibility 一律忽略。
+const PlanStop = specObj({
+  nodeIndex: specNum(0, 5000, true),
+  day: specNum(1, 7, true),
+  time: specStr(5),
+})
+const Plan = specObj({
+  id: specId, ownerId: specId, routeId: specId, name: specText,
+  startDate: specStr(10),
+  stops: specArr(PlanStop, 0, 200),
+  updatedAt: specOpt(specInstant),
+  visibility: specOpt(specEnum(['private', 'shared'])),
+  sharedWith: specOpt(specArr(specId)),
+})
 const Receipt = specObj({
   actorId: specId, requestId: specId, fingerprint: specStr(128),
   targetIds: specArr(specId), appliedAt: specInstant,
@@ -343,7 +360,7 @@ const State = specObj({
   assignments: specArr(Assignment), memberships: specArr(Membership),
   attendance: specArr(Attendance), positions: specArr(PositionReport),
   incidents: specArr(Incident), events: specArr(ActivityEvent),
-  notices: specArr(Notice), tasks: specArr(Task), receipts: specArr(Receipt),
+  notices: specArr(Notice), tasks: specArr(Task), plans: specArr(Plan), receipts: specArr(Receipt),
 })
 const stateSpec = State
 
@@ -369,6 +386,15 @@ const VehicleInput = specObj((function () {
 // 由客户端可选提交，缺省值在 routes.js 处理器里补。
 const RouteInput = specObj((function () {
   const keys = Object.assign({}, Route.keys)
+  delete keys.id
+  delete keys.ownerId
+  delete keys.updatedAt
+  return keys
+})())
+// V3 个人天气计划：提交面。id/ownerId 由服务端给；updatedAt 是服务端时间戳。
+// visibility 在 schema 里保留（取值仍校验），但处理器按 sharedWith 重新推导，客户端值被忽略。
+const PlanInput = specObj((function () {
+  const keys = Object.assign({}, Plan.keys)
   delete keys.id
   delete keys.ownerId
   delete keys.updatedAt
@@ -439,6 +465,10 @@ const Payload = specUnion('type', {
   'route.create': specObj({ type: specEnum(['route.create']), input: RouteInput }),
   'route.update': specObj({ type: specEnum(['route.update']), routeId: specId, input: RouteInput }),
   'route.delete': specObj({ type: specEnum(['route.delete']), routeId: specId }),
+  // V3 个人天气计划：分享就是 sharedWith 的全量替换（与 route.update 同构），不另设 plan.share。
+  'plan.create': specObj({ type: specEnum(['plan.create']), input: PlanInput }),
+  'plan.update': specObj({ type: specEnum(['plan.update']), planId: specId, input: PlanInput }),
+  'plan.delete': specObj({ type: specEnum(['plan.delete']), planId: specId }),
   'profile.save': specObj({ type: specEnum(['profile.save']), person: Person }),
   'companion.save': specObj({ type: specEnum(['companion.save']), companionId: specNull(specId), person: Person }),
   'companion.remove': specObj({ type: specEnum(['companion.remove']), companionId: specId }),
@@ -455,7 +485,8 @@ module.exports = {
   RoutePoint, RouteRisk, TrackPoint, Difficulty, RouteSnapshot, Route, PickupPoint, Activity,
   Trip, Consent, SignupGroup, Signup, Driver, Evidence, Vehicle,
   Assignment, Membership, Departure, CheckIn, ReturnPlan, NodeVisit, Attendance,
-  PositionReport, Incident, ActivityEvent, Audience, Notice, Task, TaskInput, TaskStatus, TaskCategory, Receipt,
-  stateSpec, ActivityInput, VehicleInput, ParticipantInput, AssignmentPreview, RouteInput,
+  PositionReport, Incident, ActivityEvent, Audience, Notice, Task, TaskInput, TaskStatus, TaskCategory,
+  Plan, PlanStop, Receipt,
+  stateSpec, ActivityInput, VehicleInput, ParticipantInput, AssignmentPreview, RouteInput, PlanInput,
   Payload, Command,
 }

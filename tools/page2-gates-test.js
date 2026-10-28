@@ -451,15 +451,26 @@ const WEATHER_STATES = {
 }
 const DATA_STATES = ['loadingWeather', 'data', 'dataClassic', 'empty', 'ownerNoData']
 
-/* ================= 夹具：weather-hub（观察点 / 轨迹点组） ================= */
+/* ================= 夹具：weather-hub（屏 1 选源首页 · 白底无卡片皮肤） ================= */
 function hubData(over) {
   return Object.assign({
+    screen: 'home',
+    homeTab: 'plans',
+    plansState: 'ready', plansError: '',
+    plans: [
+      { id: 'pl1', name: '格聂 · 周末两日徒步', subText: '10/29 出发 · 2 天 · 个人计划' },
+      { id: 'pl2', name: '四姑娘山 · 一天来回', subText: '11/02 出发 · 1 天 · 个人计划' },
+    ],
+    sharedPlans: [{ id: 'pl3', name: '措普沟 · 湖畔往返', subText: '11/05 出发 · 1 天 · 由 陈屿 共享' }],
+    lastPlan: { id: 'pl1', isOwner: true, name: '格聂 · 周末两日徒步', subText: '10/29 出发 · 2 天 · 个人计划' },
     points: [
-      { id: 'w1', display: '冷杉坪', subText: '3,580 m · 2026-10-14', },
-      { id: 'w2', display: '垭口', subText: '4,120 m · 2026-10-14' },
+      { id: 'w1', display: '冷杉坪', subText: '30.1234°N, 103.1200°E · 3,580 m' },
+      { id: 'w2', display: '垭口', subText: '30.2200°N, 103.2100°E · 4,120 m' },
     ],
     tracks: [{ id: 't1', name: '四姑娘山大峰', statsText: '12 个节点', nodes: [{ id: 'n1', name: '起点', label: '0 min' }, { id: 'n2', name: '垭口', label: '+180 min' }] }],
     trackOpen: { t1: true },
+    routesState: 'idle', routes: [],
+    place: null, initial: {}, planId: '', placeOpen: false, placeList: [], placeQuery: '',
     manualOpen: false, manual: { name: '', lat: '', lng: '', ele: '', wgs: false }, manualError: '',
     gpxOpen: false, gpxError: '', gpxMeta: null, gpxPoints: [],
     deleteOpen: false, deleteInfo: { type: 'point', id: '', name: '' },
@@ -487,18 +498,24 @@ section('§0 有效性门：判据的输入必须真的存在')
   check('经典分支同样无求值失败', unresolvable.length === 0, unresolvable.slice(0, 3).join(' ｜ '))
   resetUnresolvable()
   const h = render(src(HUB_WXML), hubData())
-  check('hub 夹具渲染出 3 张 .card（GPX 卡 + 观察点卡 + 轨迹点组卡）',
-    entriesWithClass(h, 'card').length === 3, String(entriesWithClass(h, 'card').length))
-  check('hub 夹具的观察点卡里真的有一行行内容（.list-row ≥ 2）',
-    (() => {
-      const pts = hubCards(h).pts
-      return !!pts && entriesWithClass(within(h, pts), 'list-row').length >= 2
-    })(), '')
+  check('hub 屏 1 夹具渲染出 3 条资产行 + 3 个资产 tab',
+    entriesWithClass(h, 'wh-asset').length === 3 && entriesWithClass(h, 'wh-tab').length === 3,
+    entriesWithClass(h, 'wh-asset').length + '/' + entriesWithClass(h, 'wh-tab').length)
+  /* 2026-10-27 天气页 V3：用户裁决 D2 允许本页脱离全站卡片语言（白底、鲜绿、无卡片）。
+     这条同时防「两套内缩叠加」——页面分区自己给 20px，就不许再出现 .card。 */
+  check('hub 屏 1 不再使用卡片语言（D2 的登记例外；出现 .card 就是两套留白叠加）',
+    entriesWithClass(h, 'card').length === 0, String(entriesWithClass(h, 'card').length))
+  check('hub 屏 1 三个入口都在（地图选点 / 输入经纬度 / 导入 GPX）',
+    nodesTagged(h, 'view').filter(x => attrOf(x, 'bindtap') === 'onPickMap').length === 1 &&
+    nodesTagged(h, 'view').filter(x => attrOf(x, 'bindtap') === 'onManualOpen').length === 1 &&
+    nodesTagged(h, 'view').filter(x => attrOf(x, 'bindtap') === 'onImportGpx').length === 1, '')
   check('hub 夹具表达式全部求值得动', unresolvable.length === 0, unresolvable.slice(0, 3).join(' ｜ '))
   resetUnresolvable()
-  const noPoints = render(src(HUB_WXML), hubData({ points: [] }))
-  check('没有观察点时那张卡不渲染（判据不是靠"文件里有这个类"成立的）',
-    hubCards(noPoints).pts === null, String(hubCards(noPoints).pts))
+  const noPoints = render(src(HUB_WXML), hubData({ homeTab: 'points', points: [] }))
+  check('常用地点空态不渲染资产行（判据不是靠"文件里有这个类"成立的）',
+    entriesWithClass(noPoints, 'wh-asset').length === 0 &&
+    textsWith(noPoints, '还没有常用地点').length === 1,
+    String(entriesWithClass(noPoints, 'wh-asset').length))
 }
 
 /* ================= §1 A-07 模板半边：日期控件不再被 stranded ================= */
@@ -912,108 +929,68 @@ async function gateWeatherJs() {
 }
 
 /* ================= §3 A-23：观察点卡的横向留白回到单源 ================= */
-section('§3 A-23：观察点卡内缩 = 同页兄弟卡，且由 .card 一处承载')
+section('§3 A-23′：天气 Hub 改白底无卡片后，横向留白只有一个出处（.wh-list）')
 guarded('§3', () => {
   const appRules = parseSheet(src(APP_WXSS))
   const hubRules = parseSheet(src(HUB_WXSS))
   const sheets = [appRules, hubRules]
-  const e = render(src(HUB_WXML), hubData())
-  const { gpx, pts, trk } = hubCards(e)
-  check('三张卡都按结构认到了（GPX/观察点/轨迹点组；认不到就是判据没有输入）',
-    !!gpx && !!pts && !!trk, JSON.stringify([!!gpx, !!pts, !!trk]))
-  const gi = insetOf(gpx, sheets)
-  const pi = insetOf(pts, sheets)
-  const ti = insetOf(trk, sheets)
-  check('观察点卡与 GPX 卡的左右内缩逐值相同（同屏两张卡不再不一致）',
-    pi.left === gi.left && pi.right === gi.right, 'pts=' + pi.left + '/' + pi.right + ' gpx=' + gi.left + '/' + gi.right)
-  check('观察点卡与轨迹点组卡也相同（本页没有第四种形态）',
-    pi.left === ti.left && pi.right === ti.right, 'trk=' + ti.left + '/' + ti.right)
-  check('内缩是正数（原来被内联 padding 归零 ⇒ 文字贴圆角边）',
-    Number.isFinite(pi.left) && pi.left > 0 && Number.isFinite(pi.right) && pi.right > 0, 'left=' + pi.left + ' right=' + pi.right)
-  check('留白确实来自 app.wxss 的 .card 一处（赢家不是内联、也不是页内重印）',
-    pts.node.attrs.style === undefined && pi.winnerLeft === '.card@sheet0',
-    'winner=' + pi.winnerLeft + ' inline=' + JSON.stringify(pts.node.attrs.style))
-  check('卡内直接子元素自己不带左右 padding（"靠 .card 一处给留白"这条前提成立）',
-    (() => {
-      const header = within(e, pts).filter(x => hasClass(x, 'card-header'))[0]
-      const row = within(e, pts).filter(x => hasClass(x, 'list-row'))[0]
-      if (!header || !row) return false
-      const free = v => !Number.isFinite(v.left) || v.left === 0
-      const freeRight = v => !Number.isFinite(v.right) || v.right === 0
-      return [insetOf(header, sheets), insetOf(row, sheets)].every(v => free(v) && freeRight(v))
-    })(), '')
-  // 影子改写（铁律 31③）：单源必须是"改得动"的
+  const e = render(src(HUB_WXML), hubData({ homeTab: 'points' }))
+  const list = entriesWithClass(e, 'wh-list')[0]
+  const rows = entriesWithClass(e, 'wh-asset')
+  check('判据输入存在：列表容器 + ≥2 条资产行', !!list && rows.length >= 2,
+    'list=' + !!list + ' rows=' + rows.length)
+  const li = insetOf(list, sheets)
+  check('列表容器左右内缩 = 20px，且赢家是本页 .wh-list（留白只有一个出处）',
+    li.left === 20 && li.right === 20 && li.winnerLeft === '.wh-list@sheet1',
+    'left=' + li.left + ' right=' + li.right + ' winner=' + li.winnerLeft)
+  check('每条资产行自己不带左右内缩（不是"容器 + 行"两层叠加）',
+    rows.every(r => {
+      const v = insetOf(r, sheets)
+      return !(v.left > 0) && !(v.right > 0)
+    }), rows.map(r => insetOf(r, sheets)).map(v => v.left + '/' + v.right).join(' '))
+  check('资产行没有内联 padding（不重印第二份留白）',
+    rows.every(r => !(r.node.attrs && r.node.attrs.style)), '')
+  // 影子改写（铁律 31③）：单源必须"改得动"
   {
-    // 影子必须同时覆盖 padding 简写与 longhand 两种合法写法，否则"把简写拆成四条写"这种
-    // 等价重构会让影子静默失效（本轮 P26 第一次就是这么误伤的）。
-    const SHADOW = '24px'
-    const shadow = appRules.map(r => ({
+    const shadow = hubRules.map(r => ({
       sel: r.sel,
-      decls: r.decls.map(d => (r.sel === '.card' && /^padding(-top|-right|-bottom|-left)?$/.test(d.prop) && /px$/i.test(d.value)
-        ? Object.assign({}, d, { value: SHADOW }) : d)),
+      decls: r.decls.map(d => (r.sel === '.wh-list' && d.prop === 'padding'
+        ? Object.assign({}, d, { value: '8px 24px 18px' }) : d)),
     }))
-    const shSheets = [shadow, hubRules]
-    const c2 = hubCards(render(src(HUB_WXML), hubData()))
-    const gi2 = insetOf(c2.gpx, shSheets)
-    const pi2 = insetOf(c2.pts, shSheets)
-    const ti2 = insetOf(c2.trk, shSheets)
-    check('影子把 .card 的横向内缩改成 24px ⇒ 三张卡一起变 24（单源可改写，不是三个巧合的 16）',
-      gi2.left === 24 && pi2.left === 24 && ti2.left === 24 && gi2.right === 24 && pi2.right === 24 && ti2.right === 24,
-      [gi2.left, pi2.left, ti2.left].join('/'))
-    const back = insetOf(hubCards(render(src(HUB_WXML), hubData())).pts, sheets)
+    const li2 = insetOf(entriesWithClass(render(src(HUB_WXML), hubData({ homeTab: 'points' })), 'wh-list')[0], [appRules, shadow])
+    check('影子把 .wh-list 横向内缩改成 24px ⇒ 终值跟着变 24（不是两个巧合的 20）',
+      li2.left === 24 && li2.right === 24, li2.left + '/' + li2.right)
+    const li3 = insetOf(entriesWithClass(render(src(HUB_WXML), hubData({ homeTab: 'points' })), 'wh-list')[0], sheets)
     check('还原后逐项相同（影子没有把状态留在别处）',
-      back.left === pi.left && back.right === pi.right, back.left + '/' + pi.left)
+      li3.left === li.left && li3.right === li.right, li3.left + '/' + li.left)
   }
-  check('既有补偿没有被顺手清掉：轨迹组展开区仍是左 16px（同页观感一致的那条旧账）',
+  check('删除按钮与行的事件层级未动：catchtap 仍是 onDeleteTap、行仍是 bindtap onOpenPoint',
     (() => {
-      const expanded = within(e, trk).filter(x => hasClass(x, 'stack'))[0]
-      if (!expanded) return false
-      const v = insetOf(expanded, sheets)
-      return v.left === 16 && v.right === 16
-    })(), '')
-  check('删除按钮与行的事件层级未动：catchtap 仍是 onDeleteTap、行仍是 bindtap onPointTap（padding 改动没碰事件）',
-    (() => {
-      const row = within(e, pts).filter(x => hasClass(x, 'list-row'))[0]
-      if (!row) return false
-      const del = within(e, row).filter(x => hasClass(x, 'button'))[0]
-      return attrOf(row, 'bindtap') === 'onPointTap' && !!del && attrOf(del, 'catchtap') === 'onDeleteTap'
+      const row = rows[0]
+      const del = within(e, row).filter(x => hasClass(x, 'wh-asset-del'))[0]
+      return attrOf(row, 'bindtap') === 'onOpenPoint' && !!del && attrOf(del, 'catchtap') === 'onDeleteTap'
     })(), '')
 })
 
 /* ================= §4 A-24：卡片标题不再逐字重复按钮 ================= */
-section('§4 A-24：GPX 卡的标题与按钮不再同文')
+section('§4 A-24′：GPX 入口唯一、主行动唯一')
 guarded('§4', () => {
   const e = render(src(HUB_WXML), hubData())
-  const card = hubCards(e).gpx
-  check('带 onImportGpx 按钮的那张卡仍按结构认得到（判据输入存在；按文案认卡会在别人改文案时崩红）', !!card, '')
-  const header = within(e, card).filter(x => hasClass(x, 'card-label'))[0]
-  const btns = within(e, card).filter(x => hasClass(x, 'button'))
-  check('卡内那颗按钮的文案一字未改（仍是「导入 GPX 轨迹」）',
-    btns.length === 1 && textsWith(within(e, btns[0]), '导入 GPX 轨迹').length === 1, String(btns.length))
-  check('按钮 handler 名未改（仍是 onImportGpx，天气 Hub 的入口归属没动）',
-    btns.length === 1 && attrOf(btns[0], 'bindtap') === 'onImportGpx', btns[0] && attrOf(btns[0], 'bindtap'))
-  const headerText = (() => {
-    if (!header) return ''
-    const t = within(e, header).filter(x => x.kind === 'text')[0]
-    return t ? renderedText(t) : ''
-  })()
-  check('标题与按钮不再同文（缺陷本体 = 同一串字面文本两种身份）',
-    !!header && headerText !== '导入 GPX 轨迹', JSON.stringify(headerText))
-  check('标题非空且仍在说这块是干什么的（不是"删掉多余一行"式修法）',
-    headerText.length > 0 && headerText.indexOf('GPX') !== -1, JSON.stringify(headerText))
-  check('这张卡的可点入口仍只有那一个（没有新增按钮）',
-    (() => {
-      const taps = within(e, card).filter(x => x.kind === 'node' && (attrOf(x, 'bindtap') || attrOf(x, 'catchtap')))
-      return taps.length === 1 && attrOf(taps[0], 'bindtap') === 'onImportGpx'
-    })(), '')
-  check('按钮仍是 secondary（主行动唯一化：地图选点仍是本页唯一实心按钮，没有升格）',
-    btns.length === 1 && attrResolved(btns[0], 'class').indexOf('secondary') !== -1 && attrResolved(btns[0], 'class').indexOf('primary') === -1,
-    btns[0] && attrResolved(btns[0], 'class'))
-  check('页头那颗实心按钮仍是 onPickMap/primary（我没顺手改主次）',
-    (() => {
-      const map = nodesTagged(e, 'view').filter(x => attrOf(x, 'bindtap') === 'onPickMap')[0]
-      return !!map && attrResolved(map, 'class').indexOf('primary') !== -1
-    })(), '')
+  const gpxBtns = nodesTagged(e, 'view').filter(x => attrOf(x, 'bindtap') === 'onImportGpx')
+  check('GPX 入口恰好一个（判据输入存在）', gpxBtns.length === 1, String(gpxBtns.length))
+  check('按钮文案一字未改（仍是「导入 GPX 轨迹」）',
+    gpxBtns.length === 1 && textsWith(within(e, gpxBtns[0]), '导入 GPX 轨迹').length === 1, '')
+  check('该入口不是实心主行动（主次没有升格）',
+    gpxBtns.length === 1 && gpxBtns[0].classes.indexOf('wh-primary') === -1,
+    gpxBtns[0] && gpxBtns[0].classes.join(' '))
+  const map = nodesTagged(e, 'view').filter(x => attrOf(x, 'bindtap') === 'onPickMap')
+  check('地图选点仍是本页唯一实心按钮（primary 唯一化没被改掉）',
+    map.length === 1 && map[0].classes.indexOf('wh-primary') !== -1,
+    map.map(m => m.classes.join(' ')).join(' | '))
+  check('三个入口都在且各只有一个（地图选点 / 输入经纬度 / 导入 GPX）',
+    map.length === 1 &&
+    nodesTagged(e, 'view').filter(x => attrOf(x, 'bindtap') === 'onManualOpen').length === 1 &&
+    gpxBtns.length === 1, '')
   // 弹层是关闭态时整个子树不渲染（overlay 语义），所以这一条要拿"打开"的状态读它的 title 属性
   const open = render(src(HUB_WXML), hubData({
     gpxOpen: true,
@@ -1021,7 +998,7 @@ guarded('§4', () => {
     gpxPoints: [{ name: '起点', coordinates: { lat: 30.1, lng: 103.1 } }],
   }))
   const sheet = nodesTagged(open, 'overlay').filter(n => attrResolved(n, 'title') === '导入 GPX 轨迹')
-  check('导入预览弹层打开时标题仍是「导入 GPX 轨迹」（那一处按按钮即弹，标题身份正确，不许被顺手改掉）',
+  check('导入预览弹层打开时标题仍是「导入 GPX 轨迹」（按按钮即弹，身份正确）',
     sheet.length === 1, String(sheet.length))
 })
 

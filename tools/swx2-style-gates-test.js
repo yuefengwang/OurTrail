@@ -378,15 +378,29 @@ section('§1 解析器与判据自证（判据不能空转；含审计实测数�
 /* ================================================================= */
 section('§2 B-09：var() 引用必须有定义（未定义 token 命中 2→0）')
 {
+  /* 2026-10-27 天气页 V3（D2 皮肤例外）：组件根节点上定义的局部自定义属性是**合法 CSS**
+     ——`.weather-v3 { --w-green: … }` 与 `var(--w-green)` 在同一份 wxss 里成对出现。
+     所以判据从「名字必须在 app.wxss 的 page 块」改为「名字必须在 app.wxss **或本文件**有定义」；
+     后者仍要求同文件成对，不是放宽到"全仓随便哪写过都算"。牙齿由 §2 的有效性门守：
+     编一个谁都没定义的名字，必须仍然被计为 dead。 */
+  const localDefsOf = rel => {
+    const names = new Set()
+    ;(blankComments(read(rel)).match(/--[\w-]+\s*:/g) || []).forEach(s => names.add(s.replace(/\s*:$/, '')))
+    return names
+  }
+  const isDead = (name, localDefs) => !Object.prototype.hasOwnProperty.call(TOKENS, name) && !localDefs.has(name)
+  check('T2.0 判据有效性：一个谁都没定义的名字仍会被计为 dead（局部定义不是免死金牌）',
+    isDead('--opt-not-a-real-token', new Set(['--w-green'])), '')
   const deadHits = []
   allWxss(MP).forEach(rel => {
+    const localDefs = localDefsOf(rel)
     ;(blankComments(read(rel)).match(/var\(\s*(--[\w-]+)/g) || []).forEach(hit => {
       const name = /--[\w-]+/.exec(hit)[0]
-      if (!Object.prototype.hasOwnProperty.call(TOKENS, name)) deadHits.push(rel + ' ' + name)
+      if (isDead(name, localDefs)) deadHits.push(rel + ' ' + name)
     })
   })
   const deadNames = Array.from(new Set(deadHits.map(d => d.split(' ')[1])))
-  check('T2.1 全仓 .wxss 的 var() 引用全部有定义（未定义 token 种类 = 0）', deadNames.length === 0, deadNames.join(','))
+  check('T2.1 全仓 .wxss 的 var() 引用全部有定义（app.wxss 或本文件；未定义 token 种类 = 0）', deadNames.length === 0, deadNames.join(','))
   check('T2.2 --surface-alt / --text-2 两个死名字已从写入集消失',
     deadNames.indexOf('--surface-alt') === -1 && deadNames.indexOf('--text-2') === -1, JSON.stringify(deadNames))
   check('T2.3 我没有私自强占 token 名：--surface-alt/--text-2 在 app.wxss 里仍未定义（注册表归 SWX1）',

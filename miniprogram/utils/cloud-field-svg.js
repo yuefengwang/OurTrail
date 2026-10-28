@@ -273,13 +273,15 @@ function isoLoops (F, T, xOf, yOf) {
  * 未显式给 basis 的调用按 'measured'（tol=0，判据与旧实现逐字一致）。
  * ⚠ 边界如实记录：GPX/选点/手填三条来源本项目都没有可量化的误差资料，
  *   只能按「点自己的高程」处理；误差带只对模型地形这一个来源生效。 */
-var SCAN_MIN = 0, SCAN_MAX = 7000
+/* 判读扫描范围 = 实测网格的物理边界（300hPa 实测至 9,765m）。
+   导出对象而非两个 const：OI 的 peakCover 也按引用读它，影子改数才会一起动（铁律 31）。 */
+var SCAN_RANGE = { MIN: 0, MAX: 9750 }
 var EDGE_GUARD = 200            // 与此点至少隔 200m 才算「在一侧」
 var MODERATE_AT_POINT = 45      // 点上有中等云量时不判上下（旧实现的 cUser<45 守卫，语义保留）
 var ALT_TOL = { measured: 0, estimated: 600, none: Infinity }
 function denseSpanAt(sample, h, lo, hi) {
   var run = null, runs = [], peak = 0
-  for (var alt = Math.max(SCAN_MIN, lo); alt <= Math.min(SCAN_MAX, hi); alt += 25) {
+  for (var alt = Math.max(SCAN_RANGE.MIN, lo); alt <= Math.min(SCAN_RANGE.MAX, hi); alt += 25) {
     var v = sample(h, alt)
     if (v >= SPAN_C) {
       if (!run) run = { lo: alt, hi: alt }
@@ -312,8 +314,8 @@ function inferState(sample, h, userAlt, coverage, opts) {
   function unknown (reason, holds) { return pack(null, reason, holds || []) }
   var covOk = !!(coverage && Number.isFinite(coverage.lo) && Number.isFinite(coverage.hi) && coverage.hi > coverage.lo)
   if (!covOk) return unknown('no-data')
-  var lo = Math.max(SCAN_MIN, coverage.lo)
-  var hi = Math.min(SCAN_MAX, coverage.hi)
+  var lo = Math.max(SCAN_RANGE.MIN, coverage.lo)
+  var hi = Math.min(SCAN_RANGE.MAX, coverage.hi)
   var tol = ALT_TOL[basis]
   /* 没有可信海拔 ⇒ 凡涉及「此点」的位置关系一概不判；但云带本身是事实，
      实测包络有效就照常带出 span，否则「不知道这儿有多高」会把这一小时
@@ -379,19 +381,31 @@ function inferState(sample, h, userAlt, coverage, opts) {
  *             同分时才由「是否框住查询点」决定。装不下就保云带、把点写在窗外——
  *             点的数字本来就在读数行里，而一片空白的云场图没有意义。
  *             留在窗外的锚点由 clippedAbove/Below 与 pointOutside 各自如实报告（不混用）。
+ *             （2026-10-28：MAX_SPAN 抬到轴宽后，「装不下」在 [LO_FLOOR, HI_CEIL] 内已不可达；
+ *              这三条分支保留为兜底与将来放宽网格时的出口，仍由影子变异钉住——见
+ *              tools/cloud-field-geometry-test.js 的 9,750→6,000 变异。）
  *   没有锚点 ⇒ 退回历史固定窗（行为与改前逐像素一致），并标 fallback=true。
  *
  * 判读一律与本窗无关：inferState / denseSpanAt / peakCover 扫**实测范围**，
  * OI 的 cloudLayersAt 继续扫**固定基准**（天象成立条件不得随显示窗漂移，
  * 这条由 tools/cloud-position-test.js §8 钉住）。 */
 var PROFILE = {
+  GRID_M: 50,        // 高度网格步长：云段扫描与场网格共用（单源，避免两处 50 漂移）
   DECK_MIN: 25,      // 参与布局的「有意义云量」下界 = 等值带第二档（10% 是发丝级底纹，不足以决定窗）
   PAD_M: 250,        // 一格的呼吸位（等于适配器的海拔步长），贴边的云不至于看不见
   QUANT: 250,        // 窗的边界量化到 250 m ⇒ 刻度落在整数上、换时间窗不至于每帧抖动
   MIN_SPAN: 1500,    // 再窄就没有高度感了
-  MAX_SPAN: 4000,    // 与历史固定窗同尺度（190px 行高 ⇒ 21 m/px），不至于把云带压成一条线
+  /* 跨度上限 = 窗**必须容得下实测的全部云段**，不再是一屏的可读性取舍。
+     4,000 / 6,000 两代上限都取舍过可读性，代价是**静默**：窗被上端截断后，
+     被截掉的云一条都画不出来（72h 视图实测：低云 1,000–4,300 + 高层 8,500–8,750
+     ⇒ 窗 0–4,750、所有等值环最高点 4,376 m），只在左上角留一句「窗外上方还有云带」。
+     对高原/雪山用户来说那正是最该看的一段，等于图说谎。
+     取 HI_CEIL 同值后 bounds 本身就在 [LO_FLOOR, HI_CEIL] 内 ⇒ 任何候选窗都装得下，
+     `clippedAbove` 在生产形状下不可达（保留渲染分支：网格若将来允许更高就会再用到）。
+     代价如实：一张图被最高那层拉长，低云被压扁（见 smoke/geometry 套件的跨度断言）。 */
+  MAX_SPAN: 9750,
   LO_FLOOR: 0,
-  HI_CEIL: 7000,     // 与 SCAN_MIN/SCAN_MAX 同源：这是实测网格的物理边界
+  HI_CEIL: 9750,     // 与 SCAN_RANGE 同源：实测网格的物理边界（300hPa 实测至 9,765m）
 }
 var ESTIMATE_TOL_M = 600   // Open-Meteo 地形高度的误差带上界（与 ALT_TOL.estimated 同一个数）
 
@@ -402,7 +416,7 @@ function finiteNum (v) { return Number.isFinite(v) ? v : null }
 function profileDeckRuns (sample, h, lo, hi) {
   var runs = [], run = null
   var from = Math.max(PROFILE.LO_FLOOR, Math.floor(lo)), to = Math.min(PROFILE.HI_CEIL, Math.ceil(hi))
-  for (var alt = from; alt <= to; alt += 50) {
+  for (var alt = from; alt <= to; alt += PROFILE.GRID_M) {
     var v = sample(h, alt)
     if (v >= PROFILE.DECK_MIN) { run = run || { lo: alt, hi: alt, peak: 0 } ; run.hi = alt; if (v > run.peak) run.peak = v }
     else if (run) { runs.push(run); run = null }
@@ -495,8 +509,15 @@ function planProfile (opts) {
       var ink = 0, hasPoint = false
       anchors.forEach(function (a) {
         if (a.isPoint) { if (a.lo >= w.lo && a.hi <= w.hi) hasPoint = true; return }
-        var ov = Math.min(a.hi, w.hi) - Math.max(a.lo, w.lo)
-        if (ov > 0) ink += ov / Math.max(1, a.hi - a.lo) * (a.peak || 0) * (a.hi - a.lo)
+        /* 单点云段没有厚度：扫描到实测包络顶端时，最后那个样本若单独达标就会得到 lo===hi。
+           旧式 `ov / max(1, 厚) * peak * 厚` 对它恒为 0 ⇒ 装下它的窗和不装它**得分相同**，
+           于是窗不为它张开，而 clippedAbove 又照实报「上方还有云带」——图与边注互相打脸。
+           给它半格等效厚度，只为让它参与比较；有厚度的云段走的是同一条式子
+           （除以再乘同一个厚度 ⇒ 就是 ov×peak，故既有窗口逐字节不变）。 */
+        var aLo = a.lo, aHi = a.hi
+        if (aHi <= aLo) { aLo -= PROFILE.GRID_M / 2; aHi += PROFILE.GRID_M / 2 }
+        var ov = Math.min(aHi, w.hi) - Math.max(aLo, w.lo)
+        if (ov > 0) ink += ov * (a.peak || 0)
       })
       var score = ink * 1000 + (hasPoint ? 1 : 0)
       if (!best || score > best.score + 1e-9 || (Math.abs(score - best.score) < 1e-9 && w.lo < best.w.lo)) best = { w: w, score: score }
@@ -509,6 +530,22 @@ function planProfile (opts) {
     best = { w: c, score: 0 }
   }
   res.lo = best.w.lo; res.hi = best.w.hi; res.fallback = false
+  /* 窗被跨度上限夹住时只能从**上端**截断 ⇒ 「点上端之外」永远进不来
+     （高原实测：窗 0–5,450 而此点 6,200）。整窗向上平移能把点带进来，跨度不变，
+     代价由下端承担，并由 clippedBelow 如实报出——比把点丢在窗外有用。
+     只往上平移，不往下：下端并没有被上限截断，点在下端之外意味着「云都在我头顶」，
+     这时把窗拽下来会牺牲用户要看的那段云（差多少米已经由 pointOutside 说明）。
+     只在点真的落得进 bounds 时平移；够不着就不假装（pointOutside 照旧说话）。 */
+  if (alt != null && bounds) {
+    var pTol = opts.basis === 'estimated' ? ESTIMATE_TOL_M : 0
+    var pLo = alt - pTol, pHi = alt + pTol
+    if (pLo >= bounds.lo && pHi <= bounds.hi && pHi > res.hi) {
+      var shift = Math.ceil((pHi - res.hi) / PROFILE.QUANT) * PROFILE.QUANT
+      if (res.lo + shift >= bounds.lo && res.hi + shift <= bounds.hi) {
+        res.lo += shift; res.hi += shift
+      }
+    }
+  }
   res.decks = merged
   /* clipped* 只说「云带被窗裁掉了」，不含查询点——点不在窗里是另一件事（pointOutside），
      两者混在一个旗标上会让边注说出「窗外下方还有云带」这种其实没有云的话。 */
@@ -809,6 +846,7 @@ module.exports = {
   ALT1: ALT1,
   BINS: THRESHOLDS,
   denseSpanAt: denseSpanAt,
+  SCAN_RANGE: SCAN_RANGE,
   /* --- 剖面显示窗（纯显示层）---
      planProfile 只决定「这张图画哪一段高度」；判读一律用实测范围或固定基准，与本窗无关。
      renderProfileChrome 是两个渲染器共用的图形语言：参考线/交线/刻度/窗外提示/窗范围一套逻辑。 */

@@ -29,7 +29,9 @@
 | 现场面板 | `components/field-panel` | 签到/出发核实/节点/到家/返程/异常/位置，组织者与协作共用 |
 | 协作任务 | `pages/staff` | 现场协作者的专属视角（field-panel staff 版） |
 | 本车任务 | `pages/vehicle` | 车辆联络人：去程/返程逐人清点、发车/完成 |
-| 天气 Tab | `pages/weather-hub` | 独立天气模块首页：地图选点 / 输入经纬度（含 WGS-84 开关）/ 导入 GPX 三种入口，本地观察点与轨迹点组管理（免档案、免活动） |
+| 天气 Tab | `pages/weather-hub` | 天气模块两屏宿主（2026-10-27 V3）：屏 1 选源首页＝地图选点 / 输入经纬度（含 WGS-84 开关）/ 导入 GPX 三入口 + 继续上次 + 个人计划 / 常用地点 / 共用路线三 tab；屏 2 挂共享详情单元（底栏常驻） |
+| 天气详情 | `components/weather-detail` | 四视图共享单元（逐时 / 云层 / 沿途 / 日月）：吸顶 tab、42px/列横滑逐时图、生产云层等值带、日照弧与三态天相卡、行程流；两个宿主共用一份实现 |
+| 个人计划弹层 | `components/weather-plan-sheet` | 行程编辑（名称 / 出发日 / 节点×天×抵达时刻，同日逆序本地先拦）与分享（协作码，owner 才给名单） |
 | 天气查询 | `pages/weather` | 三种模式共用：活动流（节点→天气，含天气提醒草稿）与自由查询（单点/轨迹组，抵达日程、保存/分享降精度）；Open-Meteo 云函数代理+缓存、**天相结论卡**（云海/日照金山/星空/银河/彩虹/晨昏光） |
 | 天气全图 | `pages/weather-chart` | 横屏整屏看 7×24 小时 meteogram 时间坐标图（数据经 `utils/chart-store.js` 交接，不走 URL） |
 | 天相图表 | `components/meteogram` | canvas 自绘 meteogram：温度线/降水双柱/三层云量/天相窗口标记/日时轴（几何抽到 `layout.js` 供测试断言） |
@@ -56,6 +58,7 @@ miniprogram/
                                  fact-grid/equipment-grid/field-panel/roster-panel/
                                  transport-panel/meteogram/route-profile/
                                  profile-gate/content-editor/brand-header/next-up-card/
+                                 weather-detail/weather-plan-sheet/
                                  privacy-popup(已注销，保留文件)
   utils/
     api.js           云函数调用封装（read/dispatch + Result 解包）

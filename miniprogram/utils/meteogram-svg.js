@@ -29,7 +29,7 @@ const ROWS = {
   dayHdr: { y: 0, h: 14 },
   iconTemp: { y: 20, h: 58 },   // 图标行 + 温度曲线（含极值标注与三档网格）
   precip: { y: 84, h: 42 },     // 降水双柱 + 概率底带
-  cloud: { y: 132, h: 190 },    // Cloud Field（2000–6000 m 等值带）
+  cloud: { y: 132, h: 190 },    // Cloud Field（高度窗由 planProfile 自适应，不是固定 2000–6000）
   wind: { y: 328, h: 66 },      // 风向箭头 + 风速/阵风曲线
   axis: { y: 394, h: 18 },
 }
@@ -147,12 +147,18 @@ function buildUnified(opts) {
     elevSource: opts.elevSource || null,
   }
   /* 显示窗由有效数据 + 有效云层 + 查询点联合决定（cloud-field-svg.planProfile，纯显示层）。
-     没给出处时按「点自己的高程」处理，与 inferState 的默认一致；有 elevSource 就走唯一映射函数。 */
+     没给出处时按「点自己的高程」处理，与 inferState 的默认一致；有 elevSource 就走唯一映射函数。
+     规划视野可以与渲染视野不同（`planField`）：窗必须对整条时间轴稳定，否则 24/48/72
+     会拿同一份数据裁出三种高度尺度。缺省 = 渲染字段，旧调用逐字节不变。 */
   const elevBasis = opts.elevBasis || (cloud.elevSource ? F.elevBasis(cloud.elevSource)
     : (cloud.userAlt != null ? 'measured' : 'none'))
+  const planCf = opts.planField || cf
+  const planColumn = planCf === cf ? column : CFF.makeColumnSampler(planCf)
+  const planSample = planCf === cf ? cloudSample
+    : (t, alt) => CFF.sampleAtStations(planColumn, planCf.times.length, t, alt)
   const profT0 = Date.now()
   cloud.profile = CFF.planProfile({
-    sample: cloudSample, covered: cloud.covered, hours: horizon,
+    sample: planSample, covered: planCf.covered || null, hours: planCf.times.length,
     queryAlt: cloud.userAlt, basis: elevBasis,
   })
   cloud.elevBasis = elevBasis

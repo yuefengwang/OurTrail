@@ -1,0 +1,75 @@
+<overlay open="{{open}}" kind="sheet" title="{{mode === 'share' ? '分享这个计划' : (isCopy ? '复制为独立计划' : '调整个人行程')}}" bind:close="onClose">
+  <view class="wp">
+
+    <!-- 分享：协作码添加 + 逐个取消（名单只有 owner 拿得到，见 §8.3） -->
+    <block wx:if="{{mode === 'share'}}">
+      <text class="wp-note">共享后对方只能查看，不能修改或删除；对方可以复制成自己的计划。</text>
+      <view wx:if="{{shareList.length}}" class="wp-share-list">
+        <view wx:for="{{shareList}}" wx:key="code" class="wp-share-row">
+          <text class="wp-share-code">{{item.short}}</text>
+          <text class="wp-share-tag">只读</text>
+          <view class="wp-link" hover-class="wp-link-hover" catchtap="onShareRemove" data-code="{{item.code}}">取消分享</view>
+        </view>
+      </view>
+      <text wx:else class="wp-quiet">还没有分享给任何人。</text>
+      <text class="wp-field-label">添加同行者（协作码）</text>
+      <view class="wp-code-row">
+        <input class="wp-input" value="{{shareCode}}" bindinput="onShareCode" placeholder="粘贴对方的协作码" maxlength="64" />
+        <view class="wp-btn wp-btn-inline" hover-class="wp-btn-hover" bindtap="onShareAdd">添加</view>
+      </view>
+      <view wx:if="{{shareList.length}}" class="wp-btn wp-btn-quiet" hover-class="wp-btn-hover" bindtap="onShareClear">取消全部共享</view>
+      <text wx:if="{{localError}}" class="wp-error">{{localError}}</text>
+      <text wx:if="{{error}}" class="wp-error">{{error}}</text>
+      <view class="wp-btn wp-btn-primary" hover-class="wp-btn-hover" bindtap="onClose">知道了</view>
+    </block>
+
+    <!-- 编辑：名称 / 出发日 / 每站第几天 + 抵达时刻 -->
+    <block wx:else>
+      <text wx:if="{{isCopy}}" class="wp-note">副本归你自己所有，不会覆盖原计划。</text>
+      <view wx:else class="wp-note wp-note-lock">
+        <icon name="lock" size="13" color="#69716B" />
+        <text>计划只改这份行程，不改路线原始记录；从活动带入后调整，也不会回写活动。</text>
+      </view>
+
+      <text class="wp-field-label">计划名称</text>
+      <input class="wp-input" value="{{form.name}}" bindinput="onName" maxlength="40" placeholder="例如：格聂 · 周末两日徒步" />
+
+      <text class="wp-field-label">出发日期</text>
+      <picker mode="date" value="{{form.startDate}}" bindchange="onStartDate">
+        <view class="wp-picker">
+          <text>{{form.startDate}}</text>
+          <icon name="down" size="12" color="#8B958C" />
+        </view>
+      </picker>
+
+      <text class="wp-sub">关键节点 · 时间可留空</text>
+      <view class="wp-columns">
+        <text>节点</text>
+        <text>第几天</text>
+        <text>抵达时间</text>
+      </view>
+      <view wx:for="{{form.rows}}" wx:key="nodeIndex" class="wp-row">
+        <view class="wp-row-name">
+          <text class="wp-row-title">{{item.name}}</text>
+          <text class="wp-row-sub">{{item.altitude === null ? '海拔待确认' : item.altitude + ' m'}}</text>
+        </view>
+        <picker mode="selector" range="{{dayLabels}}" value="{{item.day - 1}}" data-index="{{index}}" bindchange="onDayChange">
+          <view class="wp-cell">{{'D' + item.day}}</view>
+        </picker>
+        <view class="wp-time-cell">
+          <picker mode="time" value="{{item.time || '08:00'}}" data-index="{{index}}" bindchange="onTimeChange">
+            <view class="wp-cell {{item.time ? '' : 'wp-cell-empty'}}">{{item.time || '待安排'}}</view>
+          </picker>
+          <view wx:if="{{item.time}}" class="wp-time-clear" catchtap="onTimeClear" data-index="{{index}}">留空</view>
+        </view>
+      </view>
+
+      <text class="wp-quiet">同一营地可在相邻两天重复出现。同一天的抵达时间不能早于前一站；留空的站按「待安排」显示，不会补成 00:00。</text>
+      <text wx:if="{{localError}}" class="wp-error">{{localError}}</text>
+      <text wx:if="{{error}}" class="wp-error">{{error}}</text>
+
+      <view class="wp-btn wp-btn-primary {{busy ? 'wp-btn-busy' : ''}}" hover-class="{{busy ? '' : 'wp-btn-hover'}}" bindtap="{{busy ? '' : 'onConfirm'}}">{{busy ? '正在保存…' : '保存个人计划'}}</view>
+      <view class="wp-btn wp-btn-quiet" hover-class="wp-btn-hover" bindtap="onClose">取消，保留原计划</view>
+    </block>
+  </view>
+</overlay>

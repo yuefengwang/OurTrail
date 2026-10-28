@@ -1,0 +1,499 @@
+<view class="weather-v3">
+
+  <!-- 品牌固定条（plain：白底无分隔线）：返回与词标同一行，右侧给微信胶囊让位（§1.2 第 1 条：胶囊不可自绘）。
+       高度由组件自己实测后经 bind:ready 回给四视图 tab 的 sticky top，避免第二份几何副本。 -->
+  <brand-header
+    variant="plain"
+    back="{{mode === 'deep' || canBack}}"
+    bind:back="onBack"
+    bind:ready="onChromeReady"
+  />
+
+  <!-- 页头：地点 + 节点（点击分别打开地点 / 节点弹层） -->
+  <view class="wv3-header">
+    <view class="wv3-header-main">
+      <view class="wv3-place" hover-class="wv3-tap" bindtap="onPlaceTap">
+        <text class="wv3-place-name">{{placeName || '选择地点'}}</text>
+        <icon name="down" size="18" color="#18211B" />
+      </view>
+      <view class="wv3-node" hover-class="wv3-tap" bindtap="onNodeTap">
+        <icon name="pin" size="12" color="#657168" />
+        <text class="wv3-node-text">{{placeSub}}</text>
+        <icon wx:if="{{!isPoint}}" name="down" size="12" color="#657168" />
+      </view>
+    </view>
+    <view class="wv3-source" hover-class="wv3-tap" data-kind="source" bindtap="onHelp">
+      <text class="wv3-dot"></text>
+      <text>{{providerLabel || '天气数据'}}</text>
+    </view>
+  </view>
+
+  <!-- 日期条：单点 = 5 日卡；路线 = D1/D2…（超范围禁用） -->
+  <view wx:if="{{dayStrip.length}}" class="wv3-days {{dayStripKind === 'plan' ? 'wv3-days-plan' : ''}}">
+    <view
+      wx:for="{{dayStrip}}"
+      wx:key="key"
+      class="wv3-day {{item.selected ? 'on' : ''}} {{item.enabled === false ? 'off' : ''}}"
+      hover-class="{{item.enabled === false ? '' : 'wv3-tap'}}"
+      bindtap="{{item.enabled === false ? '' : 'onDay'}}"
+      data-date="{{item.date}}"
+    >
+      <text class="wv3-day-main">{{dayStripKind === 'plan' ? item.label : item.weekday}}</text>
+      <text class="wv3-day-sub">{{item.short}}</text>
+      <view wx:if="{{dayStripKind === 'point'}}" class="wv3-day-cond">
+        <view wx:if="{{item.icon}}" class="wv3-day-icon"><icon name="{{item.icon}}" size="15" color="{{item.selected ? '#16783E' : '#707971'}}" /></view>
+        <text class="wv3-day-temp">{{item.min === null ? '—' : item.min + '°'}} / {{item.max === null ? '—' : item.max + '°'}}</text>
+      </view>
+      <text wx:if="{{item.isActivityDay}}" class="wv3-day-mark">活动日</text>
+      <text wx:else class="wv3-day-mark"> </text>
+    </view>
+  </view>
+
+  <!-- 四视图 tab（吸顶；页面级滚动。--wv3-chrome 由品牌固定条 ready 事件实测，样式表只消费不复制几何） -->
+  <view class="wv3-tabs" style="--wv3-chrome:{{chromeHeight}}px">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="wv3-tab {{item.selected ? 'on' : ''}} {{item.disabled ? 'off' : ''}}"
+      hover-class="{{item.disabled ? '' : 'wv3-tap'}}"
+      bindtap="{{item.disabled ? '' : 'onTab'}}"
+      data-key="{{item.key}}"
+    >{{item.label}}</view>
+  </view>
+
+  <!-- 加载 / 失败 / 超范围：不拿占位数字冒充读数 -->
+  <view wx:if="{{loading}}" class="wv3-status">
+    <text class="wv3-status-title">正在查询天气</text>
+    <text class="wv3-status-text">正在取这一个地点的预报。山里信号不稳时会等一下。</text>
+    <text wx:if="{{retryNote}}" class="wv3-status-text">{{retryNote}}</text>
+  </view>
+
+  <view wx:elif="{{errorCode}}" class="wv3-status">
+    <text class="wv3-status-title">{{emptyTitle}}</text>
+    <text class="wv3-status-text">{{emptyDetail}}</text>
+    <view wx:if="{{errorCode === 'outOfRange'}}" class="wv3-btn" hover-class="wv3-tap" bindtap="onJumpToday">看今天的天气</view>
+    <view wx:else class="wv3-btn" hover-class="wv3-tap" bindtap="onRetry">重新查询</view>
+  </view>
+
+  <block wx:else>
+    <view wx:if="{{stale}}" class="wv3-banner">
+      <icon name="cloudoff" size="14" color="#7A5C1E" />
+      <text>本地缓存的预报 · {{stale.ageText}}取到 · 不代表最新天气</text>
+    </view>
+
+    <!-- ============ 逐时 ============ -->
+    <block wx:if="{{tabs[0].selected}}">
+      <view class="wv3-readout">
+        <view class="wv3-read-main">
+          <icon wx:if="{{readout.icon}}" name="{{readout.icon}}" size="31" color="#18211B" />
+          <text class="wv3-temp">{{readout.temp}}°</text>
+          <view class="wv3-read-copy">
+            <text class="wv3-read-date">{{selectedDateLabel}} {{readout.time}}</text>
+            <text class="wv3-read-sub">{{readout.condition}} · 体感 {{readout.feels}}°</text>
+            <text class="wv3-read-sub wv3-read-cloud">{{readout.cloudLine}}</text>
+          </view>
+        </view>
+        <view class="wv3-read-side">
+          <view class="wv3-read-cell">
+            <text class="wv3-read-num">{{readout.precip}}<text class="wv3-read-unit"> mm</text></text>
+            <text class="wv3-read-label">降水量</text>
+          </view>
+          <view class="wv3-read-cell">
+            <text class="wv3-read-num">{{readout.gust}}<text class="wv3-read-unit"> km/h</text></text>
+            <text class="wv3-read-label">阵风</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="wv3-toolbar">
+        <text class="wv3-caption">北京时间 · 数值每 3 小时标注</text>
+        <view class="wv3-periods">
+          <view
+            wx:for="{{periodOptions}}"
+            wx:key="value"
+            class="wv3-period {{item.selected ? 'on' : ''}}"
+            hover-class="wv3-tap"
+            bindtap="onPeriod"
+            data-value="{{item.value}}"
+          >{{item.value}} 小时</view>
+        </view>
+      </view>
+
+      <view class="wv3-board">
+        <view class="wv3-axis" style="width:{{axisWidth}}px;height:{{hourlyHeight + 30}}px">
+          <view class="wv3-axis-row" style="top:8px"><text class="wv3-axis-label">时刻</text></view>
+          <view class="wv3-axis-row" style="top:42px"><text class="wv3-axis-b">温度</text><text class="wv3-axis-u">°C</text></view>
+          <view class="wv3-axis-row" style="top:122px"><text class="wv3-axis-b">降水</text><text class="wv3-axis-u">mm</text><text class="wv3-axis-u">概率 %</text></view>
+          <view class="wv3-axis-row" style="top:204px"><text class="wv3-axis-b">风</text><text class="wv3-axis-u">km/h</text></view>
+          <view class="wv3-axis-row is-compact" style="top:273px">
+            <text class="wv3-axis-label">高云</text>
+            <text class="wv3-axis-u">{{cloudBounds.high}}</text>
+          </view>
+          <view class="wv3-axis-row is-compact" style="top:293px">
+            <text class="wv3-axis-label">中云</text>
+            <text class="wv3-axis-u">{{cloudBounds.mid}}</text>
+          </view>
+          <view class="wv3-axis-row is-compact" style="top:313px">
+            <text class="wv3-axis-label">低云</text>
+            <text class="wv3-axis-u">{{cloudBounds.low}}</text>
+          </view>
+        </view>
+        <scroll-view class="wv3-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+          <view class="wv3-inner" style="width:{{hourlyWidth}}px">
+            <view class="wv3-hours">
+              <view
+                wx:for="{{hourCols}}"
+                wx:key="key"
+                class="wv3-hour {{item.selected ? 'on' : ''}} {{item.leftAlign ? 'start' : ''}}"
+                style="width:{{hourlyCell}}px"
+                hover-class="wv3-tap"
+                bindtap="onHourTap"
+                data-index="{{item.i}}"
+              >{{item.label}}</view>
+            </view>
+            <image
+              class="wv3-chart-img"
+              src="{{hourlySrc}}"
+              style="width:{{hourlyWidth}}px;height:{{hourlyHeight}}px"
+              mode="widthFix"
+              aria-label="同一时间轴上的温度、降水、风速与分层云量"
+              bindtap="onHourTap"
+            />
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="wv3-legend">
+        <view class="wv3-lg"><text class="wv3-lg-line"></text><text>气温</text></view>
+        <view class="wv3-lg"><text class="wv3-lg-line dash"></text><text>体感</text></view>
+        <view class="wv3-lg"><text class="wv3-lg-dot"></text><text>降水</text></view>
+        <view class="wv3-lg"><text class="wv3-lg-line wind"></text><text>风速</text></view>
+        <view class="wv3-lg"><text class="wv3-lg-line gust"></text><text>阵风</text></view>
+        <view class="wv3-lg wv3-lg-cloud">
+          <text>云量（该层）</text>
+          <view class="wv3-lg-scale">
+            <view class="wv3-ramp"></view>
+            <view class="wv3-lg-ticks"><text>0%</text><text>50%</text><text>100%</text></view>
+          </view>
+        </view>
+      </view>
+      <text class="wv3-note">三层的高度区间按取数端点（Open-Meteo 逐时预报）的官方口径：低云 {{cloudBounds.low}}（含雾）、中云 {{cloudBounds.mid}}、高云 {{cloudBounds.high}}，是海平面以上（海拔）的高度，不是这块云的云底或云顶。带里的颜色越深＝这一小时该层云量越多（图例 0–100%，50% 在中点）；每 3 小时印一个整数，带里那条横线＝这一小时没有该层读数，不是 0%。</text>
+
+      <view class="wv3-scrub">
+        <view class="wv3-step {{cursor <= 0 ? 'off' : ''}}" hover-class="wv3-tap" bindtap="onStep" data-step="-1">
+          <icon name="back" size="17" color="#627568" />
+        </view>
+        <slider
+          class="wv3-slider"
+          min="0"
+          max="{{cursorMax}}"
+          value="{{cursor}}"
+          block-size="20"
+          activeColor="#267D43"
+          backgroundColor="#E4EAE2"
+          bindchange="onSliderChange"
+        />
+        <view class="wv3-step {{cursor >= cursorMax ? 'off' : ''}}" hover-class="wv3-tap" bindtap="onStep" data-step="1">
+          <icon name="next" size="17" color="#627568" />
+        </view>
+      </view>
+      <text class="wv3-hint">{{hourlyHint}}</text>
+
+      <view class="wv3-section">
+        <view class="wv3-sec-head">
+          <text class="wv3-h2">{{readout.time}} 的详细读数</text>
+          <text class="wv3-sec-meta">{{nodeName}}</text>
+        </view>
+        <view class="wv3-grid">
+          <view wx:for="{{readout.detailRows}}" wx:key="key" class="wv3-cell">
+            <text class="wv3-cell-label">{{item.label}}</text>
+            <text class="wv3-cell-value">{{item.value}}<text class="wv3-cell-unit"> {{item.unit}}</text></text>
+          </view>
+        </view>
+      </view>
+
+      <view class="wv3-link-row" hover-class="wv3-tap" bindtap="onTab" data-key="cloud">
+        <view>
+          <text class="wv3-link-title">云层在哪个高度？</text>
+          <text class="wv3-link-sub">查看这一地点的高度—时间剖面</text>
+        </view>
+        <icon name="next" size="18" color="#6C7C70" />
+      </view>
+      <view wx:if="{{!isPoint}}" class="wv3-link-row" hover-class="wv3-tap" bindtap="onTab" data-key="route">
+        <view>
+          <text class="wv3-link-title">沿途各节点的抵达时刻天气</text>
+          <text class="wv3-link-sub">按行程安排逐点核对，不做同一时刻铺满比较</text>
+        </view>
+        <icon name="next" size="18" color="#6C7C70" />
+      </view>
+    </block>
+
+    <!-- ============ 云层（生产样式：连续等值带） ============ -->
+    <block wx:elif="{{tabs[1].selected}}">
+      <view class="wv3-cloud-head">
+        <text class="wv3-h2">云随高度与时间变化</text>
+        <view class="wv3-link wv3-link-quiet" hover-class="wv3-tap" data-kind="cloud" bindtap="onHelp">
+          <text>读图说明</text>
+          <icon name="info" size="14" color="#738077" />
+        </view>
+      </view>
+      <view class="wv3-toolbar">
+        <text class="wv3-caption">{{selectedDateLabel}} {{readout.time}} · {{nodeName}}</text>
+        <view class="wv3-periods">
+          <view
+            wx:for="{{periodOptions}}"
+            wx:key="value"
+            class="wv3-period {{item.selected ? 'on' : ''}}"
+            hover-class="wv3-tap"
+            bindtap="onPeriod"
+            data-value="{{item.value}}"
+          >{{item.value}} 小时</view>
+        </view>
+      </view>
+
+      <view wx:if="{{cloudMissing}}" class="wv3-warn">
+        <text class="wv3-warn-title">这次没有取到云层剖面</text>
+        <text class="wv3-warn-text">没有剖面就不判断云的位置——这不等于「没有云」。</text>
+        <view class="wv3-btn" hover-class="wv3-tap" bindtap="onRetry">重新查询</view>
+      </view>
+
+      <block wx:else>
+        <view class="wv3-cloud-stage">
+          <image class="wv3-cloud-img" src="{{cloud.src}}" mode="widthFix" bindtap="onCloudTap" />
+        </view>
+        <view class="wv3-cloud-readout">
+          <text class="wv3-cloud-r1">{{cloudSel.r1}}</text>
+          <view class="wv3-cloud-line">
+            <text class="wv3-cloud-r2">{{cloudSel.r2}}</text>
+            <text wx:if="{{cloudSel.r3}}" class="wv3-cloud-r3">{{cloudSel.r3}}</text>
+          </view>
+          <text class="wv3-cloud-r4">{{cloudSel.r4}}</text>
+        </view>
+        <view class="wv3-cloud-scale">
+          <text>云量 0%</text>
+          <view class="wv3-ramp"></view>
+          <text>100%</text>
+          <text class="wv3-cloud-range">{{cloud.rangeLabel}}</text>
+        </view>
+        <view class="wv3-cloud-elev">
+          <text class="wv3-cloud-elev-line">{{elevLabel}}</text>
+          <text wx:if="{{cloud.legendElev}}" class="wv3-cloud-elev-note">{{cloud.legendElev}}</text>
+        </view>
+        <text class="wv3-note">灰阶表示模型层云量，不是实测云底或云顶；显示窗只决定「画哪一段高度」。没有 ≥80% 成层云带 ≠ 晴空。</text>
+        <view class="wv3-scrub">
+          <view class="wv3-step {{cursor <= 0 ? 'off' : ''}}" hover-class="wv3-tap" bindtap="onStep" data-step="-1">
+            <icon name="back" size="17" color="#627568" />
+          </view>
+          <slider
+            class="wv3-slider"
+            min="0"
+            max="{{cursorMax}}"
+            value="{{cursor}}"
+            block-size="20"
+            activeColor="#267D43"
+            backgroundColor="#E4EAE2"
+            bindchange="onSliderChange"
+          />
+          <view class="wv3-step {{cursor >= cursorMax ? 'off' : ''}}" hover-class="wv3-tap" bindtap="onStep" data-step="1">
+            <icon name="next" size="17" color="#627568" />
+          </view>
+        </view>
+      </block>
+    </block>
+
+    <!-- ============ 日月天相 ============ -->
+    <block wx:elif="{{tabs[3].selected}}">
+      <view class="wv3-sun">
+        <text class="wv3-sun-title">{{selectedDateLabel}}</text>
+        <text class="wv3-sun-sub">{{nodeName}} · 日照与天文时刻</text>
+        <image class="wv3-sun-arc" src="{{sky.arcSrc}}" mode="widthFix" />
+        <view class="wv3-sun-facts">
+          <view class="wv3-sun-fact"><text class="wv3-fact-b">{{sky.rise}}</text><text class="wv3-fact-l">日出</text></view>
+          <view class="wv3-sun-fact"><text class="wv3-fact-b">{{sky.set}}</text><text class="wv3-fact-l">日落</text></view>
+          <view class="wv3-sun-fact"><text class="wv3-fact-b">{{sky.moon}}</text><text class="wv3-fact-l">月面照明 {{sky.moonName}}</text></view>
+        </view>
+      </view>
+
+      <view class="wv3-section">
+        <view class="wv3-sec-head">
+          <text class="wv3-h2">晨昏与暗夜</text>
+          <text class="wv3-sec-meta">客观时刻 · 不因天气取消</text>
+        </view>
+        <view class="wv3-events">
+          <view wx:for="{{sky.events}}" wx:key="time" class="wv3-event">
+            <text class="wv3-event-time">{{item.time}}</text>
+            <view class="wv3-event-body">
+              <text class="wv3-event-title">{{item.title}}</text>
+              <text class="wv3-event-note">{{item.note}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="wv3-section">
+        <view class="wv3-sec-head">
+          <text class="wv3-h2">天相条件</text>
+          <view class="wv3-link" hover-class="wv3-tap" data-kind="sky" bindtap="onHelp">
+            <text>如何判断</text>
+            <icon name="info" size="14" color="#16783E" />
+          </view>
+        </view>
+        <view wx:for="{{sky.cards}}" wx:key="key" class="wv3-sky-card">
+          <view class="wv3-sky-top">
+            <text class="wv3-sky-name">{{item.title}}</text>
+            <text class="wv3-pill {{item.verdict}}">{{item.verdictLabel}}</text>
+          </view>
+          <text class="wv3-sky-text">{{item.text}}</text>
+          <text wx:if="{{item.look}}" class="wv3-sky-look">{{item.look}}<text wx:if="{{item.window}}"> · {{item.window}}</text></text>
+          <text wx:if="{{item.stars && item.verdict === 'possible'}}" class="wv3-sky-stars">{{item.stars}}</text>
+        </view>
+        <view wx:if="{{sky.overall}}" class="wv3-overall">
+          <text class="wv3-overall-label">徒步条件</text>
+          <text class="wv3-overall-value">{{sky.overall.label}} {{sky.overall.stars}}</text>
+          <text class="wv3-note">总评只用今天成立的项参与（被排除的不投票）。</text>
+        </view>
+        <text wx:if="{{sky.silent}}" class="wv3-note">{{sky.silent.text}}</text>
+      </view>
+      <text class="wv3-foot">北京时间 UTC+8 · 温度 °C · 降水 mm/h · 风 km/h · 云量 %</text>
+    </block>
+
+    <!-- ============ 沿途（行程流） ============ -->
+    <block wx:else>
+      <view wx:if="{{!route.hasPlan}}" class="wv3-status wv3-status-inline">
+        <text class="wv3-status-title">{{planFailed ? '计划暂时读不到' : '这条路线还没有个人计划'}}</text>
+        <text class="wv3-status-text">{{planFailed
+          ? '网络恢复后可以再试；这不影响天气查询本身。'
+          : '计划把路线与「哪天到哪个节点、几点到」绑定；路线原始记录不会被修改。'}}</text>
+        <view wx:if="{{!planFailed}}" class="wv3-btn" hover-class="wv3-tap" bindtap="openEdit">创建个人计划</view>
+        <view wx:else class="wv3-btn" hover-class="wv3-tap" bindtap="onRetry">重新查询</view>
+      </view>
+
+      <block wx:else>
+        <view class="wv3-plan-ctx">
+          <view class="wv3-plan-main">
+            <text class="wv3-plan-name">{{route.planName}}</text>
+            <text class="wv3-plan-meta">{{route.planMeta}}</text>
+          </view>
+          <text class="wv3-caption">{{route.stops.length}} 个节点</text>
+        </view>
+
+        <view class="wv3-days wv3-days-plan wv3-days-inline">
+          <view
+            wx:for="{{route.dayButtons}}"
+            wx:key="key"
+            class="wv3-day {{item.selected ? 'on' : ''}} {{item.enabled === false ? 'off' : ''}}"
+            hover-class="{{item.enabled === false ? '' : 'wv3-tap'}}"
+            bindtap="{{item.enabled === false ? '' : 'onDay'}}"
+            data-date="{{item.date}}"
+          >
+            <text class="wv3-day-main">{{item.label}}</text>
+            <text class="wv3-day-sub">{{item.short}}</text>
+          </view>
+        </view>
+
+        <view class="wv3-notice {{route.notice.tone}}">
+          <icon name="{{route.notice.icon}}" size="14" color="{{route.notice.color}}" />
+          <text>{{route.notice.text}}</text>
+        </view>
+
+        <view wx:if="{{routeBusy}}" class="wv3-note">正在逐节点取数…</view>
+
+        <view class="wv3-flow">
+          <view
+            wx:for="{{route.stops}}"
+            wx:key="nodeIndex"
+            class="wv3-stop"
+            hover-class="wv3-tap"
+            bindtap="onStopTap"
+            data-index="{{item.nodeIndex}}"
+            data-time="{{item.time}}"
+          >
+            <view class="wv3-stop-time">
+              <text class="wv3-stop-clock">{{item.timed ? item.time : '待安排'}}</text>
+              <text class="wv3-stop-time-sub">{{item.timed ? '预计抵达' : '点开查询'}}</text>
+            </view>
+            <view class="wv3-stop-body">
+              <view class="wv3-stop-name">
+                <text>{{item.name}}</text>
+                <icon name="next" size="14" color="#8A968C" />
+              </view>
+              <text class="wv3-stop-meta">{{item.altitudeText}} · 第 {{item.day}} 天</text>
+              <view wx:if="{{item.weather}}" class="wv3-stop-weather">
+                <icon wx:if="{{item.weather.icon}}" name="{{item.weather.icon}}" size="16" color="#18211B" />
+                <text class="wv3-stop-temp">{{item.weather.temp}}</text>
+                <text class="wv3-stop-tag">{{item.weather.condition}}</text>
+                <text class="wv3-stop-tag">{{item.weather.pop}}</text>
+                <text class="wv3-stop-tag">{{item.weather.wind}}</text>
+              </view>
+              <text class="wv3-stop-note">{{item.weather ? item.weather.note : item.weatherText}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view wx:if="{{route.stops.length === 0}}" class="wv3-note">这一天没有安排节点。调整每天的节点与时间可以补上。</view>
+        <view wx:if="{{!routeBusy}}" class="wv3-link wv3-retry-link" hover-class="wv3-tap" bindtap="onRouteRetry">重新取一次各节点天气</view>
+
+        <view class="wv3-plan-actions">
+          <view wx:if="{{route.canEdit}}" class="wv3-btn" hover-class="wv3-tap" bindtap="openEdit">调整每天的节点与时间</view>
+          <view wx:if="{{route.canShare}}" class="wv3-btn wv3-btn-quiet" hover-class="wv3-tap" bindtap="onShareOpen">分享给同行者</view>
+          <view class="wv3-btn wv3-btn-quiet" hover-class="wv3-tap" bindtap="onCopyPlan">复制为独立计划</view>
+          <view wx:if="{{route.canEdit}}" class="wv3-btn-link" hover-class="wv3-tap" bindtap="onPlanDelete">删除这个计划</view>
+        </view>
+
+        <text class="wv3-note">抵达时刻按所在小时读取逐时样本；降水显示概率，风速单位 km/h。计划时间不修改原始 GPX 记录，同一营地可在相邻两天重复出现。</text>
+      </block>
+      <text class="wv3-foot">北京时间 UTC+8 · 温度 °C · 降水 mm/h · 风 km/h</text>
+    </block>
+  </block>
+
+  <!-- ============ 弹层 ============ -->
+  <overlay open="{{nodeOpen}}" kind="sheet" title="选择路线节点" bind:close="onNodeClose">
+    <view class="wv3-node-list">
+      <text class="wv3-note">切换节点沿用当前日期与时刻。</text>
+      <view
+        wx:for="{{nodeOptions}}"
+        wx:key="index"
+        class="wv3-node-option"
+        hover-class="wv3-tap"
+        bindtap="onNodePick"
+        data-index="{{index}}"
+      >
+        <view class="wv3-node-info">
+          <text class="wv3-node-opt-name">{{index + 1}} · {{item.name}}</text>
+          <text class="wv3-node-opt-sub">{{item.altitude === null ? '海拔待确认' : item.altitude + ' m'}}</text>
+        </view>
+        <icon wx:if="{{item.selected}}" name="check" size="19" color="#16783E" />
+        <icon wx:else name="next" size="19" color="#16783E" />
+      </view>
+    </view>
+  </overlay>
+
+  <overlay open="{{helpOpen}}" kind="dialog" title="{{helpTitle}}" bind:close="onHelpClose">
+    <view class="wv3-help">
+      <text class="wv3-help-body">{{helpBody}}</text>
+      <view class="wv3-btn" hover-class="wv3-tap" bindtap="onHelpClose">知道了</view>
+    </view>
+  </overlay>
+
+  <weather-plan-sheet
+    open="{{planOpen}}"
+    mode="edit"
+    draft="{{planDraft}}"
+    nodes="{{place.nodes}}"
+    busy="{{planBusy}}"
+    error="{{planError}}"
+    bind:confirm="onPlanConfirm"
+    bind:close="onPlanClose"
+  />
+
+  <weather-plan-sheet
+    open="{{shareOpen}}"
+    mode="share"
+    plan="{{activePlan}}"
+    busy="{{planBusy}}"
+    error="{{planError}}"
+    bind:share="onPlanShare"
+    bind:close="onShareClose"
+  />
+
+</view>

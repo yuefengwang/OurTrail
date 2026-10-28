@@ -152,6 +152,38 @@ function weatherPhrase(code) {
   return { label: item.label, tone: item.tone }
 }
 
+// 日徽标用码：云端 dayCode（白昼代表性码）优先；旧返回体/旧缓存（≤12h）没有该字段时回退 code。
+// dayCode=0 是合法值（晴），所以只认 typeof number，绝不 Number() 化——Number(null) 会印成晴天。
+function dayCodeOf(day) {
+  const d = day || {}
+  return typeof d.dayCode === 'number' && Number.isFinite(d.dayCode) ? d.dayCode : d.code
+}
+
+// 日级现象文案。逐时行仍用 weatherPhrase(hour.code)——天气码原值不动。
+function dayPhrase(day) {
+  return weatherPhrase(dayCodeOf(day))
+}
+
+// WMO code → 图标类（页面只认这 5 个值，<icon name> 直接吃）。
+// 与上面的标签桶**不同源**：标签把 0–2 并成「多云」，这里 code 1（mainly clear）画太阳。
+// 冻雨 56/57/66/67 归 rain、冻雾 48 归 cloud；其余不认识的码不给图标——
+// 「没有图标」不等于「阴天」，不能拿一朵云替说不出话的数据。
+const WEATHER_ICON_CLASSES = ['sun', 'cloud', 'rain', 'snow', 'storm']
+
+function weatherIcon(code) {
+  // Number(null)===0、Number('')===0、Number('  ')===0：先判空，否则缺码会被画成晴天
+  if (code === null || code === undefined) return ''
+  if (typeof code === 'string' && code.trim() === '') return ''
+  const c = Number(code)
+  if (!Number.isFinite(c)) return ''
+  if (c === 0 || c === 1) return 'sun'
+  if (c === 2 || c === 3 || c === 45 || c === 48) return 'cloud'
+  if ((c >= 51 && c <= 67) || (c >= 80 && c <= 82)) return 'rain'
+  if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 'snow'
+  if (c === 95 || c === 96 || c === 99) return 'storm'
+  return ''
+}
+
 // 风向（度，自北顺时针）→ 八向文案（V2 Timeline 浮条与 Numbers 用）。
 // 缺失/非法返回 null，调用方显示 '—'——单字段缺失不致整页失败。
 // 注意 Number(null)=0、Number('')=0，必须先判空再转数字，否则「缺数据」会被读成「北风」。
@@ -278,7 +310,7 @@ module.exports = {
   DIFFICULTY_LABELS, DIFFICULTY_OPTIONS, difficultyLabel,
   TASK_STATUS_LABELS, TASK_CATEGORY_LABELS, TASK_CATEGORY_OPTIONS,
   UNASSIGNED_LABELS, TRIP_MODE_LABELS, TRIP_MODE_HINTS, TRIP_MODE_OPTIONS, RETURN_PLAN_LABELS,
-  PICKUP_MISSING, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase, windDirText,
+  PICKUP_MISSING, DETAIL_STATE_TITLES, usable, validPhone, weatherPhrase, weatherIcon, WEATHER_ICON_CLASSES, windDirText, dayCodeOf, dayPhrase,
   ELEV_SUBJECT, ELEV_SOURCE_LABELS, ELEV_MODEL_SUFFIX, elevSourceLabel, elevLineLabel, resolveElev, elevBasis,
   CLOUD_POSITION_LABELS, CLOUD_POSITION_REASONS, cloudPositionLabel, cloudPositionReason,
   CLOUD_WINDOW_NOTES, cloudWindowNote, profileRangeLabel, pointOutsideLabel, cloudLegendElev, cloudLegendNoElev,

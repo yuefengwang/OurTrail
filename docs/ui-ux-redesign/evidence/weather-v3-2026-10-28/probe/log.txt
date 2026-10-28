@@ -1,0 +1,17 @@
+· data keys: ready,loading,error,errorCode,retryNote,emptyTitle,emptyDetail,emptyKind,stale,placeName,placeSub,nodeName,isPoint,tabs,period,periodOptions,cursor,cursorMax,selectedDate,selectedDateLabel,dayStrip,dayStripKind,readout,hourlySrc,hourlyWidth,hourlyHeight,hourlyCell,hourlyColumns,axis,cloudMissing,cloud,cloudSel,sky,route,activePlanId,activePlan,planOwner,planFailed,providerLabel,updatedLabel,elevLabel,nodeOpen,helpOpen,helpTitle,helpBody,planOpen,shareOpen,planDraft,planError,planBusy,routeBusy,mode,place,initial,planId,canBack,outOfRange,hourCols
+· hourlySrc: 空=false 长度=43801
+· hourlyWidth=1008 hourlyHeight=310 时段=24 tab=undefined
+· 载荷字段: chart=null cloud=src|selSrc|r1|r2|r3|r4|stKey|hour|legendIn|elevShown|legendElev|rangeLabel
+· 生产 SVG 落盘 produced.svg (27288 B)，前 300 字：
+<svg xmlns="http://www.w3.org/2000/svg" width="1008" height="310" viewBox="0 0 1008 310"><rect x="546.0" y="0" width="42" height="310" fill="#eaf5eb" opacity=".65"/><path d="M21.0 0V310" stroke="#e8eeea" stroke-width="0.7" stroke-dasharray="2 4" fill="none"/><path d="M63.0 0V310" stroke="#e8eeea" st
+· shot 01-rect.png (84891 B)
+  ↳ 01-rect URI 长度=263
+· shot 02-text.png (86285 B)
+  ↳ 02-text URI 长度=368
+· shot 03-image-attr.png (87056 B)
+  ↳ 03-image-attr URI 长度=393
+· shot 04-grad.png (86359 B)
+  ↳ 04-grad URI 长度=530
+· shot 05-path.png (89139 B)
+  ↳ 05-path URI 长度=402
+· shot 06-produced.png (61946 B)

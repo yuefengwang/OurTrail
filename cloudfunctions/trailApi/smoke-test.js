@@ -27,7 +27,7 @@ function emptyState() {
     schemaVersion: 1, revision: 0, savedAt: '2026-09-26T07:00:00+08:00',
     profiles: [], routes: [], activities: [], groups: [], signups: [], vehicles: [],
     assignments: [], memberships: [], attendance: [], positions: [], incidents: [],
-    events: [], notices: [], tasks: [], receipts: [],
+    events: [], notices: [], tasks: [], plans: [], receipts: [],
   }
 }
 
@@ -321,6 +321,19 @@ function run() {
   check('NaN/Infinity 不离开数据层（转 null）',
     clNaN.levels[0].cloudCover[0] === null && clNaN.levels[0].altitudes[1] === null, clNaN)
 
+  /* 剖面顶到 300 hPa（2026-10-28 用户决定；实测中国境内 300hPa 高度 8,498–9,765 m）。
+     只喂云层剖面图的 cloudLevels；业务成带判据 cloudBandAt 必须仍停在 450 hPa
+     —— 抬显示天花板不得顺带改天相结论（铁律 28）。 */
+  const hTop = {
+    cloud_cover_450hPa: [10], geopotential_height_450hPa: [6700],
+    cloud_cover_300hPa: [95], geopotential_height_300hPa: [9700],
+  }
+  const clTop = buildCloudLevels(times3, hTop, 0, 1)
+  check('剖面含 300 hPa 层（顶到 9,700 m）', !!clTop && clTop.levels.some(l => l.pressure === 300),
+    clTop && clTop.levels.map(l => l.pressure))
+  check('9,700 m 的成层云不参与 cloudBandAt（业务判据仍停在 450 hPa ⇒ 无带）',
+    cloudBandAt(hTop, 0) === null, cloudBandAt(hTop, 0))
+
   console.log('== 12c. 天气：低层温湿廓线 / 总云量 / PBLH（2026-10 天相输入修正） ==')
   const { hourView, PROFILE_LEVELS } = require('./lib/weather')
   const hProf = {
@@ -527,10 +540,73 @@ function run() {
     check('当日无数据 → null', W.pointResponse({ elevation: 1, days: [], detail: [], series: [] }) === null)
   }
 
-  /* ================= 第 16 节：Profile 域补洞（docs/product/profile/13-testing-strategy §4） =================
-   * 此前零覆盖：me 视图口径 / membership.save 错误路径 / membership.revoke / companion.remove 域 /
-   * position.revoke 域 / profile.save 服务端拒绝 / canReadSensitive+readContact 直测 / export.record 命令。 */
-  section('16. Profile 域补洞：me 视图 / membership / companion / position.revoke / 拒绝路径 / 敏感读')
+  /* ================= 第 15b 节：日级代表性现象码（白昼窗口 / 雾三证门 / 恶劣一票否决） =================
+   * 根因：provider 的 daily.weather_code 是全天最严重的码，深夜雾会把整日徽标染成「雾」。
+   * 口径见 docs/superpowers/specs/2026-10-28-weather-day-code-design.md §2。 */
+  section('15b. 日级代表性现象码：白昼窗口 / 雾三证门 / 恶劣一票否决')
+  {
+    const hr = (t, code, rh, vis) => ({ t, code, rh, visibility: vis })
+
+    // 1) 夜间可信雾 + 白昼晴：日码变晴，但 provider 日码仍在调用方手里（fetchForecast 的 code 原值）
+    const nightFog = [
+      hr('00:00', 45, 100, 0.2), hr('01:00', 45, 100, 0.2), hr('02:00', 45, 98, 0.3), hr('03:00', 45, 97, 0.4),
+      hr('07:30', 0, 60, 20), hr('09:00', 0, 55, 20), hr('10:00', 1, 50, 20), hr('11:00', 0, 45, 20),
+      hr('12:00', 0, 40, 20), hr('13:00', 1, 45, 20), hr('14:00', 0, 50, 20), hr('15:00', 0, 55, 20),
+      hr('16:00', 1, 60, 20), hr('17:00', 0, 65, 20), hr('18:00', 0, 70, 20),
+    ]
+    check('夜间雾 + 白昼晴 → dayCode=0（provider 日码 45 被替换）',
+      W.representativeDayCode(nightFog, '07:15', '18:00', 45) === 0)
+
+    // 2) 全天可信雾 → 仍是雾
+    const allFog = []
+    for (let i = 0; i < 24; i++) allFog.push(hr(String(i).padStart(2, '0') + ':00', 45, 100, 0.3))
+    check('全天可信雾 → dayCode=45', W.representativeDayCode(allFog, '07:00', '18:00', 0) === 45)
+
+    // 3) 缺佐证的雾不参与投票（provider 日码 2 原样回退，证明不是被 45 淹没）
+    const dryFog = []
+    for (let i = 0; i < 24; i++) dryFog.push(hr(String(i).padStart(2, '0') + ':00', 45, 67, 0.54))
+    check('雾码但 RH 67% → 不进 pool，回退 provider 日码 2',
+      W.representativeDayCode(dryFog, '07:00', '18:00', 2) === 2)
+
+    // 4) 降水不被众数抹掉：毛毛雨占多数 → 51；一小时阵雪 → 一票否决 85
+    const drizzle = []
+    for (let i = 8; i <= 18; i++) drizzle.push(hr(String(i).padStart(2, '0') + ':00', 51, 95, 5))
+    check('毛毛雨占多数 → dayCode=51', W.representativeDayCode(drizzle, '07:00', '18:00', 51) === 51)
+    const snowHour = drizzle.slice(0, 10).concat([hr('18:00', 85, 90, 2)])
+    check('窗口内一小时阵雪 → 一票否决 85（不被 10 小时毛毛雨投掉）',
+      W.representativeDayCode(snowHour, '07:00', '18:00', 51) === 85)
+
+    // 5) 窗口真正按日出日落切：同一个 06:00 雷暴，日出 07:15 时在窗外、05:00 时在窗内
+    const dawnStorm = [hr('06:00', 95, 80, 8)].concat(drizzle)
+    check('06:00 雷暴 + 日出 07:15 → 窗口外，不参与', W.representativeDayCode(dawnStorm, '07:15', '18:00', 51) === 51)
+    check('06:00 雷暴 + 日出 05:00 → 窗口内，一票否决 95', W.representativeDayCode(dawnStorm, '05:00', '18:00', 51) === 95)
+    const noonStorm = [hr('09:00', 95, 80, 8)].concat(drizzle)
+    check('缺 sunrise/sunset → 回退 08–18（09:00 雷暴仍在窗内）',
+      W.representativeDayCode(noonStorm, '', '', 51) === 95)
+    check('缺 sunrise/sunset → 回退 08–18（06:00 雷暴被排除）',
+      W.representativeDayCode(dawnStorm, '', '', 51) === 51)
+
+    // 6) 并列取较大码：不替天气说好话
+    const tie = [hr('08:00', 0, 50, 20), hr('09:00', 1, 50, 20), hr('10:00', 0, 50, 20), hr('11:00', 1, 50, 20)]
+    check('0×2 / 1×2 并列 → 1（多云优先于晴）', W.representativeDayCode(tie, '07:00', '18:00', 0) === 1)
+
+    // 7) fog 真值表（三证缺一不可；Number(null) 陷阱）
+    check('fog: 45 / RH 89 / 0.2 km → false', W.fogConfirmed({ code: 45, rh: 89, visibility: 0.2 }) === false)
+    check('fog: 45 / RH 90 / 0.9 km → true', W.fogConfirmed({ code: 45, rh: 90, visibility: 0.9 }) === true)
+    check('fog: 48 / RH 100 / 0.99 km → true', W.fogConfirmed({ code: 48, rh: 100, visibility: 0.99 }) === true)
+    check('fog: 3 / RH 100 / 0.1 km → false（低能见度不等于雾）', W.fogConfirmed({ code: 3, rh: 100, visibility: 0.1 }) === false)
+    check('fog: 45 / 湿度缺失 → false', W.fogConfirmed({ code: 45, rh: null, visibility: 0.2 }) === false)
+    check('fog: 45 / 能见度缺失 → false', W.fogConfirmed({ code: 45, rh: 95, visibility: null }) === false)
+    check('fog: 空对象 → false', W.fogConfirmed({}) === false && W.fogConfirmed(null) === false)
+
+    // 8) hourView 带 fog（逐时 code 不回改）
+    const hvFog = W.hourView(['2026-10-28T00:00'], { weather_code: [45], relative_humidity_2m: [95], visibility: [300] }, 0)
+    check('hourView: code 仍为 45，fog=true', hvFog.code === 45 && hvFog.fog === true)
+    const hvDry = W.hourView(['2026-10-28T00:00'], { weather_code: [45], relative_humidity_2m: [67], visibility: [540] }, 0)
+    check('hourView: 干雾小时 code 仍为 45，fog=false', hvDry.code === 45 && hvDry.fog === false)
+  }
+
+
   const ME = 'o-me-openid'
   const OTHER = 'o-other-openid'
   const personOf = (name, phone) => ({ name, phone, emergency: { name: '紧急人', phone: '13000000000' }, medical: '' })
@@ -976,6 +1052,126 @@ function run() {
   editInput.title = '改标题'
   const lockRes = dispatch(phaseState, LIN, { type: 'activity.edit', activityId: richId, input: editInput })
   check('集合中仍锁标题（新字段未放宽交易键）', !lockRes.ok && lockRes.error.code === 'WRONG_PHASE', lockRes.error)
+
+  console.log('')
+  section('18 V3 个人天气计划：CRUD / 分享面 / CAS / 幂等')
+  {
+    let st = baseState()
+    st = dispatch(st, OWNER, { type: 'profile.save', person: { name: '陈屿', phone: '00000000002', emergency: { name: '陈父', phone: '00000000052' }, medical: '' } }).value.state
+    const created = dispatch(st, LIN, { type: 'activity.create', input: fullActivityInput() })
+    st = created.value.state
+    const routeId = st.routes[0].id
+    const routePointIds = st.routes[0].points.map(p => p.id)
+    check('活动创建时落下的私有路线可作为计划路线', routePointIds.length === 2, routePointIds)
+
+    const basePlan = (patch) => Object.assign({
+      routeId, name: '格聂 · 周末两日徒步', startDate: '2026-10-29', sharedWith: [], visibility: 'private',
+      stops: [
+        { nodeIndex: 0, day: 1, time: '08:00' },
+        { nodeIndex: 1, day: 1, time: '13:30' },
+        { nodeIndex: 1, day: 2, time: '08:00' },
+        { nodeIndex: 0, day: 2, time: '' },
+      ],
+    }, patch || {})
+
+    const r1 = dispatch(st, LIN, { type: 'plan.create', input: basePlan() })
+    check('plan.create ok', r1.ok, r1.error)
+    st = r1.value.state
+    const planId = r1.value.targetIds[0]
+    const plan = st.plans[0]
+    check('计划归属 = 当前 actor（与 route.create 同口径）', plan.ownerId === LIN, plan.ownerId)
+    check('visibility 由 sharedWith 推导为 private', plan.visibility === 'private' && plan.sharedWith.length === 0, plan)
+    check('同一节点可跨天重复（D1/D2 营地为同一 nodeIndex 1）',
+      plan.stops.filter(s => s.nodeIndex === 1).length === 2, plan.stops)
+    check('time 允许空串 = 待安排（不补 00:00）', plan.stops[3].time === '', plan.stops[3])
+    check('updatedAt 是服务端时间戳', plan.updatedAt === ctx().now, plan.updatedAt)
+
+    const reverse = dispatch(st, LIN, { type: 'plan.create', input: basePlan({ stops: [
+      { nodeIndex: 0, day: 1, time: '12:00' }, { nodeIndex: 1, day: 1, time: '09:00' },
+    ] }) })
+    check('同日逆序被拒（INVALID_INPUT）', !reverse.ok && reverse.error.code === 'INVALID_INPUT', reverse.error)
+    const outOfRange = dispatch(st, LIN, { type: 'plan.create', input: basePlan({ stops: [{ nodeIndex: 9, day: 1, time: '08:00' }] }) })
+    check('节点不在路线上被拒', !outOfRange.ok && outOfRange.error.code === 'INVALID_INPUT', outOfRange.error)
+    const missingRoute = dispatch(st, LIN, { type: 'plan.create', input: basePlan({ routeId: 'route-nope' }) })
+    check('路线不存在被拒（NOT_FOUND）', !missingRoute.ok && missingRoute.error.code === 'NOT_FOUND', missingRoute.error)
+    const emptyName = dispatch(st, LIN, { type: 'plan.create', input: basePlan({ name: '   ' }) })
+    check('空计划名被拒', !emptyName.ok && emptyName.error.code === 'INVALID_INPUT', emptyName.error)
+    const badDate = dispatch(st, LIN, { type: 'plan.create', input: basePlan({ startDate: '2026/10/29' }) })
+    check('出发日期格式被拒', !badDate.ok && badDate.error.code === 'INVALID_INPUT', badDate.error)
+    check('被拒请求零落库（仍只有 1 个计划）', st.plans.length === 1, st.plans.length)
+
+    // 幂等：同 requestId 同内容 → replayed，不产生第二个计划
+    const reqId = 'req-plan-idem'
+    const fingerprint = fp({ type: 'plan.create', input: basePlan({ name: '复制计划' }) })
+    const reply1 = reduceCommand(st, { actor: { userId: LIN }, requestId: reqId, expectedRevision: st.revision, fingerprint, payload: { type: 'plan.create', input: basePlan({ name: '复制计划' }) } }, ctx())
+    const reply2 = reduceCommand(reply1.value.state, { actor: { userId: LIN }, requestId: reqId, expectedRevision: reply1.value.state.revision, fingerprint, payload: { type: 'plan.create', input: basePlan({ name: '复制计划' }) } }, ctx())
+    check('同 requestId 重放 → replayed=true', reply2.ok && reply2.value.replayed === true, reply2.error)
+    check('重放不产生第二个计划', reply2.value.state.plans.filter(p => p.name === '复制计划').length === 1, reply2.value.state.plans.length)
+    st = reply1.value.state
+    const planId2 = reply1.value.targetIds[0]
+
+    // CAS：陈旧版本写入必须 CONFLICT 且零副作用
+    const stale = reduceCommand(st, { actor: { userId: LIN }, requestId: genId('req'), expectedRevision: 0, fingerprint: fp({ type: 'plan.update', planId, input: basePlan({ name: '陈旧写' }) }), payload: { type: 'plan.update', planId, input: basePlan({ name: '陈旧写' }) } }, ctx())
+    check('陈旧 expectedRevision → CONFLICT', !stale.ok && stale.error.code === 'CONFLICT', stale.error)
+
+    // 分享：sharedWith 全量替换 → visibility 派生
+    const share = dispatch(st, LIN, { type: 'plan.update', planId, input: basePlan({ sharedWith: [OWNER, OWNER, LIN], visibility: 'private' }) })
+    check('分享写入成功', share.ok, share.error)
+    st = share.value.state
+    const sharedPlan = st.plans.find(p => p.id === planId)
+    check('sharedWith 去重并剔除自己', sharedPlan.sharedWith.length === 1 && sharedPlan.sharedWith[0] === OWNER, sharedPlan.sharedWith)
+    check('客户端提交的 private 被忽略，visibility 由名单推导为 shared',
+      sharedPlan.visibility === 'shared', sharedPlan.visibility)
+
+    const ownView = selectView(st, { userId: LIN }, { kind: 'plans' }, ctx().now)
+    const sharedView = selectView(st, { userId: OWNER }, { kind: 'plans' }, ctx().now)
+    const thirdView = selectView(st, { userId: 'o-stranger' }, { kind: 'plans' }, ctx().now)
+    check('owner 读视图列出自己的计划', ownView.plans.some(p => p.id === planId), ownView.plans.map(p => p.id))
+    check('被授权者读视图可见', sharedView.plans.some(p => p.id === planId), sharedView.plans.map(p => p.id))
+    check('无关账号看不到（不是"列表里有但标灰"）', !thirdView.plans.some(p => p.id === planId), thirdView.plans.map(p => p.id))
+    const sharedRow = sharedView.plans.find(p => p.id === planId)
+    check('被授权者 isOwner=false 且 sharedBy 为所有者显示名',
+      sharedRow.isOwner === false && sharedRow.sharedBy === '林溪', sharedRow)
+    check('读视图不回传 ownerId / sharedWith 原文',
+      sharedRow.ownerId === undefined && sharedRow.sharedWith === undefined
+      && JSON.stringify(sharedView).indexOf(LIN) === -1 && JSON.stringify(sharedView).indexOf(OWNER) === -1,
+      Object.keys(sharedRow))
+    check('未登录读 plans → denied AUTH_REQUIRED',
+      selectView(st, { userId: null }, { kind: 'plans' }, ctx().now).kind === 'denied'
+      && selectView(st, { userId: null }, { kind: 'plans' }, ctx().now).code === 'AUTH_REQUIRED', '')
+
+    // 被授权者：只读。update/delete 均 FORBIDDEN 且零副作用
+    const pristine = JSON.stringify(st)
+    const hackUpdate = dispatch(st, OWNER, { type: 'plan.update', planId, input: basePlan({ name: '越权改名' }) })
+    check('被授权者 plan.update → FORBIDDEN', !hackUpdate.ok && hackUpdate.error.code === 'FORBIDDEN', hackUpdate.error)
+    const hackDelete = dispatch(st, OWNER, { type: 'plan.delete', planId })
+    check('被授权者 plan.delete → FORBIDDEN', !hackDelete.ok && hackDelete.error.code === 'FORBIDDEN', hackDelete.error)
+    check('越权尝试零副作用（state 逐字节未变）', JSON.stringify(st) === pristine, '')
+
+    // 复制为独立计划：被授权者读 → create，owner = 复制者，原计划不动
+    const copy = dispatch(st, OWNER, { type: 'plan.create', input: basePlan({ name: '格聂 · 周末两日徒步（副本）', sharedWith: [] }) })
+    check('被授权者可复制为独立计划', copy.ok, copy.error)
+    const copiedState = copy.value.state
+    const copiedPlan = copiedState.plans.find(p => p.id === copy.value.targetIds[0])
+    check('副本 owner = 复制者', copiedPlan.ownerId === OWNER, copiedPlan.ownerId)
+    check('副本不覆盖原计划', copiedState.plans.filter(p => p.id === planId).length === 1
+      && copiedState.plans.find(p => p.id === planId).ownerId === LIN, '')
+
+    // 取消分享：sharedWith 清空后立即不可读
+    const unshare = dispatch(copiedState, LIN, { type: 'plan.update', planId, input: basePlan({ sharedWith: [] }) })
+    check('取消分享写入成功', unshare.ok, unshare.error)
+    const afterUnshare = unshare.value.state
+    const ownerAfter = selectView(afterUnshare, { userId: OWNER }, { kind: 'plans' }, ctx().now)
+    check('取消分享后被授权者立即不可读', !ownerAfter.plans.some(p => p.id === planId), ownerAfter.plans.map(p => p.id))
+    check('取消分享后 visibility 回到 private',
+      afterUnshare.plans.find(p => p.id === planId).visibility === 'private', '')
+
+    // 删除：owner 可删；他人删已被拒
+    const del = dispatch(afterUnshare, LIN, { type: 'plan.delete', planId: planId2 })
+    check('owner 可删除计划', del.ok && !del.value.state.plans.some(p => p.id === planId2), del.error)
+    const delMissing = dispatch(del.value.state, LIN, { type: 'plan.delete', planId: 'plan-nope' })
+    check('删除不存在的计划 → NOT_FOUND', !delMissing.ok && delMissing.error.code === 'NOT_FOUND', delMissing.error)
+  }
 
   console.log('')
   console.log('passed=' + passed + ' failed=' + failed)

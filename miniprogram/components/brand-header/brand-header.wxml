@@ -1,11 +1,19 @@
 <!-- 两层：占位块留在文档流里给固定条让出高度，固定条自己贴顶。
      这样宿主页仍可只有 .page 一个根节点（tools/m02-class-scope-test.js PV1/PV2 与
      tools/b4-pad-final-value-test.js 的根节点判据都按「页面唯一根」读），不用为了挂品牌栏改页骨架。 -->
-<view class="brand-header {{variant === 'overlay' ? 'brand-header--overlay' : ''}}">
+<view class="brand-header {{variant === 'overlay' ? 'brand-header--overlay' : ''}} {{variant === 'plain' ? 'brand-header--plain' : ''}}">
   <view class="brand-header__spacer" style="height:{{variant === 'overlay' ? 0 : height}}px"></view>
   <view class="brand-header__bar {{variant === 'overlay' ? 'brand-header__bar--overlay' : ''}}" style="height:{{height}}px;padding-top:{{statusBarHeight}}px;padding-right:{{contentRightInset}}px;">
-    <!-- icon 不吃 CSS 变量，颜色只能写字面量：--forest #163E35 / --white #FFFFFF（app.wxss:6-7） -->
-    <icon name="trailMark" size="20" color="{{variant === 'overlay' ? '#FFFFFF' : '#163E35'}}" />
+    <!-- 返回：44×44 命中区，图标靠左对齐页面 20px 内容网格（居中会把箭头推出网格）。
+         颜色写字面量：--ink #202A26 / --white #FFFFFF（app.wxss:14、:12），icon 不吃 CSS 变量。 -->
+    <view wx:if="{{back}}" class="brand-header__back" hover-class="brand-header__back--tap" bindtap="onBack" aria-role="button" aria-label="返回">
+      <icon name="back" size="20" color="{{variant === 'overlay' ? '#FFFFFF' : '#202A26'}}" />
+    </view>
+    <!-- 返回箭头已经占住左侧锚点，此时不再重复品牌图形（原型同结构：返回 + 词标）。
+         颜色写字面量：--forest #163E35 / --white #FFFFFF（app.wxss:5、:12） -->
+    <view wx:if="{{!back}}" class="brand-header__mark">
+      <icon name="trailMark" size="20" color="{{variant === 'overlay' ? '#FFFFFF' : '#163E35'}}" />
+    </view>
     <text class="brand-header__word">OurTrail</text>
     <block wx:if="{{title}}">
       <text class="brand-header__dot">·</text>

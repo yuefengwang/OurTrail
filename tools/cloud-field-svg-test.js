@@ -62,7 +62,25 @@ const base = renderer.renderBaseSvg(mockGeo, {
 })
 check('基础层含 <svg> 根', base.svg.indexOf('<svg') === 0)
 check('含 clipPath（贴边云出血必需）', base.svg.indexOf('clipPath') > 0)
-check('含五档灰阶填充色', ['#eeeeea', '#d4d6d0', '#b0b2ab', '#84867f', '#5a5c56'].every(c => base.svg.indexOf(c) >= 0))
+/* 五档灰阶用**合成场**证明，不用真实快照：格聂 mock 的峰值是 90.8%，
+   90% 那条线只有一条细缝。窗一旦变宽（跨度上限抬到轴宽后，5,700–6,550 的第二层云
+   也会被框进来 ⇒ 窗从 1500–5500 变成 1500–7000），细缝的像素面积落到 AREA_MIN 之下，
+   第五档就不再出现——那说明夹具贴边，不是渲染丢了档。
+   合成场峰值 100%、两侧衰减到 <10%，五档都有可观的面积。 */
+const rampAlts = []
+for (let a = 0; a <= 9750; a += 250) rampAlts.push(a)
+const rampCol = rampAlts.map(a => Math.round(100 * Math.exp(-Math.pow((a - 4000) / 1200, 2))))
+const rampGeo = renderer.buildGeometry({
+  times: [...Array(24).keys()],
+  altitudes: rampAlts,
+  values: Array.from({ length: 24 }, () => rampCol.slice()),
+  covered: { lo: 0, hi: 9750 },
+}, { width: 375, plotHeight: 300, userAltitude: 3500 })
+const rampSvg = renderer.renderBaseSvg(rampGeo, {
+  userAltitude: 3500, sunrise: 7.1, sunset: 19.08, dateLabel: '合成 · 2026.10.06',
+}).svg
+check('含五档灰阶填充色', ['#eeeeea', '#d4d6d0', '#b0b2ab', '#84867f', '#5a5c56'].every(c => rampSvg.indexOf(c) >= 0),
+  JSON.stringify(rampGeo.bands.map(b => b.fill)))
 check('含此点海拔参考线标签（主体不再是「你」）', base.svg.indexOf('此点 3,500 m') > 0)
 check('无外来命名空间/脚本（data-URI 安全）', base.svg.indexOf('script') < 0 && base.svg.indexOf('xlink') < 0)
 check('SVG 生成 < 50ms', base.svgMs < 50, '实际 ' + base.svgMs + 'ms')

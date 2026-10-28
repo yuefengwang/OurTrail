@@ -52,7 +52,7 @@ function buildBrief(input) {
   // 只认“出发那一小时”的精确读数；没有就只给全天，不拿 00:00 冒充 08:00。
   const series = result.series || []
   const hour = series.find(h => h.d === date && h.t === p.time) || null
-  const phrase = F.weatherPhrase(day.code)
+  const phrase = F.dayPhrase(day)
   const hourPhrase = hour ? F.weatherPhrase(hour.code) : null
   const hourText = hour
     ? p.time + ' ' + hourPhrase.label + ' ' + round(hour.temp) + '°C · 降水 ' + round(hour.pop) + '% · 风 ' + round(hour.wind) + ' km/h'
