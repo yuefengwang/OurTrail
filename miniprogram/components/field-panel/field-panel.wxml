@@ -1,4 +1,4 @@
-<view class="stack">
+<view class="stack activity-ui activity-panel">
   <status-panel wx:if="{{denied}}" kind="denied" title="当前任务不可用" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取现场名单。" />
@@ -40,7 +40,7 @@
         status="{{item.status}}"
         tone="{{item.tone}}"
       >
-        <view class="button text" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="openSheet">现场记录</view>
+        <view class="button secondary" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="openSheet">现场记录</view>
       </person-row>
     </view>
     <!-- 空态按成因分支说话（C-18）：这一区是 40 人清点的工作面，领队一边搜一边勾，

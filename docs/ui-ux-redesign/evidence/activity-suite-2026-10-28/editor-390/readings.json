@@ -1,0 +1,131 @@
+{
+  "date": "2026-10-28T03:20:17.861Z",
+  "source": "native renderer; controlled API responses and isolated memory storage; no real cloud writes",
+  "checks": [
+    {
+      "name": "fresh bundle uses new step names",
+      "pass": true
+    },
+    {
+      "name": "blank form does not display alarming required checklist",
+      "pass": true
+    },
+    {
+      "name": "title input updates real form",
+      "pass": true
+    },
+    {
+      "name": "time suggestion fills start and estimated dates",
+      "pass": true
+    },
+    {
+      "name": "map cancel keeps form intact",
+      "pass": true
+    },
+    {
+      "name": "map result fills meeting place and readiness",
+      "pass": true
+    },
+    {
+      "name": "ready form still advances to route instead of suddenly publishing",
+      "pass": true
+    },
+    {
+      "name": "route library empty state is explicit",
+      "pass": true
+    },
+    {
+      "name": "intro editor still writes parent content",
+      "pass": true
+    },
+    {
+      "name": "review page contains live meeting and intro",
+      "pass": true
+    },
+    {
+      "name": "review edit returns to meeting section",
+      "pass": true
+    },
+    {
+      "name": "publish intent saves a draft before confirmation",
+      "pass": true
+    },
+    {
+      "name": "confirmation discloses visibility and registration policy",
+      "pass": true
+    },
+    {
+      "name": "confirmation does not auto opt organizer into participation",
+      "pass": true
+    },
+    {
+      "name": "no publish command was sent",
+      "pass": true
+    },
+    {
+      "name": "second case has independent empty state",
+      "pass": true
+    },
+    {
+      "name": "missing required action returns to basics without a write",
+      "pass": true
+    }
+  ],
+  "screenshots": [
+    "01-basic-empty.png",
+    "02-meeting.png",
+    "03-route.png",
+    "04-intro.png",
+    "05-review.png",
+    "06-registration.png",
+    "07-publish-confirmation.png",
+    "08-required-return.png"
+  ],
+  "errors": [],
+  "system": {
+    "brand": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1",
+    "platform": "devtools",
+    "benchmarkLevel": -1,
+    "pixelRatio": 3,
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "windowWidth": 390,
+    "windowHeight": 844,
+    "statusBarHeight": 47,
+    "safeArea": {
+      "top": 47,
+      "left": 0,
+      "right": 390,
+      "bottom": 810,
+      "width": 390,
+      "height": 763
+    },
+    "language": "zh_CN",
+    "version": "8.0.5",
+    "fontSizeSetting": 16,
+    "SDKVersion": "3.8.12",
+    "host": {
+      "env": "WeChat"
+    },
+    "enableDebug": false,
+    "mode": "default",
+    "deviceOrientation": "portrait",
+    "bluetoothEnabled": true,
+    "locationEnabled": true,
+    "wifiEnabled": true,
+    "albumAuthorized": true,
+    "cameraAuthorized": true,
+    "locationAuthorized": true,
+    "microphoneAuthorized": true,
+    "notificationAuthorized": true,
+    "notificationAlertAuthorized": true,
+    "notificationBadgeAuthorized": true,
+    "notificationSoundAuthorized": true,
+    "phoneCalendarAuthorized": true,
+    "bluetoothAuthorized": true,
+    "locationReducedAccuracy": true,
+    "devicePixelRatio": 3
+  }
+}

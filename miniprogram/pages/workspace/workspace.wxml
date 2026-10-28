@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page activity-ui">
   <status-panel wx:if="{{denied}}" kind="denied" title="没有此工作台的访问权限" detail="{{denied}}" actionLabel="{{activityId ? '查看活动' : '回到我的活动'}}" bind:action="onDeniedAction" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在核对当前需要关注的事。" />
@@ -24,12 +24,12 @@
          （待审核/待安排车辆/待签到或待到家），面板与 tab0 待办都在同一块纸面上。 -->
     <view class="sheet-top ws-sheet">
       <view class="segmented tabs-line" aria-label="工作台分区">
-        <view wx:for="{{tabLabels}}" wx:key="index" class="seg {{tab === index ? 'on' : ''}}" data-tab="{{index}}" bindtap="onTab">{{item}}</view>
+        <view wx:for="{{tabLabels}}" wx:key="index" class="seg {{tab === index ? 'on' : ''}}" data-tab="{{index}}" hover-class="button-hover" bindtap="onTab">{{item}}</view>
       </view>
 
       <!-- 三个事实格：C17 保留（删了会失去一眼可见的总量），但去卡片化——纸面本身已经是白面，
            再叠一层石色卡片只会变成第二层表面。格间只留发丝线，把视觉主块让给下面的检查队列。 -->
-      <view class="workspace-band">
+      <view class="workspace-band {{tab ? 'workspace-band--compact' : ''}}">
         <view class="metrics">
           <view class="metric" hover-class="button-hover" bindtap="goRoster"><text class="metric-value">{{pending}}<text class="metric-unit">人</text></text><text class="metric-label">待审核 ›</text></view>
           <view class="metric" hover-class="button-hover" bindtap="goTransport"><text class="metric-value">{{unassigned}}<text class="metric-unit">人</text></text><text class="metric-label">待安排车辆 ›</text></view>
@@ -101,19 +101,23 @@
              style-B（2026-10-26 批次二 b）：去掉了 leaf 淡绿实底——四个入口是导航而非主行动，
              改用与页面其余卡片同族的白面细线，把强调色留给待办与阶段。 -->
         <view class="workspace-tools">
-          <view class="button workspace-tool" hover-class="button-hover" bindtap="goTasks">
+          <view class="workspace-tool" hover-class="button-hover" bindtap="goTasks">
+            <view class="workspace-tool__top"><view class="activity-nav-icon"><icon name="check" size="22" color="#163E35" /></view><icon name="arrow" size="16" color="#5F6E66" /></view>
             <text class="workspace-tool__title">任务清单</text>
             <text class="workspace-tool__sub">装备、采购与记录的分工</text>
           </view>
-          <view class="button workspace-tool" hover-class="button-hover" bindtap="goNotices">
+          <view class="workspace-tool" hover-class="button-hover" bindtap="goNotices">
+            <view class="workspace-tool__top"><view class="activity-nav-icon"><icon name="bell" size="22" color="#163E35" /></view><icon name="arrow" size="16" color="#5F6E66" /></view>
             <text class="workspace-tool__title">活动通知</text>
             <text class="workspace-tool__sub">发布安排，核对实际状态</text>
           </view>
-          <view class="button workspace-tool" hover-class="button-hover" bindtap="goDetail">
+          <view class="workspace-tool" hover-class="button-hover" bindtap="goDetail">
+            <view class="workspace-tool__top"><view class="activity-nav-icon"><icon name="users" size="22" color="#163E35" /></view><icon name="arrow" size="16" color="#5F6E66" /></view>
             <text class="workspace-tool__title">参与者视角</text>
             <text class="workspace-tool__sub">看看同行的人看到什么</text>
           </view>
-          <view wx:if="{{canEdit}}" class="button workspace-tool" hover-class="button-hover" bindtap="goEdit">
+          <view wx:if="{{canEdit}}" class="workspace-tool" hover-class="button-hover" bindtap="goEdit">
+            <view class="workspace-tool__top"><view class="activity-nav-icon"><icon name="edit" size="22" color="#163E35" /></view><icon name="arrow" size="16" color="#5F6E66" /></view>
             <text class="workspace-tool__title">编辑活动</text>
             <text class="workspace-tool__sub">改时间、集合点与说明</text>
           </view>

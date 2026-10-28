@@ -1,21 +1,11 @@
 'use strict'
-// 「下一次同行」：首页专用的客户端派生卡——不新增域字段、不额外发请求，
-// 输入就是首页已有的 home 投影。
-//
-// 只回答一件事：最近一场要去的活动是哪场、什么时候、还有多久、多少人。
-// 整卡可点进详情，卡内不放实心按钮：本页唯一的 primary 留给「发起活动」
-// （ourtrail-ui §3 #7）。没有未来活动时反过来——空态卡内就是那个 primary，
-// 动作行只留次级「发现活动」，同屏不会出现两个主按钮。
-//
-// 2026-10-26（style-B）：由森林底纯色卡改为照片 hero（参考板首屏是一张压满的照片）。
-// 活动模型没有图片字段，照片按 activityId 稳定取氛围图（utils/covers.js）；
-// 失败先换一张、再退回纯色底，三档都有可读文字。
 const covers = require('../../utils/covers')
 
 Component({
   options: { styleIsolation: 'apply-shared' },
   properties: {
     empty: { type: Boolean, value: false },
+    hasActivities: { type: Boolean, value: false },
     activityId: { type: String, value: '' },
     title: { type: String, value: '' },
     facts: { type: Array, value: [] },
@@ -24,6 +14,7 @@ Component({
     coverSrc: '',
     coverAlt: '',
     coverFailed: false,
+    inviteCoverFailed: false,
   },
   observers: {
     activityId(id) {
@@ -41,6 +32,12 @@ Component({
     },
     onCreate() {
       this.triggerEvent('create')
+    },
+    onDiscover() {
+      this.triggerEvent('discover')
+    },
+    onInviteCoverError() {
+      this.setData({ inviteCoverFailed: true })
     },
     onCoverError() {
       const alt = this.data.coverAlt

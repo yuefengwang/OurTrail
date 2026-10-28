@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page activity-ui">
   <!-- denied / loading：内容只是文字面板，照片还无从谈起 ⇒ 品牌栏走默认的纸面固定条。
        首屏照片那一支在下面 hero 里自带一条 overlay 词标。 -->
   <brand-header wx:if="{{denied || loading}}" />
@@ -14,12 +14,14 @@
       <brand-header variant="{{nextUp ? 'overlay' : 'solid'}}" />
       <next-up-card
         empty="{{!nextUp}}"
+        has-activities="{{hasAny}}"
         activity-id="{{nextUp.id}}"
         title="{{nextUp.title}}"
         facts="{{nextUp.facts}}"
         data-id="{{nextUp.id}}"
         bind:open="onOpenCard"
         bind:create="onNew"
+        bind:discover="onGoDiscover"
       />
     </view>
 
@@ -38,28 +40,28 @@
           <input class="searchbar__input" type="text" confirm-type="search" placeholder="搜索活动或路线" aria-label="查找活动" value="{{search}}" bindinput="onSearch" />
         </view>
 
-        <!-- 本页唯一的 primary 是「发起活动」——有未来活动时它在动作行，没有时它在邀请卡里
-             （动作行只剩次级「发现活动」，同屏不会出现两个主按钮）。 -->
-        <view class="home-actions">
+        <view wx:if="{{nextUp}}" class="home-actions">
           <view class="button secondary" hover-class="button-hover" bindtap="onGoDiscover">
+            <icon name="search" size="18" color="#163E35" />
             <text>发现活动</text>
           </view>
           <view wx:if="{{nextUp}}" class="button primary" hover-class="button-hover" bindtap="onNew">
+            <icon name="plus" size="18" color="#FFFFFF" />
             <text>发起活动</text>
           </view>
         </view>
 
         <view wx:if="{{hasAny}}" class="segmented tabs-line" aria-label="活动范围">
-          <view class="seg {{filter === 'mine' ? 'on' : ''}}" data-value="mine" bindtap="onFilter">我的活动</view>
-          <view class="seg {{filter === 'recent' ? 'on' : ''}}" data-value="recent" bindtap="onFilter">最近查看</view>
-          <view class="seg {{filter === 'finished' ? 'on' : ''}}" data-value="finished" bindtap="onFilter">已结束</view>
-          <view wx:if="{{collabCount}}" class="seg {{filter === 'collab' ? 'on' : ''}}" data-value="collab" bindtap="onFilter">需要协作 {{collabCount}}</view>
+          <view class="seg {{filter === 'mine' ? 'on' : ''}}" data-value="mine" hover-class="button-hover" bindtap="onFilter">我的活动</view>
+          <view class="seg {{filter === 'recent' ? 'on' : ''}}" data-value="recent" hover-class="button-hover" bindtap="onFilter">最近查看</view>
+          <view class="seg {{filter === 'finished' ? 'on' : ''}}" data-value="finished" hover-class="button-hover" bindtap="onFilter">已结束</view>
+          <view wx:if="{{collabCount}}" class="seg {{filter === 'collab' ? 'on' : ''}}" data-value="collab" hover-class="button-hover" bindtap="onFilter">需要协作 {{collabCount}}</view>
         </view>
 
         <!-- 区块头（板上「推荐活动」的位置）：眉题承担视觉分区，副行说明排序口径。
              这里不叫「推荐」——列表是同一个人自己的活动，按出发时间排，没有任何推荐算法。 -->
         <view wx:if="{{hasAny}}" class="home-section">
-          <text class="home-section__title">更多活动</text>
+          <text class="home-section__title">{{filter === 'recent' ? '最近查看' : filter === 'finished' ? '已结束的同行' : filter === 'collab' ? '需要我协作' : '我的活动'}}</text>
           <text class="home-section__sub">按出发时间排序</text>
         </view>
 

@@ -61,11 +61,14 @@ function specificity(sel) {
   return { ids, b: classes + attrs + pseudoClass, c: types + pseudoEl }
 }
 function cmpSpec(a, b) { return (a.ids - b.ids) || (a.b - b.b) || (a.c - b.c) }
-// 只实现「单复合选择器」的匹配（本文件 .button 族全是这种）。
-// 后代/类型/伪类一旦声明配色，§1 围栏会红并要求升级解析器；伪元素规则按定义不参与节点终值。
 function compoundOf(sel) {
   const s = sel.trim()
-  if (/\s|[>+~]/.test(s)) return null
+  if (/[>+~]/.test(s)) return null
+  if (/\s/.test(s)) {
+    const parts = s.split(/\s+/).map(compoundOf)
+    if (parts.some(part => !part)) return null
+    return Object.assign({}, parts[parts.length - 1], { ancestors: parts.slice(0, -1) })
+  }
   const type = (s.match(/^([a-zA-Z][\w-]*)/) || [])[1] || null
   const classes = (s.match(/\.[\w-]+/g) || []).map(x => x.slice(1))
   const attrs = (s.match(/\[([\w-]+)\]/g) || []).map(x => x.slice(1, -1))
@@ -77,6 +80,14 @@ function applies(node, c) {
   if (c.pseudo.length) return false              // :hover / ::after —— 节点模型里没有状态与部件
   if (c.type && c.type !== node.tag) return false
   if (c.attrs.some(a => !node.attrs.has(a))) return false
+  if (c.ancestors) {
+    let parent = node.parent
+    for (let index = c.ancestors.length - 1; index >= 0; index--) {
+      while (parent && !applies(parent, c.ancestors[index])) parent = parent.parent
+      if (!parent) return false
+      parent = parent.parent
+    }
+  }
   return c.classes.every(k => node.classes.has(k))
 }
 function parse(css) {
@@ -193,7 +204,8 @@ function famNode(fam, disabled, opts) {
   return {
     tag: opts.tag || 'view',
     classes: new Set(classes),
-    attrs: new Set(disabled && opts.attrOnly ? ['disabled'] : [])
+    attrs: new Set(disabled && opts.attrOnly ? ['disabled'] : []),
+    parent: opts.parent || null
   }
 }
 const FILLED = ['__fallback', 'primary', 'secondary', 'danger', 'leaf']
@@ -232,11 +244,20 @@ check('P1.6 调换两条同特异度规则的书写次序 ⇒ 赢家必须跟着
   finalDecl({ rules: [probe[1], probe[0]], tokens: {} }, probeNode, 'background').sel === '.a')
 check('P1.7 属性名解析：.button[disabled] 的 attr 取到的是 disabled（截错字符会让属性形态整条门失效）',
   JSON.stringify(compoundOf('.button[disabled]').attrs) === JSON.stringify(['disabled']))
-check('P1.8 围栏：没有后代/类型/伪类规则声明 .button 族配色（这类规则本解析器不建模祖先链，出现即要求先升级）',
+check('P1.8 围栏：配色规则均能解析，后代作用域必须通过祖先链匹配',
   base.rules.filter(r => PAINT_PROPS.indexOf(r.prop) !== -1 && /\.button/.test(r.sel) &&
     (!r.comp || r.comp.pseudo.some(p => p.indexOf(':') !== 0) || (r.comp && r.comp.type))).length === 0,
   base.rules.filter(r => PAINT_PROPS.indexOf(r.prop) !== -1 && /\.button/.test(r.sel) &&
     (!r.comp || r.comp.pseudo.some(p => p.indexOf(':') !== 0) || (r.comp && r.comp.type))).map(r => r.sel + '{' + r.prop + '}').join(','))
+const activityAncestor = { tag: 'view', classes: new Set(['activity-ui']), attrs: new Set() }
+const otherAncestor = { tag: 'view', classes: new Set(['weather-ui']), attrs: new Set() }
+check('P1.activity 后代匹配不跨页面、不把节点自身误当祖先',
+  applies(famNode('secondary', false, { parent: activityAncestor }), compoundOf('.activity-ui .button.secondary'))
+  && !applies(famNode('secondary', false, { parent: otherAncestor }), compoundOf('.activity-ui .button.secondary'))
+  && !applies(activityAncestor, compoundOf('.activity-ui .activity-ui')))
+check('P1.activity 多层后代顺序必须成立',
+  applies(famNode('secondary', false, { parent: { ...otherAncestor, parent: activityAncestor } }), compoundOf('.activity-ui .weather-ui .button'))
+  && !applies(famNode('secondary', false, { parent: { ...otherAncestor, parent: activityAncestor } }), compoundOf('.weather-ui .activity-ui .button')))
 check('P1.9 .button 族的伪元素规则不声明 background/color（它只摘原生 button 的下划线，不该影响节点三属性）',
   base.rules.filter(r => /\.button/.test(r.sel) && r.comp && r.comp.pseudo.some(p => p.indexOf('::') === 0) &&
     ['background', 'background-color', 'color'].indexOf(r.prop) !== -1).length === 0)
@@ -538,6 +559,23 @@ check('T7.2 把兜底通用规则挪到全部变体定义之后 ⇒ 变体靠 (0
 check('T7.3 用属性形态（原生 <button disabled>）与类形态走的是同一套赢家规则，二者不得给出两种灰',
   FAMLIST.every(fam => finalPaints(base, famNode(fam, true, { attrOnly: true, tag: 'button' })).winners.background ===
     (fam === '__fallback' ? '.button[disabled]' : '.button.' + fam + '[disabled]')))
+
+section('§8 活动作用域：可用、禁用、隔离与影子 token')
+for (const family of FAMLIST) {
+  const enabled = finalPaints(base, famNode(family, false, { parent: activityAncestor }))
+  const disabled = finalPaints(base, famNode(family, true, { parent: activityAncestor }))
+  check('activity.' + family + ' 禁用态不被作用域样式覆盖', triple(disabled) === triple(disabledFam[family]))
+  check('activity.' + family + ' 原生 disabled 与类形态一致', triple(disabled) === triple(finalPaints(base, famNode(family, true, { parent: activityAncestor, attrOnly: true, tag: 'button' }))))
+  check('activity.' + family + ' 不影响天气与其他页面', triple(finalPaints(base, famNode(family, false, { parent: otherAncestor }))) === triple(finalPaints(base, famNode(family, false))))
+  check('activity.' + family + ' 可用态文字对比度达 4.5', contrastRatio(enabled.color, enabled.backdrop) >= 4.5)
+  const shadow = { rules: base.rules, tokens: { ...base.tokens, '--line': '#AACCAA', '--muted': '#334433' } }
+  const changed = finalPaints(shadow, famNode(family, true, { parent: activityAncestor }))
+  check('activity.' + family + ' 禁用配色跟随 token', rawOf(changed.color) === '#334433' && (family === 'text' ? changed.bg.kind === 'transparent' : rawOf(changed.bg) === '#AACCAA'))
+}
+const scopedSecondary = finalPaints(base, famNode('secondary', false, { parent: activityAncestor }))
+check('activity.secondary 使用可辨识的白底描边，而非提交实底', rawOf(scopedSecondary.bg) === base.tokens['--surface'] && rawOf(scopedSecondary.border) === base.tokens['--control-line'])
+const brokenScope = parse(fs.readFileSync(TARGET, 'utf8') + '\n.activity-ui .button.secondary.disabled { background: var(--surface); }')
+check('activity 变异自证：禁用覆盖被删坏必能发现', triple(finalPaints(brokenScope, famNode('secondary', true, { parent: activityAncestor }))) !== triple(disabledFam.secondary))
 
 console.log('\npassed=' + passed + ' failed=' + failed)
 process.exit(failed ? 1 : 0)

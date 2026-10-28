@@ -1,4 +1,4 @@
-<view class="page {{showSticky ? 'has-sticky' : ''}}">
+<view class="page activity-ui {{showSticky ? 'has-sticky' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="无法查看此活动" detail="{{denied}}" actionLabel="回到我的活动" bind:action="goHome" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在核对活动安排。" />
@@ -27,9 +27,6 @@
       </button>
     </view>
 
-    <!-- 首屏：全出血封面（媒体 320）+ 抬进照片下沿的纸面板。
-         事实格与状态卡同处一块 .sheet-top：它们是「值不值得去 / 现在该做什么」的唯一出口，
-         事实区（sec-facts）已并入这里，首屏读数不再重复印第二份。 -->
     <view class="act-top">
       <view class="activity-hero-bleed">
         <activity-hero
@@ -86,6 +83,7 @@
           wx:key="key"
           class="seg {{item.key === anchorActive ? 'on' : ''}}"
           data-id="{{item.target}}"
+          hover-class="button-hover"
           bindtap="onSectionNav"
         >{{item.label}}</view>
       </view>

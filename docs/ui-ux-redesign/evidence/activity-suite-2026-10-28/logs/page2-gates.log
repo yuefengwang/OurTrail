@@ -1,0 +1,131 @@
+== §0 新架构有效性：三标签互斥，夹具无求值失败 ==
+  ✓ cloud：七日条与三个标签始终可达
+  ✓ cloud：只在云层标签显示剖面
+  ✓ cloud：只在逐时标签显示 canvas
+  ✓ cloud：只在日月标签显示结论卡
+  ✓ cloud：输入表达式无求值失败
+  ✓ cloud：不显示空的沿途模块
+  ✓ hourly：七日条与三个标签始终可达
+  ✓ hourly：只在云层标签显示剖面
+  ✓ hourly：只在逐时标签显示 canvas
+  ✓ hourly：只在日月标签显示结论卡
+  ✓ hourly：输入表达式无求值失败
+  ✓ hourly：不显示空的沿途模块
+  ✓ sky：七日条与三个标签始终可达
+  ✓ sky：只在云层标签显示剖面
+  ✓ sky：只在逐时标签显示 canvas
+  ✓ sky：只在日月标签显示结论卡
+  ✓ sky：输入表达式无求值失败
+  ✓ sky：不显示空的沿途模块
+== §1 日期、权限、加载、空态和出处 ==
+  ✓ denied：顶部状态分支互斥
+  ✓ denied：浏览日期在加载天气与空态仍可更换
+  ✓ denied：提醒按钮仍由组织者权限控制
+  ✓ denied：无求值失败
+  ✓ loading：顶部状态分支互斥
+  ✓ loading：浏览日期在加载天气与空态仍可更换
+  ✓ loading：提醒按钮仍由组织者权限控制
+  ✓ loading：无求值失败
+  ✓ loadingWeather：顶部状态分支互斥
+  ✓ loadingWeather：浏览日期在加载天气与空态仍可更换
+  ✓ loadingWeather：提醒按钮仍由组织者权限控制
+  ✓ loadingWeather：无求值失败
+  ✓ data：顶部状态分支互斥
+  ✓ data：浏览日期在加载天气与空态仍可更换
+  ✓ data：提醒按钮仍由组织者权限控制
+  ✓ data：无求值失败
+  ✓ dataClassic：顶部状态分支互斥
+  ✓ dataClassic：浏览日期在加载天气与空态仍可更换
+  ✓ dataClassic：提醒按钮仍由组织者权限控制
+  ✓ dataClassic：无求值失败
+  ✓ empty：顶部状态分支互斥
+  ✓ empty：浏览日期在加载天气与空态仍可更换
+  ✓ empty：提醒按钮仍由组织者权限控制
+  ✓ empty：无求值失败
+  ✓ ownerNoData：顶部状态分支互斥
+  ✓ ownerNoData：浏览日期在加载天气与空态仍可更换
+  ✓ ownerNoData：提醒按钮仍由组织者权限控制
+  ✓ ownerNoData：无求值失败
+  ✓ 日期在图表之前，且明确不修改行程
+  ✓ 日期值和事件接线不变
+  ✓ 来源与许可真实保留且只一处
+  ✓ 出行安全声明不因切标签被删除
+  ✓ 缺云层数据显式空态，不自动转画晴空
+  ✓ 天气失败可重试且可改日期
+== §3 常用地点、路线、行程分类与样式单源 ==
+  ✓ 两个查询场景与三类已存资产分开
+  ✓ 首页夹具无表达式失败
+  ✓ 地图、坐标、轨迹、路线库均有入口
+  ✓ 轨迹直接查沿途，常用地点直接查点位，计划单独打开
+  ✓ 原型云同步没有冒充已落地
+  ✓ 三类资产卡横向留白由全局 card 单源提供
+  ✓ 影子修改全局 padding 时三类卡片同步变化
+  ✓ 无保存资产不是空白页，给出查询后主动保存的出路
+  ✓ 最近查询独立展示且声明不上传不收藏
+  ✓ GPX 预览有独立核对标题和保存动作
+  ✓ GPX 原文件本机保存边界明确
+== §4 逐时、云层、日月读数契约 ==
+  ✓ 五卡与一卡免责都仅一处
+  ✓ 结论卡实质内容完整且无逐卡免责
+  ✓ 总评一次，五个摘要与结论卡同源
+  ✓ 星串评级使用 view 容器与两个独立 text
+  ✓ 沉默有说明而无空详解标题
+  ✓ 天文确定性与天气推算的边界未删除
+  ✓ 带操作区头保持横排
+  ✓ 非操作区头仍保持竖排
+  ✓ 逐时概要四指标默认可读，全表默认折叠
+  ✓ 概要温度降水风云各自一行
+  ✓ hourly：八列摘要按跨日唯一键渲染
+  ✓ hourly：概率行与摘要同列且缺数据可隐藏
+  ✓ hourly：不依赖拖动也可逐时切换
+  ✓ cloud：八列摘要按跨日唯一键渲染
+  ✓ cloud：概率行与摘要同列且缺数据可隐藏
+  ✓ cloud：不依赖拖动也可逐时切换
+  ✓ 云层灰阶语义与数据缺测语义明确
+  ✓ 地点名坐标海拔来源与保存入口齐备
+== §6 边界：写入集与追加条款（M-18 本批只做一半都不算完成） ==
+  ✓ M-18 两份通知页的卡片正文 / 未读标记 / 分批 / 发布接线仍同构（差异只允许在页头）
+  ✓ 品牌头只在 tab 版通知页（anotices 走原生导航，不顶第二条自绘品牌栏）
+  ✓ 通知页分区头只留一处（旧版「同行消息」+「通知」两个头连出两次「通知」）
+  ✓ tabBar.list 真值源读得出来，且 anotices 确实不在里面
+  ✓ 84px 留白只出现在 tab 页（M-18 样式半 + 追加 1 的合并判据）
+  · 跨页 84px 留白公式当前命中 4/5 处：pages/home/home.wxss pages/me/me.wxss pages/weather-hub/weather-hub.wxss pages/notices/notices.wxss
+  · app.wxss 的 .tabbar-safe：已被他人删除（与本批追加 1 的裁定冲突，已上报 requests.md）
+  · weather.wxss 的 .pheno-disclaimer：仍在但已无使用者（A-26 删掉的逐卡免责留下的死类，登记 requests 由样式页 owner 收）
+  · M-18 活动身份那一半的状态是 BLOCKED，不是本门放过：anotices 正文要出活动标题，
+  ·   三条路都不在本批写入集内——① 工厂 utils/notices-page.js 参数化页头；② 三个 navigateTo 入边（activity.js:413 / workspace.js:180 / weather.js:1424）传标题；
+  ·   ③ 页面自己补一次 read(kind:activity)，但 tools/scenario-notices-test.js 的 §3 第二条断言「非所有者不读活动判发布权」禁止这条路径，
+  ·      而本批禁写 tools/ 下已存在的文件（详见 out/PAGE2/requests.md）。
+  · 跨版本读数：审计 A-26 原报「四个层级、每卡一份」，HEAD 复量为「气象预报」2 处（区块副标题 + 逐卡一行），已按实测处理，未照抄「4」。
+== §2 A-07 接线：改日期 ⇒ 主图回到视口（真 weather.js + 真 handler） ==
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+  ✓ 等待信号有牙齿：响应迟到 80ms 时，固定 30ms 读不到滚动，回调+在途计数读到
+  ✓ 等待结束后 setData 回调归零（信号不是一次性的假闩）
+  ✓ 统一图在屏 ⇒ 滚向 .cloud-field-card
+  ✓ 回退经典 canvas ⇒ 滚向 .timeline-card（原先这一支直接 early return，切日停在页尾）
+  ✓ 没有图（空态/loadingWeather）⇒ 一条查询都不发（不滚向不在屏的对象）
+  ✓ 图已在视口内 ⇒ 不滚（增强不是硬跳）
+  ✓ rect 读不到 ⇒ 不滚也不抛（滚动是增强不是功能依赖）
+  ✓ pageScrollTo 自己抛错也被吞掉（失败静默，不阻断链路）
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+  ✓ onDate 之后取了一次天气（没被滚动打断）
+  ✓ 改日期 ⇒ 恰一次 pageScrollTo（不新造第二套滚动状态）
+  ✓ 数据真的落到页面（图与卡非空，滚动才有意义）
+  ✓ 一次性闩已消费（不留挂起）
+  ✓ 168 小时序列不进入 setData（this._chartSeries 持有）
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+  ✓ 阳性对照：不改日期的取数（首屏/重新查询）不滚 —— 红则说明改成无条件滚了
+  ✓ 改日 + 取数失败 ⇒ 不滚（没有图可滚）
+  ✓ 失败即作废挂起的复位承诺（不漏到下一次无关刷新）
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+  ✓ 下一次非改日期的成功刷新仍然不滚（承诺不会迟到发作）
+  ✓ （旁证）这次刷新确实成功过
+  ✓ 点日条里已选中的那天 ⇒ 早退：不取数也不滚（没多出一条空操作）
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+  ✓ 点日条换到另一天 ⇒ 恰一次复位滚动（与 picker 同一条承诺）
+[weather] 方向天气不可用，天相保持旧口径： Cannot read properties of undefined (reading 'callFunction')
+  ✓ 云场夹具真的造出了 unified（否则这一支根本没跑，判据是空转）
+  ✓ 统一图在屏时改日期 ⇒ 滚向 .cloud-field-card（同一助手，锚点由 data 选，不写死两处）
+  ✓ 两条分支互斥：这次只查在屏的那个锚点，没有去查另一条分支的 .timeline-card
+
+==== passed=109 failed=0 ====

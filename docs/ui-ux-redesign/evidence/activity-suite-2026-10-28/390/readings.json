@@ -1,0 +1,2006 @@
+{
+  "date": "2026-10-28T05:42:22.763Z",
+  "source": "native renderer, production domain projections, isolated memory; all cloud writes blocked",
+  "checks": [
+    {
+      "name": "home has upcoming activity and list",
+      "pass": true
+    },
+    {
+      "name": "01-home rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "01-home has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "01-home measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "discover navigation preserves destination",
+      "pass": true
+    },
+    {
+      "name": "02-discover rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "02-discover has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "02-discover measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "discover selected activity matches fixture",
+      "pass": true
+    },
+    {
+      "name": "activity card opens detail",
+      "pass": true
+    },
+    {
+      "name": "03-detail rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "03-detail has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "03-detail measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "owner action opens workspace",
+      "pass": true
+    },
+    {
+      "name": "04-workspace rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "04-workspace has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "04-workspace measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "04b-workspace-tools rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "04b-workspace-tools has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "04b-workspace-tools measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "navigation tile opens task list",
+      "pass": true
+    },
+    {
+      "name": "new task opens form without writing",
+      "pass": true
+    },
+    {
+      "name": "08b-task-sheet rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "08b-task-sheet has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "08b-task-sheet measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "名单 panel retains readable data",
+      "pass": true
+    },
+    {
+      "name": "05-roster-panel rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "05-roster-panel has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "05-roster-panel measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "分车 panel retains readable data",
+      "pass": true
+    },
+    {
+      "name": "06-transport-panel rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "06-transport-panel has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "06-transport-panel measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "现场 panel retains readable data",
+      "pass": true
+    },
+    {
+      "name": "07-field-panel rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "07-field-panel has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "07-field-panel measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "08-tasks rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "08-tasks has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "08-tasks measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "09-notices rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "09-notices has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "09-notices measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "09b-notice-sheet rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "09b-notice-sheet has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "09b-notice-sheet measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "10-vehicle rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "10-vehicle has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "10-vehicle measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "vehicle direction switches without writing",
+      "pass": true
+    },
+    {
+      "name": "10b-vehicle-return rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "10b-vehicle-return has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "10b-vehicle-return measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "11-editor rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "11-editor has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "11-editor measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "staff page displays authorized field panel",
+      "pass": true
+    },
+    {
+      "name": "14-staff rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "14-staff has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "signup preserves explicit consent",
+      "pass": true
+    },
+    {
+      "name": "12-signup rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "12-signup has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "12-signup measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "signup without consent stays in form with only the consent error",
+      "pass": true
+    },
+    {
+      "name": "13-signup-validation rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "13-signup-validation has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "13-signup-validation measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "signup participant can expand without granting consent",
+      "pass": true
+    },
+    {
+      "name": "13b-signup-expanded rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "13b-signup-expanded has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "13b-signup-expanded measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "guest home explains no upcoming activity",
+      "pass": true
+    },
+    {
+      "name": "15-home-empty rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "15-home-empty has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "15-home-empty measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "no cloud writes attempted: []",
+      "pass": true
+    },
+    {
+      "name": "no uncaught runtime exceptions",
+      "pass": true
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "01-home.png",
+      "page": "pages/home/home"
+    },
+    {
+      "name": "02-discover.png",
+      "page": "pages/discover/discover"
+    },
+    {
+      "name": "03-detail.png",
+      "page": "pages/activity/activity"
+    },
+    {
+      "name": "04-workspace.png",
+      "page": "pages/workspace/workspace"
+    },
+    {
+      "name": "04b-workspace-tools.png",
+      "page": "pages/workspace/workspace"
+    },
+    {
+      "name": "08b-task-sheet.png",
+      "page": "pages/tasks/tasks"
+    },
+    {
+      "name": "05-roster-panel.png",
+      "page": "pages/workspace/workspace"
+    },
+    {
+      "name": "06-transport-panel.png",
+      "page": "pages/workspace/workspace"
+    },
+    {
+      "name": "07-field-panel.png",
+      "page": "pages/workspace/workspace"
+    },
+    {
+      "name": "08-tasks.png",
+      "page": "pages/tasks/tasks"
+    },
+    {
+      "name": "09-notices.png",
+      "page": "pages/anotices/anotices"
+    },
+    {
+      "name": "09b-notice-sheet.png",
+      "page": "pages/anotices/anotices"
+    },
+    {
+      "name": "10-vehicle.png",
+      "page": "pages/vehicle/vehicle"
+    },
+    {
+      "name": "10b-vehicle-return.png",
+      "page": "pages/vehicle/vehicle"
+    },
+    {
+      "name": "11-editor.png",
+      "page": "pages/editor/editor"
+    },
+    {
+      "name": "14-staff.png",
+      "page": "pages/staff/staff"
+    },
+    {
+      "name": "12-signup.png",
+      "page": "pages/signup/signup"
+    },
+    {
+      "name": "13-signup-validation.png",
+      "page": "pages/signup/signup"
+    },
+    {
+      "name": "13b-signup-expanded.png",
+      "page": "pages/signup/signup"
+    },
+    {
+      "name": "15-home-empty.png",
+      "page": "pages/home/home"
+    }
+  ],
+  "errors": [],
+  "system": {
+    "brand": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1",
+    "platform": "devtools",
+    "benchmarkLevel": -1,
+    "pixelRatio": 3,
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "windowWidth": 390,
+    "windowHeight": 844,
+    "statusBarHeight": 47,
+    "safeArea": {
+      "top": 47,
+      "left": 0,
+      "right": 390,
+      "bottom": 810,
+      "width": 390,
+      "height": 763
+    },
+    "language": "zh_CN",
+    "version": "8.0.5",
+    "fontSizeSetting": 16,
+    "SDKVersion": "3.8.12",
+    "host": {
+      "env": "WeChat"
+    },
+    "enableDebug": false,
+    "mode": "default",
+    "deviceOrientation": "portrait",
+    "bluetoothEnabled": true,
+    "locationEnabled": true,
+    "wifiEnabled": true,
+    "albumAuthorized": true,
+    "cameraAuthorized": true,
+    "locationAuthorized": true,
+    "microphoneAuthorized": true,
+    "notificationAuthorized": true,
+    "notificationAlertAuthorized": true,
+    "notificationBadgeAuthorized": true,
+    "notificationSoundAuthorized": true,
+    "phoneCalendarAuthorized": true,
+    "bluetoothAuthorized": true,
+    "locationReducedAccuracy": true,
+    "devicePixelRatio": 3
+  },
+  "controls": {
+    "01-home": [
+      {
+        "text": "发现活动",
+        "size": {
+          "width": 171,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 336
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "发起活动",
+        "size": {
+          "width": 171,
+          "height": 48
+        },
+        "offset": {
+          "left": 199,
+          "top": 336
+        },
+        "radius": "14px",
+        "font": "16px"
+      },
+      {
+        "text": "我的活动",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 396
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "最近查看",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 107.5,
+          "top": 396
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "已结束",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 195,
+          "top": 396
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "需要协作 1",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 282.5,
+          "top": 396
+        },
+        "radius": "0px",
+        "font": "14px"
+      }
+    ],
+    "02-discover": [
+      {
+        "text": "列表",
+        "size": {
+          "width": 64,
+          "height": 44
+        },
+        "offset": {
+          "left": 24,
+          "top": 169
+        },
+        "radius": "5px",
+        "font": "14px"
+      },
+      {
+        "text": "地图",
+        "size": {
+          "width": 64,
+          "height": 44
+        },
+        "offset": {
+          "left": 92,
+          "top": 169
+        },
+        "radius": "5px",
+        "font": "14px"
+      }
+    ],
+    "03-detail": [
+      {
+        "text": "介绍",
+        "size": {
+          "width": 58,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 626.5
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "行程",
+        "size": {
+          "width": 58,
+          "height": 44
+        },
+        "offset": {
+          "left": 78.3359375,
+          "top": 626.5
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "路线",
+        "size": {
+          "width": 58,
+          "height": 44
+        },
+        "offset": {
+          "left": 136.671875,
+          "top": 626.5
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "安全",
+        "size": {
+          "width": 58,
+          "height": 44
+        },
+        "offset": {
+          "left": 195.0078125,
+          "top": 626.5
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "装备",
+        "size": {
+          "width": 58,
+          "height": 44
+        },
+        "offset": {
+          "left": 253.34375,
+          "top": 626.5
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "约定",
+        "size": {
+          "width": 58,
+          "height": 44
+        },
+        "offset": {
+          "left": 311.6796875,
+          "top": 626.5
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "导航",
+        "size": {
+          "width": 46,
+          "height": 48
+        },
+        "offset": {
+          "left": 324,
+          "top": 855.5
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "重新查询",
+        "size": {
+          "width": 316,
+          "height": 48
+        },
+        "offset": {
+          "left": 37,
+          "top": 1218.5
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "分享",
+        "size": {
+          "width": 88,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 659
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "进入工作台",
+        "size": {
+          "width": 254,
+          "height": 48
+        },
+        "offset": {
+          "left": 116,
+          "top": 659
+        },
+        "radius": "14px",
+        "font": "16px"
+      }
+    ],
+    "04-workspace": [
+      {
+        "text": "总览",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "名单",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 107.5,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "分车",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 195,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "现场",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 282.5,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "开始集合",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 458.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "任务清单\n装备、采购与记录的分工",
+        "size": {
+          "width": 171,
+          "height": 128
+        },
+        "offset": {
+          "left": 20,
+          "top": 662.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "活动通知\n发布安排，核对实际状态",
+        "size": {
+          "width": 171,
+          "height": 128
+        },
+        "offset": {
+          "left": 199,
+          "top": 662.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "参与者视角\n看看同行的人看到什么",
+        "size": {
+          "width": 171,
+          "height": 128
+        },
+        "offset": {
+          "left": 20,
+          "top": 798.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "编辑活动\n改时间、集合点与说明",
+        "size": {
+          "width": 171,
+          "height": 128
+        },
+        "offset": {
+          "left": 199,
+          "top": 798.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "取消这场活动（仅出发前可作废）",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 1239.359375
+        },
+        "radius": "14px",
+        "font": "14px"
+      }
+    ],
+    "04b-workspace-tools": [
+      {
+        "text": "总览",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "名单",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 107.5,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "分车",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 195,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "现场",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 282.5,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "开始集合",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 458.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "任务清单\n装备、采购与记录的分工",
+        "size": {
+          "width": 171,
+          "height": 128
+        },
+        "offset": {
+          "left": 20,
+          "top": 662.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "活动通知\n发布安排，核对实际状态",
+        "size": {
+          "width": 171,
+          "height": 128
+        },
+        "offset": {
+          "left": 199,
+          "top": 662.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "参与者视角\n看看同行的人看到什么",
+        "size": {
+          "width": 171,
+          "height": 128
+        },
+        "offset": {
+          "left": 20,
+          "top": 798.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "编辑活动\n改时间、集合点与说明",
+        "size": {
+          "width": 171,
+          "height": 128
+        },
+        "offset": {
+          "left": 199,
+          "top": 798.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "取消这场活动（仅出发前可作废）",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 1239.359375
+        },
+        "radius": "14px",
+        "font": "14px"
+      }
+    ],
+    "08b-task-sheet": [
+      {
+        "text": "全部\n1",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 149
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "待办\n1",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 107.5,
+          "top": 149
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "进行中\n0",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 195,
+          "top": 149
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "已完成\n0",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 282.5,
+          "top": 149
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "开始",
+        "size": {
+          "width": 54,
+          "height": 48
+        },
+        "offset": {
+          "left": 39,
+          "top": 328
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "编辑",
+        "size": {
+          "width": 54,
+          "height": 48
+        },
+        "offset": {
+          "left": 99,
+          "top": 328
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "删除",
+        "size": {
+          "width": 46,
+          "height": 48
+        },
+        "offset": {
+          "left": 159,
+          "top": 328
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "保存任务",
+        "size": {
+          "width": 356,
+          "height": 48
+        },
+        "offset": {
+          "left": 17,
+          "top": 821.140625
+        },
+        "radius": "14px",
+        "font": "16px"
+      },
+      {
+        "text": "新建任务",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 659
+        },
+        "radius": "14px",
+        "font": "16px"
+      }
+    ],
+    "05-roster-panel": [
+      {
+        "text": "总览",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "名单",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 107.5,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "分车",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 195,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "现场",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 282.5,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "协作授权",
+        "size": {
+          "width": 114,
+          "height": 48
+        },
+        "offset": {
+          "left": 256,
+          "top": 301
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "联络与资料",
+        "size": {
+          "width": 104,
+          "height": 48
+        },
+        "offset": {
+          "left": 153,
+          "top": 688.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      }
+    ],
+    "06-transport-panel": [
+      {
+        "text": "总览",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "名单",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 107.5,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "分车",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 195,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "现场",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 282.5,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "预览自动分车方案",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 544.796875
+        },
+        "radius": "14px",
+        "font": "16px"
+      },
+      {
+        "text": "编辑车辆与司机",
+        "size": {
+          "width": 152,
+          "height": 48
+        },
+        "offset": {
+          "left": 37,
+          "top": 891.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "删除车辆",
+        "size": {
+          "width": 152,
+          "height": 48
+        },
+        "offset": {
+          "left": 201,
+          "top": 891.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "添加车辆",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 972.796875
+        },
+        "radius": "14px",
+        "font": "14px"
+      }
+    ],
+    "07-field-panel": [
+      {
+        "text": "总览",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "名单",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 107.5,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "分车",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 195,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "现场",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 282.5,
+          "top": 140
+        },
+        "radius": "0px",
+        "font": "14px"
+      }
+    ],
+    "08-tasks": [
+      {
+        "text": "全部\n1",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 149
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "待办\n1",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 107.5,
+          "top": 149
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "进行中\n0",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 195,
+          "top": 149
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "已完成\n0",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 282.5,
+          "top": 149
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "开始",
+        "size": {
+          "width": 54,
+          "height": 48
+        },
+        "offset": {
+          "left": 39,
+          "top": 328
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "编辑",
+        "size": {
+          "width": 54,
+          "height": 48
+        },
+        "offset": {
+          "left": 99,
+          "top": 328
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "删除",
+        "size": {
+          "width": 46,
+          "height": 48
+        },
+        "offset": {
+          "left": 159,
+          "top": 328
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "新建任务",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 659
+        },
+        "radius": "14px",
+        "font": "16px"
+      }
+    ],
+    "09-notices": [
+      {
+        "text": "发布活动通知",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 118
+        },
+        "radius": "14px",
+        "font": "16px"
+      },
+      {
+        "text": "标记已读",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 340
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "查看活动安排",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 208,
+          "top": 340
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "复制通知",
+        "size": {
+          "width": 336,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 400
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "标记已读",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 571
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "查看活动安排",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 208,
+          "top": 571
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "复制通知",
+        "size": {
+          "width": 336,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 631
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "标记已读",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 802
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "查看活动安排",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 208,
+          "top": 802
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "复制通知",
+        "size": {
+          "width": 336,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 862
+        },
+        "radius": "14px",
+        "font": "14px"
+      }
+    ],
+    "09b-notice-sheet": [
+      {
+        "text": "发布活动通知",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 118
+        },
+        "radius": "14px",
+        "font": "16px"
+      },
+      {
+        "text": "标记已读",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 340
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "查看活动安排",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 208,
+          "top": 340
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "复制通知",
+        "size": {
+          "width": 336,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 400
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "标记已读",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 571
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "查看活动安排",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 208,
+          "top": 571
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "复制通知",
+        "size": {
+          "width": 336,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 631
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "标记已读",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 802
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "查看活动安排",
+        "size": {
+          "width": 162,
+          "height": 48
+        },
+        "offset": {
+          "left": 208,
+          "top": 802
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "复制通知",
+        "size": {
+          "width": 336,
+          "height": 48
+        },
+        "offset": {
+          "left": 34,
+          "top": 862
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "发布站内通知",
+        "size": {
+          "width": 356,
+          "height": 48
+        },
+        "offset": {
+          "left": 17,
+          "top": 654
+        },
+        "radius": "14px",
+        "font": "16px"
+      }
+    ],
+    "10-vehicle": [
+      {
+        "text": "去程",
+        "size": {
+          "width": 169,
+          "height": 44
+        },
+        "offset": {
+          "left": 24,
+          "top": 199.1953125
+        },
+        "radius": "5px",
+        "font": "14px"
+      },
+      {
+        "text": "返程",
+        "size": {
+          "width": 169,
+          "height": 44
+        },
+        "offset": {
+          "left": 197,
+          "top": 199.1953125
+        },
+        "radius": "5px",
+        "font": "14px"
+      }
+    ],
+    "10b-vehicle-return": [
+      {
+        "text": "去程",
+        "size": {
+          "width": 169,
+          "height": 44
+        },
+        "offset": {
+          "left": 24,
+          "top": 199.1953125
+        },
+        "radius": "5px",
+        "font": "14px"
+      },
+      {
+        "text": "返程",
+        "size": {
+          "width": 169,
+          "height": 44
+        },
+        "offset": {
+          "left": 197,
+          "top": 199.1953125
+        },
+        "radius": "5px",
+        "font": "14px"
+      }
+    ],
+    "11-editor": [
+      {
+        "text": "删除草稿",
+        "size": {
+          "width": 74,
+          "height": 48
+        },
+        "offset": {
+          "left": 296,
+          "top": 28.59375
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "1\n基本",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 97.1953125
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "2\n路线",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 107.5,
+          "top": 97.1953125
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "3\n介绍",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 195,
+          "top": 97.1953125
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "4\n发布",
+        "size": {
+          "width": 88,
+          "height": 44
+        },
+        "offset": {
+          "left": 282.5,
+          "top": 97.1953125
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "从路线开始 ›",
+        "size": {
+          "width": 98,
+          "height": 48
+        },
+        "offset": {
+          "left": 272.234375,
+          "top": 214.1953125
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "调整",
+        "size": {
+          "width": 46,
+          "height": 48
+        },
+        "offset": {
+          "left": 307,
+          "top": 589.1953125
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "调整",
+        "size": {
+          "width": 46,
+          "height": 48
+        },
+        "offset": {
+          "left": 307,
+          "top": 649.1953125
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "在地图上选集合点",
+        "size": {
+          "width": 316,
+          "height": 48
+        },
+        "offset": {
+          "left": 37,
+          "top": 953.1953125
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "手动添加",
+        "size": {
+          "width": 316,
+          "height": 48
+        },
+        "offset": {
+          "left": 37,
+          "top": 1013.1953125
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "保存草稿",
+        "size": {
+          "width": 82,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 659
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "下一步：路线",
+        "size": {
+          "width": 260,
+          "height": 48
+        },
+        "offset": {
+          "left": 110,
+          "top": 659
+        },
+        "radius": "14px",
+        "font": "16px"
+      }
+    ],
+    "14-staff": [],
+    "12-signup": [
+      {
+        "text": "提交报名",
+        "size": {
+          "width": 250,
+          "height": 48
+        },
+        "offset": {
+          "left": 120,
+          "top": 659
+        },
+        "radius": "14px",
+        "font": "16px"
+      }
+    ],
+    "13-signup-validation": [
+      {
+        "text": "收起",
+        "size": {
+          "width": 46,
+          "height": 48
+        },
+        "offset": {
+          "left": 307,
+          "top": 296
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "提交报名",
+        "size": {
+          "width": 250,
+          "height": 48
+        },
+        "offset": {
+          "left": 120,
+          "top": 659
+        },
+        "radius": "14px",
+        "font": "16px"
+      }
+    ],
+    "13b-signup-expanded": [
+      {
+        "text": "收起",
+        "size": {
+          "width": 46,
+          "height": 48
+        },
+        "offset": {
+          "left": 307,
+          "top": 296
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "提交报名",
+        "size": {
+          "width": 250,
+          "height": 48
+        },
+        "offset": {
+          "left": 120,
+          "top": 659
+        },
+        "radius": "14px",
+        "font": "16px"
+      }
+    ],
+    "15-home-empty": [
+      {
+        "text": "发起活动",
+        "size": {
+          "width": 312,
+          "height": 48
+        },
+        "offset": {
+          "left": 39,
+          "top": 222
+        },
+        "radius": "14px",
+        "font": "16px"
+      },
+      {
+        "text": "发现活动",
+        "size": {
+          "width": 350,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 295
+        },
+        "radius": "14px",
+        "font": "14px"
+      }
+    ]
+  },
+  "blockedActions": []
+}

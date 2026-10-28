@@ -10,18 +10,12 @@
    需要动 app.wxss（不属本批写入集），已写进 out/SWX2/requests.md。12px 这一支同理待收（--text-caption）。 */
 .activity-card .activity-card__info { font-size: 12px; color: var(--muted); }
 .activity-card--featured .activity-card__info { color: var(--on-forest-muted); }
-/* 动作行（2026-10-26 style-B）：页标题让位给品牌栏后，动作只剩一行。
-   主按钮只留给「发起活动」，发现是次级；两者等宽，44px 以上触控高度由全局 .button 的
-   --action-height 承重。没有未来活动时本行只剩「发现活动」（primary 在邀请卡里）。 */
 .home-actions { display: flex; align-items: center; gap: 8px; }
 .home-actions .button { flex: 1; }
 
-/* 首屏照片 hero（2026-10-26 style-B）：负边距抵掉 .page 的 24px 上留白与 20px 左右留白，
-   照片因此顶到屏幕边。高度由 next-up-card--photo 的 min-height 320 给，这里只负责出血与圆角：
-   全出血的照片再带 14px 圆角，四角会露出纸面小三角。 */
 .home-hero { margin: -24px -20px 0; }
-.home-hero--photo { min-height: 320px; }
-.home-hero--photo .next-up-card { min-height: 320px; border-radius: 0; }
+.home-hero--photo { min-height: 280px; }
+.home-hero--photo .next-up-card { min-height: 280px; border-radius: 0; }
 /* 邀请卡分支：没有照片，品牌栏回到纸面固定条，卡仍要在纸面内留 20px 边距。
    此时 hero 不能有 -24 上边距——占位块会被拉进固定条底下，卡片顶到导航栏里。 */
 .home-hero--invite { margin-top: 0; padding: 0 20px; }

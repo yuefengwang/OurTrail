@@ -1,0 +1,136 @@
+== 1. 工作台装配：organizer 视图 → 总览数据 / 面板 properties / 门槛按钮状态 ==
+  ✓ 读取请求 = activity / a1 / organizer 视角（一次）
+  ✓ onLoad 记录 activityId 并 setData（三个面板的 activity-id 均绑定自它）
+  ✓ wxml：三个面板都绑定 activity-id，field-panel 固定 organizer 视角
+  ✓ wxml：面板显隐用类名而非 hidden 属性（hidden 在自定义组件宿主上不生效，曾致四区内容全部平铺）
+  ✓ wxml：三个指标可点，分别跳名单/分车/现场（指标即入口）
+  ✓ 副标题随阶段装配（published → 该阶段在发生什么）
+  ✓ 标题与阶段徽标（published → 行前准备）
+  ✓ 三项指标：待审核 1 / 待分车 2 / 第三格=待签到 3
+  ✓ 进程时间线 5 段：当前标 ●、未到标 ○、label 不带装饰
+  ✓ 下一阶段按钮可用且指向「开始集合」，编辑入口打开
+  ✓ published（出发前）可取消
+  ✓ 导航栏标题设置为「活动工作台」
+  ✓ revision 取自读取（后续阶段推进做 CAS）
+  ✓ 分区切换（总览/名单/分车/现场）
+  ✓ closing 阶段第三格切到「待到家」（pendingHome）
+  ✓ closing 下一阶段 = 安全收尾并归档，且已出发后不可再取消
+  ✓ 缺少活动编号：直接 denied 且不外呼
+== 2. 阶段推进：进程区按钮 → 二次确认弹层（门槛说明）→ activity.transition ==
+  ✓ 点击「进入正在集合」先弹确认层（不直接发命令）
+  ✓ 确认弹层展示门槛说明、原因必填与确认绑定（wxml 契约）
+  ✓ 关闭弹层不产生命令
+  ✓ 原因为空时确认被拦：不发命令、不进 busy、弹层保持
+  ✓ 发出 activity.transition，payload 与 schema 一致（type/activityId/next/reason，无多余键）
+  ✓ 以读取时的 revision 做 CAS
+  ✓ 成功反馈：震动 + toast「已进入正在集合。」+ 弹层关闭 + 成功 callout
+  ✓ 成功后 revision 推进并自动重读（CAS 链延续）
+== 3. 取消活动：独立 danger 块 → 二次确认 → cancelled；出发后入口不渲染 ==
+  ✓ gathering 阶段展示取消入口（文字权重 + data-next=cancelled，不再与主动作同块同色）
+  ✓ danger 块带 data-next=cancelled → 弹层标题「确认取消活动」
+  ✓ 取消路径的确认按钮用 danger 样式（wxml 只读布尔，不认枚举原文）
+  ✓ 发出 activity.transition → cancelled，payload 与 schema 一致
+  ✓ 取消成功反馈：toast「活动已取消。」+ 弹层关闭
+  ✓ active（已出发）阶段 canCancel=false：取消入口不渲染（取消仅限出发前）
+== 4. 名单面板：审核通过/拒绝 / 取消守卫与递补 / pending 计数 ==
+  ✓ 名单读取走 organizer 视角（面板自行拉取授权视图）
+  ✓ 名单汇总：三格指标带取 counters 同一出处（已确认 4 / 待审核 1 / 候补 1），缺一格必红
+  ✓ wxml：批量动作条仅在有勾选时渲染，空选态只留一句引导（不留五颗死按钮）
+  ✓ wxml：搜索与状态筛选合并为一行（.roster-filter）
+  ✓ 行装配：状态文案/语气/副标题（出行方式打头，未排车说「待安排车辆」）
+  ✓ 同行组约束行（整组同车标注）
+  ✓ 搜索过滤（姓名/上车点/车辆）
+  ✓ 状态筛选「待审核」只剩 pending 行
+  ✓ 勾选后展示已选计数
+  ✓ 批量审核先弹确认层并带名单
+  ✓ 审核通过发 signup.review {decision:confirm}，payload 与 schema 一致
+  ✓ 审核保存反馈：toast「已保存」+ 弹层收起 + 选中清空 + 成功 callout
+  ✓ 拒绝发 signup.review {decision:reject}，且以刷新后的 revision 做 CAS
+  ✓ 取消报名未填原因被拦：不发命令
+  ✓ 填原因后发 signup.cancel 带 reason
+  ✓ 递补候补发 signup.promote（无 decision/reason 键）
+  ✓ 同行组「允许分车」发 group.setTogether keepTogether=false
+== 5. 分车面板：预览 plan 装配 → set(null)/swap/remove/commit/vehicle.remove ==
+  ✓ 分车读取 = activity read + readTransport 各一次（attached+observer 同轮也只一轮）
+  ✓ 车辆指标：1 辆车 / 5 个可用乘客位 / 2 人待安排
+  ✓ 车辆行装配：司机/上车点/座位示意（01 李四、02 王五，第 3 格前是过道）
+  ✓ 已确认人员选项 = 4 人（都需乘车；未排车者标「待安排车辆」并带座位号）
+  ✓ 同车约束行（整组同车）
+  ✓ 参与者司机候选=已确认且没占用乘客座位（孙七/周八；有车的李四王五与未确认者不入列）
+  ✓ wxml：参与者司机下拉绑定 driverCandidates（曾误绑只在座位指派流程赋值的 confirmedOptions，编辑器里下拉恒为空）
+  ✓ wxml：预览自动分车在无车辆时禁用（0 车按下必空手而归）
+  ✓ previewAssignments 以 activityId 调用，plan 收进预览弹层
+  ✓ 计划差异计数：2 调整 / 1 移除 / 1 未能安排
+  ✓ 调整行映射成可展示行（旧安排 → 新安排，车辆名+座号）
+  ✓ 移除行与未能安排的原因文案
+  ✓ 提交发 assignment.commit，preview 原样携带 plan 且过 schema
+  ✓ 方案保存反馈：弹层关闭 + toast「已保存」+ 成功 callout
+  ✓ 点空座位打开指派层（车辆/座号带入，未选人）
+  ✓ 安排座位发 assignment.set {signupId,vehicleId,seatLabel}
+  ✓ 不编座号时 target.seatLabel 为 null（不是 undefined/空串）
+  ✓ 点已占座位：预选现任乘客并给出交换对象（排除本人）
+  ✓ 交换发 assignment.swap {firstSignupId,secondSignupId}
+  ✓ 交换反馈 toast「已交换」
+  ✓ 移除安排发 assignment.remove {signupId}，payload 与 schema 一致
+  ✓ 移除反馈 toast 说清了移除的是什么 + 弹层关闭
+  ✓ 删除车辆先弹确认层并带车辆名（不发命令）
+  ✓ 确认删除发 vehicle.remove {vehicleId}
+== 6. 现场面板：签到 evidence 形状 / 出发核实 / 到家 / 节点 / 异常 ==
+  ✓ 现场读取带 perspective 属性（workspace 传 organizer）
+  ✓ 只列已确认人员并带出行方式/上车点/签到/车辆副标题
+  ✓ gathering 收尾标语为现场事实
+  ✓ gathering 可发动作：签到/未出发/迟到/两类异常，缺前置的「已随队出发」不渲染
+  ✓ 少了 joined 必须说明缺哪一步（此处缺签到）
+  ✓ 已签到且不再需要上车的行（s3）仍然给出「核实已随队出发」
+  ✓ 已签到但缺去程上车的行（s6）不给 joined，并把用户指向车长任务页
+  ✓ 动作不含上车与位置上报（上车在车长任务页、位置上报是参与者本人自助）
+  ✓ 回到 s2 开层：动作表与缺签到文案一致（面板不是只算一次）
+  ✓ 未填逐人核实依据被拦：不发命令
+  ✓ 签到 payload：checkIn.method=manual，evidence 只带 note（at/by 留空待服务端覆写，不伪造）
+  ✓ 签到 payload 按服务端覆写规则补齐后过 schema
+  ✓ 签到保存反馈：逐人 message + toast「已保存」+ revision 推进
+  ✓ 出发核实 payload：outcome.kind=not_departed + evidence（同样只带 note）
+  ✓ 下撤报备发 incident.report {signupIds,kind:withdrawal,description}
+  ✓ 异常未填处理结果被拦：不发命令
+  ✓ 结案发 incident.resolve {incidentId,note}
+  ✓ closing 收尾标语
+  ✓ closing 已随队未到家：动作=到家/另行返程/两类异常
+  ✓ 到家 payload：顶层 note，无 evidence 对象（不伪造 at/by）
+  ✓ 另行返程发 attendance.returnPlan plan=independent
+  ✓ active 阶段展示最后一次主动上报（坐标 + 过时标记）
+  ✓ active+已随队：开放节点确认（需选节点）
+  ✓ 未选路线节点被拦：不发命令
+  ✓ 节点确认发 attendance.node {pointId,note}
+  ✓ 现场面板：self 行副标题只有出行方式与签到事实，不含车辆/座位/上车
+  ✓ 现场面板：self 行不给返程安排动作（与 field.js 的 trip.mode 门同向）
+  ✓ 现场面板：self 行仍能正常核实到家（收尾义务与出行方式无关）
+== 7. 面板防重复加载：attached + observers 同轮 → _loading 守卫只跑一次 ==
+  ✓ 名单面板：attached+observer 同轮 → read 只发一次
+  ✓ 守卫在读取完成后复位：属性变更可再次加载（activityId 透传读取请求）
+  ✓ 分车面板：attached+observer 同轮 → read 与 readTransport 各只发一次
+  ✓ 现场面板：attached+observer（activityId, perspective）同轮 → read 只发一次
+  ✓ perspective 变更触发恰好一次重读，且请求带上新视角
+  ✓ 无 activityId 时不发读取（早退，不留半截状态）
+== 8. vehicle_contact 只读面：工作台拒绝 / 面板拒绝 / vehicle 视角零可发操作 ==
+  ✓ 工作台按 organizer 视角读取，非组织者（如车长）被拒并透出原文
+  ✓ 被拒后无任何进程操作可用（canTransition/canCancel=false，不发命令）
+  ✓ 名单面板被拒：透出原因且不装配名单行（owner-only 读取被服务端闸门挡下）
+  ✓ 分车面板被拒：同样透出原因、不装配车辆
+  ✓ 被拒面板没有发出任何命令
+  ✓ vehicle 视角读取透传 perspective，乘车人名单可只读查看
+  ✓ 不可发的命令对应操作不渲染：现场记录弹层零动作（gathering 分支开放但权限为空）
+  ✓ 驱动不存在的动作被拒：不发任何命令
+== 9. L3 编排行为：journey 主待办 / 空态 / 工具导航 / 面板同步 ==
+  ✓ 主待办原样取 journey.primary，未重算优先级或丢弃队列
+  ✓ 有门槛仍保留权限允许的阶段确认入口
+  ✓ 待办去 roster 切区并滚顶
+  ✓ 待办去 transport 切区并滚顶
+  ✓ 待办去 field 切区并滚顶
+  ✓ 独立工具四入口保留活动 id
+  ✓ 旅程完善活动入口仍去同一编辑器
+  ✓ written → 重读 → phase@revision，切区不丢失
+  ✓ 无待办保留 journey 的 idle 说明与真实下一步
+  ✓ 只读阶段不新增推进/编辑/取消权限
+  ✓ 真正空队列仍有阶段说明，不伪造待办
+
+passed=125 failed=0 skipped=0

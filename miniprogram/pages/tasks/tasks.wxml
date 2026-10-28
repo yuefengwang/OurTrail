@@ -1,10 +1,10 @@
-<view class="page {{canManage && !denied && !loading ? 'has-sticky' : ''}}">
+<view class="page activity-ui {{canManage && !denied && !loading ? 'has-sticky' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="任务清单暂不可用" detail="{{denied}}" actionLabel="{{activityId ? '查看活动' : '回到我的活动'}}" bind:action="onDeniedAction" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取这场活动的分工。" />
   </block>
   <view wx:else class="stack-sections">
-    <view class="tasks-identity">
+    <view class="tasks-identity activity-intro">
       <view class="cluster" style="justify-content:space-between;align-items:center;">
         <text class="eyebrow">协作 · 任务清单</text>
         <text class="small muted">{{activityTitle || '这场活动'}}</text>
@@ -19,6 +19,7 @@
         wx:key="value"
         class="seg {{filter === item.value ? 'on' : ''}}"
         data-value="{{item.value}}"
+        hover-class="button-hover"
         bindtap="onFilter"
       ><text>{{item.label}}</text><text class="seg-count">{{item.count}}</text></view>
     </view>
@@ -37,9 +38,9 @@
           </view>
           <text wx:if="{{item.note}}" class="small muted task-note">{{item.note}}</text>
           <view wx:if="{{canManage}}" class="task-row__actions">
-            <view class="task-secondary task-status-action" hover-class="button-hover" data-id="{{item.id}}" data-next="{{item.actionNext}}" bindtap="onStatus">{{item.actionLabel}}</view>
-            <view class="task-secondary" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEdit">编辑</view>
-            <view class="task-secondary" hover-class="button-hover" data-id="{{item.id}}" bindtap="onDeleteOpen">删除</view>
+            <view class="button secondary task-secondary task-status-action" hover-class="button-hover" data-id="{{item.id}}" data-next="{{item.actionNext}}" bindtap="onStatus">{{item.actionLabel}}</view>
+            <view class="button secondary task-secondary" hover-class="button-hover" data-id="{{item.id}}" bindtap="onEdit">编辑</view>
+            <view class="button text task-secondary" hover-class="button-hover" data-id="{{item.id}}" bindtap="onDeleteOpen">删除</view>
           </view>
         </view>
       </view>

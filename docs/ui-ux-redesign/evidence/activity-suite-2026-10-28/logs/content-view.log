@@ -1,0 +1,17 @@
+== 活动正文展示层 ==
+  ✓ 空行分段：两段
+  ✓ 空行分段：多余空白/空段被丢弃
+  ✓ 单段保持一段
+  ✓ 空文本不产生段落
+  ✓ 非字符串安全
+  ✓ 文本块拆成 paragraphs
+  ✓ 单图 layout=single
+  ✓ 双图 layout=double
+  ✓ 三图 layout=triple
+  ✓ 空文本/空图块被丢弃（只剩 4 块）
+  ✓ 旧活动无 content 返回空数组
+  ✓ 坏块不抛
+  ✓ allImages 按正文顺序收集
+  ✓ allImages 对空/坏输入失败关闭
+
+passed=14 failed=0

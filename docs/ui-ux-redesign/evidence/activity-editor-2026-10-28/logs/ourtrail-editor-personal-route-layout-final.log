@@ -1,0 +1,76 @@
+== 模板结构 ==
+  PASS 路线库不留假媒体槽或氛围图片
+  PASS 列表辅助信息不再重复指标摘要
+  PASS 我的/共享两组保留独立循环
+  PASS 两组文字资产均有编号与标题
+  PASS 共享只承诺查看，不承诺使用
+  PASS 列表新建与打开导航接线保留
+  PASS 路线库页头：一句 20px 陈述独占一行，随后是全宽 block 主按钮，不再有同名标题层/眉题/副标题
+  PASS 路线行：保存时间并入标题下的元信息簇，行尾只剩风险/引用一行
+  PASS 路线详情彻底移除假封面与脚注
+  PASS 主视觉地图在剖面→节点→天气→风险→共享→引用→管理之前
+  PASS 无地图时有诚实空态与拥有者补坐标入口
+  PASS 路线详情：眉题(来源) → 标题 → 元信息（含保存时间）→ 指标，保存时间不再独立成行
+  PASS 底栏仅 owner；主发起、次编辑均在栏内
+  PASS has-sticky 是 owner 条件类，而非所有用户的空留白
+  PASS 删除入口为 owner 文字危险动作，仍有确认 dialog
+  PASS 共享添加和取消共享确认仍在
+  PASS 地图没有 view 覆盖层
+  PASS 个人页不再有冗余大标题
+  PASS 头像昵称身份区与统计带独立
+  PASS 身份区保留 nickname 直接编辑及头像按钮
+  PASS 身份区显式说明自动保存和未激活状态
+  PASS 路线库为独立工具入口，不混入最近活动容器
+  PASS 安全/同行人/权限三分组始终存在
+  PASS 电话仍遮罩；代报与位置权限边界仍可见
+  PASS 七个资料/危险操作弹层全部保留
+  PASS 本机草稿与未激活入口全部保留
+  PASS tab 页底部 calc 不变
+  PASS 常用同行人改用共享 <person-row>，编辑与移除仍在它的插槽内
+  PASS 个人页不再自定义第二套人行头像尺寸（36px 的 .sm 变体与 15px 无源字阶已删）
+  PASS 行卡内边距收进 app.wxss 的 .card.rows，me/editor 都不再抄内联 padding
+  PASS 个人页内联 style 数不高于 5a 基线 11（只许变少）
+  PASS 紧凑指标只有 app.wxss 一个出处；两页不得再各抄一份字号/行距/字距
+  PASS 与 .cluster 缺省同值的空覆盖 .route-meta 已从两页的定义与模板里一起消失
+  PASS 全图页的可点档位下限引用 --touch-target，不写死 44px
+  PASS 六页内联 style 不高于 5b 基线（routes 0 / weather-chart 0 / route 10 / route-edit 17 / editor 99 / signup 17）
+  PASS 行内主标题走 app.wxss 的 .row-title（字重与 overflow-wrap 同处），四页不再内联抄字重
+  PASS 全仓独立的内联字重行标题为 0；复合内联字重只剩登记的这 2 处
+  PASS route 详情的节点名只留排布差，字重与断词由共享类承担（两个类同写）
+  PASS route 注册既有 chapter
+  PASS me 注册既有 chapter
+  PASS 个人页注册共享 <person-row>（模板用了就必须登记，否则标签静默不渲染）
+  PASS 路线标题允许长文本换行而非截断
+== 真 route Page 与 API 边界 ==
+  PASS no-id 不外呼，结束 loading 并给原因
+  PASS no-id 下拉也结束刷新
+  PASS onShow 真读取 routeId + organizer 活动
+  PASS reload 更新 revision、owner、标题和风险
+  PASS 地图仍用真实节点与轨迹
+  PASS 引用标题缺失降为空值，不编造标题
+  PASS 只查询有坐标节点，使用 GCJ 坐标与目标日期
+  PASS 天气真实装配含 ready/no-coords 与读数
+  PASS 页面不再持有封面字段或失败 handler
+  PASS 编辑返回 onShow 重读最新标题与 revision
+  PASS 编辑/发起/活动导航参数未改变；空 id 不跳转
+  PASS 日期选择重新查询各坐标节点
+  PASS 推算开关仍设当天 08:00 并给节点抵达时间
+  PASS 超窗不伪装 ready，缺坐标独立保留
+  PASS 天气失败不翻整页、不抹路线
+  PASS 删除被拒保留弹层与错误，busy 收尾、不返回
+  PASS 删除仍走 CAS + 本页同步契约
+  PASS 删除可取消
+  PASS 删除成功关闭弹层并返回
+  PASS shared 投影无 sharedWith 仍可正常读；无点不造地图
+  PASS shared 下管理/发起/共享均由 owner 数据位控制
+  PASS 活动附属读取失败不拖垮路线
+  PASS 路线读失败显式 denied
+== 真 routes Page ==
+  PASS mine/shared 分区与长标题原样保留
+  PASS 指标只包含一次距离/爬升/节点
+  PASS 辅助摘要仅风险，不重复 km/m/节点
+  PASS 缺里程爬升只留节点事实，不伪造零距离
+  PASS 列表打开/新建导航保持
+  PASS 空列表三个集合一致清空
+  PASS 列表失败收尾并显示原因
+passed=72 failed=0

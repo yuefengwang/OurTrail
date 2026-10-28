@@ -1,8 +1,8 @@
-<view class="page">
+<view class="page activity-ui">
   <view class="stack-sections">
     <!-- 紧凑身份头（L3）：角色 + 真实活动编号同一行；这页没有活动名投影，就不虚构一个标题。
          授权范围写在角色下面，现场协作的人先知道「这是我现在的授权范围」。 -->
-    <view class="staff-identity">
+    <view class="staff-identity activity-intro">
       <view class="cluster" style="justify-content:space-between;align-items:center;">
         <text class="eyebrow">现场协作</text>
         <text class="small muted">活动编号 · {{activityId}}</text>

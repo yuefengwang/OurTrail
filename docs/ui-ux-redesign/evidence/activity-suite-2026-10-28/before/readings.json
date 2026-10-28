@@ -1,0 +1,204 @@
+{
+  "date": "2026-10-28T02:50:11.155Z",
+  "source": "native renderer, production domain projections, isolated memory; all cloud writes blocked",
+  "checks": [
+    {
+      "name": "home has upcoming activity and list",
+      "pass": true
+    },
+    {
+      "name": "01-home rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "discover navigation preserves destination",
+      "pass": true
+    },
+    {
+      "name": "02-discover rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "discover selected activity matches fixture",
+      "pass": true
+    },
+    {
+      "name": "activity card opens detail",
+      "pass": true
+    },
+    {
+      "name": "03-detail rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "owner action opens workspace",
+      "pass": true
+    },
+    {
+      "name": "04-workspace rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "名单 panel retains readable data",
+      "pass": true
+    },
+    {
+      "name": "05-roster-panel rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "分车 panel retains readable data",
+      "pass": true
+    },
+    {
+      "name": "06-transport-panel rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "现场 panel retains readable data",
+      "pass": true
+    },
+    {
+      "name": "07-field-panel rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "08-tasks rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "09-notices rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "10-vehicle rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "11-editor rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "signup preserves explicit consent",
+      "pass": true
+    },
+    {
+      "name": "12-signup rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "signup without consent stays in form",
+      "pass": true
+    },
+    {
+      "name": "13-signup-validation rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "no cloud writes attempted",
+      "pass": false
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "01-home.png",
+      "page": "pages/home/home"
+    },
+    {
+      "name": "02-discover.png",
+      "page": "pages/discover/discover"
+    },
+    {
+      "name": "03-detail.png",
+      "page": "pages/activity/activity"
+    },
+    {
+      "name": "04-workspace.png",
+      "page": "pages/workspace/workspace"
+    },
+    {
+      "name": "05-roster-panel.png",
+      "page": "pages/workspace/workspace"
+    },
+    {
+      "name": "06-transport-panel.png",
+      "page": "pages/workspace/workspace"
+    },
+    {
+      "name": "07-field-panel.png",
+      "page": "pages/workspace/workspace"
+    },
+    {
+      "name": "08-tasks.png",
+      "page": "pages/tasks/tasks"
+    },
+    {
+      "name": "09-notices.png",
+      "page": "pages/anotices/anotices"
+    },
+    {
+      "name": "10-vehicle.png",
+      "page": "pages/vehicle/vehicle"
+    },
+    {
+      "name": "11-editor.png",
+      "page": "pages/editor/editor"
+    },
+    {
+      "name": "12-signup.png",
+      "page": "pages/signup/signup"
+    },
+    {
+      "name": "13-signup-validation.png",
+      "page": "pages/signup/signup"
+    }
+  ],
+  "errors": [],
+  "system": {
+    "brand": "devtools",
+    "model": "iPhone 12/13 (Pro)",
+    "system": "iOS 10.0.1",
+    "platform": "devtools",
+    "benchmarkLevel": -1,
+    "pixelRatio": 3,
+    "screenWidth": 390,
+    "screenHeight": 844,
+    "windowWidth": 390,
+    "windowHeight": 844,
+    "statusBarHeight": 47,
+    "safeArea": {
+      "top": 47,
+      "left": 0,
+      "right": 390,
+      "bottom": 810,
+      "width": 390,
+      "height": 763
+    },
+    "language": "zh_CN",
+    "version": "8.0.5",
+    "fontSizeSetting": 16,
+    "SDKVersion": "3.8.12",
+    "host": {
+      "env": "WeChat"
+    },
+    "enableDebug": false,
+    "mode": "default",
+    "deviceOrientation": "portrait",
+    "bluetoothEnabled": true,
+    "locationEnabled": true,
+    "wifiEnabled": true,
+    "albumAuthorized": true,
+    "cameraAuthorized": true,
+    "locationAuthorized": true,
+    "microphoneAuthorized": true,
+    "notificationAuthorized": true,
+    "notificationAlertAuthorized": true,
+    "notificationBadgeAuthorized": true,
+    "notificationSoundAuthorized": true,
+    "phoneCalendarAuthorized": true,
+    "bluetoothAuthorized": true,
+    "locationReducedAccuracy": true,
+    "devicePixelRatio": 3
+  },
+  "failure": "AssertionError [ERR_ASSERTION]: no cloud writes attempted\n    at check (/Users/tushiyu/git/OurTrail/tools/verify-activity-suite-native.cjs:40:10)\n    at main (/Users/tushiyu/git/OurTrail/tools/verify-activity-suite-native.cjs:146:5)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+}

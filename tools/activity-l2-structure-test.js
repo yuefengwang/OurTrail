@@ -393,7 +393,7 @@ section('13. 底部操作条（S3）：唯一出口、互斥链、留白同源')
 {
   // 根类与底栏同一个开关：showSticky 决定「有没有底栏」，也决定「要不要 120px 页尾留白」。
   check('根节点按 showSticky 条件挂 .has-sticky',
-    /<view class="page \{\{showSticky \? 'has-sticky' : ''\}\}">/.test(ACT_WXML))
+    /<view class="page activity-ui \{\{showSticky \? 'has-sticky' : ''\}\}">/.test(ACT_WXML))
   const stickyTags = ACT_WXML.match(/<view[^>]*class="sticky-action act-sticky"[^>]*>/g) || []
   check('全页只有一个 .sticky-action，且由 showSticky 控制', stickyTags.length === 1
     && stickyTags[0].indexOf('wx:if="{{showSticky}}"') !== -1, stickyTags)

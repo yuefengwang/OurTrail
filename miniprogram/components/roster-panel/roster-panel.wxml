@@ -1,4 +1,4 @@
-<view class="stack">
+<view class="stack activity-ui activity-panel">
   <status-panel wx:if="{{denied}}" kind="denied" title="无法查看名单" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取名单。" />
@@ -6,7 +6,7 @@
   <view wx:else class="stack">
     <view class="card-header">
       <text class="section-title">参与人名单</text>
-      <view class="button text" hover-class="button-hover" bindtap="onAccessOpen">
+      <view class="button secondary" hover-class="button-hover" bindtap="onAccessOpen">
         <icon name="shield" size="16" color="#163E35" />
         <text>协作授权</text>
       </view>
@@ -59,7 +59,7 @@
         <checkbox-group data-id="{{item.signupId}}" bindchange="onSelect">
           <label class="check-label" style="padding:0;"><checkbox color="#163E35" checked="{{selected[item.signupId]}}" /><text class="check-text">选择</text></label>
         </checkbox-group>
-        <view class="button text" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="onContact">联络与资料</view>
+        <view class="button secondary" hover-class="button-hover" data-id="{{item.signupId}}" bindtap="onContact">联络与资料</view>
       </person-row>
     </view>
     <status-panel wx:else kind="empty" title="没有匹配的参与人" detail="尝试其他姓名或报名状态。" />

@@ -1,5 +1,7 @@
 # OurTrail 设计系统参考（token 表 + 组件清单）
 
+**2026-10-28 活动作用域补充**：token 值不变；`app.wxss` 的 `.activity-ui` 对活动十个页面覆写按钮/页签/表单外观，三个业务面板使用 `.activity-panel`。活动按钮复用 `--radius-card`，主按钮 16/22、单行 48px，次按钮白底 `--control-line` 描边；禁用表达不变。表单复用 `--radius-button` 和完整描边，活动分区间距 28px。天气、路线、我的和全站通知不受影响。详见 `docs/ui-ux-redesign/design-system.md` 的同日补充及 `docs/ui-ux-redesign/activity-suite-2026-10-28.md`；早期全站基线表不是此作用域的最终值。
+
 来源：`app.wxss`（原型 tokens.css/components.css 移植）。改动前先确认这里没有等价物。
 **实时值真身是 `miniprogram/app.wxss`**（2026-10-17 复测：671 行、`page` 块占 4–77 行、其上 **44 个自定义属性 = 29 色 + 15 数值**）。
 本表是它的登记副本，结构 2026-10-14 逐条复核过；**计数会漂，别信这里或 AGENTS.md 里任何一次写死的数**——

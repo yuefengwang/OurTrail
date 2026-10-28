@@ -1,0 +1,162 @@
+{
+  "date": "2026-10-28T03:30:32.160Z",
+  "source": "native renderer, production domain projections, isolated memory; all cloud writes blocked",
+  "checks": [
+    {
+      "name": "home has upcoming activity and list",
+      "pass": true
+    },
+    {
+      "name": "01-home rendered without denial",
+      "pass": true
+    },
+    {
+      "name": "01-home has activity UI scope",
+      "pass": true
+    },
+    {
+      "name": "01-home measured controls are at least 44px and inside viewport",
+      "pass": true
+    },
+    {
+      "name": "discover navigation preserves destination",
+      "pass": false
+    }
+  ],
+  "screenshots": [
+    {
+      "name": "01-home.png",
+      "page": "pages/home/home"
+    }
+  ],
+  "errors": [],
+  "system": {
+    "brand": "devtools",
+    "model": "Mac 21-inch and above",
+    "system": "macOS 10.14.3",
+    "platform": "devtools",
+    "benchmarkLevel": -1,
+    "pixelRatio": 2,
+    "screenWidth": 414,
+    "screenHeight": 896,
+    "windowWidth": 414,
+    "windowHeight": 896,
+    "statusBarHeight": 20,
+    "safeArea": {
+      "top": 20,
+      "left": 0,
+      "right": 414,
+      "bottom": 896,
+      "width": 414,
+      "height": 876
+    },
+    "language": "zh_CN",
+    "version": "8.0.5",
+    "fontSizeSetting": 16,
+    "SDKVersion": "3.8.12",
+    "host": {
+      "env": "WeChat"
+    },
+    "enableDebug": false,
+    "mode": "default",
+    "deviceOrientation": "portrait",
+    "bluetoothEnabled": true,
+    "locationEnabled": true,
+    "wifiEnabled": true,
+    "albumAuthorized": true,
+    "cameraAuthorized": true,
+    "locationAuthorized": true,
+    "microphoneAuthorized": true,
+    "notificationAuthorized": true,
+    "notificationAlertAuthorized": true,
+    "notificationBadgeAuthorized": true,
+    "notificationSoundAuthorized": true,
+    "phoneCalendarAuthorized": true,
+    "bluetoothAuthorized": true,
+    "locationReducedAccuracy": true,
+    "devicePixelRatio": 2
+  },
+  "controls": {
+    "01-home": [
+      {
+        "text": "发现活动",
+        "size": {
+          "width": 183,
+          "height": 48
+        },
+        "offset": {
+          "left": 20,
+          "top": 336
+        },
+        "radius": "14px",
+        "font": "14px"
+      },
+      {
+        "text": "发起活动",
+        "size": {
+          "width": 183,
+          "height": 48
+        },
+        "offset": {
+          "left": 211,
+          "top": 336
+        },
+        "radius": "14px",
+        "font": "16px"
+      },
+      {
+        "text": "我的活动",
+        "size": {
+          "width": 94,
+          "height": 44
+        },
+        "offset": {
+          "left": 20,
+          "top": 396
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "最近查看",
+        "size": {
+          "width": 94,
+          "height": 44
+        },
+        "offset": {
+          "left": 113.5,
+          "top": 396
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "已结束",
+        "size": {
+          "width": 94,
+          "height": 44
+        },
+        "offset": {
+          "left": 207,
+          "top": 396
+        },
+        "radius": "0px",
+        "font": "14px"
+      },
+      {
+        "text": "需要协作 1",
+        "size": {
+          "width": 94,
+          "height": 44
+        },
+        "offset": {
+          "left": 300.5,
+          "top": 396
+        },
+        "radius": "0px",
+        "font": "14px"
+      }
+    ]
+  },
+  "failure": "AssertionError [ERR_ASSERTION]: discover navigation preserves destination\n    at check (/Users/tushiyu/git/OurTrail/tools/verify-activity-suite-native.cjs:46:10)\n    at main (/Users/tushiyu/git/OurTrail/tools/verify-activity-suite-native.cjs:118:5)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+}

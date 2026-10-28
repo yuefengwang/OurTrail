@@ -5,7 +5,7 @@
         两个入口一起固定在底栏，不再出现「主操作在屏幕最底下、按钮互斥看不见」的情况。
      3. 候选勾选行仍由 checkbox-group 承载 change、data-key 挂在 group 上（挂内层 label 会被
         group 的 currentTarget 语义吃掉，真机已复现，见 SYNC.md 2026-10-04）。 -->
-<view class="page {{!denied && !loading && !purposeGate && !profileGate ? 'has-sticky' : ''}}">
+<view class="page activity-ui {{!denied && !loading && !purposeGate && !profileGate ? 'has-sticky' : ''}}">
   <block wx:if="{{profileGate}}">
     <view class="stack">
       <view class="section-head">
@@ -97,10 +97,10 @@
 
   <!-- 新报名 -->
   <view wx:else class="stack-sections">
-    <view class="section-head">
+    <view class="section-head activity-intro">
       <text class="kicker">一起出发 · 报名资料</text>
-      <text class="page-title" style="display:block;margin-top:4px;">这次，和谁同行？</text>
-      <text class="section-sub">{{activityTitle}} · 还可申请 {{remaining}} 人。资料仅用于本次同行与安全联络。</text>
+      <text class="signup-activity-title">{{activityTitle}}</text>
+      <text class="section-sub">还可申请 {{remaining}} 人 · 资料仅用于本次同行与安全联络。</text>
     </view>
 
     <view class="stack" style="gap:0;">
@@ -123,7 +123,7 @@
     <block wx:for="{{participants}}" wx:for-item="p" wx:for-index="pi" wx:key="key">
       <!-- 收合态：姓名 + 资料完整度 + 必勾的授权 -->
       <view wx:if="{{!expandedParts[p.key]}}" class="card stack-gap3">
-        <view class="cluster" style="justify-content:space-between;" hover-class="button-hover" data-key="{{p.key}}" bindtap="togglePart">
+        <view class="cluster signup-person-toggle" hover-class="button-hover" data-key="{{p.key}}" bindtap="togglePart">
           <view class="cluster" style="gap:8px;min-width:0;">
             <text class="badge neutral tabular">{{pi + 1}}</text>
             <text class="row-title">{{p.person.name || '未命名参与人'}}</text>
@@ -133,7 +133,7 @@
           </view>
           <view class="cluster" style="gap:8px;flex:0 0 auto;">
             <text class="badge {{p.complete ? 'success' : 'warning'}}">{{p.complete ? '资料齐' : '待补全'}}</text>
-            <text class="muted">›</text>
+            <text class="signup-edit-link">{{p.complete ? '查看资料' : '补全资料'}} ›</text>
           </view>
         </view>
         <view catchtap="noop">
@@ -278,6 +278,7 @@
       <view class="button primary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onEditSubmit'}}">{{busy ? '正在保存…' : '保存此人的修改'}}</view>
     </block>
     <block wx:else>
+      <view wx:if="{{!capacityAsk}}" class="signup-submit-summary"><text>已选 {{participants.length}} 人</text><text class="small muted">请逐人确认授权</text></view>
       <view wx:if="{{capacityAsk}}" class="button primary {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onWaitlist'}}">明确同意整组候补</view>
       <view class="button {{capacityAsk ? 'secondary' : 'primary'}} {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onSubmit'}}">{{busy ? '正在提交…' : '提交报名'}}</view>
     </block>

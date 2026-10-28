@@ -1,0 +1,72 @@
+== 1. 发布门：轨迹可解析项全部可忽略 ==
+  ✓ 空路线 create ok（schema 本就允许空 title/points/risks）
+  ✓ 空路线 publish ok（发布门只拦标题/时间/集合点）
+  ✓ publish 后 phase=published
+  ✓ publish 后 assertInvariants 通过（放宽不同源就会在这里红，并拖垮此后每条命令）
+  ✓ published 阶段补路线名称/节点/风险 ok（「发布后补」承诺）
+  ✓ 补写落库：title/points/risks 均生效
+  ✓ 补写后 persistPrivateRoute 落私有路线并回填 routeId
+  ✓ 补写后不变量仍通过
+  ✓ 有节点无风险 create ok
+  ✓ 有节点无风险 publish ok
+  ✓ 有风险无节点 create ok
+  ✓ 有风险无节点 publish ok
+  ✓ activity.copy 空/半成品路线 ok
+== 2. 发布门：必填项与条目级完整不放水 ==
+  ✓ 缺标题 → publish INVALID_INPUT（标题）
+  ✓ 缺出发时间 → publish INVALID_INPUT（完整）
+  ✓ 缺截止时间 → publish INVALID_INPUT（完整）
+  ✓ 缺集合点 → publish INVALID_INPUT（完整）
+  ✓ 上车点缺地址 → publish INVALID_INPUT（完整）
+  ✓ 上车点缺集合时间 → publish INVALID_INPUT（完整）
+  ✓ 时间顺序错（截止晚于出发） → publish INVALID_INPUT（截止）
+  ✓ 节点缺名称 → publish INVALID_INPUT（路线节点需要名称）
+  ✓ 风险缺应对 → publish INVALID_INPUT（风险提示需要）
+  ✓ 2 组全部拒绝后 revision 不变（零副作用）
+== 3. gathering/active：交易性键锁死，路线数组只增不改 ==
+  ✓ 推进 gathering ok
+  ✓ gathering 改标题 → WRONG_PHASE
+  ✓ gathering 改出发时间 → WRONG_PHASE
+  ✓ gathering 改名额 → WRONG_PHASE
+  ✓ gathering 改审核方式 → WRONG_PHASE
+  ✓ gathering 重开报名开关 → WRONG_PHASE
+  ✓ gathering 缩短 endAt → WRONG_PHASE
+  ✓ gathering 延长 endAt ok（既有规则不回退）
+  ✓ gathering 追加路线节点 ok（发布时留空的路线，出发后补得回来）
+  ✓ 追加后 routeSnapshot.title 标量同笔可改（信息性标量不锁）
+  ✓ gathering 改已有节点名 → WRONG_PHASE（已发出的条目一字不能动）
+  ✓ gathering 删已有节点 → WRONG_PHASE
+  ✓ gathering 追加风险 ok
+  ✓ gathering 改已有风险 → WRONG_PHASE
+  ✓ gathering 追加上车点 ok
+  ✓ gathering 改已有上车点 → WRONG_PHASE
+  ✓ gathering 改说明/装备 ok（既有允许字段不回退）
+  ✓ 推进 active ok
+  ✓ active 追加节点 ok
+  ✓ active 改已有节点 → WRONG_PHASE
+  ✓ 阶段锁全部用例后 revision 仍前进、不变量通过
+== 4. 删改的既有引用守卫不受「只增不改」影响 ==
+  ✓ 拼车报名 ok
+  ✓ 审核确认 ok
+  ✓ published 删被拼车报名引用的上车点 → INVALID_INPUT（引用守卫兜底「只增不改」）
+  ✓ 有已确认报名也推进 gathering ok
+  ✓ gathering 删被引用上车点 → WRONG_PHASE（锁这层先拒）
+  ✓ 4 组后不变量通过
+== 5. 投影：completeness 派生 / riskView 无损 / 空路线不广播 attendance.node ==
+  ✓ 完整活动 completeness 全 true
+  ✓ riskView 无损：severity 投影不丢（编辑器往返 → 阶段门逐字节比对的地基）
+  ✓ 空路线 completeness：route/points/risks false、pickups true
+  ✓ home 投影同源带 completeness（activityView 复用）
+  ✓ 自行前往报名 ok
+  ✓ 签到 ok
+  ✓ 记录出发 ok
+  ✓ 推进 active ok
+  ✓ active 且空路线：permittedActions 不含 attendance.node（没有必然红字的按钮）
+  ✓ 行程中补节点 ok
+  ✓ 补节点后 attendance.node 重新广播
+  ✓ 终态不变量通过
+== 6. 存量（完整）活动：放宽不放水也不误伤 ==
+  ✓ 完整活动 publish ok
+  ✓ routeSnapshot 逐字节落库（title/points/risks/track/里程爬升不丢）
+  ✓ 已有活动的 routeSnapshot 未被本轮任何用例改动
+passed=65 failed=0

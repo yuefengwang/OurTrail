@@ -1,0 +1,58 @@
+PASS 工作台：首屏只有「森林底身份块 + 纸面板」两块，身份块在 hero 内、纸面板紧随其后
+PASS 工作台：分段器、三格事实带、三个常驻面板与总览同处纸面板，且 tabs → 指标 → 面板
+PASS 工作台：指标格恰 3 个（C17 保留），删掉一格必须红
+PASS 工作台：总览内 待办 → 里程碑 → 独立工具 → 阶段
+PASS 工作台：四个工具不混入待办，编辑仍受权限保护
+PASS 工作台：四个工具是有方向箭头的导航卡，不冒充提交按钮
+PASS 工作台：工具说明文字降为 muted（标题 forest / 说明 muted 二三级关系）
+PASS 工作台：主待办来自 journey.primary，idle 不伪装成待办
+PASS 工作台：待办有真实 label/detail 与空态阶段说明
+PASS 工作台：下一步入口在待办区且不抢占真实待办的 primary
+PASS 工作台：门槛说明独立于权限位
+PASS 工作台：取消仍在后置阶段区并保持次级文字入口
+PASS 工作台：roster-panel 常驻且同步链完整
+PASS 工作台：transport-panel 常驻且同步链完整
+PASS 工作台：field-panel 常驻且同步链完整
+PASS 工作台：待到家数由事实带承担时，现场面板不重复印一份
+PASS 工作台：小事实带字号用现有 token，工具为双列
+PASS 工作台：首屏列无 gap，纸面板才真的盖上 hero 下沿 20px
+PASS 工作台：hero 吃掉页面内边距铺到导航下沿，且是森林底白字
+PASS 工作台：纸面板内部分区同用 20px 节奏
+PASS 工作台：指标带去卡片化，数值不再被 24px 覆盖
+PASS 工作台：待办不再套 .card（纸面本身就是同一层表面）
+PASS 名单：汇总从一句话改成三格指标带，数字取 counters 同一出处
+PASS 名单：搜索是 44 高 pill（.searchbar），状态筛选与它同行、按内容收窄
+PASS 人员行：头像 44 与姓名 16/600（行名是这一屏的主信息，不能与副行只差一级）
+PASS 交通：添加车辆在车辆列表末尾整宽，无车时实心、有车时软底（改回恒 primary 必红）
+PASS 交通：容量带保持 3 格（C15：不减也不加），座位图原样
+PASS 车辆：身份 → 方向 → 本程行动区 → 乘客 → 容量
+PASS 车辆：司机身份取实际投影，不只摆车牌
+PASS 车辆：缺口、错误和原发车/完成动作均在名单前
+PASS 车辆：denied/loading 与 showBoard/canOperate 的真实祖先保护
+PASS 车辆门控阳性：重命名 body class 不影响保护
+PASS 车辆门控反向：去掉 body else 必须失败
+PASS 车辆门控反向：去掉 canOperate 必须失败
+PASS 车辆门控反向：去掉 showBoard 必须失败
+PASS 车辆：保留缺口确认层、回去清点和危险确认
+PASS 车辆：车程完成不等于安全到家，警示留在行动区
+PASS 现场：紧凑角色与真实活动编号在面板前，无虚构活动名
+PASS 现场：面板原接口与刷新键不变
+PASS 任务：新建在固定底栏且受 canManage 保护，页头不再有实心按钮
+PASS 任务：计数就在筛选里，没有独立 metrics 带
+PASS 任务：逐条紧凑状态边栏，不折叠记录
+PASS 任务：名称/分类/负责人/说明/截止/文字状态都在列表
+PASS 任务：状态推进独立按钮，仍带原 id/next 并受 canManage 保护
+PASS 任务：编辑/删除保留文字、id、权限，降为次级按钮
+PASS 任务：身份头标题 20/28（与首页分区标题同一档）
+PASS 任务：次级按钮仍至少 44px token 触区，状态边栏可见
+PASS 通知：行是发丝分隔的消息流（无圆角、无底色、只留底边），未读只切左边颜色不位移
+PASS 通知：行形态有牙齿（回卡片 / 未读加粗边 / 恢复白底 / 恢复圆角，四种都必红）
+PASS 通知：两份页面的正文都走 16/24 主信息档（页脚小字读不成通知）
+PASS 公告：单分区头 + 一行读数，与 tab 版正文同构（差异只留页头）
+PASS workspace：页面样式不新造颜色或 token
+PASS vehicle：页面样式不新造颜色或 token
+PASS staff：页面样式不新造颜色或 token
+PASS tasks：页面样式不新造颜色或 token
+PASS notices：页面样式不新造颜色或 token
+PASS anotices：页面样式不新造颜色或 token
+passed=57 failed=0 skipped=0

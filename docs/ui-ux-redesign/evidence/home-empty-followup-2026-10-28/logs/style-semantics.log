@@ -1,0 +1,138 @@
+== §1 解析器与层叠机制自证（判据不能空转） ==
+  ✓ P1.1 目标文件解析出规则与 token（801 条声明 / 44 个 token）
+  ✓ P1.2 六个颜色 token 都在（--line/--muted/--forest/--surface/--paper/--white）
+  ✓ P1.3 .button 的五个变体选择器都被解析到（词表导出不是靠硬编码清单）
+  ✓ P1.4 特异度函数：.button(0,1,0) < .button.primary(0,2,0) < .button.primary.disabled(0,3,0)，且通用禁用与变体同权
+  ✓ P1.5 特异度函数：属性形式 .button[disabled] 与类形式 .button.disabled 同权，变体属性形式高一级
+  ✓ P1.6 调换两条同特异度规则的书写次序 ⇒ 赢家必须跟着换（机制敏感，不是硬编码期望）
+  ✓ P1.7 属性名解析：.button[disabled] 的 attr 取到的是 disabled（截错字符会让属性形态整条门失效）
+  ✓ P1.8 围栏：配色规则均能解析，后代作用域必须通过祖先链匹配
+  ✓ P1.activity 后代匹配不跨页面、不把节点自身误当祖先
+  ✓ P1.activity 多层后代顺序必须成立
+  ✓ P1.9 .button 族的伪元素规则不声明 background/color（它只摘原生 button 的下划线，不该影响节点三属性）
+  ✓ P1.10 围栏：.button 族没有 !important、没有 id 选择器（否则赢家判据不成立）
+== §2 禁用态按变体分别定义：层叠终值 + 哪条声明赢了 ==
+  ✓ T2.__fallback 禁用终值 = 实底兜底那一套（#dee3db 底 / 同色描边 / #5f6e66 字）
+  ✓ T2.__fallback 的 background 赢家是兜底通用规则本身
+  ✓ T2.primary 禁用终值 = 实底兜底那一套（#dee3db 底 / 同色描边 / #5f6e66 字）
+  ✓ T2.primary 的 background 赢家是该族自己的禁用声明
+  ✓ T2.secondary 禁用终值 = 实底兜底那一套（#dee3db 底 / 同色描边 / #5f6e66 字）
+  ✓ T2.secondary 的 background 赢家是该族自己的禁用声明
+  ✓ T2.danger 禁用终值 = 实底兜底那一套（#dee3db 底 / 同色描边 / #5f6e66 字）
+  ✓ T2.danger 的 background 赢家是该族自己的禁用声明
+  ✓ T2.leaf 禁用终值 = 实底兜底那一套（#dee3db 底 / 同色描边 / #5f6e66 字）
+  ✓ T2.leaf 的 background 赢家是该族自己的禁用声明
+  ✓ T2.text 禁用终值 = 无底色、无描边（B-11 的缺陷本体），文字退到 --muted
+  ✓ T2.text 的 background 赢家是 .button.text.disabled（(0,3,0) 压过通用的 (0,2,0)，不再靠书写顺序顺带赢）
+  ✓ T2.__fallback 的 [disabled] 属性形态与 .disabled 类形态终值相同（禁用只有一种长相）
+  ✓ T2.primary 的 [disabled] 属性形态与 .disabled 类形态终值相同（禁用只有一种长相）
+  ✓ T2.secondary 的 [disabled] 属性形态与 .disabled 类形态终值相同（禁用只有一种长相）
+  ✓ T2.danger 的 [disabled] 属性形态与 .disabled 类形态终值相同（禁用只有一种长相）
+  ✓ T2.text 的 [disabled] 属性形态与 .disabled 类形态终值相同（禁用只有一种长相）
+  ✓ T2.leaf 的 [disabled] 属性形态与 .disabled 类形态终值相同（禁用只有一种长相）
+  ✓ T2.block 叠加不改三属性（block 是布局变体，不是配色变体）
+== §2b 回滚对照：本轮像素只允许 text 一族变化 ==
+  ✓ T2b.__fallback 族禁用终值未变（["#DEE3DB","#DEE3DB","#5F6E66"]）
+  ✓ T2b.primary 族禁用终值未变（["#DEE3DB","#DEE3DB","#5F6E66"]）
+  ✓ T2b.secondary 族禁用终值未变（["#DEE3DB","#DEE3DB","#5F6E66"]）
+  ✓ T2b.danger 族禁用终值未变（["#DEE3DB","#DEE3DB","#5F6E66"]）
+  ✓ T2b.text 族禁用终值有变（["transparent","transparent","#5F6E66"]）
+  ✓ T2b.leaf 族禁用终值未变（["#DEE3DB","#DEE3DB","#5F6E66"]）
+  ✓ T2b 变化族恰为 {text}：四个实底族零变化（没有顺手改配色）且 text 必须变（修复不是空改）
+  ✓ T2b 阳性对照：摘掉变体声明后 text 退回灰块、且与兜底族逐字相同（证明新增规则真的承重，不是装饰）
+== §3 禁用态不得比可用态更重（B-11 本体的量化形） ==
+  ✓ T3.__fallback 不新增填充：可用态没有底色时，禁用态也不许长出底色
+  ✓ T3.__fallback 不新增可见描边：可用态无边时，禁用态要么仍无边、要么描边与底色同色而不可见
+  ✓ T3.__fallback 文字权重不倒挂：禁用态对比度 ≤ 可用态（11.83 → 4.12）
+  ✓ T3.__fallback 禁用态仍看得见：文字对比度 ≥ 3:1（WCAG 非文本下限，也是 B-13 用的那把尺；它同时禁掉了 opacity:.6 那种写法）
+  ✓ T3.__fallback 禁用态与自身可用态可辨（底/边/字三者不得全同）
+  ✓ T3.primary 不新增填充：可用态没有底色时，禁用态也不许长出底色
+  ✓ T3.primary 不新增可见描边：可用态无边时，禁用态要么仍无边、要么描边与底色同色而不可见
+  ✓ T3.primary 文字权重不倒挂：禁用态对比度 ≤ 可用态（11.83 → 4.12）
+  ✓ T3.primary 禁用态仍看得见：文字对比度 ≥ 3:1（WCAG 非文本下限，也是 B-13 用的那把尺；它同时禁掉了 opacity:.6 那种写法）
+  ✓ T3.primary 禁用态与自身可用态可辨（底/边/字三者不得全同）
+  ✓ T3.secondary 不新增填充：可用态没有底色时，禁用态也不许长出底色
+  ✓ T3.secondary 不新增可见描边：可用态无边时，禁用态要么仍无边、要么描边与底色同色而不可见
+  ✓ T3.secondary 文字权重不倒挂：禁用态对比度 ≤ 可用态（10.30 → 4.12）
+  ✓ T3.secondary 禁用态仍看得见：文字对比度 ≥ 3:1（WCAG 非文本下限，也是 B-13 用的那把尺；它同时禁掉了 opacity:.6 那种写法）
+  ✓ T3.secondary 禁用态与自身可用态可辨（底/边/字三者不得全同）
+  ✓ T3.danger 不新增填充：可用态没有底色时，禁用态也不许长出底色
+  ✓ T3.danger 不新增可见描边：可用态无边时，禁用态要么仍无边、要么描边与底色同色而不可见
+  ✓ T3.danger 文字权重不倒挂：禁用态对比度 ≤ 可用态（5.72 → 4.12）
+  ✓ T3.danger 禁用态仍看得见：文字对比度 ≥ 3:1（WCAG 非文本下限，也是 B-13 用的那把尺；它同时禁掉了 opacity:.6 那种写法）
+  ✓ T3.danger 禁用态与自身可用态可辨（底/边/字三者不得全同）
+  ✓ T3.text 不新增填充：可用态没有底色时，禁用态也不许长出底色
+  ✓ T3.text 不新增可见描边：可用态无边时，禁用态要么仍无边、要么描边与底色同色而不可见
+  ✓ T3.text 文字权重不倒挂：禁用态对比度 ≤ 可用态（10.82 → 4.91）
+  ✓ T3.text 禁用态仍看得见：文字对比度 ≥ 3:1（WCAG 非文本下限，也是 B-13 用的那把尺；它同时禁掉了 opacity:.6 那种写法）
+  ✓ T3.text 禁用态与自身可用态可辨（底/边/字三者不得全同）
+  ✓ T3.leaf 不新增填充：可用态没有底色时，禁用态也不许长出底色
+  ✓ T3.leaf 不新增可见描边：可用态无边时，禁用态要么仍无边、要么描边与底色同色而不可见
+  ✓ T3.leaf 文字权重不倒挂：禁用态对比度 ≤ 可用态（9.01 → 4.12）
+  ✓ T3.leaf 禁用态仍看得见：文字对比度 ≥ 3:1（WCAG 非文本下限，也是 B-13 用的那把尺；它同时禁掉了 opacity:.6 那种写法）
+  ✓ T3.leaf 禁用态与自身可用态可辨（底/边/字三者不得全同）
+  ✓ T3.跨族一致：四个实底族的禁用终值彼此相同（同一支禁用表达，不是各写一套灰）
+== §4 真实使用点：每一处 button+disabled 的终值都要符合其变体定义 ==
+  ✓ T4.1 普查抓到 button+disabled 真实场景 ≥ 40 处（全站禁用态是既成约定；抓到 0 处说明普查器坏了）
+  ✓ T4.2 B-11 证据清单上的四处 text 使用点全被抓到（activity / editor / roster-panel / transport-panel）
+  ✓ T4.3 每一处真实使用点的禁用终值都等于其变体定义（text 透明、实底族退灰），无一处漏网
+  ✓ T4.4 兜底规则不是死代码：确有「button + disabled 但不带变体」的真实场景（异或式三元，如 roster 提升按钮）
+  ✓ T4.5 凡有真实使用点的变体都已显式定义（新增变体/新用法都不会让本条假红），且 text 四处一个不少
+  ✓ T4.5b leaf 变体今日零禁用使用点（其定义是前瞻覆盖，不是漏改；一旦有使用点上一条就会验它）
+  ✓ T4.6 普查器有效性：text 族的四处终值确实在普查路径上被解出为透明（不是靠 §2 的夹具独证）
+  · 普查读数：button+disabled 场景 74 处，按变体 {"secondary":17,"primary":32,"fallback":3,"text":12,"danger":10}；class 含无法枚举的动态插值 0 处（局限已写进 handoff）
+== §5 变体词表闭合 + 禁用族只许声明三条属性 ==
+  ✓ T5.1 变体词表由文件自身导出：五个既有变体全在，.block 正确落榜（只声明布局不声明配色）
+  ✓ T5.1b 词表是导出的而不是写死的：新增着色变体不会让本条红（红的是 T5.2「新变体没补禁用定义」）
+  ✓ T5.2 每个着色变体都有 .button.X.disabled 与 .button.X[disabled] 两种形态的定义（缺一即词表破口）
+  ✓ T5.3 没有「给不存在的变体写禁用定义」的孤儿规则
+  ✓ T5.4 围栏：禁用族只声明 background/border-color/color（pointer-events/opacity/transform 属 C-16 按压反馈，未并入本轮）
+  ✓ T5.5 禁用族解析后只用 --line / --muted / transparent 三种表达（零新色值，铁律 17）
+  ✓ T5.6 禁用族的每条选择器（兜底 2 条 + 每变体 2 条）恰好声明这三条属性各一次（少一条就退回顺带压制，多一条就是越界）
+  ✓ T5.7 兜底通用规则仍在且仍声明同一套三色（无变体的禁用按钮靠它，不是死代码——T4.4 已证有真实场景）
+== §6 单源是可影子改写的行为，不是常量名 ==
+  ✓ T6.1 影子改写 --line ⇒ 五个实底场景（四变体 + 兜底）的禁用底色一起跟着动（同一支引用，不是各自抄字面量）
+  ✓ T6.2 影子改写 --line ⇒ text 族禁用底色不动（透明是透明，两族互不串味）
+  ✓ T6.3 影子改写 --muted ⇒ 六族禁用文字色一起动（禁用文字色也只有一支引用）
+  ✓ T6.4 反向不串味：影子改 --muted 不得带动任何族的可用态文字色（可用与禁用是两本账）
+  ✓ T6.5 还原对照：影子之后重读原文件，六族禁用终值逐项与基线相同（影子没留下状态，也不是两个零恰好对上）
+  ✓ T6.6 影子门有牙齿：把一处 var(--line) 换成字面量后影子必须追不上它（假单源会被当场抓住）
+== §7 等价重构必须照样全绿（门钉终值与赢家，不钉源码写法） ==
+  ✓ T7.1 同一声明体的多条选择器合并成一条选择器列表 ⇒ 解析出的规则数不变、六族终值不变（拆开/合写等价）
+  ✓ T7.2 把兜底通用规则挪到全部变体定义之后 ⇒ 变体靠 (0,3,0) 仍赢、六族终值不变（顺序迷信不是判据）
+  ✓ T7.3 用属性形态（原生 <button disabled>）与类形态走的是同一套赢家规则，二者不得给出两种灰
+== §8 活动作用域：可用、禁用、隔离与影子 token ==
+  ✓ activity.__fallback 禁用态不被作用域样式覆盖
+  ✓ activity.__fallback 原生 disabled 与类形态一致
+  ✓ activity.__fallback 不影响天气与其他页面
+  ✓ activity.__fallback 可用态文字对比度达 4.5
+  ✓ activity.__fallback 禁用配色跟随 token
+  ✓ activity.primary 禁用态不被作用域样式覆盖
+  ✓ activity.primary 原生 disabled 与类形态一致
+  ✓ activity.primary 不影响天气与其他页面
+  ✓ activity.primary 可用态文字对比度达 4.5
+  ✓ activity.primary 禁用配色跟随 token
+  ✓ activity.secondary 禁用态不被作用域样式覆盖
+  ✓ activity.secondary 原生 disabled 与类形态一致
+  ✓ activity.secondary 不影响天气与其他页面
+  ✓ activity.secondary 可用态文字对比度达 4.5
+  ✓ activity.secondary 禁用配色跟随 token
+  ✓ activity.danger 禁用态不被作用域样式覆盖
+  ✓ activity.danger 原生 disabled 与类形态一致
+  ✓ activity.danger 不影响天气与其他页面
+  ✓ activity.danger 可用态文字对比度达 4.5
+  ✓ activity.danger 禁用配色跟随 token
+  ✓ activity.text 禁用态不被作用域样式覆盖
+  ✓ activity.text 原生 disabled 与类形态一致
+  ✓ activity.text 不影响天气与其他页面
+  ✓ activity.text 可用态文字对比度达 4.5
+  ✓ activity.text 禁用配色跟随 token
+  ✓ activity.leaf 禁用态不被作用域样式覆盖
+  ✓ activity.leaf 原生 disabled 与类形态一致
+  ✓ activity.leaf 不影响天气与其他页面
+  ✓ activity.leaf 可用态文字对比度达 4.5
+  ✓ activity.leaf 禁用配色跟随 token
+  ✓ activity.secondary 使用可辨识的白底描边，而非提交实底
+  ✓ activity 变异自证：禁用覆盖被删坏必能发现
+
+passed=126 failed=0

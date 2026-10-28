@@ -51,7 +51,7 @@ check('路线名单独插值，chips 由页面派生传入（模板不再自己�
 check('日期、倒计时、人数、归属与相位徽章各有一槽', /\{\{date\}\}/.test(cardSource) && /\bwhen\b/.test(cardSource) && /\{\{people\}\}/.test(cardSource) && /\{\{roleNote\}\}/.test(cardSource) && /\{\{badge\}\}/.test(cardSource))
 const collabs = nodes(card).filter(n => n.attrs.catchtap === 'onCollab')
 check('协作独立 catchtap，携带角色键且不冒泡为 open', collabs.length > 0 && collabs.every(n => n.attrs['data-key'] === '{{item.key}}' && !n.attrs.bindtap && n.attrs['hover-class'] === 'button-hover'))
-check('80px 缩略图与可换行 flex 结构有明确源码声明', /\.activity-card__thumb\s*\{[^}]*width:\s*80px/.test(cardCss) && /\.activity-card__head\s*\{[^}]*display:\s*flex/.test(cardCss) && /\.activity-card__heading\s*\{[^}]*min-width:\s*0/.test(cardCss))
+check('64px 缩略图让出标题空间，事实行可换行而非裁切', /\.activity-card__thumb\s*\{[^}]*width:\s*64px/.test(cardCss) && /\.activity-card__head\s*\{[^}]*display:\s*flex/.test(cardCss) && /\.activity-card__heading\s*\{[^}]*min-width:\s*0/.test(cardCss) && /\.activity-card__chips\s*\{[^}]*flex-wrap:\s*wrap/.test(cardCss))
 check('标题不截断；新增布局不引入 line-clamp/ellipsis', !/line-clamp|text-overflow:\s*ellipsis/.test(cardCss + homeCss + discoverCss))
 check('协作触控目标读 token，非硬编码 44', /\.collab-leaf\s*\{[^}]*min-height:\s*var\(--touch-target\)/.test(cardCss))
 const homeCards = nodes(home).filter(n => n.tag === 'activity-card')
@@ -78,6 +78,12 @@ check('发起为唯一主按钮，发现次级；原 handler 与文字契约保�
   actions.some(n => n.attrs.bindtap === 'onGoDiscover' && !hasClass(n, 'primary')) &&
   homeSource.includes('发起活动') && homeSource.includes('发现活动'))
 check('四档筛选保持，移除无效 with-tabbar 开关', ['mine', 'recent', 'finished', 'collab'].every(v => homeSource.includes('data-value="' + v + '"')) && !homeSource.includes('with-tabbar'))
+const inviteSource = read('components/next-up-card/next-up-card.wxml')
+const invite = cls(tree(inviteSource), 'next-up-card--invite')
+check('无活动与仅有历史/草稿由真实 hasAny 区分', nextUp.attrs['has-activities'] === '{{hasAny}}' && cls(invite, 'next-up-card__invite-media').attrs['wx:if'] === '{{!hasActivities}}')
+check('空首页发起和发现成组，外部动作行不重复', header.attrs['wx:if'] === '{{nextUp}}' && nextUp.attrs['bind:discover'] === 'onGoDiscover' && nodes(invite).filter(node => hasClass(node, 'primary')).length === 1 && nodes(invite).some(node => node.attrs.bindtap === 'onDiscover'))
+check('空首页说明保存后的去向，照片标明氛围用途', inviteSource.includes('参与或发起后，活动会显示在这里') && inviteSource.includes('场景氛围图') && !inviteSource.includes('推荐活动'))
+check('空首页图片失败隐藏图片，不隐藏动作或标题', nodes(invite).some(node => node.tag === 'image' && node.attrs['wx:if'] === '{{!inviteCoverFailed}}' && node.attrs.binderror === 'onInviteCoverError') && !cls(invite, 'next-up-card__invite-content').attrs['wx:if'])
 const dc = nodes(discover).filter(n => n.tag === 'activity-card')
 check('发现列表和地图选中卡同为 compact', dc.length === 2 && dc.every(n => n.attrs.compact === '{{true}}' && n.attrs.featured === '{{false}}'))
 const toolbar = cls(discover, 'discover-toolbar')
@@ -118,5 +124,15 @@ for (const variant of [{ featured: true, compact: false }, { featured: false, co
   config.observers['cover, activityId'].call(c, 'new-cover', 'a2')
   check(JSON.stringify(variant) + ' 换活动/封面复位失败态', !c.data.coverFailed && c.data.coverSrc === 'new-cover')
 }
+require(path.join(ROOT, 'miniprogram/components/next-up-card/next-up-card.js'))
+const inviteEvents = []
+const inviteComponent = { data: Object.assign({}, config.data, { empty: true, hasActivities: false }), setData(patch) { Object.assign(this.data, patch) }, triggerEvent(type) { inviteEvents.push(type) } }
+Object.assign(inviteComponent, config.methods)
+inviteComponent.onInviteCoverError()
+check('空首页独立图片兜底不影响活动封面状态', inviteComponent.data.inviteCoverFailed && !inviteComponent.data.coverFailed)
+inviteComponent.onCreate()
+inviteComponent.onDiscover()
+inviteComponent.onOpen()
+check('空首页两入口发送各自事件，不打开不存在的活动', inviteEvents.join(',') === 'create,discover')
 console.log('\npassed=' + passed + ' failed=' + failed + ' (structure=E1, UI=NOT_RUN)')
 process.exit(failed ? 1 : 0)

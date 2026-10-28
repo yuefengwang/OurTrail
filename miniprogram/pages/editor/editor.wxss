@@ -16,15 +16,6 @@
 /* 底栏主操作吃剩余宽度；「上一步 / 继续完善」保持文字按钮的自然宽度。 */
 .sticky-action .button.text { flex: 0 0 auto; }
 
-/* 步骤指示的完成态记号（T007）：只加一个 ✓，不碰 .seg 既有尺寸/配色/字重
-   （swx1 §1 钉着 .seg 的 min-height 与终值，这里写任何高度都会撞门）。 */
-.seg.done::before {
-  content: '✓';
-  margin-right: 4px;
-  font-size: 11px;
-  color: var(--forest);
-}
-
 /* 四步页签在 306px 宽、四步全部完成（带 ✓）时最紧：横向 padding 从 4px 收到 2px，
    只影响本页，避免 .segmented 的 flex-wrap 把页签拆成两行。 */
 .segmented.tabs-line .seg { padding-left: 2px; padding-right: 2px; }
@@ -42,10 +33,33 @@
 .route-shortcut-text { flex: 1; min-width: 0; }
 
 /* 缺项分组清单：组名与步骤名各占一端；组与组之间 6px，与 callout 内既有行距同量级。 */
-.readiness-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 6px; }
+.readiness-row { display: flex; min-height: var(--touch-target); align-items: center; justify-content: space-between; gap: 12px; margin-top: 6px; }
 
 /* 卡内子项（路线节点 / 风险提示）：用发丝线分行，不再在卡里再套一张 .card。
    首项没有顶线，末项与父卡 padding 之间由 .subrow 的 12px 自己收口。 */
 .subrows { display: flex; flex-direction: column; }
 .subrow { padding: 12px 0; }
 .subrow + .subrow { border-top: 1px solid var(--line); }
+
+.editor-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.editor-caption { display: block; margin-top: 4px; color: var(--muted); font-size: var(--text-caption); }
+.editor-steps { flex-wrap: nowrap; }
+.editor-steps .seg { gap: 6px; }
+.editor-step-number { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: var(--radius-tag); background: var(--stone); color: var(--muted); font-size: var(--text-caption); }
+.editor-steps .on .editor-step-number { background: var(--forest); color: var(--white); }
+.editor-steps .done .editor-step-number { background: var(--forest-soft); color: var(--forest); }
+.editor-route-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.editor-source { flex: 1; min-width: 116px; min-height: var(--touch-target); padding: 12px; background: var(--forest-soft); border-radius: var(--radius-button); display: flex; flex-direction: column; gap: 4px; }
+.editor-review { padding-top: 20px; }
+.editor-review-title { display: block; font-size: var(--text-title); font-weight: 600; line-height: 26px; word-break: break-all; padding-bottom: 8px; }
+.editor-review-row { display: flex; align-items: center; gap: 12px; min-height: var(--touch-target); padding: 12px 0; border-bottom: 1px solid var(--line); }
+.editor-review-main { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; word-break: break-all; }
+.editor-review-value { font-weight: 500; }
+.editor-review-link { color: var(--forest); flex-shrink: 0; }
+.editor-fast-track { display: flex; flex-direction: column; align-items: flex-start; padding: 12px 0; border-top: 1px solid var(--line); }
+.editor-save-note { text-align: center; }
+.editor-footer { flex-wrap: nowrap; gap: 12px; }
+.editor-footer-secondary { display: flex; align-items: center; flex-shrink: 0; gap: 8px; }
+.editor-footer-secondary .button.text { padding-left: 0; padding-right: 0; min-width: var(--touch-target); font-size: var(--text-body); }
+.editor-footer-secondary .button.secondary { flex: 0 0 auto; padding-left: 12px; padding-right: 12px; }
+.editor-footer .button.primary { min-width: 0; padding-left: 12px; padding-right: 12px; }

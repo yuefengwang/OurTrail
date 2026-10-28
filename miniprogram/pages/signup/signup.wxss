@@ -4,3 +4,7 @@
    分组只为扫读，不新增颜色与字重（swx2 两档口径）。 */
 .part-group { display: flex; flex-direction: column; gap: 8px; }
 .part-group + .part-group { margin-top: 16px; }
+.signup-activity-title { font-size: var(--text-title); font-weight: 600; line-height: 26px; overflow-wrap: anywhere; }
+.signup-person-toggle { justify-content: space-between; min-height: var(--touch-target); }
+.signup-edit-link { color: var(--forest); font-size: var(--text-body); }
+.signup-submit-summary { display: flex; flex-direction: column; gap: 2px; padding-right: 8px; }

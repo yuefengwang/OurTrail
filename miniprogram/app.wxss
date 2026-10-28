@@ -281,6 +281,58 @@ button.button { font-family: inherit; }
 }
 .sticky-action .button { flex: 1; }
 
+.activity-ui .button {
+  border-radius: var(--radius-card);
+  min-height: var(--action-height);
+  transition: opacity var(--motion);
+}
+.activity-ui .button.primary { font-size: var(--text-input); line-height: 22px; }
+.activity-ui .button.secondary { background: var(--surface); border-color: var(--control-line); }
+.activity-ui .button.secondary.disabled, .activity-ui .button.secondary[disabled] {
+  background: var(--line);
+  border-color: var(--line);
+  color: var(--muted);
+}
+.activity-ui .button.text { min-height: var(--touch-target); }
+.activity-ui .sticky-action { gap: 8px; }
+.activity-ui .sticky-action .button { margin: 0; }
+.activity-ui .stack-sections { gap: 28px; }
+.activity-ui .segmented .seg { box-sizing: border-box; font-size: var(--text-body); }
+.activity-ui .segmented.tabs-line .seg { padding: 10px 4px; font-size: var(--text-body); }
+.activity-ui .segmented .seg.disabled { color: var(--muted); }
+.activity-ui .input, .activity-ui .picker, .activity-ui .textarea {
+  border: 1px solid var(--control-line);
+  border-radius: var(--radius-button);
+  padding: 12px;
+  background: var(--surface);
+}
+.activity-ui .field.invalid .input, .activity-ui .field.invalid .textarea { border-color: var(--danger); }
+.activity-ui .input:focus, .activity-ui .textarea:focus { border-color: var(--forest); }
+.activity-ui .searchbar { border-radius: var(--radius-card); }
+.activity-ui .activity-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.activity-ui .activity-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border-radius: var(--radius-button);
+  background: var(--forest-soft);
+  flex-shrink: 0;
+}
+.activity-panel .metrics {
+  padding: 12px;
+  background: var(--paper);
+  border-radius: var(--radius-card);
+}
+.activity-panel .card-header .button { flex-shrink: 0; }
+
 /* ---------- 状态：色相只是辅助，文字才是主体 ---------- */
 .badge {
   display: inline-flex;

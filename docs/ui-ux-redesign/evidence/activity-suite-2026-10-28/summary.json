@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-28",
+  "nativeReports": [
+    { "directory": "375", "viewport": [375, 812], "device": "iPhone 12/13 mini", "checks": 77, "failed": 0, "screenshots": 20, "uncaughtExceptions": 0 },
+    { "directory": "390", "viewport": [390, 844], "device": "iPhone 12/13 (Pro)", "checks": 77, "failed": 0, "screenshots": 20, "uncaughtExceptions": 0 },
+    { "directory": "414", "viewport": [414, 896], "device": "Mac 21-inch and above", "checks": 77, "failed": 0, "screenshots": 20, "uncaughtExceptions": 0 },
+    { "directory": "editor-375", "viewport": [375, 812], "device": "iPhone 12/13 mini", "checks": 17, "failed": 0, "screenshots": 8, "uncaughtExceptions": 0 },
+    { "directory": "editor-390", "viewport": [390, 844], "device": "iPhone 12/13 (Pro)", "checks": 17, "failed": 0, "screenshots": 8, "uncaughtExceptions": 0 },
+    { "directory": "editor-414", "viewport": [414, 896], "device": "Mac 21-inch and above", "checks": 17, "failed": 0, "screenshots": 8, "uncaughtExceptions": 0 }
+  ],
+  "regressions": { "suiteCount": 26, "assertions": 1808, "failed": 0, "logsDirectory": "logs" },
+  "baselineScreenshots": 13,
+  "finalScreenshots": 84,
+  "staticGates": ["check.js: exit 0", "check-handlers.js: exit 0; existing editor.onNumber unchanged", "git diff --check: exit 0"],
+  "notVerified": ["physical phones", "soft keyboard occlusion", "large system fonts", "live account end-to-end writes"],
+  "realCloudWrites": 0
+}

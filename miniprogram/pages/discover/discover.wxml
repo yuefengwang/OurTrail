@@ -1,4 +1,4 @@
-<view class="page">
+<view class="page activity-ui">
   <status-panel wx:if="{{denied}}" kind="denied" title="暂时看不到活动" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在整理已发布的活动。" />
@@ -7,9 +7,10 @@
     <!-- N3（2026-10-22）页头压缩为一行。style-B（2026-10-26）：眉题「发现活动」删掉——
          原生导航标题已经印着「发现活动」，同一屏重复两遍不增信息；页头身份由这行标题承担。
          N4（2026-10-23）把视图分段从页头搬进结果工具组：它是「这批结果怎么看」，不是页面身份。 -->
-    <view class="discover-head">
+    <view class="discover-head activity-intro">
       <view class="list-head__text">
-        <view class="list-head__title">看看别人在约什么。</view>
+        <view class="list-head__title">找一场适合你的同行</view>
+        <text class="small muted">先看时间与路线，再决定是否加入。</text>
       </view>
     </view>
 
@@ -26,8 +27,8 @@
     <view class="discover-toolbar">
       <view class="discover-toolbar__top">
         <view class="segmented discover-views" aria-label="发现视图">
-          <view class="seg {{viewMode === 'list' ? 'on' : ''}}" data-mode="list" bindtap="onViewMode">列表</view>
-          <view class="seg {{viewMode === 'map' ? 'on' : ''}}" data-mode="map" bindtap="onViewMode">地图</view>
+          <view class="seg {{viewMode === 'list' ? 'on' : ''}}" data-mode="list" hover-class="button-hover" bindtap="onViewMode">列表</view>
+          <view class="seg {{viewMode === 'map' ? 'on' : ''}}" data-mode="map" hover-class="button-hover" bindtap="onViewMode">地图</view>
         </view>
         <text class="result-count tabular">本次结果 {{cards.length}} 场 · 均未出发</text>
       </view>

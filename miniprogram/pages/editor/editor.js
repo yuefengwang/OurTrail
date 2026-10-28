@@ -193,7 +193,9 @@ Page({
     isDraft: true,
     saveLabel: '保存草稿',
     step: 0,
-    stepLabels: ['01 信息', '02 路线', '03 介绍', '04 发布'],
+    stepLabels: ['基本', '路线', '介绍', '发布'],
+    nextLabels: ['下一步：路线', '下一步：介绍', '下一步：报名'],
+    reviewRows: [],
     // 步骤指示完成态（纯展示派生，T007）：与发布门同读一份 missing，见 checklistPatch
     stepDone: [false, false, false, false],
     ratingOptions: [1, 2, 3, 4, 5],
@@ -226,7 +228,6 @@ Page({
     quickRouteBusyId: '',
     routeReplaceOpen: false,
     pendingRouteTitle: '',
-    // 发布就绪：必填一清空就更新，底栏可在任意步骤直接发布。
     publishReady: false,
     requiredMissingText: '',
     // 缺项的展示分组（title/time/pickup）：只服务「还差 N 项」与跳转，
@@ -625,7 +626,7 @@ Page({
       autoPickupIds: Object.assign({}, this._autoPickupIds || {}),
       message: auto.created ? '已用路线起点生成集合点，补一句集合位置说明就能发布。' : '',
       messageActionLabel: auto.created ? '去确认集合点' : '',
-      messageActionStep: auto.created ? 1 : -1,
+      messageActionStep: auto.created ? 0 : -1,
     }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
@@ -661,10 +662,9 @@ Page({
       // 底栏与失败提示引用这里，用户不会把「自动推算的结束/截止」当成要填三遍。
       requiredMissingText: groups.map(item => item.label).join('、'),
       requiredGroups: groups,
+      reviewRows: this.reviewRowsOf(form),
       // 步骤指示的完成态（T007，纯展示派生）：不新造「一步怎样算完成」的判据——
       // 与发布门同读这一份 missing。「哪些步骤有必填项」也问门本身：拿一份空白
-      // 表单跑同一判据（答案恒为步骤 0/1；介绍与发布没有必填项，不印「完成」，
-      // 不替用户宣布一件没发生的事）。步骤标签固定，答案算一次就够。
       stepDone: this.data.stepLabels.map((_, i) =>
         this.requiredSteps().indexOf(i) !== -1 && missing.every(m => m.step !== i)),
     }
@@ -691,6 +691,18 @@ Page({
   },
   updatePublishReadiness(form) {
     this.setData(this.checklistPatch(form || this.data.form))
+  },
+  reviewRowsOf(form) {
+    const pickup = form.pickups[0]
+    const start = form.dt_start
+    const end = form.dt_end
+    const content = Array.isArray(form.content) ? form.content : []
+    return [
+      { key: 'time', label: '出行时间', value: start.date && start.time ? start.date + ' ' + start.time + ' 出发' : '出发时间待填写', detail: end.date && end.time ? end.date + ' ' + end.time + ' 结束' : '预计结束待填写', step: 0, section: '' },
+      { key: 'pickup', label: '集合安排', value: pickup ? (pickup.name || '集合点未命名') + (form.pickups.length > 1 ? ' 等 ' + form.pickups.length + ' 个集合点' : '') : '集合点待填写', detail: pickup ? [pickup.address || '地址待补充', pickup.meeting.date, pickup.meeting.time].filter(Boolean).join(' · ') : '', step: 0, section: 'pickup' },
+      { key: 'route', label: '路线与准备', value: routeAutoTextOf(form) || '暂未添加路线', detail: form.equipmentText ? '已填写必带装备，请核对风险提示' : '可补充路线、风险与装备清单', step: 1, section: '' },
+      { key: 'intro', label: '活动介绍', value: content.length ? '已填写图文介绍' : form.description || '暂未填写，可稍后补充', detail: form.feeSummary || '', step: 2, section: '' },
+    ]
   },
   // 快捷估算结束时间：当天往返 / 出发后 N 天（保持出发时刻的时钟时间），填入即收起并标记为联动
   onQuickEnd(e) {
@@ -858,6 +870,7 @@ Page({
 
   // ---- 路线库快速带入（不推翻路线资产本身，只把快照带进当前活动）----
   onQuickRouteOpen() {
+    if (this.busyBlocks() || this.data.contentBusy) return
     if (!this.data.canChangeRoute) {
       this.setData({ failure: '集合或行程中路线只能补充，不能更换；如需换路线，请在发布前修改。' })
       return
@@ -922,8 +935,7 @@ Page({
   },
   // 第 1 步只留一行路线捷径，完整路线面在第 2 步。
   onGoRouteStep() {
-    if (this.data.step === 1) return
-    this.setData({ step: 1 }, () => this.scrollTop())
+    this.setStep({ currentTarget: { dataset: { step: 1 } } })
   },
   onQuickRoutePick(e) {
     const id = e.currentTarget.dataset.id
@@ -1012,7 +1024,7 @@ Page({
       message: '已带入「' + (route.title || '路线') + '」' + prefilled
         + (auto.created ? '；并已用起点生成集合点，补一句集合位置说明即可。' : '。'),
       messageActionLabel: auto.created ? '去确认集合点' : '',
-      messageActionStep: auto.created ? 1 : -1,
+      messageActionStep: auto.created ? 0 : -1,
     }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
@@ -1047,7 +1059,7 @@ Page({
       autoPickupIds: Object.assign({}, this._autoPickupIds || {}),
       message: '已用起点作为集合点，请补一句集合位置说明。',
       messageActionLabel: '去确认集合点',
-      messageActionStep: 1,
+      messageActionStep: 0,
       routeAutoText: routeAutoTextOf(form),
     }, this.checklistPatch(form)))
     this.persistDraft()
@@ -1205,33 +1217,32 @@ Page({
   },
   setStep(e) {
     const step = Number(e.currentTarget.dataset.step)
+    if (!Number.isInteger(step) || step < 0 || step >= this.data.stepLabels.length || this.busyBlocks()) return
     if (this.data.contentBusy) {
       this.setData({ failure: '图片正在上传/检查，请稍候再切换步骤。' })
       this.scrollTop()
       return
     }
     if (step === this.data.step) return
-    this.setData({ step }, () => this.scrollTop())
+    this.setData(Object.assign({
+      step,
+      message: this.data.messageActionLabel ? this.data.message : ''
+    }, this.checklistPatch(this.data.form)), () => this.scrollTop())
   },
   prevStep() {
-    const step = Math.max(0, this.data.step - 1)
-    if (this.data.contentBusy) {
-      this.setData({ failure: '图片正在上传/检查，请稍候再切换步骤。' })
-      this.scrollTop()
-      return
-    }
-    if (step === this.data.step) return
-    this.setData({ step }, () => this.scrollTop())
+    this.setStep({ currentTarget: { dataset: { step: Math.max(0, this.data.step - 1) } } })
   },
   nextStep() {
-    const step = Math.min(3, this.data.step + 1)
-    if (this.data.contentBusy) {
-      this.setData({ failure: '图片正在上传/检查，请稍候再切换步骤。' })
-      this.scrollTop()
-      return
-    }
-    if (step === this.data.step) return
-    this.setData({ step }, () => this.scrollTop())
+    this.setStep({ currentTarget: { dataset: { step: Math.min(3, this.data.step + 1) } } })
+  },
+  onReviewEdit(e) {
+    if (this.busyBlocks() || this.data.contentBusy) return
+    const step = Number(e.currentTarget.dataset.step)
+    if (!Number.isInteger(step) || step < 0 || step > 2) return
+    this.setData({ step }, () => {
+      if (e.currentTarget.dataset.section === 'pickup') this.scrollToPickup()
+      else this.scrollTop()
+    })
   },
 
   // ---- 保存 ----
@@ -1349,8 +1360,8 @@ Page({
       const d = Date.parse(composeDateTime(f.dt_deadline.date, f.dt_deadline.time))
       if (!(d <= s && s < e)) missing.push({ step: 0, key: 'time', label: '时间顺序（截止 ≤ 出发，且早于结束）' })
     }
-    if (!f.pickups.length) missing.push({ step: 1, key: 'pickup', label: '至少 1 个集合上车点' })
-    else if (f.pickups.some(p => !p.name.trim() || !p.address.trim() || !p.meeting.date || !p.meeting.time)) missing.push({ step: 1, key: 'pickup', label: '集合上车点的名称、地址与集合时间' })
+    if (!f.pickups.length) missing.push({ step: 0, key: 'pickup', label: '至少 1 个集合上车点' })
+    else if (f.pickups.some(p => !p.name.trim() || !p.address.trim() || !p.meeting.date || !p.meeting.time)) missing.push({ step: 0, key: 'pickup', label: '集合上车点的名称、地址与集合时间' })
     return missing
   },
   // 可后补清单：与服务端口径一致——整体可为空，填了的条目必须完整（半成品条目也点名）。
@@ -1358,15 +1369,14 @@ Page({
   deferredForPublish(form) {
     const f = form || this.data.form
     const deferred = []
-    // 按步骤顺序点名：路线(1) → 图文(2) → 风险(3)，「去补上」先落到更靠前的工作面。
     if (!f.routeTitle.trim()) deferred.push({ step: 1, label: '路线名称' })
     if (!f.points.length) deferred.push({ step: 1, label: '至少 1 个路线节点' })
     else if (f.points.some(p => !p.name.trim())) deferred.push({ step: 1, label: '每个路线节点的名称' })
     const hasContent = this.data.contentFilled || (Array.isArray(f.content) && f.content.length > 0)
     if (!hasContent) deferred.push({ step: 2, label: '图文详情（封面、正文或图片）' })
-    if (!f.risks.length) deferred.push({ step: 3, label: '至少 1 条风险提示' })
-    else if (f.risks.some(r => !r.title.trim() || !r.advice.trim())) deferred.push({ step: 3, label: '每条风险的问题与应对方式' })
-    return deferred
+    if (!f.risks.length) deferred.push({ step: 1, label: '至少 1 条风险提示' })
+    else if (f.risks.some(r => !r.title.trim() || !r.advice.trim())) deferred.push({ step: 1, label: '每条风险的问题与应对方式' })
+    return deferred.sort((left, right) => left.step - right.step)
   },
   // 步骤 3 常驻发布入口：先预检必填缺失项（跳到第一步并逐项点名），再静默保存，最后弹发布确认。
   // 可后补项不拦截——确认弹层里逐项点名并给「去补上」出口（onDeferredFix）。
@@ -1388,9 +1398,11 @@ Page({
       .catch(() => {})
   },
   // 第 4 步「去补齐」：跳到第一组缺口所在步骤；集合点这一组再定位到集合区锚点。
-  onFixRequired() {
-    if (this.busyBlocks()) return
-    const group = (this.data.requiredGroups || [])[0]
+  onFixRequired(e) {
+    if (this.busyBlocks() || this.data.contentBusy) return
+    const key = e && e.currentTarget && e.currentTarget.dataset.key
+    const groups = this.groupMissing(this.missingForPublish())
+    const group = key ? groups.find(item => item.key === key) : groups[0]
     if (!group) return
     this.setData({ step: group.step }, () => {
       if (group.key === 'pickup') this.scrollToPickup()
@@ -1399,10 +1411,11 @@ Page({
   },
   // 成功提示的动作出口（目前只由自动生成集合点产生）：跳到对应步骤并定位。
   onMessageAction() {
+    if (this.busyBlocks() || this.data.contentBusy) return
     const step = this.data.messageActionStep
     if (step < 0) return
     this.setData({ step }, () => {
-      if (step === 1) this.scrollToPickup()
+      if (step === 0) this.scrollToPickup()
       else this.scrollTop()
     })
   },
@@ -1448,6 +1461,7 @@ Page({
 
   // ---- GPX 导入 ----
   onImportGpx() {
+    if (this.busyBlocks() || this.data.contentBusy) return
     this.setData({ gpxError: '' })
     // wx.chooseMessageFile 是隐私接口：只能选聊天中的文件，且需平台隐私协议声明「选中的文件」。
     // 失败必须显式透出（此前静默导致“点了没反应”）。
@@ -1557,7 +1571,7 @@ Page({
       message: '已导入 ' + points.length + ' 个路线节点' + prefilled
         + (auto.created ? '；并已用起点生成集合点，补一句集合位置说明即可。' : '，记得在后续步骤核对保存。'),
       messageActionLabel: auto.created ? '去确认集合点' : '',
-      messageActionStep: auto.created ? 1 : -1,
+      messageActionStep: auto.created ? 0 : -1,
     }, routeDerivedOf(form), this.checklistPatch(form)))
     this.persistDraft()
   },
@@ -1607,6 +1621,8 @@ Page({
         startText,
         pickupText,
         '上限 ' + f.capacity + ' 人' + (f.routeTitle ? ' · ' + f.routeTitle : ''),
+        f.visibility === 'link' ? '仅链接可见（拿到链接的人可查看）' : '公开到发现页',
+        (f.approvalMode === 'manual' ? '手动审核' : '自动确认') + ' · ' + (f.acceptingSignups ? '发布后开放报名' : '发布后暂不开放报名'),
       ],
       publishSummaryText: startText + ' · ' + pickupText + ' · 上限 ' + f.capacity + ' 人'
         + (f.routeTitle ? ' · ' + f.routeTitle : ''),

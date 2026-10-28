@@ -1,18 +1,30 @@
 <!-- 有未来活动：照片 hero（氛围图，非活动实拍）+ 压底文字；整卡可点，卡内无实心按钮。
      照片失败先换一张、再退回纯色森林底——两档都由 coverFailed 决定，文字始终可读。 -->
-<view wx:if="{{empty}}" class="next-up-card next-up-card--invite">
-  <text class="next-up-card__kicker">还没有安排</text>
-  <text class="next-up-card__title">从一场短途开始。</text>
-  <text class="next-up-card__detail">选一条路线、定好时间，把同行的朋友叫上。</text>
-  <view class="button primary next-up-card__cta" hover-class="button-hover" bindtap="onCreate">
-    <text>发起活动</text>
+<view wx:if="{{empty}}" class="activity-ui next-up-card next-up-card--invite">
+  <view wx:if="{{!hasActivities}}" class="next-up-card__invite-media">
+    <image wx:if="{{!inviteCoverFailed}}" class="next-up-card__cover" src="/assets/photos/cover-valley.jpg" mode="aspectFill" aria-label="山林场景氛围图，非活动实拍" binderror="onInviteCoverError" />
+    <view class="next-up-card__scrim" />
+    <view class="next-up-card__invite-caption"><text>把时间留给山野</text><text wx:if="{{!inviteCoverFailed}}" class="next-up-card__photo-note">场景氛围图</text></view>
+  </view>
+  <view class="next-up-card__invite-content">
+    <text class="next-up-card__kicker">{{hasActivities ? '下一次同行 · 还没有安排' : '我的活动 · 还没有同行安排'}}</text>
+    <text class="next-up-card__title">{{hasActivities ? '再约一次，一起出发' : '下一次出发，从这里开始'}}</text>
+    <text class="next-up-card__detail">自己发起一次同行，或先看看大家的安排。</text>
+    <view class="next-up-card__invite-actions">
+      <view class="button primary" hover-class="button-hover" bindtap="onCreate"><icon name="plus" size="18" color="#FFFFFF" /><text>发起活动</text></view>
+      <view class="button secondary" hover-class="button-hover" bindtap="onDiscover"><icon name="search" size="18" color="#163E35" /><text>发现活动</text></view>
+    </view>
+    <view wx:if="{{!hasActivities}}" class="next-up-card__invite-note"><icon name="activity" size="18" color="#5F6E66" /><text>参与或发起后，活动会显示在这里，方便查看安排与进度。</text></view>
   </view>
 </view>
 <view wx:else class="next-up-card next-up-card--photo {{coverFailed ? 'cover-failed' : ''}}" hover-class="next-up-card--pressed" bindtap="onOpen">
   <image wx:if="{{!coverFailed}}" class="next-up-card__cover" src="{{coverSrc}}" mode="aspectFill" binderror="onCoverError" />
   <view class="next-up-card__scrim" />
   <view class="next-up-card__body">
-    <text class="next-up-card__kicker">下一次同行</text>
+    <view class="next-up-card__eyeline">
+      <text class="next-up-card__kicker">下一次同行</text>
+      <text class="next-up-card__link">查看安排 ›</text>
+    </view>
     <text class="next-up-card__title">{{title}}</text>
     <view wx:if="{{facts.length}}" class="next-up-card__facts">
       <block wx:for="{{facts}}" wx:key="*this">

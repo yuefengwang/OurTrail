@@ -549,8 +549,8 @@ async function scenario6() {
       && !m.some(x => /路线|风险/.test(x.label)), JSON.stringify(m.map(x => x.label)))
     check('展示层收成 3 组且顺序固定（名称 → 时间 → 集合），步骤文案来自 stepLabels',
       page.data.requiredGroups.map(g => g.key).join(',') === 'title,time,pickup'
-      && page.data.requiredGroups[0].stepText === '01 信息'
-      && page.data.requiredGroups[2].stepText === '02 路线',
+      && page.data.requiredGroups[0].stepText === '基本'
+      && page.data.requiredGroups[2].stepText === '基本',
       JSON.stringify(page.data.requiredGroups))
     page.onPublishIntent()
     await waitFor(() => env.rec.scrolls.length > 0)
@@ -572,8 +572,8 @@ async function scenario6() {
     env.rec.scrolls.length = 0
     page.onPublishIntent()
     await waitFor(() => env.rec.scrolls.length > 0)
-    check('只差集合点：落到第 2 步并回到顶部（提示就在标签下面）',
-      page.data.step === 1 && env.rec.scrolls[0] && env.rec.scrolls[0].scrollTop === 0,
+    check('只差集合点：落到基本信息并回到顶部（提示就在标签下面）',
+      page.data.step === 0 && env.rec.scrolls[0] && env.rec.scrolls[0].scrollTop === 0,
       JSON.stringify({ step: page.data.step, scrolls: env.rec.scrolls }))
     check('只差集合点：失败提示只说这一组', page.data.failure === '还差：集合上车点。补齐后再发布。', page.data.failure)
     env.rec.scrolls.length = 0
@@ -592,7 +592,7 @@ async function scenario6() {
       d0.some(x => x.label === '图文详情（封面、正文或图片）' && x.step === 2)
       && d0.some(x => x.label === '路线名称' && x.step === 1)
       && d0.some(x => x.label === '至少 1 个路线节点' && x.step === 1)
-      && d0.some(x => x.label === '至少 1 条风险提示' && x.step === 3), JSON.stringify(d0))
+      && d0.some(x => x.label === '至少 1 条风险提示' && x.step === 1), JSON.stringify(d0))
 
     // ③ 必填未齐（上车点半成品 + 时间顺序错）：必填清单仍拦路
     page.setData({ form: Object.assign({}, page.data.form, {
@@ -1030,13 +1030,13 @@ async function scenario13() {
     page.applyRouteSnapshot(detail.route)
     await waitFor(() => page.data.form.pickups.length === 1)
     check('自动生成集合点后就地给出确认出口',
-      page.data.messageActionLabel === '去确认集合点' && page.data.messageActionStep === 1,
+      page.data.messageActionLabel === '去确认集合点' && page.data.messageActionStep === 0,
       JSON.stringify({ label: page.data.messageActionLabel, step: page.data.messageActionStep }))
     env.rec.scrolls.length = 0
     page.onMessageAction()
     await waitFor(() => env.rec.scrolls.length > 0)
-    check('点确认出口：跳到第 2 步并滚到 #pickup-section',
-      page.data.step === 1 && env.rec.scrolls[0] && env.rec.scrolls[0].selector === '#pickup-section',
+    check('点确认出口：跳到基本信息并滚到 #pickup-section',
+      page.data.step === 0 && env.rec.scrolls[0] && env.rec.scrolls[0].selector === '#pickup-section',
       JSON.stringify({ step: page.data.step, scrolls: env.rec.scrolls }))
   }
   {
@@ -1254,8 +1254,60 @@ async function scenario15() {
   }
 }
 
+async function scenario16() {
+  section('16. 创建顺序、发布核对与返回编辑')
+  const { page, cmds, env } = bootEditor({})
+  await settle(page)
+  check('必填项集中在基本信息，路线与介绍可选', page.missingForPublish().every(item => item.step === 0))
+  page.setStep({ currentTarget: { dataset: { step: -1 } } })
+  page.setStep({ currentTarget: { dataset: { step: 'invalid' } } })
+  page.setStep({ currentTarget: { dataset: { step: 4 } } })
+  check('非法步骤不会让编辑区变空', page.data.step === 0)
+  page.setData({ busy: true, busyAt: Date.now() })
+  page.nextStep()
+  page.onGoRouteStep()
+  check('正在保存时不能切换工作面', page.data.step === 0)
+  page.setData({ busy: false, form: completeForm(), message: '已选好集合点', messageActionLabel: '' })
+  page.setStep({ currentTarget: { dataset: { step: 3 } } })
+  check('切换步骤不残留无操作的成功提示', page.data.message === '')
+  await waitFor(() => env.rec.scrolls.length > 0)
+  check('快速进入发布页只核对，不提前落库或发布', page.data.step === 3 && !page.data.publishOpen && cmds.length === 0)
+  check('核对摘要来自当前表单而不是样例', page.data.reviewRows[0].value.includes('2026-10-03') && page.data.reviewRows[1].value.includes('犀浦'))
+  check('必填完成不把可选工作面假标成完成', page.data.stepDone.join(',') === 'true,false,false,false')
+  env.rec.scrolls.length = 0
+  page.onReviewEdit({ currentTarget: { dataset: { step: 0, section: 'pickup' } } })
+  await waitFor(() => env.rec.scrolls.length > 0)
+  check('核对集合点可回到基本信息的具体锚点', page.data.step === 0 && env.rec.scrolls[0].selector === '#pickup-section')
+  page.onPickup({ currentTarget: { dataset: { index: 0, key: 'address' } }, detail: { value: '核对后修改的集合地址' } })
+  page.setStep({ currentTarget: { dataset: { step: 3 } } })
+  check('修改返回后摘要立即更新', page.data.reviewRows[1].detail.includes('核对后修改的集合地址'))
+  page.setData({ form: Object.assign({}, page.data.form, { visibility: 'link', approvalMode: 'auto', acceptingSignups: false }) })
+  page.onPublishOpen()
+  check('确认层披露链接可见但不冒充邀请制', page.data.publishSummaryLines.some(line => line.includes('拿到链接的人可查看')))
+  check('确认层如实显示关闭报名与自动确认', page.data.publishSummaryLines.some(line => line.includes('自动确认') && line.includes('暂不开放报名')))
+  page.onPublishClose()
+  page.setData({ form: Object.assign({}, page.data.form, { title: '', pickups: [] }) })
+  await new Promise(resolve => setImmediate(resolve))
+  env.rec.scrolls.length = 0
+  page.onFixRequired({ currentTarget: { dataset: { key: 'pickup' } } })
+  await waitFor(() => env.rec.scrolls.length > 0)
+  check('可逐项补集合点，不被第一项名称强行截走', page.data.step === 0 && env.rec.scrolls[0].selector === '#pickup-section')
+  const wxml = require('fs').readFileSync(require.resolve('../miniprogram/pages/editor/editor.wxml'), 'utf8')
+  const routeOffset = wxml.indexOf('wx:if="{{step === 1}}"')
+  const introOffset = wxml.indexOf('wx:if="{{step === 2}}"')
+  const publishOffset = wxml.indexOf('wx:if="{{step === 3}}"')
+  check('集合点确实在基本页，不只是改了跳转数字', wxml.indexOf('id="pickup-section"') < routeOffset)
+  check('风险与装备位于路线页，费用说明位于介绍页', wxml.indexOf('bindtap="toggleRisks"') > routeOffset && wxml.indexOf('bindtap="toggleExtras"') < introOffset && wxml.indexOf('bindtap="toggleDetailExtras"') > introOffset && wxml.indexOf('bindtap="toggleDetailExtras"') < publishOffset)
+  check('报名审核 picker 高亮实际当前项', /value="\{\{form.approvalMode === 'manual' \? 0 : 1\}\}"/.test(wxml))
+  check('前面步骤不因必填齐突然改成发布操作', !wxml.includes('wx:if="{{publishReady && isDraft}}"') && wxml.includes('{{nextLabels[step]}}'))
+  check('保存入口固定，原图文编辑和资料门仍存在', wxml.includes('editor-footer-secondary') && wxml.includes('<content-editor') && wxml.includes('<profile-gate'))
+  page.setData({ message: '请确认自动生成的集合点', messageActionLabel: '去确认集合点' })
+  page.nextStep()
+  check('切步保留需要确认的集合点提示', page.data.message === '请确认自动生成的集合点')
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11, scenario12, scenario13, scenario14, scenario15]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11, scenario12, scenario13, scenario14, scenario15, scenario16]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

@@ -1,4 +1,4 @@
-<view class="stack">
+<view class="stack activity-ui activity-panel">
   <status-panel wx:if="{{denied}}" kind="denied" title="无法管理车辆安排" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在读取车辆与人员安排。" />

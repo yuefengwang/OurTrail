@@ -1,5 +1,18 @@
 # OurTrail 户外编辑式设计系统（2026-10-16 UI 重构轮）
 
+## 2026-10-28 补充：活动板块专用作用域
+
+以下为本轮活动体验的覆盖规则，早期批次的尺寸记录保留为历史依据，不再代表活动板块的最终值。真实实现集中在 `miniprogram/app.wxss` 的 `.activity-ui` / `.activity-panel`，没有修改 token 值。
+
+- 覆盖 home、discover、activity、editor、signup、workspace、tasks、vehicle、staff、anotices，以及三个业务面板；不覆盖天气、路线库、我的或全站通知。
+- 按钮改用既有 `--radius-card`（14px）；主操作 16px/22px、单行 48px；次操作为白底 `--control-line` 描边。文本操作至少 44px。禁用态继续使用既有灰色表达，不因作用域而回到可用色。
+- 页签 14px 字、44px 边框盒命中高，保留文字和下划线区分选中态。表单使用既有 `--radius-button` 和 `--control-line` 提供完整边界。
+- 活动页分区间距 28px；工作台工具以导航卡而非 `.button` 呈现，保留图标、标题、说明、箭头和至少 44px 触区。
+- 首页下一次同行最小高度 280px（border-box）；活动详情媒体 216px、标题 24/32；精选卡媒体 152px，紧凑卡缩略图宽 64px，事实行可换行，完整标题不截断。
+- 工作台面板内保留三项跨区指标入口，采用紧凑排列；面板仍常驻挂载并保留 `written` / `sync-key` 同步链。
+
+变更理由、业务边界与原生证据：`activity-suite-2026-10-28.md`、`evidence/activity-suite-2026-10-28/README.md`。
+
 > 本文件是本轮 UI/UX 重构的**唯一规范源**。实现落在 `miniprogram/app.wxss`（token + 全局类）
 > 与各页面 `.wxss`；页面结构与数据契约一律不变（只做视觉层），所有门禁读数见总报告。
 >

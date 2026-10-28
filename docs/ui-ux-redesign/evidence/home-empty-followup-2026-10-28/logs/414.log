@@ -1,0 +1,85 @@
+PASS home has upcoming activity and list
+PASS 01-home rendered without denial
+PASS 01-home has activity UI scope
+PASS 01-home measured controls are at least 44px and inside viewport
+PASS discover navigation preserves destination
+PASS 02-discover rendered without denial
+PASS 02-discover has activity UI scope
+PASS 02-discover measured controls are at least 44px and inside viewport
+PASS discover selected activity matches fixture
+PASS activity card opens detail
+PASS 03-detail rendered without denial
+PASS 03-detail has activity UI scope
+PASS 03-detail measured controls are at least 44px and inside viewport
+PASS owner action opens workspace
+PASS 04-workspace rendered without denial
+PASS 04-workspace has activity UI scope
+PASS 04-workspace measured controls are at least 44px and inside viewport
+PASS 04b-workspace-tools rendered without denial
+PASS 04b-workspace-tools has activity UI scope
+PASS 04b-workspace-tools measured controls are at least 44px and inside viewport
+PASS navigation tile opens task list
+PASS new task opens form without writing
+PASS 08b-task-sheet rendered without denial
+PASS 08b-task-sheet has activity UI scope
+PASS 08b-task-sheet measured controls are at least 44px and inside viewport
+PASS 名单 panel retains readable data
+PASS 05-roster-panel rendered without denial
+PASS 05-roster-panel has activity UI scope
+PASS 05-roster-panel measured controls are at least 44px and inside viewport
+PASS 分车 panel retains readable data
+PASS 06-transport-panel rendered without denial
+PASS 06-transport-panel has activity UI scope
+PASS 06-transport-panel measured controls are at least 44px and inside viewport
+PASS 现场 panel retains readable data
+PASS 07-field-panel rendered without denial
+PASS 07-field-panel has activity UI scope
+PASS 07-field-panel measured controls are at least 44px and inside viewport
+PASS 08-tasks rendered without denial
+PASS 08-tasks has activity UI scope
+PASS 08-tasks measured controls are at least 44px and inside viewport
+PASS 09-notices rendered without denial
+PASS 09-notices has activity UI scope
+PASS 09-notices measured controls are at least 44px and inside viewport
+PASS 09b-notice-sheet rendered without denial
+PASS 09b-notice-sheet has activity UI scope
+PASS 09b-notice-sheet measured controls are at least 44px and inside viewport
+PASS 10-vehicle rendered without denial
+PASS 10-vehicle has activity UI scope
+PASS 10-vehicle measured controls are at least 44px and inside viewport
+PASS vehicle direction switches without writing
+PASS 10b-vehicle-return rendered without denial
+PASS 10b-vehicle-return has activity UI scope
+PASS 10b-vehicle-return measured controls are at least 44px and inside viewport
+PASS 11-editor rendered without denial
+PASS 11-editor has activity UI scope
+PASS 11-editor measured controls are at least 44px and inside viewport
+PASS staff page displays authorized field panel
+PASS 14-staff rendered without denial
+PASS 14-staff has activity UI scope
+PASS signup preserves explicit consent
+PASS 12-signup rendered without denial
+PASS 12-signup has activity UI scope
+PASS 12-signup measured controls are at least 44px and inside viewport
+PASS signup without consent stays in form with only the consent error
+PASS 13-signup-validation rendered without denial
+PASS 13-signup-validation has activity UI scope
+PASS 13-signup-validation measured controls are at least 44px and inside viewport
+PASS signup participant can expand without granting consent
+PASS 13b-signup-expanded rendered without denial
+PASS 13b-signup-expanded has activity UI scope
+PASS 13b-signup-expanded measured controls are at least 44px and inside viewport
+PASS guest home explains no upcoming activity
+PASS 15-home-empty rendered without denial
+PASS 15-home-empty has activity UI scope
+PASS 15-home-empty measured controls are at least 44px and inside viewport
+PASS empty home uses the new onboarding surface without a fabricated activity
+PASS both empty-home actions are 48px, aligned and inside viewport
+PASS empty-home image failure retains both actions and title
+PASS 15b-home-empty-image-fallback rendered without denial
+PASS 15b-home-empty-image-fallback has activity UI scope
+PASS 15b-home-empty-image-fallback measured controls are at least 44px and inside viewport
+PASS empty-home discover action opens real discovery page
+PASS empty-home create action opens actual editor without writing
+PASS no cloud writes attempted: []
+PASS no uncaught runtime exceptions

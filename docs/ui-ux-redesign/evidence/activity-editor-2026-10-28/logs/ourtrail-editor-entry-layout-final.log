@@ -1,0 +1,51 @@
+== E1 结构、接线与 token（不是 UI PASS） ==
+  PASS 保留 article 根与原 open 入口
+  PASS compact 缩略图与标题列在同一个横向头部
+  PASS compact 才挂缩略图；featured 分支自己就是场景封面、没有缩略图
+  PASS 右侧列包含完整标题、日期和状态槽
+  PASS 状态不在任何图片容器内，图片失败不吞状态
+  PASS 路线名单独插值，chips 由页面派生传入（模板不再自己拼路线事实）
+  PASS 日期、倒计时、人数、归属与相位徽章各有一槽
+  PASS 协作独立 catchtap，携带角色键且不冒泡为 open
+  PASS 80px 缩略图与可换行 flex 结构有明确源码声明
+  PASS 标题不截断；新增布局不引入 line-clamp/ellipsis
+  PASS 协作触控目标读 token，非硬编码 44
+  PASS 首页一个 cards 列表，只有非 featured 紧凑化
+  PASS 首页原 open/collab 事件仍在
+  PASS 首页挂品牌栏并走自定义导航（原生标题栏不再出现，身份由词标承担）
+  PASS 首屏先给「下一次同行」：整卡进详情、空态卡内发起；页面不再有页标题块
+  PASS 首页动作行独立成行，不把全部动作挤进标题行
+  PASS 发起为唯一主按钮，发现次级；原 handler 与文字契约保持；没有未来活动时主按钮随状态卡一起消失
+  PASS 四档筛选保持，移除无效 with-tabbar 开关
+  PASS 发现列表和地图选中卡同为 compact
+  PASS 结果工具组包含排序/筛选、视图切换和结果计数
+  PASS 搜索紧随头部，其后工具组与完整低权重提示，再到结果
+  PASS 提示不再是 callout，保留完整原话与可见分支
+  PASS 显示可定位数/本次结果，不称附近
+  PASS 筛选 sheet 所有选择值只绑定 draftFilters
+  PASS card 样式只引用既有色 token，零字面量副本
+  PASS home 样式只引用既有色 token，零字面量副本
+  PASS discover 样式只引用既有色 token，零字面量副本
+== 真实 Component 方法：失败兜底、事件与兼容默认值 ==
+  PASS compact 默认 false，不改变旧消费者的选择
+  PASS 全局类 opt-in 保留
+[activity-card] 实拍封面加载失败，回退氛围图： broken-cover
+  PASS {"featured":true,"compact":false} 实拍失败先回退氛围图
+[activity-card] 封面图加载失败： /assets/photos/cover-dawn.jpg
+  PASS {"featured":true,"compact":false} 图片全失败仍保留所有文字/指标/协作属性
+  PASS {"featured":true,"compact":false} 原 collab/open 事件不变
+  PASS {"featured":true,"compact":false} 换活动/封面复位失败态
+[activity-card] 实拍封面加载失败，回退氛围图： broken-cover
+  PASS {"featured":false,"compact":false} 实拍失败先回退氛围图
+[activity-card] 封面图加载失败： /assets/photos/cover-dawn.jpg
+  PASS {"featured":false,"compact":false} 图片全失败仍保留所有文字/指标/协作属性
+  PASS {"featured":false,"compact":false} 原 collab/open 事件不变
+  PASS {"featured":false,"compact":false} 换活动/封面复位失败态
+[activity-card] 实拍封面加载失败，回退氛围图： broken-cover
+  PASS {"featured":false,"compact":true} 实拍失败先回退氛围图
+[activity-card] 封面图加载失败： /assets/photos/cover-dawn.jpg
+  PASS {"featured":false,"compact":true} 图片全失败仍保留所有文字/指标/协作属性
+  PASS {"featured":false,"compact":true} 原 collab/open 事件不变
+  PASS {"featured":false,"compact":true} 换活动/封面复位失败态
+
+passed=41 failed=0 (structure=E1, UI=NOT_RUN)

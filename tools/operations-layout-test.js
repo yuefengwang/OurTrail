@@ -127,8 +127,10 @@ function main() {
   // style-B 批次二 b：工具是**导航**不是主行动。四个 leaf 实底会变成整页最响的色块，
   // 把强调色从待办手里抢走；白面细线才与页面其余卡片同族。
   const toolNodes = tools ? all(tools, hasClass('workspace-tool')) : []
-  check('工作台：四个工具用白面细线（button 基类，无 leaf 实底）', toolNodes.length === 4
-    && toolNodes.every(n => hasClass('button')(n) && !hasClass('leaf')(n)), 'tools=' + toolNodes.length)
+  check('工作台：四个工具是有方向箭头的导航卡，不冒充提交按钮', toolNodes.length === 4
+    && toolNodes.every(n => !hasClass('button')(n) && !hasClass('leaf')(n)
+      && !!one(n, child => child.tag === 'icon' && child.attrs.name === 'arrow')
+      && !!one(n, hasClass('activity-nav-icon'))), 'tools=' + toolNodes.length)
   check('工作台：工具说明文字降为 muted（标题 forest / 说明 muted 二三级关系）',
     /\.workspace-tool__sub\s*\{[^}]*color:\s*var\(--muted\)/.test(read('workspace', 'wxss')))
   const primary = one(queue, attr('data-target', '{{queuePrimary.target}}'))
@@ -261,7 +263,7 @@ function main() {
     before(header, filters) && !!newBtn && newBtn.attrs['bindtap'] === 'onNew'
     && !!ancestor(newBtn, attr('wx:if', '{{canManage && !denied && !loading}}'))
     && !one(header, tap('onNew')) && !one(header, hasClass('page-title'))
-    && /<view class="page \{\{canManage && !denied && !loading \? 'has-sticky' : ''\}\}">/.test(t.source))
+    && /<view class="page activity-ui \{\{canManage && !denied && !loading \? 'has-sticky' : ''\}\}">/.test(t.source))
   check('任务：计数就在筛选里，没有独立 metrics 带', !!filters && t.source.slice(filters.start, filters.end).includes('{{item.count}}')
     && !one(tb, hasClass('metrics')))
   check('任务：逐条紧凑状态边栏，不折叠记录', !!record && hasClass('task-row')(record)

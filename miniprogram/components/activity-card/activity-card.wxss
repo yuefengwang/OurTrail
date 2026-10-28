@@ -10,11 +10,9 @@
   background: var(--forest-deep);
   border-color: var(--forest-deep);
 }
-/* 媒体盒：featured 与普通卡共用（定高 px + 文档流 image，平台坑 §6 的稳绘制路径）。
-   featured 240（2026-10-26 style-B，148→240）：参考板首屏的活动卡是「照片占半屏」的形态。 */
 .activity-card__media {
   position: relative;
-  height: 240px;
+  height: 152px;
   overflow: hidden;
   background: var(--forest-deep);
 }
@@ -52,8 +50,6 @@
 .activity-card--plain .activity-card__media { height: 200px; background: var(--stone); }
 .activity-card__plain { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 16px; }
 
-/* ---- 紧凑行（首页/发现页）：80px 缩略图 + 标题列 ----
-   卡片回到留白内边距；缩略图只是锚点，标题列 flex:1 + min-width:0 保证长标题断行不撑破卡片。 */
 .activity-card.activity-card--compact { padding: 12px; gap: 10px; }
 .activity-card--compact .activity-card__plain { padding: 0; gap: 10px; }
 .activity-card__head {
@@ -64,9 +60,9 @@
 }
 .activity-card__thumb {
   position: relative;
-  flex: 0 0 80px;
-  width: 80px;
-  height: 80px;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 76px;
   overflow: hidden;
   border-radius: var(--radius-button);
   background: var(--stone);
@@ -82,15 +78,15 @@
 /* 标题保持全局 18px/600（style-B 不降档）：紧凑列只有 ~250px，行高从 1.5 收到 24px
    换一行字的空间，字重与字号不动。 */
 .activity-card__heading .activity-card__title { font-size: var(--text-title); line-height: 24px; letter-spacing: -0.2px; }
-/* 标题与相位徽章同一行：标题吃掉剩余宽度并断行，徽章永不被压扁。 */
 .activity-card__titlebar {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
   gap: 8px;
   min-width: 0;
 }
 .activity-card__titlebar .activity-card__title { flex: 1; min-width: 0; }
-.activity-card__status { flex: 0 0 auto; margin-top: 3px; }
+.activity-card__status { flex: 0 0 auto; margin-top: 0; }
 
 /* ---- 平铺行（发现页 2026-10-26）：去底色/边框/圆角，让结果读成一列行而不是一摞卡。
    缩略图、内边距与所有排版仍由 compact 提供；flat 不覆盖 padding。
@@ -102,16 +98,11 @@
   background: transparent;
 }
 
-/* ---- 三槽正文 ----
-   chips 一行不折行（参考板的活动卡只有一行 chips）：溢出时由标题列整体的
-   min-width:0 + overflow:hidden 兜住，而不是把每一枚 chip 截成「…」——
-   截断优先级已经由 utils/card-view.chipsOf 的次序表达（日期在前、爬升垫底）。 */
 .activity-card__chips {
   display: flex;
   align-items: baseline;
-  flex-wrap: nowrap;
-  overflow: hidden;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  gap: 2px 0;
   font-size: var(--text-caption);
   line-height: 18px;
   color: var(--muted);

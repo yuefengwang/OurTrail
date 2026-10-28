@@ -1,0 +1,17 @@
+PASS fresh bundle uses new step names
+PASS blank form does not display alarming required checklist
+PASS title input updates real form
+PASS time suggestion fills start and estimated dates
+PASS map cancel keeps form intact
+PASS map result fills meeting place and readiness
+PASS ready form still advances to route instead of suddenly publishing
+PASS route library empty state is explicit
+PASS intro editor still writes parent content
+PASS review page contains live meeting and intro
+PASS review edit returns to meeting section
+PASS publish intent saves a draft before confirmation
+PASS confirmation discloses visibility and registration policy
+PASS confirmation does not auto opt organizer into participation
+PASS no publish command was sent
+PASS second case has independent empty state
+PASS missing required action returns to basics without a write

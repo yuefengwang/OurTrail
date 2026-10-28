@@ -89,7 +89,7 @@ section('§2 固定底栏（sticky-action）与页面留白成对')
   const mism = wxmlFiles.filter(f => {
     const src = fs.readFileSync(f, 'utf8')
     if (!/has-sticky/.test(src)) return false
-    const m = src.match(/class="page \{\{([^}]*)\}\}"/)
+    const m = src.match(/class="page(?: [\w-]+)* \{\{([^}]*)\}\}"/)
     if (!m) return true
     return !/sticky-action/.test(src)
   })

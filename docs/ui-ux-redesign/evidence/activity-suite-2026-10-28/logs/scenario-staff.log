@@ -1,0 +1,33 @@
+== 1. 薄壳契约（承重版）：onShow 挂载点 / data 键集合恰为两个 / field-panel 带 sync-key 绑定 ==
+  ✓ 页面配置 = data + onLoad + onShow + onPullDownRefresh（返回与下拉都只靠生命周期失效信号，F-04）
+  ✓ 下拉手势与钩子成对：json 注册了 enablePullDownRefresh 才允许有 onPullDownRefresh（两种半截都不该绿）
+  ✓ 不 require 任何模块（api/格式化全都不碰，纯装配壳）
+  ✓ data 键集合恰为 {activityId, syncKey}（装配参数 + 一个显式失效信号键，不留第二个状态位）
+  ✓ WXML 无任何 bind/catch 事件绑定（不存在孤儿 handler 的可能）
+  ✓ staff.wxml 的 field-panel 带 sync-key 绑定（宿主有键却没接线 ⇒ 信号发进没人看的 data）
+== 1b. 返回本页真的重读：onShow → syncKey 变化 → 真 field-panel 恰好重读一次，名单随新 phase 重装配 ==
+  ✓ 首屏那一次读由面板 attached 发出（宿主 onLoad 不重复发读 ⇒ 首屏不多打一次全量读）
+  ✓ 首次进入那次 onShow 不下发信号（那一次读已由面板 attached 发出，重复下发＝白多打一次全量读）
+  ✓ 领队推进阶段后返回本页 ⇒ 信号与面板已读的那份不同 ⇒ 真面板恰好重读一次（不是 0 次也不是 2 次）
+  ✓ 重读是同一份请求形状（activity / a1 / staff 视角），没有另开第二条链路
+  ✓ 返回后看到的是新阶段（动作表按 phase 重装配），不是离开时那份旧快照 = F-04 的本体
+  ✓ 反向对照：信号没再变化就不重读（判据不是「每次返回都必读」的一刀切，承重的是 key 真的换了）
+  ✓ 压缩壳后下拉仍只刷新一次原面板并停止刷新动画
+== 2. onLoad 参数装配：options.id → activityId；缺参守卫为空串 ==
+  ✓ onLoad({id:"a1"}) → data.activityId = "a1"
+  ✓ 装配只补 activityId 一个键（无隐副作用）
+  ✓ 缺参守卫：onLoad({}) → activityId 为空串（不崩、不给 undefined）
+  ✓ WXML 把装配结果原样传给面板：activity-id="{{activityId}}"
+  ✓ Field 视角固定由页面指定：perspective="staff"（字面量，不来自参数）
+== 3. 注册与接线：staff.json 注册 field-panel / 头部文案 / 面板 properties 兼容 ==
+  ✓ staff.json 注册 field-panel 且路径指向真实组件
+  ✓ 导航栏标题「协作任务」
+  ✓ field-panel 声明覆盖 staff 页传入的两个属性（activityId/perspective，均 String 型）；syncKey 是可选项，staff 不传即不自触发
+  ✓ 头部呈现角色与实际活动身份，保留授权范围说明
+== 4. 轻集成：staff 页装配 → 真 field-panel（请求形状 / 授权撤销透出 / 正常出画面） ==
+  ✓ 读取请求 = activity / a1 / staff 视角（activityId 来自页面装配）
+  ✓ 授权被撤销：面板透出服务端原文、不装配名单行（staff 页不own任何兜底文案）
+  ✓ 授权有效：staff 视角名单出画面（已确认者带签到/乘车副标题）
+  ✓ 读取 revision 交给面板做后续命令的 CAS 基准
+
+passed=26 failed=0 skipped=0

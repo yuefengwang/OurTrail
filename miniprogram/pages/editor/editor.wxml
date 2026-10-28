@@ -2,21 +2,19 @@
 <!-- has-sticky 与底栏 wx:if 同条件（同 route-edit.wxml 的既定写法）：底栏是 position:fixed
      不计入文档流，页尾要靠 .page.has-sticky(120px) 留白才不被压住；denied/loading 没有底栏，
      就不该多留这一截空白。 -->
-<view class="page {{!denied && !loading ? 'has-sticky' : ''}}">
+<view class="page activity-ui {{!denied && !loading ? 'has-sticky' : ''}}">
   <status-panel wx:if="{{denied}}" kind="denied" title="无法编辑此活动" detail="{{denied}}" />
   <block wx:elif="{{loading}}">
     <status-panel kind="loading" title="正在载入" detail="正在准备编辑器。" />
   </block>
   <view wx:else class="stack">
 
-    <!-- 编辑式头部：眉题 + 大标题 + 一句定位；删除草稿仍是 text 权重的次要动作。 -->
-    <view class="card-header" style="align-items:flex-start;">
-      <view class="section-head" style="min-width:0;flex:1;">
-        <text class="eyebrow">{{savedId ? '编辑活动' : '发起一次同行'}}</text>
-        <text class="page-title" style="display:block;margin-top:4px;">把出发，安排妥当。</text>
-        <text class="section-sub">必填项齐了就能发；路线与图文可以稍后补。</text>
+    <view class="editor-heading">
+      <view>
+        <text class="page-title">{{savedId ? '编辑活动' : '发起活动'}}</text>
+        <text class="editor-caption">{{draftSavedAt ? '本机已保存 · ' + draftSavedAt : '先安排出发，再邀请同行'}}</text>
       </view>
-      <view wx:if="{{isDraft}}" class="button text {{busy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy ? '' : 'onDeleteDraftOpen'}}" style="flex:0 0 auto;">删除草稿</view>
+      <view wx:if="{{isDraft}}" class="button text {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onDeleteDraftOpen'}}">删除草稿</view>
     </view>
 
     <!-- 路线库预填横幅：标题与路线信息已自动带入，仍可修改 -->
@@ -28,10 +26,11 @@
     <!-- 草稿恢复如实说明表单来源（本机草稿会覆盖路线预填，此时上方横幅不渲染） -->
     <text wx:if="{{draftRestored}}" class="small muted">已恢复本机草稿，自动保存中。</text>
 
-    <!-- 下划线页签：沿用 .seg/.on 供驱动与门定位，只换表面形态；步骤号已在标签里，不再重复计数。 -->
-    <view class="segmented tabs-line" aria-label="活动编辑步骤">
-      <!-- 完成态只做视觉记号（.seg.done 的 ✓）：判据来自发布门的 missing，不在模板里重算 -->
-      <view wx:for="{{stepLabels}}" wx:key="index" class="seg {{step === index ? 'on' : ''}} {{stepDone[index] ? 'done' : ''}}" data-step="{{index}}" bindtap="setStep">{{item}}</view>
+    <view class="segmented tabs-line editor-steps" aria-label="活动编辑步骤">
+      <view wx:for="{{stepLabels}}" wx:key="index" class="seg {{step === index ? 'on' : ''}} {{stepDone[index] ? 'done' : ''}} {{busy || contentBusy ? 'disabled' : ''}}" data-step="{{index}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'setStep'}}">
+        <text class="editor-step-number tabular">{{stepDone[index] ? '✓' : index + 1}}</text>
+        <text>{{item}}</text>
+      </view>
     </view>
 
     <!-- 反馈区上移（D10）：切步被拦、发布预检跳步时，提示必须和页签同屏，否则提示等于没有。
@@ -50,28 +49,20 @@
     <!-- ========== 步骤 1：基本信息 ========== -->
     <view wx:if="{{step === 0}}" class="stack-gap3">
       <view class="section-head">
-        <text class="kicker">基本信息</text>
-        <text class="section-title">名称与出发时间</text>
-        <text class="section-sub">结束时间与报名截止会按出发时间自动推算；集合位置在第 2 步填，不在这里。</text>
+        <text class="section-title">这次去哪里，什么时候出发</text>
+        <text class="section-sub">名称、时间和集合点必填，其余内容可按需完善。</text>
       </view>
 
       <!-- 步内分组（T007）：组间距由 .step-group 承载；卡内标题已说明这一段是什么，不再叠眉题。 -->
       <view class="step-group">
         <!-- 路线捷径（D3）：完整路线面只留一处（第 2 步），这里只保留入口与「已带入」事实。 -->
         <view class="route-shortcut">
-          <text class="small muted route-shortcut-text">{{form.routeTitle ? '已带入路线：' + form.routeTitle : '有现成路线？可以自动填好名称、里程与节点。'}}</text>
-          <view wx:if="{{canChangeRoute}}" class="cluster" style="flex:0 0 auto;">
-            <block wx:if="{{!form.routeTitle}}">
-              <view class="button text" hover-class="button-hover" bindtap="onQuickRouteOpen">从路线库选择</view>
-              <view class="button text" hover-class="button-hover" bindtap="onImportGpx">导入 GPX</view>
-            </block>
-            <view wx:else class="button text" hover-class="button-hover" bindtap="onGoRouteStep">去 02 路线调整 ›</view>
-          </view>
-          <text wx:else class="small muted">集合或行程中路线只能补充，不能更换。</text>
+          <text class="small muted route-shortcut-text">{{form.routeTitle ? '已带入：' + form.routeTitle : '有现成路线？可以带入活动名称和行程。'}}</text>
+          <view class="button text {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onGoRouteStep'}}">{{form.routeTitle ? '查看路线' : '从路线开始'}} ›</view>
         </view>
 
-        <form-field label="活动名称" hint="{{titleAutoSource || '必填。从路线或 GPX 开始会自动填写，可修改。'}}">
-          <input class="input" value="{{form.title}}" maxlength="100" placeholder="这次想去哪里？如：青城后山 · 周末轻徒步" bindinput="onTitleInput" />
+        <form-field label="活动名称" hint="{{titleAutoSource}}">
+          <input class="input" value="{{form.title}}" maxlength="100" placeholder="例如：青城后山 · 周末轻徒步" bindinput="onTitleInput" />
         </form-field>
       </view>
 
@@ -79,10 +70,9 @@
       <view class="card stack-gap3">
         <view class="cluster" style="justify-content:space-between;">
           <text class="section-title">出发时间</text>
-          <text wx:if="{{form.dt_start.date}}" class="badge success">已定</text>
+          <text class="small muted">北京时间</text>
         </view>
         <view wx:if="{{!form.dt_start.date}}" class="stack-gap3">
-          <text class="small muted">常用时间建议，点一下填入；也可以直接选日期和时间。</text>
           <view class="cluster">
             <view wx:for="{{startSuggestions}}" wx:key="key" class="chip" hover-class="button-hover" data-key="{{item.key}}" bindtap="useSuggestedStart">{{item.label}}</view>
           </view>
@@ -101,7 +91,7 @@
             </view>
           </picker>
         </view>
-        <text class="small muted">均为北京时间。定好出发后，结束时间与报名截止会自动估算。</text>
+        <text class="small muted">结束与截止按出发时间估算，请核对；多日活动可点「调整」。</text>
 
         <view class="cluster" style="justify-content:space-between;">
           <view class="stack" style="gap:2px;min-width:0;">
@@ -190,26 +180,108 @@
         <view class="button secondary block {{templateId && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{templateId && !busy ? 'onCopyTemplate' : ''}}">创建模板副本并编辑</view>
       </view>
 
-      <!-- 缺项=warning（拦发布）：按组展示（名称 / 时间 / 集合点），与跳转落点同一份分组 -->
-      <view wx:if="{{!publishReady}}" class="callout warning">
-        <text class="callout-title">还差 {{requiredGroups.length}} 项</text>
-        <view wx:for="{{requiredGroups}}" wx:key="key" class="readiness-row">
-          <text>{{item.label}}</text>
-          <text class="small muted">{{item.stepText}}</text>
-        </view>
-        <text class="small muted" style="display:block;margin-top:4px;">补齐后底栏会直接出现「发布活动」，不要求先写完介绍。</text>
+      <view class="section-head" id="pickup-section">
+        <text class="section-title">在哪集合</text>
+        <text class="section-sub">地图选点可带入名称和地址；集合时间按出发时间估算，可修改。</text>
       </view>
-      <view wx:else class="callout success">
-        <text class="callout-title">必填项已齐，可以直接发布。</text>
+
+      <view class="step-group">
+      <view wx:if="{{!form.pickups.length}}" class="card stack-gap3">
+        <text>选好集合位置，让同行人知道在哪里见面。</text>
+        <view class="button secondary block" hover-class="button-hover" bindtap="chooseNewPickupLocation">
+          <icon name="pin" size="16" color="#163E35" />
+          <text>在地图上选集合点</text>
+        </view>
+        <view wx:if="{{form.points.length}}" class="button text" hover-class="button-hover" bindtap="useStartAsPickup">用路线起点生成集合点</view>
+        <view class="button text" hover-class="button-hover" bindtap="addPickup">手动添加</view>
+      </view>
+
+      <block wx:for="{{form.pickups}}" wx:key="id">
+        <view wx:if="{{!editingPickups[item.id]}}" class="card" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickup">
+          <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
+            <view class="cluster" style="gap:8px;min-width:0;">
+              <text class="badge neutral tabular">{{index + 1}}</text>
+              <text class="row-title">{{item.name || '上车点 ' + (index + 1)}}</text>
+              <text wx:if="{{autoPickupIds[item.id]}}" class="badge neutral">自动生成</text>
+            </view>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" catchtap="togglePickup">编辑</view>
+          </view>
+          <text wx:if="{{item.address}}" style="display:block;margin-top:6px;">{{item.address}}</text>
+          <text wx:else class="small muted" style="display:block;margin-top:6px;">还没写集合位置，点「编辑」补一句。</text>
+          <view class="cluster" style="gap:8px;margin-top:6px;">
+            <text class="small tabular">{{item.meeting.date || '待定'}} {{item.meeting.time}}</text>
+            <text wx:if="{{item.lat}}" class="small muted">· 已定位</text>
+          </view>
+        </view>
+        <view wx:else class="card stack-gap3">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="card-label">集合点 {{index + 1}}</text>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickup">完成</view>
+          </view>
+          <form-field label="集合点名称">
+            <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onPickup" />
+          </form-field>
+          <form-field label="详细集合位置" hint="必填。写清楚从哪儿进、认什么标志物；地图选点会自动填。">
+            <input class="input" value="{{item.address}}" data-index="{{index}}" data-key="address" bindinput="onPickup" />
+          </form-field>
+          <view class="button secondary block" hover-class="button-hover" data-index="{{index}}" bindtap="choosePickupLocation">
+            <icon name="pin" size="16" color="#163E35" />
+            <text>在地图上选点{{item.lat ? '（已设置）' : ''}}</text>
+          </view>
+          <view class="stack-gap3">
+            <view class="cluster" style="justify-content:space-between;">
+              <text class="field-label">集合时间</text>
+              <text class="small tabular">{{item.meeting.date || '待定'}} {{item.meeting.time}}</text>
+            </view>
+            <block wx:if="{{form.dt_start.date && form.dt_start.time}}">
+              <view class="cluster">
+                <view class="chip" hover-class="button-hover" data-index="{{index}}" data-offset="0" bindtap="onPickupQuickTime">与出发同时</view>
+                <view class="chip" hover-class="button-hover" data-index="{{index}}" data-offset="-30" bindtap="onPickupQuickTime">提前 30 分</view>
+                <view class="chip" hover-class="button-hover" data-index="{{index}}" data-offset="-60" bindtap="onPickupQuickTime">提前 1 小时</view>
+              </view>
+            </block>
+            <text wx:else class="small muted">填好步骤 1 的出发时间后，这里可一键估算；日期默认出发日。</text>
+            <view class="cluster" style="flex-wrap:nowrap;">
+              <picker mode="date" value="{{item.meeting.date}}" data-index="{{index}}" bindchange="onPickupDate" style="flex:1;">
+                <view class="picker {{item.meeting.date ? '' : 'placeholder'}}">
+                  <text class="picker-value">{{item.meeting.date || '日期'}}</text>
+                </view>
+              </picker>
+              <picker mode="time" value="{{item.meeting.time}}" data-index="{{index}}" bindchange="onPickupTime" style="flex:1;">
+                <view class="picker {{item.meeting.time ? '' : 'placeholder'}}">
+                  <text class="picker-value">{{item.meeting.time || '时间'}}</text>
+                </view>
+              </picker>
+            </view>
+          </view>
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="field-label">坐标（可选）</text>
+            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickupCoords">{{showPickupCoords[item.id] ? '收起手动输入' : '手动输入'}}</view>
+          </view>
+          <block wx:if="{{showPickupCoords[item.id]}}">
+            <view class="cluster" style="align-items:flex-start;">
+              <form-field label="纬度" style="flex:1;">
+                <input class="input" type="digit" value="{{item.lat}}" data-index="{{index}}" data-key="lat" bindinput="onPickup" />
+              </form-field>
+              <form-field label="经度" style="flex:1;">
+                <input class="input" type="digit" value="{{item.lng}}" data-index="{{index}}" data-key="lng" bindinput="onPickup" />
+              </form-field>
+            </view>
+          </block>
+          <view class="button text" hover-class="button-hover" data-index="{{index}}" catchtap="removePickup">移除此集合点</view>
+        </view>
+      </block>
+      <view wx:if="{{form.pickups.length}}" class="button secondary block" hover-class="button-hover" bindtap="addPickup">
+        <icon name="plus" size="18" color="#163E35" />
+        <text>添加集合点</text>
+      </view>
       </view>
     </view>
 
-    <!-- ========== 步骤 2：路线与集合 ========== -->
     <view wx:if="{{step === 1}}" class="stack-gap3">
       <view class="section-head">
-        <text class="kicker">路线与集合</text>
-        <text class="section-title">走哪条路，在哪集合</text>
-        <text class="section-sub">有路线就自动带入；没有也能先发布。集合点是发布必填。</text>
+        <text class="section-title">路线与行前准备</text>
+        <text class="section-sub">复用路线或导入轨迹，再核对节点、风险与装备。</text>
       </view>
 
       <view class="card stack-gap3">
@@ -218,10 +290,16 @@
           <text wx:if="{{form.routeTitle}}" class="badge neutral">{{form.routeTitle}}</text>
         </view>
         <text wx:if="{{routeAutoText}}" class="small muted">{{routeAutoText}}</text>
-        <text wx:else class="small muted">还没有路线。没有路线也能发布，之后可以在活动编辑里补。</text>
-        <view class="cluster">
-          <view class="button secondary {{canChangeRoute ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canChangeRoute ? 'onQuickRouteOpen' : ''}}">{{form.routeTitle ? '更换路线' : '从路线库选择'}}</view>
-          <view class="button secondary {{canChangeRoute ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canChangeRoute ? 'onImportGpx' : ''}}">导入 GPX</view>
+        <text wx:else class="small muted">还没有路线。徒步活动建议先导入轨迹；普通休闲活动可跳过。</text>
+        <view class="editor-route-actions">
+          <view class="editor-source {{canChangeRoute && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canChangeRoute && !busy ? 'onQuickRouteOpen' : ''}}">
+            <text class="row-title">{{form.routeTitle ? '更换路线' : '从路线库选择'}}</text>
+            <text class="small muted">复用已保存的路线与节点</text>
+          </view>
+          <view class="editor-source {{canChangeRoute && !busy ? '' : 'disabled'}}" hover-class="button-hover" bindtap="{{canChangeRoute && !busy ? 'onImportGpx' : ''}}">
+            <text class="row-title">导入 GPX 轨迹</text>
+            <text class="small muted">自动解析里程、爬升与节点</text>
+          </view>
         </view>
         <view wx:if="{{form.routeTitle || form.points.length}}" class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleRouteDetails">
           <text class="small muted">{{form.points.length}} 个节点 · {{form.risks.length}} 条风险</text>
@@ -351,240 +429,6 @@
         </block>
       </view>
 
-      <view class="section-head" id="pickup-section">
-        <text class="kicker">集合</text>
-        <text class="section-title">在哪集合</text>
-        <text class="section-sub">发布只要求每个集合点有名称、位置和时间；地图选点会同时填好三者。</text>
-      </view>
-
-      <view class="step-group">
-      <view wx:if="{{!form.pickups.length}}" class="card stack-gap3">
-        <text>还没有集合点。选一个地图位置最快；也可以先手动添加，地址之后补。</text>
-        <view class="button secondary block" hover-class="button-hover" bindtap="chooseNewPickupLocation">
-          <icon name="pin" size="16" color="#163E35" />
-          <text>在地图上选集合点</text>
-        </view>
-        <view wx:if="{{form.points.length}}" class="button text" hover-class="button-hover" bindtap="useStartAsPickup">用路线起点生成集合点</view>
-        <view class="button text" hover-class="button-hover" bindtap="addPickup">手动添加</view>
-      </view>
-
-      <block wx:for="{{form.pickups}}" wx:key="id">
-        <view wx:if="{{!editingPickups[item.id]}}" class="card" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickup">
-          <view class="cluster" style="justify-content:space-between;align-items:flex-start;">
-            <view class="cluster" style="gap:8px;min-width:0;">
-              <text class="badge neutral tabular">{{index + 1}}</text>
-              <text class="row-title">{{item.name || '上车点 ' + (index + 1)}}</text>
-              <text wx:if="{{autoPickupIds[item.id]}}" class="badge neutral">自动生成</text>
-            </view>
-            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" catchtap="togglePickup">编辑</view>
-          </view>
-          <text wx:if="{{item.address}}" style="display:block;margin-top:6px;">{{item.address}}</text>
-          <text wx:else class="small muted" style="display:block;margin-top:6px;">还没写集合位置，点「编辑」补一句。</text>
-          <view class="cluster" style="gap:8px;margin-top:6px;">
-            <text class="small tabular">{{item.meeting.date || '待定'}} {{item.meeting.time}}</text>
-            <text wx:if="{{item.lat}}" class="small muted">· 已定位</text>
-          </view>
-        </view>
-        <view wx:else class="card stack-gap3">
-          <view class="cluster" style="justify-content:space-between;">
-            <text class="card-label">上车点 {{index + 1}}</text>
-            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickup">完成</view>
-          </view>
-          <form-field label="上车点名称">
-            <input class="input" value="{{item.name}}" data-index="{{index}}" data-key="name" bindinput="onPickup" />
-          </form-field>
-          <form-field label="详细集合位置" hint="必填。写清楚从哪儿进、认什么标志物；地图选点会自动填。">
-            <input class="input" value="{{item.address}}" data-index="{{index}}" data-key="address" bindinput="onPickup" />
-          </form-field>
-          <view class="button secondary block" hover-class="button-hover" data-index="{{index}}" bindtap="choosePickupLocation">
-            <icon name="pin" size="16" color="#163E35" />
-            <text>在地图上选点{{item.lat ? '（已设置）' : ''}}</text>
-          </view>
-          <view class="stack-gap3">
-            <view class="cluster" style="justify-content:space-between;">
-              <text class="field-label">集合时间</text>
-              <text class="small tabular">{{item.meeting.date || '待定'}} {{item.meeting.time}}</text>
-            </view>
-            <block wx:if="{{form.dt_start.date && form.dt_start.time}}">
-              <view class="cluster">
-                <view class="chip" hover-class="button-hover" data-index="{{index}}" data-offset="0" bindtap="onPickupQuickTime">与出发同时</view>
-                <view class="chip" hover-class="button-hover" data-index="{{index}}" data-offset="-30" bindtap="onPickupQuickTime">提前 30 分</view>
-                <view class="chip" hover-class="button-hover" data-index="{{index}}" data-offset="-60" bindtap="onPickupQuickTime">提前 1 小时</view>
-              </view>
-            </block>
-            <text wx:else class="small muted">填好步骤 1 的出发时间后，这里可一键估算；日期默认出发日。</text>
-            <view class="cluster" style="flex-wrap:nowrap;">
-              <picker mode="date" value="{{item.meeting.date}}" data-index="{{index}}" bindchange="onPickupDate" style="flex:1;">
-                <view class="picker {{item.meeting.date ? '' : 'placeholder'}}">
-                  <text class="picker-value">{{item.meeting.date || '日期'}}</text>
-                </view>
-              </picker>
-              <picker mode="time" value="{{item.meeting.time}}" data-index="{{index}}" bindchange="onPickupTime" style="flex:1;">
-                <view class="picker {{item.meeting.time ? '' : 'placeholder'}}">
-                  <text class="picker-value">{{item.meeting.time || '时间'}}</text>
-                </view>
-              </picker>
-            </view>
-          </view>
-          <view class="cluster" style="justify-content:space-between;">
-            <text class="field-label">坐标（可选）</text>
-            <view class="button text" hover-class="button-hover" data-id="{{item.id}}" bindtap="togglePickupCoords">{{showPickupCoords[item.id] ? '收起手动输入' : '手动输入'}}</view>
-          </view>
-          <block wx:if="{{showPickupCoords[item.id]}}">
-            <view class="cluster" style="align-items:flex-start;">
-              <form-field label="纬度" style="flex:1;">
-                <input class="input" type="digit" value="{{item.lat}}" data-index="{{index}}" data-key="lat" bindinput="onPickup" />
-              </form-field>
-              <form-field label="经度" style="flex:1;">
-                <input class="input" type="digit" value="{{item.lng}}" data-index="{{index}}" data-key="lng" bindinput="onPickup" />
-              </form-field>
-            </view>
-          </block>
-          <view class="button text" hover-class="button-hover" data-index="{{index}}" catchtap="removePickup">移除此上车点</view>
-        </view>
-      </block>
-      <view wx:if="{{form.pickups.length}}" class="button secondary block" hover-class="button-hover" bindtap="addPickup">
-        <icon name="plus" size="18" color="#163E35" />
-        <text>添加上车点</text>
-      </view>
-      </view>
-    </view>
-
-    <!-- ========== 步骤 3：介绍（可选） ========== -->
-    <view wx:if="{{step === 2}}" class="stack-gap3">
-      <view class="section-head">
-        <text class="kicker">介绍（可选）</text>
-        <text class="section-title">想写就写，不写也能发布</text>
-        <text class="section-sub">写几句话、配几张图，报名的人更容易判断；不需要先建段落卡片。</text>
-      </view>
-
-      <content-editor
-        initial-content="{{form.content}}"
-        initial-cover="{{form.coverFileId}}"
-        reset-key="{{contentResetKey}}"
-        bind:change="onContentChange"
-        bind:busy="onContentBusy"
-      />
-
-      <view class="card stack-gap3">
-        <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleIntro">
-          <text class="row-title">简介与推荐理由（可选）</text>
-          <view class="cluster" style="gap:8px;">
-            <text wx:if="{{form.description || form.organizerIntro || form.highlightsText}}" class="badge success">已填写</text>
-            <text class="muted">{{expandedIntro ? '▾' : '›'}}</text>
-          </view>
-        </view>
-        <block wx:if="{{expandedIntro}}">
-          <form-field label="一句话简介" hint="一两句话；卡片和搜索会用">
-            <textarea class="textarea slim" value="{{form.description}}" maxlength="2000" placeholder="可选。比如：周末轻徒步，适合第一次上山的人" data-key="description" bindinput="onField" />
-          </form-field>
-          <form-field label="组织者与协作说明">
-            <textarea class="textarea slim" value="{{form.organizerIntro}}" maxlength="2000" placeholder="可选。谁带队、如何分工协作" data-key="organizerIntro" bindinput="onField" />
-          </form-field>
-          <form-field label="推荐理由" hint="一行一条；详情页会以要点展示">
-            <textarea class="textarea slim" value="{{form.highlightsText}}" maxlength="2000" placeholder="如：直面主峰，云海日出；路线成熟，适合有一定经验的爱好者" data-key="highlightsText" bindinput="onField" />
-          </form-field>
-        </block>
-      </view>
-      <text wx:if="{{contentBusy}}" class="small muted">图片正在上传/检查，完成后才能保存、发布或切换步骤。</text>
-    </view>
-
-    <!-- ========== 步骤 4：发布 ========== -->
-    <view wx:if="{{step === 3}}" class="stack-gap3">
-      <view class="section-head">
-        <text class="kicker">发布</text>
-        <text class="section-title">名额与可选说明</text>
-        <text class="section-sub">名额已默认 24 人、手动审核；不改也能直接发布。</text>
-      </view>
-
-      <view class="step-group">
-      <view class="card stack-gap3">
-        <view class="cluster" style="justify-content:space-between;">
-          <text class="section-title">名额与报名</text>
-          <text class="small muted">{{form.capacity}} 人 · {{form.approvalMode === 'manual' ? '手动审核' : '自动确认'}}</text>
-        </view>
-        <view class="cluster" style="align-items:flex-start;">
-          <form-field label="人数上限" hint="1–500 人，待审核与已确认都占名额" style="flex:1;">
-            <input class="input" type="number" value="{{form.capacity}}" data-key="capacity" bindinput="onField" />
-          </form-field>
-          <form-field label="报名确认方式" style="flex:1;">
-            <picker range="{{['组织者手动审核', '符合条件自动确认']}}" bindchange="onApproval">
-              <view class="picker">
-                <text class="picker-value">{{form.approvalMode === 'manual' ? '手动审核' : '自动确认'}}</text>
-                <text class="picker-arrow">▾</text>
-              </view>
-            </picker>
-          </form-field>
-        </view>
-        <checkbox-group bindchange="onAccepting">
-          <label class="check-label">
-            <checkbox color="#163E35" value="on" checked="{{form.acceptingSignups}}" />
-            <text class="check-text">发布后开放报名</text>
-          </label>
-        </checkbox-group>
-      </view>
-      </view>
-
-      <view class="step-group">
-        <view class="card stack-gap3">
-          <view class="cluster" style="justify-content:space-between;">
-            <text class="section-title">谁能看到这个活动</text>
-            <text class="small muted">{{form.visibility === 'link' ? '仅链接可见' : '公开到发现页'}}</text>
-          </view>
-          <picker range="{{['公开到发现页', '仅通过分享链接可见']}}" value="{{form.visibility === 'link' ? 1 : 0}}" bindchange="onVisibility">
-            <view class="picker">
-              <text class="picker-value">{{form.visibility === 'link' ? '仅通过分享链接可见' : '公开到发现页'}}</text>
-              <text class="picker-arrow">▾</text>
-            </view>
-          </picker>
-          <text class="small muted">{{form.visibility === 'link' ? '不出现在发现页；拿到分享链接的人仍可查看并报名。' : '发布后会出现在发现页，其他户外爱好者可以搜索到。'}}</text>
-        </view>
-      </view>
-
-      <view class="step-group">
-      <view class="card stack-gap3">
-        <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleDetailExtras">
-          <text class="row-title">活动说明与费用（可选）</text>
-          <view class="cluster" style="gap:8px;">
-            <text wx:if="{{form.leader || form.feeSummary || form.feeIncludesText || form.feeExcludesText || form.signupNote || form.minParticipants || form.sceneryRating || form.funRating}}" class="badge success">已填写</text>
-            <text class="muted">{{detailExtrasOpen ? '▾' : '›'}}</text>
-          </view>
-        </view>
-        <block wx:if="{{detailExtrasOpen}}">
-          <form-field label="领队/发起团队" hint="一行；如「友友部落领队天团」">
-            <input class="input" value="{{form.leader}}" maxlength="100" data-key="leader" bindinput="onField" />
-          </form-field>
-          <form-field label="成行人数" hint="只作展示；不填则只显示人数上限">
-            <input class="input" type="number" value="{{form.minParticipants}}" data-key="minParticipants" bindinput="onField" />
-          </form-field>
-          <view class="cluster" style="justify-content:space-between;">
-            <text class="field-label">风景指数</text>
-            <view class="cluster" style="gap:6px;">
-              <view wx:for="{{ratingOptions}}" wx:key="*this" class="chip {{form.sceneryRating >= item ? 'on' : ''}}" data-key="sceneryRating" data-value="{{item}}" bindtap="onRating">{{item}}</view>
-            </view>
-          </view>
-          <view class="cluster" style="justify-content:space-between;">
-            <text class="field-label">腐败指数</text>
-            <view class="cluster" style="gap:6px;">
-              <view wx:for="{{ratingOptions}}" wx:key="*this" class="chip {{form.funRating >= item ? 'on' : ''}}" data-key="funRating" data-value="{{item}}" bindtap="onRating">{{item}}</view>
-            </view>
-          </view>
-          <form-field label="费用摘要" hint="一行；详情页活动说明会显示">
-            <input class="input" value="{{form.feeSummary}}" maxlength="200" data-key="feeSummary" bindinput="onField" placeholder="如：住木屋 498/人；露营 398/人" />
-          </form-field>
-          <form-field label="费用包含" hint="一行一条">
-            <textarea class="textarea slim" value="{{form.feeIncludesText}}" data-key="feeIncludesText" bindinput="onField" placeholder="如：大巴&#10;住宿&#10;领队" />
-          </form-field>
-          <form-field label="费用不含" hint="一行一条">
-            <textarea class="textarea slim" value="{{form.feeExcludesText}}" data-key="feeExcludesText" bindinput="onField" placeholder="如：餐食&#10;中转车" />
-          </form-field>
-          <form-field label="报名后须知" hint="如拉群方式、行前准备；详情页会显示">
-            <textarea class="textarea slim" value="{{form.signupNote}}" maxlength="2000" data-key="signupNote" bindinput="onField" />
-          </form-field>
-        </block>
-      </view>
-      </view>
-
       <view class="step-group">
       <view class="card stack-gap3">
         <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleRisks">
@@ -632,15 +476,15 @@
       <view class="step-group">
       <view class="card stack-gap3">
         <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleExtras">
-          <text class="row-title">装备与费用说明（可选）</text>
+          <text class="row-title">装备清单（可选）</text>
           <view class="cluster" style="gap:8px;">
-            <text wx:if="{{form.equipmentText || form.equipmentSuggestedText || form.feeNote || form.cancellationNote}}" class="badge success">已填写</text>
+            <text wx:if="{{form.equipmentText || form.equipmentSuggestedText}}" class="badge success">已填写</text>
             <text style="color:var(--forest);font-weight:600;">{{editingExtras ? '完成' : '编辑'}}</text>
           </view>
         </view>
 
         <block wx:if="{{!editingExtras}}">
-          <block wx:if="{{form.equipmentText || form.equipmentSuggestedText || form.feeNote || form.cancellationNote}}">
+          <block wx:if="{{form.equipmentText || form.equipmentSuggestedText}}">
             <block wx:if="{{form.equipmentText}}">
               <text class="field-label">必带装备</text>
               <view class="cluster" style="margin-top:8px;">
@@ -653,16 +497,8 @@
                 <text wx:for="{{text.lines(form.equipmentSuggestedText)}}" wx:key="*this" class="badge neutral">{{item}}</text>
               </view>
             </block>
-            <block wx:if="{{form.feeNote}}">
-              <text class="field-label" style="display:block;margin-top:12px;">费用说明</text>
-              <text style="display:block;margin-top:4px;line-height:1.6;">{{form.feeNote}}</text>
-            </block>
-            <block wx:if="{{form.cancellationNote}}">
-              <text class="field-label" style="display:block;margin-top:12px;">取消与退出约定</text>
-              <text style="display:block;margin-top:4px;line-height:1.6;">{{form.cancellationNote}}</text>
-            </block>
           </block>
-          <text wx:else class="small muted">装备、费用与取消约定都不填也可以发布；点「编辑」补充。</text>
+          <text wx:else class="small muted">说明哪些必须带、哪些建议带，方便同行人行前检查。</text>
         </block>
 
         <block wx:else>
@@ -706,6 +542,87 @@
             </view>
             <text class="small muted">仅作建议，不当作必带承诺；可留空。</text>
           </view>
+        </block>
+      </view>
+      </view>
+
+    </view>
+
+    <!-- ========== 步骤 3：介绍（可选） ========== -->
+    <view wx:if="{{step === 2}}" class="stack-gap3">
+      <view class="section-head">
+        <text class="section-title">让同行人了解这次出行</text>
+        <text class="section-sub">介绍、照片与费用说明均为可选；不需要写成一篇长文章。</text>
+      </view>
+
+      <content-editor
+        initial-content="{{form.content}}"
+        initial-cover="{{form.coverFileId}}"
+        reset-key="{{contentResetKey}}"
+        bind:change="onContentChange"
+        bind:busy="onContentBusy"
+      />
+
+      <view class="card stack-gap3">
+        <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleIntro">
+          <text class="row-title">简介与推荐理由（可选）</text>
+          <view class="cluster" style="gap:8px;">
+            <text wx:if="{{form.description || form.organizerIntro || form.highlightsText}}" class="badge success">已填写</text>
+            <text class="muted">{{expandedIntro ? '▾' : '›'}}</text>
+          </view>
+        </view>
+        <block wx:if="{{expandedIntro}}">
+          <form-field label="一句话简介" hint="一两句话；卡片和搜索会用">
+            <textarea class="textarea slim" value="{{form.description}}" maxlength="2000" placeholder="可选。比如：周末轻徒步，适合第一次上山的人" data-key="description" bindinput="onField" />
+          </form-field>
+          <form-field label="组织者与协作说明">
+            <textarea class="textarea slim" value="{{form.organizerIntro}}" maxlength="2000" placeholder="可选。谁带队、如何分工协作" data-key="organizerIntro" bindinput="onField" />
+          </form-field>
+          <form-field label="推荐理由" hint="一行一条；详情页会以要点展示">
+            <textarea class="textarea slim" value="{{form.highlightsText}}" maxlength="2000" placeholder="如：直面主峰，云海日出；路线成熟，适合有一定经验的爱好者" data-key="highlightsText" bindinput="onField" />
+          </form-field>
+        </block>
+      </view>
+      <view class="step-group">
+      <view class="card stack-gap3">
+        <view class="cluster cluster-row-tap" style="justify-content:space-between;" hover-class="button-hover" bindtap="toggleDetailExtras">
+          <text class="row-title">活动说明与费用（可选）</text>
+          <view class="cluster" style="gap:8px;">
+            <text wx:if="{{form.leader || form.feeSummary || form.feeIncludesText || form.feeExcludesText || form.signupNote || form.minParticipants || form.sceneryRating || form.funRating || form.feeNote || form.cancellationNote}}" class="badge success">已填写</text>
+            <text class="muted">{{detailExtrasOpen ? '▾' : '›'}}</text>
+          </view>
+        </view>
+        <block wx:if="{{detailExtrasOpen}}">
+          <form-field label="领队/发起团队" hint="一行；如「友友部落领队天团」">
+            <input class="input" value="{{form.leader}}" maxlength="100" data-key="leader" bindinput="onField" />
+          </form-field>
+          <form-field label="成行人数" hint="只作展示；不填则只显示人数上限">
+            <input class="input" type="number" value="{{form.minParticipants}}" data-key="minParticipants" bindinput="onField" />
+          </form-field>
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="field-label">风景指数</text>
+            <view class="cluster" style="gap:6px;">
+              <view wx:for="{{ratingOptions}}" wx:key="*this" class="chip {{form.sceneryRating >= item ? 'on' : ''}}" data-key="sceneryRating" data-value="{{item}}" bindtap="onRating">{{item}}</view>
+            </view>
+          </view>
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="field-label">腐败指数</text>
+            <view class="cluster" style="gap:6px;">
+              <view wx:for="{{ratingOptions}}" wx:key="*this" class="chip {{form.funRating >= item ? 'on' : ''}}" data-key="funRating" data-value="{{item}}" bindtap="onRating">{{item}}</view>
+            </view>
+          </view>
+          <form-field label="费用摘要" hint="一行；详情页活动说明会显示">
+            <input class="input" value="{{form.feeSummary}}" maxlength="200" data-key="feeSummary" bindinput="onField" placeholder="如：住木屋 498/人；露营 398/人" />
+          </form-field>
+          <form-field label="费用包含" hint="一行一条">
+            <textarea class="textarea slim" value="{{form.feeIncludesText}}" data-key="feeIncludesText" bindinput="onField" placeholder="如：大巴&#10;住宿&#10;领队" />
+          </form-field>
+          <form-field label="费用不含" hint="一行一条">
+            <textarea class="textarea slim" value="{{form.feeExcludesText}}" data-key="feeExcludesText" bindinput="onField" placeholder="如：餐食&#10;中转车" />
+          </form-field>
+          <form-field label="报名后须知" hint="如拉群方式、行前准备；详情页会显示">
+            <textarea class="textarea slim" value="{{form.signupNote}}" maxlength="2000" data-key="signupNote" bindinput="onField" />
+          </form-field>
           <form-field label="费用说明" hint="仅说明费用，线下结算；不收款。">
             <textarea class="textarea slim" value="{{form.feeNote}}" data-key="feeNote" bindinput="onField" />
           </form-field>
@@ -716,43 +633,102 @@
       </view>
       </view>
 
+      <text wx:if="{{contentBusy}}" class="small muted">图片正在上传/检查，完成后才能保存、发布或切换步骤。</text>
+    </view>
+
+    <!-- ========== 步骤 4：发布 ========== -->
+    <view wx:if="{{step === 3}}" class="stack-gap3">
+      <view class="section-head">
+        <text class="section-title">{{isDraft ? '核对信息，准备发布' : '核对信息，保存修改'}}</text>
+        <text class="section-sub">确认出行安排、报名方式与可见范围。</text>
+      </view>
+
+      <view class="card editor-review">
+        <text class="editor-review-title">{{form.title || '活动名称待填写'}}</text>
+        <view wx:for="{{reviewRows}}" wx:key="key" class="editor-review-row {{busy || contentBusy ? 'disabled' : ''}}" data-step="{{item.step}}" data-section="{{item.section}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onReviewEdit'}}">
+          <view class="editor-review-main">
+            <text class="small muted">{{item.label}}</text>
+            <text class="editor-review-value">{{item.value}}</text>
+            <text wx:if="{{item.detail}}" class="small muted">{{item.detail}}</text>
+          </view>
+          <text class="editor-review-link">修改 ›</text>
+        </view>
+        <view class="button text {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onSavePreview'}}">保存并查看活动页预览 ›</view>
+      </view>
+
+      <view class="step-group">
+      <view class="card stack-gap3">
+        <view class="cluster" style="justify-content:space-between;">
+          <text class="section-title">名额与报名</text>
+          <text class="small muted">{{form.capacity}} 人 · {{form.approvalMode === 'manual' ? '手动审核' : '自动确认'}}</text>
+        </view>
+        <view class="cluster" style="align-items:flex-start;">
+          <form-field label="人数上限" hint="1–500 人，待审核与已确认都占名额" style="flex:1;">
+            <input class="input" type="number" value="{{form.capacity}}" data-key="capacity" bindinput="onField" />
+          </form-field>
+          <form-field label="报名确认方式" style="flex:1;">
+            <picker range="{{['组织者手动审核', '符合条件自动确认']}}" value="{{form.approvalMode === 'manual' ? 0 : 1}}" bindchange="onApproval">
+              <view class="picker">
+                <text class="picker-value">{{form.approvalMode === 'manual' ? '手动审核' : '自动确认'}}</text>
+                <text class="picker-arrow">▾</text>
+              </view>
+            </picker>
+          </form-field>
+        </view>
+        <checkbox-group bindchange="onAccepting">
+          <label class="check-label">
+            <checkbox color="#163E35" value="on" checked="{{form.acceptingSignups}}" />
+            <text class="check-text">发布后开放报名</text>
+          </label>
+        </checkbox-group>
+      </view>
+      </view>
+
+      <view class="step-group">
+        <view class="card stack-gap3">
+          <view class="cluster" style="justify-content:space-between;">
+            <text class="section-title">谁能看到这个活动</text>
+            <text class="small muted">{{form.visibility === 'link' ? '仅链接可见' : '公开到发现页'}}</text>
+          </view>
+          <picker range="{{['公开到发现页', '仅通过分享链接可见']}}" value="{{form.visibility === 'link' ? 1 : 0}}" bindchange="onVisibility">
+            <view class="picker">
+              <text class="picker-value">{{form.visibility === 'link' ? '仅通过分享链接可见' : '公开到发现页'}}</text>
+              <text class="picker-arrow">▾</text>
+            </view>
+          </picker>
+          <text class="small muted">{{form.visibility === 'link' ? '不出现在发现页；拿到分享链接的人仍可查看并报名。' : '发布后会出现在发现页，其他户外爱好者可以搜索到。'}}</text>
+        </view>
+      </view>
+
       <view wx:if="{{publishReady}}" class="callout success">
-        <text class="callout-title">必填项已齐，可以直接发布。</text>
+        <text class="callout-title">{{isDraft ? '必填信息已齐，确认后即可发布。' : '必填信息已齐，可以保存修改。'}}</text>
         <text class="small muted" style="display:block;margin-top:4px;">图文、路线、风险与费用都能发布后继续补。</text>
       </view>
-      <!-- 与第 1 步同构的分组清单：同一份 requiredGroups，不在模板里重算缺项 -->
       <view wx:else class="callout warning">
         <text class="callout-title">还差 {{requiredGroups.length}} 项</text>
-        <view wx:for="{{requiredGroups}}" wx:key="key" class="readiness-row">
+        <view wx:for="{{requiredGroups}}" wx:key="key" class="readiness-row {{busy || contentBusy ? 'disabled' : ''}}" data-key="{{item.key}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onFixRequired'}}">
           <text>{{item.label}}</text>
-          <text class="small muted">{{item.stepText}}</text>
+          <text class="small muted">去填写 ›</text>
         </view>
       </view>
     </view>
 
-    <view class="form-actions">
-      <view class="button secondary {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onSave'}}">{{saveLabel}}</view>
-      <view class="button secondary {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onSavePreview'}}">保存并预览</view>
+    <view wx:if="{{step < 3 && publishReady}}" class="editor-fast-track">
+      <text class="small muted">必填信息已齐，可跳过后续可选项。</text>
+      <view class="button text {{busy || contentBusy ? 'disabled' : ''}}" data-step="3" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'setStep'}}">直接去核对{{isDraft ? '发布' : '保存'}} ›</view>
     </view>
-    <text wx:if="{{draftSavedAt}}" class="small muted" style="text-align:center;">已在本机自动保存 · {{draftSavedAt}}</text>
-    <text class="small muted" style="text-align:center;">「{{saveLabel}}」会同步到云端，换设备也能继续；「保存并预览」先看一遍再发。</text>
+    <text class="small muted editor-save-note">本机自动保存不等于发布；「{{saveLabel}}」会同步到云端。</text>
   </view>
 
-  <!-- 固定底栏：必填齐了就把「发布活动」提为主操作，任意步骤都能直接发；「继续完善」仍可往下走。 -->
-  <view wx:if="{{!denied && !loading}}" class="sticky-action">
-    <view wx:if="{{step > 0}}" class="button text {{contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{contentBusy ? '' : 'prevStep'}}">上一步</view>
-    <block wx:if="{{step < 3}}">
-      <view wx:if="{{publishReady && isDraft}}" class="button primary block {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onPublishIntent'}}">发布活动</view>
-      <view wx:else class="button primary block {{contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{contentBusy ? '' : 'nextStep'}}" style="flex:1;">
-        <text>下一步</text>
-        <icon name="arrow" size="18" color="#FFFFFF" />
-      </view>
-      <view wx:if="{{publishReady && isDraft}}" class="button text {{contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{contentBusy ? '' : 'nextStep'}}">继续完善</view>
-    </block>
-    <!-- 第 4 步三态（D13）：草稿且齐 → 发布；草稿未齐 → 去补齐（不再点了被弹回第 1 步）；已发布 → 保存修改 -->
-    <view wx:if="{{step === 3 && isDraft && publishReady}}" class="button primary block {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onPublishIntent'}}">发布活动</view>
-    <view wx:elif="{{step === 3 && isDraft}}" class="button primary block {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onFixRequired'}}">去补齐</view>
-    <view wx:elif="{{step === 3}}" class="button primary block {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onSave'}}">保存修改</view>
+  <view wx:if="{{!denied && !loading}}" class="sticky-action editor-footer">
+    <view class="editor-footer-secondary">
+      <view wx:if="{{step > 0}}" class="button text {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'prevStep'}}">上一步</view>
+      <view wx:if="{{step < 3 || isDraft}}" class="button secondary {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onSave'}}">{{busy ? '保存中…' : saveLabel}}</view>
+    </view>
+    <view wx:if="{{step < 3}}" class="button primary {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'nextStep'}}">{{nextLabels[step]}}</view>
+    <view wx:elif="{{isDraft && publishReady}}" class="button primary {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onPublishIntent'}}">{{busy ? '保存中…' : '发布活动'}}</view>
+    <view wx:elif="{{isDraft}}" class="button primary {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onFixRequired'}}">去补齐必填项</view>
+    <view wx:else class="button primary {{busy || contentBusy ? 'disabled' : ''}}" hover-class="button-hover" bindtap="{{busy || contentBusy ? '' : 'onSave'}}">{{busy ? '保存中…' : '保存修改'}}</view>
   </view>
 
   <overlay open="{{deleteDraftOpen}}" kind="dialog" title="删除这份草稿？" bind:close="onDeleteDraftClose">
@@ -786,7 +762,7 @@
         </view>
         <view class="button text" hover-class="button-hover" bindtap="onDeferredFix">从第一项开始补 ›</view>
       </view>
-      <text>发布后参与者即可报名。报名、同行人和车辆数据不会自动创建。</text>
+      <text>{{form.acceptingSignups ? '发布后开放报名。' : '发布后暂不开放报名，可稍后在活动管理中开启。'}}报名、同行人和车辆数据不会自动创建。</text>
       <checkbox-group bindchange="onParticipate">
         <label class="check-label">
           <checkbox color="#163E35" value="on" checked="{{participate}}" />

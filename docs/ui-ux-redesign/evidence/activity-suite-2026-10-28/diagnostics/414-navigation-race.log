@@ -1,0 +1,16 @@
+PASS home has upcoming activity and list
+PASS 01-home rendered without denial
+PASS 01-home has activity UI scope
+PASS 01-home measured controls are at least 44px and inside viewport
+FAIL discover navigation preserves destination
+AssertionError [ERR_ASSERTION]: discover navigation preserves destination
+    at check (/Users/tushiyu/git/OurTrail/tools/verify-activity-suite-native.cjs:46:10)
+    at main (/Users/tushiyu/git/OurTrail/tools/verify-activity-suite-native.cjs:118:5)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}

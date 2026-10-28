@@ -1,0 +1,115 @@
+== 1. 首屏装配：参与者视角视图装配 / 闸门 / 编辑报名按用途回填 ==
+  ✓ onLoad 记录 activityId、默认 new 模式
+  ✓ 进入时处于 loading 态
+  ✓ 读取顺序：先活动（participant 视角）后档案
+  ✓ revision 取自活动读（后续提交做 CAS）
+  ✓ 装配完成不进 denied
+  ✓ 装配活动标题/余位/审核提示（manual）
+  ✓ 候选参与人 = 本人（默认勾选）+ 两位同行人（未勾选）
+  ✓ 参与人列表初始只含本人（深拷贝候选资料，可独立改）
+  ✓ 上车点选项 = 活动集合点（出行方式已独立成单选，不再混进同一个 picker）
+  ✓ 本地草稿恢复参与人与「整组同车」标记
+  ✓ 草稿空字段从最新档案补齐（已登记的紧急联系直接展示）
+  ✓ 补齐后资料齐 → complete=true（可折叠为一行）
+  ✓ 未开放报名：denied 且不装配表单
+  ✓ 档案没姓名：不抛红字 denied，交页面内微信资料门处理
+  ✓ 档案没姓名：profileGate + 自动弹层同时亮起
+  ✓ 档案读到手即回填草稿账号段（draft.setOpenId，12 §3）
+  ✓ 关闭资料门：只收 sheet，不解除必填状态
+  ✓ 重新打开资料门
+  ✓ 资料保存后清门并重读报名表
+  ✓ denied 视图透出原文
+  ✓ 档案不可用：引导去「我的」
+  ✓ automatic 模式审核提示切换
+  ✓ 编辑模式标记（signupId 决定）
+  ✓ 编辑模式先进用途门槛，不读报名资料
+  ✓ 空用途不放行（不发 readForm）
+  ✓ readForm 带 activityId/signupId/去空格后的用途
+  ✓ 回填：person/trip/consent 与 readForm 的 input 一致
+  ✓ editForm 带 signupId；原授权锁定；门槛关闭
+  ✓ 用途读取前刷新 revision（供提交 CAS）
+  ✓ readForm 失败：透出原因且不回填表单
+== 2. 参与人卡智能折叠：资料齐折叠 / 不齐自动展开 / 勾选即展开 ==
+  ✓ pickupValues = 集合点 id（picker 序号映射基准，不再混入 self 这一档）
+  ✓ 本人资料不齐 → complete=false（折叠行显示「待补全」徽标）
+  ✓ 不齐自动展开（expandedParts 标记）
+  ✓ 勾选新同行人 → 进入参与人列表并自动展开
+  ✓ 勾选同行人：深拷贝候选资料 + 默认 self 出行 + 默认未授权
+  ✓ 勾选同行人不影响已填本人
+  ✓ 资料齐的参与人 complete=true（可折叠为「资料齐」一行）
+  ✓ 资料齐不强制展开（无 expandedParts 标记）
+  ✓ 收合态点击展开
+  ✓ 再点收起
+  ✓ pickupIndexOf：shared 映射回集合点序号
+  ✓ pickupIndexOf：未知集合点 → -1（显示未选，不再冒充自行前往）
+  ✓ pickupIndexOf：self → -1（本来就不需要上车点）
+== 3. 必勾授权：未勾被拦 / 不发命令 / 自动展开有错的人 ==
+  ✓ 一个参与人都没选也被拦（不发命令）
+  ✓ dataUse/proxyAuthority 未勾：不发任何命令
+  ✓ 逐人点名授权错误（本人不要求 proxyAuthority）
+  ✓ 拦截时 busy/capacityAsk/failure 复位
+  ✓ 提交校验失败自动展开有错的人
+  ✓ 勾选即清错：本人的 dataUse 报错就地消失（数组形状 change 值）
+  ✓ 取消勾选不冒新报错（只清不加，不在输入过程新增拦截）
+  ✓ 布尔形状 change 值兼容（独立 checkbox 老语义）
+  ✓ 姓名/电话/紧急联系不合法同样拦下（format.validPhone，不发命令）
+  ✓ 授权勾齐后提交放行（signup.submit 先发出）
+  ✓ 报名成功后回写档案：表单紧急联系/备注与档案快照不同 → 追加一条 profile.save
+  ✓ 回写 person = 档案快照 + 表单四字段（紧急联系/备注进档案，命令键无多余）
+  ✓ 同行人资料与常用同行人一致 → 不回写（无 companion.save，不打多余命令）
+  ✓ 放行后用户可见反馈：toast + 跳活动页 + busy 复位
+== 4. 提交 payload：ParticipantInput 显式对齐 / UI 字段不泄漏 / signup.edit 带 signupId ==
+  ✓ 发出 signup.submit（后随一条档案回写）
+  ✓ payload 顶层 = type/activityId/participants/keepTogether/mode（无多余键）
+  ✓ expectedRevision = 页面 revision（CAS 基准）
+  ✓ participants 两位
+  ✓ 每位 = personRef/participant/trip/consent 四键（UI 附加 complete/pickupIndex/tripSummary/key/kindLabel 不泄漏）
+  ✓ 本人 personRef = user:p1
+  ✓ participant 原样映射 person（含 emergency/medical）
+  ✓ trip 映射 shared + 集合点 id
+  ✓ consent 原样透传
+  ✓ 同行人 personRef = companion 且带代报名授权
+  ✓ UI 附加字段痕迹不进 payload
+  ✓ 提交成功反馈：toast + redirect 回活动页 + busy 复位
+  ✓ 成功后清本地报名草稿
+  ✓ 正常提交不触发候补询问（capacityAsk 保持 false）
+  ✓ 回写合并档案快照：头像保留、紧急联系/备注来自表单
+  ✓ 编辑提交发 signup.edit（type/activityId/signupId/participant/trip/purpose，无多余键；后随档案回写）
+  ✓ 编辑 payload 带修改后的 person 与 trip（未驱动的 emergency 原样保留）
+  ✓ 编辑紧急联系人/电话映射到 emergency.name/phone（而非杂散键）
+  ✓ 编辑提交 expectedRevision = 用途读取刷新后的 revision
+  ✓ 编辑成功后同样回写档案（profile.save 基于同一 revision，无多余命令）
+  ✓ 编辑成功反馈：toast「修改已保存」+ redirect 回活动页带 signupId
+  ✓ 编辑校验失败：不发命令、busy 复位、点名电话
+== 5. CONFLICT 恢复：自动重读 + 提示 + 新 revision 重试成功 ==
+  ✓ 第一次提交基于旧 revision（1）
+  ✓ CONFLICT 后自动重读页面（activity + profile 各一次）
+  ✓ CONFLICT 提示「安排已被他人更新，已刷新，请重试」
+  ✓ 失败原因透出、busy 复位、不误入候补询问
+  ✓ 重读后 revision 刷新为 2（下次提交的 CAS 基准）
+  ✓ 重试基于重读后的 revision（2）——不再一直冲突
+  ✓ 重试成功后追加档案回写（profile.save 基于重读后的 revision）
+  ✓ 重试成功：toast「报名已提交」+ redirect 回活动页
+== 6. 同行人增删：勾选/移除/逐项编辑互不串扰 ==
+  ✓ 勾选同行人 → 列表新增一行并自动展开
+  ✓ 勾选同行人不影响已填本人
+  ✓ 取消勾选 → 从参与人列表移除
+  ✓ 移除后本人资料原样保留
+  ✓ 编辑本人姓名生效且其余字段不动
+  ✓ 紧急联系电话写进 emergency.phone（与本人电话互不串扰）
+  ✓ 勾选资料使用授权
+  ✓ 选「搭乘车辆」+ 集合点 → trip 变 shared+pickupPointId
+  ✓ 选了搭乘车辆 ⇒ needsVehicle 打开（同车约束问题这时才有意义）
+  ✓ 取消「整组同车」生效并写入本地草稿
+  ✓ tripLabel：self → 自行前往；shared → 搭乘车辆 · 集合点名；未知集合点 → 搭乘车辆 · 上车点信息缺失
+== 7. 满员整组候补：CAPACITY 询问 + waitlist 模式整组提交 ==
+  ✓ 名额未满：无候补询问（capacityAsk=false，WXML 仅在 true 时渲染候补勾选）
+  ✓ 首次仍以 apply 模式提交
+  ✓ CAPACITY 后打开候补询问且不当作普通失败
+  ✓ CAPACITY 不弹「报名已提交」
+  ✓ 确认候补后以 waitlist 模式整组重提（signup.submit + mode=waitlist）
+  ✓ 候补提交带同一组参与人与整组同车标记
+  ✓ 候补提交沿用同一 revision（CAPACITY 路径不重读）
+  ✓ 候补成功反馈：toast「报名已提交」+ redirect 回活动页
+
+passed=106 failed=0 skipped=0

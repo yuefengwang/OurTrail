@@ -1,0 +1,6 @@
+Error: Failed connecting to ws://127.0.0.1:9427, check if target project window is opened with automation enabled
+    at Launcher.connectTool (/private/tmp/ourtrail-editor-native-qa/node_modules/miniprogram-automator/out/Launcher.js:1:3285)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Launcher.connect (/private/tmp/ourtrail-editor-native-qa/node_modules/miniprogram-automator/out/Launcher.js:1:2861)
+    at async Automator.connect (/private/tmp/ourtrail-editor-native-qa/node_modules/miniprogram-automator/out/Automator.js:1:1469)
+    at async main (/Users/tushiyu/git/OurTrail/tools/verify-activity-suite-native.cjs:92:10)
