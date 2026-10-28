@@ -1,0 +1,29 @@
+PASS home root opts into the activity design system
+PASS discover root opts into the activity design system
+PASS activity root opts into the activity design system
+PASS editor root opts into the activity design system
+PASS signup root opts into the activity design system
+PASS workspace root opts into the activity design system
+PASS tasks root opts into the activity design system
+PASS vehicle root opts into the activity design system
+PASS staff root opts into the activity design system
+PASS anotices root opts into the activity design system
+PASS weather does not inherit activity-specific overrides
+PASS weather-hub does not inherit activity-specific overrides
+PASS weather-plan does not inherit activity-specific overrides
+PASS weather-chart does not inherit activity-specific overrides
+PASS routes does not inherit activity-specific overrides
+PASS route does not inherit activity-specific overrides
+PASS me does not inherit activity-specific overrides
+PASS notices does not inherit activity-specific overrides
+PASS roster-panel uses shared styles and activity scope
+PASS transport-panel uses shared styles and activity scope
+PASS field-panel uses shared styles and activity scope
+PASS shared activity styling has no raw colors or new tokens
+PASS shared activity helpers have one global source
+PASS draft save is secondary and remains busy guarded
+PASS signup header identifies the real activity and footer counts real participants
+PASS participant selection still binds dataset to the group
+PASS panel tabs retain state and sibling write invalidation
+PASS workspace summary keeps cross-panel navigation in compact mode
+passed=28 failed=0 (source contracts only; native evidence is separate)

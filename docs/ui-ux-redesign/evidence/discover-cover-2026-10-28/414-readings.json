@@ -1,0 +1,338 @@
+{
+  "checkedAt": "2026-10-28T11:54:53.766Z",
+  "source": "real discover read; component-only layout fixtures restored after checks; no cloud writes",
+  "checks": [
+    {
+      "name": "real discover read succeeds",
+      "pass": true
+    },
+    {
+      "name": "real card uses flat compact variant",
+      "pass": true
+    },
+    {
+      "name": "real-list: cover width is 104px",
+      "pass": true
+    },
+    {
+      "name": "real-list: cover follows text column height",
+      "pass": true
+    },
+    {
+      "name": "real-list: image fills cover without an empty band",
+      "pass": true
+    },
+    {
+      "name": "real-list: image and title do not overlap",
+      "pass": true
+    },
+    {
+      "name": "real-list: row stays inside viewport",
+      "pass": true
+    },
+    {
+      "name": "real-list: cover uses page gutter without duplicate inset",
+      "pass": true
+    },
+    {
+      "name": "real-list: title is intact",
+      "pass": true
+    },
+    {
+      "name": "long-title: cover width is 104px",
+      "pass": true
+    },
+    {
+      "name": "long-title: cover follows text column height",
+      "pass": true
+    },
+    {
+      "name": "long-title: image fills cover without an empty band",
+      "pass": true
+    },
+    {
+      "name": "long-title: image and title do not overlap",
+      "pass": true
+    },
+    {
+      "name": "long-title: row stays inside viewport",
+      "pass": true
+    },
+    {
+      "name": "long-title: cover uses page gutter without duplicate inset",
+      "pass": true
+    },
+    {
+      "name": "long-title: title is intact",
+      "pass": true
+    },
+    {
+      "name": "failed cover leaves no empty image column",
+      "pass": true
+    },
+    {
+      "name": "failed cover preserves title",
+      "pass": true
+    },
+    {
+      "name": "non-flat compact cards retain their existing dimensions",
+      "pass": true
+    },
+    {
+      "name": "restored-real-list: cover width is 104px",
+      "pass": true
+    },
+    {
+      "name": "restored-real-list: cover follows text column height",
+      "pass": true
+    },
+    {
+      "name": "restored-real-list: image fills cover without an empty band",
+      "pass": true
+    },
+    {
+      "name": "restored-real-list: image and title do not overlap",
+      "pass": true
+    },
+    {
+      "name": "restored-real-list: row stays inside viewport",
+      "pass": true
+    },
+    {
+      "name": "restored-real-list: cover uses page gutter without duplicate inset",
+      "pass": true
+    },
+    {
+      "name": "restored-real-list: title is intact",
+      "pass": true
+    },
+    {
+      "name": "no uncaught runtime errors",
+      "pass": true
+    }
+  ],
+  "measurements": [
+    {
+      "name": "real-list",
+      "thumb": {
+        "size": {
+          "width": 104,
+          "height": 128
+        },
+        "offset": {
+          "left": 20,
+          "top": 421
+        },
+        "text": ""
+      },
+      "heading": {
+        "size": {
+          "width": 258,
+          "height": 128
+        },
+        "offset": {
+          "left": 136,
+          "top": 421
+        },
+        "text": "[预演] 状态矩阵E2E-7cm7\n行前准备\n02/06 周六\n·\n6 km\n·\n200 m\n路线\n已确认 2/12"
+      },
+      "cover": {
+        "size": {
+          "width": 104,
+          "height": 128
+        },
+        "offset": {
+          "left": 20,
+          "top": 421
+        },
+        "text": ""
+      },
+      "title": {
+        "size": {
+          "width": 208,
+          "height": 24
+        },
+        "offset": {
+          "left": 136,
+          "top": 421
+        },
+        "text": "[预演] 状态矩阵E2E-7cm7"
+      },
+      "frame": {
+        "size": {
+          "width": 374,
+          "height": 161
+        },
+        "offset": {
+          "left": 20,
+          "top": 405
+        },
+        "text": "[预演] 状态矩阵E2E-7cm7\n行前准备\n02/06 周六\n·\n6 km\n·\n200 m\n路线\n已确认 2/12"
+      }
+    },
+    {
+      "name": "long-title",
+      "thumb": {
+        "size": {
+          "width": 104,
+          "height": 276
+        },
+        "offset": {
+          "left": 20,
+          "top": 421
+        },
+        "text": ""
+      },
+      "heading": {
+        "size": {
+          "width": 258,
+          "height": 276
+        },
+        "offset": {
+          "left": 136,
+          "top": 421
+        },
+        "text": "排版验收样例·长标题MountainTrail山间徒步长标题MountainTrail山间徒步长标题MountainTrail山间徒步长标题MountainTrail山间徒步长标题MountainTr\n行前准备\n11/07 周六\n·\n挑战\n·\n98.8 km\n·\n9999 m\n仅用于本地排版核验的路线名称仅用于本地排版核验的路线名称仅用于本地排版核验的路线名称仅用于本地排版核验的路线名称\n已确认 2/12"
+      },
+      "cover": {
+        "size": {
+          "width": 104,
+          "height": 276
+        },
+        "offset": {
+          "left": 20,
+          "top": 421
+        },
+        "text": ""
+      },
+      "title": {
+        "size": {
+          "width": 258,
+          "height": 144
+        },
+        "offset": {
+          "left": 136,
+          "top": 421
+        },
+        "text": "排版验收样例·长标题MountainTrail山间徒步长标题MountainTrail山间徒步长标题MountainTrail山间徒步长标题MountainTrail山间徒步长标题MountainTr"
+      },
+      "frame": {
+        "size": {
+          "width": 374,
+          "height": 309
+        },
+        "offset": {
+          "left": 20,
+          "top": 405
+        },
+        "text": "排版验收样例·长标题MountainTrail山间徒步长标题MountainTrail山间徒步长标题MountainTrail山间徒步长标题MountainTrail山间徒步长标题MountainTr\n行前准备\n11/07 周六\n·\n挑战\n·\n98.8 km\n·\n9999 m\n仅用于本地排版核验的路线名称仅用于本地排版核验的路线名称仅用于本地排版核验的路线名称仅用于本地排版核验的路线名称\n已确认 2/12"
+      }
+    },
+    {
+      "name": "restored-real-list",
+      "thumb": {
+        "size": {
+          "width": 104,
+          "height": 128
+        },
+        "offset": {
+          "left": 20,
+          "top": 421
+        },
+        "text": ""
+      },
+      "heading": {
+        "size": {
+          "width": 258,
+          "height": 128
+        },
+        "offset": {
+          "left": 136,
+          "top": 421
+        },
+        "text": "[预演] 状态矩阵E2E-7cm7\n行前准备\n02/06 周六\n·\n6 km\n·\n200 m\n路线\n已确认 2/12"
+      },
+      "cover": {
+        "size": {
+          "width": 104,
+          "height": 128
+        },
+        "offset": {
+          "left": 20,
+          "top": 421
+        },
+        "text": ""
+      },
+      "title": {
+        "size": {
+          "width": 208,
+          "height": 24
+        },
+        "offset": {
+          "left": 136,
+          "top": 421
+        },
+        "text": "[预演] 状态矩阵E2E-7cm7"
+      },
+      "frame": {
+        "size": {
+          "width": 374,
+          "height": 161
+        },
+        "offset": {
+          "left": 20,
+          "top": 405
+        },
+        "text": "[预演] 状态矩阵E2E-7cm7\n行前准备\n02/06 周六\n·\n6 km\n·\n200 m\n路线\n已确认 2/12"
+      }
+    }
+  ],
+  "errors": [],
+  "system": {
+    "brand": "devtools",
+    "model": "Mac 21-inch and above",
+    "system": "macOS 10.14.3",
+    "platform": "devtools",
+    "benchmarkLevel": -1,
+    "pixelRatio": 2,
+    "screenWidth": 414,
+    "screenHeight": 896,
+    "windowWidth": 414,
+    "windowHeight": 896,
+    "statusBarHeight": 20,
+    "safeArea": {
+      "top": 20,
+      "left": 0,
+      "right": 414,
+      "bottom": 896,
+      "width": 414,
+      "height": 876
+    },
+    "language": "zh_CN",
+    "version": "8.0.5",
+    "fontSizeSetting": 16,
+    "SDKVersion": "3.8.12",
+    "host": {
+      "env": "WeChat"
+    },
+    "enableDebug": false,
+    "mode": "default",
+    "deviceOrientation": "portrait",
+    "bluetoothEnabled": true,
+    "locationEnabled": true,
+    "wifiEnabled": true,
+    "albumAuthorized": true,
+    "cameraAuthorized": true,
+    "locationAuthorized": true,
+    "microphoneAuthorized": true,
+    "notificationAuthorized": true,
+    "notificationAlertAuthorized": true,
+    "notificationBadgeAuthorized": true,
+    "notificationSoundAuthorized": true,
+    "phoneCalendarAuthorized": true,
+    "bluetoothAuthorized": true,
+    "locationReducedAccuracy": true,
+    "devicePixelRatio": 2
+  },
+  "realResultCount": 50
+}
