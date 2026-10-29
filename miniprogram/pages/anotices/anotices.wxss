@@ -1,8 +1,261 @@
-/* 通知列表：复用全局 notice-card / overlay 体系
-   B4-PAD（M-18 / E-03）：这一行原来抄的是 tab 页专用的底部留白（基线 32px 之上再加 84px 底栏位与安全区），
-   但本页不在 `app.json` 的 `tabBar.list` 里——它是从活动详情/工作台用 navigateTo 打开的**子页**，
-   微信不会为它渲染 custom-tab-bar，那 84px 是给一个不存在的底栏预留的（列表只有一两条通知时尤其明显）。
-   ⇒ 页尾留白由 app.wxss 的 `.page` 基线承载，本页不再写任何覆盖。
-   规则与判据：design-system.md「Tab 页底部留白（唯一规则）」+ `node tools/b4-pad-final-value-test.js` §3。
-   （故意不在注释里重印那条 calc 表达式：`tools/g2-platform-gate-test.js` §6 是按文本找这份公式的，
-     注释里重印会让它以为这一行还在 ⇒ 判据形态的教训见铁律 30。） */
+/* 活动内通知：与 tab 版正文同构（M-18），页头差异留在 section-head；
+   本页不在 tabBar.list 里，底部留白只吃 app.wxss 的 .page 基线，不写 84px。 */
+.anotices-page {
+  background: var(--white);
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+.anotices-head { margin-top: 16px; }
+.notice-body { padding: 0 20px 18px; }
+
+.notice-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 18px;
+}
+.view-switch {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 2px;
+  border-radius: var(--radius-button);
+  background: var(--stone);
+}
+.view-switch__btn {
+  min-height: 44px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: var(--radius-tag);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+.view-switch__btn.on { background: var(--white); color: var(--ink); font-weight: 600; }
+.view-switch__count { font-size: 12px; }
+.activity-filter {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 4px;
+  color: var(--forest);
+  font-size: 12px;
+  font-weight: 600;
+}
+.activity-filter__label {
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.date-group { padding-top: 16px; }
+.date-group__head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.date-group__day { color: var(--ink); font-size: 14px; line-height: 20px; font-weight: 600; }
+.date-group__sub { color: var(--muted); font-size: 12px; line-height: 18px; }
+.date-group__line { flex: 1; height: 1px; background: var(--line); }
+
+.notice-row {
+  display: grid;
+  grid-template-columns: 52px 8px minmax(0, 1fr);
+  gap: 0 8px;
+  min-height: var(--touch-target);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--radius-button);
+}
+.notice-row--tap { background: var(--paper); }
+.notice-row.unread {
+  padding-left: 8px;
+  padding-right: 8px;
+  margin-left: -8px;
+  margin-right: -8px;
+  background: linear-gradient(90deg, var(--forest-soft), var(--white) 72%);
+}
+.notice-row__time {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+  padding-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.notice-row__dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--stone-line);
+}
+.notice-row.unread .notice-row__dot {
+  background: var(--forest);
+  box-shadow: 0 0 0 3px var(--forest-soft);
+}
+.notice-row__main { min-width: 0; }
+.notice-row__activity { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.notice-row__activity-name {
+  color: var(--forest);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notice-row__copy {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 22px;
+}
+.notice-row.unread .notice-row__copy { font-weight: 600; }
+.notice-row__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+.notice-row__state { color: var(--muted); }
+.notice-row__view { display: flex; align-items: center; gap: 2px; color: var(--forest); font-weight: 600; }
+.chev { font-size: 16px; line-height: 16px; }
+
+.feed-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 22px 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+.feed-foot__line { width: 20px; height: 1px; background: var(--line); }
+
+.notice-state { padding: 40px 20px 28px; text-align: center; }
+.notice-state__icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--white);
+}
+.notice-state__title { display: block; color: var(--ink); font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -0.3px; }
+.notice-state__detail {
+  display: block;
+  max-width: 280px;
+  margin: 8px auto 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+.notice-state .button { margin-top: 16px; }
+
+.notice-skeleton { padding: 18px 20px 0; }
+.sk-date { width: 90px; height: 10px; border-radius: var(--radius-tag); background: var(--stone); margin-bottom: 12px; }
+.sk-row {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+  min-height: 78px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.sk-time { width: 32px; height: 9px; border-radius: var(--radius-tag); background: var(--stone); }
+.sk-lines { display: flex; flex-direction: column; }
+.sk-line {
+  height: 9px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-tag);
+  background: var(--stone);
+  opacity: 0.7;
+}
+.sk-line { width: 64%; }
+.sk-line--wide { width: 94%; height: 12px; }
+.sk-line--short { width: 45%; }
+
+.sheet-notice-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+.sheet-notice-copy {
+  display: block;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 26px;
+  white-space: pre-line;
+}
+.linked-trip {
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+}
+.linked-trip__label { display: block; color: var(--forest); font-size: 12px; line-height: 18px; font-weight: 600; letter-spacing: 0.6px; }
+.linked-trip__title { display: block; margin-top: 4px; color: var(--ink); font-size: 16px; line-height: 22px; font-weight: 600; }
+.linked-trip__meta { display: flex; align-items: flex-start; gap: 6px; margin-top: 6px; color: var(--muted); font-size: 12px; line-height: 18px; }
+.sheet-footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+.sheet-actions { display: flex; gap: 12px; margin-top: 16px; }
+.sheet-actions .button { flex: 1; }
+
+.filter-sheet { padding-top: 4px; }
+.activity-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--touch-target);
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 20px;
+}
+.activity-option:last-child { border-bottom: 0; }
+.activity-option.on { color: var(--forest); font-weight: 600; }
+.activity-option__count { color: var(--muted); font-size: 12px; }
+.filter-check { color: var(--forest); font-size: 16px; }
+
+.notice-publish { margin-top: 12px; }
+.notice-message { display: block; margin-top: 12px; }

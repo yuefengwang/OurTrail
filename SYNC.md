@@ -1747,3 +1747,52 @@ D2 前两版量错对象——真节点行套在 `<block wx:if="{{routeDetailsOp
 **页头占位修复（同日追加，用户「把页头占位符布局的修复也带上」）**：上一段留的 ① 已修。根因不是文案，是**一个字段被两态共用却没有占位**——`placeSub` / `nodeOptions` / `isPoint` 只在成功装配时产出，于是「正在查询」与「这次没取到」两态下页头节点行只剩图钉＋箭头（`.wv3-node` 的 `min-height:27px` 把空位撑住，看着像渲染坏了），点开还是一个**空弹层**。修法：把「地点侧字段」抽成 `weather-v3-view.js` 的四个导出（`isPointPlace` / `placeNameText` / `placeSubText` / `nodeOptionsOf`），组件 `syncHeader()` 在 `resetContext()` 与 `onNodePick()` 各调一次（无结果时 `rebuild()` 静默返回 ⇒ 换节点后旧文案必须自己跟上），`buildDetailView` 改成调同一批函数 ⇒ **占位句与数据到位后那句话是同一个字符串**，不是两份文案在赛跑；零新增状态词（复用 `未命名地点` / `海拔待确认`）。顺带修两个同源毛病：缺海拔仍印「海拔待确认」不印 0 m；节点没名字时不留悬空分隔符（旧输出 ` · 3,200 m`）。**判据**：`structure 133→144`（§9 十条，含反复制门：组件 JS 里不得再出现坐标/待确认/未命名地点字面量，坐标格式化本体全仓只许一处）、`scenario-weather-v3 59→71`（§8 十二条走真组件：在途、三次重试全失败、失败态换节点、装配与占位逐字相同）、`mutate 18→24 / 0 漏网`（M13 悬空分隔符、M14 缺海拔印 0、M15 选中位恒指第一项、M16 装配另拼一份页头）。**一条既有静态门被本轮证伪并改写**：它用正则钉 `nodeOptions: allNodes.map(...)` 的**源码文本**，把表达式搬进具名函数（行为一模一样）就假红 ⇒ 按铁律 30① 改成打真实 `nodeOptionsOf` 读行为，没删断言。**真机 VERIFIED**（再重编译一次；9431 拿到后掉线 ⇒ 重走 close/open/auto 换 9432）：`tools/drive-header.js` **10 条全 ✓**——加载在途那一帧 `loading===true` 且节点行已是「取证观景台 · 3,800 m」（旧 bundle 此时是空串 ⇒ 这条同时是 bundle 新鲜度门），数据到位后逐字不变；日期超范围态节点行仍是「取证营地 · 3,500 m」，换节点后文案与选中位一起移动；像素 `after-header-loading.png` / `after-header-error.png` + `header-readings.json`。**两处驱动假红当场修**（探针把映射后的字符串数组当原始对象读），不计产品红。取证边界：地点是注入的生产形状载荷（三个命名节点），天气与状态机走真实通路。**仍留裁决**：② 首页空态下方约一整屏留白；③ 风行标签「方向前缀 + 裸速度」交错（350 宽时步长 37.6px、未测到碰撞，属节奏问题）。
 
 **边界**：`cloudfunctions/` 零改动 ⇒ **不需要重新部署**；未 commit / 未 push；375/414 未取。
+
+**2026-10-29 「我的」页按 UI Lab B · 山野档案 v3 实施（布局 1:1）**
+
+用户要求把 `D:\OurTrail_UI_Lab\ourtrail-expansion\profile\option-b.html` 1:1 落到小程序 `pages/me`。`handoff.md` 记录该方案已选型（B v3，用户参考图驱动）。五处裁决：① 布局像素级 1:1、字号按小程序规范放大（9–11px → 12/14/16/18/21）；② 只显示真实数据——头图用本地 `cover-snow.jpg` 并标「配图示意」，签名行不出现，履历栏四项全部真实（同行 = 进行中 + 已完成 / 进行中 / 路线库 / 由我发起）；③ 协作码**按原型删除**（接受路线共享与活动协作授权的自我获取入口暂时缺失，另开一轮补替代）；④ 扩展 me 视图并重部署；⑤ 授权重开 DevTools 真机。
+
+**生产改动（客户端 7 个 + 云函数 2 个投影）**
+- `pages/me/me.wxml` 全量重排：头图 + 身份叠加（头像 72 / 白 3px 描边）→ 待完善暖卡 → 履历四格 → 我的行程（下一程大卡 82px 封面 + 紧凑行）→ 同行与安全（安全卡 3 行 / 同行人胶囊横滑 / 路线库行 / 位置授权汇总行）→ 页脚「每一程，都值得一起走」。空态只收「我的行程」，**安全区保留**（安全资料与活动无关，原型 empty 隐藏属演示缺陷）；denied 用头图 + gate + 重新尝试，不照抄「微信身份就绪」（小程序无此态）。
+- `pages/me/me.wxss` 全量重写：只用 `app.wxss` token（零 `#hex` / `rgba`），四档字号 12/14/16/18/21，触控 44；零阴影（头像白描边用 `box-shadow: 0 0 0 3px var(--white)`）；安全行副标题允许两行（原型 9px 单行省略，放大后会把路线库关键半句截掉）。
+- `pages/me/me.js`：删 `displayIdentity` / `abbreviate` / `onCopyIdentity`；新增 `ledgerOf` / `decorateTrip` / `positionSummaryOf` 三个纯派生；`tripNext` 只在「未来 + 进行中阶段」才印「下一程」，已归档/取消/过期一律「最近一场」（不把走完的活动包装成期待）；新增同行人管理 sheet、位置授权 sheet、隐私指引 sheet（完整指引仍跳 `pages/privacy`，页面可达）、资料编辑面（未激活=完善/已激活=编辑）；保留自动保存、草稿 v2、错误三作用域、头像上传、微信手机号、位置撤回、busy 自愈、revision CAS。
+- `utils/format.js`：新增 `fullDateLabel`（`10月31日 周六`）与 `shortDate`（`10/31`），导出。
+- `components/icon/icon.js`：新增 `phone` 线性图标（24 网格）。
+- `domain/selectors.js`（生产 + lab 双份，已 `sync-lab`）：`stats.routes`（只算本人创建，含活动发布时沉淀的私有路线）+ `recent[].pickupName`（首个上车点，无则空串——不拿活动标题冒充集合点）。
+- `route.wxml` / `roster-panel.wxml` 三处「让对方在『我的』页复制协作码/身份码」改为「由对方提供」——协作码入口删除后不能再把人指向不存在的路径。
+- `smoke-test §16a`：stats.routes 三例（0 / 活动沉淀 1 / 新建 2 / 他人 0）+ recent keys 加 `pickupName` 与「茶店子」回填。
+
+**判据（读数取脚本自打印 `passed=`，全部 exit 0）**
+`check.js` ALL CHECKS PASSED（G7/G8/G11 恢复工作：初版 `@media` 让三条门拒绝工作，已删；G10 命中 0）· `check-handlers` 36 handlers 相符（死 handler 仍只有存量 `editor#onNumber`）· `smoke 287` · `scenario-me 160`（新增 §11 十七条：履历四项 / 大卡派生 / 取消不叫下一程 / 位置汇总 / 三个 sheet / 资料面模式；§1 协作码三条**替换**为「页面不再提供」）· `personal-route-layout 75`（overlay 7→10；判据主语从 `profile-identity/profile-stats` 换成 `ident-card/trail-log`；新增头图 148 / 头像 72 / 大卡 82 / 履历四格 / 安全三行 / 胶囊横滑 / 零发明色值）· `swx2 108`（T5.1 字重 700 全部收 600；T8.3/T8.4 主语从 `.nick-wrap` 换成 `.ident-main`，钉 flex:1 + min-width:0 + 单一出处）· `m02 65`（U2a 覆盖下限 10→8：me 页 `.card-label` 使用点 7→1，全仓实测 8）· `nav-chrome 15` · `b4-pad 33` · `t4-e08 41` · `swx1 45` · `journey-graph 15` · `ui-consistency 19` · `scenario-activity 212` · `scenario-editor 227` · `scenario-discover 60` · `scenario-signup 106` · `scenario-workspace 125` · `scenario-notices 105` · `scenario-tasks 34` · `scenario-staff 26` · `scenario-vehicle 66` · `scenario-profile-gate 19` · `routes 75` · `gpx 62` · `lab-dryrun 165` · `e2e-test 72`。
+
+**部署**：`cli cloud functions deploy --env cloud1-d9ghcm034574b9d55 --names trailApi trailApiLab --project 'D:\OurTrail' --remote-npm-install` 成功（30 / 23 files）。线上真实账号回读 `stats.routes = 2`、大卡集合点「东门集合点」，证明两个新字段已生效。
+
+**真机 VERIFIED（390 宽 IDE 模拟器，端口 9421）**：`me-drive.js` **17/0**（头图 148、头像 72、履历四格、安全三行、页脚、四态截图）+ `me-lower.js` **6/0**（下半屏安全区 5 个标题、同行人条、路线库行、位置行、页脚）。真实数据：走查用户 / ongoing 1 / routes 2 / recent 1（走查测试活动，已过期 ⇒ 「最近一场 · 你发起」而不是「下一程」）。截图 5 张在 `docs/ui-ux-redesign/evidence/me-v3-2026-10-29/`。
+
+**一条硬教训：PowerShell `Set-Content -Encoding UTF8` 给 `me.wxss` 写了 BOM，IDE 报「编译 .wxss 文件错误」，模拟器白屏、automator 全部请求超时（`timeout waiting for automator response`）。** 用 `[IO.File]::WriteAllText(..., UTF8Encoding($false))` 去掉 BOM 后一次恢复。`check.js` 不查 BOM；以后改仓库源文件一律用编辑工具，绝不用 `Set-Content`。
+
+**1:1 例外（登记，不假装逐像素）**：圆角 15/13/12 → token 14/8；阴影 → 白描边 + 细线；原型 `#16783e` → `--forest`；9–11px → 12/14（否则真机不可读）；头图固定本地照并标「配图示意」；空态保留安全区；denied 不冒充「未登录」；原型 `@media(max-width:380px)` 收一档因项目 G7 门不支持嵌套 at-rule，未做 375/414 分档。**未覆盖**：375/414 宽度、真机上同行人 >0 的胶囊横滑、有位置授权（可撤回/已过期）的 sheet 态、物理手机。
+
+**边界**：`cloudfunctions/` **已改 ⇒ 需要重新部署 trailApi**（本轮已部署）；未 commit / 未 push；用户未跟踪文件未动。
+
+**2026-10-29 通知页按 UI Lab A · 行动流 1:1 实施（两页同构）**
+
+用户要求通知页也按原型同步。`docs/expansion/handoff.md` 记录通知 A 已定稿；本次把 `pages/notices` 从卡式列表重排为**日期分组的行动流**，并同步 `pages/anotices`（活动内通知）保持 M-18 正文同构，页头仍各走各的（tab 自绘品牌栏 / 子页原生导航）。字号按小程序规范放大（原型 9–13px → 12/14/16/24），色值/圆角只用 token。
+
+**生产改动**
+- `domain/selectors.js`（生产 + lab）：`kind:'notices'` 投影补 `activityTitle` / `activityStartAt` / `pickupName`。行动流行头要回答「哪场活动」，详情卡的关联活动要出发时刻与集合点；不改权限面（能读通知的人本来就能读该活动公开摘要）。`smoke` 新增「三字段来自真实关联活动」。
+- `utils/notices-page.js`：新增 `dayInfoOf/groupByDay/activityOptionsOf` 三个纯派生、`filteredOf`（全部/未读 + 活动两层过滤）、`applyItems` 同时产出 `groups/unreadCount/totalCount/filteredCount/emptyKind/activityOptions/filterLabel`；保留 `items` 全量与 `visibleItems` 语义（anotices 旧断言仍成立）。新增 `onSetView/onOpenFilter/onSelectActivity/onOpenNotice/onCloseNotice/onRefresh/onOpenDiscover`；`onMarkRead` 成功后收起详情 + toast；发布、复制、投递、分批、失败语义全部保留。
+- `pages/notices/{notices.wxml,notices.wxss}`：标题 + 未读徽标 + 刷新圆钮 → 说明 → 全部/未读分段 + 活动筛选 → 条数/最新在上 → 日期分组（今天/昨天/月日 + 周几）→ 行（52px 时间列 / 圆点 / 活动名 / 两行摘要 / 未读/已读 + 查看）→ 末尾「安排有变化，这里会留下记录」；未读行浅绿渐变底 + 左侧绿点；空态三分支（无通知/未读处理完/该活动无通知）各有出口；加载用日期条 + 三行骨架；详情 sheet 含正文、关联活动、脚注、标记已读/查看活动、owner 复制与投递。
+- `pages/anotices/{anotices.wxml,anotices.wxss}`：正文按同一结构与类名重排（页头仍是 section-head），底部保持子页基线（不抄 84px）。
+- `components/icon/icon.js`：新增 `refresh` / `filter` 两个 24 网格线性图标。
+
+**判据（读数取脚本自打印 `passed=`，全部 exit 0）**
+`check.js` ALL CHECKS PASSED（G7/G8/G11 恢复工作：初版 `@keyframes` 让三门拒绝工作，已删动画）· `scenario-notices 114`（新增 §9 九条：日期分组/未读总数/行内时刻/活动聚合/未读筛选/活动筛选/详情三字段/刷新重读+toast/未读处理完空态；两条结构断言由 `notice-card + visibleItems` **替换**为 `groups + filteredCount` 两页同构）· `page2-gates 119`（M-18 锚点随结构替换为 `notice-row + groups`，钉的仍是正文/未读/分批/发布接线两页一致；页头身份断言拆成 tab `notice-head` / 子页 `section-head`）· `swx1 45` · `swx2 108` · `m02 65` · `b4-pad 33`（notices 仍留 84px、anotices 仍只吃基线）· `t4-e08 41` · `check-handlers` 两页 21/20 handlers 相符 · `smoke 288`。
+
+**部署**：trailApi / trailApiLab 重新部署成功（30 / 23 files）。线上真实账号通知为 **0 条**，因此行动流为注入式渲染证据（生产形状字段），真实空态另有一张。
+
+**真机 VERIFIED（390 宽 IDE 模拟器，端口 9421）**：`notices-drive.js` **9/0**——真实空态 0 条、注入 3 条后 3 行 / 2 个日期组 / 2 行未读、未读筛选只剩 2 条、点行打开详情（青城后山 · 通知，含关联活动与集合点）、空态面板、加载骨架；截图 6 张在 `docs/ui-ux-redesign/evidence/notices-a-2026-10-29/`。对齐读数：`.view-switch` 与 `.activity-filter` 垂直中心差 **0.0px**，行内「未读/查看」中心差 **0.0px**；标题行与刷新钮中心差 7px（原型同为底对齐，登记不改）。
+
+**例外与未覆盖**：项目 WXSS 门不支持 `@keyframes` ⇒ 刷新姿态用透明度/底色，不做旋转；骨架静态灰度；分段 44 / 筛选 48 保触控；未做 375/414 分档。**未覆盖**：活动筛选 sheet 与 owner 发布/投递的真机路径、真实未读数据（账号 0 通知）、物理手机。
+
+**边界**：`cloudfunctions/` **已改 ⇒ 需要重新部署 trailApi**（本轮已部署）；未 commit / 未 push；用户未跟踪文件未动。

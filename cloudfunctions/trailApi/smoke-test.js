@@ -103,6 +103,17 @@ function run() {
   state = r.value.state
   check('pending', state.signups[1].status === 'pending')
   check('notice auto-published', state.notices.length >= 1)
+  {
+    // 行动流：通知行头要回答「哪场活动」，详情卡要能给出出发时刻与集合点。
+    const nv = selectView(state, { userId: LIN }, { kind: 'notices' }, ctx().now)
+    const first = nv.notices && nv.notices[0]
+    const linked = first && state.activities.find(a => a.id === first.activityId)
+    const linkedPickup = linked && linked.pickupPoints && linked.pickupPoints.length ? linked.pickupPoints[0].name : ''
+    check('通知视图带 activityTitle / activityStartAt / pickupName（行头与详情卡的数据）',
+      !!first && !!linked && first.activityTitle === linked.title
+      && first.activityStartAt === linked.startAt && first.pickupName === linkedPickup,
+      JSON.stringify({ first: first && { t: first.activityTitle, s: first.activityStartAt, p: first.pickupName }, linked: linked && { t: linked.title, s: linked.startAt } }))
+  }
   r = dispatch(state, LIN, { type: 'signup.review', activityId, signupIds: [state.signups[1].id], decision: 'confirm' })
   check('signup.review ok', r.ok, r.error)
   state = r.value.state

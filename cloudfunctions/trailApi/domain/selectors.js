@@ -635,11 +635,24 @@ function selectView(state, actor, request, now) {
   if (request.kind === 'notices') {
     if (actor.userId === null) return deniedView('AUTH_REQUIRED', '请先选择当前账号。')
     if (request.activityId && !state.activities.some(a => a.id === request.activityId)) return deniedView('NOT_FOUND', '找不到此活动。')
+    // 行动流要回答「哪场活动」：通知行头、活动筛选、详情里的关联活动卡都需要标题/出发时刻/集合点。
+    // 这三个字段只做展示投影，不引入新的权限面——能读到通知的人本来就能读到该活动的公开摘要。
+    const activityById = new Map(state.activities.map(a => [a.id, a]))
     return {
       kind: 'notices',
       notices: state.notices
       .filter(n => (!request.activityId || n.activityId === request.activityId) && canReadNotice(state, actor, n, now))
-      .map(n => ({ id: n.id, activityId: n.activityId, content: n.content, publishedAt: n.publishedAt, read: hasOwn(n.readBy, actor.userId), kind: n.kind || 'unknown' })),
+      .map(n => {
+        const activity = activityById.get(n.activityId)
+        const pickup = activity && activity.pickupPoints && activity.pickupPoints.length ? activity.pickupPoints[0] : null
+        return {
+          id: n.id, activityId: n.activityId, content: n.content, publishedAt: n.publishedAt,
+          read: hasOwn(n.readBy, actor.userId), kind: n.kind || 'unknown',
+          activityTitle: activity ? activity.title : '',
+          activityStartAt: activity ? activity.startAt : null,
+          pickupName: pickup && pickup.name ? pickup.name : '',
+        }
+      }),
     }
   }
   if (request.kind !== 'activity') return deniedView('FORBIDDEN', '不支持此读取请求。')

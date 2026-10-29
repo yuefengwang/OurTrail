@@ -123,8 +123,8 @@ function makePage(cfg) {
 const NOW = '2026-09-29T09:00:00+08:00'
 function sampleNotices() {
   return [
-    { id: 'n1', activityId: 'a1', content: '周五 20:00 东门集合', publishedAt: '2026-09-28T08:00:00+08:00', read: true },
-    { id: 'n2', activityId: 'a1', content: '集合时间提前 10 分钟', publishedAt: '2026-09-29T08:30:00+08:00', read: false },
+    { id: 'n1', activityId: 'a1', activityTitle: '青城后山', activityStartAt: '2026-10-01T10:00:00+08:00', pickupName: '泰安古镇', content: '周五 20:00 东门集合', publishedAt: '2026-09-28T08:00:00+08:00', read: true },
+    { id: 'n2', activityId: 'a1', activityTitle: '青城后山', activityStartAt: '2026-10-01T10:00:00+08:00', pickupName: '泰安古镇', content: '集合时间提前 10 分钟', publishedAt: '2026-09-29T08:30:00+08:00', read: false },
   ]
 }
 // readNoticeManagement 的 value（ownerPermission 通过后：该活动全部通知的 noticeView 投影）
@@ -793,23 +793,90 @@ async function scenario8() {
       page.data.visibleItems.length)
   }
   {
-    // 接线：两页 WXML 渲染的必须是可见子集，加载更多要有真 handler
+    // 接线：Tab 页按日期分组渲染 groups（行动流），活动内页仍渲染 visibleItems；
+    // 两页都必须有真实的「加载更多」出口与 hiddenCount 读数。
     const wxmlNotices = fs.readFileSync(path.join(MP_DIR, 'pages/notices/notices.wxml'), 'utf8')
     const wxmlAnotices = fs.readFileSync(path.join(MP_DIR, 'pages/anotices/anotices.wxml'), 'utf8')
-    const wired = w => /wx:for="\{\{visibleItems\}\}"/.test(w)
+    const wired = w => /wx:for="\{\{groups\}\}"/.test(w)
       && !/wx:for="\{\{items\}\}"/.test(w)
+      && !/wx:for="\{\{visibleItems\}\}"/.test(w)
       && /bindtap="onLoadMore"/.test(w)
       && /hiddenCount/.test(w)
-    check('两页 WXML 都渲染 visibleItems 且挂上 onLoadMore（不是只在 JS 里分批）',
+    check('两页都按日期分组渲染 groups（行动流），并挂 onLoadMore 与 hiddenCount',
       wired(wxmlNotices) && wired(wxmlAnotices),
       'notices=' + wired(wxmlNotices) + ' anotices=' + wired(wxmlAnotices))
-    check('两页仍以 items.length 报总数（分批不改「共 N 条」的口径）',
-      /共 \{\{items\.length\}\} 条/.test(wxmlNotices) && /共 \{\{items\.length\}\} 条/.test(wxmlAnotices), '')
+    check('两页总数都用过滤后全集 filteredCount（不随分批变）',
+      /filteredCount/.test(wxmlNotices) && /filteredCount/.test(wxmlAnotices), '')
+  }
+}
+
+// 9. 行动流派生（2026-10-29 通知页按原型 A 重排）：日期分组 / 未读筛选 / 活动筛选 / 详情 / 刷新
+//    只测客户端派生与交互；服务端倒序口径仍由 §1 与 smoke 看守。
+async function scenario9() {
+  section('9. 行动流：日期分组 / 未读 / 活动筛选 / 详情 / 刷新')
+  // 夹具按**服务端写入顺序**给（旧→新）；reload 会 reverse 成「最新在上」。
+  // 这也顺手钉住「分组顺序跟服务端倒序走」，而不是按夹具的字面顺序。
+  const list = [
+    { id: 'n3', activityId: 'a2', activityTitle: '四姑娘山', activityStartAt: '2026-10-08T07:30:00+08:00', pickupName: '四姑娘山镇', content: '还有 10 天出发', publishedAt: '2026-09-28T19:40:00+08:00', read: false },
+    { id: 'n2', activityId: 'a1', activityTitle: '青城后山', activityStartAt: '2026-10-01T10:00:00+08:00', pickupName: '泰安古镇', content: '你已确认参加', publishedAt: '2026-09-29T08:02:00+08:00', read: true },
+    { id: 'n1', activityId: 'a1', activityTitle: '青城后山', activityStartAt: '2026-10-01T10:00:00+08:00', pickupName: '泰安古镇', content: '集合时间保持 10:00', publishedAt: '2026-09-29T10:26:00+08:00', read: false },
+  ]
+  {
+    const { page, reads, env } = bootNotices(NOTICES_PATH, { notices: list })
+    await waitFor(() => page.data.loading === false)
+    check('日期分组：今天 2 条 / 昨天 1 条',
+      page.data.groups.length === 2 && page.data.groups[0].dayText === '今天'
+      && page.data.groups[0].items.length === 2 && page.data.groups[1].dayText === '昨天',
+      JSON.stringify(page.data.groups.map(g => [g.dayText, g.items.length])))
+    check('未读总数与行内时刻来自真实 publishedAt',
+      page.data.unreadCount === 2 && page.data.items[0].timeOnly === '10:26' && page.data.items[0].time === '2026-09-29 10:26',
+      JSON.stringify({ u: page.data.unreadCount, t: page.data.items[0].timeOnly }))
+    check('活动筛选选项按标题聚合（全部 + 2 场，计数用全量）',
+      page.data.activityOptions.length === 3
+      && page.data.activityOptions[1].label === '青城后山' && page.data.activityOptions[1].count === 2
+      && page.data.activityOptions[2].label === '四姑娘山',
+      JSON.stringify(page.data.activityOptions))
+    page.onSetView({ currentTarget: { dataset: { view: 'unread' } } })
+    check('切到未读：只剩 2 条未读，分组仍 2 组',
+      page.data.viewMode === 'unread' && page.data.visibleItems.length === 2
+      && page.data.visibleItems.every(i => !i.read) && page.data.groups.length === 2,
+      JSON.stringify(page.data.visibleItems.map(i => i.id)))
+    page.onSelectActivity({ currentTarget: { dataset: { id: 'a2' } } })
+    check('按活动筛选：只剩四姑娘山 1 条',
+      page.data.activityFilter === 'a2' && page.data.visibleItems.length === 1
+      && page.data.visibleItems[0].activityTitle === '四姑娘山',
+      JSON.stringify(page.data.visibleItems.map(i => i.id)))
+    page.onSelectActivity({ currentTarget: { dataset: { id: 'all' } } })
+    page.onOpenNotice({ currentTarget: { dataset: { id: 'n1' } } })
+    check('详情 sheet 带活动标题 / 出发时刻 / 集合点',
+      page.data.noticeOpen === true
+      && page.data.noticeDetail.activityTitle === '青城后山'
+      && page.data.noticeDetail.activityStartText === '10月1日 周四 · 10:00'
+      && page.data.noticeDetail.pickupName === '泰安古镇',
+      JSON.stringify(page.data.noticeDetail))
+    page.onCloseNotice()
+    const before = reads.length
+    await page.onRefresh()
+    check('刷新按钮重读并提示「通知已同步」',
+      reads.length === before + 1 && env.rec.toasts.indexOf('通知已同步') !== -1,
+      JSON.stringify({ reads: reads.length - before, toasts: env.rec.toasts }))
+  }
+  {
+    const { page } = bootNotices(NOTICES_PATH, {
+      notices: [{ id: 'n1', activityId: 'a1', activityTitle: '青城后山', content: 'x', publishedAt: '2026-09-29T10:00:00+08:00', read: true }],
+    })
+    await waitFor(() => page.data.loading === false)
+    page.onSetView({ currentTarget: { dataset: { view: 'unread' } } })
+    check('未读全部处理完：emptyKind=unread 且有「查看全部」出口',
+      page.data.emptyKind === 'unread' && page.data.visibleItems.length === 0, page.data.emptyKind)
+    page.onSetView({ currentTarget: { dataset: { view: 'all' } } })
+    check('切回全部：已读通知仍可见（不是无条件空）',
+      page.data.emptyKind === '' && page.data.visibleItems.length === 1, JSON.stringify({ e: page.data.emptyKind, n: page.data.visibleItems.length }))
   }
 }
 
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++
