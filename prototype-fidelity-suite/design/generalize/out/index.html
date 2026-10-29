@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>社区图书借阅</title>
+<!-- 由 design-dna-generalizer 生成；每个节点的 data-grounding 指向知识库里的规则 id，
+     或标注为 unmeasured。plan.id=community-book-lending · store revision=128 -->
+<style>
+:root {
+  --device-width: 390px; /* token.var.device-width */
+  --green: #16783e; /* token.var.green */
+  --green-bright: #198b47; /* token.var.green-bright */
+  --green-soft: #edf7ed; /* token.var.green-soft */
+  --ink: #18211b; /* token.var.ink */
+  --line: #e8ece7; /* token.var.line */
+  --muted: #69716b; /* token.var.muted */
+  --pale: #f5f7f4; /* token.var.pale */
+  --radius-18px: 18px; /* token.radius.18px */
+  --radius-3px: 3px; /* token.radius.3px */
+  --radius-4px: 4px; /* token.radius.4px */
+  --radius-50: 50%; /* token.radius.50 */
+  --radius-9px: 9px; /* token.radius.9px */
+  --box-shadow-rgb-255-255-255-0px-0px-0px-1-5px-inset: rgb(255, 255, 255) 0px 0px 0px 1.5px inset; /* token.shadow.rgb-255-255-255-0px-0px-0px-1-5px-inset */
+  --fs-10px: 10px; /* token.size.10px */
+  --fs-11px: 11px; /* token.size.11px */
+  --fs-12px: 12px; /* token.size.12px */
+  --fs-13px: 13px; /* token.size.13px */
+  --fs-16px: 16px; /* token.size.16px */
+  --fs-17px: 17px; /* token.size.17px */
+  --fs-9px: 9px; /* token.size.9px */
+  --fw-400: 400; /* token.weight.400 */
+  --fw-500: 500; /* token.weight.500 */
+  --fw-600: 600; /* token.weight.600 */
+  --fw-650: 650; /* token.weight.650 */
+  --fw-700: 700; /* token.weight.700 */
+  --dna-type-scale: 10px, 11px, 12px, 13px, 16px, 17px, 9px; /* 既有字号阶，未新增 */
+  --dna-weights: 400, 500, 600, 650, 700;
+  --dna-radii: 18px, 3px, 4px, 50%, 9px;
+  --dna-tap-target: 46px;
+  --dna-hairline: 1px;
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "PingFang SC", sans-serif;
+  font-size: var(--fs-16px);
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--pale);
+}
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--pale);
+}
+.section {
+  padding: 0 1.25em;
+}
+.section + .section { border-top: var(--dna-hairline) solid var(--line); } /* principle.hairline-separation */
+.section[data-surface="header"] {
+  padding-top: 1em;
+}
+.section[data-surface="footer"] {
+  padding-bottom: 2em;
+  color: var(--muted);
+}
+.dna-text {
+  margin: .75em 0;
+  font-size: var(--fs-17px);
+  font-weight: 600;
+}
+.dna-list {
+  list-style: none;
+  margin: .5em 0;
+  padding: 0;
+}
+.dna-list > li {
+  display: flex;
+  flex-direction: column;
+  gap: .15em;
+  padding: .75em 0;
+  border-bottom: var(--dna-hairline) solid var(--line);
+}
+.dna-list > li:last-child {
+  border-bottom: 0;
+}
+.dna-list-title {
+  font-size: var(--fs-16px);
+  color: var(--ink);
+}
+.dna-list-meta {
+  font-size: var(--fs-13px);
+  color: var(--muted);
+}
+button, .dna-button {
+  min-height: 46px;
+  min-width: 46px;
+  border: 0;
+  border-radius: var(--radius-18px);
+  background: var(--green);
+  color: var(--pale);
+  font: inherit;
+  font-size: var(--fs-16px);
+  font-weight: 600;
+  padding: 0 1.25em;
+  cursor: pointer;
+}
+button:disabled {
+  background: var(--muted);
+  cursor: not-allowed;
+}
+button > span {
+  display: inline-block;
+}
+.dna-field {
+  display: block;
+  margin: .75em 0;
+}
+.dna-field input {
+  width: 100%;
+  min-height: 46px;
+  font-size: max(14px, var(--fs-16px));
+  padding: 0 .75em;
+  border: var(--dna-hairline) solid var(--line);
+  border-radius: var(--radius-9px);
+  background: var(--pale);
+  color: var(--ink);
+}
+.dna-nav {
+  display: flex;
+  gap: .5em;
+}
+.overlay[hidden] {
+  display: none;
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--pale);
+  display: flex;
+  align-items: flex-end;
+}
+.overlay > [role="dialog"] {
+  width: 100%;
+  background: var(--pale);
+  border-radius: var(--radius-18px) var(--radius-18px) 0 0;
+  padding: 1.25em;
+}
+.grounding-unmeasured {
+  outline: 1px dashed var(--muted);
+}
+
+</style>
+</head>
+<body>
+  <main class="page" data-plan="community-book-lending" data-store-revision="128">
+    <section class="section" data-section="head" data-surface="header" aria-label="页头">
+      <h2 class="dna-text" data-grounding="brief">页头</h2>
+        <p class="dna-text grounding-unmeasured" data-function="show-title" data-kind="display" data-role="text" data-state="default" data-states="default" data-grounding="unmeasured">显示书名与借阅点</p>
+    </section>
+    <section class="section" data-section="search" data-surface="content" aria-label="查找">
+      <h2 class="dna-text" data-grounding="brief">查找</h2>
+        <label class="dna-field grounding-unmeasured" data-function="filter-books" data-kind="input" data-role="text" data-state="default" data-states="default filled" data-grounding="unmeasured"><span>按书名筛选</span><input type="text" placeholder="按书名筛选" /></label>
+    </section>
+    <section class="section" data-section="shelf" data-surface="content" aria-label="在架图书">
+      <h2 class="dna-text" data-grounding="brief">在架图书</h2>
+        <ul class="dna-list grounding-unmeasured" data-function="list-books" data-kind="list" data-role="list" data-state="filled" data-states="loading empty filled error" data-grounding="unmeasured">
+          <li><span class="dna-list-title">浏览在架图书（示例）</span><span class="dna-list-meta">该行形态未取证：库里没有本页可用的行组件，这是占位结构</span></li>
+        </ul>
+    </section>
+    <section class="section" data-section="actions" data-surface="footer" aria-label="操作">
+      <h2 class="dna-text" data-grounding="brief">操作</h2>
+        <div class="section-actions">
+          <button type="button" data-action="open-dialog" data-function="borrow" data-kind="action" data-role="button" data-state="default" data-states="default disabled confirming" data-grounding="rule:component.button-span"><span>借阅这本</span></button>
+        </div>
+    </section>
+  </main>
+  <div class="overlay" id="dna-confirm" hidden data-grounding="rule:interaction.dialog-sheet">
+    <div role="dialog" aria-modal="true" tabindex="-1" aria-label="确认">
+      <p class="dna-text">确认要执行这一步吗？</p>
+      <button type="button" data-action="close-dialog"><span>取消</span></button>
+      <button type="button" data-action="close-dialog"><span>确认</span></button>
+    </div>
+  </div>
+  <script>
+    // 浮层的显隐由 overlay 的 hidden 控制：关闭态必须同时不可见、不命中点击。
+    (function () {
+      var overlay = document.getElementById('dna-confirm');
+      if (!overlay) return;
+      document.addEventListener('click', function (ev) {
+        var el = ev.target.closest('[data-action]');
+        if (!el) return;
+        var action = el.getAttribute('data-action');
+        if (action === 'open-dialog') overlay.hidden = false;
+        if (action === 'close-dialog') overlay.hidden = true;
+      });
+    })();
+  </script>
+</body>
+</html>

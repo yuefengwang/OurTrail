@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "kind": "page-state-manifest",
   "pageId": "b-statusbar",
-  "generatedAt": "2026-10-28T14:33:48.964Z",
+  "generatedAt": "2026-10-29T12:26:22.327Z",
   "states": [
     {
       "id": "default",
@@ -23,8 +23,8 @@
             "height": 844
           },
           "dpr": 1,
-          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
-          "capturedAt": "2026-10-28T14:33:43.491Z",
+          "codeVersion": null,
+          "capturedAt": "2026-10-29T12:26:19.276Z",
           "nodes": 10,
           "screenshot": {
             "path": "screenshot.png",
@@ -48,8 +48,8 @@
             "height": 844
           },
           "dpr": 1,
-          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
-          "capturedAt": "2026-10-28T14:33:48.856Z",
+          "codeVersion": null,
+          "capturedAt": "2026-10-29T12:26:22.289Z",
           "nodes": 11,
           "screenshot": {
             "path": "screenshot.png",

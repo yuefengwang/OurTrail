@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "kind": "page-state-manifest",
   "pageId": "b-dynamic-declared",
-  "generatedAt": "2026-10-28T14:33:13.995Z",
+  "generatedAt": "2026-10-29T12:26:02.526Z",
   "states": [
     {
       "id": "default",
@@ -23,8 +23,8 @@
             "height": 844
           },
           "dpr": 1,
-          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
-          "capturedAt": "2026-10-28T14:33:08.532Z",
+          "codeVersion": null,
+          "capturedAt": "2026-10-29T12:25:59.558Z",
           "nodes": 10,
           "screenshot": {
             "path": "screenshot.png",
@@ -48,12 +48,12 @@
             "height": 844
           },
           "dpr": 1,
-          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
-          "capturedAt": "2026-10-28T14:33:13.893Z",
+          "codeVersion": null,
+          "capturedAt": "2026-10-29T12:26:02.490Z",
           "nodes": 10,
           "screenshot": {
             "path": "screenshot.png",
-            "sha256": "ee00d752e167810d46ecd75f815b852a0c9cb461c0fcc4b28f2a4643a929f4ed",
+            "sha256": "5bc194fe9f7420dbe66eb78812a435f2981f9c015db8bd6069bbada8ec8ff18a",
             "width": 390,
             "height": 844,
             "scale": {

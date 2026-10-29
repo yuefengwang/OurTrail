@@ -48,7 +48,8 @@
         "width": "390px",
         "height": "900px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -105,7 +106,8 @@
         "width": "390px",
         "height": "364px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -156,7 +158,8 @@
         "width": "358px",
         "height": "28px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -211,7 +214,8 @@
         "width": "358px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -262,7 +266,8 @@
         "width": "328px",
         "height": "16px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -313,7 +318,8 @@
         "width": "328px",
         "height": "30px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -364,7 +370,8 @@
         "width": "328px",
         "height": "20px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -415,7 +422,9 @@
         "width": "358px",
         "height": "90px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none",
+        "src": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/assets/stripes.png"
       },
       "visible": true,
       "lineCount": null
@@ -466,7 +475,8 @@
         "width": "120px",
         "height": "38px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -517,7 +527,8 @@
         "width": "358px",
         "height": "16px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1

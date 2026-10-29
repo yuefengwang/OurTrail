@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": { "id": "template", "name": "夹具格式样例" },
+  "prototype": { "adapter": "web", "viewport": { "width": 390, "height": 844 }, "frameSelector": "#frame" },
+  "target": { "adapter": "web", "frameSelector": "#frame" },
+  "tolerances": { "position": 1.5, "size": 1.5, "gap": 1, "font": 1, "color": 6, "pixelRatio": 0.02, "criticalPixelRatio": 0.005 },
+  "pages": [
+    {
+      "id": "t-page",
+      "prototype": { "url": "page.html" },
+      "target": { "url": "page.html" },
+      "mappings": [
+        { "id": "t-title", "role": "标题", "prototypeSelector": "#t-title", "targetSelector": "#t-title", "pixelMode": "informational", "criticality": "critical" }
+      ],
+      "states": [{ "id": "default" }],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [{ "tap": { "selector": "#t-btn" } }, { "wait": 150 }],
+          "expect": { "textIncludes": { "selector": "#t-note", "text": "已展开" } },
+          "screenshot": false
+        }
+      ]
+    }
+  ]
+}

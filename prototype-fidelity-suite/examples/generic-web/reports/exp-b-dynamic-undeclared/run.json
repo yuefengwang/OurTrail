@@ -3,7 +3,8 @@
   "runId": "exp-b-dynamic-undeclared",
   "pageId": "b-dynamic-undeclared",
   "stateId": "default",
-  "startedAt": "2026-10-28T14:33:20.043Z",
+  "viewportId": null,
+  "startedAt": "2026-10-29T12:26:05.866Z",
   "project": {
     "id": "generic-web",
     "name": "通用 Web 基样（示例 1 · 卡片页）"

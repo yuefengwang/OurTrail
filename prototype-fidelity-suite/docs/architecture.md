@@ -38,11 +38,11 @@
 adapter 由 CLI 按 `pf.config.json` 的 `adapter` 字段动态加载。
 因此新增一个目标平台＝新增一个目录，核心一行不改。
 
-`core/lib` 十五个模块，职责单一：
+`core/lib` 二十个模块，职责单一：
 
 | 模块 | 职责 |
 |---|---|
-| `util.js` | 路径/时间/克隆/错误类型 `PfError` |
+| `util.js` | 路径/时间/哈希/错误类型 `PfError`；`writeFileRetry` 对瞬时文件锁（EPERM/EACCES/EBUSY/UNKNOWN）有限次重试，永久错误不重试 |
 | `schema.js` | draft-07 子集校验器；**未知关键字即报错**（拼错不能悄悄关掉约束） |
 | `png.js` | PNG 解码（IHDR/PLTE/tRNS/IDAT，filter 0–4，CRC 校验，16 位降位）与 RGBA 编码 |
 | `image.js` | 像素读取、缩放、白底合成 |
@@ -51,27 +51,50 @@ adapter 由 CLI 按 `pf.config.json` 的 `adapter` 字段动态加载。
 | `geometry.js` | 盒模型/字号/颜色/行数比对；内容锚点重定基 `realignToAnchor` |
 | `contract.js` | design tokens 聚合、组件契约、页面节奏（gap 标注 inferred） |
 | `manifests.js` | 四个"声明侧"契约的构建器 |
-| `artifacts.js` | capture / diff / validation 三类产物与 schemaVersion、状态汇总 |
+| `artifacts.js` | capture / diff / validation 三类产物与 schemaVersion、状态汇总；`clearRunArtifacts` 保证复用的 run 目录不携带上一次的裁决 |
 | `scorecard` → `score.js` | 五维评分卡与总判定次序 |
 | `interaction.js` | 交互检查驱动器（声明式步骤 → 真动作 → 观测后果） |
 | `report.js` | 自包含 HTML 报告（离线可开，图片内联 data URI） |
 | `env.js` | 探测仓库外的 Playwright / automator、端口；探不到记 `unverified` |
 | `html.js` | HTML 转义（报告用） |
+| `acceptance.js` | 接受差异的解析：按 `props[]` / `axis` / `maxAbsPx` 收窄；越界与"声明错"（`covers-nothing` / `unevaluable`）分别记账 |
+| `cascade.js` | 级联归因：把实测 `dx/dy` 拆成"祖先给的"与"自己的"，只报告不裁决 |
+| `bundle.js` | 构建版本证据：对编译源树做内容指纹（sha256），校验"指纹早于截图"与"验证时仍未变" |
+| `repair.js` | 有界修复：唯一锚点预检 → 备份 → 应用 → 回滚（回滚以重新哈希证明） |
 
 ## 3. 流水线
 
 ```
 pf doctor     环境体检（端口、驱动、Node 版本）→ 缺什么就明确说缺
-pf capture    prototype + target 各自截图 + DOM 快照 + capture-manifest
+pf capture    prototype + target 各自截图 + DOM 快照 + capture-manifest（可 --viewport <id>|all）
 pf contract   读快照产出 7 份契约（tokens / components / layout / 4 份声明侧）
 pf diff       逐映射对比较几何、样式、文本、像素 → visual-diff-report
 pf validate   评分卡 + 交互检查 → fidelity-validation-report
 pf interactions  单跑交互（可单独重跑，不改视觉结论）
 pf verify     capture → contract → diff → validate 串起来，逐步打印状态
+pf repair     有界修复：唯一锚点 → 备份 → 应用 → 复测 → 保留或逐字节回滚
 ```
+
+多视口是**同名命令的循环**，不是第二套命令：`--viewport <id>|all` 让捕获目录变成
+`captures/<page>/<state>/@<vp>/<side>`，run 目录前缀带 `@<vp>`，报告里的证据路径也带它；
+一次跑多视口时打印 `viewports: <id>=<VERDICT> …`，退出码取最差的一档（FAIL > 环境/UNVERIFIED > PASS）。
+`pf repair` 拒绝 `--viewport all`：修复一次只针对一个视口的读数，否则"改好了"没有唯一指代。
+视口宽度是否**真的到达浏览器**不靠目录名证明：`examples/generic-web/f/fluid.html` 的 frame 是流式的
+（`width: 100%`），375/414 两个视口拍出的截图与节点盒都跟着变；`b/base.html` 的 390px 固定机身
+是阴性对照 —— 它在两个视口下拍出来都是 390 宽，证明"多视口通过"这句话在非流式页面上是空的（实验 F）。
 
 每个阶段都能单独跑：`diff` 只读快照与截图，`validate` 只读 diff 报告。
 这让"量"与"改"可以完全分开 —— 修复流程只允许在 `diff` 产出定位过的差异之后开始。
+
+每个 run 目录在开跑前会清掉上一次的裁决产物（`verify-steps.json` / `visual-diff-report.json` /
+`fidelity-validation-report.json` / `report.html`）。这不是洁癖：一次在写快照时被文件锁打断的运行
+曾以退出码 2 结束，而目录里还留着上一次的 PASS 报告 —— 退出码与产物互相矛盾，读者只会信产物。
+
+打断它的那把锁也是真的：Windows 上对刚创建的产物做扫描会让写入抛
+`UNKNOWN: unknown error, open …`，Playwright 自己的落盘与 `fs.writeFileSync` 一样不会重试。
+所以产物落盘统一走 `util.writeFileRetry`（可重试 errno 集合、上限 5 次、退避 20→160 ms；
+`ENOSPC` 这类非瞬时错误立即失败，不会重试成"看起来成功"）。
+两条行为各有一份断言：`tests/write-safety.test.js`（重试语义与清理集合）与实验 E（目录新鲜度）。
 
 退出码统一：`0 PASS`、`1 FAIL`（真实差异）、`2` 环境/配置错误或 `UNVERIFIED`
 （"什么都没测到"永不返回 0）。
@@ -146,9 +169,15 @@ critical 失败 > 0                     → FAIL
 | 两侧 `box-sizing` 不同（border-box / content-box），却要标量断言 `width/height/min-height/max-height` | 该维度记 **UNVERIFIED**（`same declaration, different box`）；盒模型本身由几何判 | 同一个 `width: 60px` 在两种盒模型下对应两个外观；标量判 PASS 等于宣称盒模型一致 |
 | 配置**显式声明**了某个 styleProp，但两侧适配器都读不到 | 该维度记 **UNVERIFIED**（`not reported by either adapter`） | 默认清单里的缺失＝没要求；显式声明了却读不到＝要求了但没测到。两者不能合并成"跳过" |
 
-`acceptedDifferences` 只按**类别**接受（`position` / `size` / `text` …），不支持按轴切分。
-于是"宽差 60px 可接受、高差 8px 是真缺陷"这种混合配对只能整类接受或整类失败。
-试点的 `primary-sub` 就是这种形态，处理方式是**不接受** `size`（宁可留 FAIL，也不把真差异一起洗白）。
+`acceptedDifferences` 可以只按**类别**接受（`position` / `size` / `text` …），也可以收窄到
+`props[]`（哪几条声明）、`axis`（x 还是 y）、`maxAbsPx`（差多远）三者之一。
+**不收窄的条目保持原义**：一条只写 `categories` 的接受仍然整类放行，所以旧配置的行为不变。
+收窄的条目只豁免它真的覆盖到的部分，"宽差 60px 可接受、高差 8px 是真缺陷"因此可以说清；
+而声明写错不会被当成免费通行证：命名了不存在差异属性的条目记 `covers-nothing`，
+对 `ink`/`pixel`/`text` 这类没有可测操作数的类别下 `maxAbsPx` 记 `unevaluable`，
+两者都会进 `acceptanceInvalid` 并附 `ACCEPTANCE_INVALID` 警告，而不是静默接受。
+试点的 `primary-sub` **没有**改配置：它仍然整类不接受（宁可留 FAIL，也不把真差异一起洗白），
+收窄只是让这种混合配对**以后**有表达方式。
 
 ## 6. 交互契约
 
@@ -184,15 +213,15 @@ color 单通道最大差 6（先按白底合成 alpha，不换算 ΔE）、pixel
 ```
 prototype-fidelity-suite/
 ├── cli/pf.js
-├── core/lib/           15 个纯函数模块
+├── core/lib/           20 个纯函数模块
 ├── adapters/           README.md = 适配器契约；每个平台三件套：
 │   ├── web/            capture.js + adapter.json + LIMITATIONS.md
 │   └── wechat-miniprogram/  同上
-├── schemas/            12 份 JSON Schema（11 契约 + adapter 描述符）
-├── tests/              11 套、510 断言（2026-10-28 实测）；tests/run.js 按进程隔离执行
+├── schemas/            17 份 JSON Schema（11 契约 + 6 支撑）
+├── tests/              20 套、1095 断言（2026-10-29 实测）；tests/run.js 按进程隔离执行
 ├── examples/ourtrail/  pf.config.json + captures/ + contracts/ + reports/
-├── examples/generic-web/  与 OurTrail 无关的示例 + experiments/（A/B/C/D 运行器与读数）
-├── skills/             README.md（索引）+ 七个子目录，各含 SKILL.md（最多一层 references/）
+├── examples/generic-web/  与 OurTrail 无关的示例 + experiments/（A/B/C/D/E/F 运行器与读数）
+├── skills/             README.md（索引）+ 十一个子目录，各含 SKILL.md（最多一层 references/）
 └── docs/               本文件 + research-report / experiments / pilot-ourtrail / reuse-guide / limitations-roadmap
 ```
 
@@ -206,6 +235,8 @@ prototype-fidelity-suite/
 | 实验 B 误报控制 | **已跑，达标（含 1 处已登记漏报）** | 6 类允许差异 6/6 PASS 且每例带反空转门、2 个阴性对照 2/2 FAIL；20px 以上字重漏报见 §3.6 |
 | 实验 C 修复有效性 | **通用栈已跑，1 轮收敛**；OurTrail 实现层 **BLOCKED** | `c-repair` 8 对 7 FAIL → 8/8 PASS、几何 0 / 像素 0、0 新问题；试点内另有 1 条声明层修复 |
 | 实验 D 可迁移性 | **已跑，达标** | 仓库外副本 0 处 OurTrail 引用、`codeVersion: null`、20 个区域逐字段相同 |
+| 实验 E 运行目录新鲜度 | **已跑，达标（配变异）** | 同目录 PASS → 中止（退出码 2、旧报告已清、步骤日志点名 BLOCKED）→ 再 PASS；注释掉清理调用后 2 条转红 |
+| 实验 F 命名视口 | **已跑，达标（配变异）** | 流式夹具 375/414 两视口截图与节点盒同步改变，两份报告各记 `viewportId`；固定机身页作阴性对照；把夹具钉回 390px 后 2 条转红 |
 | OurTrail 试点 | **视觉已量、交互 4/4、修复提案 BLOCKED** | 15 对实态：12 处几何失败归因到 5 条声明级根因；实现层补丁 P1–P5 等授权 ⇒ `docs/pilot-ourtrail.md` |
 
 仍未建成：
@@ -213,10 +244,10 @@ prototype-fidelity-suite/
 | 项 | 状态 | 说明 |
 |---|---|---|
 | 小程序侧的实验 A/B 成组实验 | 未做 | 注入偏差要改冻结页面（`pages/weather-hub/**`），授权不允许 |
-| `components` / `sections` 声明 | 未开始 | 试点配置未声明，`component-contracts` 与 `page-layout` 为空 ⇒ 契约覆盖记 UNVERIFIED |
-| 结构级重排的自动归因 | 样本 1 | 只有试点 `tabs −89.99` 一次级联分解；复杂结构变化可能只给位移、指不到声明 |
+| `components` / `sections` 声明 | 能力已落地，试点未声明 | `specimen` 页声明并在契约里逐值校验（3 组件 + 3 区块）；**试点 OurTrail 配置仍未声明**，`component-contracts` 与 `page-layout` 为空 ⇒ 试点契约覆盖仍记 UNVERIFIED |
+| 结构级重排的自动归因 | 归因器已实现，真实样本 1 | `core/lib/cascade.js` + `tests/cascade.test.js`（39：每条几何记录恰好被归因一次、分项可加回原差、高度项是活算不是抄常数、归因不得把真差异洗成通过）；真实项目上仍只有试点 `tabs −89.99` 一次分解，复杂结构变化可能只给位移、指不到声明 |
 | 新平台的适配器实验 | 未做 | 适配器契约与 `LIMITATIONS.md` 有，但只有 Web / 微信两个实现，没有第三个平台的实验 |
-| 多视口 / 暗色 / RTL | 未覆盖 | 实验固定在 390×844 / dpr 1（`b-dpr2` 例外为 2×） |
+| 多视口 / 暗色 / RTL | 多视口已覆盖；暗色 / RTL 未覆盖 | 宽度轴由实验 F 验到布局层；视口**高度**只有 `b-taller` 单例，暗色模式与 RTL 仍只是配置里的声明 |
 
 七个技能已落盘（`skills/README.md` 是索引）。它们不重复实现逻辑：
 每个技能只规定"什么时候用、读哪份产物、过哪道门、失败怎么记"，

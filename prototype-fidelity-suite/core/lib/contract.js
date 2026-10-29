@@ -13,6 +13,11 @@
  * the provenance so a reviewer can tell what the tool actually saw.
  */
 const { round, slug } = require('./util');
+const geometry = require('./geometry');
+
+const POSITION_TOL = geometry.POSITION_TOL;
+const SIZE_TOL = geometry.SIZE_TOL;
+const GAP_TOL = geometry.GAP_TOL;
 
 const TOKEN_GROUPS = {
   colors: ['color', 'background-color', 'border-top-color', 'border-color'],
@@ -57,24 +62,23 @@ function collectTokens(snapshot) {
 }
 
 /**
- * Component contracts: for each declared component, capture the box model and
- * the style properties that define it. `selectors` may list several instances.
+ * Component contracts measured on BOTH sides.
+ *
+ * v0.1 wrote `PASS` as soon as the selector existed on the prototype, which
+ * reads as "this component matches" while it only meant "I found a box"
+ * (docs/audit-v0.1.md Q4/F4). The two facts are now separate fields:
+ *   resolved   the declaration is measurable on the prototype
+ *   status     PASS only when both sides were measured and agree
+ * A missing target side is UNVERIFIED with a reason; a declared selector that
+ * finds nothing on the target is FAIL, because the component was promised there.
  */
-function buildComponents(snapshot, components) {
+function buildComponents(prototypeSnapshot, targetSnapshot, components, tolerances) {
+  const tol = tolerances || {};
   const out = [];
   for (const c of components || []) {
-    const nodes = c.selectors
-      ? snapshot.nodes.filter(n => c.selectors.some(sel => n.sel === sel || (n.selectors || []).includes(sel)))
-      : [];
-    if (!nodes.length) {
-      out.push({
-        id: c.id, role: c.role, criticality: c.criticality || 'normal',
-        status: 'UNVERIFIED', reason: 'selector not found in snapshot',
-        selectors: c.selectors, source: { kind: 'unknown' },
-      });
-      continue;
-    }
-    const instances = nodes.map(n => ({
+    const protoNodes = matchNodes(prototypeSnapshot, c.selectors);
+    const targetNodes = matchNodes(targetSnapshot, c.selectors);
+    const instancesOf = nodes => nodes.map(n => ({
       selector: n.sel,
       path: n.path,
       rect: roundRect(n.rect),
@@ -83,18 +87,105 @@ function buildComponents(snapshot, components) {
       lineCount: n.lineCount == null ? null : n.lineCount,
       source: { kind: 'measured', captureNode: n.id },
     }));
-    out.push({
+    const base = {
       id: c.id,
-      role: c.role,
+      ...(c.role ? { role: c.role } : {}),
       criticality: c.criticality || 'normal',
-      status: 'PASS',
-      selectors: c.selectors,
-      instances,
+      selectors: c.selectors || [],
+      resolved: protoNodes.length > 0,
+    };
+
+    if (!protoNodes.length) {
+      out.push({ ...base, status: 'UNVERIFIED', reason: 'selector not found in snapshot', source: { kind: 'unknown' } });
+      continue;
+    }
+    if (!targetSnapshot) {
+      out.push({
+        ...base, status: 'UNVERIFIED', reason: 'target side not captured; only the prototype was measured',
+        instances: instancesOf(protoNodes), prototype: { instances: instancesOf(protoNodes) }, target: null,
+        source: { kind: 'measured' },
+      });
+      continue;
+    }
+    if (!targetNodes.length) {
+      out.push({
+        ...base, status: 'FAIL', reason: 'declared selector found nothing on the target side',
+        differences: [{ kind: 'missing', target: null }],
+        instances: instancesOf(protoNodes), prototype: { instances: instancesOf(protoNodes) }, target: { instances: [] },
+        source: { kind: 'measured' },
+      });
+      continue;
+    }
+
+    const protoInstances = instancesOf(protoNodes);
+    const targetInstances = instancesOf(targetNodes);
+    const differences = [];
+    if (protoInstances.length !== targetInstances.length) {
+      differences.push({
+        kind: 'count', prototype: protoInstances.length, target: targetInstances.length,
+      });
+    }
+    const shared = Math.min(protoInstances.length, targetInstances.length);
+    const props = c.styleProps || DEFAULT_COMPONENT_PROPS;
+    let maxGeo = 0;
+    for (let i = 0; i < shared; i++) {
+      const a = protoInstances[i], b = targetInstances[i];
+      for (const axis of ['x', 'y', 'w', 'h']) {
+        const delta = round(b.rect[axis] - a.rect[axis], 2);
+        const limit = axis === 'x' || axis === 'y'
+          ? (tol.position == null ? POSITION_TOL : tol.position)
+          : (tol.size == null ? SIZE_TOL : tol.size);
+        maxGeo = Math.max(maxGeo, Math.abs(delta));
+        if (Math.abs(delta) > limit) differences.push({ kind: 'geometry', axis, prototype: a.rect[axis], target: b.rect[axis], delta });
+      }
+      for (const prop of props) {
+        const hasA = Object.prototype.hasOwnProperty.call(a.styles, prop);
+        const hasB = Object.prototype.hasOwnProperty.call(b.styles, prop);
+        if (!hasA && !hasB) continue;
+        if (!hasA || !hasB) {
+          differences.push({ kind: 'unverified', prop, prototype: hasA ? a.styles[prop] : null, target: hasB ? b.styles[prop] : null });
+          continue;
+        }
+        const cmp = geometry.compareStyleProp(prop, a.styles[prop], b.styles[prop], tol);
+        if (cmp.comparable === false) {
+          differences.push({ kind: 'unverifiable', prop, prototype: cmp.a, target: cmp.b });
+        } else if (!cmp.equal) {
+          differences.push({ kind: 'style', prop, prototype: cmp.a, target: cmp.b, delta: cmp.delta == null ? null : cmp.delta });
+        }
+      }
+    }
+
+    const status = differences.some(d => d.kind !== 'unverified' && d.kind !== 'unverifiable')
+      ? 'FAIL'
+      : differences.length ? 'UNVERIFIED' : 'PASS';
+    out.push({
+      ...base,
+      status,
+      reason: status === 'PASS' ? null
+        : status === 'FAIL' ? `${differences.filter(d => d.kind !== 'unverified' && d.kind !== 'unverifiable').length} 处两侧不一致`
+          : '部分属性只有一侧报告，比较没有发生',
+      instances: protoInstances,
+      prototype: { instances: protoInstances },
+      target: { instances: targetInstances },
+      agreement: {
+        instances: { prototype: protoInstances.length, target: targetInstances.length },
+        compared: shared,
+        maxGeometryDelta: round(maxGeo, 2),
+        differences: differences.length,
+      },
+      differences,
       source: { kind: 'measured' },
     });
   }
   return out;
 }
+
+const DEFAULT_COMPONENT_PROPS = [
+  'display', 'flex-direction', 'align-items', 'justify-content', 'gap',
+  'padding', 'margin', 'width', 'height', 'font-size', 'font-weight',
+  'line-height', 'letter-spacing', 'color', 'background-color',
+  'border-radius', 'border-top-width', 'border-top-color', 'box-shadow', 'opacity',
+];
 
 function pickStyles(styles, props) {
   const keys = props || [
@@ -113,40 +204,134 @@ function roundRect(r) {
 }
 
 /**
- * Page layout contract: ordered sections + measured rhythm. Gaps are `inferred`
- * because they are computed from two measured rects, not read as a CSS value.
+ * Page layout contract: ordered sections + measured rhythm, on both sides.
+ *
+ * Same split as components: `resolved` says the section was measurable on the
+ * prototype, `status` says the two sides agree. Gaps stay `inferred` because
+ * they are computed from two measured rects, not read as a CSS value — and an
+ * inferred gap is only comparable when both of its operands were measured on
+ * the same side.
  */
-function buildPageLayout(snapshot, sections) {
-  const found = [];
+function buildPageLayout(prototypeSnapshot, targetSnapshot, sections, tolerances) {
+  const tol = tolerances || {};
+  const gapTol = tol.gap == null ? GAP_TOL : tol.gap;
+  const measured = [];
+
   for (const sec of sections || []) {
-    const nodes = snapshot.nodes.filter(n => n.sel === sec.selector || (n.selectors || []).includes(sec.selector));
-    if (!nodes.length) {
-      found.push({ id: sec.id, role: sec.role, status: 'UNVERIFIED', selector: sec.selector, source: { kind: 'unknown' } });
-      continue;
-    }
-    const n = nodes[0];
-    found.push({
-      id: sec.id,
-      role: sec.role,
-      selector: sec.selector,
+    const protoNode = nodesFor(prototypeSnapshot, sec.selector)[0] || null;
+    const targetNode = targetSnapshot ? (nodesFor(targetSnapshot, sec.selector)[0] || null) : null;
+    const view = n => (n ? {
       rect: roundRect(n.rect),
       text: n.text || '',
       styles: pickStyles(n.styles),
-      status: 'PASS',
-      source: { kind: 'measured', captureNode: n.id },
+      captureNode: n.id,
+    } : null);
+
+    const base = {
+      id: sec.id,
+      ...(sec.role ? { role: sec.role } : {}),
+      selector: sec.selector,
+      resolved: !!protoNode,
+    };
+
+    if (!protoNode) {
+      measured.push({ ...base, status: 'UNVERIFIED', reason: 'selector not found in snapshot', source: { kind: 'unknown' } });
+      continue;
+    }
+
+    const prototype = view(protoNode);
+    if (!targetSnapshot) {
+      measured.push({
+        ...base,
+        rect: prototype.rect, text: prototype.text, styles: prototype.styles,
+        status: 'UNVERIFIED',
+        reason: 'target side not captured; only the prototype was measured',
+        prototype, target: null,
+        source: { kind: 'measured', captureNode: protoNode.id },
+      });
+      continue;
+    }
+
+    if (!targetNode) {
+      measured.push({
+        ...base,
+        rect: prototype.rect, text: prototype.text, styles: prototype.styles,
+        status: 'FAIL',
+        reason: 'declared section found nothing on the target side',
+        prototype, target: null,
+        differences: [{ kind: 'missing', target: null }],
+        source: { kind: 'measured', captureNode: protoNode.id },
+      });
+      continue;
+    }
+
+    const target = view(targetNode);
+    const differences = [];
+    let maxGeo = 0;
+    for (const axis of ['x', 'y', 'w', 'h']) {
+      const delta = round(target.rect[axis] - prototype.rect[axis], 2);
+      const limit = axis === 'x' || axis === 'y'
+        ? (tol.position == null ? POSITION_TOL : tol.position)
+        : (tol.size == null ? SIZE_TOL : tol.size);
+      maxGeo = Math.max(maxGeo, Math.abs(delta));
+      if (Math.abs(delta) > limit) {
+        differences.push({ kind: 'geometry', axis, prototype: prototype.rect[axis], target: target.rect[axis], delta });
+      }
+    }
+
+    measured.push({
+      ...base,
+      rect: prototype.rect, text: prototype.text, styles: prototype.styles,
+      status: differences.length ? 'FAIL' : 'PASS',
+      reason: differences.length ? `${differences.length} 处几何不一致` : null,
+      prototype,
+      target,
+      differences,
+      agreement: { maxGeometryDelta: round(maxGeo, 2) },
+      source: { kind: 'measured', captureNode: protoNode.id },
     });
   }
-  const visible = found.filter(s => s.rect);
+
   const rhythm = [];
-  for (let i = 1; i < visible.length; i++) {
+  const anchored = measured.filter(s => s.prototype);
+  for (let i = 1; i < anchored.length; i++) {
+    const prev = anchored[i - 1];
+    const cur = anchored[i];
+    const gap = round(cur.prototype.rect.y - (prev.prototype.rect.y + prev.prototype.rect.h), 2);
+    const targetGap = cur.target && prev.target
+      ? round(cur.target.rect.y - (prev.target.rect.y + prev.target.rect.h), 2)
+      : null;
+    const delta = targetGap == null ? null : round(targetGap - gap, 2);
     rhythm.push({
-      from: visible[i - 1].id,
-      to: visible[i].id,
-      gap: round(visible[i].rect.y - (visible[i - 1].rect.y + visible[i - 1].rect.h), 2),
-      source: { kind: 'inferred', from: [visible[i - 1].id, visible[i].id] },
+      from: prev.id,
+      to: cur.id,
+      gap,
+      targetGap,
+      delta,
+      status: delta == null ? 'UNVERIFIED' : (Math.abs(delta) > gapTol ? 'FAIL' : 'PASS'),
+      reason: delta == null ? 'both operands were not measured on the target side' : null,
+      source: { kind: 'inferred', from: [prev.id, cur.id] },
     });
   }
-  return { sections: found, rhythm };
+
+  return {
+    sections: measured,
+    rhythm,
+    coverage: {
+      sectionsDeclared: (sections || []).length,
+      resolved: measured.filter(s => s.resolved).length,
+      compared: measured.filter(s => s.prototype && s.target).length,
+    },
+  };
+}
+
+function nodesFor(snapshot, selector) {
+  return selector ? matchNodes(snapshot, [selector]) : [];
+}
+
+function matchNodes(snapshot, selectors) {
+  if (!snapshot || !selectors) return [];
+  return (snapshot.nodes || []).filter(n => selectors.some(sel => n.sel === sel || (n.selectors || []).includes(sel)));
 }
 
 /**

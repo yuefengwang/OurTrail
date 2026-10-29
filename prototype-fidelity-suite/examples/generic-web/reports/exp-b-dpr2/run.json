@@ -3,7 +3,8 @@
   "runId": "exp-b-dpr2",
   "pageId": "b-dpr2",
   "stateId": "default",
-  "startedAt": "2026-10-28T14:32:28.803Z",
+  "viewportId": null,
+  "startedAt": "2026-10-29T12:25:35.800Z",
   "project": {
     "id": "generic-web",
     "name": "通用 Web 基样（示例 1 · 卡片页）"

@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "prototype-manifest",
+  "projectId": "generic-web",
+  "pageId": "f-fluid",
+  "generatedAt": "2026-10-29T12:28:18.361Z",
+  "prototype": {
+    "platform": "web",
+    "source": "html",
+    "entry": "f/fluid.html",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "frameSelector": "#fluid",
+    "readOnly": true
+  },
+  "states": [
+    {
+      "id": "default",
+      "captured": false,
+      "dataSource": null,
+      "capturedAt": null,
+      "codeVersion": null,
+      "viewport": null,
+      "dpr": null,
+      "nodes": 0,
+      "screenshot": null,
+      "status": "UNVERIFIED"
+    }
+  ],
+  "mappings": {
+    "declared": 4,
+    "selectors": [],
+    "source": "pf.config.json#pages[].mappings"
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json",
+    "side": "prototype"
+  }
+}

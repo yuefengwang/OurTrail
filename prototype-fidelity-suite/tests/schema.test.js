@@ -154,4 +154,4 @@ section('typeOf classifies the way the validator does');
   eq('null is its own type', schema.typeOf(null), 'null');
 }
 
-finish('schema.test');
+process.exit(finish('schema.test'));

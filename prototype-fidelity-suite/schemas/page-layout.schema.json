@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://ourtrail.local/prototype-fidelity/schemas/page-layout.schema.json",
   "title": "page-layout",
-  "description": "Supporting artifact: ordered page sections with measured boxes and the inferred vertical rhythm between them. Gaps are inferred from two measured rects, so their provenance says so.",
+  "description": "Supporting artifact: ordered page sections with boxes measured on BOTH sides, the geometry differences between them, and the inferred vertical rhythm of each side. Gaps are inferred from two measured rects, so their provenance says so; a gap is UNVERIFIED when either operand was not measured on the target side.",
   "type": "object",
   "required": ["schemaVersion", "kind", "pageId", "stateId", "generatedAt", "sections", "rhythm"],
   "additionalProperties": false,
@@ -13,7 +13,8 @@
     "stateId": { "type": "string", "minLength": 1 },
     "generatedAt": { "type": "string", "format": "date-time" },
     "sections": { "type": "array", "items": { "$ref": "#/definitions/section" } },
-    "rhythm": { "type": "array", "items": { "$ref": "#/definitions/gap" } }
+    "rhythm": { "type": "array", "items": { "$ref": "#/definitions/gap" } },
+    "coverage": { "$ref": "#/definitions/coverage" }
   },
   "definitions": {
     "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
@@ -46,11 +47,54 @@
         "id": { "type": "string", "minLength": 1 },
         "role": { "type": "string" },
         "selector": { "type": "string", "minLength": 1 },
+        "resolved": { "type": "boolean" },
         "rect": { "$ref": "#/definitions/rect" },
         "text": { "type": "string" },
         "styles": { "type": "object", "additionalProperties": { "type": "string" } },
         "status": { "$ref": "#/definitions/status" },
+        "reason": { "type": ["string", "null"] },
+        "prototype": { "$ref": "#/definitions/side" },
+        "target": { "$ref": "#/definitions/side" },
+        "agreement": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "maxGeometryDelta": { "type": "number" } }
+        },
+        "differences": { "type": "array", "items": { "$ref": "#/definitions/difference" } },
         "source": { "$ref": "#/definitions/source" }
+      }
+    },
+    "side": {
+      "type": ["object", "null"],
+      "required": ["rect", "text", "styles"],
+      "additionalProperties": false,
+      "properties": {
+        "rect": { "$ref": "#/definitions/rect" },
+        "text": { "type": "string" },
+        "styles": { "type": "object", "additionalProperties": { "type": "string" } },
+        "captureNode": { "type": "string" }
+      }
+    },
+    "difference": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["geometry", "missing"] },
+        "axis": { "enum": ["x", "y", "w", "h"] },
+        "prototype": {},
+        "target": {},
+        "delta": { "type": ["number", "null"] }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["sectionsDeclared", "resolved", "compared"],
+      "additionalProperties": false,
+      "properties": {
+        "sectionsDeclared": { "type": "integer" },
+        "resolved": { "type": "integer" },
+        "compared": { "type": "integer" }
       }
     },
     "gap": {
@@ -61,6 +105,10 @@
         "from": { "type": "string", "minLength": 1 },
         "to": { "type": "string", "minLength": 1 },
         "gap": { "type": "number" },
+        "targetGap": { "type": ["number", "null"] },
+        "delta": { "type": ["number", "null"] },
+        "status": { "$ref": "#/definitions/status" },
+        "reason": { "type": ["string", "null"] },
         "source": {
           "type": "object",
           "required": ["kind", "from"],

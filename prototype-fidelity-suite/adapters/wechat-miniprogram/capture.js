@@ -17,10 +17,9 @@
  * come back at a scale that is NOT 1 (observed 306×660 for a 390×844 viewport), so
  * the scale is measured and recorded per capture rather than assumed.
  */
-const fs = require('fs');
 const path = require('path');
 const { createRequire } = require('module');
-const { ensureDir, PfError, round } = require('../../core/lib/util');
+const { ensureDir, PfError, round, writeFileRetry } = require('../../core/lib/util');
 const { expandBox } = require('../../core/lib/geometry');
 const { detectAutomator } = require('../../core/lib/env');
 
@@ -30,7 +29,7 @@ const STYLE_PROPS = [
   'border-bottom-width', 'border-bottom-color',
   'box-shadow', 'opacity', 'padding', 'margin', 'display', 'flex-direction',
   'align-items', 'justify-content', 'white-space', 'gap',
-  'min-height', 'box-sizing', 'width', 'height',
+  'min-height', 'box-sizing', 'width', 'height', 'background-image',
 ];
 
 function loadAutomator() {
@@ -171,7 +170,7 @@ async function capture(opts) {
     const shotPath = path.join(o.outDir, 'screenshot.png');
     const shot = await mp.screenshot();
     const buf = Buffer.from(String(shot), 'base64');
-    fs.writeFileSync(shotPath, buf);
+    writeFileRetry(shotPath, buf);
 
     const width = readPngSize(buf).width;
     const height = readPngSize(buf).height;

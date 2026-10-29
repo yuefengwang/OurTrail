@@ -3,7 +3,8 @@
   "runId": "exp-b-statusbar",
   "pageId": "b-statusbar",
   "stateId": "default",
-  "startedAt": "2026-10-28T14:33:37.663Z",
+  "viewportId": null,
+  "startedAt": "2026-10-29T12:26:15.871Z",
   "project": {
     "id": "generic-web",
     "name": "通用 Web 基样（示例 1 · 卡片页）"

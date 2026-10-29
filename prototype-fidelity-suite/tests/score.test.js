@@ -5,6 +5,7 @@
  */
 const { check, eq, section, totals, finish } = require('./harness');
 const score = require('../core/lib/score');
+const geometry = require('../core/lib/geometry');
 const stateChecks = require('../core/lib/state-checks');
 
 function pair(over) {
@@ -270,4 +271,98 @@ section('state checks compare artifacts with the declaration');
   eq('unverified state evidence keeps the card unverified', score.buildScorecard({ pairs: [pair()], state: missing }).verdict, 'UNVERIFIED');
 }
 
-finish('score.test');
+section('every category the comparator can emit has a dimension owner');
+{
+  // The list of props is read from the comparator itself, so adding a property
+  // whose category nobody owns turns this suite red instead of silently
+  // producing "FAIL with every dimension PASS".
+  const unmapped = geometry.STYLE_PROPS.map(p => geometry.categorizeStyle(p)).filter(c => !score.ownerOf(c));
+  eq('no style property maps to an unowned category', [...new Set(unmapped)], []);
+  const recordLevel = ['position', 'size', 'spacing', 'text', 'text-wrap', 'target-missing', 'prototype-missing', 'pixel', 'ink'];
+  eq('the record-level categories are owned too', recordLevel.filter(c => !score.ownerOf(c)), []);
+  eq('an unknown category is reported as unowned, not assumed', score.ownerOf('gizmo'), null);
+}
+
+section('a spacing difference fails the dimension that owns it');
+{
+  // The audit's F7 reproduction: two pairs, only padding differs. v0.1 said
+  // FAIL with geometry/typography/appearance all PASS.
+  const onlyPadding = pair({
+    pairId: 'b', status: 'FAIL', categories: ['spacing'],
+    styles: [{ prop: 'padding', category: 'spacing', status: 'FAIL', a: '14px 16px', b: '14px 20px', delta: 4 }],
+  });
+  const sc = score.buildScorecard({ pairs: [pair({ pairId: 'a' }), onlyPadding] });
+  eq('the page still fails', sc.verdict, 'FAIL');
+  eq('geometry owns the spacing failure', sc.dimensions.geometry.verdict, 'FAIL');
+  eq('typography stays clean', sc.dimensions.typography.verdict, 'PASS');
+  eq('appearance stays clean', sc.dimensions.appearance.verdict, 'PASS');
+  eq('the failing category names its dimension', sc.categories.spacing, { dimension: 'geometry', fail: 1 });
+  eq('the denominator is every measured pair', sc.dimensions.geometry.metrics.spacing,
+    { total: 2, fail: 1, maxAbsPx: 4 });
+  eq('nothing is left unowned', sc.coverage.unownedCategories, []);
+
+  const clean = score.buildScorecard({ pairs: [pair({ pairId: 'a' })] });
+  eq('a page with no spacing difference invents no spacing metric',
+    clean.dimensions.geometry.metrics.spacing, undefined);
+  eq('and geometry still passes', clean.dimensions.geometry.verdict, 'PASS');
+}
+
+section('structural categories are owned, not orphaned');
+{
+  const layout = pair({
+    pairId: 'l', status: 'FAIL', categories: ['layout'],
+    styles: [{ prop: 'display', category: 'layout', status: 'FAIL', a: 'flex', b: 'block' }],
+  });
+  const sc = score.buildScorecard({ pairs: [layout] });
+  eq('a layout difference is a geometry failure', sc.dimensions.geometry.verdict, 'FAIL');
+  eq('and is reported with its owner', sc.categories.layout, { dimension: 'geometry', fail: 1 });
+
+  const boxOnly = pair({
+    pairId: 'o', status: 'FAIL', categories: ['other'],
+    styles: [{ prop: 'min-height', category: 'other', status: 'FAIL', a: '60px', b: '52px', delta: 8 }],
+  });
+  const scOther = score.buildScorecard({ pairs: [boxOnly] });
+  eq('an unclassified box property still lands somewhere', scOther.dimensions.geometry.verdict, 'FAIL');
+
+  const extra = pair({
+    pairId: 'p', status: 'FAIL', presence: { prototype: false, target: true },
+    geometry: null, text: null, categories: ['prototype-missing'],
+  });
+  const scExtra = score.buildScorecard({ pairs: [extra] });
+  eq('an extra node on the target is an appearance failure', scExtra.dimensions.appearance.verdict, 'FAIL');
+  eq('and is counted once', scExtra.dimensions.appearance.checks.fail, 1);
+  eq('coverage keeps reporting it separately', scExtra.coverage.missingOnPrototype, 1);
+}
+
+section('a measurement the comparator downgraded is not a pass');
+{
+  // F6: the box-model downgrade used to leave geometry at `unverified: 0`.
+  const box = pair({
+    pairId: 'hero', status: 'UNVERIFIED',
+    styles: [{ prop: 'width', category: 'other', status: 'UNVERIFIED', a: '48px', b: '48px', reason: 'box models differ' }],
+  });
+  const sc = score.buildScorecard({ pairs: [box] });
+  eq('geometry reports the gap', sc.dimensions.geometry.checks.unverified, 1);
+  eq('geometry does not claim a pass', sc.dimensions.geometry.verdict, 'UNVERIFIED');
+  eq('the card cannot pass either', sc.verdict, 'UNVERIFIED');
+  check('and pass never counts the unverified check',
+    sc.dimensions.geometry.checks.pass === sc.dimensions.geometry.checks.total - 1,
+    sc.dimensions.geometry.checks);
+
+  const paint = pair({
+    pairId: 'text', status: 'UNVERIFIED',
+    styles: [{ prop: 'color', category: 'appearance', status: 'UNVERIFIED', a: '#000', b: null }],
+  });
+  const scPaint = score.buildScorecard({ pairs: [paint] });
+  eq('a one-sided appearance property is charged to appearance', scPaint.dimensions.appearance.checks.unverified, 1);
+  eq('and not to geometry', scPaint.dimensions.geometry.checks.unverified, 0);
+  eq('geometry still passes on its own evidence', scPaint.dimensions.geometry.verdict, 'PASS');
+
+  const pixels = pair({ pairId: 'img', status: 'UNVERIFIED', pixel: { status: 'UNVERIFIED', judged: true } });
+  const scPixels = score.buildScorecard({ pairs: [pixels] });
+  eq('a rendering comparison that could not run is an appearance gap',
+    scPixels.dimensions.appearance.checks.unverified, 1);
+  eq('so appearance cannot pass', scPixels.dimensions.appearance.verdict, 'UNVERIFIED');
+}
+
+process.exit(finish('score.test'));

@@ -11,7 +11,7 @@
  * — callers must surface that as BLOCKED, never guess pixels.
  */
 const zlib = require('zlib');
-const { PfError } = require('./util');
+const { PfError, writeFileRetry } = require('./util');
 
 const SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -213,7 +213,7 @@ function writeFile(file, widthOrImage, height, rgba) {
   const img = typeof widthOrImage === 'object' && widthOrImage !== null
     ? widthOrImage
     : { width: widthOrImage, height, data: rgba };
-  require('fs').writeFileSync(file, encode(img.width, img.height, img.data));
+  writeFileRetry(file, encode(img.width, img.height, img.data));
   return file;
 }
 

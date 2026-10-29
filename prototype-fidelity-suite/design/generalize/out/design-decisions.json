@@ -1,0 +1,108 @@
+{
+  "kind": "design-decisions",
+  "page": "community-book-lending",
+  "storeRevision": 128,
+  "decisions": [
+    {
+      "id": "D-color",
+      "statement": "色板只用库里的 7 个全局颜色变量，不新造色值",
+      "ruleRefs": [
+        "token.var.green",
+        "token.var.green-bright",
+        "token.var.green-soft",
+        "token.var.ink",
+        "token.var.line",
+        "token.var.muted",
+        "token.var.pale"
+      ]
+    },
+    {
+      "id": "D-type-scale",
+      "statement": "字号从既有阶里取（10px / 11px / 12px / 13px / 16px / 17px / 9px），不新增字号",
+      "ruleRefs": [
+        "token.size.10px",
+        "token.size.11px",
+        "token.size.12px",
+        "token.size.13px",
+        "token.size.16px",
+        "token.size.17px",
+        "token.size.9px"
+      ]
+    },
+    {
+      "id": "D-radius",
+      "statement": "圆角只用库里量到的 5 个值（18px / 3px / 4px / 50% / 9px），不新造圆角",
+      "ruleRefs": [
+        "token.radius.18px",
+        "token.radius.3px",
+        "token.radius.4px",
+        "token.radius.50",
+        "token.radius.9px"
+      ]
+    },
+    {
+      "id": "D-component-04",
+      "statement": "1 处功能沿用 `button > span`",
+      "ruleRefs": [
+        "component.button-span"
+      ]
+    },
+    {
+      "id": "D-confirm-dialog",
+      "statement": "confirm-dialog 按库里观测到的契约实现（interaction.dialog-sheet）",
+      "ruleRefs": [
+        "interaction.dialog-sheet"
+      ]
+    },
+    {
+      "id": "D-tap-target",
+      "statement": "可点区高度中位数 46px；3/45 个 <31px，16/45 个 <44px",
+      "ruleRefs": [
+        "principle.tap-target"
+      ]
+    },
+    {
+      "id": "D-hairline-separation",
+      "statement": "区块分隔主要靠 1px #e8ece7 上边框（13 处），阴影 4 处只用于外壳与浮层",
+      "ruleRefs": [
+        "principle.hairline-separation"
+      ]
+    },
+    {
+      "id": "D-type-hierarchy",
+      "statement": "字号阶 32px×1 / 25px×1 / 24px×4 / 21px×1 / 19px×1 / 18px×4 / 17px×14 / 16px×37 / 15px×6 / 14px×5 / 13px×35 / 12px×35 / 11px×52 / 10px×46 / 9px×5；5 处 <10px",
+      "ruleRefs": [
+        "principle.type-hierarchy"
+      ]
+    },
+    {
+      "id": "D-icon-stroke",
+      "statement": "图标为内联 SVG 描边（63 个），主流形态 1.8px/outline/round（39/63）",
+      "ruleRefs": [
+        "principle.icon-stroke"
+      ]
+    }
+  ],
+  "gaps": [
+    {
+      "code": "ROLE_UNRESOLVED",
+      "where": "head/show-title",
+      "detail": "全库没有可用于本页的 \"text\" 形态：component.span-row-body：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-row-body-h3：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-row-route：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.button-small：只属于 activity/weather 族；本页未声明家族，不按家族规则处理；component.div-solar-event-time：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.div-weather-section-heading-h2：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-stop-time-small：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-stop-body：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.small-stop-note：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-chart-note：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-time-hint：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "code": "ROLE_UNRESOLVED",
+      "where": "search/filter-books",
+      "detail": "全库没有可用于本页的 \"text\" 形态：component.span-row-body：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-row-body-h3：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-row-route：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.button-small：只属于 activity/weather 族；本页未声明家族，不按家族规则处理；component.div-solar-event-time：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.div-weather-section-heading-h2：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-stop-time-small：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-stop-body：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.small-stop-note：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-chart-note：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-time-hint：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "code": "ROLE_UNRESOLVED",
+      "where": "shelf/list-books",
+      "detail": "全库没有可用于本页的 \"list\" 形态：component.div-activity-list：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "code": "INTERACTION_UNRESOLVED",
+      "where": "interactions/status-feedback",
+      "detail": "全库没有可用于本页的 status-feedback 契约"
+    }
+  ]
+}

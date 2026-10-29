@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://ourtrail.local/prototype-fidelity/schemas/component-contracts.schema.json",
   "title": "component-contracts",
-  "description": "For each declared component, its measured instances: box, styles that define it, text and line count. A declared component whose selector was not found is UNVERIFIED with an explicit reason — never silently absent.",
+  "description": "For each declared component, the instances measured on BOTH sides, the geometry/style differences between them, and two separate facts: `resolved` (the declaration was measurable on the prototype) and `status` (PASS only when both sides were measured and agree). A declared selector that was not found, or a target side that was never captured, is UNVERIFIED with an explicit reason — never silently absent, and never a PASS.",
   "type": "object",
   "required": ["schemaVersion", "kind", "pageId", "stateId", "generatedAt", "components"],
   "additionalProperties": false,
@@ -59,11 +59,54 @@
         "id": { "type": "string", "minLength": 1 },
         "role": { "type": "string" },
         "criticality": { "enum": ["critical", "normal"] },
+        "resolved": { "type": "boolean" },
         "status": { "$ref": "#/definitions/status" },
-        "reason": { "type": "string" },
+        "reason": { "type": ["string", "null"] },
         "selectors": { "type": "array", "items": { "type": "string" } },
         "instances": { "type": "array", "items": { "$ref": "#/definitions/instance" } },
+        "prototype": { "$ref": "#/definitions/side" },
+        "target": { "$ref": "#/definitions/side" },
+        "agreement": { "$ref": "#/definitions/agreement" },
+        "differences": { "type": "array", "items": { "$ref": "#/definitions/difference" } },
         "source": { "$ref": "#/definitions/source" }
+      }
+    },
+    "side": {
+      "type": ["object", "null"],
+      "required": ["instances"],
+      "additionalProperties": false,
+      "properties": {
+        "instances": { "type": "array", "items": { "$ref": "#/definitions/instance" } }
+      }
+    },
+    "agreement": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "instances": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "prototype": { "type": "integer" },
+            "target": { "type": "integer" }
+          }
+        },
+        "compared": { "type": "integer" },
+        "maxGeometryDelta": { "type": "number" },
+        "differences": { "type": "integer" }
+      }
+    },
+    "difference": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["count", "geometry", "style", "missing", "unverified", "unverifiable"] },
+        "axis": { "enum": ["x", "y", "w", "h"] },
+        "prop": { "type": "string" },
+        "prototype": {},
+        "target": {},
+        "delta": { "type": ["number", "null"] }
       }
     }
   }

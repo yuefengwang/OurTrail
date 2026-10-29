@@ -9,8 +9,49 @@
  * not an invented 95% similarity.
  */
 const { round } = require('./util');
+const { categorizeStyle } = require('./geometry');
 
 const DEFAULT_BUDGET = { criticalFailures: 0, nonCriticalFailures: 0 };
+
+/**
+ * Every category a comparison can emit belongs to exactly one dimension.
+ *
+ * v0.1 emitted `spacing` and `layout` records that no dimension claimed, so a
+ * spacing-only difference produced `verdict FAIL` with all three dimensions
+ * PASS — a report that cannot say what failed (docs/audit-v0.1.md F7). The map
+ * is the contract: `tests/score.test.js` fails if a category the comparator can
+ * emit has no owner here.
+ */
+const CATEGORY_DIMENSION = {
+  position: 'geometry',
+  size: 'geometry',
+  spacing: 'geometry',
+  layout: 'geometry',
+  other: 'geometry',
+  typography: 'typography',
+  text: 'typography',
+  'text-wrap': 'typography',
+  appearance: 'appearance',
+  icon: 'appearance',
+  pixel: 'appearance',
+  ink: 'appearance',
+  'target-missing': 'appearance',
+  'prototype-missing': 'appearance',
+};
+
+/**
+ * Categories a dimension already counts through its own checks. The rest are
+ * counted here, one check per (pair, category), so ownership is enforced without
+ * counting the same record twice.
+ */
+const COUNTED_ELSEWHERE = new Set([
+  'position', 'size', 'typography', 'text', 'text-wrap',
+  'appearance', 'icon', 'pixel', 'ink', 'target-missing',
+]);
+
+function ownerOf(category) {
+  return CATEGORY_DIMENSION[category] || null;
+}
 
 function counts(records, predicate) {
   let total = 0, pass = 0, fail = 0, unverified = 0, na = 0;
@@ -118,11 +159,17 @@ function buildScorecard(input) {
   }
   geo.position.meanAbsPx = geo.position.total ? round(posSum / geo.position.total, 2) : 0;
   geo.size.meanAbsPx = geo.size.total ? round(sizeSum / geo.size.total, 2) : 0;
-  if (input.spacing) {
+  // Spacing is emitted by the comparator as a category, but v0.1 only counted it
+  // when a caller hand-passed `input.spacing` — and the CLI never did, so a
+  // padding-only difference failed the page while every dimension said PASS
+  // (docs/audit-v0.1.md F7). Derive it when the caller has no number of its own;
+  // an explicit `input.spacing` still wins.
+  const spacing = input.spacing || spacingFromPairs(pairs);
+  if (spacing) {
     geo.spacing = {
-      total: input.spacing.total || 0,
-      fail: input.spacing.fail || 0,
-      maxAbsPx: input.spacing.maxAbsPx || 0,
+      total: spacing.total || 0,
+      fail: spacing.fail || 0,
+      maxAbsPx: spacing.maxAbsPx || 0,
     };
   }
 
@@ -141,7 +188,9 @@ function buildScorecard(input) {
   const wrapCriticalFail = wrapChecks.filter(r => r.text.lineDelta !== 0 && !excused(r, 'text-wrap') &&
     r.criticality === 'critical').length;
 
-  const appearance = styleStatus(pairs, ['color', 'background-color', 'border-radius', 'border-top-width', 'border-top-color', 'box-shadow', 'opacity']);
+  // `background-image` / `src` are appearance declarations: a swapped or cropped
+  // asset is a paint difference even when the box and the corner radius match.
+  const appearance = styleStatus(pairs, ['color', 'background-color', 'border-radius', 'border-top-width', 'border-top-color', 'box-shadow', 'opacity', 'background-image', 'src']);
   // Pixel and ink differences are appearance evidence: the region rendered
   // differently (a cropped image, a heavier stroke) while no declaration moved.
   // Without this they reached only the overall verdict, producing a FAIL with
@@ -154,28 +203,65 @@ function buildScorecard(input) {
   const pairsMeasured = pairs.filter(r => r.geometry);
   const pairsUnverified = pairs.filter(r => r.status === 'UNVERIFIED');
 
-  const geometryFail = geo.position.fail + geo.size.fail + (input.spacing ? input.spacing.fail : 0);
-  const geometryTotal = geo.position.total + geo.size.total + (input.spacing ? input.spacing.total : 0);
-  const geometryCriticalFail = geo.position.criticalFail + geo.size.criticalFail;
-  const typographyFail = typo.fail + textFail + wrapFail;
-  const typographyTotal = typo.total + textJudged.length + wrapChecks.length;
-  const typographyCriticalFail = typo.criticalFail + textCriticalFail + wrapCriticalFail;
-  const appearanceFail = appearance.fail + missingTarget.length + renderingFail.length;
-  const appearanceTotal = appearance.total + pairsMeasured.length;
+  // Categories a dimension does not already count through its own checks
+  // (`layout`, `other`, `prototype-missing`) become one check each, charged to
+  // their owner. Without this the page fails while no dimension does (F7).
+  const extra = { geometry: { total: 0, fail: 0, criticalFail: 0 }, typography: { total: 0, fail: 0, criticalFail: 0 }, appearance: { total: 0, fail: 0, criticalFail: 0 } };
+  const categories = {};
+  const unowned = new Set();
+  for (const r of pairs) {
+    if (r.status === 'NOT_APPLICABLE') continue;
+    const isCritical = r.criticality === 'critical';
+    for (const c of new Set(r.categories || [])) {
+      const dim = ownerOf(c);
+      if (!dim) { unowned.add(c); continue; }
+      if (!categories[c]) categories[c] = { dimension: dim, fail: 0 };
+      categories[c].fail++;
+      if (COUNTED_ELSEWHERE.has(c)) continue;
+      extra[dim].total++;
+      extra[dim].fail++;
+      if (isCritical) extra[dim].criticalFail++;
+    }
+  }
+
+  // F6: geometry passed a hardcoded `unverified: 0`, so a box the comparator
+  // downgraded — differing box models, a dimension property only one side
+  // reports — still read as measured. Count what the comparator marked instead.
+  const geoStyleUnverified = pairs.filter(r => (r.styles || []).some(s =>
+    s.status === 'UNVERIFIED' && ownerOf(s.category || categorizeStyle(s.prop)) === 'geometry')).length;
+  // A pixel comparison that could not run is a rendering measurement gap; it
+  // belongs to the dimension that owns rendering, not only to the overall verdict.
+  const pixelUnverified = pairs.filter(r => r.pixel && r.pixel.status === 'UNVERIFIED' && r.pixel.judged !== false).length;
+
+  const geometryFail = geo.position.fail + geo.size.fail + (geo.spacing ? geo.spacing.fail : 0) + extra.geometry.fail;
+  const geometryTotal = geo.position.total + geo.size.total + (geo.spacing ? geo.spacing.total : 0) + extra.geometry.total;
+  const geometryCriticalFail = geo.position.criticalFail + geo.size.criticalFail + extra.geometry.criticalFail;
+  const typographyFail = typo.fail + textFail + wrapFail + extra.typography.fail;
+  const typographyTotal = typo.total + textJudged.length + wrapChecks.length + extra.typography.total;
+  const typographyCriticalFail = typo.criticalFail + textCriticalFail + wrapCriticalFail + extra.typography.criticalFail;
+  const appearanceFail = appearance.fail + missingTarget.length + renderingFail.length + extra.appearance.fail;
+  const appearanceTotal = appearance.total + pairsMeasured.length + extra.appearance.total;
   const appearanceCriticalFail = appearance.criticalFail
     + missingTarget.filter(r => r.criticality === 'critical').length
-    + renderingFail.filter(r => r.criticality === 'critical').length;
+    + renderingFail.filter(r => r.criticality === 'critical').length
+    + extra.appearance.criticalFail;
+  const appearanceUnverified = appearance.unverified + pixelUnverified;
+
+  const passOf = (total, fail, unverified) => Math.max(0, total - fail - unverified);
 
   const dims = {
     geometry: {
-      checks: { total: geometryTotal, pass: geometryTotal - geometryFail, fail: geometryFail, unverified: 0 },
+      checks: {
+        total: geometryTotal, fail: geometryFail,
+        pass: passOf(geometryTotal, geometryFail, geoStyleUnverified), unverified: geoStyleUnverified,
+      },
       metrics: geo,
-      verdict: dimensionVerdict(geometryTotal, geometryFail, budget, 0, geometryCriticalFail),
+      verdict: dimensionVerdict(geometryTotal, geometryFail, budget, geoStyleUnverified, geometryCriticalFail),
     },
     typography: {
       checks: {
         total: typographyTotal, fail: typographyFail,
-        pass: typographyTotal - typographyFail, unverified: typo.unverified,
+        pass: passOf(typographyTotal, typographyFail, typo.unverified), unverified: typo.unverified,
       },
       metrics: {
         style: typo, text: { total: textChecks.length, fail: textFail },
@@ -186,7 +272,7 @@ function buildScorecard(input) {
     appearance: {
       checks: {
         total: appearanceTotal, fail: appearanceFail,
-        pass: appearanceTotal - appearanceFail, unverified: appearance.unverified,
+        pass: passOf(appearanceTotal, appearanceFail, appearanceUnverified), unverified: appearanceUnverified,
       },
       metrics: {
         style: appearance,
@@ -194,12 +280,15 @@ function buildScorecard(input) {
         missingOnPrototype: missingPrototype.length,
         notApplicable: pairs.filter(r => r.status === 'NOT_APPLICABLE').length,
       },
-      verdict: dimensionVerdict(appearanceTotal, appearanceFail, budget, appearance.unverified, appearanceCriticalFail),
+      verdict: dimensionVerdict(appearanceTotal, appearanceFail, budget, appearanceUnverified, appearanceCriticalFail),
     },
   };
 
   if (input.state) dims.state = checkDimension(input.state);
   if (input.interaction) dims.interaction = checkDimension(input.interaction);
+  // Which build did the screenshot show? An unproven build cannot be a pass; the
+  // dimension exists only when the project declares a bundle to prove against.
+  if (input.provenance && input.provenance.length) dims.provenance = checkDimension(input.provenance);
 
   const criticalFailures = critical.filter(r => r.status === 'FAIL');
   const nonCriticalFailures = nonCritical.filter(r => r.status === 'FAIL');
@@ -218,6 +307,9 @@ function buildScorecard(input) {
     schemaVersion: '1.0.0',
     generatedAt: new Date().toISOString(),
     dimensions: dims,
+    // Which category failed, how often, and who owns it — the report can always
+    // name a failing dimension instead of only a failing region (F7).
+    categories,
     criticalFailures: criticalFailures.map(brief),
     nonCriticalFailures: nonCriticalFailures.map(brief),
     budget,
@@ -230,9 +322,33 @@ function buildScorecard(input) {
       missingOnTarget: missingTarget.length,
       missingOnPrototype: missingPrototype.length,
       pixelsCompared: input.pixel && input.pixel.regions ? input.pixel.regions.length : 0,
+      // A category with no owner would be counted in the overall verdict but in
+      // no dimension. This list must stay empty; the suite fails if it is not.
+      unownedCategories: [...unowned].sort(),
     },
     verdict: overall,
   };
+}
+
+/**
+ * Spacing statistics derived from the region records themselves. The denominator
+ * is every measured pair — a pair with no spacing difference is a passing
+ * spacing check, which is what makes the ratio meaningful.
+ */
+function spacingFromPairs(pairs) {
+  const measured = pairs.filter(r => r.geometry);
+  if (!measured.some(r => (r.categories || []).includes('spacing'))) return null;
+  let fail = 0, maxAbsPx = 0;
+  for (const r of measured) {
+    if (!(r.categories || []).includes('spacing')) continue;
+    fail++;
+    for (const s of r.styles || []) {
+      if (s.category === 'spacing' && typeof s.delta === 'number') {
+        maxAbsPx = Math.max(maxAbsPx, Math.abs(s.delta));
+      }
+    }
+  }
+  return { total: measured.length, fail, maxAbsPx: round(maxAbsPx, 2) };
 }
 
 /**
@@ -276,4 +392,4 @@ function brief(r) {
   };
 }
 
-module.exports = { buildScorecard, verdictOf, DEFAULT_BUDGET };
+module.exports = { buildScorecard, verdictOf, DEFAULT_BUDGET, CATEGORY_DIMENSION, ownerOf };

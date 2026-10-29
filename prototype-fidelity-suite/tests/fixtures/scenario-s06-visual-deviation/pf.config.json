@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": { "id": "s06-visual-deviation", "name": "三处已声明偏差 + 一个对照区" },
+  "prototype": { "adapter": "web", "viewport": { "width": 390, "height": 844 }, "frameSelector": "#frame" },
+  "target": { "adapter": "web", "frameSelector": "#frame" },
+  "tolerances": { "position": 1.5, "size": 1.5, "gap": 1, "font": 1, "color": 6, "pixelRatio": 0.02, "criticalPixelRatio": 0.005 },
+  "pages": [
+    {
+      "id": "s06-page",
+      "note": "控制区 s-ctrl 两侧字节相同；三处偏差分别落在 s-pad / s-badge / s-move",
+      "prototype": { "url": "prototype.html" },
+      "target": { "url": "target.html" },
+      "mappings": [
+        { "id": "s-title", "role": "标题", "prototypeSelector": "#s-title", "targetSelector": "#s-title", "pixelMode": "informational", "criticality": "critical" },
+        { "id": "s-ctrl", "role": "对照区（必须 PASS）", "prototypeSelector": "#s-ctrl", "targetSelector": "#s-ctrl", "pixelMode": "informational", "criticality": "critical" },
+        { "id": "s-pad", "role": "车程卡（内边距 12→16）", "prototypeSelector": "#s-pad", "targetSelector": "#s-pad", "pixelMode": "informational", "criticality": "critical", "styleProps": ["padding"] },
+        { "id": "s-badge", "role": "名额徽标（底色变化）", "prototypeSelector": "#s-badge", "targetSelector": "#s-badge", "pixelMode": "informational", "criticality": "normal", "styleProps": ["background-color"] },
+        { "id": "s-move", "role": "集合门块（右移 8px）", "prototypeSelector": "#s-move", "targetSelector": "#s-move", "pixelMode": "informational", "criticality": "normal", "styleProps": ["margin-left"] },
+        { "id": "s-btn", "role": "提醒按钮", "prototypeSelector": "#s-btn", "targetSelector": "#s-btn", "pixelMode": "informational", "criticality": "normal" }
+      ],
+      "states": [{ "id": "default" }],
+      "interactions": [
+        {
+          "id": "toggle-out",
+          "title": "点按钮后出现提醒",
+          "do": [{ "tap": { "selector": "#s-btn" } }, { "wait": 150 }],
+          "expect": { "textIncludes": { "selector": "#s-out", "text": "提醒已显示" } },
+          "screenshot": false
+        }
+      ]
+    }
+  ]
+}

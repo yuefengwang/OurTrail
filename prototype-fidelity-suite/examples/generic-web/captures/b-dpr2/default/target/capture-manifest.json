@@ -3,14 +3,16 @@
   "kind": "capture-manifest",
   "pageId": "b-dpr2",
   "stateId": "default",
+  "viewportId": null,
   "side": "target",
   "platform": "web",
-  "capturedAt": "2026-10-28T14:32:39.803Z",
+  "capturedAt": "2026-10-29T12:25:42.565Z",
   "source": {
     "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/b/base.html",
     "projectRoot": null,
     "route": null,
-    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
     "dataSource": "real",
     "injection": null,
     "note": null
@@ -20,6 +22,7 @@
     "height": 844
   },
   "dpr": 2,
+  "bundle": null,
   "screenshot": {
     "path": "screenshot.png",
     "sha256": "6460da348f08d9e585f41e477cab4b15805b6b95866ced5ed2e6c4d141312249",

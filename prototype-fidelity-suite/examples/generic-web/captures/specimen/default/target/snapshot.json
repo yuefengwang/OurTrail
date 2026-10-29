@@ -48,7 +48,8 @@
         "width": "390px",
         "height": "844px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -116,7 +117,8 @@
         "width": "390px",
         "height": "844px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -167,7 +169,8 @@
         "width": "126.422px",
         "height": "26px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -218,7 +221,8 @@
         "width": "235.344px",
         "height": "16px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -273,7 +277,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -324,7 +329,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -375,7 +381,8 @@
         "width": "149px",
         "height": "26px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -430,7 +437,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -481,7 +489,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -532,7 +541,8 @@
         "width": "149px",
         "height": "26px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -587,7 +597,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -638,7 +649,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -689,7 +701,8 @@
         "width": "149px",
         "height": "26px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -744,7 +757,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -795,7 +809,8 @@
         "width": "141px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -846,7 +861,8 @@
         "width": "141px",
         "height": "26px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -901,7 +917,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -952,7 +969,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -1004,7 +1022,8 @@
         "width": "140px",
         "height": "24px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -1059,7 +1078,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -1110,7 +1130,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -1162,7 +1183,8 @@
         "width": "150px",
         "height": "44px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -1217,7 +1239,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -1268,7 +1291,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -1319,7 +1343,8 @@
         "width": "56px",
         "height": "56px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -1374,7 +1399,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -1425,7 +1451,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -1476,7 +1503,8 @@
         "width": "140px",
         "height": "24px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -1531,7 +1559,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -1582,7 +1611,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -1633,7 +1663,9 @@
         "width": "140px",
         "height": "56px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none",
+        "src": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/assets/stripes.png"
       },
       "visible": true,
       "lineCount": null
@@ -1688,7 +1720,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -1739,7 +1772,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -1790,7 +1824,8 @@
         "width": "140px",
         "height": "66px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 3
@@ -1845,7 +1880,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -1896,7 +1932,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -1947,7 +1984,8 @@
         "width": "149px",
         "height": "26px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -2002,7 +2040,8 @@
         "width": "175px",
         "height": "110px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -2053,7 +2092,8 @@
         "width": "149px",
         "height": "14px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -2104,7 +2144,8 @@
         "width": "149px",
         "height": "26px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": null
@@ -2155,7 +2196,8 @@
         "width": "70px",
         "height": "30px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1
@@ -2206,7 +2248,8 @@
         "width": "120px",
         "height": "16px",
         "min-height": "0px",
-        "box-sizing": "border-box"
+        "box-sizing": "border-box",
+        "background-image": "none"
       },
       "visible": true,
       "lineCount": 1

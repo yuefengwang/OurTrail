@@ -1,0 +1,217 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/schemas/design-plan.schema.json",
+  "title": "Design plan produced by design-dna-generalizer",
+  "description": "The output of turning a business brief into a page design, using only rules the knowledge base allows for that page. Rule provenance is carried per function (component.ruleId) and per decision (decisions[].ruleRefs); those ids are checked against the store by design/generalize/plan.js:validatePlan, not by this schema — a plan cannot be validated without the store it cites, and pretending otherwise would let a dangling id pass.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind", "schemaVersion", "id", "title", "family", "platform", "constraints",
+    "generatedAt", "basis", "tokens", "sections", "interactions", "principles",
+    "decisions", "gaps", "rejected", "coverage"
+  ],
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "ruleId": { "type": "string", "minLength": 3 },
+    "ruleRefs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/ruleId" }
+    },
+    "grounding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolved", "ruleId", "signature", "scope", "basis"],
+      "properties": {
+        "resolved": { "type": "boolean" },
+        "ruleId": { "type": ["string", "null"] },
+        "signature": { "type": ["string", "null"] },
+        "scope": { "type": ["string", "null"], "enum": ["global", "page-family", "page", null] },
+        "basis": { "type": ["string", "null"] }
+      }
+    }
+  },
+  "properties": {
+    "kind": { "const": "design-plan" },
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "family": { "type": ["string", "null"] },
+    "platform": { "type": "object" },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["storeId", "storeRevision", "corpus", "family"],
+      "properties": {
+        "storeId": { "type": ["string", "null"] },
+        "storeRevision": { "type": "integer", "minimum": 0 },
+        "corpus": { "type": "array", "items": { "type": "string" } },
+        "family": { "type": ["string", "null"] }
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variables", "scale"],
+      "properties": {
+        "variables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "value", "ruleId", "group", "scope"],
+            "properties": {
+              "name": { "type": "string", "pattern": "^--[a-z0-9-]+$" },
+              "value": { "type": "string" },
+              "ruleId": { "$ref": "#/definitions/ruleId" },
+              "group": { "type": "string" },
+              "scope": { "type": "string", "enum": ["global", "page-family", "page"] }
+            }
+          }
+        },
+        "scale": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["prop", "value", "ruleId", "scope"],
+            "properties": {
+              "prop": { "type": "string" },
+              "value": { "type": "string" },
+              "ruleId": { "$ref": "#/definitions/ruleId" },
+              "scope": { "type": "string", "enum": ["global", "page-family", "page"] }
+            }
+          }
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "role", "surface", "layout", "functions"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "role": { "type": "string", "minLength": 1 },
+          "surface": { "type": "string", "enum": ["header", "content", "footer", "overlay"] },
+          "layout": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["order", "basis", "stack"],
+            "properties": {
+              "order": { "type": "integer", "minimum": 1 },
+              "basis": { "type": "string", "minLength": 1 },
+              "stack": { "type": "string", "enum": ["block", "row"] }
+            }
+          },
+          "functions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "label", "kind", "role", "states", "component"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "label": { "type": "string", "minLength": 1 },
+                "kind": { "type": "string", "enum": ["display", "list", "action", "input", "navigation", "feedback"] },
+                "role": { "type": "string", "minLength": 2 },
+                "states": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+                "component": { "$ref": "#/definitions/grounding" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "interactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "resolved", "ruleId", "scope", "contract", "basis"],
+        "properties": {
+          "name": { "type": "string", "minLength": 2 },
+          "resolved": { "type": "boolean" },
+          "ruleId": { "type": ["string", "null"] },
+          "scope": { "type": ["string", "null"], "enum": ["global", "page-family", "page", null] },
+          "contract": { "type": ["object", "null"] },
+          "basis": { "type": ["string", "null"] },
+          "requested": { "type": "boolean" }
+        }
+      }
+    },
+    "principles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement", "scope"],
+        "properties": {
+          "id": { "$ref": "#/definitions/ruleId" },
+          "statement": { "type": "string", "minLength": 1 },
+          "scope": { "type": "string", "enum": ["global", "page-family", "page"] }
+        }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement", "ruleRefs"],
+        "properties": {
+          "id": { "type": "string", "minLength": 2 },
+          "statement": { "type": "string", "minLength": 1 },
+          "ruleRefs": { "$ref": "#/definitions/ruleRefs" }
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "where", "detail"],
+        "properties": {
+          "code": { "type": "string", "enum": ["ROLE_UNRESOLVED", "INTERACTION_UNRESOLVED"] },
+          "where": { "type": "string", "minLength": 1 },
+          "detail": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "rejected": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ruleId", "category", "scope", "signature", "roles", "why"],
+        "properties": {
+          "ruleId": { "$ref": "#/definitions/ruleId" },
+          "category": { "type": "string", "enum": ["token", "component", "interaction", "principle"] },
+          "scope": { "type": ["string", "null"] },
+          "signature": { "type": ["string", "null"] },
+          "roles": { "type": ["array", "null"], "items": { "type": "string" } },
+          "why": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["functions", "resolved", "unresolved", "interactionsRequested", "interactionsResolved"],
+      "properties": {
+        "functions": { "type": "integer", "minimum": 1 },
+        "resolved": { "type": "integer", "minimum": 0 },
+        "unresolved": { "type": "integer", "minimum": 0 },
+        "interactionsRequested": { "type": "integer", "minimum": 0 },
+        "interactionsResolved": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

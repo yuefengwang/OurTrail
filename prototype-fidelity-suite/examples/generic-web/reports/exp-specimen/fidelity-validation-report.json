@@ -3,18 +3,19 @@
   "kind": "fidelity-validation-report",
   "pageId": "specimen",
   "stateId": "default",
-  "generatedAt": "2026-10-28T14:32:11.029Z",
+  "viewportId": null,
+  "generatedAt": "2026-10-29T12:25:25.623Z",
   "status": "FAIL",
   "reason": null,
   "scorecard": {
     "schemaVersion": "1.0.0",
-    "generatedAt": "2026-10-28T14:32:11.028Z",
+    "generatedAt": "2026-10-29T12:25:25.623Z",
     "dimensions": {
       "geometry": {
         "checks": {
-          "total": 24,
-          "pass": 23,
-          "fail": 1,
+          "total": 37,
+          "fail": 3,
+          "pass": 34,
           "unverified": 0
         },
         "metrics": {
@@ -31,6 +32,11 @@
             "criticalFail": 0,
             "maxAbsPx": 0,
             "meanAbsPx": 0
+          },
+          "spacing": {
+            "total": 12,
+            "fail": 1,
+            "maxAbsPx": 4
           }
         },
         "verdict": "FAIL"
@@ -62,14 +68,14 @@
       },
       "appearance": {
         "checks": {
-          "total": 96,
+          "total": 109,
           "fail": 9,
-          "pass": 87,
+          "pass": 100,
           "unverified": 0
         },
         "metrics": {
           "style": {
-            "total": 84,
+            "total": 97,
             "fail": 3,
             "unverified": 0,
             "criticalFail": 0
@@ -101,6 +107,32 @@
         },
         "metrics": {},
         "verdict": "PASS"
+      }
+    },
+    "categories": {
+      "position": {
+        "dimension": "geometry",
+        "fail": 1
+      },
+      "spacing": {
+        "dimension": "geometry",
+        "fail": 1
+      },
+      "typography": {
+        "dimension": "typography",
+        "fail": 2
+      },
+      "pixel": {
+        "dimension": "appearance",
+        "fail": 6
+      },
+      "appearance": {
+        "dimension": "appearance",
+        "fail": 2
+      },
+      "text-wrap": {
+        "dimension": "typography",
+        "fail": 1
       }
     },
     "criticalFailures": [],
@@ -462,7 +494,8 @@
       "notApplicable": 0,
       "missingOnTarget": 0,
       "missingOnPrototype": 0,
-      "pixelsCompared": 0
+      "pixelsCompared": 0,
+      "unownedCategories": []
     },
     "verdict": "FAIL"
   },
@@ -486,10 +519,10 @@
             "observed": "说明已展开"
           }
         ],
-        "startedAt": "2026-10-28T14:32:10.096Z",
+        "startedAt": "2026-10-29T12:25:24.776Z",
         "screenshotPath": null,
-        "finishedAt": "2026-10-28T14:32:10.867Z",
-        "durationMs": 771,
+        "finishedAt": "2026-10-29T12:25:25.520Z",
+        "durationMs": 744,
         "verification": "real-action-and-observation"
       }
     ],

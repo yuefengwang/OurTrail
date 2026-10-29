@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "kind": "page-state-manifest",
   "pageId": "c-repair",
-  "generatedAt": "2026-10-28T14:34:40.156Z",
+  "generatedAt": "2026-10-29T12:26:52.896Z",
   "states": [
     {
       "id": "default",
@@ -23,8 +23,8 @@
             "height": 844
           },
           "dpr": 1,
-          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
-          "capturedAt": "2026-10-28T14:34:34.808Z",
+          "codeVersion": null,
+          "capturedAt": "2026-10-29T12:26:49.864Z",
           "nodes": 10,
           "screenshot": {
             "path": "screenshot.png",
@@ -48,8 +48,8 @@
             "height": 844
           },
           "dpr": 1,
-          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
-          "capturedAt": "2026-10-28T14:34:40.078Z",
+          "codeVersion": null,
+          "capturedAt": "2026-10-29T12:26:52.858Z",
           "nodes": 10,
           "screenshot": {
             "path": "screenshot.png",

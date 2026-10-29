@@ -1,0 +1,34 @@
+{
+  "id": "s02-kb-conflict",
+  "class": "kb-conflict",
+  "adversarial": true,
+  "purpose": "同一主题（css-var:--leaf）的两条规则给出不同值时必须被报成冲突并以退出码 1 结束；无关规则（--paper）不得被连带标记。两份库都是同一份抽取结果的副本，只多了一条格式完全合法、证据与范围自洽的「旧 token」——它看起来像一次正常改名，但库不能接受它。",
+  "steps": [
+    {
+      "run": ["kb", "conflicts", "--file", "clean-kb.json"],
+      "expectExit": 0,
+      "captureStdout": "clean.txt"
+    },
+    {
+      "run": ["kb", "conflicts", "--file", "conflict-kb.json"],
+      "expectExit": 1,
+      "captureStdout": "conflict.txt"
+    }
+  ],
+  "checks": [
+    { "file": "clean.txt", "contains": "no conflicts among 3 rules" },
+    { "file": "clean.txt", "matches": "^(?![\\s\\S]*VALUE_CONFLICT)" },
+
+    { "file": "conflict.txt", "matches": "VALUE_CONFLICT token\\.var\\.leaf vs token\\.var\\.leaf-legacy" },
+    { "file": "conflict.txt", "contains": "css-var:--leaf" },
+    { "file": "conflict.txt", "contains": "#2f6b4f" },
+    { "file": "conflict.txt", "contains": "#c2410c" },
+    { "file": "conflict.txt", "matches": "1 conflicts" },
+    { "file": "conflict.txt", "matches": "^(?![\\s\\S]*token\\.var\\.paper)[\\s\\S]*VALUE_CONFLICT" },
+
+    { "file": "clean-kb.json", "path": "$.rules", "minLength": 3 },
+    { "file": "clean-kb.json", "path": "$.rules[*].confirmation.status", "equals": "candidate" },
+    { "file": "conflict-kb.json", "path": "$.rules", "minLength": 4 },
+    { "file": "conflict-kb.json", "path": "$.rules[*].confirmation.status", "equals": "candidate" }
+  ]
+}

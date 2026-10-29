@@ -21,7 +21,14 @@
         "url": { "type": ["string", "null"] },
         "projectRoot": { "type": ["string", "null"] },
         "route": { "type": ["string", "null"] },
-        "codeVersion": { "type": ["string", "null"] },
+        "codeVersion": {
+          "type": ["string", "null"],
+          "description": "The build the caller declares this capture to show. Never inferred from the suite's own git HEAD."
+        },
+        "suiteHead": {
+          "type": ["string", "null"],
+          "description": "HEAD of the repository that ran the capture. It dates the capture; it does not identify the rendered build."
+        },
         "dataSource": { "enum": ["real", "injected"] },
         "injection": { "type": ["object", "array", "null"] },
         "note": { "type": ["string", "null"] }
@@ -36,6 +43,23 @@
       }
     },
     "dpr": { "type": ["number", "null"], "minimum": 0 },
+    "bundle": {
+      "description": "Content fingerprint of the source tree this capture is supposed to show, taken before the render. Absent when the side does not declare a bundle.",
+      "type": ["object", "null"],
+      "required": ["fingerprint", "method", "fingerprintedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "fingerprint": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" },
+        "files": { "type": ["integer", "null"], "minimum": 0 },
+        "bytes": { "type": ["integer", "null"], "minimum": 0 },
+        "newestMtime": { "type": ["string", "null"], "format": "date-time" },
+        "fingerprintedAt": { "type": "string", "format": "date-time" },
+        "method": { "const": "content-sha256" },
+        "root": { "type": ["string", "null"] },
+        "status": { "enum": ["PASS", "UNVERIFIED"] },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
     "screenshot": {
       "oneOf": [
         {

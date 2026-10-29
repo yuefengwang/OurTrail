@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "page-layout",
+  "pageId": "f-fluid",
+  "stateId": "default",
+  "generatedAt": "2026-10-29T12:28:08.759Z",
+  "sections": [],
+  "rhythm": [],
+  "coverage": {
+    "sectionsDeclared": 0,
+    "resolved": 0,
+    "compared": 0
+  }
+}

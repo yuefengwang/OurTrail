@@ -3,7 +3,7 @@
   "kind": "prototype-manifest",
   "projectId": "generic-web",
   "pageId": "b-dynamic-undeclared",
-  "generatedAt": "2026-10-28T14:33:31.368Z",
+  "generatedAt": "2026-10-29T12:26:12.423Z",
   "prototype": {
     "platform": "web",
     "source": "html",
@@ -20,8 +20,8 @@
       "id": "default",
       "captured": true,
       "dataSource": "real",
-      "capturedAt": "2026-10-28T14:33:25.787Z",
-      "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+      "capturedAt": "2026-10-29T12:26:09.227Z",
+      "codeVersion": null,
       "viewport": {
         "width": 390,
         "height": 844

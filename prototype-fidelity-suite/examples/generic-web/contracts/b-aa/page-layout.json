@@ -3,7 +3,12 @@
   "kind": "page-layout",
   "pageId": "b-aa",
   "stateId": "default",
-  "generatedAt": "2026-10-28T14:32:22.862Z",
+  "generatedAt": "2026-10-29T12:25:32.341Z",
   "sections": [],
-  "rhythm": []
+  "rhythm": [],
+  "coverage": {
+    "sectionsDeclared": 0,
+    "resolved": 0,
+    "compared": 0
+  }
 }

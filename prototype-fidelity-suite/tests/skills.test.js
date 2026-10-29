@@ -59,18 +59,44 @@ function inspect(text, dirName, exists) {
 
 const existsIn = (dir, file) => fs.existsSync(path.join(SKILLS, dir, 'references', file));
 
+// Skill rows are `| name | … |` or `| 1 | name | … |` with a backticked kebab id.
+function rosterOf(readmeText) {
+  return [...new Set(readmeText.split(/\r?\n/)
+    .filter(line => line.startsWith('|'))
+    .flatMap(line => [...line.matchAll(/^\|\s*(?:\d+\s*\|\s*)?`([a-z0-9]+(?:-[a-z0-9]+)*)`\s*\|/g)].map(m => m[1])))].sort();
+}
+
+// A project store is data, a skill is instructions. If a skill copies rule
+// values, the two drift apart the moment either one changes — and the copy is
+// the one nobody re-checks. So the separation is enforced, not documented.
+function copiedFacts(text) {
+  const errors = [];
+  const decl = /^\s*--[a-z0-9-]+\s*:/m.exec(text);
+  if (decl) errors.push(`re-declares a custom property: ${decl[0].trim()}`);
+  const hex = /#[0-9a-fA-F]{3,8}\b/.exec(text);
+  if (hex) errors.push(`embeds a colour literal: ${hex[0]}`);
+  return errors;
+}
+
 section('skill documents are installable');
 {
   const dirs = fs.readdirSync(SKILLS, { withFileTypes: true })
     .filter(d => d.isDirectory() && fs.existsSync(path.join(SKILLS, d.name, 'SKILL.md')))
     .map(d => d.name).sort();
-  eq('seven skills', dirs, [
-    'design-contract-builder', 'fidelity-orchestrator', 'fidelity-repair-agent',
-    'interaction-fidelity-validator', 'prototype-inspector',
-    'target-platform-adapter', 'visual-fidelity-analyzer',
-  ]);
 
   const readme = fs.readFileSync(path.join(SKILLS, 'README.md'), 'utf8');
+  // The roster lives in the index, not in this test: a hardcoded list makes
+  // "add a skill" itself a failing action (audit F1b). The comparison is
+  // bidirectional instead, so an unindexed skill and an index row pointing at a
+  // directory that does not exist both fail.
+  const indexed = rosterOf(readme);
+  check('the index names at least one skill', indexed.length > 0, indexed);
+  eq('the index and the directories list the same skills', indexed, dirs);
+  // Teeth: the parser must read the numbered table too, and a skill present only
+  // in the directories must not sneak through as indexed.
+  eq('the roster parser reads numbered and plain rows',
+    rosterOf('| 1 | `a-b` | x |\n| `c-d` | y |\n| `PLAYWRIGHT_MODULE_PATH` | z |'), ['a-b', 'c-d']);
+  check('an unindexed directory is a difference', JSON.stringify(rosterOf('| `a-b` | x |')) !== JSON.stringify(['a-b', 'c-d']));
   for (const dir of dirs) {
     const text = fs.readFileSync(path.join(SKILLS, dir, 'SKILL.md'), 'utf8');
     const res = inspect(text, dir, existsIn);
@@ -82,6 +108,77 @@ section('skill documents are installable');
       const body = fs.readFileSync(file, 'utf8');
       check(`${dir}/${ref}: references stay one level deep`, !/references\/[A-Za-z0-9._-]+\//.test(body));
     }
+  }
+}
+
+section('the project store stays out of the general skill');
+{
+  const dir = path.join(SKILLS, 'ourtrail-design-dna');
+  const extra = fs.readdirSync(dir, { withFileTypes: true })
+    .filter(f => f.name !== 'SKILL.md' && !(f.isDirectory() && f.name === 'references'))
+    .map(f => f.name);
+  eq('the skill directory ships instructions only', extra, []);
+  const body = fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8');
+  eq('the body re-declares none of the stored values', copiedFacts(body), []);
+  check('the copy check catches a pasted token table',
+    copiedFacts('## 输出\n\n--radius: 18px;\n').length === 1,
+    copiedFacts('## 输出\n\n--radius: 18px;\n'));
+  check('the copy check catches an embedded colour', copiedFacts('边框用 #163E35。').length === 1);
+  check('the copy check leaves a rule id alone', copiedFacts('见 `token.var.green` 与 `page.weather.home`。').length === 0);
+}
+
+// Both design skills hand the user diagnostic codes to act on and subcommands to
+// type. A rename on either side turns the document into prose nobody can follow,
+// so each doc is checked against the code that emits what it quotes. The reviewer
+// also quotes plan gap codes: the plan it reads is written by the generalizer, so
+// that module is part of what can invalidate its failure table.
+section('the design skills only name things that exist');
+{
+  const docs = [
+    ['design-dna-generalizer', ['design/generalize/plan.js']],
+    ['design-consistency-reviewer', ['design/review/review.js', 'design/generalize/plan.js']],
+  ];
+  for (const [skill, extra] of docs) {
+    const body = fs.readFileSync(path.join(SKILLS, skill, 'SKILL.md'), 'utf8');
+    const source = ['cli/pf.js', ...extra]
+      .map(p => fs.readFileSync(path.join(ROOT, p), 'utf8')).join('\n');
+    const cmds = [...new Set([...body.matchAll(/pf ([a-z]+)/g)].map(m => m[1]))];
+    check(`${skill}: the doc names at least one subcommand`, cmds.length > 0, cmds);
+    for (const cmd of cmds) check(`${skill}: pf ${cmd} exists in the cli`, new RegExp(`case '${cmd}':`).test(source));
+    // The failure-handling table quotes gate codes as things the user will see.
+    const codes = [...new Set([...body.matchAll(/`([A-Z][A-Z_]{4,})`/g)].map(m => m[1]))];
+    check(`${skill}: the doc quotes the gate codes it claims are observable`, codes.length > 0, codes);
+    for (const c of codes) check(`${skill}: ${c} is a code the tool actually emits`, source.includes(`'${c}'`));
+  }
+}
+
+// The vocabulary table exists because a brief author cannot guess these words:
+// they wrote `role: "input"` (that is a `kind`) and got BRIEF_INVALID. A table
+// that drifts from the code is worse than no table, so both directions are
+// checked: every value the code accepts must be listed, and the doc may not
+// list a value the code would reject.
+section('the generalizer doc lists exactly the closed vocabularies');
+{
+  const plan = require('../design/generalize/plan');
+  const body = fs.readFileSync(path.join(SKILLS, 'design-dna-generalizer', 'SKILL.md'), 'utf8');
+  const rowOf = label => {
+    const m = new RegExp('^\\|\\s*`' + label + '`\\s*\\|([^|]*)\\|', 'm').exec(body);
+    return m ? [...m[1].matchAll(/`([^`]+)`/g)].map(x => x[1]) : null;
+  };
+  const pairs = [
+    ['functions\\[\\]\\.kind', [...plan.FUNCTION_KINDS]],
+    ['functions\\[\\]\\.role', plan.ROLE_NAMES],
+    ['functions\\[\\]\\.states', [...plan.STATE_WORDS]],
+    ['interactions\\[\\]', plan.INTERACTION_NAMES],
+  ];
+  for (const [label, code] of pairs) {
+    const doc = rowOf(label);
+    check(`${label}: the doc has a vocabulary row`, doc !== null);
+    if (!doc) continue;
+    const missing = code.filter(v => !doc.includes(v));
+    const extra = doc.filter(v => !code.includes(v));
+    check(`${label}: the doc lists every value the code accepts`, missing.length === 0, { missing });
+    check(`${label}: the doc invents no value the code rejects`, extra.length === 0, { extra });
   }
 }
 
@@ -108,4 +205,4 @@ section('the document rules actually reject bad skills');
       .some(e => /limit 1024/.test(e)));
 }
 
-finish('skills.test');
+process.exit(finish('skills.test'));

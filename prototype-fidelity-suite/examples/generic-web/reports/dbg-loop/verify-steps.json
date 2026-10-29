@@ -1,0 +1,16 @@
+{
+  "steps": [
+    {
+      "step": "capture:prototype",
+      "status": "PASS",
+      "detail": "10 nodes"
+    },
+    {
+      "step": "capture:target",
+      "status": "BLOCKED",
+      "detail": "UNKNOWN: unknown error, open 'D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\captures\\b-dynamic-declared\\default\\target\\snapshot.json'"
+    }
+  ],
+  "verdict": "BLOCKED",
+  "viewportId": null
+}

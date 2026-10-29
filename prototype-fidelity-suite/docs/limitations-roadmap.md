@@ -113,7 +113,7 @@
 | Playwright | **真实运行** | 1.63.0-alpha-2026-08-31（全局 npm，未装进仓库）；全部示例实验的真实渲染 |
 | miniprogram-automator | **真实运行** | 0.13.0；连真实开发者工具，元素读数 + 截图；试点 4 条交互 PASS |
 | 微信开发者工具 | **真实连接** | 共享会话，`open/auto` 级操作；未 `quit` |
-| 自研 `png` / `diff` / `geometry` / `regions` | **有测试与实验** | `tests/run.js` 11 套 510 断言；实验 A/B/C/D |
+| 自研 `png` / `diff` / `geometry` / `regions` | **有测试与实验** | `tests/run.js` 20 套 1095 断言；实验 A/B/C/D/E/F（128）；独立夹具 9 类场景 |
 | `chrome-devtools-mcp` | **未用** | 裁决 REJECT（需 MCP 传输、与目标形态不符），未安装 |
 | `argos-ci/argos` | **未用** | 裁决 REJECT（托管 SaaS + token），未联网调用 |
 | `looks-same` | **未装** | 只借鉴"差异聚类"思路，未引入依赖 |

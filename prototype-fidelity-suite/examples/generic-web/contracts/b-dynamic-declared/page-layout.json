@@ -3,7 +3,12 @@
   "kind": "page-layout",
   "pageId": "b-dynamic-declared",
   "stateId": "default",
-  "generatedAt": "2026-10-28T14:33:13.989Z",
+  "generatedAt": "2026-10-29T12:26:02.524Z",
   "sections": [],
-  "rhythm": []
+  "rhythm": [],
+  "coverage": {
+    "sectionsDeclared": 0,
+    "resolved": 0,
+    "compared": 0
+  }
 }

@@ -3,7 +3,8 @@
   "kind": "visual-diff-report",
   "pageId": "c-repair",
   "stateId": "default",
-  "generatedAt": "2026-10-28T14:34:23.399Z",
+  "viewportId": null,
+  "generatedAt": "2026-10-29T12:26:42.828Z",
   "prototype": {
     "platform": "web",
     "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/b/base.html",
@@ -12,9 +13,11 @@
       "height": 844
     },
     "dpr": 1,
-    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "bundle": null,
     "dataSource": "real",
-    "capturedAt": "2026-10-28T14:34:17.723Z",
+    "capturedAt": "2026-10-29T12:26:39.456Z",
     "screenshotSha256": "aa388c693ef44064532c4d448fc65e1a7471833fc3a51f3082338b1d90e20667",
     "screenshotScale": {
       "x": 1,
@@ -30,9 +33,11 @@
       "height": 844
     },
     "dpr": 1,
-    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "bundle": null,
     "dataSource": "real",
-    "capturedAt": "2026-10-28T14:34:23.029Z",
+    "capturedAt": "2026-10-29T12:26:42.721Z",
     "screenshotSha256": "88cb4b26b742a7c0b9705e762565b2c05885365532d459b2141d99acba9d468b",
     "screenshotScale": {
       "x": 1,
@@ -172,7 +177,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -268,6 +274,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -320,6 +333,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-title-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-title-target.png",
@@ -472,6 +489,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-card-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-card-target.png",
@@ -632,6 +653,33 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "measured-chain",
+        "chain": [
+          {
+            "pairId": "b-card",
+            "depth": 1,
+            "measured": true,
+            "dx": 0,
+            "dy": 0,
+            "dh": 2,
+            "pushesY": 0
+          }
+        ],
+        "inherited": {
+          "dx": 0,
+          "dy": 0
+        },
+        "own": {
+          "dx": 0,
+          "dy": 0
+        },
+        "dominant": "none",
+        "arithmetic": {
+          "dx": "0 - (0) = 0",
+          "dy": "0 - (0) = 0"
+        }
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-label-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-label-target.png",
@@ -757,7 +805,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -853,6 +902,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -905,6 +961,33 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "measured-chain",
+        "chain": [
+          {
+            "pairId": "b-card",
+            "depth": 1,
+            "measured": true,
+            "dx": 0,
+            "dy": 0,
+            "dh": 2,
+            "pushesY": 0
+          }
+        ],
+        "inherited": {
+          "dx": 0,
+          "dy": 0
+        },
+        "own": {
+          "dx": 0,
+          "dy": 2
+        },
+        "dominant": "own",
+        "arithmetic": {
+          "dx": "0 - (0) = 0",
+          "dy": "2 - (0) = 2"
+        }
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-clock-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-clock-target.png",
@@ -1030,7 +1113,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -1126,6 +1210,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -1178,6 +1269,33 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "measured-chain",
+        "chain": [
+          {
+            "pairId": "b-card",
+            "depth": 1,
+            "measured": true,
+            "dx": 0,
+            "dy": 0,
+            "dh": 2,
+            "pushesY": 0
+          }
+        ],
+        "inherited": {
+          "dx": 0,
+          "dy": 0
+        },
+        "own": {
+          "dx": 0,
+          "dy": 2
+        },
+        "dominant": "own",
+        "arithmetic": {
+          "dx": "0 - (0) = 0",
+          "dy": "2 - (0) = 2"
+        }
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-desc-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-desc-target.png",
@@ -1302,7 +1420,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -1398,6 +1517,20 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
+        },
+        {
+          "prop": "src",
+          "status": "PASS",
+          "a": "file:///d:/ourtrail/prototype-fidelity-suite/examples/generic-web/assets/stripes.png",
+          "b": "file:///d:/ourtrail/prototype-fidelity-suite/examples/generic-web/assets/stripes.png",
+          "delta": null
         }
       ],
       "text": {
@@ -1447,6 +1580,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-img-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-img-target.png",
@@ -1584,6 +1721,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-btn-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-btn-target.png",
@@ -1709,7 +1850,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -1805,6 +1947,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -1857,6 +2006,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-note-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-c-before\\regions\\b-note-target.png",
@@ -1873,6 +2026,11 @@
   },
   "alignment": {
     "applied": false
+  },
+  "cascade": {
+    "method": "measured-deltas-along-declared-ancestry",
+    "attributed": 3,
+    "independent": 5
   },
   "warnings": [
     "Container pixel comparisons masked over declared child regions (each child is judged at its own level): b-card ← b-label/b-clock/b-desc"

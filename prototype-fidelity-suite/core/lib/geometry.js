@@ -11,6 +11,7 @@
  * and never substituted for one another.
  */
 const { round } = require('./util');
+const crypto = require('crypto');
 
 const POSITION_TOL = 1.5;   // CSS px; calibrated in tests/experiment-a.js
 const SIZE_TOL = 1.5;
@@ -23,7 +24,7 @@ const STYLE_PROPS = [
   'color', 'background-color', 'border-radius', 'border-top-width',
   'border-top-color', 'box-shadow', 'opacity', 'padding', 'margin', 'gap',
   'display', 'flex-direction', 'align-items', 'justify-content', 'overflow',
-  'position', 'text-transform', 'white-space',
+  'position', 'text-transform', 'white-space', 'background-image', 'src',
 ];
 
 function parseColor(value) {
@@ -104,6 +105,127 @@ function normalizeShadow(value) {
   return v;
 }
 
+/** Split a comma list at depth 0 — `rgba(0, 0, 0, .1), rgba(…)` is two layers. */
+function splitTopLevel(value) {
+  const out = [];
+  let depth = 0, cur = '';
+  for (const ch of String(value)) {
+    if (ch === '(') depth++;
+    else if (ch === ')') depth = Math.max(0, depth - 1);
+    if (ch === ',' && depth === 0) { out.push(cur); cur = ''; continue; }
+    cur += ch;
+  }
+  out.push(cur);
+  return out.map(s => s.trim()).filter(Boolean);
+}
+
+/**
+ * A shadow layer as numbers, not as text. `0 2px 4px rgba(0,0,0,.1)` and
+ * `rgba(0, 0, 0, 0.1) 0px 2px 4px` are the same shadow, and a raw string
+ * comparison called them different. Returns null when any length is not in px —
+ * guessing a rem size would invent a difference that was never measured.
+ */
+function parseShadowLayer(layer) {
+  const text = String(layer).trim();
+  const colourMatch = /(rgba?\([^)]*\)|#[0-9a-fA-F]{3,8}|transparent)\b/i.exec(text);
+  const colour = colourMatch ? parseColor(colourMatch[1]) : null;
+  if (colourMatch && !colour) return null;
+  const rest = colourMatch ? text.replace(colourMatch[1], ' ') : text;
+  const out = { inset: false, x: null, y: null, blur: null, spread: null, color: colour ? fmtColor(colour) : null };
+  const lengths = [];
+  for (const tok of rest.trim().split(/\s+/).filter(Boolean)) {
+    if (/^inset$/i.test(tok)) { out.inset = true; continue; }
+    const m = /^(-?[\d.]+)(px)?$/i.exec(tok);
+    if (!m) return null;
+    if (m[2] === undefined && parseFloat(m[1]) !== 0) return null; // non-px lengths would be guessed
+    lengths.push(parseFloat(m[1]));
+  }
+  if (lengths.length < 2 || lengths.length > 4) return null;
+  out.x = lengths[0]; out.y = lengths[1]; out.blur = lengths[2] || 0; out.spread = lengths[3] || 0;
+  return out;
+}
+
+function parseShadowList(value) {
+  if (!value) return [];
+  const v = String(value).trim();
+  if (v === 'none' || v === '') return [];
+  return splitTopLevel(v).map(parseShadowLayer);
+}
+
+function compareShadows(va, vb, tol) {
+  const t = tol || {};
+  const px = t.gap == null ? GAP_TOL : t.gap;
+  const colourTol = t.color == null ? COLOR_TOL : t.color;
+  const A = parseShadowList(va);
+  const B = parseShadowList(vb);
+  if (A.some(x => x === null) || B.some(x => x === null)) {
+    return { comparable: false, a: normalizeShadow(va), b: normalizeShadow(vb) };
+  }
+  const canonical = list => list.map(l =>
+    `${l.inset ? 'inset ' : ''}${l.x}px ${l.y}px ${l.blur}px ${l.spread}px${l.color ? ' ' + l.color : ''}`).join(', ') || 'none';
+  const shown = { comparable: true, a: canonical(A), b: canonical(B) };
+  if (A.length !== B.length) return { ...shown, delta: null, equal: false };
+  let pxDelta = 0, colourDelta = 0;
+  for (let i = 0; i < A.length; i++) {
+    const a = A[i], b = B[i];
+    if (a.inset !== b.inset) return { ...shown, delta: null, equal: false };
+    for (const k of ['x', 'y', 'blur', 'spread']) pxDelta = Math.max(pxDelta, Math.abs(a[k] - b[k]));
+    if (!a.color !== !b.color) return { ...shown, delta: null, equal: false };
+    if (a.color && b.color && a.color !== b.color) {
+      const ca = parseColor(a.color), cb = parseColor(b.color);
+      if (!ca || !cb) return { ...shown, delta: null, equal: false };
+      const A1 = compositeOverWhite(ca), B1 = compositeOverWhite(cb);
+      colourDelta = Math.max(colourDelta, Math.abs(A1.r - B1.r), Math.abs(A1.g - B1.g), Math.abs(A1.b - B1.b));
+    }
+  }
+  return {
+    ...shown,
+    pxDelta: round(pxDelta, 2), colourDelta: round(colourDelta, 2),
+    delta: round(Math.max(pxDelta, colourDelta), 2),
+    equal: pxDelta <= px && colourDelta <= colourTol,
+  };
+}
+
+/**
+ * Background images and icon sources, reduced to what they *are*: a gradient's
+ * colours and stops, or an asset's file name. Two different files with the same
+ * name are indistinguishable here — this compares declarations, and the pixel
+ * comparison of a mapped icon pair remains the check that looks at the picture.
+ */
+function normalizeAsset(value) {
+  if (value == null) return { kind: 'none', key: 'none' };
+  const v = String(value).trim();
+  if (!v || v === 'none') return { kind: 'none', key: 'none' };
+  const url = /url\(\s*["']?([^"')]+)["']?\s*\)/i.exec(v);
+  if (url) {
+    const raw = url[1].trim();
+    if (/^data:/i.test(raw)) {
+      const sha = crypto.createHash('sha256').update(raw).digest('hex');
+      return { kind: 'url', key: 'data:sha256:' + sha.slice(0, 16), raw: 'data:…' };
+    }
+    const file = raw.split(/[?#]/)[0].replace(/\\/g, '/').split('/').filter(Boolean).pop() || raw;
+    return { kind: 'url', key: 'file:' + decodeURIComponent(file), raw };
+  }
+  const grad = /((?:linear|radial|conic)-gradient)\(([\s\S]*)\)/i.exec(v);
+  if (grad) {
+    const parts = splitTopLevel(grad[2]).map(p => {
+      const m = /^(?:rgba?|#)[^ ]*/.exec(p);
+      const rest = m ? p.slice(m[0].length).trim() : p;
+      const c = m ? parseColor(m[0]) : null;
+      const stop = rest.replace(/\s+/g, '');
+      return (c ? fmtColor(c) : m ? m[0] : '') + (stop ? ' ' + stop : '');
+    });
+    return { kind: 'gradient', key: grad[1].toLowerCase() + '(' + parts.join(', ') + ')' };
+  }
+  return { kind: 'other', key: v.replace(/\s+/g, ' ').toLowerCase() };
+}
+
+function compareAsset(va, vb) {
+  const A = normalizeAsset(va), B = normalizeAsset(vb);
+  return { comparable: true, a: A.key, b: B.key, delta: null, equal: A.key === B.key, kind: A.kind === B.kind ? A.kind : A.kind + '→' + B.kind };
+}
+
+
 /**
  * Numeric comparison facts for one style property.
  * `tol` carries the project's configured tolerances; the module constants are
@@ -140,10 +262,8 @@ function compareStyleProp(prop, va, vb, tol) {
     if (Number.isNaN(A) || Number.isNaN(B)) return { comparable: false, a: va, b: vb };
     return { comparable: true, a: A, b: B, delta: Math.abs(A - B), equal: Math.abs(A - B) < 1 };
   }
-  if (prop === 'box-shadow') {
-    const A = normalizeShadow(va), B = normalizeShadow(vb);
-    return { comparable: true, a: A, b: B, equal: A === B };
-  }
+  if (prop === 'box-shadow') return compareShadows(va, vb, tol);
+  if (prop === 'background-image' || prop === 'src') return compareAsset(va, vb);
   const A = prop === 'letter-spacing' ? parseTracking(va) : parseLength(va);
   const B = prop === 'letter-spacing' ? parseTracking(vb) : parseLength(vb);
   if (A == null || B == null) {
@@ -192,6 +312,7 @@ function categorizeStyle(prop) {
   if (['color', 'background-color', 'border-radius', 'border-top-width', 'border-top-color', 'box-shadow', 'opacity'].includes(prop)) return 'appearance';
   if (['padding', 'margin', 'gap'].includes(prop)) return 'spacing';
   if (['display', 'flex-direction', 'align-items', 'justify-content', 'position', 'overflow'].includes(prop)) return 'layout';
+  if (['background-image', 'src'].includes(prop)) return 'icon';
   return 'other';
 }
 
@@ -480,6 +601,7 @@ function summarize(records) {
 module.exports = {
   STYLE_PROPS, POSITION_TOL, SIZE_TOL, GAP_TOL, FONT_TOL, COLOR_TOL,
   parseColor, parseLength, parseBox, expandBox, compareStyleProp, compareNode, compareSnapshots,
+  parseShadowList, compareShadows, normalizeAsset, compareAsset, categorizeStyle,
   derivePairs, siblingGaps, summarize, resolveNode, findByPath, normalizeText, roundRect,
   realignToAnchor,
 };

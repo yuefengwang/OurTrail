@@ -1,0 +1,40 @@
+{
+  "id": "medicine-cabinet-stocktake",
+  "title": "社区药箱盘点",
+  "family": null,
+  "platform": {
+    "target": "mini-program",
+    "viewport": { "width": 390, "height": 844 },
+    "constraints": ["无 hover", "触摸为主", "无外部字体"]
+  },
+  "constraints": ["盘点结果必须逐件可核对", "过期药品必须单独标出", "不引入新色值"],
+  "sections": [
+    {
+      "id": "head",
+      "role": "页头",
+      "surface": "header",
+      "functions": [
+        { "id": "show-cabinet", "label": "显示药箱编号与盘点日期", "kind": "display", "role": "text", "states": ["default"] }
+      ]
+    },
+    {
+      "id": "stock",
+      "role": "库存清单",
+      "surface": "content",
+      "functions": [
+        { "id": "list-medicines", "label": "逐件列出药品与数量", "kind": "list", "role": "list", "states": ["loading", "empty", "filled", "error"] },
+        { "id": "mark-expired", "label": "标出过期药品", "kind": "action", "role": "button", "states": ["default", "disabled"] }
+      ]
+    },
+    {
+      "id": "report",
+      "role": "盘点结论",
+      "surface": "footer",
+      "functions": [
+        { "id": "submit-count", "label": "提交盘点结果", "kind": "action", "role": "button", "states": ["default", "confirming", "disabled"] },
+        { "id": "show-save-error", "label": "保存失败提示", "kind": "feedback", "role": "status", "states": ["error"] }
+      ]
+    }
+  ],
+  "interactions": ["confirm-dialog", "status-feedback"]
+}

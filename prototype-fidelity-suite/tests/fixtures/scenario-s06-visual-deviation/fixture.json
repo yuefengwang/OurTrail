@@ -1,0 +1,68 @@
+{
+  "id": "s06-visual-deviation",
+  "class": "visual-deviation",
+  "adversarial": true,
+  "purpose": "三处小偏差（4px 内边距 / 底色 / 右移 8px）在一张其余字节相同的页面上必须整页 FAIL，且失败按 pairId 与声明归因；对照区 s-ctrl 必须 PASS。只给一个分数的实现过不了这条。",
+  "requires": ["playwright"],
+  "steps": [
+    {
+      "run": ["verify", "--project", ".", "--page", "s06-page", "--run", "r1"],
+      "expectExit": 1,
+      "captureStdout": "verify.stdout.txt"
+    }
+  ],
+  "checks": [
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.verdict", "equals": "FAIL" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.measurement.regionsCompared", "equals": 6 },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.measurement.regionsFailing", "equals": 3 },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.warnings", "length": 0 },
+
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[1].id", "equals": "s-ctrl" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[1].status", "equals": "PASS" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[1].categories", "length": 0 },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[1].pixel.diffRatio", "equals": 0 },
+
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[2].id", "equals": "s-pad" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[2].status", "equals": "FAIL" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[2].categories", "contains": "spacing" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[2].styles[0].prop", "equals": "padding" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[2].styles[0].status", "equals": "FAIL" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[2].styles[0].a", "equals": [12, 12, 12, 12] },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[2].styles[0].b", "equals": [16, 16, 16, 16] },
+
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[3].id", "equals": "s-badge" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[3].status", "equals": "FAIL" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[3].categories", "contains": "appearance" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[3].styles[0].prop", "equals": "background-color" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[3].styles[0].status", "equals": "FAIL" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[3].styles[0].a", "equals": "rgb(47, 111, 94)" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[3].styles[0].b", "equals": "rgb(58, 122, 104)" },
+
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[4].id", "equals": "s-move" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[4].status", "equals": "FAIL" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[4].categories", "contains": "position" },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[4].geometry.dx", "equals": 8 },
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[4].geometry.dy", "equals": 0 },
+
+    { "file": "reports/r1/visual-diff-report.json", "path": "$.regions[5].status", "equals": "PASS" },
+
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.status", "equals": "FAIL" },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.criticalFailures", "length": 1 },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.criticalFailures[0].pairId", "equals": "s-pad" },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.criticalFailures[0].categories", "contains": "spacing" },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.criticalFailures[0].failingStyles[0].prop", "equals": "padding" },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.criticalFailures[0].failingStyles[0].a", "equals": [12, 12, 12, 12] },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.criticalFailures[0].failingStyles[0].b", "equals": [16, 16, 16, 16] },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.nonCriticalFailures", "length": 2 },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.nonCriticalFailures[0].pairId", "equals": "s-badge" },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.nonCriticalFailures[1].pairId", "equals": "s-move" },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.dimensions.appearance.verdict", "equals": "FAIL" },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.dimensions.geometry.verdict", "equals": "FAIL" },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.scorecard.dimensions.interaction.verdict", "equals": "PASS" },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.interaction.checks[0].id", "equals": "toggle-out" },
+    { "file": "reports/r1/fidelity-validation-report.json", "path": "$.interaction.checks[0].status", "equals": "PASS" },
+
+    { "file": "verify.stdout.txt", "contains": "verdict FAIL" },
+    { "file": "verify.stdout.txt", "contains": "diff · 3 failing" }
+  ]
+}

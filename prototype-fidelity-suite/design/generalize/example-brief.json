@@ -1,0 +1,46 @@
+{
+  "id": "community-book-lending",
+  "title": "社区图书借阅",
+  "family": null,
+  "platform": {
+    "target": "mini-program",
+    "viewport": { "width": 390, "height": 844 },
+    "constraints": ["无 hover", "触摸为主", "无外部字体"]
+  },
+  "constraints": ["首屏必须能看到借阅入口", "不引入新色值"],
+  "sections": [
+    {
+      "id": "head",
+      "role": "页头",
+      "surface": "header",
+      "functions": [
+        { "id": "show-title", "label": "显示书名与借阅点", "kind": "display", "role": "text", "states": ["default"] }
+      ]
+    },
+    {
+      "id": "search",
+      "role": "查找",
+      "surface": "content",
+      "functions": [
+        { "id": "filter-books", "label": "按书名筛选", "kind": "input", "role": "text", "states": ["default", "filled"] }
+      ]
+    },
+    {
+      "id": "shelf",
+      "role": "在架图书",
+      "surface": "content",
+      "functions": [
+        { "id": "list-books", "label": "浏览在架图书", "kind": "list", "role": "list", "states": ["loading", "empty", "filled", "error"] }
+      ]
+    },
+    {
+      "id": "actions",
+      "role": "操作",
+      "surface": "footer",
+      "functions": [
+        { "id": "borrow", "label": "借阅这本", "kind": "action", "role": "button", "states": ["default", "disabled", "confirming"] }
+      ]
+    }
+  ],
+  "interactions": ["confirm-dialog", "status-feedback"]
+}

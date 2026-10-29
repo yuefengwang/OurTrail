@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "generatedAt": "2026-10-28T14:31:53.974Z",
+  "generatedAt": "2026-10-29T12:25:15.674Z",
   "project": "examples/generic-web",
   "environment": {
     "node": "v24.19.0",
@@ -138,12 +138,12 @@
         "verdict": "PASS",
         "readings": {
           "b-clock": {
-            "pixelDiffRatio": 0.10102,
+            "pixelDiffRatio": 0.10579,
             "ink": {
               "status": "FAIL",
               "reasons": [
-                "ink w 54 vs 116",
-                "ink amount ×1.72"
+                "ink w 54 vs 119",
+                "ink amount ×1.9"
               ]
             },
             "judged": false
@@ -155,12 +155,12 @@
         "verdict": "FAIL",
         "readings": {
           "b-clock": {
-            "pixelDiffRatio": 0.10752,
+            "pixelDiffRatio": 0.10315,
             "ink": {
               "status": "FAIL",
               "reasons": [
-                "ink w 54 vs 123",
-                "ink amount ×1.89"
+                "ink w 54 vs 116",
+                "ink amount ×1.84"
               ]
             }
           }
@@ -639,6 +639,65 @@
         }
       },
       "repoReferences": []
+    },
+    "E": {
+      "run": "reports/shared-run",
+      "good": {
+        "rc": 0,
+        "verdict": "PASS"
+      },
+      "blocked": {
+        "rc": 2,
+        "reportLeftBehind": false
+      },
+      "goodAfterBlock": {
+        "rc": 0,
+        "verdict": "PASS"
+      }
+    },
+    "F": {
+      "fluid": {
+        "rc": 0,
+        "w375": {
+          "path": "screenshot.png",
+          "sha256": "da1ae7fb756a2a672694c6ed13a655af043bdd95a8f4866c67efc6703ae48b35",
+          "width": 375,
+          "height": 812,
+          "scale": {
+            "x": 1,
+            "y": 1
+          },
+          "normalizedFrom": "device-pixels"
+        },
+        "w414": {
+          "path": "screenshot.png",
+          "sha256": "2892a7260042dde417471ffe02230186fa7df9f035b1f8ffc070859e2c97d2cd",
+          "width": 414,
+          "height": 896,
+          "scale": {
+            "x": 1,
+            "y": 1
+          },
+          "normalizedFrom": "device-pixels"
+        },
+        "card375": {
+          "x": 16,
+          "y": 68,
+          "w": 343,
+          "h": 100
+        },
+        "card414": {
+          "x": 16,
+          "y": 68,
+          "w": 382,
+          "h": 100
+        }
+      },
+      "fixedFrame": {
+        "rc": 0,
+        "w375": 390,
+        "w414": 390
+      }
     }
   }
 }

@@ -21,7 +21,7 @@
  */
 const path = require('path');
 const fs = require('fs');
-const { PfError, ensureDir, isoNow } = require('./util');
+const { PfError, ensureDir, isoNow, writeFileRetry } = require('./util');
 const { detectAutomator } = require('./env');
 const { createRequire } = require('module');
 
@@ -228,7 +228,7 @@ async function openMpDriver(cfg) {
     async screenshot(file) {
       const shot = await mp.screenshot();
       ensureDir(path.dirname(file));
-      fs.writeFileSync(file, Buffer.from(String(shot), 'base64'));
+      writeFileRetry(file, Buffer.from(String(shot), 'base64'));
       return file;
     },
     async close() { await mp.disconnect().catch(() => {}); },

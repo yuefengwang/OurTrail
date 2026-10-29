@@ -13,7 +13,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
-const MIN_SUITES = 11;
+const MIN_SUITES = 15;
 const dir = __dirname;
 
 const files = fs.readdirSync(dir)

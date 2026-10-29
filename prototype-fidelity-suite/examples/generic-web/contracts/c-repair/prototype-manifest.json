@@ -3,7 +3,7 @@
   "kind": "prototype-manifest",
   "projectId": "generic-web",
   "pageId": "c-repair",
-  "generatedAt": "2026-10-28T14:34:40.154Z",
+  "generatedAt": "2026-10-29T12:26:52.895Z",
   "prototype": {
     "platform": "web",
     "source": "html",
@@ -20,8 +20,8 @@
       "id": "default",
       "captured": true,
       "dataSource": "real",
-      "capturedAt": "2026-10-28T14:34:34.808Z",
-      "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+      "capturedAt": "2026-10-29T12:26:49.864Z",
+      "codeVersion": null,
       "viewport": {
         "width": 390,
         "height": 844

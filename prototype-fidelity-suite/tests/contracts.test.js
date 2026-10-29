@@ -41,7 +41,7 @@ const CONTRACTS = [
   'page-layout',
 ];
 // Not page/state contracts, but the same versioned-and-gated treatment.
-const SUPPORT_SCHEMAS = ['adapter'];
+const SUPPORT_SCHEMAS = ['adapter', 'design-dna', 'design-dna-kb', 'design-plan', 'design-review-report', 'repair-report'];
 
 function loadSchema(name) {
   return JSON.parse(fs.readFileSync(path.join(SCHEMA_DIR, name + '.schema.json'), 'utf8'));
@@ -86,7 +86,7 @@ function readIfJson(rel) {
 section('schema inventory');
 {
   const files = fs.readdirSync(SCHEMA_DIR).filter(f => f.endsWith('.schema.json')).sort();
-  eq('one schema file per declared contract (plus page-layout and adapter)',
+  eq('one schema file per declared contract (plus page-layout, adapter, design-dna, its store, the design plan, its review report and the repair report)',
     files.length, CONTRACTS.length + SUPPORT_SCHEMAS.length);
   for (const name of [...CONTRACTS, ...SUPPORT_SCHEMAS]) {
     check(`${name}.schema.json exists`, files.includes(name + '.schema.json'));
@@ -266,6 +266,10 @@ const interactionRun = manifests.buildInteractionContract({
 section('builders emit schema-valid artifacts');
 {
   valid('project-config', JSON.parse(fs.readFileSync(path.join(PROJECT, 'pf.config.json'), 'utf8')));
+  // The generic-web example is the only config that uses named viewports and
+  // `dynamicText`; validating it keeps the schema from describing a config
+  // nobody writes (it had drifted by both fields before this line existed).
+  valid('project-config', JSON.parse(fs.readFileSync(path.join(ROOT, 'examples', 'generic-web', 'pf.config.json'), 'utf8')));
   valid('prototype-manifest', protoManifest);
   valid('page-state-manifest', stateManifest);
   valid('platform-mappings', platformMappings);

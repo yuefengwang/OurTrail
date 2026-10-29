@@ -71,6 +71,12 @@
       "items": {
         "$ref": "#/definitions/page"
       }
+    },
+    "viewports": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/namedViewport"
+      }
     }
   },
   "definitions": {
@@ -316,6 +322,9 @@
             "string",
             "null"
           ]
+        },
+        "dynamicText": {
+          "type": "boolean"
         }
       }
     },
@@ -419,6 +428,25 @@
             "type": "string"
           }
         },
+        "props": {
+          "type": "array",
+          "description": "Accept only these CSS declarations; any other difference in the same category stays judged.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y"
+          ],
+          "description": "Accept a position/size difference on one axis only."
+        },
+        "maxAbsPx": {
+          "type": "number",
+          "minimum": 0,
+          "description": "How far the accepted difference may move before the acceptance stops covering it."
+        },
         "reason": {
           "type": "string",
           "minLength": 1
@@ -510,6 +538,36 @@
           }
         }
       ]
+    },
+    "namedViewport": {
+      "type": "object",
+      "required": [
+        "id",
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "width": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "dpr": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "device": {
+          "type": "string"
+        }
+      }
     }
   }
 }

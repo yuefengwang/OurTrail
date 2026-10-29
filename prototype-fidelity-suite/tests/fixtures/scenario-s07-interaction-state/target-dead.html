@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>s07 目标 B · 点击没有任何后果（渲染与原型一致）</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font: 16px/1.5 system-ui, sans-serif; color: #1f2a26; background: #f5f5f0; }
+  #frame { width: 390px; min-height: 844px; padding: 20px 16px 0; }
+  .i-title { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; }
+  .i-note { margin: 12px 0 0; font-size: 13px; line-height: 19px; color: #5a6660; }
+  .i-btn { margin-top: 18px; height: 38px; padding: 0 16px; font-size: 14px; border: 1px solid #b9c7c0; border-radius: 8px; background: #ffffff; color: #1f2a26; }
+  .i-out { margin: 12px 0 0; font-size: 12px; line-height: 16px; color: #6b6b6b; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <h1 class="i-title" id="i-title">装备清单</h1>
+  <p class="i-note" id="i-note">出发前请核对随身携带的装备。</p>
+  <button class="i-btn" id="i-btn">展开说明</button>
+  <p class="i-out" id="i-out">说明未展开</p>
+</div>
+<!-- 故意没有脚本：按钮看得见、点得到，监听器从未注册 -->
+</body>
+</html>

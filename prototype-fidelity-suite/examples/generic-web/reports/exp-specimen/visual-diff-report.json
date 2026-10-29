@@ -3,7 +3,8 @@
   "kind": "visual-diff-report",
   "pageId": "specimen",
   "stateId": "default",
-  "generatedAt": "2026-10-28T14:32:05.555Z",
+  "viewportId": null,
+  "generatedAt": "2026-10-29T12:25:22.456Z",
   "prototype": {
     "platform": "web",
     "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/prototype/index.html",
@@ -12,9 +13,11 @@
       "height": 844
     },
     "dpr": 1,
-    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "bundle": null,
     "dataSource": "real",
-    "capturedAt": "2026-10-28T14:31:59.760Z",
+    "capturedAt": "2026-10-29T12:25:19.315Z",
     "screenshotSha256": "f2c1ec1013b3c86d1ad7c1fb6309872da38dc90eb51665c9c028d6ea26966ea3",
     "screenshotScale": {
       "x": 1,
@@ -30,9 +33,11 @@
       "height": 844
     },
     "dpr": 1,
-    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "bundle": null,
     "dataSource": "real",
-    "capturedAt": "2026-10-28T14:32:05.173Z",
+    "capturedAt": "2026-10-29T12:25:22.340Z",
     "screenshotSha256": "7d2c8e4b0397cf97cf7422bd5cdde08cae67a73d50709ba44626154bb5c33f78",
     "screenshotScale": {
       "x": 1,
@@ -171,7 +176,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -267,6 +273,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -316,6 +329,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\ctrl-1-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\ctrl-1-target.png",
@@ -436,7 +453,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -532,6 +550,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -581,6 +606,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\ctrl-2-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\ctrl-2-target.png",
@@ -701,7 +730,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -797,6 +827,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -846,6 +883,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\ctrl-3-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\ctrl-3-target.png",
@@ -966,7 +1007,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -1062,6 +1104,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -1111,6 +1160,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\ctrl-4-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\ctrl-4-target.png",
@@ -1235,7 +1288,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -1331,6 +1385,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -1380,6 +1441,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\pos-8-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\pos-8-target.png",
@@ -1504,7 +1569,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -1601,6 +1667,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -1660,6 +1733,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\gap-4-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\gap-4-target.png",
@@ -1787,7 +1864,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -1883,6 +1961,13 @@
           "status": "PASS",
           "a": "nowrap",
           "b": "nowrap"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -1960,6 +2045,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\font-size-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\font-size-target.png",
@@ -2087,7 +2176,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -2183,6 +2273,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -2269,6 +2366,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\line-height-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\line-height-target.png",
@@ -2395,7 +2496,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -2491,6 +2593,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -2577,6 +2686,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\radius-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\radius-target.png",
@@ -2706,7 +2819,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -2802,6 +2916,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -2897,6 +3018,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\color-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\color-target.png",
@@ -3019,7 +3144,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -3115,6 +3241,20 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
+        },
+        {
+          "prop": "src",
+          "status": "PASS",
+          "a": "file:///d:/ourtrail/prototype-fidelity-suite/examples/generic-web/assets/stripes.png",
+          "b": "file:///d:/ourtrail/prototype-fidelity-suite/examples/generic-web/assets/stripes.png",
+          "delta": null
         }
       ],
       "text": {
@@ -3210,6 +3350,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\crop-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\crop-target.png",
@@ -3336,7 +3480,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -3432,6 +3577,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -3734,6 +3886,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\wrap-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-specimen\\regions\\wrap-target.png",
@@ -3750,6 +3906,11 @@
   },
   "alignment": {
     "applied": false
+  },
+  "cascade": {
+    "method": "measured-deltas-along-declared-ancestry",
+    "attributed": 0,
+    "independent": 12
   },
   "warnings": []
 }

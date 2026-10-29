@@ -11,9 +11,8 @@
  *  - rects are reported relative to the captured frame, never to the document,
  *    so a toolbar or preview chrome above the frame costs nothing
  */
-const fs = require('fs');
 const path = require('path');
-const { ensureDir, PfError } = require('../../core/lib/util');
+const { ensureDir, PfError, writeFileRetry } = require('../../core/lib/util');
 const { detectPlaywright } = require('../../core/lib/env');
 
 const STYLE_PROPS = [
@@ -22,7 +21,7 @@ const STYLE_PROPS = [
   'border-bottom-width', 'border-bottom-color', 'box-shadow', 'opacity', 'padding', 'margin', 'gap',
   'display', 'flex-direction', 'align-items', 'justify-content', 'overflow',
   'position', 'white-space', 'text-transform', 'width', 'height',
-  'min-height', 'box-sizing',
+  'min-height', 'box-sizing', 'background-image',
 ];
 
 function loadPlaywright() {
@@ -84,6 +83,12 @@ const SNAPSHOT_SCRIPT = (args) => {
       const camel = p.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
       const v = cs[camel];
       if (v != null && v !== '') styles[p] = v;
+    }
+    // `src` is an attribute, not a computed style; reading `cs.src` silently
+    // returns nothing, which would turn every image comparison into a no-op.
+    if (/^(IMG|SOURCE|VIDEO|AUDIO)$/.test(el.tagName)) {
+      const src = el.currentSrc || el.getAttribute('src') || el.getAttribute('srcset');
+      if (src) styles.src = src;
     }
     const classes = [...el.classList];
     const selectors = classes.map(c => '.' + c);
@@ -191,13 +196,18 @@ async function capture(opts) {
 
     ensureDir(o.outDir);
     const shotPath = path.join(o.outDir, 'screenshot.png');
-    await page.screenshot({
-      path: shotPath,
+    // Playwright writes the file itself when given `path`, and that write is not
+    // retried: on Windows an antivirus scan of the just-created PNG surfaces as
+    // `UNKNOWN: unknown error, open …`, which aborts an otherwise fine capture
+    // (observed while running experiment B back to back). Take the buffer and
+    // write it through the shared retry path instead.
+    const shotBuf = await page.screenshot({
       clip: box || undefined,
       animations: 'disabled',
       caret: 'hide',
       scale: dpr === 1 ? 'css' : 'device',
     });
+    writeFileRetry(shotPath, shotBuf);
     const scale = { x: dpr, y: dpr };
 
     return {

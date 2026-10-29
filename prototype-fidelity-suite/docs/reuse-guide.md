@@ -37,8 +37,9 @@
    `SKILL.md` 里的命令都相对于套件根目录，不含绝对路径。
 5. **自检**：
    ```bash
-   node tests/run.js                                  # 11 套 / 510 断言，按进程隔离
-   node examples/generic-web/experiments/run.js       # A/B/C/D，需要 Playwright
+   node tests/run.js                                  # 20 套 / 1095 断言，按进程隔离
+   node examples/generic-web/experiments/run.js       # A/B/C/D/E/F，需要 Playwright
+   node tests/fixtures/run.js                         # 独立夹具：9 类场景（规则提取→修复后回归）
    ```
    两端都绿再开始接新项目；`tests/run.js` 失败说明套件本身坏了，不要带着它去量别人。
 

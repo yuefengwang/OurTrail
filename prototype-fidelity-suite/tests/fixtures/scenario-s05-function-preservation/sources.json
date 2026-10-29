@@ -1,0 +1,39 @@
+{
+  "$comment": "Independent QA fixture input. Neutral prototype authored for this scenario only; no OurTrail page is referenced. Paths are relative to this file.",
+  "root": "proto",
+  "viewport": { "width": 390, "height": 844 },
+  "pages": [
+    {
+      "id": "garden-browse",
+      "family": "garden",
+      "file": "garden-browse.html",
+      "root": "#frame",
+      "sectionRoot": "#screen",
+      "states": [{ "id": "default", "screen": true, "steps": [] }]
+    },
+    {
+      "id": "garden-detail",
+      "family": "garden",
+      "file": "garden-detail.html",
+      "root": "#frame",
+      "sectionRoot": "#screen",
+      "states": [{ "id": "default", "screen": true, "steps": [] }]
+    },
+    {
+      "id": "repair-list",
+      "family": "repair",
+      "file": "repair-list.html",
+      "root": "#frame",
+      "sectionRoot": "#screen",
+      "states": [{ "id": "default", "screen": true, "steps": [] }]
+    },
+    {
+      "id": "repair-detail",
+      "family": "repair",
+      "file": "repair-detail.html",
+      "root": "#frame",
+      "sectionRoot": "#screen",
+      "states": [{ "id": "default", "screen": true, "steps": [] }]
+    }
+  ]
+}

@@ -3,7 +3,12 @@
   "kind": "page-layout",
   "pageId": "c-repair",
   "stateId": "default",
-  "generatedAt": "2026-10-28T14:34:40.151Z",
+  "generatedAt": "2026-10-29T12:26:52.893Z",
   "sections": [],
-  "rhythm": []
+  "rhythm": [],
+  "coverage": {
+    "sectionsDeclared": 0,
+    "resolved": 0,
+    "compared": 0
+  }
 }

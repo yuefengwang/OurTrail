@@ -38,8 +38,74 @@
         "properties": {
           "pairId": { "type": "string", "minLength": 1 },
           "categories": { "type": "array", "items": { "type": "string" } },
+          "props": {
+            "type": "array",
+            "description": "Narrow the acceptance to these CSS declarations; anything else in the same category stays judged.",
+            "items": { "type": "string" }
+          },
+          "axis": {
+            "enum": ["x", "y"],
+            "description": "Narrow a position/size acceptance to one axis."
+          },
+          "maxAbsPx": {
+            "type": "number",
+            "minimum": 0,
+            "description": "How far the accepted difference may move before the acceptance no longer holds."
+          },
           "reason": { "type": "string", "minLength": 1 }
         }
+      }
+    },
+    "attribution": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["measured-chain", "independent"] },
+        "reason": { "type": "string" },
+        "chain": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["pairId", "depth"],
+            "additionalProperties": false,
+            "properties": {
+              "pairId": { "type": "string" },
+              "depth": { "type": "integer", "minimum": 1 },
+              "measured": { "type": "boolean" },
+              "dx": { "type": ["number", "null"] },
+              "dy": { "type": ["number", "null"] },
+              "dh": { "type": ["number", "null"] },
+              "pushesY": { "type": ["number", "null"] }
+            }
+          }
+        },
+        "inherited": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }
+        },
+        "own": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "dx": { "type": "number" }, "dy": { "type": "number" } }
+        },
+        "dominant": { "enum": ["inherited", "own", "mixed", "none"] },
+        "arithmetic": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "dx": { "type": "string" }, "dy": { "type": "string" } }
+        }
+      }
+    },
+    "cascade": {
+      "type": "object",
+      "required": ["method", "attributed", "independent"],
+      "additionalProperties": false,
+      "properties": {
+        "method": { "type": "string", "minLength": 1 },
+        "attributed": { "type": "integer", "minimum": 0 },
+        "independent": { "type": "integer", "minimum": 0 }
       }
     },
     "verdict": { "$ref": "#/definitions/verdict" },
@@ -70,6 +136,7 @@
         }
       }
     },
+    "cascade": { "$ref": "#/definitions/cascade" },
     "warnings": { "type": "array", "items": { "type": "string" } }
   },
   "definitions": {
@@ -111,6 +178,16 @@
         "viewport": { "type": ["object", "null"] },
         "dpr": { "type": ["number", "null"] },
         "codeVersion": { "type": ["string", "null"] },
+        "suiteHead": { "type": ["string", "null"] },
+        "bundle": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "fingerprint": { "type": ["string", "null"] },
+            "files": { "type": ["integer", "null"] },
+            "fingerprintedAt": { "type": ["string", "null"] }
+          }
+        },
         "dataSource": { "enum": ["real", "injected", null] },
         "capturedAt": { "type": "string", "format": "date-time" },
         "screenshotSha256": { "type": ["string", "null"], "format": "sha256" },
@@ -269,6 +346,29 @@
         "evidence": { "$ref": "#/definitions/evidence" },
         "acceptedDifference": { "type": ["string", "null"] },
         "acceptedCategories": { "type": "array", "items": { "type": "string" } },
+        "acceptanceBroken": {
+          "type": "array",
+          "description": "Declarations that no longer cover the measured difference. Present only when one did not hold.",
+          "items": {
+            "type": "object",
+            "required": ["category", "kind", "reason"],
+            "additionalProperties": false,
+            "properties": {
+              "category": { "type": "string" },
+              "kind": { "enum": ["bound-exceeded", "covers-nothing", "unevaluable"] },
+              "prop": { "type": ["string", "null"] },
+              "props": { "type": ["array", "null"], "items": { "type": "string" } },
+              "axis": { "enum": ["x", "y", null] },
+              "observed": { "type": ["number", "null"] },
+              "maxAbsPx": { "type": ["number", "null"] },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "acceptanceInvalid": { "type": "boolean" },
+        "attribution": {
+          "oneOf": [{ "$ref": "#/definitions/attribution" }, { "type": "null" }]
+        },
         "images": {
           "type": "object",
           "required": ["prototype", "target", "diff"],

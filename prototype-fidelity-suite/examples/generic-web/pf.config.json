@@ -6,7 +6,10 @@
   },
   "prototype": {
     "adapter": "web",
-    "viewport": { "width": 390, "height": 844 },
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
     "frameSelector": "#device"
   },
   "target": {
@@ -16,8 +19,8 @@
   "tolerances": {
     "position": 1.5,
     "size": 1.5,
-    "gap": 1.0,
-    "font": 1.0,
+    "gap": 1,
+    "font": 1,
     "color": 6,
     "pixelRatio": 0.02,
     "criticalPixelRatio": 0.005
@@ -25,46 +28,177 @@
   "pages": [
     {
       "id": "specimen",
-      "prototype": { "url": "prototype/index.html" },
-      "target": { "url": "target/index.html" },
-      "selectors": ["#toggle", "#note"],
+      "prototype": {
+        "url": "prototype/index.html"
+      },
+      "target": {
+        "url": "target/index.html"
+      },
+      "selectors": [
+        "#toggle",
+        "#note"
+      ],
       "components": [
         {
           "id": "cell",
           "role": "specimen cell",
           "criticality": "critical",
-          "selectors": [".cell"],
-          "styleProps": ["padding", "border-radius", "background-color", "border-top-color", "width", "height"]
+          "selectors": [
+            ".cell"
+          ],
+          "styleProps": [
+            "padding",
+            "border-radius",
+            "background-color",
+            "border-top-color",
+            "width",
+            "height"
+          ]
         },
-        { "id": "caption", "role": "cell caption", "selectors": [".cap"] },
-        { "id": "probe", "role": "text probe", "selectors": [".probe", ".probe-lh"] }
+        {
+          "id": "caption",
+          "role": "cell caption",
+          "selectors": [
+            ".cap"
+          ]
+        },
+        {
+          "id": "probe",
+          "role": "text probe",
+          "selectors": [
+            ".probe",
+            ".probe-lh"
+          ]
+        }
       ],
       "sections": [
-        { "id": "device", "role": "captured frame", "selector": "#device" },
-        { "id": "title", "role": "page title", "selector": "#title" },
-        { "id": "row-1", "role": "specimen row 1", "selector": "#ctrl-1" }
+        {
+          "id": "device",
+          "role": "captured frame",
+          "selector": "#device"
+        },
+        {
+          "id": "title",
+          "role": "page title",
+          "selector": "#title"
+        },
+        {
+          "id": "row-1",
+          "role": "specimen row 1",
+          "selector": "#ctrl-1"
+        }
       ],
       "mappings": [
-        { "id": "ctrl-1", "role": "对照 1", "prototypeSelector": "#ctrl-1", "targetSelector": "#ctrl-1", "criticality": "critical" },
-        { "id": "ctrl-2", "role": "对照 2", "prototypeSelector": "#ctrl-2", "targetSelector": "#ctrl-2", "criticality": "critical" },
-        { "id": "ctrl-3", "role": "对照 3", "prototypeSelector": "#ctrl-3", "targetSelector": "#ctrl-3", "criticality": "critical" },
-        { "id": "ctrl-4", "role": "对照 4", "prototypeSelector": "#ctrl-4", "targetSelector": "#ctrl-4", "criticality": "critical" },
-        { "id": "pos-8", "role": "位置 8px", "prototypeSelector": "#pos-8", "targetSelector": "#pos-8", "criticality": "normal" },
-        { "id": "gap-4", "role": "间距 4px", "prototypeSelector": "#gap-4", "targetSelector": "#gap-4", "criticality": "normal" },
-        { "id": "font-size", "role": "字号", "prototypeSelector": "#fs-label", "targetSelector": "#fs-label", "criticality": "normal" },
-        { "id": "line-height", "role": "行高", "prototypeSelector": "#lh-label", "targetSelector": "#lh-label", "criticality": "normal" },
-        { "id": "radius", "role": "圆角", "prototypeSelector": "#radius-box", "targetSelector": "#radius-box", "criticality": "normal" },
-        { "id": "color", "role": "文字颜色", "prototypeSelector": "#color-label", "targetSelector": "#color-label", "criticality": "normal" },
-        { "id": "crop", "role": "图片裁切", "prototypeSelector": "#crop-img", "targetSelector": "#crop-img", "criticality": "normal" },
-        { "id": "wrap", "role": "换行", "prototypeSelector": "#wrap-text", "targetSelector": "#wrap-text", "criticality": "normal" }
+        {
+          "id": "ctrl-1",
+          "role": "对照 1",
+          "prototypeSelector": "#ctrl-1",
+          "targetSelector": "#ctrl-1",
+          "criticality": "critical"
+        },
+        {
+          "id": "ctrl-2",
+          "role": "对照 2",
+          "prototypeSelector": "#ctrl-2",
+          "targetSelector": "#ctrl-2",
+          "criticality": "critical"
+        },
+        {
+          "id": "ctrl-3",
+          "role": "对照 3",
+          "prototypeSelector": "#ctrl-3",
+          "targetSelector": "#ctrl-3",
+          "criticality": "critical"
+        },
+        {
+          "id": "ctrl-4",
+          "role": "对照 4",
+          "prototypeSelector": "#ctrl-4",
+          "targetSelector": "#ctrl-4",
+          "criticality": "critical"
+        },
+        {
+          "id": "pos-8",
+          "role": "位置 8px",
+          "prototypeSelector": "#pos-8",
+          "targetSelector": "#pos-8",
+          "criticality": "normal"
+        },
+        {
+          "id": "gap-4",
+          "role": "间距 4px",
+          "prototypeSelector": "#gap-4",
+          "targetSelector": "#gap-4",
+          "criticality": "normal"
+        },
+        {
+          "id": "font-size",
+          "role": "字号",
+          "prototypeSelector": "#fs-label",
+          "targetSelector": "#fs-label",
+          "criticality": "normal"
+        },
+        {
+          "id": "line-height",
+          "role": "行高",
+          "prototypeSelector": "#lh-label",
+          "targetSelector": "#lh-label",
+          "criticality": "normal"
+        },
+        {
+          "id": "radius",
+          "role": "圆角",
+          "prototypeSelector": "#radius-box",
+          "targetSelector": "#radius-box",
+          "criticality": "normal"
+        },
+        {
+          "id": "color",
+          "role": "文字颜色",
+          "prototypeSelector": "#color-label",
+          "targetSelector": "#color-label",
+          "criticality": "normal"
+        },
+        {
+          "id": "crop",
+          "role": "图片裁切",
+          "prototypeSelector": "#crop-img",
+          "targetSelector": "#crop-img",
+          "criticality": "normal"
+        },
+        {
+          "id": "wrap",
+          "role": "换行",
+          "prototypeSelector": "#wrap-text",
+          "targetSelector": "#wrap-text",
+          "criticality": "normal"
+        }
       ],
-      "states": [{ "id": "default" }],
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
       "interactions": [
         {
           "id": "toggle-note",
           "title": "点按钮后说明展开",
-          "do": [{ "tap": { "selector": "#toggle" } }, { "wait": 150 }],
-          "expect": { "textIncludes": { "selector": "#note", "text": "已展开" } },
+          "do": [
+            {
+              "tap": {
+                "selector": "#toggle"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#note",
+              "text": "已展开"
+            }
+          },
           "screenshot": false
         }
       ],
@@ -72,215 +206,981 @@
     },
     {
       "id": "c-repair",
-      "prototype": { "url": "b/base.html" },
-      "target": { "url": "c-repair/target.html" },
+      "prototype": {
+        "url": "b/base.html"
+      },
+      "target": {
+        "url": "c-repair/target.html"
+      },
       "note": "实验 C：target.html 由 experiments/run.js 从 c-repair/before.html 复制，修复后再写回；直接手工改它没有意义。",
       "mappings": [
-        { "id": "b-title", "role": "标题", "prototypeSelector": "#b-title", "targetSelector": "#b-title", "pixelMode": "informational", "criticality": "critical" },
-        { "id": "b-card", "role": "卡片", "prototypeSelector": "#b-card", "targetSelector": "#b-card", "styleProps": ["padding", "border-radius", "background-color"] },
-        { "id": "b-label", "role": "字段名", "prototypeSelector": "#b-label", "targetSelector": "#b-label", "pixelMode": "informational", "styleProps": ["font-size", "line-height", "color"] },
-        { "id": "b-clock", "role": "时间", "prototypeSelector": "#b-clock", "targetSelector": "#b-clock", "pixelMode": "informational" },
-        { "id": "b-desc", "role": "说明", "prototypeSelector": "#b-desc", "targetSelector": "#b-desc", "pixelMode": "informational" },
-        { "id": "b-img", "role": "图片", "prototypeSelector": "#b-img", "targetSelector": "#b-img", "criticality": "critical" },
-        { "id": "b-btn", "role": "按钮", "prototypeSelector": "#b-btn", "targetSelector": "#b-btn", "pixelMode": "informational", "styleProps": ["margin", "width", "height"] },
-        { "id": "b-note", "role": "结果说明", "prototypeSelector": "#b-note", "targetSelector": "#b-note", "pixelMode": "informational" }
+        {
+          "id": "b-title",
+          "role": "标题",
+          "prototypeSelector": "#b-title",
+          "targetSelector": "#b-title",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-card",
+          "role": "卡片",
+          "prototypeSelector": "#b-card",
+          "targetSelector": "#b-card",
+          "styleProps": [
+            "padding",
+            "border-radius",
+            "background-color"
+          ]
+        },
+        {
+          "id": "b-label",
+          "role": "字段名",
+          "prototypeSelector": "#b-label",
+          "targetSelector": "#b-label",
+          "pixelMode": "informational",
+          "styleProps": [
+            "font-size",
+            "line-height",
+            "color"
+          ]
+        },
+        {
+          "id": "b-clock",
+          "role": "时间",
+          "prototypeSelector": "#b-clock",
+          "targetSelector": "#b-clock",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-desc",
+          "role": "说明",
+          "prototypeSelector": "#b-desc",
+          "targetSelector": "#b-desc",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-img",
+          "role": "图片",
+          "prototypeSelector": "#b-img",
+          "targetSelector": "#b-img",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-btn",
+          "role": "按钮",
+          "prototypeSelector": "#b-btn",
+          "targetSelector": "#b-btn",
+          "pixelMode": "informational",
+          "styleProps": [
+            "margin",
+            "width",
+            "height"
+          ]
+        },
+        {
+          "id": "b-note",
+          "role": "结果说明",
+          "prototypeSelector": "#b-note",
+          "targetSelector": "#b-note",
+          "pixelMode": "informational"
+        }
       ],
-      "states": [{ "id": "default" }],
-      "interactions": [{
-        "id": "toggle-note",
-        "title": "点按钮后说明展开",
-        "do": [{ "tap": { "selector": "#b-btn" } }, { "wait": 150 }],
-        "expect": { "textIncludes": { "selector": "#b-note", "text": "已展开" } },
-        "screenshot": false
-      }]
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [
+            {
+              "tap": {
+                "selector": "#b-btn"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#b-note",
+              "text": "已展开"
+            }
+          },
+          "screenshot": false
+        }
+      ]
     },
     {
       "id": "b-identical",
-      "prototype": { "url": "b/base.html" },
-      "target": { "url": "b/base.html" },
+      "prototype": {
+        "url": "b/base.html"
+      },
+      "target": {
+        "url": "b/base.html"
+      },
       "mappings": [
-        { "id": "b-title", "role": "标题", "prototypeSelector": "#b-title", "targetSelector": "#b-title", "pixelMode": "informational", "criticality": "critical" },
-        { "id": "b-card", "role": "卡片", "prototypeSelector": "#b-card", "targetSelector": "#b-card", "criticality": "critical" },
-        { "id": "b-label", "role": "字段名", "prototypeSelector": "#b-label", "targetSelector": "#b-label", "pixelMode": "informational" },
-        { "id": "b-clock", "role": "时间", "prototypeSelector": "#b-clock", "targetSelector": "#b-clock", "pixelMode": "informational" },
-        { "id": "b-desc", "role": "说明", "prototypeSelector": "#b-desc", "targetSelector": "#b-desc", "pixelMode": "informational" },
-        { "id": "b-img", "role": "图片", "prototypeSelector": "#b-img", "targetSelector": "#b-img", "criticality": "critical" },
-        { "id": "b-btn", "role": "按钮", "prototypeSelector": "#b-btn", "targetSelector": "#b-btn", "pixelMode": "informational" },
-        { "id": "b-note", "role": "结果说明", "prototypeSelector": "#b-note", "targetSelector": "#b-note", "pixelMode": "informational" }
+        {
+          "id": "b-title",
+          "role": "标题",
+          "prototypeSelector": "#b-title",
+          "targetSelector": "#b-title",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-card",
+          "role": "卡片",
+          "prototypeSelector": "#b-card",
+          "targetSelector": "#b-card",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-label",
+          "role": "字段名",
+          "prototypeSelector": "#b-label",
+          "targetSelector": "#b-label",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-clock",
+          "role": "时间",
+          "prototypeSelector": "#b-clock",
+          "targetSelector": "#b-clock",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-desc",
+          "role": "说明",
+          "prototypeSelector": "#b-desc",
+          "targetSelector": "#b-desc",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-img",
+          "role": "图片",
+          "prototypeSelector": "#b-img",
+          "targetSelector": "#b-img",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-btn",
+          "role": "按钮",
+          "prototypeSelector": "#b-btn",
+          "targetSelector": "#b-btn",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-note",
+          "role": "结果说明",
+          "prototypeSelector": "#b-note",
+          "targetSelector": "#b-note",
+          "pixelMode": "informational"
+        }
       ],
-      "states": [{ "id": "default" }],
-      "interactions": [{
-        "id": "toggle-note",
-        "title": "点按钮后说明展开",
-        "do": [{ "tap": { "selector": "#b-btn" } }, { "wait": 150 }],
-        "expect": { "textIncludes": { "selector": "#b-note", "text": "已展开" } },
-        "screenshot": false
-      }]
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [
+            {
+              "tap": {
+                "selector": "#b-btn"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#b-note",
+              "text": "已展开"
+            }
+          },
+          "screenshot": false
+        }
+      ]
     },
     {
       "id": "b-aa",
-      "prototype": { "url": "b/base.html" },
-      "target": { "url": "b/aa.html" },
+      "prototype": {
+        "url": "b/base.html"
+      },
+      "target": {
+        "url": "b/aa.html"
+      },
       "mappings": [
-        { "id": "b-title", "role": "标题", "prototypeSelector": "#b-title", "targetSelector": "#b-title", "pixelMode": "informational", "criticality": "critical" },
-        { "id": "b-card", "role": "卡片", "prototypeSelector": "#b-card", "targetSelector": "#b-card", "criticality": "critical" },
-        { "id": "b-label", "role": "字段名", "prototypeSelector": "#b-label", "targetSelector": "#b-label", "pixelMode": "informational" },
-        { "id": "b-clock", "role": "时间", "prototypeSelector": "#b-clock", "targetSelector": "#b-clock", "pixelMode": "informational" },
-        { "id": "b-desc", "role": "说明", "prototypeSelector": "#b-desc", "targetSelector": "#b-desc", "pixelMode": "informational" },
-        { "id": "b-img", "role": "图片", "prototypeSelector": "#b-img", "targetSelector": "#b-img", "criticality": "critical" },
-        { "id": "b-btn", "role": "按钮", "prototypeSelector": "#b-btn", "targetSelector": "#b-btn", "pixelMode": "informational" },
-        { "id": "b-note", "role": "结果说明", "prototypeSelector": "#b-note", "targetSelector": "#b-note", "pixelMode": "informational" }
+        {
+          "id": "b-title",
+          "role": "标题",
+          "prototypeSelector": "#b-title",
+          "targetSelector": "#b-title",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-card",
+          "role": "卡片",
+          "prototypeSelector": "#b-card",
+          "targetSelector": "#b-card",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-label",
+          "role": "字段名",
+          "prototypeSelector": "#b-label",
+          "targetSelector": "#b-label",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-clock",
+          "role": "时间",
+          "prototypeSelector": "#b-clock",
+          "targetSelector": "#b-clock",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-desc",
+          "role": "说明",
+          "prototypeSelector": "#b-desc",
+          "targetSelector": "#b-desc",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-img",
+          "role": "图片",
+          "prototypeSelector": "#b-img",
+          "targetSelector": "#b-img",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-btn",
+          "role": "按钮",
+          "prototypeSelector": "#b-btn",
+          "targetSelector": "#b-btn",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-note",
+          "role": "结果说明",
+          "prototypeSelector": "#b-note",
+          "targetSelector": "#b-note",
+          "pixelMode": "informational"
+        }
       ],
-      "states": [{ "id": "default" }],
-      "interactions": [{
-        "id": "toggle-note",
-        "title": "点按钮后说明展开",
-        "do": [{ "tap": { "selector": "#b-btn" } }, { "wait": 150 }],
-        "expect": { "textIncludes": { "selector": "#b-note", "text": "已展开" } },
-        "screenshot": false
-      }]
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [
+            {
+              "tap": {
+                "selector": "#b-btn"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#b-note",
+              "text": "已展开"
+            }
+          },
+          "screenshot": false
+        }
+      ]
     },
     {
       "id": "b-dpr2",
-      "prototype": { "url": "b/base.html" },
-      "target": { "url": "b/base.html", "dpr": 2 },
+      "prototype": {
+        "url": "b/base.html"
+      },
+      "target": {
+        "url": "b/base.html",
+        "dpr": 2
+      },
       "mappings": [
-        { "id": "b-title", "role": "标题", "prototypeSelector": "#b-title", "targetSelector": "#b-title", "pixelMode": "informational", "criticality": "critical" },
-        { "id": "b-card", "role": "卡片", "prototypeSelector": "#b-card", "targetSelector": "#b-card", "criticality": "critical" },
-        { "id": "b-label", "role": "字段名", "prototypeSelector": "#b-label", "targetSelector": "#b-label", "pixelMode": "informational" },
-        { "id": "b-clock", "role": "时间", "prototypeSelector": "#b-clock", "targetSelector": "#b-clock", "pixelMode": "informational" },
-        { "id": "b-desc", "role": "说明", "prototypeSelector": "#b-desc", "targetSelector": "#b-desc", "pixelMode": "informational" },
-        { "id": "b-img", "role": "图片", "prototypeSelector": "#b-img", "targetSelector": "#b-img", "criticality": "critical" },
-        { "id": "b-btn", "role": "按钮", "prototypeSelector": "#b-btn", "targetSelector": "#b-btn", "pixelMode": "informational" },
-        { "id": "b-note", "role": "结果说明", "prototypeSelector": "#b-note", "targetSelector": "#b-note", "pixelMode": "informational" }
+        {
+          "id": "b-title",
+          "role": "标题",
+          "prototypeSelector": "#b-title",
+          "targetSelector": "#b-title",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-card",
+          "role": "卡片",
+          "prototypeSelector": "#b-card",
+          "targetSelector": "#b-card",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-label",
+          "role": "字段名",
+          "prototypeSelector": "#b-label",
+          "targetSelector": "#b-label",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-clock",
+          "role": "时间",
+          "prototypeSelector": "#b-clock",
+          "targetSelector": "#b-clock",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-desc",
+          "role": "说明",
+          "prototypeSelector": "#b-desc",
+          "targetSelector": "#b-desc",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-img",
+          "role": "图片",
+          "prototypeSelector": "#b-img",
+          "targetSelector": "#b-img",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-btn",
+          "role": "按钮",
+          "prototypeSelector": "#b-btn",
+          "targetSelector": "#b-btn",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-note",
+          "role": "结果说明",
+          "prototypeSelector": "#b-note",
+          "targetSelector": "#b-note",
+          "pixelMode": "informational"
+        }
       ],
-      "states": [{ "id": "default" }],
-      "interactions": [{
-        "id": "toggle-note",
-        "title": "点按钮后说明展开",
-        "do": [{ "tap": { "selector": "#b-btn" } }, { "wait": 150 }],
-        "expect": { "textIncludes": { "selector": "#b-note", "text": "已展开" } },
-        "screenshot": false
-      }]
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [
+            {
+              "tap": {
+                "selector": "#b-btn"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#b-note",
+              "text": "已展开"
+            }
+          },
+          "screenshot": false
+        }
+      ]
     },
     {
       "id": "b-taller",
-      "prototype": { "url": "b/base.html" },
-      "target": { "url": "b/base.html", "viewport": { "width": 390, "height": 900 } },
+      "prototype": {
+        "url": "b/base.html"
+      },
+      "target": {
+        "url": "b/base.html",
+        "viewport": {
+          "width": 390,
+          "height": 900
+        }
+      },
       "mappings": [
-        { "id": "b-title", "role": "标题", "prototypeSelector": "#b-title", "targetSelector": "#b-title", "pixelMode": "informational", "criticality": "critical" },
-        { "id": "b-card", "role": "卡片", "prototypeSelector": "#b-card", "targetSelector": "#b-card", "criticality": "critical" },
-        { "id": "b-label", "role": "字段名", "prototypeSelector": "#b-label", "targetSelector": "#b-label", "pixelMode": "informational" },
-        { "id": "b-clock", "role": "时间", "prototypeSelector": "#b-clock", "targetSelector": "#b-clock", "pixelMode": "informational" },
-        { "id": "b-desc", "role": "说明", "prototypeSelector": "#b-desc", "targetSelector": "#b-desc", "pixelMode": "informational" },
-        { "id": "b-img", "role": "图片", "prototypeSelector": "#b-img", "targetSelector": "#b-img", "criticality": "critical" },
-        { "id": "b-btn", "role": "按钮", "prototypeSelector": "#b-btn", "targetSelector": "#b-btn", "pixelMode": "informational" },
-        { "id": "b-note", "role": "结果说明", "prototypeSelector": "#b-note", "targetSelector": "#b-note", "pixelMode": "informational" }
+        {
+          "id": "b-title",
+          "role": "标题",
+          "prototypeSelector": "#b-title",
+          "targetSelector": "#b-title",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-card",
+          "role": "卡片",
+          "prototypeSelector": "#b-card",
+          "targetSelector": "#b-card",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-label",
+          "role": "字段名",
+          "prototypeSelector": "#b-label",
+          "targetSelector": "#b-label",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-clock",
+          "role": "时间",
+          "prototypeSelector": "#b-clock",
+          "targetSelector": "#b-clock",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-desc",
+          "role": "说明",
+          "prototypeSelector": "#b-desc",
+          "targetSelector": "#b-desc",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-img",
+          "role": "图片",
+          "prototypeSelector": "#b-img",
+          "targetSelector": "#b-img",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-btn",
+          "role": "按钮",
+          "prototypeSelector": "#b-btn",
+          "targetSelector": "#b-btn",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-note",
+          "role": "结果说明",
+          "prototypeSelector": "#b-note",
+          "targetSelector": "#b-note",
+          "pixelMode": "informational"
+        }
       ],
-      "states": [{ "id": "default" }],
-      "interactions": [{
-        "id": "toggle-note",
-        "title": "点按钮后说明展开",
-        "do": [{ "tap": { "selector": "#b-btn" } }, { "wait": 150 }],
-        "expect": { "textIncludes": { "selector": "#b-note", "text": "已展开" } },
-        "screenshot": false
-      }]
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [
+            {
+              "tap": {
+                "selector": "#b-btn"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#b-note",
+              "text": "已展开"
+            }
+          },
+          "screenshot": false
+        }
+      ]
     },
     {
       "id": "b-dynamic-declared",
-      "prototype": { "url": "b/base.html" },
-      "target": { "url": "b/dynamic.html" },
+      "prototype": {
+        "url": "b/base.html"
+      },
+      "target": {
+        "url": "b/dynamic.html"
+      },
       "mappings": [
-        { "id": "b-title", "role": "标题", "prototypeSelector": "#b-title", "targetSelector": "#b-title", "pixelMode": "informational", "criticality": "critical" },
-        { "id": "b-card", "role": "卡片", "prototypeSelector": "#b-card", "targetSelector": "#b-card", "criticality": "critical" },
-        { "id": "b-label", "role": "字段名", "prototypeSelector": "#b-label", "targetSelector": "#b-label", "pixelMode": "informational" },
-        { "id": "b-clock", "role": "时间", "prototypeSelector": "#b-clock", "targetSelector": "#b-clock", "pixelMode": "informational", "dynamicText": true },
-        { "id": "b-desc", "role": "说明", "prototypeSelector": "#b-desc", "targetSelector": "#b-desc", "pixelMode": "informational" },
-        { "id": "b-img", "role": "图片", "prototypeSelector": "#b-img", "targetSelector": "#b-img", "criticality": "critical" },
-        { "id": "b-btn", "role": "按钮", "prototypeSelector": "#b-btn", "targetSelector": "#b-btn", "pixelMode": "informational" },
-        { "id": "b-note", "role": "结果说明", "prototypeSelector": "#b-note", "targetSelector": "#b-note", "pixelMode": "informational" }
+        {
+          "id": "b-title",
+          "role": "标题",
+          "prototypeSelector": "#b-title",
+          "targetSelector": "#b-title",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-card",
+          "role": "卡片",
+          "prototypeSelector": "#b-card",
+          "targetSelector": "#b-card",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-label",
+          "role": "字段名",
+          "prototypeSelector": "#b-label",
+          "targetSelector": "#b-label",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-clock",
+          "role": "时间",
+          "prototypeSelector": "#b-clock",
+          "targetSelector": "#b-clock",
+          "pixelMode": "informational",
+          "dynamicText": true
+        },
+        {
+          "id": "b-desc",
+          "role": "说明",
+          "prototypeSelector": "#b-desc",
+          "targetSelector": "#b-desc",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-img",
+          "role": "图片",
+          "prototypeSelector": "#b-img",
+          "targetSelector": "#b-img",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-btn",
+          "role": "按钮",
+          "prototypeSelector": "#b-btn",
+          "targetSelector": "#b-btn",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-note",
+          "role": "结果说明",
+          "prototypeSelector": "#b-note",
+          "targetSelector": "#b-note",
+          "pixelMode": "informational"
+        }
       ],
-      "states": [{ "id": "default" }],
-      "interactions": [{
-        "id": "toggle-note",
-        "title": "点按钮后说明展开",
-        "do": [{ "tap": { "selector": "#b-btn" } }, { "wait": 150 }],
-        "expect": { "textIncludes": { "selector": "#b-note", "text": "已展开" } },
-        "screenshot": false
-      }]
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [
+            {
+              "tap": {
+                "selector": "#b-btn"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#b-note",
+              "text": "已展开"
+            }
+          },
+          "screenshot": false
+        }
+      ]
     },
     {
       "id": "b-dynamic-undeclared",
-      "prototype": { "url": "b/base.html" },
-      "target": { "url": "b/dynamic.html" },
+      "prototype": {
+        "url": "b/base.html"
+      },
+      "target": {
+        "url": "b/dynamic.html"
+      },
       "mappings": [
-        { "id": "b-title", "role": "标题", "prototypeSelector": "#b-title", "targetSelector": "#b-title", "pixelMode": "informational", "criticality": "critical" },
-        { "id": "b-card", "role": "卡片", "prototypeSelector": "#b-card", "targetSelector": "#b-card", "criticality": "critical" },
-        { "id": "b-label", "role": "字段名", "prototypeSelector": "#b-label", "targetSelector": "#b-label", "pixelMode": "informational" },
-        { "id": "b-clock", "role": "时间", "prototypeSelector": "#b-clock", "targetSelector": "#b-clock", "pixelMode": "informational" },
-        { "id": "b-desc", "role": "说明", "prototypeSelector": "#b-desc", "targetSelector": "#b-desc", "pixelMode": "informational" },
-        { "id": "b-img", "role": "图片", "prototypeSelector": "#b-img", "targetSelector": "#b-img", "criticality": "critical" },
-        { "id": "b-btn", "role": "按钮", "prototypeSelector": "#b-btn", "targetSelector": "#b-btn", "pixelMode": "informational" },
-        { "id": "b-note", "role": "结果说明", "prototypeSelector": "#b-note", "targetSelector": "#b-note", "pixelMode": "informational" }
+        {
+          "id": "b-title",
+          "role": "标题",
+          "prototypeSelector": "#b-title",
+          "targetSelector": "#b-title",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-card",
+          "role": "卡片",
+          "prototypeSelector": "#b-card",
+          "targetSelector": "#b-card",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-label",
+          "role": "字段名",
+          "prototypeSelector": "#b-label",
+          "targetSelector": "#b-label",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-clock",
+          "role": "时间",
+          "prototypeSelector": "#b-clock",
+          "targetSelector": "#b-clock",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-desc",
+          "role": "说明",
+          "prototypeSelector": "#b-desc",
+          "targetSelector": "#b-desc",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-img",
+          "role": "图片",
+          "prototypeSelector": "#b-img",
+          "targetSelector": "#b-img",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-btn",
+          "role": "按钮",
+          "prototypeSelector": "#b-btn",
+          "targetSelector": "#b-btn",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-note",
+          "role": "结果说明",
+          "prototypeSelector": "#b-note",
+          "targetSelector": "#b-note",
+          "pixelMode": "informational"
+        }
       ],
-      "states": [{ "id": "default" }],
-      "interactions": [{
-        "id": "toggle-note",
-        "title": "点按钮后说明展开",
-        "do": [{ "tap": { "selector": "#b-btn" } }, { "wait": 150 }],
-        "expect": { "textIncludes": { "selector": "#b-note", "text": "已展开" } },
-        "screenshot": false
-      }]
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [
+            {
+              "tap": {
+                "selector": "#b-btn"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#b-note",
+              "text": "已展开"
+            }
+          },
+          "screenshot": false
+        }
+      ]
     },
     {
       "id": "b-statusbar",
-      "prototype": { "url": "b/base.html" },
-      "target": { "url": "b/statusbar.html" },
+      "prototype": {
+        "url": "b/base.html"
+      },
+      "target": {
+        "url": "b/statusbar.html"
+      },
       "alignment": {
         "anchor": "b-title",
         "reason": "目标外壳多一条 24px 状态栏；标题顶边视为内容原点"
       },
       "mappings": [
-        { "id": "b-title", "role": "标题", "prototypeSelector": "#b-title", "targetSelector": "#b-title", "pixelMode": "informational", "criticality": "critical" },
-        { "id": "b-card", "role": "卡片", "prototypeSelector": "#b-card", "targetSelector": "#b-card", "criticality": "critical" },
-        { "id": "b-label", "role": "字段名", "prototypeSelector": "#b-label", "targetSelector": "#b-label", "pixelMode": "informational" },
-        { "id": "b-clock", "role": "时间", "prototypeSelector": "#b-clock", "targetSelector": "#b-clock", "pixelMode": "informational" },
-        { "id": "b-desc", "role": "说明", "prototypeSelector": "#b-desc", "targetSelector": "#b-desc", "pixelMode": "informational" },
-        { "id": "b-img", "role": "图片", "prototypeSelector": "#b-img", "targetSelector": "#b-img", "criticality": "critical" },
-        { "id": "b-btn", "role": "按钮", "prototypeSelector": "#b-btn", "targetSelector": "#b-btn", "pixelMode": "informational" },
-        { "id": "b-note", "role": "结果说明", "prototypeSelector": "#b-note", "targetSelector": "#b-note", "pixelMode": "informational" }
+        {
+          "id": "b-title",
+          "role": "标题",
+          "prototypeSelector": "#b-title",
+          "targetSelector": "#b-title",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-card",
+          "role": "卡片",
+          "prototypeSelector": "#b-card",
+          "targetSelector": "#b-card",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-label",
+          "role": "字段名",
+          "prototypeSelector": "#b-label",
+          "targetSelector": "#b-label",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-clock",
+          "role": "时间",
+          "prototypeSelector": "#b-clock",
+          "targetSelector": "#b-clock",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-desc",
+          "role": "说明",
+          "prototypeSelector": "#b-desc",
+          "targetSelector": "#b-desc",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-img",
+          "role": "图片",
+          "prototypeSelector": "#b-img",
+          "targetSelector": "#b-img",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-btn",
+          "role": "按钮",
+          "prototypeSelector": "#b-btn",
+          "targetSelector": "#b-btn",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-note",
+          "role": "结果说明",
+          "prototypeSelector": "#b-note",
+          "targetSelector": "#b-note",
+          "pixelMode": "informational"
+        }
       ],
-      "states": [{ "id": "default" }],
-      "interactions": [{
-        "id": "toggle-note",
-        "title": "点按钮后说明展开",
-        "do": [{ "tap": { "selector": "#b-btn" } }, { "wait": 150 }],
-        "expect": { "textIncludes": { "selector": "#b-note", "text": "已展开" } },
-        "screenshot": false
-      }]
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [
+            {
+              "tap": {
+                "selector": "#b-btn"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#b-note",
+              "text": "已展开"
+            }
+          },
+          "screenshot": false
+        }
+      ]
     },
     {
       "id": "b-weight",
-      "prototype": { "url": "b/base.html" },
-      "target": { "url": "b/weight.html" },
+      "prototype": {
+        "url": "b/base.html"
+      },
+      "target": {
+        "url": "b/weight.html"
+      },
       "mappings": [
-        { "id": "b-title", "role": "标题", "prototypeSelector": "#b-title", "targetSelector": "#b-title", "pixelMode": "informational", "criticality": "critical" },
-        { "id": "b-card", "role": "卡片", "prototypeSelector": "#b-card", "targetSelector": "#b-card", "criticality": "critical" },
-        { "id": "b-label", "role": "字段名", "prototypeSelector": "#b-label", "targetSelector": "#b-label", "pixelMode": "informational" },
-        { "id": "b-clock", "role": "时间", "prototypeSelector": "#b-clock", "targetSelector": "#b-clock", "pixelMode": "informational" },
-        { "id": "b-desc", "role": "说明", "prototypeSelector": "#b-desc", "targetSelector": "#b-desc", "pixelMode": "informational" },
-        { "id": "b-img", "role": "图片", "prototypeSelector": "#b-img", "targetSelector": "#b-img", "criticality": "critical" },
-        { "id": "b-btn", "role": "按钮", "prototypeSelector": "#b-btn", "targetSelector": "#b-btn", "pixelMode": "informational" },
-        { "id": "b-note", "role": "结果说明", "prototypeSelector": "#b-note", "targetSelector": "#b-note", "pixelMode": "informational" }
+        {
+          "id": "b-title",
+          "role": "标题",
+          "prototypeSelector": "#b-title",
+          "targetSelector": "#b-title",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-card",
+          "role": "卡片",
+          "prototypeSelector": "#b-card",
+          "targetSelector": "#b-card",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-label",
+          "role": "字段名",
+          "prototypeSelector": "#b-label",
+          "targetSelector": "#b-label",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-clock",
+          "role": "时间",
+          "prototypeSelector": "#b-clock",
+          "targetSelector": "#b-clock",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-desc",
+          "role": "说明",
+          "prototypeSelector": "#b-desc",
+          "targetSelector": "#b-desc",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-img",
+          "role": "图片",
+          "prototypeSelector": "#b-img",
+          "targetSelector": "#b-img",
+          "criticality": "critical"
+        },
+        {
+          "id": "b-btn",
+          "role": "按钮",
+          "prototypeSelector": "#b-btn",
+          "targetSelector": "#b-btn",
+          "pixelMode": "informational"
+        },
+        {
+          "id": "b-note",
+          "role": "结果说明",
+          "prototypeSelector": "#b-note",
+          "targetSelector": "#b-note",
+          "pixelMode": "informational"
+        }
       ],
-      "states": [{ "id": "default" }],
-      "interactions": [{
-        "id": "toggle-note",
-        "title": "点按钮后说明展开",
-        "do": [{ "tap": { "selector": "#b-btn" } }, { "wait": 150 }],
-        "expect": { "textIncludes": { "selector": "#b-note", "text": "已展开" } },
-        "screenshot": false
-      }]
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [
+            {
+              "tap": {
+                "selector": "#b-btn"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#b-note",
+              "text": "已展开"
+            }
+          },
+          "screenshot": false
+        }
+      ]
+    },
+    {
+      "id": "f-fluid",
+      "prototype": {
+        "url": "f/fluid.html",
+        "frameSelector": "#fluid"
+      },
+      "target": {
+        "url": "f/fluid.html",
+        "frameSelector": "#fluid"
+      },
+      "note": "实验 F：frame 是流式宽度（100%），没有 390px 假机身，因此 --viewport 改变的是真实布局宽度。",
+      "mappings": [
+        {
+          "id": "f-title",
+          "role": "标题",
+          "prototypeSelector": "#f-title",
+          "targetSelector": "#f-title",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "f-card",
+          "role": "卡片",
+          "prototypeSelector": "#f-card",
+          "targetSelector": "#f-card",
+          "criticality": "critical",
+          "styleProps": [
+            "padding",
+            "border-radius",
+            "background-color"
+          ]
+        },
+        {
+          "id": "f-desc",
+          "role": "说明",
+          "prototypeSelector": "#f-desc",
+          "targetSelector": "#f-desc",
+          "pixelMode": "informational",
+          "criticality": "critical"
+        },
+        {
+          "id": "f-list",
+          "role": "清单",
+          "prototypeSelector": "#f-list",
+          "targetSelector": "#f-list",
+          "pixelMode": "informational"
+        }
+      ],
+      "states": [
+        {
+          "id": "default"
+        }
+      ],
+      "interactions": [
+        {
+          "id": "toggle-note",
+          "title": "点按钮后说明展开",
+          "do": [
+            {
+              "tap": {
+                "selector": "#f-more"
+              }
+            },
+            {
+              "wait": 150
+            }
+          ],
+          "expect": {
+            "textIncludes": {
+              "selector": "#f-note",
+              "text": "已展开"
+            }
+          },
+          "screenshot": false
+        }
+      ]
+    }
+  ],
+  "viewports": [
+    {
+      "id": "w375",
+      "width": 375,
+      "height": 812
+    },
+    {
+      "id": "w414",
+      "width": 414,
+      "height": 896
     }
   ]
 }

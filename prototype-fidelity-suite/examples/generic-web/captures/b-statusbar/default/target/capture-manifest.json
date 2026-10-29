@@ -3,14 +3,16 @@
   "kind": "capture-manifest",
   "pageId": "b-statusbar",
   "stateId": "default",
+  "viewportId": null,
   "side": "target",
   "platform": "web",
-  "capturedAt": "2026-10-28T14:33:48.856Z",
+  "capturedAt": "2026-10-29T12:26:22.289Z",
   "source": {
     "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/b/statusbar.html",
     "projectRoot": null,
     "route": null,
-    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
     "dataSource": "real",
     "injection": null,
     "note": null
@@ -20,6 +22,7 @@
     "height": 844
   },
   "dpr": 1,
+  "bundle": null,
   "screenshot": {
     "path": "screenshot.png",
     "sha256": "cca2ca9c2e1943acb66489d5b6662f5968a15ba619e984a1623c99d461e95054",

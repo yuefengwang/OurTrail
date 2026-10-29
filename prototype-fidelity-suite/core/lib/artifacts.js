@@ -3,6 +3,7 @@
  * Builders for the versioned artifacts. One place decides what "a capture
  * manifest" contains, so the CLI, the adapters and the tests cannot drift.
  */
+const fs = require('fs');
 const path = require('path');
 const { sha256File, exists, isoNow, round } = require('./util');
 
@@ -17,6 +18,7 @@ function buildCaptureManifest(input) {
     kind: 'capture-manifest',
     pageId: input.pageId,
     stateId: input.stateId || 'default',
+    viewportId: input.viewportId || null,
     side: input.side,
     platform: input.platform,
     capturedAt: input.capturedAt || isoNow(),
@@ -25,12 +27,16 @@ function buildCaptureManifest(input) {
       projectRoot: input.projectRoot || null,
       route: input.route || null,
       codeVersion: input.codeVersion || null,
+      // The repository HEAD of the checkout that ran the capture. It dates the
+      // capture; it is not evidence about the rendered build.
+      suiteHead: input.suiteHead || null,
       dataSource: input.dataSource || 'real',
       injection: input.injection || null,
       note: input.note || null,
     },
     viewport: input.viewport || null,
     dpr: input.dpr == null ? null : input.dpr,
+    bundle: input.bundle || null,
     screenshot: hasShot ? {
       path: path.basename(shot),
       sha256: sha256File(shot),
@@ -63,6 +69,7 @@ function buildVisualDiffReport(input) {
     kind: 'visual-diff-report',
     pageId: input.pageId,
     stateId: input.stateId || 'default',
+    viewportId: input.viewportId || null,
     generatedAt: isoNow(),
     prototype: input.provenance && input.provenance.prototype || null,
     target: input.provenance && input.provenance.target || null,
@@ -92,6 +99,7 @@ function buildValidationReport(input) {
     kind: 'fidelity-validation-report',
     pageId: input.pageId,
     stateId: input.stateId || 'default',
+    viewportId: input.viewportId || null,
     generatedAt: isoNow(),
     status,
     reason: input.reason || null,
@@ -116,7 +124,38 @@ function statusRollup(statuses) {
   return 'PASS';
 }
 
+/**
+ * A run directory is named by the caller (`--run foo`) and is reused whenever
+ * that name is used again. If a re-run aborts before it writes a verdict — a
+ * capture that could not write its snapshot, say — whatever the *previous* run
+ * left behind still sits in the directory and reads as this run's evidence.
+ * Removing the verdict artifacts up front makes "what is in reports/foo" mean
+ * "what this run managed to produce": a failed run leaves no verdict at all,
+ * instead of an old PASS the exit code contradicts.
+ */
+const RUN_VERDICT_ARTIFACTS = [
+  'verify-steps.json',
+  'visual-diff-report.json',
+  'fidelity-validation-report.json',
+  'report.html',
+];
+
+function clearRunArtifacts(runDir) {
+  const removed = [];
+  for (const name of RUN_VERDICT_ARTIFACTS) {
+    const file = path.join(runDir, name);
+    try {
+      fs.unlinkSync(file);
+      removed.push(name);
+    } catch (e) {
+      if (e.code !== 'ENOENT') throw e;
+    }
+  }
+  return removed;
+}
+
 module.exports = {
-  SCHEMA_VERSION, STATUSES,
+  SCHEMA_VERSION, STATUSES, RUN_VERDICT_ARTIFACTS,
   buildCaptureManifest, buildVisualDiffReport, buildValidationReport, statusRollup,
+  clearRunArtifacts,
 };

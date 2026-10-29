@@ -3,7 +3,12 @@
   "kind": "page-layout",
   "pageId": "b-taller",
   "stateId": "default",
-  "generatedAt": "2026-10-28T14:32:56.955Z",
+  "generatedAt": "2026-10-29T12:25:52.448Z",
   "sections": [],
-  "rhythm": []
+  "rhythm": [],
+  "coverage": {
+    "sectionsDeclared": 0,
+    "resolved": 0,
+    "compared": 0
+  }
 }

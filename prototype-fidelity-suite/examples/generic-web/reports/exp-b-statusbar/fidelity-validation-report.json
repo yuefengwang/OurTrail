@@ -3,18 +3,19 @@
   "kind": "fidelity-validation-report",
   "pageId": "b-statusbar",
   "stateId": "default",
-  "generatedAt": "2026-10-28T14:33:54.839Z",
+  "viewportId": null,
+  "generatedAt": "2026-10-29T12:26:25.755Z",
   "status": "PASS",
   "reason": null,
   "scorecard": {
     "schemaVersion": "1.0.0",
-    "generatedAt": "2026-10-28T14:33:54.839Z",
+    "generatedAt": "2026-10-29T12:26:25.755Z",
     "dimensions": {
       "geometry": {
         "checks": {
           "total": 16,
-          "pass": 16,
           "fail": 0,
+          "pass": 16,
           "unverified": 0
         },
         "metrics": {
@@ -62,14 +63,14 @@
       },
       "appearance": {
         "checks": {
-          "total": 64,
+          "total": 73,
           "fail": 0,
-          "pass": 64,
+          "pass": 73,
           "unverified": 0
         },
         "metrics": {
           "style": {
-            "total": 56,
+            "total": 65,
             "fail": 0,
             "unverified": 0,
             "criticalFail": 0
@@ -103,6 +104,7 @@
         "verdict": "PASS"
       }
     },
+    "categories": {},
     "criticalFailures": [],
     "nonCriticalFailures": [],
     "budget": {
@@ -117,7 +119,8 @@
       "notApplicable": 0,
       "missingOnTarget": 0,
       "missingOnPrototype": 0,
-      "pixelsCompared": 0
+      "pixelsCompared": 0,
+      "unownedCategories": []
     },
     "verdict": "PASS"
   },
@@ -141,10 +144,10 @@
             "observed": "说明已展开"
           }
         ],
-        "startedAt": "2026-10-28T14:33:53.902Z",
+        "startedAt": "2026-10-29T12:26:24.786Z",
         "screenshotPath": null,
-        "finishedAt": "2026-10-28T14:33:54.684Z",
-        "durationMs": 782,
+        "finishedAt": "2026-10-29T12:26:25.550Z",
+        "durationMs": 764,
         "verification": "real-action-and-observation"
       }
     ],

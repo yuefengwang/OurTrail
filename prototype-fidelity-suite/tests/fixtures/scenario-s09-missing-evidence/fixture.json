@@ -1,0 +1,58 @@
+{
+  "id": "s09-missing-evidence",
+  "class": "missing-evidence",
+  "adversarial": true,
+  "purpose": "证据没拿到时只能记「判不了」：目标页根本不存在（m-missing）与目标页存在但声明的证据元素从不出现（m-wait）都必须是退出码 2，且不得留下任何编造的 diff/评分产物；同目录里 m-ok 是阳性对照——没有它，一个「什么都 UNVERIFIED」的实现也能让本场景全绿。",
+  "requires": [
+    "playwright"
+  ],
+  "steps": [
+    {
+      "run": ["verify", "--project", ".", "--page", "m-ok", "--state", "default", "--run", "ok"],
+      "expectExit": 0,
+      "captureStdout": "ok.stdout.txt"
+    },
+    {
+      "run": ["verify", "--project", ".", "--page", "m-missing", "--state", "default", "--run", "missing"],
+      "expectExit": 2,
+      "captureStdout": "missing.stdout.txt"
+    },
+    {
+      "run": ["diff", "--project", ".", "--page", "m-missing", "--state", "default", "--run", "missing-diff"],
+      "expectExit": 2,
+      "captureStdout": "missing-diff.stdout.txt"
+    },
+    {
+      "run": ["verify", "--project", ".", "--page", "m-wait", "--state", "default", "--run", "wait"],
+      "expectExit": 2,
+      "captureStdout": "wait.stdout.txt"
+    }
+  ],
+  "checks": [
+    { "file": "reports/ok/visual-diff-report.json", "path": "$.verdict", "equals": "PASS" },
+    { "file": "reports/ok/visual-diff-report.json", "path": "$.measurement.regionsCompared", "equals": 3 },
+    { "file": "reports/ok/visual-diff-report.json", "path": "$.measurement.regionsFailing", "equals": 0 },
+    { "file": "reports/ok/fidelity-validation-report.json", "path": "$.status", "equals": "PASS" },
+    { "file": "reports/ok/fidelity-validation-report.json", "path": "$.scorecard.coverage.pairsMeasured", "equals": 3 },
+    { "file": "reports/ok/fidelity-validation-report.json", "path": "$.interaction.checks[0].status", "equals": "PASS" },
+    { "file": "ok.stdout.txt", "contains": "verdict PASS" },
+
+    { "file": "missing.stdout.txt", "contains": "BLOCKED" },
+    { "file": "reports/missing/verify-steps.json", "path": "$.verdict", "equals": "BLOCKED" },
+    { "file": "reports/missing/verify-steps.json", "path": "$.steps[1].step", "equals": "capture:target" },
+    { "file": "reports/missing/verify-steps.json", "path": "$.steps[1].status", "equals": "BLOCKED" },
+    { "file": "reports/missing/verify-steps.json", "path": "$.steps[0].status", "equals": "PASS" },
+    { "fileMissing": "reports/missing/visual-diff-report.json" },
+    { "fileMissing": "reports/missing/fidelity-validation-report.json" },
+    { "fileMissing": "captures/m-missing/default/target/capture-manifest.json" },
+    { "fileMissing": "captures/m-missing/default/target/screenshot.png" },
+
+    { "file": "missing-diff.stdout.txt", "contains": "CAPTURE_MISSING" },
+    { "fileMissing": "reports/missing-diff/visual-diff-report.json" },
+
+    { "file": "wait.stdout.txt", "contains": "BLOCKED" },
+    { "fileMissing": "captures/m-wait/default/target/capture-manifest.json" },
+    { "fileMissing": "reports/wait/visual-diff-report.json" },
+    { "fileMissing": "reports/wait/fidelity-validation-report.json" }
+  ]
+}

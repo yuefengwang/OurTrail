@@ -1,0 +1,117 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.dev/pf/repair-report.schema.json",
+  "title": "Prototype Fidelity — bounded repair report",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "generatedAt", "pageId", "stateId", "plan", "edits", "status"],
+  "additionalProperties": false,
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "status": { "enum": ["PASS", "FAIL", "UNVERIFIED", "BLOCKED", "NOT_APPLICABLE"] },
+    "verdict": { "enum": ["PASS", "FAIL", "UNVERIFIED", "BLOCKED"] },
+    "edit": {
+      "type": "object",
+      "required": ["id", "file"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "file": { "type": "string", "minLength": 1 },
+        "why": { "type": ["string", "null"] }
+      }
+    },
+    "precheckEdit": {
+      "type": "object",
+      "required": ["id", "file", "status", "occurrences"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "file": { "type": "string" },
+        "status": { "$ref": "#/definitions/status" },
+        "reason": { "type": ["string", "null"] },
+        "occurrences": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "backupEntry": {
+      "type": "object",
+      "required": ["id", "file", "backup", "sha256Before", "bytes"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "file": { "type": "string" },
+        "backup": { "type": "string" },
+        "sha256Before": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "appliedEdit": {
+      "type": "object",
+      "required": ["id", "file", "sha256After"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "file": { "type": "string" },
+        "sha256After": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "rollbackEntry": {
+      "type": "object",
+      "required": ["id", "file", "sha256Restored", "byteIdentical"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "file": { "type": "string" },
+        "sha256Restored": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "byteIdentical": { "type": "boolean" }
+      }
+    },
+    "phase": {
+      "type": "object",
+      "required": ["verdict", "report"],
+      "additionalProperties": false,
+      "properties": {
+        "verdict": { "$ref": "#/definitions/verdict" },
+        "report": { "type": "string" }
+      }
+    }
+  },
+  "properties": {
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "kind": { "const": "repair-report" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "pageId": { "type": "string" },
+    "stateId": { "type": "string" },
+    "viewportId": { "type": ["string", "null"] },
+    "plan": { "type": "string" },
+    "edits": { "type": "array", "items": { "$ref": "#/definitions/edit" } },
+    "status": { "$ref": "#/definitions/status" },
+    "note": { "type": "string" },
+    "precheck": {
+      "type": "object",
+      "required": ["ok", "edits"],
+      "additionalProperties": false,
+      "properties": {
+        "ok": { "type": "boolean" },
+        "edits": { "type": "array", "items": { "$ref": "#/definitions/precheckEdit" } }
+      }
+    },
+    "backup": { "type": "array", "items": { "$ref": "#/definitions/backupEntry" } },
+    "applied": { "type": "array", "items": { "$ref": "#/definitions/appliedEdit" } },
+    "before": { "$ref": "#/definitions/phase" },
+    "after": { "$ref": "#/definitions/phase" },
+    "restored": { "oneOf": [{ "$ref": "#/definitions/phase" }, { "type": "null" }] },
+    "decision": {
+      "type": "object",
+      "required": ["outcome", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "outcome": { "enum": ["kept", "rolled-back"] },
+        "reason": { "type": "string" },
+        "byteIdentical": { "type": "boolean" },
+        "restoredVerdict": { "$ref": "#/definitions/verdict" },
+        "restoredMatchesBefore": { "type": "boolean" },
+        "applied": { "type": "array", "items": { "$ref": "#/definitions/appliedEdit" } }
+      }
+    },
+    "rollback": { "oneOf": [{ "type": "array", "items": { "$ref": "#/definitions/rollbackEntry" } }, { "type": "null" }] }
+  }
+}

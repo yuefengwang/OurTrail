@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "kind": "interaction-contract",
   "pageId": "specimen",
-  "generatedAt": "2026-10-28T14:32:10.991Z",
+  "generatedAt": "2026-10-29T12:27:26.506Z",
   "driver": {
     "adapter": "web",
     "endpoint": null,

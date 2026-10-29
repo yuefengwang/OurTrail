@@ -3,7 +3,8 @@
   "runId": "exp-b-weight",
   "pageId": "b-weight",
   "stateId": "default",
-  "startedAt": "2026-10-28T14:33:55.022Z",
+  "viewportId": null,
+  "startedAt": "2026-10-29T12:26:25.910Z",
   "project": {
     "id": "generic-web",
     "name": "通用 Web 基样（示例 1 · 卡片页）"

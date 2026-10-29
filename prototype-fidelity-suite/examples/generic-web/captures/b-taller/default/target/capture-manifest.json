@@ -3,14 +3,16 @@
   "kind": "capture-manifest",
   "pageId": "b-taller",
   "stateId": "default",
+  "viewportId": null,
   "side": "target",
   "platform": "web",
-  "capturedAt": "2026-10-28T14:32:56.859Z",
+  "capturedAt": "2026-10-29T12:25:52.409Z",
   "source": {
     "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/b/base.html",
     "projectRoot": null,
     "route": null,
-    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
     "dataSource": "real",
     "injection": null,
     "note": null
@@ -20,6 +22,7 @@
     "height": 900
   },
   "dpr": 1,
+  "bundle": null,
   "screenshot": {
     "path": "screenshot.png",
     "sha256": "ccaedde2c140204b3791fb3e0ef2607e1c83f8de46dac0aa57376072f7f0dccb",

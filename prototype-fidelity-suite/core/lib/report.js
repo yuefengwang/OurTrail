@@ -6,7 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const { escapeHtml } = require('./html');
-const { sha256File, ensureDir, round } = require('./util');
+const { sha256File, ensureDir, round, writeFileRetry } = require('./util');
 
 const STATUS_COLORS = {
   PASS: '#1a7f37',
@@ -264,7 +264,7 @@ ${(m.artifacts || []).map(a => `${escapeHtml(a.path)}${a.sha256 ? ` · sha256 <c
 function writeReport(file, manifest) {
   ensureDir(path.dirname(file));
   const html = renderReport(manifest);
-  fs.writeFileSync(file, html, 'utf8');
+  writeFileRetry(file, html);
   return { file, sha256: sha256File(file), bytes: Buffer.byteLength(html, 'utf8') };
 }
 

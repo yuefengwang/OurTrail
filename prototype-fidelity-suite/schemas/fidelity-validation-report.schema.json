@@ -96,7 +96,21 @@
             "typography": { "$ref": "#/definitions/dimension" },
             "appearance": { "$ref": "#/definitions/dimension" },
             "state": { "$ref": "#/definitions/dimension" },
-            "interaction": { "$ref": "#/definitions/dimension" }
+            "interaction": { "$ref": "#/definitions/dimension" },
+            "provenance": { "$ref": "#/definitions/dimension" }
+          }
+        },
+        "categories": {
+          "type": "object",
+          "description": "Per comparison category: which dimension owns it and how many records failed. A category absent here never appeared; a category with no owner would land in coverage.unownedCategories instead.",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["dimension", "fail"],
+            "additionalProperties": false,
+            "properties": {
+              "dimension": { "enum": ["geometry", "typography", "appearance"] },
+              "fail": { "type": "integer", "minimum": 0 }
+            }
           }
         },
         "criticalFailures": { "type": "array", "items": { "$ref": "#/definitions/failure" } },
@@ -122,7 +136,12 @@
             "notApplicable": { "type": "integer", "minimum": 0 },
             "missingOnTarget": { "type": "integer", "minimum": 0 },
             "missingOnPrototype": { "type": "integer", "minimum": 0 },
-            "pixelsCompared": { "type": "integer", "minimum": 0 }
+            "pixelsCompared": { "type": "integer", "minimum": 0 },
+            "unownedCategories": {
+              "type": "array",
+              "description": "Categories that reached the overall verdict but belong to no dimension. Honest coverage gap; the suite requires this to be empty.",
+              "items": { "type": "string" }
+            }
           }
         },
         "verdict": { "$ref": "#/definitions/status" }

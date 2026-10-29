@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "kind": "page-state-manifest",
   "pageId": "b-dpr2",
-  "generatedAt": "2026-10-28T14:32:39.932Z",
+  "generatedAt": "2026-10-29T12:25:42.619Z",
   "states": [
     {
       "id": "default",
@@ -23,8 +23,8 @@
             "height": 844
           },
           "dpr": 1,
-          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
-          "capturedAt": "2026-10-28T14:32:34.401Z",
+          "codeVersion": null,
+          "capturedAt": "2026-10-29T12:25:39.414Z",
           "nodes": 10,
           "screenshot": {
             "path": "screenshot.png",
@@ -48,8 +48,8 @@
             "height": 844
           },
           "dpr": 2,
-          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
-          "capturedAt": "2026-10-28T14:32:39.803Z",
+          "codeVersion": null,
+          "capturedAt": "2026-10-29T12:25:42.565Z",
           "nodes": 10,
           "screenshot": {
             "path": "screenshot.png",

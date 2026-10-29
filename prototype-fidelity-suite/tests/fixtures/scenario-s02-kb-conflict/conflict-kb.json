@@ -1,0 +1,440 @@
+{
+  "schemaVersion": "0.2.0",
+  "kind": "design-dna-kb",
+  "id": "garden-repair-qa-conflict",
+  "title": "OurTrail 已确认原型的设计知识（来源：activity-list / activity-detail / weather）",
+  "corpus": [
+    {
+      "file": "garden-browse.html",
+      "sha256": "975bc062e6743c8b1b8865c5a6343790ba82d29c1ea8407e092d564d9650467f",
+      "bytes": 1855,
+      "capturedAt": "2026-10-29T09:06:00.520Z"
+    },
+    {
+      "file": "garden-detail.html",
+      "sha256": "7bd2a040939d8f600f529fe8e62a32012c256ebadd8f6c033ec8cdc5a383267f",
+      "bytes": 1711,
+      "capturedAt": "2026-10-29T09:06:00.520Z"
+    },
+    {
+      "file": "repair-detail.html",
+      "sha256": "ab2761902ca0ebbc527ace39beddf708d194b1fbd51e6f8cc7a8927e1e1cac19",
+      "bytes": 1691,
+      "capturedAt": "2026-10-29T09:06:00.520Z"
+    },
+    {
+      "file": "repair-list.html",
+      "sha256": "6cb123764239495ef1d655e09d48fbf0c44663a00c5b97cebac285c66f0f5d13",
+      "bytes": 1851,
+      "capturedAt": "2026-10-29T09:06:00.520Z"
+    }
+  ],
+  "sources": [
+    {
+      "id": "garden-browse",
+      "family": "garden",
+      "file": "garden-browse.html",
+      "states": [
+        {
+          "id": "default",
+          "query": "",
+          "steps": [],
+          "nodeCount": 16
+        }
+      ]
+    },
+    {
+      "id": "garden-detail",
+      "family": "garden",
+      "file": "garden-detail.html",
+      "states": [
+        {
+          "id": "default",
+          "query": "",
+          "steps": [],
+          "nodeCount": 13
+        }
+      ]
+    },
+    {
+      "id": "repair-list",
+      "family": "repair",
+      "file": "repair-list.html",
+      "states": [
+        {
+          "id": "default",
+          "query": "",
+          "steps": [],
+          "nodeCount": 16
+        }
+      ]
+    },
+    {
+      "id": "repair-detail",
+      "family": "repair",
+      "file": "repair-detail.html",
+      "states": [
+        {
+          "id": "default",
+          "query": "",
+          "steps": [],
+          "nodeCount": 16
+        }
+      ]
+    }
+  ],
+  "revision": 4,
+  "updatedAt": "2026-10-29T09:10:00.000Z",
+  "rules": [
+    {
+      "id": "token.var.leaf",
+      "category": "token",
+      "kind": "measured",
+      "statement": "--leaf = #2f6b4f，被 3 处声明引用（.head h1、.borrow）",
+      "value": {
+        "name": "--leaf",
+        "resolved": [
+          "#2f6b4f"
+        ],
+        "declaredIn": [
+          "inline"
+        ],
+        "consumers": {
+          "count": 3,
+          "selectors": [
+            ".head h1",
+            ".borrow"
+          ]
+        },
+        "group": "other"
+      },
+      "evidence": [
+        {
+          "type": "custom-property",
+          "page": "garden-browse",
+          "state": "default",
+          "source": "garden-browse.html · inline",
+          "selector": ":root",
+          "prop": "--leaf",
+          "value": "#2f6b4f"
+        },
+        {
+          "type": "custom-property",
+          "page": "garden-detail",
+          "state": "default",
+          "source": "garden-detail.html · inline",
+          "selector": ":root",
+          "prop": "--leaf",
+          "value": "#2f6b4f"
+        }
+      ],
+      "support": {
+        "pages": [
+          "garden-browse",
+          "garden-detail"
+        ],
+        "states": [
+          "garden-browse/default",
+          "garden-detail/default"
+        ],
+        "instances": 2,
+        "selectors": [
+          ":root"
+        ]
+      },
+      "scope": {
+        "level": "page-family",
+        "pages": [
+          "garden-browse",
+          "garden-detail"
+        ],
+        "families": [
+          "garden"
+        ],
+        "rationale": "在 2/4 个页面中出现（garden-browse、garden-detail），未覆盖 repair-list、repair-detail"
+      },
+      "confidence": "high",
+      "confirmation": {
+        "status": "candidate",
+        "by": null,
+        "at": null
+      },
+      "exceptions": [],
+      "kb": {
+        "id": "token.var.leaf",
+        "category": "token",
+        "updatedAt": "2026-10-29T09:06:00.775Z",
+        "updatedBy": null,
+        "note": "seeded from pf dna"
+      }
+    },
+    {
+      "id": "token.var.leaf-legacy",
+      "category": "token",
+      "kind": "measured",
+      "statement": "--leaf = #c2410c，被 1 处声明引用（.order em）",
+      "value": {
+        "name": "--leaf",
+        "resolved": [
+          "#c2410c"
+        ],
+        "declaredIn": [
+          "inline"
+        ],
+        "consumers": {
+          "count": 1,
+          "selectors": [
+            ".order em"
+          ]
+        },
+        "group": "other"
+      },
+      "evidence": [
+        {
+          "type": "custom-property",
+          "page": "repair-list",
+          "state": "default",
+          "source": "repair-list.html · inline",
+          "selector": ":root",
+          "prop": "--leaf",
+          "value": "#c2410c"
+        },
+        {
+          "type": "custom-property",
+          "page": "repair-detail",
+          "state": "default",
+          "source": "repair-detail.html · inline",
+          "selector": ":root",
+          "prop": "--leaf",
+          "value": "#c2410c"
+        }
+      ],
+      "support": {
+        "pages": [
+          "repair-list",
+          "repair-detail"
+        ],
+        "states": [
+          "repair-list/default",
+          "repair-detail/default"
+        ],
+        "instances": 2,
+        "selectors": [
+          ":root"
+        ]
+      },
+      "scope": {
+        "level": "page-family",
+        "pages": [
+          "repair-list",
+          "repair-detail"
+        ],
+        "families": [
+          "repair"
+        ],
+        "rationale": "在 2/4 个页面中出现（repair-list、repair-detail），未覆盖 garden-browse、garden-detail"
+      },
+      "confidence": "high",
+      "confirmation": {
+        "status": "candidate",
+        "by": null,
+        "at": null
+      },
+      "exceptions": [],
+      "kb": {
+        "id": "token.var.leaf-legacy",
+        "category": "token",
+        "updatedAt": "2026-10-29T09:10:00.000Z",
+        "updatedBy": null,
+        "note": "fixture: legacy duplicate of --leaf"
+      }
+    },
+    {
+      "id": "token.var.paper",
+      "category": "token",
+      "kind": "measured",
+      "statement": "--paper = #fbf8f2，被 4 处声明引用（#frame）",
+      "value": {
+        "name": "--paper",
+        "resolved": [
+          "#fbf8f2"
+        ],
+        "declaredIn": [
+          "inline"
+        ],
+        "consumers": {
+          "count": 4,
+          "selectors": [
+            "#frame"
+          ]
+        },
+        "group": "other"
+      },
+      "evidence": [
+        {
+          "type": "custom-property",
+          "page": "garden-browse",
+          "state": "default",
+          "source": "garden-browse.html · inline",
+          "selector": ":root",
+          "prop": "--paper",
+          "value": "#fbf8f2"
+        },
+        {
+          "type": "custom-property",
+          "page": "garden-detail",
+          "state": "default",
+          "source": "garden-detail.html · inline",
+          "selector": ":root",
+          "prop": "--paper",
+          "value": "#fbf8f2"
+        },
+        {
+          "type": "custom-property",
+          "page": "repair-list",
+          "state": "default",
+          "source": "repair-list.html · inline",
+          "selector": ":root",
+          "prop": "--paper",
+          "value": "#fbf8f2"
+        },
+        {
+          "type": "custom-property",
+          "page": "repair-detail",
+          "state": "default",
+          "source": "repair-detail.html · inline",
+          "selector": ":root",
+          "prop": "--paper",
+          "value": "#fbf8f2"
+        }
+      ],
+      "support": {
+        "pages": [
+          "garden-browse",
+          "garden-detail",
+          "repair-list",
+          "repair-detail"
+        ],
+        "states": [
+          "garden-browse/default",
+          "garden-detail/default",
+          "repair-list/default",
+          "repair-detail/default"
+        ],
+        "instances": 4,
+        "selectors": [
+          ":root"
+        ]
+      },
+      "scope": {
+        "level": "global",
+        "pages": [
+          "garden-browse",
+          "garden-detail",
+          "repair-detail",
+          "repair-list"
+        ],
+        "families": [
+          "garden",
+          "repair"
+        ],
+        "rationale": "在全部 4 个已确认原型的页面中出现（garden-browse、garden-detail、repair-detail、repair-list，跨 garden/repair 两族）——范围来自出现次数，不是设计判断"
+      },
+      "confidence": "high",
+      "confirmation": {
+        "status": "candidate",
+        "by": null,
+        "at": null
+      },
+      "exceptions": [],
+      "kb": {
+        "id": "token.var.paper",
+        "category": "token",
+        "updatedAt": "2026-10-29T09:06:00.775Z",
+        "updatedBy": null,
+        "note": "seeded from pf dna"
+      }
+    },
+    {
+      "id": "token.var.ink-accent",
+      "category": "token",
+      "kind": "measured",
+      "statement": "--ink-accent = #2f6b4f，被 1 处声明引用（.head h1）",
+      "value": {
+        "name": "--ink-accent",
+        "resolved": [
+          "#2f6b4f"
+        ],
+        "declaredIn": [
+          "inline"
+        ],
+        "consumers": {
+          "count": 1,
+          "selectors": [
+            ".head h1"
+          ]
+        },
+        "group": "color"
+      },
+      "evidence": [
+        {
+          "type": "custom-property",
+          "page": "repair-list",
+          "state": "default",
+          "source": "repair-list.html · inline",
+          "selector": ":root",
+          "prop": "--ink-accent",
+          "value": "#2f6b4f"
+        }
+      ],
+      "support": {
+        "pages": [
+          "repair-list"
+        ],
+        "states": [
+          "repair-list/default"
+        ],
+        "instances": 1,
+        "selectors": [
+          ":root"
+        ]
+      },
+      "scope": {
+        "level": "page",
+        "pages": [
+          "repair-list"
+        ],
+        "families": [
+          "repair"
+        ],
+        "rationale": "只在 repair-list 中出现；不得当作全局规范"
+      },
+      "confidence": "medium",
+      "confirmation": {
+        "status": "candidate",
+        "by": null,
+        "at": null
+      },
+      "exceptions": [],
+      "kb": {
+        "id": "token.var.ink-accent",
+        "category": "token",
+        "updatedAt": "2026-10-29T09:06:00.775Z",
+        "updatedBy": null,
+        "note": "seeded from pf dna"
+      }
+    }
+  ],
+  "changelog": [
+    {
+      "revision": 4,
+      "at": "2026-10-29T09:10:00.000Z",
+      "by": null,
+      "action": "add",
+      "id": "token.var.ink-accent",
+      "fields": [],
+      "note": "fixture seed"
+    }
+  ],
+  "decisions": []
+}

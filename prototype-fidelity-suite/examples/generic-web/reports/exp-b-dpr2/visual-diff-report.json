@@ -3,7 +3,8 @@
   "kind": "visual-diff-report",
   "pageId": "b-dpr2",
   "stateId": "default",
-  "generatedAt": "2026-10-28T14:32:40.227Z",
+  "viewportId": null,
+  "generatedAt": "2026-10-29T12:25:42.739Z",
   "prototype": {
     "platform": "web",
     "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/b/base.html",
@@ -12,9 +13,11 @@
       "height": 844
     },
     "dpr": 1,
-    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "bundle": null,
     "dataSource": "real",
-    "capturedAt": "2026-10-28T14:32:34.401Z",
+    "capturedAt": "2026-10-29T12:25:39.414Z",
     "screenshotSha256": "aa388c693ef44064532c4d448fc65e1a7471833fc3a51f3082338b1d90e20667",
     "screenshotScale": {
       "x": 1,
@@ -30,9 +33,11 @@
       "height": 844
     },
     "dpr": 2,
-    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "bundle": null,
     "dataSource": "real",
-    "capturedAt": "2026-10-28T14:32:39.803Z",
+    "capturedAt": "2026-10-29T12:25:42.565Z",
     "screenshotSha256": "6460da348f08d9e585f41e477cab4b15805b6b95866ced5ed2e6c4d141312249",
     "screenshotScale": {
       "x": 2,
@@ -172,7 +177,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -268,6 +274,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -339,6 +352,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-title-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-title-target.png",
@@ -459,7 +476,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -555,6 +573,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -611,6 +636,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-card-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-card-target.png",
@@ -732,7 +761,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -828,6 +858,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -926,6 +963,33 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "measured-chain",
+        "chain": [
+          {
+            "pairId": "b-card",
+            "depth": 1,
+            "measured": true,
+            "dx": 0,
+            "dy": 0,
+            "dh": 0,
+            "pushesY": 0
+          }
+        ],
+        "inherited": {
+          "dx": 0,
+          "dy": 0
+        },
+        "own": {
+          "dx": 0,
+          "dy": 0
+        },
+        "dominant": "none",
+        "arithmetic": {
+          "dx": "0 - (0) = 0",
+          "dy": "0 - (0) = 0"
+        }
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-label-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-label-target.png",
@@ -1047,7 +1111,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -1143,6 +1208,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -1195,6 +1267,33 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "measured-chain",
+        "chain": [
+          {
+            "pairId": "b-card",
+            "depth": 1,
+            "measured": true,
+            "dx": 0,
+            "dy": 0,
+            "dh": 0,
+            "pushesY": 0
+          }
+        ],
+        "inherited": {
+          "dx": 0,
+          "dy": 0
+        },
+        "own": {
+          "dx": 0,
+          "dy": 0
+        },
+        "dominant": "none",
+        "arithmetic": {
+          "dx": "0 - (0) = 0",
+          "dy": "0 - (0) = 0"
+        }
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-clock-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-clock-target.png",
@@ -1316,7 +1415,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -1412,6 +1512,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -1627,6 +1734,33 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "measured-chain",
+        "chain": [
+          {
+            "pairId": "b-card",
+            "depth": 1,
+            "measured": true,
+            "dx": 0,
+            "dy": 0,
+            "dh": 0,
+            "pushesY": 0
+          }
+        ],
+        "inherited": {
+          "dx": 0,
+          "dy": 0
+        },
+        "own": {
+          "dx": 0,
+          "dy": 0
+        },
+        "dominant": "none",
+        "arithmetic": {
+          "dx": "0 - (0) = 0",
+          "dy": "0 - (0) = 0"
+        }
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-desc-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-desc-target.png",
@@ -1747,7 +1881,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -1843,6 +1978,20 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
+        },
+        {
+          "prop": "src",
+          "status": "PASS",
+          "a": "file:///d:/ourtrail/prototype-fidelity-suite/examples/generic-web/assets/stripes.png",
+          "b": "file:///d:/ourtrail/prototype-fidelity-suite/examples/generic-web/assets/stripes.png",
+          "delta": null
         }
       ],
       "text": {
@@ -1892,6 +2041,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-img-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-img-target.png",
@@ -2012,7 +2165,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -2108,6 +2262,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -2251,6 +2412,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-btn-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-btn-target.png",
@@ -2372,7 +2537,8 @@
           "prop": "box-shadow",
           "status": "PASS",
           "a": "none",
-          "b": "none"
+          "b": "none",
+          "delta": 0
         },
         {
           "prop": "opacity",
@@ -2468,6 +2634,13 @@
           "status": "PASS",
           "a": "normal",
           "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
         }
       ],
       "text": {
@@ -2593,6 +2766,10 @@
       },
       "acceptedDifference": null,
       "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
       "images": {
         "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-note-prototype.png",
         "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-dpr2\\regions\\b-note-target.png",
@@ -2609,6 +2786,11 @@
   },
   "alignment": {
     "applied": false
+  },
+  "cascade": {
+    "method": "measured-deltas-along-declared-ancestry",
+    "attributed": 3,
+    "independent": 5
   },
   "warnings": [
     "Target screenshot is 2.0000×2.0000 of CSS px; region crops are normalised to the smaller side before diffing.",

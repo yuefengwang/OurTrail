@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "capture-manifest",
+  "pageId": "b-identical",
+  "stateId": "default",
+  "viewportId": "w414",
+  "side": "prototype",
+  "platform": "web",
+  "capturedAt": "2026-10-29T12:28:34.633Z",
+  "source": {
+    "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/b/base.html",
+    "projectRoot": null,
+    "route": null,
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "dataSource": "real",
+    "injection": null,
+    "note": null
+  },
+  "viewport": {
+    "width": 414,
+    "height": 896
+  },
+  "dpr": 1,
+  "bundle": null,
+  "screenshot": {
+    "path": "screenshot.png",
+    "sha256": "f8c81caececb347a65f6ea1a9b86c2f14a57a15657a725624070fb68f82e4db5",
+    "width": 390,
+    "height": 896,
+    "scale": {
+      "x": 1,
+      "y": 1
+    },
+    "normalizedFrom": "device-pixels"
+  },
+  "snapshot": {
+    "nodes": 10,
+    "rootId": "n0",
+    "dimensions": {
+      "width": 414,
+      "height": 896
+    }
+  },
+  "provenance": {
+    "capturedBy": "prototype-fidelity-suite",
+    "adapter": "web",
+    "verification": "captured"
+  }
+}

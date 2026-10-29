@@ -3,7 +3,7 @@
   "kind": "platform-mappings",
   "pageId": "b-statusbar",
   "stateId": "default",
-  "generatedAt": "2026-10-28T14:33:48.966Z",
+  "generatedAt": "2026-10-29T12:26:22.328Z",
   "platforms": {
     "prototype": "web",
     "target": "web"

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "capture-manifest",
+  "pageId": "f-fluid",
+  "stateId": "default",
+  "viewportId": "w414",
+  "side": "target",
+  "platform": "web",
+  "capturedAt": "2026-10-29T12:28:18.338Z",
+  "source": {
+    "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/f/fluid.html",
+    "projectRoot": null,
+    "route": null,
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "dataSource": "real",
+    "injection": null,
+    "note": null
+  },
+  "viewport": {
+    "width": 414,
+    "height": 896
+  },
+  "dpr": 1,
+  "bundle": null,
+  "screenshot": {
+    "path": "screenshot.png",
+    "sha256": "2892a7260042dde417471ffe02230186fa7df9f035b1f8ffc070859e2c97d2cd",
+    "width": 414,
+    "height": 896,
+    "scale": {
+      "x": 1,
+      "y": 1
+    },
+    "normalizedFrom": "device-pixels"
+  },
+  "snapshot": {
+    "nodes": 12,
+    "rootId": "n0",
+    "dimensions": {
+      "width": 414,
+      "height": 896
+    }
+  },
+  "provenance": {
+    "capturedBy": "prototype-fidelity-suite",
+    "adapter": "web",
+    "verification": "captured"
+  }
+}

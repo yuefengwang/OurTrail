@@ -24,5 +24,6 @@
       "status": "PASS"
     }
   ],
-  "verdict": "PASS"
+  "verdict": "PASS",
+  "viewportId": null
 }

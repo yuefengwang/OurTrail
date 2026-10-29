@@ -3,7 +3,8 @@
   "runId": "exp-b-taller",
   "pageId": "b-taller",
   "stateId": "default",
-  "startedAt": "2026-10-28T14:32:45.854Z",
+  "viewportId": null,
+  "startedAt": "2026-10-29T12:25:46.014Z",
   "project": {
     "id": "generic-web",
     "name": "通用 Web 基样（示例 1 · 卡片页）"

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0.0",
+  "pageId": "s08-page",
+  "stateId": "default",
+  "edits": [
+    {
+      "id": "restore-label-type",
+      "file": "target.html",
+      "anchor": "font-size: 14px; line-height: 20px",
+      "replace": "font-size: 12px; line-height: 16px",
+      "why": "r-label 把原型的 12/16 写成了 14/20；只恢复这条声明，其它不动"
+    }
+  ]
+}

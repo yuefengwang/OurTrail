@@ -3,7 +3,8 @@
   "runId": "exp-c-after",
   "pageId": "c-repair",
   "stateId": "default",
-  "startedAt": "2026-10-28T14:34:29.192Z",
+  "viewportId": null,
+  "startedAt": "2026-10-29T12:26:46.320Z",
   "project": {
     "id": "generic-web",
     "name": "通用 Web 基样（示例 1 · 卡片页）"

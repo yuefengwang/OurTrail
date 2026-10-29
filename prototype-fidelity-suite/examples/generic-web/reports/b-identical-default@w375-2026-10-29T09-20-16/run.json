@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "b-identical-default@w375-2026-10-29T09-20-16",
+  "pageId": "b-identical",
+  "stateId": "default",
+  "viewportId": "w375",
+  "startedAt": "2026-10-29T09:20:16.642Z",
+  "project": {
+    "id": "generic-web",
+    "name": "通用 Web 基样（示例 1 · 卡片页）"
+  }
+}

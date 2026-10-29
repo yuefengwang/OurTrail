@@ -3,7 +3,7 @@
  * Experiment runner — Phase 7 (A / B / C / D) against a stack that has nothing
  * to do with OurTrail.
  *
- *   node examples/generic-web/experiments/run.js            # A + B + C + D
+ *   node examples/generic-web/experiments/run.js            # A + B + C + D + E + F
  *   node examples/generic-web/experiments/run.js --only a   # one experiment
  *
  * A. Known-deviation detection — eight injected deviations, each with the
@@ -19,6 +19,11 @@
  * D. Portability — the example is copied outside the repository and must
  *    produce identical readings with no reference to OurTrail, its paths or its
  *    components.
+ * E. Run-directory freshness — an aborted run must not leave the previous run's
+ *    verdict behind as if it were its own evidence.
+ * F. Named viewports — the width axis has to reach the browser, not just the
+ *    directory name. The fluid fixture proves it does; the fixed-frame fixture
+ *    is the negative control that shows why the fluid one is needed.
  *
  * Exit codes: 0 every experiment met its expectation, 1 at least one did not,
  * 2 the environment could not run them (Playwright missing) — never reported
@@ -225,10 +230,20 @@ function runB(out) {
       uClock && categories(uClock).includes('text') && categories(uClock).includes('ink'), categories(uClock));
     check('undeclared: only that region fails', undeclared.report && JSON.stringify(failingIds(undeclared.report)) === '["b-clock"]',
       undeclared.report && failingIds(undeclared.report));
-    // Both runs rendered the same bytes; only the declaration differs.
-    check('the two runs saw the same pixels (declaration, not rendering, changed the verdict)',
-      px(clock) != null && px(uClock) != null && Math.abs(px(clock) - px(uClock)) < 0.02,
-      { declared: px(clock), undeclared: px(uClock) });
+    // Both runs loaded the same page (same URL, same bytes on disk). The clock
+    // renders a millisecond timestamp, so its glyphs — and therefore its pixel
+    // ratio — differ between any two captures by construction. Comparing that
+    // ratio would test the wall clock, not the declaration. Compare the readings
+    // that must be stable instead: every other region, and the clock's own box.
+    const reading = r => (r ? JSON.stringify({ status: r.status, categories: r.categories, geometry: r.geometry, styles: r.styles }) : null);
+    const moved = (declared.report && declared.report.regions || [])
+      .map(r => r.id)
+      .filter(id => id !== 'b-clock' && reading(region(declared.report, id)) !== reading(region(undeclared.report, id)));
+    check('every region except the live clock reads identically in the two runs (declaration, not rendering, changed the verdict)',
+      moved.length === 0, moved);
+    check('the live clock keeps its box in both runs; only its glyphs moved',
+      !!clock && !!uClock && JSON.stringify(clock.geometry) === JSON.stringify(uClock.geometry),
+      { declared: clock && clock.geometry && clock.geometry.target, undeclared: uClock && uClock.geometry && uClock.geometry.target });
   }
 
   // --- shell offset (status bar)
@@ -517,18 +532,38 @@ function runD(out, opts) {
 
     for (const page of ['b-identical', 'specimen']) {
       const run = 'exp-' + page;
+      // The in-repo side is re-measured here rather than reusing whatever earlier
+      // experiments left in reports/: a stale report would make the provenance
+      // checks below answer a question about an older suite version.
+      const inRepoRun = 'expD-in-' + page;
+      spawnSync(process.execPath, [PF, 'verify', '--project', PROJECT, '--page', page, '--run', inRepoRun], {
+        cwd: SUITE, encoding: 'utf8', timeout: 300000,
+      });
       const res = spawnSync(process.execPath, [PF, 'verify', '--project', dest, '--page', page, '--run', run], {
         cwd: SUITE, encoding: 'utf8', timeout: 300000,
       });
       const reportFile = path.join(dest, 'reports', run, 'visual-diff-report.json');
       const outside = fs.existsSync(reportFile) ? JSON.parse(fs.readFileSync(reportFile, 'utf8')) : null;
-      const inside = JSON.parse(fs.readFileSync(path.join(PROJECT, 'reports', run, 'visual-diff-report.json'), 'utf8'));
+      const insideFile = path.join(PROJECT, 'reports', inRepoRun, 'visual-diff-report.json');
+      const inside = fs.existsSync(insideFile) ? JSON.parse(fs.readFileSync(insideFile, 'utf8')) : null;
 
       check(`D/${page}: runs at all outside the repo`, outside != null, res.stderr && res.stderr.slice(-400));
       if (!outside) continue;
+      check(`D/${page}: the in-repo control run exists`, inside != null, insideFile);
+      if (!inside) continue;
       out.experiments.D.pages[page] = { rc: res.status, verdict: outside.verdict };
+      // `codeVersion` is caller-declared in v0.2 — never inferred from the suite's
+      // own checkout — so the honest provenance check is the suite head: it must be
+      // absent outside the repository and present (a full sha) for the in-repo run.
+      // The second half is the positive control: without it the first check would
+      // also pass if the suite had stopped stamping anything at all.
       check(`D/${page}: provenance is not borrowed from the repository`,
-        outside.target && outside.target.codeVersion === null, outside.target && outside.target.codeVersion);
+        outside.target && outside.target.suiteHead === null, outside.target && outside.target.suiteHead);
+      check(`D/${page}: in-repo run dates itself with the suite HEAD (positive control)`,
+        /^[0-9a-f]{40}$/.test(String(inside.target && inside.target.suiteHead)),
+        inside.target && inside.target.suiteHead);
+      check(`D/${page}: the outside copy declares no bundle (bundle evidence is opt-in)`,
+        outside.target && outside.target.bundle === null, outside.target && outside.target.bundle);
 
       check(`D/${page}: exit code matches the in-repo run`, res.status === (page === 'specimen' ? 1 : 0), res.status);
       check(`D/${page}: verdict matches (${inside.verdict})`, outside.verdict === inside.verdict, outside.verdict);
@@ -556,6 +591,192 @@ function runD(out, opts) {
     if (!opts.keep) fs.rmSync(dest, { recursive: true, force: true });
     out.experiments.D.copiedTo = opts.keep ? dest : '(removed after the run)';
   }
+}
+
+/**
+ * E. Run-directory freshness — a run that cannot finish must not leave the
+ *    previous run's verdict behind.
+ *
+ *    Found by this suite itself: a transient Windows file lock made one capture
+ *    abort (exit 2, BLOCKED) while `reports/<run>/visual-diff-report.json` still
+ *    said PASS from the run before it. The exit code and the artifact disagreed,
+ *    and the artifact is what a reader trusts. The same directory is now cleared
+ *    of verdict artifacts before a run starts, so a blocked run leaves either
+ *    nothing or an explicit BLOCKED step log.
+ */
+function runE(out) {
+  section('实验 E · 运行目录新鲜度（中止的运行不得留下上一次的裁决）');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pf-exp-e-'));
+  const page = (id, targetUrl) => `
+    <!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+    <title>${id}</title><style>
+      body { margin: 0; font: 16px/1.4 sans-serif; }
+      #frame { width: 390px; }
+      h1 { font-size: 20px; margin: 24px 16px 8px; }
+    </style></head><body><div id="frame"><h1 id="e-title">出发前的检查</h1>
+    <button id="toggle">展开说明</button><p id="note">说明已收起</p></div>
+    <script>
+      document.getElementById('toggle').addEventListener('click', function () {
+        document.getElementById('note').textContent = '说明已展开';
+      });
+    </script></body></html>`;
+  fs.writeFileSync(path.join(dir, 'good.html'), page('good'), 'utf8');
+  fs.writeFileSync(path.join(dir, 'pf.config.json'), JSON.stringify({
+    schemaVersion: '1.0.0',
+    project: { id: 'exp-e', name: '运行目录新鲜度' },
+    prototype: { adapter: 'web', viewport: { width: 390, height: 844 }, frameSelector: '#frame' },
+    target: { adapter: 'web', frameSelector: '#frame' },
+    tolerances: { position: 1.5, size: 1.5, gap: 1, font: 1, color: 6, pixelRatio: 0.02, criticalPixelRatio: 0.005 },
+    pages: [
+      {
+        id: 'e-good',
+        prototype: { url: 'good.html' },
+        target: { url: 'good.html' },
+        mappings: [{ id: 'e-title', role: '标题', prototypeSelector: '#e-title', targetSelector: '#e-title', pixelMode: 'informational', criticality: 'critical' }],
+        // Declared so the interaction dimension is measured rather than absent:
+        // a run whose interaction dimension is UNVERIFIED exits 2 for a reason
+        // that has nothing to do with the freshness rule under test.
+        interactions: [{
+          id: 'toggle-note',
+          title: '点按钮后说明展开',
+          do: [{ tap: { selector: '#toggle' } }, { wait: 150 }],
+          expect: { textIncludes: { selector: '#note', text: '已展开' } },
+          screenshot: false,
+        }],
+      },
+      {
+        // The target resolves to a file that does not exist, so the target
+        // capture cannot happen. That is the abort the freshness rule is about.
+        id: 'e-missing',
+        prototype: { url: 'good.html' },
+        target: { url: 'does-not-exist.html' },
+        mappings: [{ id: 'e-title', role: '标题', prototypeSelector: '#e-title', targetSelector: '#e-title', pixelMode: 'informational', criticality: 'critical' }],
+      },
+    ],
+  }, null, 2), 'utf8');
+
+  const runDir = path.join(dir, 'reports', 'shared-run');
+  const reportFile = path.join(runDir, 'visual-diff-report.json');
+  const read = f => (fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null);
+  const verifyE = pageId => spawnSync(process.execPath, [PF, 'verify', '--project', dir, '--page', pageId, '--run', 'shared-run'], {
+    cwd: SUITE, encoding: 'utf8', timeout: 300000,
+  });
+
+  try {
+    // 1. A run that finishes: the directory really does hold a PASS verdict.
+    const good = verifyE('e-good');
+    const goodReport = read(reportFile);
+    out.experiments.E = { run: 'reports/shared-run', good: { rc: good.status, verdict: goodReport && goodReport.verdict }, blocked: null };
+    check('E/good: the run finishes green', good.status === 0 && goodReport && goodReport.verdict === 'PASS',
+      { rc: good.status, verdict: goodReport && goodReport.verdict });
+
+    // 2. The same directory, a run whose target capture cannot happen.
+    const bad = verifyE('e-missing');
+    out.experiments.E.blocked = { rc: bad.status, reportLeftBehind: fs.existsSync(reportFile) };
+    check('E/blocked: the run reports BLOCKED through its exit code', bad.status === 2, bad.status);
+    check('E/blocked: the previous PASS report is not left behind as this run’s evidence',
+      !fs.existsSync(reportFile), reportFile);
+    const steps = read(path.join(runDir, 'verify-steps.json'));
+    check('E/blocked: the step log names the capture that could not happen',
+      !!steps && steps.verdict === 'BLOCKED' && (steps.steps || []).some(s => s.step === 'capture:target' && s.status === 'BLOCKED'),
+      steps);
+    check('E/blocked: no validation report is invented for a run that never diffed',
+      !fs.existsSync(path.join(runDir, 'fidelity-validation-report.json')));
+
+    // 3. Positive control: the same directory still works for a run that finishes,
+    //    so clearing the artifacts did not disable the writes themselves.
+    const again = verifyE('e-good');
+    const fresh = read(reportFile);
+    out.experiments.E.goodAfterBlock = { rc: again.status, verdict: fresh && fresh.verdict };
+    check('E/recovered: a later run in the same directory writes a fresh verdict',
+      again.status === 0 && fresh && fresh.verdict === 'PASS' && fresh.generatedAt !== (goodReport && goodReport.generatedAt),
+      { rc: again.status, verdict: fresh && fresh.verdict, at: fresh && fresh.generatedAt, before: goodReport && goodReport.generatedAt });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+function runF(out) {
+  section('实验 F · 命名视口（宽度轴必须真的到达浏览器，而不只是换了个目录名）');
+
+  const verifyVp = page => spawnSync(process.execPath,
+    [PF, 'verify', '--project', PROJECT, '--page', page, '--viewport', 'all'],
+    { cwd: SUITE, encoding: 'utf8', timeout: 300000 });
+
+  const manifestOf = (page, vp) => {
+    const f = path.join(PROJECT, 'captures', page, 'default', '@' + vp, 'target', 'capture-manifest.json');
+    return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null;
+  };
+  const boxOf = (page, vp, sel) => {
+    const f = path.join(PROJECT, 'captures', page, 'default', '@' + vp, 'target', 'snapshot.json');
+    if (!fs.existsSync(f)) return null;
+    const n = (JSON.parse(fs.readFileSync(f, 'utf8')).nodes || []).find(x => x.sel === sel);
+    return n ? n.rect : null;
+  };
+  // `--viewport all` writes one directory per viewport, so the run names are
+  // discovered rather than passed in.
+  const latestByViewport = page => {
+    const root = path.join(PROJECT, 'reports');
+    const found = {};
+    for (const d of fs.readdirSync(root)) {
+      const m = new RegExp('^' + page + '-default@(\\w+)-(\\d{4}-\\d{2}-\\d{2}T[\\d-]+)$').exec(d);
+      if (!m) continue;
+      const at = fs.statSync(path.join(root, d)).mtimeMs;
+      if (!found[m[1]] || at > found[m[1]].at) found[m[1]] = { dir: path.join(root, d), at };
+    }
+    return found;
+  };
+  const validationIn = dir => {
+    const f = path.join(dir, 'fidelity-validation-report.json');
+    return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null;
+  };
+
+  // 1. A fluid frame: changing the named viewport must change the rendered width.
+  const startedAt = new Date(Date.now() - 1000).toISOString();
+  const fluid = verifyVp('f-fluid');
+  const f375 = manifestOf('f-fluid', 'w375');
+  const f414 = manifestOf('f-fluid', 'w414');
+  const card375 = boxOf('f-fluid', 'w375', '#f-card');
+  const card414 = boxOf('f-fluid', 'w414', '#f-card');
+
+  out.experiments.F = {
+    fluid: { rc: fluid.status, w375: f375 && f375.screenshot, w414: f414 && f414.screenshot, card375, card414 },
+    fixedFrame: null,
+  };
+
+  check('F/fluid: both named viewports pass in one command', fluid.status === 0
+    && /viewports:\s*w375=PASS\s+w414=PASS/.test(fluid.stdout), { rc: fluid.status, tail: fluid.stdout.slice(-200) });
+  // Anti-vacuity: artifacts left by an earlier manual run would satisfy every
+  // width assertion below without this run having captured anything.
+  check('F/fluid: both manifests were captured by this run, not left over from an earlier one',
+    !!f375 && !!f414 && f375.capturedAt >= startedAt && f414.capturedAt >= startedAt,
+    { startedAt, w375: f375 && f375.capturedAt, w414: f414 && f414.capturedAt });
+  check('F/fluid: the captured frame is exactly as wide as the named viewport',
+    !!f375 && !!f414 && f375.screenshot.width === 375 && f414.screenshot.width === 414,
+    { w375: f375 && f375.screenshot.width, w414: f414 && f414.screenshot.width });
+  check('F/fluid: a fluid box grows by the same 39px the viewport did (layout, not just the image)',
+    !!card375 && !!card414 && (card414.w - card375.w) === 39, { card375, card414 });
+
+  // 2. Each run says which viewport it measured — otherwise two reports for the
+  //    same page are indistinguishable after the fact.
+  const runs = latestByViewport('f-fluid');
+  const v375 = runs.w375 && validationIn(runs.w375.dir);
+  const v414 = runs.w414 && validationIn(runs.w414.dir);
+  check('F/fluid: each validation report records its own viewportId',
+    !!v375 && !!v414 && v375.viewportId === 'w375' && v414.viewportId === 'w414',
+    { w375: v375 && v375.viewportId, w414: v414 && v414.viewportId });
+
+  // 3. Negative control. `b-identical` wraps everything in a fixed 390px frame,
+  //    so the width axis cannot show up there. Recording that here keeps the
+  //    fluid fixture from looking like a decoration: without it, "multi-viewport
+  //    passes" would be true on a page that never reflows.
+  const fixed = verifyVp('b-identical');
+  const b375 = manifestOf('b-identical', 'w375');
+  const b414 = manifestOf('b-identical', 'w414');
+  out.experiments.F.fixedFrame = { rc: fixed.status, w375: b375 && b375.screenshot.width, w414: b414 && b414.screenshot.width };
+  check('F/fixed-frame control: the 390px mock frame stays 390 wide at both viewports (this fixture cannot exercise the axis)',
+    !!b375 && !!b414 && b375.screenshot.width === 390 && b414.screenshot.width === 390,
+    out.experiments.F.fixedFrame);
 }
 
 // ------------------------------------------------------------------ main
@@ -589,6 +810,8 @@ function runD(out, opts) {
   if (!only || only === 'b') runB(out);
   if (!only || only === 'c') runC(out);
   if (!only || only === 'd') runD(out, { keep });
+  if (!only || only === 'e') runE(out);
+  if (!only || only === 'f') runF(out);
 
   fs.writeFileSync(path.join(__dirname, 'results.json'), JSON.stringify(out, null, 2));
   console.log(`\n${passed} assertions passed, ${failures.length} failed · wrote experiments/results.json`);

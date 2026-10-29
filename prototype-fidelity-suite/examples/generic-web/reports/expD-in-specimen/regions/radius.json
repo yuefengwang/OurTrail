@@ -1,0 +1,54 @@
+{
+  "diffCount": 86,
+  "diffRatio": 0.02742,
+  "prototypePixels": {
+    "x": 28,
+    "y": 491,
+    "w": 56,
+    "h": 56
+  },
+  "targetPixels": {
+    "x": 28,
+    "y": 491,
+    "w": 56,
+    "h": 56
+  },
+  "components": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 8,
+      "h": 8,
+      "area": 23,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 48,
+      "y": 0,
+      "w": 8,
+      "h": 8,
+      "area": 23,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 0,
+      "y": 49,
+      "w": 7,
+      "h": 7,
+      "area": 20,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 49,
+      "y": 49,
+      "w": 7,
+      "h": 7,
+      "area": 20,
+      "meanDelta": null,
+      "maxDelta": null
+    }
+  ]
+}
