@@ -298,6 +298,48 @@ function buildRouteFlow(plan, place, ctx, nodeWeather, days) {
   }
 }
 
+/* ---------- 页头与节点弹层：只由地点决定，一个天气读数都不参与 ---------- */
+
+/** 单点还是路线。全仓唯一判定点（组件与装配层都问它，不再各自数节点）。 */
+function isPointPlace(place) {
+  const p = place || {}
+  return p.kind === 'point' || !Array.isArray(p.nodes) || p.nodes.length <= 1
+}
+
+/** 页头主行：地点名。没名字就说「未命名地点」——「选择地点」是屏 1 的入口文案，
+ *  拿它当加载/失败态的占位会把「已经选了但没名字」说成「还没选」。 */
+function placeNameText(place) {
+  return (place || {}).name || '未命名地点'
+}
+
+/**
+ * 页头节点行的一句话：坐标（单点）或节点名 + 该节点海拔。
+ * 这些全是**地点自带的事实**，与天气无关 ⇒ 「正在查询」与「这次没取到天气」时同样说得出口，
+ * 那一行不该在数据到位前长成只剩一个图钉。缺海拔印「海拔待确认」，不印 0（缺输入≠有利事实）。
+ */
+function placeSubText(place, node) {
+  const p = place || {}
+  const n = node || {}
+  const alt = Number.isFinite(n.altitude) ? fmtM(n.altitude) + ' m' : '海拔待确认'
+  if (isPointPlace(p)) {
+    // 经纬度成对才有意义：只缺一个时整段坐标不印，宁可少说也不印出 `undefined°E`
+    return (Number.isFinite(p.lat) && Number.isFinite(p.lng)
+      ? p.lat.toFixed(4) + '°N, ' + p.lng.toFixed(4) + '°E · ' : '') + alt
+  }
+  // 节点没名字时不印悬空分隔符（「 · 3,200 m」看着像坏了），也不现编一个称呼
+  const name = n.name || ''
+  return (name ? name + ' · ' : '') + alt
+}
+
+/** 节点弹层的列表（含当前选中位）。取数前就要能打开，所以它也不能等天气。 */
+function nodeOptionsOf(place, nodeIndex) {
+  const all = Array.isArray((place || {}).nodes) ? place.nodes : []
+  const idx = Math.min(Math.max(0, nodeIndex || 0), Math.max(0, all.length - 1))
+  return all.map((n, i) => ({
+    name: n.name, altitude: Number.isFinite(n.altitude) ? n.altitude : null, selected: i === idx,
+  }))
+}
+
 /* ---------- 主入口 ---------- */
 
 /**
@@ -336,9 +378,7 @@ function buildDetailView(o) {
   const hourlyScrolls = hourly.width > plotWidth + 0.5
   const cloud = buildCloud(result, ctx, elev, width)
   const cloudSel = cloud.geo ? cloudReadout(cloud.geo, cursor, elev.basis) : null
-  const isPoint = place.kind === 'point' || !Array.isArray(place.nodes) || place.nodes.length <= 1
-  const allNodes = Array.isArray(place.nodes) ? place.nodes : []
-  const nodeIdx = Math.min(Math.max(0, ctx.nodeIndex || 0), Math.max(0, allNodes.length - 1))
+  const isPoint = isPointPlace(place)
   const plan = o.plan || null
   const planStrip = plan && !isPoint ? V3.planDayStrip(plan, days.map(d => d.date), selDate, place.activityDate || null) : null
   const pointStrip = V3.pointDayStrip(days, series, selDate)
@@ -351,14 +391,11 @@ function buildDetailView(o) {
       errorCode: '',
       stale: o.stale || null,
       outOfRange: false,
-      placeName: place.name || '未命名地点',
-      placeSub: isPoint
-        ? (Number.isFinite(place.lat) ? place.lat.toFixed(4) + '°N, ' + place.lng.toFixed(4) + '°E · ' : '') +
-          (Number.isFinite(node.altitude) ? fmtM(node.altitude) + ' m' : '海拔待确认')
-        : (node.name || '') + ' · ' + (Number.isFinite(node.altitude) ? fmtM(node.altitude) + ' m' : '海拔待确认'),
+      placeName: placeNameText(place),
+      placeSub: placeSubText(place, node),
       nodeName: node.name || '',
       isPoint,
-      nodeOptions: allNodes.map((n, i) => ({ name: n.name, altitude: Number.isFinite(n.altitude) ? n.altitude : null, selected: i === nodeIdx })),
+      nodeOptions: nodeOptionsOf(place, ctx.nodeIndex),
       tabs: V3.TABS.map(t => ({
         key: t, label: V3.TAB_LABELS[t], selected: t === ctx.tab,
         disabled: t === 'route' && isPoint,
@@ -436,6 +473,7 @@ function loadingView(retryNote) {
 
 module.exports = {
   buildDetailView, emptyView, loadingView,
+  isPointPlace, placeNameText, placeSubText, nodeOptionsOf,
   buildRouteFlow, buildSkyView, buildCloud, cloudReadout, buildSilent,
   elevationOf, horizonDayLabels, sunTimesForWindow, dayLabel, toUri,
 }

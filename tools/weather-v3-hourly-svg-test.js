@@ -165,6 +165,55 @@ section('§3 缺值：断线、不补 0、印 —、云量留横线')
   check('缺降水在有标注的那列印 —（i=6）', precipSeg.indexOf('>—</text>') !== -1)
 }
 
+/* ------------------------------------------------------------------ */
+section('§3b 干窗：整段 0 合成一句，缺测/非零就退回逐格')
+
+function drySeries(n, patchAt) {
+  const patches = []
+  for (let i = 0; i < n; i++) patches.push(Object.assign({ precip: 0, pop: 0 }, (patchAt && patchAt[i]) || {}))
+  return series(n, patches)
+}
+
+{
+  const svg = H.buildHourlySvg({ series: drySeries(24), cursor: 0, period: 24, width: W }).svg
+  const precipSeg = svg.slice(svg.indexOf('data-seg="precip"'), svg.indexOf('data-seg="wind"'))
+  check('全窗口 0 ⇒ 一句带窗口范围的话，只出现一次',
+    count(precipSeg, '24 小时降水 0 · 概率 0%') === 1 && count(precipSeg, '小时降水 0') === 1,
+    (precipSeg.match(/>[^<]*降水 0[^<]*</) || [])[0])
+  check('全窗口 0 ⇒ 不再逐格印 0.0 / 0%',
+    precipSeg.indexOf('>0.0</text>') === -1 && precipSeg.indexOf('>0%</text>') === -1,
+    [(precipSeg.match(/>0\.0<\/text>/g) || []).length, (precipSeg.match(/>0%<\/text>/g) || []).length])
+  check('全窗口 0 ⇒ 也不画 24 根高度为 0 的柱', (precipSeg.match(/<rect x=/g) || []).length === 0,
+    (precipSeg.match(/<rect x=/g) || []).length)
+  const wide = H.buildHourlySvg({ series: drySeries(48), cursor: 0, period: 48, width: W }).svg
+  check('48 小时干窗说的是 48 小时（窗口范围跟着走）', /48 小时降水 0 · 概率 0%/.test(wide) && !/24 小时降水 0 · 概率 0%/.test(wide))
+}
+
+{
+  // 缺测 ≠ 0：有一小时没有读数就必须逐格标注（那一格是 '—'），不能并进「全窗口 0」那句话
+  const svg = H.buildHourlySvg({
+    series: drySeries(24, { 9: { precip: null, pop: null } }), cursor: 0, period: 24, width: W,
+  }).svg
+  const precipSeg = svg.slice(svg.indexOf('data-seg="precip"'), svg.indexOf('data-seg="wind"'))
+  check('有一小时缺读数 ⇒ 不合并成一句', precipSeg.indexOf('小时降水 0') === -1)
+  check('有一小时缺读数 ⇒ 逐格标注回来（8 个 10px + 8 个 8px，缺的那格是 —）',
+    (precipSeg.match(/font-size="10"/g) || []).length === 8 &&
+    (precipSeg.match(/font-size="8"/g) || []).length === 8 &&
+    precipSeg.indexOf('>—</text>') !== -1,
+    [(precipSeg.match(/font-size="10"/g) || []).length, (precipSeg.match(/font-size="8"/g) || []).length])
+}
+
+{
+  const wet = H.buildHourlySvg({ series: drySeries(24, { 4: { precip: 0.2 } }), cursor: 0, period: 24, width: W }).svg
+  const precipSeg = wet.slice(wet.indexOf('data-seg="precip"'), wet.indexOf('data-seg="wind"'))
+  check('有一小时降水非零 ⇒ 不合并（概率全 0 也算有值要并列印）', precipSeg.indexOf('小时降水 0') === -1)
+  check('有一小时降水非零 ⇒ 24 根柱仍在', (precipSeg.match(/<rect x=/g) || []).length === 24,
+    (precipSeg.match(/<rect x=/g) || []).length)
+  const risk = H.buildHourlySvg({ series: drySeries(24, Array.from({ length: 24 }, () => ({ precip: 0, pop: 20 }))), cursor: 0, period: 24, width: W }).svg
+  const riskSeg = risk.slice(risk.indexOf('data-seg="precip"'), risk.indexOf('data-seg="wind"'))
+  check('降水 0 但概率 20% ⇒ 不合并（概率是另一个事实）', riskSeg.indexOf('小时降水 0') === -1)
+}
+
 {
   // 云量缺值 → 带被切断 + 横线标记，不是 0% 的浅色带，也不是空白（空白读起来还是"没有云"）
   const s = series(24)

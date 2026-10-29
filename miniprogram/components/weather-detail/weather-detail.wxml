@@ -177,7 +177,7 @@
           </view>
         </view>
       </view>
-      <text class="wv3-note">三层的高度区间按取数端点（Open-Meteo 逐时预报）的官方口径：低云 {{cloudBounds.low}}（含雾）、中云 {{cloudBounds.mid}}、高云 {{cloudBounds.high}}，是海平面以上（海拔）的高度，不是这块云的云底或云顶。带里的颜色越深＝这一小时该层云量越多（图例 0–100%，50% 在中点）；每 3 小时印一个整数，带里那条横线＝这一小时没有该层读数，不是 0%。</text>
+      <text class="wv3-note">高度区间按取数端点（Open-Meteo 逐时预报）的海平面以上（海拔）口径（低云含雾），不是这块云的云底或云顶。带里的颜色越深＝这一小时该层云量越多，每 3 小时印一个整数；带里那条横线＝这一小时没有该层读数，不是 0%。</text>
 
       <view class="wv3-scrub">
         <view class="wv3-step {{cursor <= 0 ? 'off' : ''}}" hover-class="wv3-tap" bindtap="onStep" data-step="-1">

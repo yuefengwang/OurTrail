@@ -90,6 +90,13 @@ function hourlyObserve() {
   }
   const stopColors = Array.from(new Set((bandOf('cb-high-0').match(/stop-color="#[0-9a-f]{6}"/g) || [])
     .map(s => s.slice(12, 20))))
+  /* 干窗压缩的两个方向都要能看见：全 0 时必须合成一句（且不再逐格印），
+     有降水时必须回到逐格标注（合并了就变成隐瞒事实）。 */
+  const segOf = (svg, a, b) => svg.slice(svg.indexOf(a), svg.indexOf(b))
+  const dryList = series(24, Array.from({ length: 24 }, () => ({ precip: 0, pop: 0 })))
+  const drySeg = segOf(H.buildHourlySvg({ series: dryList, cursor: 0, period: 24 }).svg,
+    'data-seg="precip"', 'data-seg="wind"')
+  const wetSeg = segOf(a.svg, 'data-seg="precip"', 'data-seg="wind"')
   return {
     width24: a.width,
     cloudDashes: (seg.match(/height="1\.5"/g) || []).length,
@@ -100,6 +107,9 @@ function hourlyObserve() {
     cloudNums: (seg.match(/<text [^>]*>[^<]*<\/text>/g) || []).length,
     cloudWhite: (seg.match(/fill="#ffffff"/g) || []).length,
     boundsMid: H.cloudBounds().mid,
+    drySummary: drySeg.indexOf('小时降水 0') !== -1,
+    dryZeros: (drySeg.match(/>0\.0<\/text>/g) || []).length,
+    wetSummary: wetSeg.indexOf('小时降水 0') !== -1,
   }
 }
 function readoutObserve() {
@@ -118,18 +128,48 @@ function skyObserve() {
   return { night: cards.filter(c => c.key === 'night')[0].verdict }
 }
 
+/* ---------- 页头地点侧字段（占位与成功装配共用同一出处） ---------- */
+function headerObserve() {
+  const V = load('weather-v3-view.js')
+  const route = {
+    id: 'r', kind: 'route', name: '格聂两日', lat: 29.8, lng: 99.7,
+    nodes: [{ name: '起点', altitude: 3200 }, { name: '观景点', altitude: 3800 }, { name: '无名台', altitude: null }],
+  }
+  const point = { id: 'p', kind: 'point', name: '折多山', lat: 30.0512, lng: 101.8156, nodes: [{ name: '折多山', altitude: 4298 }] }
+  return {
+    named: V.placeSubText(route, route.nodes[1]),
+    nameless: V.placeSubText(route, { altitude: 3200 }),
+    noAlt: V.placeSubText(route, route.nodes[2]),
+    point: V.placeSubText(point, point.nodes[0]),
+    halfCoord: V.placeSubText({ kind: 'point', lat: 30.05, nodes: [] }, {}),
+    selected: V.nodeOptionsOf(route, 1).map(o => o.selected).join(','),
+    placeName: V.placeNameText({ name: '' }),
+    /* 成功装配走的是同一个函数吗：直接读 buildDetailView 出来的那三个字段 */
+    built: (function () {
+      const v = V.buildDetailView({
+        result: { status: 'ready', series: [], days: [], updatedAt: '2026-10-29T07:00:00+08:00' },
+        place: route, node: route.nodes[1], ctx: { date: '2026-10-29', period: 24, tab: 'hourly', cursor: 13, nodeIndex: 1 },
+        width: 350,
+      })
+      return v.data.placeSub + '|' + v.data.placeName + '|' + v.data.nodeOptions.map(o => o.selected).join(',')
+    })(),
+  }
+}
+
 /* ---------- 基线 ---------- */
 section('§0 有效性与基线（未变异副本必须与原始模块一致）')
 const baseHourly = hourlyObserve()
 const baseReadout = readoutObserve()
 const baseSky = skyObserve()
+const baseHeader = headerObserve()
 {
   const OrigH = require(path.join(UTILS, 'weather-v3-hourly-svg.js'))
   const OrigV = require(path.join(UTILS, 'weather-v3.js'))
-  check('基线读数非空且可区分（24h 一屏宽、4 条缺测横线、高云断成 2 条带、8 个色标、7 个带内整数 + 白字、缺值印 —）',
+  check('基线读数非空且可区分（24h 一屏宽、4 条缺测横线、高云断成 2 条带、8 个色标、7 个带内整数 + 白字、缺值印 —；干窗合成一句且不印 0.0、湿窗不合成）',
     baseHourly.width24 === OrigH.cellFor(350) * 24 && baseHourly.width24 <= 350 - OrigH.AXIS_W &&
     baseHourly.cloudDashes === 4 && baseHourly.cloudBands === 2 && baseHourly.cloudStops === 8 &&
     baseHourly.cloudNums === 7 && baseHourly.cloudWhite > 0 && baseHourly.boundsMid === '3–8km' &&
+    baseHourly.drySummary === true && baseHourly.dryZeros === 0 && baseHourly.wetSummary === false &&
     baseReadout.temp === '—',
     baseHourly)
   check('副本缓存清理生效：原始模块与副本是两份实例（否则变异改不到被测对象）',
@@ -137,6 +177,13 @@ const baseSky = skyObserve()
   check('原始模块读数与副本一致（有效性门）',
     OrigH.buildHourlySvg({ series: series(24), cursor: 0, period: 24 }).width === baseHourly.width24 &&
     OrigV.readoutOf({ t: '08:00', d: '2026-10-29' }, { name: 'x', altitude: null }).temp === baseReadout.temp, '')
+  check('页头基线可区分（有名/无名/缺海拔/单点/半坐标/选中位各不同，成功装配与占位同串）',
+    baseHeader.named === '观景点 · 3,800 m' && baseHeader.nameless === '3,200 m' &&
+      baseHeader.noAlt === '无名台 · 海拔待确认' && baseHeader.point === '30.0512°N, 101.8156°E · 4,298 m' &&
+      baseHeader.halfCoord === '海拔待确认' && baseHeader.selected === 'false,true,false' &&
+      baseHeader.placeName === '未命名地点' &&
+      baseHeader.built === '观景点 · 3,800 m|格聂两日|false,true,false',
+    baseHeader)
 }
 
 /* ---------- 变异 ---------- */
@@ -219,6 +266,28 @@ const cases = [
     desc: o => '中云区间 ' + o.boundsMid,
   },
   {
+    id: 'M11',
+    title: '干窗压缩失效（整段 0 退回 8 组「0.0 / 0%」）',
+    file: 'weather-v3-hourly-svg.js',
+    from: 'const drySpan = list.length > 0 &&',
+    to: 'const drySpan = false && list.length > 0 &&',
+    observe: hourlyObserve,
+    base: baseHourly,
+    differ: o => o.drySummary !== baseHourly.drySummary || o.dryZeros !== baseHourly.dryZeros,
+    desc: o => '干窗合成=' + o.drySummary + ' / 逐格 0.0=' + o.dryZeros,
+  },
+  {
+    id: 'M12',
+    title: '压缩越界（有降水也合并成「全窗口 0」，把事实藏起来）',
+    file: 'weather-v3-hourly-svg.js',
+    from: 'rain.every(v => fin(v) && v === 0) && pops.every(v => fin(v) && v === 0)',
+    to: 'true',
+    observe: hourlyObserve,
+    base: baseHourly,
+    differ: o => o.wetSummary !== baseHourly.wetSummary,
+    desc: o => '湿窗合成=' + o.wetSummary,
+  },
+  {
     id: 'M3',
     title: '读数缺值补 0（凭空造出有利/不利事实）',
     file: 'weather-v3.js',
@@ -251,6 +320,50 @@ const cases = [
     differ: o => o.night !== 'possible',
     desc: o => '星空/银河合并结论 = ' + o.night,
   },
+  {
+    id: 'M13',
+    title: '节点没名字时留下悬空分隔符（「 · 3,200 m」看着像坏了）',
+    file: 'weather-v3-view.js',
+    from: "return (name ? name + ' · ' : '') + alt",
+    to: "return ' · ' + alt",
+    observe: headerObserve,
+    base: baseHeader,
+    differ: o => o.nameless !== baseHeader.nameless,
+    desc: o => '无名节点 = ' + o.nameless,
+  },
+  {
+    id: 'M14',
+    title: '缺海拔印成 0 m（把「没有读数」冒充成一个低海拔事实）',
+    file: 'weather-v3-view.js',
+    from: "const alt = Number.isFinite(n.altitude) ? fmtM(n.altitude) + ' m' : '海拔待确认'",
+    to: "const alt = Number.isFinite(n.altitude) ? fmtM(n.altitude) + ' m' : '0 m'",
+    observe: headerObserve,
+    base: baseHeader,
+    differ: o => o.noAlt !== baseHeader.noAlt || o.halfCoord !== baseHeader.halfCoord,
+    desc: o => '缺海拔 = ' + o.noAlt + ' / 半坐标 = ' + o.halfCoord,
+  },
+  {
+    id: 'M15',
+    title: '节点弹层选中位恒指第一项（换节点后勾还留在起点）',
+    file: 'weather-v3-view.js',
+    from: 'const idx = Math.min(Math.max(0, nodeIndex || 0), Math.max(0, all.length - 1))',
+    to: 'const idx = 0',
+    observe: headerObserve,
+    base: baseHeader,
+    differ: o => o.selected !== baseHeader.selected,
+    desc: o => '选中位 = ' + o.selected,
+  },
+  {
+    id: 'M16',
+    title: '成功装配另拼一份页头文案（占位与数据到位后长得不一样）',
+    file: 'weather-v3-view.js',
+    from: 'placeSub: placeSubText(place, node),',
+    to: "placeSub: (node.name || '') + ' · ' + (Number.isFinite(node.altitude) ? node.altitude + ' m' : '—'),",
+    observe: headerObserve,
+    base: baseHeader,
+    differ: o => o.built !== baseHeader.built,
+    desc: o => '装配输出 = ' + o.built,
+  },
 ]
 
 section('§1 变异必须被观察到（0 条漏网）')
@@ -274,6 +387,7 @@ section('§2 还原后逐项相同（变异没把状态留在临时目录）')
   check('还原后读数基线一致', JSON.stringify(readoutObserve()) === JSON.stringify(baseReadout),
     { now: readoutObserve(), base: baseReadout })
   check('还原后天相基线一致', JSON.stringify(skyObserve()) === JSON.stringify(baseSky), {})
+  check('还原后页头基线一致', JSON.stringify(headerObserve()) === JSON.stringify(baseHeader), { now: headerObserve() })
 }
 
 console.log('\n' + (failed ? 'FAILED ' : 'OK ') + 'passed=' + passed + ' failed=' + failed)

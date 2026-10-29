@@ -13,6 +13,7 @@ const COMP = path.join(MP, 'components', 'weather-detail', 'weather-detail.js')
 const API = require.resolve(path.join(MP, 'utils', 'api.js'))
 const DRAFT = require.resolve(path.join(MP, 'utils', 'draft.js'))
 const V3 = require(path.join(MP, 'utils', 'weather-v3'))
+const V = require(path.join(MP, 'utils', 'weather-v3-view'))
 const HSV = require(path.join(MP, 'utils', 'weather-v3-hourly-svg'))
 // 列宽由可用宽度反推：本套件窗口 390 ⇒ 图宽 350 ⇒ cell = floor(301/24×100)/100 = 12.54
 const FIT_CELL = HSV.cellFor(350)
@@ -410,6 +411,70 @@ async function main() {
     { ready: p4.data.ready, loading: p4.data.loading, code: p4.data.errorCode })
   check('读数来自这一次取数（选中 13:00 的那一小时）', p4.data.readout.time === '13:00', p4.data.readout.time)
   p4.lifetimes.detached.call(p4)
+
+  section('§8 页头占位：取数之前这一行也要说得出话（地点侧字段不依赖天气）')
+  // 缺陷本体：resetContext 只写 placeName，placeSub 只在成功装配时产出 ⇒
+  // 「正在查询」与「这次没取到天气」两态下，页头节点行长成「图钉 + 空白 + 箭头」（真机截图抓到），
+  // 节点弹层还是个空列表。占位句全部取自地点自身（名字 / 坐标 / 节点海拔），一个天气读数都不参与。
+  installApi({ weatherDelayMs: 150 })
+  const ph = loadComponent()
+  ph.data.place = PLACE
+  ph.data.initial = { node: 0, date: D0, hour: 13, period: 24, tab: 'hourly' }
+  ph.lifetimes.attached.call(ph)
+  await settle(40)
+  check('取数在途：loading 为真，节点行已有完整一句话（旧形态此时是空串）',
+    ph.data.loading === true && ph.data.placeSub === '山谷起点 · 3,200 m', { loading: ph.data.loading, sub: ph.data.placeSub })
+  check('取数在途：主行用地点名，不回落成「选择地点」（那是屏 1 的入口文案）',
+    ph.data.placeName === '格聂两日路线', ph.data.placeName)
+  check('取数在途：节点弹层已经能打开（5 项、只选中第 1 项）',
+    ph.data.nodeOptions.length === 5 && ph.data.nodeOptions[0].selected === true &&
+      ph.data.nodeOptions.slice(1).every(o => o.selected === false),
+    ph.data.nodeOptions.map(o => o.selected))
+  check('取数在途：isPoint 就位（路线 ⇒ 节点行带箭头）', ph.data.isPoint === false, ph.data.isPoint)
+  check('占位句不含任何天气派生事实（°C / 降水 / 云量 / 晴）', !/°C|降水|云量|晴/.test(ph.data.placeSub), ph.data.placeSub)
+  await settle(400)
+  check('成功装配后与占位逐字相同（同一出处，不是两份文案在赛跑）',
+    ph.data.ready === true && ph.data.placeSub === '山谷起点 · 3,200 m' &&
+      ph.data.placeName === '格聂两日路线' && ph.data.nodeOptions.length === 5,
+    { ready: ph.data.ready, sub: ph.data.placeSub })
+  ph.lifetimes.detached.call(ph)
+
+  installApi({ failWeather: true })
+  const pf = loadComponent()
+  pf.data.place = PLACE
+  // 换一个没被前面用例写进本地缓存的日期：同地点同日期会被缓存软降级接住（那是另一条正确路径，
+  // 由 weather-resilience 套件钉），这里要的是**真错误态**。
+  pf.data.initial = { node: 2, date: '2026-11-03', hour: 13, period: 24, tab: 'hourly' }
+  pf.lifetimes.attached.call(pf)
+  await settle(120)
+  await settle(1400)
+  await settle(2900)
+  check('三次失败 ⇒ 错误态，但这一行仍然是那句话（缺的是天气，不是地点）',
+    pf.data.errorCode === 'error' && pf.data.placeSub === '溪畔营地 · 3,500 m',
+    { code: pf.data.errorCode, sub: pf.data.placeSub })
+  pf.onNodePick({ currentTarget: { dataset: { index: '1' } } })
+  await settle(20)
+  check('错误态换节点：这一行与弹层选中位跟着走（rebuild 静默返回时也不留旧值）',
+    pf.data.placeSub === '观景点 · 3,800 m' && pf.data.nodeOptions[1].selected === true &&
+      pf.data.nodeOptions[2].selected === false,
+    { sub: pf.data.placeSub, sel: pf.data.nodeOptions.map(o => o.selected) })
+  pf.lifetimes.detached.call(pf)
+
+  // 反例：地点没有名字 / 节点没有海拔 ⇒ 不许印成「0 m」，也不许留悬空分隔符
+  const bare = { id: 'route:b', kind: 'route', name: '', lat: null, lng: null, nodes: [{ name: '', lat: null, lng: null, altitude: null }] }
+  check('无海拔 ⇒ 印「海拔待确认」而不是 0 m',
+    V.placeSubText(bare, bare.nodes[0]) === '海拔待确认', V.placeSubText(bare, bare.nodes[0]))
+  check('无地点名 ⇒ 主行说「未命名地点」（不冒充「还没选」）', V.placeNameText(bare) === '未命名地点', V.placeNameText(bare))
+  const pt = {
+    id: 'point:1', kind: 'point', name: '折多山', lat: 30.0512, lng: 101.8156,
+    nodes: [{ name: '折多山', lat: 30.0512, lng: 101.8156, altitude: 4298 }],
+  }
+  check('单点 ⇒ 坐标 + 海拔，且 isPoint 为真（节点行不带箭头）',
+    V.isPointPlace(pt) === true && V.placeSubText(pt, pt.nodes[0]) === '30.0512°N, 101.8156°E · 4,298 m',
+    V.placeSubText(pt, pt.nodes[0]))
+  const halfCoord = { id: 'point:2', kind: 'point', name: '半个坐标', lat: 30.05, lng: null, nodes: [] }
+  check('经纬度只缺一个 ⇒ 整段坐标不印（宁少说不印 undefined°E）',
+    V.placeSubText(halfCoord, {}) === '海拔待确认', V.placeSubText(halfCoord, {}))
 
   console.log('\n' + (failed ? 'FAILED ' : 'OK ') + 'passed=' + passed + ' failed=' + failed)
   process.exit(failed ? 1 : 0)

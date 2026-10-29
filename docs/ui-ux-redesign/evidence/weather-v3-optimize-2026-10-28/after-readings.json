@@ -1,0 +1,36 @@
+{
+ "capturedAt": "2026-10-28T12:27:42.142Z",
+ "port": 9431,
+ "cases": {
+  "dry": {
+   "place": "折多山",
+   "node": "折多山",
+   "period": 24,
+   "zeros": 0,
+   "popLabels": 0,
+   "bars": 0,
+   "sentence": "24 小时降水 0 · 概率 0%",
+   "dashWhole": 0,
+   "note": "高度区间按取数端点（Open-Meteo 逐时预报）的海平面以上（海拔）口径（低云含雾），不是这块云的云底或云顶。带里的颜色越深＝这一小时该层云量越多，每 3 小时印一个整数；带里那条横线＝这一小时没有该层读数，不是 0%。"
+  },
+  "wet": {
+   "place": "峨眉山",
+   "zeros": 3,
+   "popLabels": 8,
+   "bars": 24,
+   "sentence": false
+  }
+ },
+ "files": [
+  "after-dry-top.png (58323B)",
+  "after-dry-note.png (61653B)",
+  "after-wet-top.png (58606B)",
+  "after-wet-note.png (63778B)"
+ ],
+ "gates": {
+  "passed": 11,
+  "failed": 1
+ },
+ "attribution": "failed=1 不是断言红：A/B 两用例的 11 条断言全 ✓，唯一一次失败是 B 用例末尾 mp.screenshot() 超时（驱动异常，非产品红）。两张 wet 帧由 tools/shot-wet.js 补拍并复核同源读数（峨眉山 bars=24、逐格 0.0 出现 3 次、概率标注 8 个 ⇒ 未压缩）。",
+ "bundleFreshness": "A5 由文案自证：新脚注含「（低云含雾）」且不含旧句「三层的高度区间」，二者只分别存在于改后/改前代码里；A1 那句窗口级文案同样只在改后代码里。"
+}

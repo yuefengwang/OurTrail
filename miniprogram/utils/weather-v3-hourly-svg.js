@@ -319,20 +319,30 @@ function buildHourlySvg(opts) {
   svg += '</g>'
 
   /* ---- 段二：降水柱（逐时）+ 数值与概率（每 3 小时） ---- */
+  /* 干窗压缩：整段窗口**每一小时**都有读数且降水与概率全为 0 时，8 组「0.0 / 0%」
+     只是把同一句话印 8 遍，会把温度下方的整条带填成噪声。改成一句带窗口范围的话，
+     列位置、网格、轴行都不动。**有任何缺测或非零就退回逐格标注**——
+     「没有读数」与「0」是两件事（缺测仍是 '—'），不能合进这句话里。 */
+  const drySpan = list.length > 0 &&
+    rain.every(v => fin(v) && v === 0) && pops.every(v => fin(v) && v === 0)
   svg += '<g data-seg="precip">'
-  for (let i = 0; i < list.length; i++) {
-    if (!fin(rain[i])) continue
-    const x = i * cell + cell / 2
-    const bar = rain[i] / rainMax * Y.precipMax
-    const h = Math.max(rain[i] > 0 ? 2 : 0, bar)
-    svg += '<rect x="' + n(x - barW / 2, 1) + '" y="' + n(Y.precipBase - bar, 2) + '" width="' + n(barW, 2) +
-      '" height="' + n(h, 2) + '" rx="2" fill="' + C.rain + '"/>'
-  }
-  for (let i = 0; i < list.length; i += LABEL_EVERY) {
-    const x = markX(i, cell)
-    svg += text(x, Y.precipValueY, fin(rain[i]) ? (rain[i] === 0 ? '0.0' : rain[i].toFixed(1)) : '—', 10,
-      fin(rain[i]) && rain[i] > 0 ? C.rainText : C.muted, markAnchor(i))
-    svg += text(x, Y.popY, fin(pops[i]) ? n(pops[i]) + '%' : '—', 8, C.pop, markAnchor(i))
+  if (drySpan) {
+    svg += text(2, Y.precipValueY + 21, list.length + ' 小时降水 0 · 概率 0%', 10, C.muted, 'start')
+  } else {
+    for (let i = 0; i < list.length; i++) {
+      if (!fin(rain[i])) continue
+      const x = i * cell + cell / 2
+      const bar = rain[i] / rainMax * Y.precipMax
+      const h = Math.max(rain[i] > 0 ? 2 : 0, bar)
+      svg += '<rect x="' + n(x - barW / 2, 1) + '" y="' + n(Y.precipBase - bar, 2) + '" width="' + n(barW, 2) +
+        '" height="' + n(h, 2) + '" rx="2" fill="' + C.rain + '"/>'
+    }
+    for (let i = 0; i < list.length; i += LABEL_EVERY) {
+      const x = markX(i, cell)
+      svg += text(x, Y.precipValueY, fin(rain[i]) ? (rain[i] === 0 ? '0.0' : rain[i].toFixed(1)) : '—', 10,
+        fin(rain[i]) && rain[i] > 0 ? C.rainText : C.muted, markAnchor(i))
+      svg += text(x, Y.popY, fin(pops[i]) ? n(pops[i]) + '%' : '—', 8, C.pop, markAnchor(i))
+    }
   }
   svg += '</g>'
 

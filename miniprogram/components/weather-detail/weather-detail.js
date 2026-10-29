@@ -75,6 +75,8 @@ Component({
     placeName: '',
     placeSub: '',
     nodeName: '',
+    // 节点弹层在取数前就要能打开（syncHeader 填），所以缺省必须是空数组而不是 undefined
+    nodeOptions: [],
     isPoint: false,
     tabs: [],
     period: 24,
@@ -204,8 +206,27 @@ Component({
       this._geo = null
       this._nodeWeather = {}
       this._plan = null
-      this.setData({ placeName: place.name || '', error: '', errorCode: '' })
+      this.setData({ error: '', errorCode: '' })
+      this.syncHeader()
       this.loadWeather()
+    },
+
+    /**
+     * 页头两行与节点弹层的「地点侧」字段：**取数之前就要有**。
+     * 它们全是地点自带的事实（名字 / 坐标 / 节点海拔），一个天气读数都不参与，
+     * 所以「正在查询」与「这次没取到天气」时同样说得出口 —— 那一行不该在数据到位前
+     * 长成只剩一个图钉，弹层也不该是空的。
+     * 文案与选中位一律回到 view 的单源（`placeNameText` / `placeSubText` / `nodeOptionsOf`），
+     * 组件不自己拼第二份；成功装配时 buildDetailView 会写同名的四个字段，值必须相同。
+     */
+    syncHeader() {
+      const place = this.data.place || {}
+      this.setData({
+        placeName: V.placeNameText(place),
+        placeSub: V.placeSubText(place, this.currentNode()),
+        nodeOptions: V.nodeOptionsOf(place, this.ctx && this.ctx.nodeIndex),
+        isPoint: V.isPointPlace(place),
+      })
     },
 
     nodeList() {
@@ -466,6 +487,8 @@ Component({
       this.ctx = V3.setNode(this.ctx, i)
       this._nodeWeather = {}
       this.setData({ nodeOpen: false })
+      // 没结果时 rebuild() 会静默返回 ⇒ 换节点后这一行与弹层的选中位必须自己跟上
+      this.syncHeader()
       this.rebuild()
     },
 

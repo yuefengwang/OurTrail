@@ -1,0 +1,149 @@
+{
+ "readout": {
+  "time": "13:00",
+  "date": "2026-10-28",
+  "condition": "晴",
+  "icon": "sun",
+  "temp": "10",
+  "feels": "7",
+  "precip": "0.0",
+  "pop": "0",
+  "wind": "15",
+  "gust": "39",
+  "windDir": "西风",
+  "rh": "35",
+  "visibility": "11.9",
+  "pressure": "628",
+  "dewPoint": "-4",
+  "uv": "6.9",
+  "cloudLow": "0",
+  "cloudMid": "0",
+  "cloudHigh": "6",
+  "cloudLine": "高云 6 · 中云 0 · 低云 0%",
+  "altitude": 4298,
+  "altitudeText": "4298",
+  "nodeName": "折多山",
+  "detailRows": [
+   {
+    "key": "pop",
+    "label": "降水概率",
+    "value": "0",
+    "unit": "%"
+   },
+   {
+    "key": "wind",
+    "label": "风向 / 风速",
+    "value": "西风",
+    "unit": "15 km/h"
+   },
+   {
+    "key": "gust",
+    "label": "阵风",
+    "value": "39",
+    "unit": "km/h"
+   },
+   {
+    "key": "rh",
+    "label": "相对湿度",
+    "value": "35",
+    "unit": "%"
+   },
+   {
+    "key": "vis",
+    "label": "能见度",
+    "value": "11.9",
+    "unit": "km"
+   },
+   {
+    "key": "alt",
+    "label": "节点海拔",
+    "value": "4298",
+    "unit": "m"
+   }
+  ],
+  "hasAnyReading": true,
+  "_opts": null
+ },
+ "cloudBounds": {
+  "high": "≥8km",
+  "mid": "3–8km",
+  "low": "≤3km"
+ },
+ "elevLabel": "此点 4,298 m · 手动填写",
+ "cloudSel": {
+  "selSrc": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22350%22%20height%3D%22412%22%20viewBox%3D%220%200%20350%20412%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22350%22%20height%3D%22412%22%20fill%3D%22none%22%2F%3E%3Crect%20x%3D%22204.3%22%20y%3D%2220%22%20width%3D%2212.3%22%20height%3D%22374%22%20fill%3D%22rgba%2822%2C62%2C53%2C0.035%29%22%2F%3E%3Cline%20x1%3D%22210.5%22%20y1%3D%2218%22%20x2%3D%22210.5%22%20y2%3D%22396%22%20stroke%3D%22%23163e35%22%20stroke-width%3D%220.5%22%20opacity%3D%220.4%22%2F%3E%3Ccircle%20cx%3D%22210.5%22%20cy%3D%2258.9%22%20r%3D%222.3%22%20fill%3D%22%23fff%22%20stroke%3D%22%23163e35%22%20stroke-width%3D%220.9%22%2F%3E%3Ccircle%20cx%3D%22210.5%22%20cy%3D%22376.4%22%20r%3D%222%22%20fill%3D%22%23fff%22%20stroke%3D%22%23163e35%22%20stroke-width%3D%220.8%22%2F%3E%3Ccircle%20cx%3D%22210.5%22%20cy%3D%22354.1%22%20r%3D%221.7%22%20fill%3D%22%23fff%22%20stroke%3D%22%23163e35%22%20stroke-width%3D%220.7%22%2F%3E%3Crect%20x%3D%22199.5%22%20y%3D%22398%22%20width%3D%2222%22%20height%3D%2211%22%20rx%3D%222%22%20fill%3D%22%23163e35%22%2F%3E%3Ctext%20x%3D%22210.5%22%20y%3D%22405.5%22%20text-anchor%3D%22middle%22%20font-size%3D%227%22%20font-weight%3D%22600%22%20fill%3D%22%23fff%22%3E13%3A00%3C%2Ftext%3E%3C%2Fsvg%3E",
+  "hour": 13,
+  "absHour": 13,
+  "stKey": "",
+  "r1": "13:00 · 10° 晴",
+  "r2": "海拔 4,298 m 云量 0%",
+  "r3": "",
+  "r4": "风 15 km/h · 阵 39 · 西风"
+ },
+ "skyFacts": {
+  "rise": "07:13",
+  "set": "18:40",
+  "moon": "94%"
+ },
+ "hours": [
+  "10/28",
+  "03",
+  "06",
+  "09",
+  "12",
+  "15",
+  "18",
+  "21"
+ ],
+ "postChange": {
+  "scope": "三处：逐时图降水段整段干窗压缩成一句话；云层剖面脚注去掉与轴行/图例重复的信息；页头节点行与节点弹层在加载/取数不成立两态下由 view 单源补上占位。",
+  "realDataDryWindow": {
+   "source": "Open-Meteo forecast，复取于 2026-10-28",
+   "lat": 30.0512,
+   "lng": 101.8156,
+   "timezone": "Asia/Shanghai",
+   "startDate": "2026-10-28",
+   "hours": 24,
+   "precipAllZero": true,
+   "popAllZero": true,
+   "note": "证明压缩分支在真实取数上真的会走，不是只存在于合成夹具里。"
+  },
+  "gates": {
+   "weather-v3-hourly-svg-test": "121/0（新增 §3b 9 条）",
+   "weather-v3-structure-test": "133/0",
+   "scenario-weather-v3": "59/0",
+   "weather-page": "227/0",
+   "page2-gates": "119/0",
+   "meteogram-readability": "87/0",
+   "swx1-style-gates": "45/0",
+   "swx2-style-gates": "111/0",
+   "t4-e08": "41/0",
+   "b4-pad-final-value": "33/0",
+   "ui-consistency": "19/0",
+   "journey-graph": "15/0",
+   "weather-v3-visual-test": "38/0",
+   "ab-weather-v3": "47/0",
+   "mutate-weather-v3": "18/0（M1–M12，0 漏网）",
+   "check.js": "ALL CHECKS PASSED"
+  },
+  "browserRender": {
+   "artifact": "preview-dry-vs-wet.png",
+   "method": "直接 require 生产 buildHourlySvg，渲染 24h 全干与 15–18 时有雨两份 SVG（width=350），同一浏览器同屏对照。",
+   "dryObserved": "一句话「24 小时降水 0 · 概率 0%」，无柱、无逐格 0.0 / 0%。",
+   "wetObserved": "逐格 0.0 与 0% 恢复，15–18 时有柱。"
+  },
+  "device": {
+   "status": "VERIFIED",
+   "when": "2026-10-28 20:2x–20:5x（用户选 A 授权重编译，之后为页头修复再重编译一次）",
+   "how": "close --project 'D:\\OurTrail' → open（未 quit）→ auto（9431 掉线后换 9432）；驱动 tools/drive-after.js 与 tools/drive-header.js",
+   "result": "逐时图 11 条 + 页头 10 条 = 21 条断言全 ✓；另 1 次失败是 mp.screenshot() 超时、2 条红是探针把映射数组当原始对象读，均非产品红（详见 after-readings.json / header-readings.json 与报告 Setup 段）",
+   "frames": ["after-dry-top.png", "after-dry-note.png", "after-wet-top.png", "after-wet-note.png", "after-header-loading.png", "after-header-error.png"],
+   "stillOpen": "物理手机、375/414 宽度未覆盖"
+  },
+  "headerFix": {
+   "scope": "页头节点行与节点弹层的「地点侧字段」抽到 view 单源：isPointPlace / placeNameText / placeSubText / nodeOptionsOf；组件 resetContext 与 onNodePick 都调 syncHeader()。",
+   "gates": { "weather-v3-structure-test": "133 → 144（§9）", "scenario-weather-v3-test": "59 → 71（§8）", "mutate-weather-v3": "18 → 24（M13–M16，0 漏网）" },
+   "gateRewrite": "一条既有静态门原本钉 view 模块里 nodeOptions 的源码文本，合法搬家即假红 ⇒ 按铁律 30① 改为打真实 nodeOptionsOf 读行为（未删断言）。"
+  }
+ }
+}

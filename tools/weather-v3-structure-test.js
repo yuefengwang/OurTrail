@@ -8,6 +8,7 @@
 const fs = require('fs')
 const path = require('path')
 const V3 = require('../miniprogram/utils/weather-v3')
+const V = require('../miniprogram/utils/weather-v3-view')
 const PL = require('../miniprogram/utils/weather-plans')
 
 const ROOT = path.join(__dirname, '..')
@@ -279,10 +280,17 @@ section('§2d 图形入口：词表在 icon 组件，页面只给名字与尺寸
     /<icon name="next" size="18" color="#6C7C70"/.test(detWxml) &&
     /<icon name="next" size="14" color="#8A968C"/.test(detWxml) &&
     /<icon [^>]*name="next" size="19" color="#16783E"/.test(detWxml))
+  // 这一条原来钉的是 view 模块里 `nodeOptions: allNodes.map(...)` 的**源码文本**——
+  // 把表达式搬进具名函数（行为一模一样）就会假红，正是铁律 30① 的反例。改成打真实函数读行为。
   check('节点弹层给当前节点打 check（其余 next），列表读投影算好的 selected',
     /wx:for="\{\{nodeOptions\}\}"/.test(detWxml) &&
     /wx:if="\{\{item\.selected\}\}" name="check"/.test(detWxml) &&
-    /nodeOptions: allNodes\.map\(\(n, i\) => \(\{ name: n\.name, altitude: Number\.isFinite\(n\.altitude\) \? n\.altitude : null, selected: i === nodeIdx \}\)\)/.test(viewJs))
+    (function () {
+      const nodes = [{ name: 'a', altitude: 1 }, { name: 'b', altitude: null }, { name: 'c', altitude: 3 }]
+      const picked = V.nodeOptionsOf({ kind: 'route', nodes: nodes }, 1)
+      return picked.length === 3 && picked.map(o => o.selected).join(',') === 'false,true,false' &&
+        picked[1].altitude === null && picked[0].altitude === 1
+    })(), '')
   check('读图说明降为灰 10px 辅助入口（wv3-link-quiet）',
     /class="wv3-link wv3-link-quiet"[^>]*data-kind="cloud"/.test(detWxml))
   // 原型 #choose-node 的两态（坐标 / 节点名）都以 pin 开头，后面才跟 down
@@ -470,6 +478,47 @@ section('§8 底栏留白与页面身份')
     /padding-bottom:\s*calc\(32px \+ 84px \+ env\(safe-area-inset-bottom\)\)/.test(wxss))
   check('详情组件不自己再加一层 84px（它是宿主里的一段，不是独立页）',
     rd(path.join(MP, 'components', 'weather-detail', 'weather-detail.wxss')).indexOf('84px') === -1)
+}
+
+/* ------------------------------------------------------------------ */
+section('§9 页头与节点弹层：地点侧字段只有一个出处')
+
+{
+  const comp = rd(path.join(MP, 'components', 'weather-detail', 'weather-detail.js'))
+  const route = {
+    id: 'route:x', kind: 'route', name: '格聂两日', lat: 29.8, lng: 99.7,
+    nodes: [
+      { name: '山谷起点', altitude: 3200 }, { name: '观景点', altitude: 3800 }, { name: '溪畔营地', altitude: null },
+    ],
+  }
+  const point = { id: 'point:x', kind: 'point', name: '折多山', lat: 30.0512, lng: 101.8156, nodes: [{ name: '折多山', altitude: 4298 }] }
+  check('路线节点行 = 节点名 + 海拔（千分位）', V.placeSubText(route, route.nodes[1]) === '观景点 · 3,800 m', V.placeSubText(route, route.nodes[1]))
+  check('单点行 = 坐标 + 海拔', V.placeSubText(point, point.nodes[0]) === '30.0512°N, 101.8156°E · 4,298 m', V.placeSubText(point, point.nodes[0]))
+  check('缺海拔 ⇒「海拔待确认」，不印 0 m', V.placeSubText(route, route.nodes[2]) === '溪畔营地 · 海拔待确认', V.placeSubText(route, route.nodes[2]))
+  check('节点没名字 ⇒ 只留海拔，不留悬空分隔符',
+    V.placeSubText(route, { altitude: 3200 }) === '3,200 m' && /^\s|·\s*$/.test(V.placeSubText(route, { altitude: 3200 })) === false,
+    V.placeSubText(route, { altitude: 3200 }))
+  check('坐标缺一个 ⇒ 整段不印（不出现 undefined°E）',
+    V.placeSubText({ kind: 'point', lat: 30.05, nodes: [] }, {}) === '海拔待确认',
+    V.placeSubText({ kind: 'point', lat: 30.05, nodes: [] }, {}))
+  check('弹层选中位跟着 nodeIndex 走（越界向内夹）',
+    V.nodeOptionsOf(route, 2).map(o => o.selected).join(',') === 'false,false,true' &&
+      V.nodeOptionsOf(route, 99).map(o => o.selected).join(',') === 'false,false,true',
+    V.nodeOptionsOf(route, 99))
+  check('isPoint 判定：kind 或节点数 ≤1（组件与装配层同一把尺）',
+    V.isPointPlace(point) === true && V.isPointPlace(route) === false &&
+      V.isPointPlace({ kind: 'route', nodes: [{ name: '只有一个' }] }) === true, '')
+
+  // 反复制：格式化本体只许在 view 模块里出现一次，组件只调用
+  check('组件里不得出现第二份坐标 / 待确认 / 未命名地点字面量（格式化只出自 view）',
+    comp.indexOf('°N') === -1 && comp.indexOf('海拔待确认') === -1 && comp.indexOf('未命名地点') === -1, '')
+  const viewSrc = rd(path.join(MP, 'utils', 'weather-v3-view.js'))
+  check('坐标格式化本体全仓只有一处（view 模块内 °N 只出现一次）',
+    (viewSrc.match(/°N/g) || []).length === 1, (viewSrc.match(/°N/g) || []).length)
+  check('组件的三个页头字段都走 view 单源（placeNameText / placeSubText / nodeOptionsOf）',
+    /V\.placeNameText\(/.test(comp) && /V\.placeSubText\(/.test(comp) && /V\.nodeOptionsOf\(/.test(comp) && /V\.isPointPlace\(/.test(comp), '')
+  check('换节点时也会重刷页头（onNodePick 里调 syncHeader，不只在 resetContext）',
+    /onNodePick[\s\S]{0,400}this\.syncHeader\(\)/.test(comp), '')
 }
 
 console.log('\n' + (failed ? 'FAILED ' : 'OK ') + 'passed=' + passed + ' failed=' + failed)
