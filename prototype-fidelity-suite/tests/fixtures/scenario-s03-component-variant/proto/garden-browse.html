@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>花园工具借用 · 浏览</title>
+<style>
+  :root {
+    --paper: #fbf8f2;
+    --backdrop: #e7e2d8;
+    --ink: #232a25;
+    --muted: #6d7168;
+    --surface: #fffdf9;
+    --rule: #ddd8cc;
+    --leaf: #2f6b4f;
+    --shelf-gap: 18px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font: 15px/1.5 system-ui, sans-serif; color: var(--ink); background: var(--backdrop); }
+  #frame { width: 390px; min-height: 844px; background: var(--paper); }
+  #screen { padding: 24px 16px 32px; }
+  .head { margin-bottom: 20px; }
+  .head h1 { margin: 0; font-size: 22px; line-height: 30px; font-weight: 600; color: var(--leaf); }
+  .head p { margin: 6px 0 0; font-size: 13px; line-height: 20px; color: var(--muted); }
+  .tool-list { display: flex; flex-direction: column; gap: var(--shelf-gap); }
+  .tool { padding: 14px; border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); }
+  .tool h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; }
+  .tool-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-bottom: 4px; border-radius: 10px; background: var(--leaf); color: var(--surface); font-size: 12px; }
+  .tool p { margin: 4px 0 0; font-size: 12px; line-height: 18px; color: var(--muted); }
+  .foot { margin-top: 24px; font-size: 12px; line-height: 18px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="screen">
+    <div class="head">
+      <h1>花园工具借用</h1>
+      <p>共 3 件可借，周五归还</p>
+    </div>
+    <div class="tool-list">
+      <div class="tool"><span class="tool-icon" aria-hidden="true">*</span><h2>长柄修枝剪</h2><p>2 号架 · 可借</p></div>
+      <div class="tool"><h2>手推播种机</h2><p>4 号架 · 已借出</p></div>
+      <div class="tool"><h2>土壤湿度计</h2><p>1 号架 · 可借</p></div>
+    </div>
+    <div class="foot">借用登记在门房，押金免收。</div>
+  </div>
+</div>
+</body>
+</html>

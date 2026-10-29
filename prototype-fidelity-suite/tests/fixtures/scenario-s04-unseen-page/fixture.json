@@ -1,0 +1,91 @@
+{
+  "id": "s04-unseen-page",
+  "class": "unseen-page",
+  "adversarial": false,
+  "purpose": "未见过的页面（社区药箱盘点）只允许引用所供知识库里对本页可用的规则；生成的骨架必须来自 brief 的区块顺序，而不是把花园/报修原型屏的排版整块搬过来。",
+  "requires": ["playwright"],
+  "steps": [
+    {
+      "run": ["dna", "--sources", "sources.json", "--out", "dna"],
+      "expectExit": 0,
+      "captureStdout": "dna.stdout.txt"
+    },
+    {
+      "run": ["kb", "seed", "--from", "dna/dna.json", "--out", "kb.json"],
+      "expectExit": 0,
+      "captureStdout": "seed.stdout.txt"
+    },
+    {
+      "run": ["design", "--brief", "brief.json", "--kb", "kb.json", "--out", "plan"],
+      "expectExit": 0,
+      "captureStdout": "design.stdout.txt"
+    }
+  ],
+  "checks": [
+    { "file": "dna.stdout.txt", "matches": "design-dna VALID" },
+    { "file": "seed.stdout.txt", "matches": "kb seeded" },
+
+    { "file": "plan/design-plan.json", "path": "$.kind", "equals": "design-plan" },
+    { "file": "plan/design-plan.json", "path": "$.id", "equals": "medicine-cabinet-stocktake" },
+    { "file": "plan/design-plan.json", "path": "$.sections[0].id", "equals": "head" },
+    { "file": "plan/design-plan.json", "path": "$.sections[1].id", "equals": "stock" },
+    { "file": "plan/design-plan.json", "path": "$.sections[2].id", "equals": "report" },
+    { "file": "plan/design-plan.json", "path": "$.sections[0].surface", "equals": "header" },
+    { "file": "plan/design-plan.json", "path": "$.sections[1].surface", "equals": "content" },
+    { "file": "plan/design-plan.json", "path": "$.sections[2].surface", "equals": "footer" },
+    { "file": "plan/design-plan.json", "path": "$.sections[*].layout.basis", "matches": "brief\\.sections" },
+
+    { "file": "plan/design-plan.json", "path": "$.sections[0].functions[0].id", "equals": "show-cabinet" },
+    { "file": "plan/design-plan.json", "path": "$.sections[1].functions[0].id", "equals": "list-medicines" },
+    { "file": "plan/design-plan.json", "path": "$.sections[1].functions[1].id", "equals": "mark-expired" },
+    { "file": "plan/design-plan.json", "path": "$.sections[2].functions[0].id", "equals": "submit-count" },
+    { "file": "plan/design-plan.json", "path": "$.sections[2].functions[1].id", "equals": "show-save-error" },
+
+    { "file": "plan/design-plan.json", "path": "$.coverage.functions", "equals": 5 },
+    { "file": "plan/design-plan.json", "path": "$.coverage.resolved", "equals": 0 },
+    { "file": "plan/design-plan.json", "path": "$.coverage.unresolved", "equals": 5 },
+    { "file": "plan/design-plan.json", "path": "$.coverage.interactionsRequested", "equals": 2 },
+    { "file": "plan/design-plan.json", "path": "$.gaps[*].code", "contains": "ROLE_UNRESOLVED" },
+    { "file": "plan/design-plan.json", "path": "$.gaps[*].code", "contains": "INTERACTION_UNRESOLVED" },
+    { "file": "plan/design-plan.json", "path": "$.gaps[*].where", "contains": "report/show-save-error" },
+
+    { "file": "kb.json", "path": "$.rules[*].id", "contains": "token.var.ink" },
+    { "file": "kb.json", "path": "$.rules[*].id", "contains": "token.size.12px" },
+    { "file": "kb.json", "path": "$.rules[*].id", "contains": "principle.type-hierarchy" },
+
+    { "file": "plan/design-plan.json", "path": "$.tokens.variables[*].ruleId", "matches": "^token\\.var\\.(backdrop|ink|muted|paper|rule|surface)$" },
+    { "file": "plan/design-plan.json", "path": "$.tokens.scale[*].ruleId", "matches": "^token\\.size\\.(12px|15px)$" },
+    { "file": "plan/design-plan.json", "path": "$.tokens.variables[*].scope", "equals": "global" },
+    { "file": "plan/design-plan.json", "path": "$.tokens.scale[*].scope", "equals": "global" },
+    { "file": "plan/design-plan.json", "path": "$.principles[*].id", "contains": "principle.type-hierarchy" },
+
+    { "file": "plan/design-plan.json", "path": "$.decisions[*].ruleRefs[*]", "matches": "^(token\\.(var\\.(backdrop|ink|muted|paper|rule|surface)|size\\.(12px|15px)|weight\\.600)|principle\\.type-hierarchy)$" },
+
+    { "file": "plan/design-plan.json", "path": "$.rejected[*].scope", "matches": "^(page|page-family)$" },
+    { "file": "plan/design-plan.json", "path": "$.rejected[*].ruleId", "contains": "token.var.ink-accent" },
+    { "file": "plan/design-plan.json", "path": "$.rejected[*].ruleId", "contains": "token.var.leaf" },
+    { "file": "plan/design-plan.json", "path": "$.rejected[*].ruleId", "contains": "component.div-tool" },
+    { "file": "plan/design-plan.json", "path": "$.rejected", "minLength": 10 },
+
+    { "file": "plan/design-plan.json", "path": "$.title", "equals": "社区药箱盘点" },
+    { "file": "plan/design-plan.json", "path": "$.constraints", "contains": "盘点结果必须逐件可核对" },
+    { "file": "plan/design-plan.json", "path": "$.sections[*].role", "contains": "库存清单" },
+
+    { "file": "plan/index.html", "contains": "data-plan=\"medicine-cabinet-stocktake\"" },
+    { "file": "plan/index.html", "contains": "data-section=\"head\"" },
+    { "file": "plan/index.html", "contains": "data-section=\"stock\"" },
+    { "file": "plan/index.html", "contains": "data-section=\"report\"" },
+    { "file": "plan/index.html", "contains": "data-function=\"show-save-error\"" },
+    { "file": "plan/index.html", "contains": "data-states=\"loading empty filled error\"" },
+    { "file": "plan/index.html", "contains": "data-states=\"default confirming disabled\"" },
+    { "file": "plan/index.html", "matches": "^(?![\\s\\S]*(\\.tool\\b|\\.order\\b|tool-list|order-list|tool-icon))[\\s\\S]*$" },
+    { "file": "plan/index.html", "matches": "^(?![\\s\\S]*(园艺|报修|工具借用|维修工单))[\\s\\S]*$" },
+    { "file": "plan/index.html", "matches": "^(?![\\s\\S]*https?://)[\\s\\S]*$" },
+
+    { "file": "design.stdout.txt", "matches": "design VALID · medicine-cabinet-stocktake" },
+    { "file": "design.stdout.txt", "matches": "rejected by scope 15" },
+    { "file": "plan/design-decisions.json", "path": "$.page", "equals": "medicine-cabinet-stocktake" },
+    { "file": "plan/design-spec.md", "contains": "顺序取自业务给出的 `sections`" },
+    { "file": "plan/design-spec.md", "contains": "ROLE_UNRESOLVED` @ `report/show-save-error" }
+  ]
+}

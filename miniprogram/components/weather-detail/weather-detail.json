@@ -1,0 +1,9 @@
+{
+  "component": true,
+  "usingComponents": {
+    "brand-header": "../brand-header/brand-header",
+    "overlay": "../overlay/overlay",
+    "icon": "../icon/icon",
+    "weather-plan-sheet": "../weather-plan-sheet/weather-plan-sheet"
+  }
+}

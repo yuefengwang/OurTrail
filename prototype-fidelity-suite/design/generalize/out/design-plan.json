@@ -1,0 +1,1216 @@
+{
+  "kind": "design-plan",
+  "schemaVersion": "0.2.0",
+  "id": "community-book-lending",
+  "title": "社区图书借阅",
+  "family": null,
+  "platform": {
+    "target": "mini-program",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "constraints": [
+      "无 hover",
+      "触摸为主",
+      "无外部字体"
+    ]
+  },
+  "constraints": [
+    "首屏必须能看到借阅入口",
+    "不引入新色值"
+  ],
+  "generatedAt": "2026-10-29T11:46:08.535Z",
+  "basis": {
+    "storeId": "ourtrail-design-dna",
+    "storeRevision": 128,
+    "corpus": [
+      "activities.js",
+      "app.js",
+      "detail.js",
+      "index.html",
+      "refinement.css",
+      "style.css",
+      "weather-data.js",
+      "weather.css",
+      "weather.html",
+      "weather.js"
+    ],
+    "family": null
+  },
+  "tokens": {
+    "variables": [
+      {
+        "name": "--device-width",
+        "value": "390px",
+        "ruleId": "token.var.device-width",
+        "group": "size",
+        "scope": "global"
+      },
+      {
+        "name": "--green",
+        "value": "#16783e",
+        "ruleId": "token.var.green",
+        "group": "color",
+        "scope": "global"
+      },
+      {
+        "name": "--green-bright",
+        "value": "#198b47",
+        "ruleId": "token.var.green-bright",
+        "group": "color",
+        "scope": "global"
+      },
+      {
+        "name": "--green-soft",
+        "value": "#edf7ed",
+        "ruleId": "token.var.green-soft",
+        "group": "color",
+        "scope": "global"
+      },
+      {
+        "name": "--ink",
+        "value": "#18211b",
+        "ruleId": "token.var.ink",
+        "group": "color",
+        "scope": "global"
+      },
+      {
+        "name": "--line",
+        "value": "#e8ece7",
+        "ruleId": "token.var.line",
+        "group": "color",
+        "scope": "global"
+      },
+      {
+        "name": "--muted",
+        "value": "#69716b",
+        "ruleId": "token.var.muted",
+        "group": "color",
+        "scope": "global"
+      },
+      {
+        "name": "--pale",
+        "value": "#f5f7f4",
+        "ruleId": "token.var.pale",
+        "group": "color",
+        "scope": "global"
+      }
+    ],
+    "scale": [
+      {
+        "prop": "border-radius",
+        "value": "18px",
+        "ruleId": "token.radius.18px",
+        "scope": "global"
+      },
+      {
+        "prop": "border-radius",
+        "value": "3px",
+        "ruleId": "token.radius.3px",
+        "scope": "global"
+      },
+      {
+        "prop": "border-radius",
+        "value": "4px",
+        "ruleId": "token.radius.4px",
+        "scope": "global"
+      },
+      {
+        "prop": "border-radius",
+        "value": "50%",
+        "ruleId": "token.radius.50",
+        "scope": "global"
+      },
+      {
+        "prop": "border-radius",
+        "value": "9px",
+        "ruleId": "token.radius.9px",
+        "scope": "global"
+      },
+      {
+        "prop": "box-shadow",
+        "value": "rgb(255, 255, 255) 0px 0px 0px 1.5px inset",
+        "ruleId": "token.shadow.rgb-255-255-255-0px-0px-0px-1-5px-inset",
+        "scope": "global"
+      },
+      {
+        "prop": "font-size",
+        "value": "10px",
+        "ruleId": "token.size.10px",
+        "scope": "global"
+      },
+      {
+        "prop": "font-size",
+        "value": "11px",
+        "ruleId": "token.size.11px",
+        "scope": "global"
+      },
+      {
+        "prop": "font-size",
+        "value": "12px",
+        "ruleId": "token.size.12px",
+        "scope": "global"
+      },
+      {
+        "prop": "font-size",
+        "value": "13px",
+        "ruleId": "token.size.13px",
+        "scope": "global"
+      },
+      {
+        "prop": "font-size",
+        "value": "16px",
+        "ruleId": "token.size.16px",
+        "scope": "global"
+      },
+      {
+        "prop": "font-size",
+        "value": "17px",
+        "ruleId": "token.size.17px",
+        "scope": "global"
+      },
+      {
+        "prop": "font-size",
+        "value": "9px",
+        "ruleId": "token.size.9px",
+        "scope": "global"
+      },
+      {
+        "prop": "font-weight",
+        "value": "400",
+        "ruleId": "token.weight.400",
+        "scope": "global"
+      },
+      {
+        "prop": "font-weight",
+        "value": "500",
+        "ruleId": "token.weight.500",
+        "scope": "global"
+      },
+      {
+        "prop": "font-weight",
+        "value": "600",
+        "ruleId": "token.weight.600",
+        "scope": "global"
+      },
+      {
+        "prop": "font-weight",
+        "value": "650",
+        "ruleId": "token.weight.650",
+        "scope": "global"
+      },
+      {
+        "prop": "font-weight",
+        "value": "700",
+        "ruleId": "token.weight.700",
+        "scope": "global"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "head",
+      "role": "页头",
+      "surface": "header",
+      "layout": {
+        "order": 1,
+        "basis": "brief.sections —— 顺序由业务给出，不取自任何原型屏",
+        "stack": "block"
+      },
+      "functions": [
+        {
+          "id": "show-title",
+          "label": "显示书名与借阅点",
+          "kind": "display",
+          "role": "text",
+          "states": [
+            "default"
+          ],
+          "component": {
+            "resolved": false,
+            "ruleId": null,
+            "signature": null,
+            "scope": null,
+            "basis": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "search",
+      "role": "查找",
+      "surface": "content",
+      "layout": {
+        "order": 2,
+        "basis": "brief.sections —— 顺序由业务给出，不取自任何原型屏",
+        "stack": "block"
+      },
+      "functions": [
+        {
+          "id": "filter-books",
+          "label": "按书名筛选",
+          "kind": "input",
+          "role": "text",
+          "states": [
+            "default",
+            "filled"
+          ],
+          "component": {
+            "resolved": false,
+            "ruleId": null,
+            "signature": null,
+            "scope": null,
+            "basis": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "shelf",
+      "role": "在架图书",
+      "surface": "content",
+      "layout": {
+        "order": 3,
+        "basis": "brief.sections —— 顺序由业务给出，不取自任何原型屏",
+        "stack": "block"
+      },
+      "functions": [
+        {
+          "id": "list-books",
+          "label": "浏览在架图书",
+          "kind": "list",
+          "role": "list",
+          "states": [
+            "loading",
+            "empty",
+            "filled",
+            "error"
+          ],
+          "component": {
+            "resolved": false,
+            "ruleId": null,
+            "signature": null,
+            "scope": null,
+            "basis": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "actions",
+      "role": "操作",
+      "surface": "footer",
+      "layout": {
+        "order": 4,
+        "basis": "brief.sections —— 顺序由业务给出，不取自任何原型屏",
+        "stack": "block"
+      },
+      "functions": [
+        {
+          "id": "borrow",
+          "label": "借阅这本",
+          "kind": "action",
+          "role": "button",
+          "states": [
+            "default",
+            "disabled",
+            "confirming"
+          ],
+          "component": {
+            "resolved": true,
+            "ruleId": "component.button-span",
+            "signature": "button > span",
+            "scope": "global",
+            "basis": "库里 16 个实例里最常用的 \"button\" 角色形态"
+          }
+        }
+      ]
+    }
+  ],
+  "interactions": [
+    {
+      "resolved": true,
+      "name": "confirm-dialog",
+      "ruleId": "interaction.dialog-sheet",
+      "scope": "global",
+      "contract": {
+        "role": "dialog",
+        "ariaModal": "true",
+        "focusable": "tabindex=\"-1\"",
+        "hiddenBy": "由外层 overlay 的 hidden 控制显隐，关闭态不得命中点击",
+        "observed": 3
+      },
+      "basis": "库里 3 处同类元素"
+    },
+    {
+      "resolved": false,
+      "name": "status-feedback",
+      "ruleId": null,
+      "scope": null,
+      "contract": null,
+      "basis": null,
+      "requested": true
+    }
+  ],
+  "principles": [
+    {
+      "id": "principle.tap-target",
+      "statement": "可点区高度中位数 46px；3/45 个 <31px，16/45 个 <44px",
+      "scope": "global"
+    },
+    {
+      "id": "principle.hairline-separation",
+      "statement": "区块分隔主要靠 1px #e8ece7 上边框（13 处），阴影 4 处只用于外壳与浮层",
+      "scope": "global"
+    },
+    {
+      "id": "principle.type-hierarchy",
+      "statement": "字号阶 32px×1 / 25px×1 / 24px×4 / 21px×1 / 19px×1 / 18px×4 / 17px×14 / 16px×37 / 15px×6 / 14px×5 / 13px×35 / 12px×35 / 11px×52 / 10px×46 / 9px×5；5 处 <10px",
+      "scope": "global"
+    },
+    {
+      "id": "principle.icon-stroke",
+      "statement": "图标为内联 SVG 描边（63 个），主流形态 1.8px/outline/round（39/63）",
+      "scope": "global"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-color",
+      "statement": "色板只用库里的 7 个全局颜色变量，不新造色值",
+      "ruleRefs": [
+        "token.var.green",
+        "token.var.green-bright",
+        "token.var.green-soft",
+        "token.var.ink",
+        "token.var.line",
+        "token.var.muted",
+        "token.var.pale"
+      ]
+    },
+    {
+      "id": "D-type-scale",
+      "statement": "字号从既有阶里取（10px / 11px / 12px / 13px / 16px / 17px / 9px），不新增字号",
+      "ruleRefs": [
+        "token.size.10px",
+        "token.size.11px",
+        "token.size.12px",
+        "token.size.13px",
+        "token.size.16px",
+        "token.size.17px",
+        "token.size.9px"
+      ]
+    },
+    {
+      "id": "D-radius",
+      "statement": "圆角只用库里量到的 5 个值（18px / 3px / 4px / 50% / 9px），不新造圆角",
+      "ruleRefs": [
+        "token.radius.18px",
+        "token.radius.3px",
+        "token.radius.4px",
+        "token.radius.50",
+        "token.radius.9px"
+      ]
+    },
+    {
+      "id": "D-component-04",
+      "statement": "1 处功能沿用 `button > span`",
+      "ruleRefs": [
+        "component.button-span"
+      ]
+    },
+    {
+      "id": "D-confirm-dialog",
+      "statement": "confirm-dialog 按库里观测到的契约实现（interaction.dialog-sheet）",
+      "ruleRefs": [
+        "interaction.dialog-sheet"
+      ]
+    },
+    {
+      "id": "D-tap-target",
+      "statement": "可点区高度中位数 46px；3/45 个 <31px，16/45 个 <44px",
+      "ruleRefs": [
+        "principle.tap-target"
+      ]
+    },
+    {
+      "id": "D-hairline-separation",
+      "statement": "区块分隔主要靠 1px #e8ece7 上边框（13 处），阴影 4 处只用于外壳与浮层",
+      "ruleRefs": [
+        "principle.hairline-separation"
+      ]
+    },
+    {
+      "id": "D-type-hierarchy",
+      "statement": "字号阶 32px×1 / 25px×1 / 24px×4 / 21px×1 / 19px×1 / 18px×4 / 17px×14 / 16px×37 / 15px×6 / 14px×5 / 13px×35 / 12px×35 / 11px×52 / 10px×46 / 9px×5；5 处 <10px",
+      "ruleRefs": [
+        "principle.type-hierarchy"
+      ]
+    },
+    {
+      "id": "D-icon-stroke",
+      "statement": "图标为内联 SVG 描边（63 个），主流形态 1.8px/outline/round（39/63）",
+      "ruleRefs": [
+        "principle.icon-stroke"
+      ]
+    }
+  ],
+  "gaps": [
+    {
+      "code": "ROLE_UNRESOLVED",
+      "where": "head/show-title",
+      "detail": "全库没有可用于本页的 \"text\" 形态：component.span-row-body：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-row-body-h3：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-row-route：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.button-small：只属于 activity/weather 族；本页未声明家族，不按家族规则处理；component.div-solar-event-time：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.div-weather-section-heading-h2：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-stop-time-small：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-stop-body：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.small-stop-note：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-chart-note：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-time-hint：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "code": "ROLE_UNRESOLVED",
+      "where": "search/filter-books",
+      "detail": "全库没有可用于本页的 \"text\" 形态：component.span-row-body：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-row-body-h3：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-row-route：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定；component.button-small：只属于 activity/weather 族；本页未声明家族，不按家族规则处理；component.div-solar-event-time：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.div-weather-section-heading-h2：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-stop-time-small：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.span-stop-body：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.small-stop-note：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-chart-note：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定；component.p-time-hint：只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "code": "ROLE_UNRESOLVED",
+      "where": "shelf/list-books",
+      "detail": "全库没有可用于本页的 \"list\" 形态：component.div-activity-list：只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "code": "INTERACTION_UNRESOLVED",
+      "where": "interactions/status-feedback",
+      "detail": "全库没有可用于本页的 status-feedback 契约"
+    }
+  ],
+  "rejected": [
+    {
+      "ruleId": "token.literal-colours",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.size.34px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.size.32px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.size.25px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.size.24px",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.size.21px",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.size.19px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.size.18px",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.size.15px",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.size.14px",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.size.10-8333px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.size.8px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.weight.760",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.weight.690",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.weight.720",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.weight.550",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.weight.680",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.weight.730",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.radius.22px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.radius.12px",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.radius.11px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.radius.10px",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.radius.8px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.radius.7px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.radius.6px",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.radius.5px",
+      "category": "token",
+      "scope": "page-family",
+      "signature": null,
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "token.radius.2px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.radius.1px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.shadow.rgba-24-37-28-0-1-0px-1px-6px-0px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "token.shadow.rgba-32-59-32-0-063-0px-1px-3px-0px",
+      "category": "token",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-icon",
+      "category": "component",
+      "scope": "page-family",
+      "signature": "span.icon",
+      "roles": null,
+      "why": "只属于 activity 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "component.div-hour-buttons-button",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.hour-buttons > button",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-layer-row-span",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.layer-row > span",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-row-metrics-span",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.row-metrics > span",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-layer-row",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.layer-row",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.nav-bottom-nav-button",
+      "category": "component",
+      "scope": "page-family",
+      "signature": "nav.bottom-nav > button",
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "component.div-chart-axis-div",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.chart-axis > div",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.dl-detail-grid-div",
+      "category": "component",
+      "scope": "page",
+      "signature": "dl.detail-grid > div",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.button-activity-row",
+      "category": "component",
+      "scope": "page",
+      "signature": "button.activity-row",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-row-body",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.row-body",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-row-date",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.row-date",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-row-body-h3",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.row-body > h3",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.p-row-route",
+      "category": "component",
+      "scope": "page",
+      "signature": "p.row-route",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-row-meta",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.row-meta",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-row-metrics",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.row-metrics",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.button-small",
+      "category": "component",
+      "scope": "page-family",
+      "signature": "button > small",
+      "roles": null,
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "component.ol-day-schedule-li",
+      "category": "component",
+      "scope": "page",
+      "signature": "ol.day-schedule > li",
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-equipment-tags-span",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.equipment-tags > span",
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-chart-legend-span",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.chart-legend > span",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-solar-event",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.solar-event",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-solar-event-time",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.solar-event > time",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-solar-event-div",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.solar-event > div",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.nav-detail-tabs-button",
+      "category": "component",
+      "scope": "page",
+      "signature": "nav.detail-tabs > button",
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.section-detail-section",
+      "category": "component",
+      "scope": "page",
+      "signature": "section.detail-section",
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-route-stops-button",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.route-stops > button",
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.nav-weather-tabs-role-tablist-button",
+      "category": "component",
+      "scope": "page",
+      "signature": "nav.weather-tabs[role=tablist] > button",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-time-scrubber-button",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.time-scrubber > button",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-weather-section-heading",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.weather-section-heading",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-weather-section-heading-h2",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.weather-section-heading > h2",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-altitude-tick",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.altitude-tick",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.button-plan-stop",
+      "category": "component",
+      "scope": "page",
+      "signature": "button.plan-stop",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-stop-time",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.stop-time",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-stop-time-small",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.stop-time > small",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-stop-body",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.stop-body",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-stop-name",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.stop-name",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-stop-meta",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.stop-meta",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.small-stop-note",
+      "category": "component",
+      "scope": "page",
+      "signature": "small.stop-note",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.button-chip",
+      "category": "component",
+      "scope": "page",
+      "signature": "button.chip",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-row-joined",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.row-joined",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.section-weather-section",
+      "category": "component",
+      "scope": "page",
+      "signature": "section.weather-section",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.p-chart-note",
+      "category": "component",
+      "scope": "page",
+      "signature": "p.chart-note",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-sky-item",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.sky-item",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-metric-unit",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.metric-unit",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.button-sort-button",
+      "category": "component",
+      "scope": "page",
+      "signature": "button.sort-button",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-activity-list",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.activity-list",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-paused-row-joined",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.paused.row-joined",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-mine-status",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.mine-status",
+      "roles": null,
+      "why": "只在 activity-list 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-key-fact",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.key-fact",
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.details-notice-fold",
+      "category": "component",
+      "scope": "page",
+      "signature": "details.notice-fold",
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.button-data-source",
+      "category": "component",
+      "scope": "page",
+      "signature": "button.data-source",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-demo-dot",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.demo-dot",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.span-chart-caption",
+      "category": "component",
+      "scope": "page",
+      "signature": "span.chart-caption",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.div-time-scrubber",
+      "category": "component",
+      "scope": "page",
+      "signature": "div.time-scrubber",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.p-time-hint",
+      "category": "component",
+      "scope": "page",
+      "signature": "p.time-hint",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "component.button-weather-link-row",
+      "category": "component",
+      "scope": "page",
+      "signature": "button.weather-link-row",
+      "roles": null,
+      "why": "只在 weather 上量到；那是那一屏自己的排版，不是可复用的约定"
+    },
+    {
+      "ruleId": "interaction.tablist",
+      "category": "interaction",
+      "scope": "page-family",
+      "signature": null,
+      "roles": [
+        "tablist"
+      ],
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "interaction.status-toast",
+      "category": "interaction",
+      "scope": "page-family",
+      "signature": null,
+      "roles": [
+        "status"
+      ],
+      "why": "只属于 activity 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "interaction.text-field",
+      "category": "interaction",
+      "scope": "page-family",
+      "signature": null,
+      "roles": [
+        "field"
+      ],
+      "why": "只属于 activity/weather 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "interaction.state-class-toggles",
+      "category": "interaction",
+      "scope": "page-family",
+      "signature": null,
+      "roles": [],
+      "why": "只属于 activity 族；本页未声明家族，不按家族规则处理"
+    },
+    {
+      "ruleId": "principle.primary-action-green",
+      "category": "principle",
+      "scope": "page",
+      "signature": null,
+      "roles": null,
+      "why": "只在 activity-detail 上量到；那是那一屏自己的排版，不是可复用的约定"
+    }
+  ],
+  "coverage": {
+    "functions": 4,
+    "resolved": 1,
+    "unresolved": 3,
+    "interactionsRequested": 2,
+    "interactionsResolved": 1
+  }
+}

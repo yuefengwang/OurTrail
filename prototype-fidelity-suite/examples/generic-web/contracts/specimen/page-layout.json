@@ -1,0 +1,375 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "page-layout",
+  "pageId": "specimen",
+  "stateId": "default",
+  "generatedAt": "2026-10-29T12:27:23.258Z",
+  "sections": [
+    {
+      "id": "device",
+      "role": "captured frame",
+      "selector": "#device",
+      "resolved": true,
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "w": 390,
+        "h": 844
+      },
+      "text": "",
+      "styles": {
+        "display": "block",
+        "flex-direction": "row",
+        "align-items": "normal",
+        "justify-content": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "width": "390px",
+        "height": "844px",
+        "font-size": "16px",
+        "font-weight": "400",
+        "line-height": "normal",
+        "letter-spacing": "normal",
+        "color": "rgb(31, 42, 38)",
+        "background-color": "rgb(245, 245, 240)",
+        "border-radius": "0px",
+        "border-top-width": "0px",
+        "border-top-color": "rgb(31, 42, 38)",
+        "box-shadow": "none",
+        "opacity": "1"
+      },
+      "status": "PASS",
+      "reason": null,
+      "prototype": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 390,
+          "h": 844
+        },
+        "text": "",
+        "styles": {
+          "display": "block",
+          "flex-direction": "row",
+          "align-items": "normal",
+          "justify-content": "normal",
+          "gap": "normal",
+          "padding": "0px",
+          "margin": "0px",
+          "width": "390px",
+          "height": "844px",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "letter-spacing": "normal",
+          "color": "rgb(31, 42, 38)",
+          "background-color": "rgb(245, 245, 240)",
+          "border-radius": "0px",
+          "border-top-width": "0px",
+          "border-top-color": "rgb(31, 42, 38)",
+          "box-shadow": "none",
+          "opacity": "1"
+        },
+        "captureNode": "n0"
+      },
+      "target": {
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "w": 390,
+          "h": 844
+        },
+        "text": "",
+        "styles": {
+          "display": "block",
+          "flex-direction": "row",
+          "align-items": "normal",
+          "justify-content": "normal",
+          "gap": "normal",
+          "padding": "0px",
+          "margin": "0px",
+          "width": "390px",
+          "height": "844px",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "letter-spacing": "normal",
+          "color": "rgb(31, 42, 38)",
+          "background-color": "rgb(245, 245, 240)",
+          "border-radius": "0px",
+          "border-top-width": "0px",
+          "border-top-color": "rgb(31, 42, 38)",
+          "box-shadow": "none",
+          "opacity": "1"
+        },
+        "captureNode": "n0"
+      },
+      "differences": [],
+      "agreement": {
+        "maxGeometryDelta": 0
+      },
+      "source": {
+        "kind": "measured",
+        "captureNode": "n0"
+      }
+    },
+    {
+      "id": "title",
+      "role": "page title",
+      "selector": "#title",
+      "resolved": true,
+      "rect": {
+        "x": 15,
+        "y": 24,
+        "w": 126.42,
+        "h": 26
+      },
+      "text": "组件基样 · 12 格",
+      "styles": {
+        "display": "block",
+        "flex-direction": "row",
+        "align-items": "normal",
+        "justify-content": "normal",
+        "gap": "normal",
+        "padding": "0px",
+        "margin": "0px",
+        "width": "126.422px",
+        "height": "26px",
+        "font-size": "18px",
+        "font-weight": "600",
+        "line-height": "26px",
+        "letter-spacing": "normal",
+        "color": "rgb(31, 42, 38)",
+        "background-color": "rgba(0, 0, 0, 0)",
+        "border-radius": "0px",
+        "border-top-width": "0px",
+        "border-top-color": "rgb(31, 42, 38)",
+        "box-shadow": "none",
+        "opacity": "1"
+      },
+      "status": "PASS",
+      "reason": null,
+      "prototype": {
+        "rect": {
+          "x": 15,
+          "y": 24,
+          "w": 126.42,
+          "h": 26
+        },
+        "text": "组件基样 · 12 格",
+        "styles": {
+          "display": "block",
+          "flex-direction": "row",
+          "align-items": "normal",
+          "justify-content": "normal",
+          "gap": "normal",
+          "padding": "0px",
+          "margin": "0px",
+          "width": "126.422px",
+          "height": "26px",
+          "font-size": "18px",
+          "font-weight": "600",
+          "line-height": "26px",
+          "letter-spacing": "normal",
+          "color": "rgb(31, 42, 38)",
+          "background-color": "rgba(0, 0, 0, 0)",
+          "border-radius": "0px",
+          "border-top-width": "0px",
+          "border-top-color": "rgb(31, 42, 38)",
+          "box-shadow": "none",
+          "opacity": "1"
+        },
+        "captureNode": "n2"
+      },
+      "target": {
+        "rect": {
+          "x": 15,
+          "y": 24,
+          "w": 126.42,
+          "h": 26
+        },
+        "text": "组件基样 · 12 格",
+        "styles": {
+          "display": "block",
+          "flex-direction": "row",
+          "align-items": "normal",
+          "justify-content": "normal",
+          "gap": "normal",
+          "padding": "0px",
+          "margin": "0px",
+          "width": "126.422px",
+          "height": "26px",
+          "font-size": "18px",
+          "font-weight": "600",
+          "line-height": "26px",
+          "letter-spacing": "normal",
+          "color": "rgb(31, 42, 38)",
+          "background-color": "rgba(0, 0, 0, 0)",
+          "border-radius": "0px",
+          "border-top-width": "0px",
+          "border-top-color": "rgb(31, 42, 38)",
+          "box-shadow": "none",
+          "opacity": "1"
+        },
+        "captureNode": "n2"
+      },
+      "differences": [],
+      "agreement": {
+        "maxGeometryDelta": 0
+      },
+      "source": {
+        "kind": "measured",
+        "captureNode": "n2"
+      }
+    },
+    {
+      "id": "row-1",
+      "role": "specimen row 1",
+      "selector": "#ctrl-1",
+      "resolved": true,
+      "rect": {
+        "x": 15,
+        "y": 96,
+        "w": 175,
+        "h": 110
+      },
+      "text": "",
+      "styles": {
+        "display": "block",
+        "flex-direction": "row",
+        "align-items": "normal",
+        "justify-content": "normal",
+        "gap": "normal",
+        "padding": "12px",
+        "margin": "0px",
+        "width": "175px",
+        "height": "110px",
+        "font-size": "16px",
+        "font-weight": "400",
+        "line-height": "normal",
+        "letter-spacing": "normal",
+        "color": "rgb(31, 42, 38)",
+        "background-color": "rgb(255, 255, 255)",
+        "border-radius": "6px",
+        "border-top-width": "1px",
+        "border-top-color": "rgb(216, 216, 216)",
+        "box-shadow": "none",
+        "opacity": "1"
+      },
+      "status": "PASS",
+      "reason": null,
+      "prototype": {
+        "rect": {
+          "x": 15,
+          "y": 96,
+          "w": 175,
+          "h": 110
+        },
+        "text": "",
+        "styles": {
+          "display": "block",
+          "flex-direction": "row",
+          "align-items": "normal",
+          "justify-content": "normal",
+          "gap": "normal",
+          "padding": "12px",
+          "margin": "0px",
+          "width": "175px",
+          "height": "110px",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "letter-spacing": "normal",
+          "color": "rgb(31, 42, 38)",
+          "background-color": "rgb(255, 255, 255)",
+          "border-radius": "6px",
+          "border-top-width": "1px",
+          "border-top-color": "rgb(216, 216, 216)",
+          "box-shadow": "none",
+          "opacity": "1"
+        },
+        "captureNode": "n4"
+      },
+      "target": {
+        "rect": {
+          "x": 15,
+          "y": 96,
+          "w": 175,
+          "h": 110
+        },
+        "text": "",
+        "styles": {
+          "display": "block",
+          "flex-direction": "row",
+          "align-items": "normal",
+          "justify-content": "normal",
+          "gap": "normal",
+          "padding": "12px",
+          "margin": "0px",
+          "width": "175px",
+          "height": "110px",
+          "font-size": "16px",
+          "font-weight": "400",
+          "line-height": "normal",
+          "letter-spacing": "normal",
+          "color": "rgb(31, 42, 38)",
+          "background-color": "rgb(255, 255, 255)",
+          "border-radius": "6px",
+          "border-top-width": "1px",
+          "border-top-color": "rgb(216, 216, 216)",
+          "box-shadow": "none",
+          "opacity": "1"
+        },
+        "captureNode": "n4"
+      },
+      "differences": [],
+      "agreement": {
+        "maxGeometryDelta": 0
+      },
+      "source": {
+        "kind": "measured",
+        "captureNode": "n4"
+      }
+    }
+  ],
+  "rhythm": [
+    {
+      "from": "device",
+      "to": "title",
+      "gap": -820,
+      "targetGap": -820,
+      "delta": 0,
+      "status": "PASS",
+      "reason": null,
+      "source": {
+        "kind": "inferred",
+        "from": [
+          "device",
+          "title"
+        ]
+      }
+    },
+    {
+      "from": "title",
+      "to": "row-1",
+      "gap": 46,
+      "targetGap": 46,
+      "delta": 0,
+      "status": "PASS",
+      "reason": null,
+      "source": {
+        "kind": "inferred",
+        "from": [
+          "title",
+          "row-1"
+        ]
+      }
+    }
+  ],
+  "coverage": {
+    "sectionsDeclared": 3,
+    "resolved": 3,
+    "compared": 3
+  }
+}

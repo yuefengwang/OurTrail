@@ -1,6 +1,8 @@
 // 我的：Identity Hub（docs/product/profile/03-information-architecture.md）。
-// 结构：A 身份头卡（头像/昵称/统计） B 反馈区（含本机未保存横幅） C 最近活动
-//       D 同行与安全（摘要行 + 编辑 sheet） E 常用同行人 F 我的协作码 G 位置授权。
+// 2026-10-29 按 UI Lab「B · 山野档案 v3」重排：头图 + 身份叠加 → 履历栏 → 我的行程
+// → 同行与安全（安全 3 行 / 同行人胶囊 / 路线库 / 位置授权）→ 页脚。
+// 视觉 1:1，字号按小程序规范放大；协作码按原型移出（路线共享/协作授权的替代入口另开一轮）。
+//
 // 自动保存规则不变：输入停止 800ms 即自动落库，blur 兜底（scenario-me 钉死的契约）。
 // 保留的一致性契约（12-state-and-error-spec.md §1）：revision CAS、_saving 防重入、
 // 草稿先行、CONFLICT 自动重读、onUnload 清定时器、avatar 永取服务端值。
@@ -11,17 +13,20 @@
 //   profile.id 到手即 draftUtil.setOpenId 回填——修复 setOpenId 全库无人调用、
 //   同机多账号共享草稿的历史缺陷。
 //
-// 错误作用域（12 §5）：error=页面级；sheetError=D 组编辑 sheet/onboarding 内；
+// 错误作用域（12 §5）：error=页面级；sheetError=D 组编辑 sheet/profile 编辑面；
 // companionError=同行人弹层内。错误只在其产生的作用域渲染。
 'use strict'
 const api = require('../../utils/api')
 const draftUtil = require('../../utils/draft')
 const J = require('../../utils/journey')
-const { PHASE_LABELS, dateLabel } = require('../../utils/format')
+const { PHASE_LABELS, fullDateLabel, shortDate, hhmm } = require('../../utils/format')
 const covers = require('../../utils/covers')
 
 const AUTO_SAVE_MS = 800
 const DRAFT_KEY_V1 = 'ourtrail.draft.me.person.v1'
+// 进行中阶段：与 selectors.ME_ONGOING_PHASES 同口径（页面只用来判「这是不是下一程」，
+// 不重算服务端统计）。
+const ONGOING_PHASES = ['published', 'gathering', 'active', 'closing']
 
 const emptyPerson = () => ({ name: '', phone: '', emergency: { name: '', phone: '' }, medical: '', avatar: '' })
 
@@ -85,35 +90,100 @@ function nowStamp() {
   return p(t.getUTCMonth() + 1) + '-' + p(t.getUTCDate()) + ' ' + p(t.getUTCHours()) + ':' + p(t.getUTCMinutes())
 }
 
-// 协作码缩略：前 4 + … + 后 4（短码原样）。完整值只通过复制出口离场（10 §4）
-function abbreviate(code) {
-  const s = String(code || '')
-  if (s.length <= 12) return s
-  return s.slice(0, 4) + '…' + s.slice(-4)
-}
-
-// 错误作用域 → data 字段（12 §5）。onboarding 复用 sheetError（同一时刻只有一个编辑面打开）
+// 错误作用域 → data 字段（12 §5）。profile 编辑面复用 sheetError（同一时刻只有一个编辑面打开）
 function scopeErrorField(scope) {
   return (scope === 'phone' || scope === 'emergency' || scope === 'medical' || scope === 'onboarding')
     ? 'sheetError' : 'error'
+}
+
+// ---- 「我的行程」派生：全部字段来自 me 视图，不补造 ----
+// isNext 只在「未来 + 进行中阶段」时为真；已归档/取消/过期的一律叫「最近一场」，
+// 否则把走完的活动印成「下一程」就是凭空造期待。
+function isUpcoming(item, now) {
+  if (!item.startAt) return false
+  const start = Date.parse(item.startAt)
+  const at = Date.parse(now || '')
+  if (!Number.isFinite(start) || !Number.isFinite(at)) return false
+  return start >= at && ONGOING_PHASES.indexOf(item.phase) !== -1
+}
+
+function decorateTrip(a, now) {
+  const upcoming = isUpcoming(a, now)
+  const roleText = a.role === 'owner' ? '你发起' : '已加入'
+  const dateText = fullDateLabel(a.startAt)
+  const timeText = a.startAt ? hhmm(a.startAt) : ''
+  const phaseText = PHASE_LABELS[a.phase] || a.phase || ''
+  return {
+    id: a.id,
+    title: a.title,
+    startAt: a.startAt,
+    phase: a.phase,
+    pickupName: a.pickupName || '',
+    cover: covers.coverFor(a.id),
+    coverFailed: false,
+    dateBadge: shortDate(a.startAt),
+    dateText,
+    timeText,
+    phaseText,
+    roleText,
+    isNext: upcoming,
+    overline: (upcoming ? '下一程 · ' : '最近一场 · ') + roleText,
+    metaText: [dateText, timeText, phaseText].filter(Boolean).join(' · '),
+  }
+}
+
+// 履历栏四项：只用真实统计。「同行」= 进行中 + 已完成（活动沉淀的私有路线也计入路线库）。
+function ledgerOf(stats) {
+  const s = stats || {}
+  return {
+    trips: (Number(s.ongoing) || 0) + (Number(s.finished) || 0),
+    ongoing: Number(s.ongoing) || 0,
+    routes: Number(s.routes) || 0,
+    organized: Number(s.organized) || 0,
+  }
+}
+
+// 位置授权汇总行：0 条时仍保留入口（与原型一致），但说「还没有上报过」，不拿空行冒充授权。
+function positionSummaryOf(rows) {
+  if (!rows.length) {
+    return { has: false, count: 0, label: '位置授权', sub: '还没有在活动中上报过位置', badge: '未上报', badgeKind: 'neutral' }
+  }
+  const live = rows.filter(r => !r.expired)
+  const first = rows[0]
+  return {
+    has: true,
+    count: rows.length,
+    label: first.label,
+    sub: rows.length > 1 ? '等 ' + rows.length + ' 处活动的位置授权' : '活动中主动上报一次',
+    badge: live.length ? '可撤回' : '已过期',
+    badgeKind: live.length ? 'success' : 'neutral',
+  }
 }
 
 Page({
   data: {
     loading: true,
     denied: '',
+    // 账号标识只做内部用途（头像云存储路径），页面不再展示/复制协作码——按原型 v3 移出。
     identity: '',
-    displayIdentity: '',
     person: emptyPerson(),
     companions: [],
     positionRows: [],
+    positionSummary: positionSummaryOf([]),
     stats: null,
+    ledger: ledgerOf(null),
     recent: [],
+    tripNext: null,
+    tripRest: [],
     activated: false,
+    profileMode: 'onboarding',
     onboardingOpen: false,
     phoneSheetOpen: false,
     emergencySheetOpen: false,
     medicalSheetOpen: false,
+    companionsOpen: false,
+    positionOpen: false,
+    privacyOpen: false,
     draftPending: false,
     draftSavedAt: '',
     discardAsk: false,
@@ -185,24 +255,28 @@ Page({
         label: row.activityTitle + ' · ' + row.name,
         // D-05：到期不等于消失——行还在（可撤回），但文案必须改口，不能再称「仍然有效」。
         expired: !!row.expired,
+        subText: row.expired ? '已过期（活动已结束），仍可撤回' : '本次活动的位置授权仍然有效',
       }))
+      const now = res.now || ''
+      const recent = (res.view.recent || []).map(a => decorateTrip(a, now))
+      const stats = res.view.stats || null
       this.revision = res.revision
+      this.now = now
       this.setData({
         loading: false,
         denied: '',
         identity: res.view.profile.id,
-        displayIdentity: abbreviate(res.view.profile.id),
         person,
         activated: !!(person.name && person.name.trim() && person.phone && person.phone.trim()),
         companions: res.view.profile.companions.map(c => ({ id: c.id, name: c.person.name, avatar: c.person.avatar || '' })),
         positionRows,
-        stats: res.view.stats || null,
-        recent: (res.view.recent || []).map(a => ({
-          id: a.id, title: a.title, startAt: a.startAt, phase: a.phase,
-          // 与发现/首页同一套封面选取（utils/covers.js）：「我的」里也能一眼认出那场山
-          cover: covers.coverFor(a.id),
-          dateText: dateLabel(a.startAt), phaseText: PHASE_LABELS[a.phase] || a.phase,
-        })),
+        positionSummary: positionSummaryOf(positionRows),
+        stats,
+        ledger: ledgerOf(stats),
+        recent,
+        // 大卡只放第一条（服务端已按「进行中优先、距离由近到远」排好），其余进紧凑行。
+        tripNext: recent.length ? recent[0] : null,
+        tripRest: recent.slice(1),
         draftPending: pending,
         draftSavedAt: draft ? (draft.savedAt || '') : '',
       })
@@ -211,11 +285,13 @@ Page({
     }).catch(e => this.setData({ loading: false, denied: api.errorText(e) }))
   },
 
-  // 最近活动封面加载失败：只隐藏那一行的缩略图，退回纯文字行（不出破图）
+  // 行程封面加载失败：只隐藏那一张，退回纯文字卡（不出破图）
   onCoverError(e) {
-    const i = e.currentTarget.dataset.index
+    const ds = e.currentTarget.dataset || {}
+    if (ds.scope === 'next') { this.setData({ 'tripNext.coverFailed': true }); return }
+    const i = ds.index
     if (i === undefined || i === null || i === '') return
-    this.setData({ ['recent[' + i + '].coverFailed']: true })
+    this.setData({ ['tripRest[' + i + '].coverFailed']: true })
   },
 
   // ---- 打开/关闭编辑面：进入任一编辑面时清空其余作用域的残留反馈（12 §5） ----
@@ -226,24 +302,36 @@ Page({
       emergencySheetOpen: scope === 'emergency',
       medicalSheetOpen: scope === 'medical',
       onboardingOpen: scope === 'onboarding',
+      companionsOpen: false,
+      positionOpen: false,
+      privacyOpen: false,
     })
   },
   onOpenPhone() { this.openSheet('phone') },
   onOpenEmergency() { this.openSheet('emergency') },
   onOpenMedical() { this.openSheet('medical') },
-  onOpenOnboarding() { this.openSheet('onboarding') },
+  // 资料编辑面：已完善时是「编辑个人资料」，未完善时是「完善同行资料」。
+  // onboarding 也走这一个面（scenario-me 直接调用 onOpenOnboarding 的契约保持不变）。
+  onOpenProfile() {
+    this.setData({ profileMode: this.data.activated ? 'edit' : 'onboarding' })
+    this.openSheet('onboarding')
+  },
+  onOpenOnboarding() {
+    this.setData({ profileMode: this.data.activated ? 'edit' : 'onboarding' })
+    this.openSheet('onboarding')
+  },
   onCloseSheet() {
     this.setData({ phoneSheetOpen: false, emergencySheetOpen: false, medicalSheetOpen: false, onboardingOpen: false })
   },
 
-  // ---- 激活（onboarding）：完成 = name+phone 齐即落库；跳过不发生任何写（04 §4） ----
+  // ---- 激活/资料编辑：完成 = name+phone 齐即落库；跳过不发生任何写（04 §4） ----
   onCompleteOnboarding() {
     const p = this.data.person
     const missing = []
     if (!p.name || !p.name.trim()) missing.push('姓名')
     if (!p.phone || !p.phone.trim()) missing.push('手机号')
     if (missing.length) {
-      this.setData({ sheetError: '还差：' + missing.join('、') + '。补全后点「完成」；或点「先跳过」，随时可回来补。' })
+      this.setData({ sheetError: '还差：' + missing.join('、') + '。补全后点「保存」；或点「先跳过」，随时可回来补。' })
       return
     }
     this.persistPerson({ scope: 'onboarding', onSuccess: () => this.onCloseSheet() })
@@ -280,7 +368,7 @@ Page({
   /**
    * @param opts.silent 自动保存时不弹 toast，只用 hint 静默告知。
    * @param opts.scope  失败反馈落在哪个作用域（page/phone/emergency/medical/onboarding）。
-   * @param opts.onSuccess 保存成功后的回调（激活 sheet 用它关闭自己）。
+   * @param opts.onSuccess 保存成功后的回调（资料编辑面用它关闭自己）。
    */
   persistPerson(opts) {
     const silent = !!(opts && opts.silent)
@@ -378,7 +466,7 @@ Page({
     const tempPath = e.detail && e.detail.avatarUrl
     if (!tempPath) return
     if (!wx.cloud) {
-      // 头像按钮同时存在于页面头卡与激活 sheet，错误跟着当前打开面走
+      // 头像按钮同时存在于身份区与资料编辑面，错误跟着当前打开面走
       if (this.data.onboardingOpen) this.setData({ sheetError: '云能力不可用，无法保存头像。' })
       else this.setData({ error: '云能力不可用，无法保存头像。' })
       return
@@ -404,7 +492,7 @@ Page({
 
   // 手机号：open-type=getPhoneNumber 的 code 由服务端换取真实号码，无验证码。
   // 失败不再静默：区分取消 / 无权限 / 开发者工具，给出可操作的提示。
-  // 提示落在手机号编辑面内（sheetError / sheetHint），页面头卡不再被打断。
+  // 提示落在手机号编辑面内（sheetError / sheetHint），身份区不再被打断。
   onPhoneCode(e) {
     const d = e.detail || {}
     if (d.code) {
@@ -449,19 +537,29 @@ Page({
     }
     return !!this.data.busy
   },
+  // 同行人管理面（胶囊条点进）：列表 + 编辑/移除/添加都在这里，页面胶囊只做入口。
+  onOpenCompanions() {
+    this.setData({
+      companionsOpen: true, error: '', sheetError: '', companionError: '', sheetHint: '', hint: '',
+      phoneSheetOpen: false, emergencySheetOpen: false, medicalSheetOpen: false,
+      onboardingOpen: false, positionOpen: false, privacyOpen: false,
+    })
+  },
+  onCloseCompanions() { this.setData({ companionsOpen: false }) },
   onAddCompanion() {
     // 服务端 companion.save 要求先有本人档案；新账号不预检的话，保存失败只会在
     // 弹层遮罩后面报错，用户看到的是"点保存没反应"（P0-4 教训）。
     const p = this.data.person || {}
     if (!p.name || !p.phone) {
-      this.setData({ error: '先补全「同行与安全」里的姓名与手机号（填齐自动保存），再添加同行人。' })
+      this.setData({ companionsOpen: false, error: '先补全「同行与安全」里的姓名与手机号（填齐自动保存），再添加同行人。' })
       api.toast('先补全本人姓名与手机号，再添加同行人')
       return
     }
-    this.setData({ companionOpen: true, companionId: null, companionPerson: emptyPerson(), companionError: '' })
+    this.setData({ companionsOpen: false, companionOpen: true, companionId: null, companionPerson: emptyPerson(), companionError: '' })
   },
   onEditCompanion(e) {
     const id = e.currentTarget.dataset.id
+    this.setData({ companionsOpen: false })
     api.read({ kind: 'profile' }).then(res => {
       if (res.view.kind !== 'profile') return
       const c = res.view.profile.companions.find(x => x.id === id)
@@ -499,7 +597,9 @@ Page({
       })
       .catch(e => this.setData({ busy: false, companionError: api.errorText(e) }))
   },
-  onRemoveAsk(e) { this.setData({ removeId: e.currentTarget.dataset.id }) },
+  onRemoveAsk(e) {
+    this.setData({ companionsOpen: false, removeId: e.currentTarget.dataset.id })
+  },
   onRemoveCancel() { this.setData({ removeId: '' }) },
   onRemoveConfirm() {
     if (this.busyBlocks()) return
@@ -515,19 +615,17 @@ Page({
       .catch(e => this.setData({ busy: false, companionError: api.errorText(e), removeId: '' }))
   },
 
-  // ---- 我的协作码 ----
-  onCopyIdentity() {
-    wx.setClipboardData({
-      data: this.data.identity,
-      success: () => api.toast('协作码已复制'),
-    })
-  },
-
-  // ---- 最近活动 ----
+  // ---- 我的行程 ----
   onOpenRecent(e) {
     const id = e.currentTarget.dataset.id
     if (!id) return
     wx.navigateTo({ url: '/pages/activity/activity?id=' + id })
+  },
+  onOpenHome() {
+    wx.switchTab({ url: '/pages/home/home' })
+  },
+  onOpenDiscover() {
+    wx.navigateTo({ url: '/pages/discover/discover' })
   },
 
   // ---- 路线库（V2.0）----
@@ -535,12 +633,15 @@ Page({
     wx.navigateTo({ url: '/pages/routes/routes' })
   },
 
-  // 隐私指引此前只有 privacy-popup（已停用的死组件）能跳到，等于对用户不存在。
-  onOpenPrivacy() {
-    wx.navigateTo({ url: '/pages/privacy/privacy' })
+  // ---- 位置授权：页面只留汇总行，逐条撤回在 sheet 内（原型同结构） ----
+  onOpenPosition() {
+    this.setData({
+      positionOpen: true, error: '', sheetError: '', companionError: '', sheetHint: '', hint: '',
+      phoneSheetOpen: false, emergencySheetOpen: false, medicalSheetOpen: false,
+      onboardingOpen: false, companionsOpen: false, privacyOpen: false,
+    })
   },
-
-  // ---- 位置授权撤回 ----
+  onClosePosition() { this.setData({ positionOpen: false }) },
   onRevoke(e) {
     if (this.busyBlocks()) return
     const { activityId, signupId } = e.currentTarget.dataset
@@ -553,5 +654,19 @@ Page({
         this.reload()
       })
       .catch(err => this.setData({ busy: false, error: api.errorText(err) }))
+  },
+
+  // ---- 隐私指引：页面用 sheet 先讲清，完整版仍进独立页（保持页面可达） ----
+  onOpenPrivacy() {
+    this.setData({
+      privacyOpen: true, error: '', sheetError: '', companionError: '', sheetHint: '', hint: '',
+      phoneSheetOpen: false, emergencySheetOpen: false, medicalSheetOpen: false,
+      onboardingOpen: false, companionsOpen: false, positionOpen: false,
+    })
+  },
+  onClosePrivacy() { this.setData({ privacyOpen: false }) },
+  onOpenPrivacyDoc() {
+    this.setData({ privacyOpen: false })
+    wx.navigateTo({ url: '/pages/privacy/privacy' })
   },
 })

@@ -1,0 +1,496 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "fidelity-validation-report",
+  "pageId": "c-repair",
+  "stateId": "default",
+  "viewportId": null,
+  "generatedAt": "2026-10-29T12:26:46.169Z",
+  "status": "FAIL",
+  "reason": null,
+  "scorecard": {
+    "schemaVersion": "1.0.0",
+    "generatedAt": "2026-10-29T12:26:46.169Z",
+    "dimensions": {
+      "geometry": {
+        "checks": {
+          "total": 25,
+          "fail": 9,
+          "pass": 16,
+          "unverified": 0
+        },
+        "metrics": {
+          "position": {
+            "total": 8,
+            "fail": 5,
+            "criticalFail": 1,
+            "maxAbsPx": 4,
+            "meanAbsPx": 1.75
+          },
+          "size": {
+            "total": 8,
+            "fail": 2,
+            "criticalFail": 0,
+            "maxAbsPx": 2,
+            "meanAbsPx": 0.5
+          },
+          "spacing": {
+            "total": 8,
+            "fail": 1,
+            "maxAbsPx": 6
+          }
+        },
+        "verdict": "FAIL"
+      },
+      "typography": {
+        "checks": {
+          "total": 34,
+          "fail": 2,
+          "pass": 32,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 22,
+            "fail": 2,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "text": {
+            "total": 6,
+            "fail": 0
+          },
+          "wrap": {
+            "total": 6,
+            "fail": 0
+          }
+        },
+        "verdict": "FAIL"
+      },
+      "appearance": {
+        "checks": {
+          "total": 52,
+          "fail": 3,
+          "pass": 49,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 44,
+            "fail": 1,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "missingOnTarget": 0,
+          "missingOnPrototype": 0,
+          "notApplicable": 0
+        },
+        "verdict": "FAIL"
+      },
+      "state": {
+        "checks": {
+          "total": 4,
+          "pass": 4,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      },
+      "interaction": {
+        "checks": {
+          "total": 1,
+          "pass": 1,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      }
+    },
+    "categories": {
+      "size": {
+        "dimension": "geometry",
+        "fail": 2
+      },
+      "appearance": {
+        "dimension": "appearance",
+        "fail": 1
+      },
+      "pixel": {
+        "dimension": "appearance",
+        "fail": 1
+      },
+      "typography": {
+        "dimension": "typography",
+        "fail": 1
+      },
+      "ink": {
+        "dimension": "appearance",
+        "fail": 1
+      },
+      "position": {
+        "dimension": "geometry",
+        "fail": 5
+      },
+      "spacing": {
+        "dimension": "geometry",
+        "fail": 1
+      }
+    },
+    "criticalFailures": [
+      {
+        "pairId": "b-img",
+        "role": "图片",
+        "criticality": "critical",
+        "categories": [
+          "position"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 2,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 16,
+            "y": 194,
+            "w": 358,
+            "h": 90
+          },
+          "target": {
+            "x": 16,
+            "y": 196,
+            "w": 358,
+            "h": 90
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": true
+        },
+        "failingStyles": [],
+        "notes": null
+      }
+    ],
+    "nonCriticalFailures": [
+      {
+        "pairId": "b-card",
+        "role": "卡片",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "appearance",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 2,
+          "dwRatio": 1,
+          "dhRatio": 1.018,
+          "prototype": {
+            "x": 16,
+            "y": 68,
+            "w": 358,
+            "h": 110
+          },
+          "target": {
+            "x": 16,
+            "y": 68,
+            "w": 358,
+            "h": 112
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": false
+        },
+        "failingStyles": [
+          {
+            "prop": "border-radius",
+            "a": 8,
+            "b": 12,
+            "delta": 4
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "b-label",
+        "role": "字段名",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "typography",
+          "ink"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 2,
+          "dwRatio": 1,
+          "dhRatio": 1.125,
+          "prototype": {
+            "x": 31,
+            "y": 83,
+            "w": 328,
+            "h": 16
+          },
+          "target": {
+            "x": 31,
+            "y": 83,
+            "w": 328,
+            "h": 18
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": false
+        },
+        "failingStyles": [
+          {
+            "prop": "font-size",
+            "a": 12,
+            "b": 14,
+            "delta": 2
+          },
+          {
+            "prop": "line-height",
+            "a": 16,
+            "b": 18,
+            "delta": 2
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "b-clock",
+        "role": "时间",
+        "criticality": "normal",
+        "categories": [
+          "position"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 2,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 31,
+            "y": 103,
+            "w": 328,
+            "h": 30
+          },
+          "target": {
+            "x": 31,
+            "y": 105,
+            "w": 328,
+            "h": 30
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": true
+        },
+        "failingStyles": [],
+        "notes": null
+      },
+      {
+        "pairId": "b-desc",
+        "role": "说明",
+        "criticality": "normal",
+        "categories": [
+          "position"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 2,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 31,
+            "y": 143,
+            "w": 328,
+            "h": 20
+          },
+          "target": {
+            "x": 31,
+            "y": 145,
+            "w": 328,
+            "h": 20
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": true
+        },
+        "failingStyles": [],
+        "notes": null
+      },
+      {
+        "pairId": "b-btn",
+        "role": "按钮",
+        "criticality": "normal",
+        "categories": [
+          "position",
+          "spacing"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": -4,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 16,
+            "y": 300,
+            "w": 120,
+            "h": 38
+          },
+          "target": {
+            "x": 16,
+            "y": 296,
+            "w": 120,
+            "h": 38
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": true
+        },
+        "failingStyles": [
+          {
+            "prop": "margin",
+            "a": [
+              16,
+              0,
+              0,
+              0
+            ],
+            "b": [
+              10,
+              0,
+              0,
+              0
+            ],
+            "delta": 6
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "b-note",
+        "role": "结果说明",
+        "criticality": "normal",
+        "categories": [
+          "position"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": -4,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 16,
+            "y": 348,
+            "w": 358,
+            "h": 16
+          },
+          "target": {
+            "x": 16,
+            "y": 344,
+            "w": 358,
+            "h": 16
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": true
+        },
+        "failingStyles": [],
+        "notes": null
+      }
+    ],
+    "budget": {
+      "criticalFailures": 0,
+      "nonCriticalFailures": 0
+    },
+    "coverage": {
+      "pairsDeclared": 8,
+      "criticalPairs": 2,
+      "pairsMeasured": 8,
+      "pairsUnverified": 0,
+      "notApplicable": 0,
+      "missingOnTarget": 0,
+      "missingOnPrototype": 0,
+      "pixelsCompared": 0,
+      "unownedCategories": []
+    },
+    "verdict": "FAIL"
+  },
+  "interaction": {
+    "checks": [
+      {
+        "id": "toggle-note",
+        "title": "点按钮后说明展开",
+        "status": "PASS",
+        "expected": {
+          "textIncludes": {
+            "selector": "#b-note",
+            "text": "已展开"
+          }
+        },
+        "observed": "ok text(#b-note) includes \"已展开\" → 说明已展开",
+        "assertions": [
+          {
+            "assertion": "text(#b-note) includes \"已展开\"",
+            "pass": true,
+            "observed": "说明已展开"
+          }
+        ],
+        "startedAt": "2026-10-29T12:26:45.287Z",
+        "screenshotPath": null,
+        "finishedAt": "2026-10-29T12:26:46.066Z",
+        "durationMs": 779,
+        "verification": "real-action-and-observation"
+      }
+    ],
+    "fail": 0,
+    "unverified": 0,
+    "status": "PASS"
+  },
+  "evidence": [
+    "visual-diff-report.json",
+    "captures/c-repair/default/prototype/capture-manifest.json",
+    "captures/c-repair/default/target/capture-manifest.json"
+  ],
+  "limitations": [
+    "Container pixel comparisons masked over declared child regions (each child is judged at its own level): b-card ← b-label/b-clock/b-desc"
+  ]
+}

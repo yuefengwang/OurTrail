@@ -1,0 +1,10 @@
+HTML local links and anchors: PASS
+Markdown local links: PASS
+Gallery images with alt: 11
+Image provenance entries: 24
+Proposed text contrast #17211D/#FFFFFF: 16.51:1 PASS
+Proposed text contrast #56635B/#FFFFFF: 6.30:1 PASS
+Proposed text contrast #245C48/#FFFFFF: 7.78:1 PASS
+Proposed text contrast #8A4B12/#FFFFFF: 6.78:1 PASS
+Proposed text contrast #B42318/#FFFFFF: 6.57:1 PASS
+Visual rendering and mini program integration: not tested; research artifacts only.

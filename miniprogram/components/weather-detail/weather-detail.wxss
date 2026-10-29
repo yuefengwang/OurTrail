@@ -1,0 +1,382 @@
+/* 天气页 V3 局部皮肤（登记见 references/design-system.md §17）。
+   与全站 token 的差异是**外观**而非语义：白底、鲜绿、无卡片、9–11px 密集小字。
+   变量只定义在本组件根节点，不写进 app.wxss 的 page 块。 */
+.weather-v3 {
+  --w-green: #16783E;
+  --w-green-soft: #EDF7ED;
+  --w-bg: #FFFFFF;
+  --w-ink: #18211B;
+  --w-muted: #69716B;
+  --w-line: #E8ECE7;
+  --w-pale: #F5F7F4;
+  --w-blue: #4186AA;
+  --w-teal: #457E78;
+  --w-amber: #A87928;
+
+  /* 几何变量（不是皮肤，故不叫 --w-）：四视图 tab 的吸顶偏移缺省值。
+     真值由 brand-header 实测后经 wxml 行内同名变量覆盖，这里只保证首帧就有合法偏移。 */
+  --wv3-chrome: 64px;
+
+  background: var(--w-bg);
+  color: var(--w-ink);
+  font-variant-numeric: tabular-nums;
+  padding-bottom: 8px;
+}
+
+.wv3-tap { opacity: .72; }
+
+/* ---------- 页头 ---------- */
+.wv3-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 20px 11px;
+}
+.wv3-header-main { min-width: 0; }
+.wv3-place { display: flex; align-items: center; gap: 8px; }
+.wv3-place-name { font-size: 24px; line-height: 1.3; letter-spacing: -.8px; font-weight: 700; }
+.wv3-node { display: flex; align-items: center; gap: 4px; padding-top: 5px; min-height: 27px; }
+.wv3-node-text { font-size: 11px; color: #657168; }
+.wv3-source { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #6B756D; white-space: nowrap; padding: 8px 0; }
+.wv3-dot { width: 5px; height: 5px; border-radius: 50%; background: #7C9A83; }
+
+/* ---------- 日期条 ---------- */
+.wv3-days { display: flex; gap: 4px; padding: 0 15px 10px; }
+.wv3-day {
+  flex: 1;
+  min-width: 0;
+  border-radius: 9px;
+  padding: 8px 3px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #707971;
+}
+.wv3-day.on { background: #EEF6ED; color: var(--w-green); }
+.wv3-day.off { opacity: .38; }
+.wv3-day-main { font-size: 11px; font-weight: 700; }
+.wv3-day-sub { font-size: 10px; white-space: nowrap; }
+/* 图标占位 fixed：温度用 nowrap，5 张卡挤在 375 宽时只有它俩能撑住同一行 */
+.wv3-day-cond { height: 18px; display: flex; align-items: center; gap: 4px; }
+.wv3-day-icon { flex: none; display: flex; align-items: center; }
+.wv3-day-temp { font-size: 10px; white-space: nowrap; }
+.wv3-day-mark { font-size: 9px; height: 12px; color: var(--w-green); }
+.wv3-days-plan .wv3-day { flex-direction: row; justify-content: center; gap: 5px; min-height: 44px; padding: 0 4px; }
+.wv3-days-inline { padding: 10px 20px 8px; }
+
+/* ---------- 四视图 tab（吸顶，接在品牌固定条下沿；top 由模板行内给实测高度） ---------- */
+.wv3-tabs {
+  position: sticky;
+  /* 偏移只来自品牌固定条实测高度（wxml 行内 --wv3-chrome）；写的不是 fallback 而是被行内覆盖的缺省值 */
+  top: var(--wv3-chrome);
+  z-index: 4;
+  display: flex;
+  background: var(--w-bg);
+  border-top: 1px solid var(--w-line);
+  border-bottom: 1px solid var(--w-line);
+  padding: 0 14px;
+}
+.wv3-tab {
+  position: relative;
+  flex: 1;
+  min-width: 20%;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #6C766E;
+  padding: 0 3px;
+  box-sizing: border-box;
+}
+.wv3-tab.on { font-weight: 700; color: var(--w-green); }
+.wv3-tab.on::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 23%;
+  right: 23%;
+  height: 3px;
+  background: var(--w-green);
+  border-radius: 4px;
+}
+.wv3-tab.off { opacity: .35; }
+
+/* ---------- 状态块 ---------- */
+.wv3-status { padding: 45px 22px; text-align: center; }
+.wv3-status-inline { padding: 34px 20px; text-align: left; }
+.wv3-status-title { display: block; font-size: 18px; font-weight: 600; color: var(--w-ink); }
+.wv3-status-text { display: block; font-size: 12px; line-height: 1.8; color: #7A877B; margin: 12px 0; }
+.wv3-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 10px 20px 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #F6F3EA;
+  color: #7A5C1E;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.wv3-warn {
+  margin: 10px 20px;
+  padding: 12px 13px;
+  border-radius: 8px;
+  background: #F6F3EA;
+  color: #7A5C1E;
+}
+.wv3-warn-title { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.wv3-warn-text { display: block; font-size: 11px; line-height: 1.6; }
+.wv3-note { display: block; font-size: 10px; line-height: 1.7; color: #758078; padding: 10px 20px 0; }
+.wv3-foot { display: block; text-align: center; font-size: 10px; line-height: 1.8; color: #89938B; padding: 24px 20px 25px; }
+
+/* ---------- 按钮 ---------- */
+.wv3-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 10px;
+  border-radius: 10px;
+  background: var(--w-pale);
+  color: #3C5544;
+  font-size: 13px;
+  padding: 0 14px;
+}
+.wv3-btn-quiet { background: var(--w-pale); }
+.wv3-btn-link { display: flex; align-items: center; justify-content: center; min-height: 44px; font-size: 12px; color: #96403C; }
+
+/* ---------- 逐时：读数 ---------- */
+.wv3-readout { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 16px 20px 12px; }
+.wv3-read-main { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.wv3-temp { font-size: 34px; line-height: 1; font-weight: 600; letter-spacing: -1.5px; }
+.wv3-read-copy { min-width: 0; }
+.wv3-read-date { display: block; font-size: 11px; color: #667269; line-height: 1.5; }
+.wv3-read-sub { display: block; font-size: 11px; color: #667269; line-height: 1.5; }
+/* 三层云量：图里没有数字（一列约 12.5px），选中小时的读数在这里 */
+.wv3-read-cloud { font-size: 10px; color: #758078; margin-top: 2px; }
+.wv3-read-side { display: flex; gap: 15px; flex: none; }
+.wv3-read-cell { text-align: right; }
+.wv3-read-num { display: block; font-size: 13px; font-weight: 600; }
+.wv3-read-unit { font-size: 10px; font-weight: 400; color: #707971; }
+.wv3-read-label { display: block; font-size: 10px; color: #707971; margin-top: 5px; }
+
+/* ---------- 逐时：工具条 ---------- */
+.wv3-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 3px 20px 10px; }
+.wv3-caption { font-size: 10px; color: #737C75; min-width: 0; line-height: 1.5; }
+.wv3-periods { display: flex; gap: 2px; padding: 2px; background: #F2F5F1; border-radius: 6px; flex: none; }
+.wv3-period { font-size: 10px; padding: 5px 7px; border-radius: 4px; color: #748078; }
+.wv3-period.on { background: #FFFFFF; color: #213D2A; font-weight: 600; box-shadow: 0 1px 3px rgba(32, 59, 32, .06); }
+
+/* ---------- 逐时：图表 ---------- */
+.wv3-board {
+  display: flex;
+  position: relative;
+  background: var(--w-bg);
+  border-top: 1px solid var(--w-line);
+  border-bottom: 1px solid var(--w-line);
+}
+.wv3-axis {
+  width: 49px;
+  flex: none;
+  background: var(--w-bg);
+  border-right: 1px solid #EDF0EC;
+  position: relative;
+  z-index: 2;
+}
+.wv3-axis-row { position: absolute; left: 0; right: 0; padding-left: 13px; font-size: 9px; color: #747E76; line-height: 1.5; }
+/* 云量三行要塞下「名称 + 高度区间」两行：行距 20px、9px 字，1.05 的行高刚好两行 18.9px。
+   放不下的写法是把名称与区间挤到一行（「高云 ≥8km」约 40px > 轴内 36px 可用宽）。 */
+.wv3-axis-row.is-compact { line-height: 1.05; }
+.wv3-axis-row.is-compact .wv3-axis-label { display: block; }
+.wv3-axis-label { font-size: 9px; color: #747E76; }
+.wv3-axis-b { display: block; font-size: 10px; font-weight: 500; color: #48584E; }
+.wv3-axis-u { display: block; font-size: 9px; }
+.wv3-scroll { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; }
+.wv3-inner { position: relative; }
+.wv3-hours { display: flex; background: var(--w-bg); }
+/* 列宽不写死：24h 一屏时一列约 12.5px，真实值由 hourlyCell 行内给（与 SVG 同一列宽）。 */
+.wv3-hour {
+  flex: none;
+  height: 30px;
+  font-size: 10px;
+  color: #69766D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 第 0 列与每个 00:00 的日期标签比一列宽，居中会被滚动视口左沿裁掉一半 */
+.wv3-hour.start { justify-content: flex-start; }
+.wv3-hour.on { background: #E4F2E6; color: #145F32; font-weight: 700; }
+.wv3-chart-img { display: block; }
+
+/* ---------- 图例 / 滑块 ---------- */
+.wv3-legend { display: flex; flex-wrap: wrap; gap: 11px; font-size: 9px; color: #6D7870; padding: 10px 20px 5px; }
+.wv3-lg { display: flex; align-items: center; gap: 4px; }
+.wv3-lg-line { display: inline-block; width: 13px; border-top: 2px solid #263E35; height: 0; }
+.wv3-lg-line.dash { border-color: #A6B5AB; border-top-style: dashed; }
+.wv3-lg-line.wind { border-color: #427B72; }
+.wv3-lg-line.gust { border-color: #83A9A4; border-top-style: dashed; }
+.wv3-lg-dot { display: inline-block; width: 7px; height: 7px; border-radius: 1px; background: #69A5C6; }
+.wv3-scrub { display: flex; align-items: center; gap: 11px; padding: 10px 15px 6px; }
+.wv3-step { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; flex: none; }
+.wv3-step.off { opacity: .25; }
+.wv3-slider { flex: 1; min-width: 0; margin: 0; }
+.wv3-hint { display: block; text-align: center; font-size: 10px; color: #859087; padding-bottom: 15px; }
+
+/* ---------- 分区 ---------- */
+.wv3-section { padding: 21px 20px; border-top: 1px solid var(--w-line); }
+.wv3-sec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 13px; }
+.wv3-h2 { font-size: 16px; font-weight: 700; letter-spacing: -.3px; }
+.wv3-sec-meta { font-size: 10px; color: #758078; }
+.wv3-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px 10px; }
+.wv3-cell { min-width: 0; }
+.wv3-cell-label { display: block; font-size: 10px; color: #758078; margin-bottom: 6px; }
+.wv3-cell-value { display: block; font-size: 17px; font-weight: 600; letter-spacing: -.3px; word-break: break-all; }
+.wv3-cell-unit { font-size: 10px; font-weight: 400; color: #6B776F; }
+
+/* ---------- 跳转行 ---------- */
+.wv3-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 17px 20px;
+  border-top: 1px solid var(--w-line);
+  min-height: 44px;
+}
+.wv3-link-title { display: block; font-size: 13px; font-weight: 600; }
+.wv3-link-sub { display: block; font-size: 10px; color: #738077; margin-top: 5px; }
+.wv3-link { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--w-green); padding: 8px 0; }
+/* 云层的「读图说明」是灰色 10px 的辅助入口；「如何判断」仍按章节头用绿色 11px */
+.wv3-link-quiet { font-size: 10px; color: #738077; }
+.wv3-retry-link { margin: 4px 20px 0; padding: 10px 0; }
+
+/* ---------- 云层 ---------- */
+.wv3-cloud-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 20px 8px; }
+.wv3-cloud-stage { padding: 2px 0 0; background: var(--w-bg); }
+.wv3-cloud-img { width: 100%; display: block; }
+.wv3-cloud-readout { padding: 10px 20px 0; }
+.wv3-cloud-r1 { display: block; font-size: 12px; font-weight: 600; }
+.wv3-cloud-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin-top: 5px; }
+.wv3-cloud-r2 { font-size: 11px; color: #4C5F51; }
+.wv3-cloud-r3 { font-size: 11px; color: var(--w-green); }
+.wv3-cloud-r4 { display: block; font-size: 10px; color: #758078; margin-top: 4px; }
+.wv3-cloud-scale { display: flex; align-items: center; gap: 7px; padding: 12px 20px 0; font-size: 9px; color: #6C776E; }
+.wv3-ramp { width: 96px; height: 7px; border-radius: 2px; background: linear-gradient(90deg, #F0F2EF, #C4CCC3, #7E8C80, #354C3D); }
+/* 图例里的小色标复用同一条色阶（不新开渐变）；逐时云的单元格按云量取同一组四色的插值 */
+.wv3-lg-cloud { align-items: center; gap: 6px; }
+.wv3-lg-scale { display: flex; flex-direction: column; gap: 2px; }
+/* 三个刻度必须落在真实位置上：CSS 四站渐变把 #C4CCC3→#7E8C80 铺在 33.3%–66.7%，
+   而 cloudShade 在同一段里线性插值 ⇒ 色带正中的颜色恰好是 50% 的云量，50 写在正中不是凑排版。 */
+.wv3-lg-ticks { display: flex; justify-content: space-between; width: 96px; position: relative; }
+/* 中点必须真的落在条带正中。写成 flex:1 时中间格拿到的是「两端标签之间的剩余空间」
+   （实测中心 123.2，条带中点 128，偏左 4.8px）；脱离文档流 + left:50% 才等于 96/2。 */
+.wv3-lg-ticks text:nth-child(2) { position: absolute; left: 50%; transform: translateX(-50%); }
+.wv3-cloud-range { margin-left: auto; font-size: 9px; color: #6C776E; }
+.wv3-cloud-elev { padding: 8px 20px 0; }
+.wv3-cloud-elev-line { display: block; font-size: 11px; color: #365B3B; }
+.wv3-cloud-elev-note { display: block; font-size: 10px; color: #758078; margin-top: 3px; }
+
+/* ---------- 日月 ---------- */
+.wv3-sun { padding: 21px 20px 0; }
+.wv3-sun-title { font-size: 18px; font-weight: 700; }
+.wv3-sun-sub { display: block; font-size: 11px; color: #738077; margin-top: 6px; }
+.wv3-sun-arc { width: 100%; height: auto; margin: 9px 0 4px; display: block; }
+.wv3-sun-facts { display: grid; grid-template-columns: repeat(3, 1fr); padding: 6px 0 20px; }
+.wv3-sun-fact { text-align: center; border-right: 1px solid var(--w-line); }
+.wv3-sun-fact:last-child { border-right: 0; }
+.wv3-fact-b { display: block; font-size: 17px; font-weight: 600; }
+.wv3-fact-l { display: block; font-size: 10px; color: #788278; margin-top: 6px; }
+.wv3-events { display: grid; gap: 17px; }
+.wv3-event { display: flex; gap: 16px; align-items: flex-start; }
+.wv3-event-time { width: 44px; flex: none; font-size: 12px; font-weight: 600; color: #65725F; padding-top: 1px; }
+.wv3-event-body { flex: 1; min-width: 0; }
+.wv3-event-title { font-size: 12px; font-weight: 600; }
+.wv3-event-note { display: block; font-size: 10px; line-height: 1.65; color: #7A847A; margin-top: 3px; }
+.wv3-sky-card { padding: 14px 0; border-bottom: 1px solid var(--w-line); }
+.wv3-sky-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.wv3-sky-name { font-size: 13px; font-weight: 600; }
+.wv3-pill { font-size: 10px; border-radius: 4px; background: #F1F3EE; padding: 4px 7px; color: #727B6C; }
+.wv3-pill.possible { background: var(--w-green-soft); color: #2C5A38; }
+.wv3-pill.excluded { background: #F3F1EE; color: #8A8578; }
+.wv3-pill.unknown { background: #F4F5F1; color: #6F7369; }
+.wv3-sky-text { display: block; font-size: 11px; line-height: 1.7; color: #788171; margin-top: 7px; }
+.wv3-sky-look { display: block; font-size: 11px; line-height: 1.7; color: #365B3B; margin-top: 5px; }
+.wv3-sky-stars { display: block; font-size: 11px; color: #A87928; margin-top: 4px; }
+.wv3-overall { margin-top: 14px; padding: 12px 13px; border-radius: 8px; background: var(--w-pale); }
+.wv3-overall-label { font-size: 10px; color: #758078; }
+.wv3-overall-value { display: block; font-size: 16px; font-weight: 600; margin-top: 4px; }
+
+/* ---------- 沿途 ---------- */
+.wv3-plan-ctx { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 15px 20px 4px; }
+.wv3-plan-main { min-width: 0; }
+.wv3-plan-name { display: block; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.wv3-plan-meta { display: block; font-size: 10px; color: #708076; margin-top: 5px; }
+.wv3-notice { display: flex; align-items: center; gap: 8px; margin: 10px 20px; padding: 11px 13px; border-radius: 8px; font-size: 11px; line-height: 1.6; }
+.wv3-notice.info { background: #F2F6F0; color: #506650; }
+.wv3-notice.warn { background: #F6F3EA; color: #7A5C1E; }
+.wv3-flow { margin: 6px 20px 4px; }
+.wv3-stop {
+  display: flex;
+  gap: 14px;
+  width: 100%;
+  padding: 15px 0 15px 2px;
+  border-bottom: 1px solid var(--w-line);
+  position: relative;
+  box-sizing: border-box;
+}
+.wv3-stop::before {
+  content: "";
+  position: absolute;
+  left: 31px;
+  top: 14px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--w-line);
+}
+.wv3-stop:last-child::before { display: none; }
+.wv3-stop-time { width: 49px; flex: none; padding-top: 2px; }
+.wv3-stop-clock { display: block; font-size: 12px; font-weight: 600; color: #3D4B41; }
+.wv3-stop-time-sub { display: block; font-size: 9px; color: #8B958C; margin-top: 4px; }
+.wv3-stop-body { flex: 1; min-width: 0; position: relative; }
+.wv3-stop-body::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  background: #7C9A83;
+  box-shadow: 0 0 0 1px #7C9A83;
+}
+.wv3-stop-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 600; color: #2C3C31; }
+.wv3-stop-meta { display: block; font-size: 10px; color: #7B857C; margin-top: 4px; }
+.wv3-stop-weather { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 9px; }
+.wv3-stop-temp { font-size: 14px; font-weight: 600; }
+.wv3-stop-tag { font-size: 10px; color: #6D7A70; background: #F2F5F1; border-radius: 4px; padding: 3px 6px; }
+.wv3-stop-note { display: block; font-size: 10px; color: #7B857C; margin-top: 7px; line-height: 1.6; }
+.wv3-plan-actions { display: grid; gap: 8px; padding: 14px 20px 6px; }
+
+/* ---------- 弹层内容 ---------- */
+.wv3-node-list { padding-bottom: 6px; }
+.wv3-node-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 0;
+  min-height: 44px;
+  border-bottom: 1px solid var(--w-line);
+}
+.wv3-node-info { min-width: 0; }
+.wv3-node-opt-name { display: block; font-size: 13px; }
+.wv3-node-opt-sub { display: block; font-size: 11px; color: #7D877C; margin-top: 5px; }
+.wv3-help { padding-bottom: 4px; }
+.wv3-help-body { display: block; font-size: 13px; line-height: 1.9; color: #68766A; white-space: pre-wrap; }

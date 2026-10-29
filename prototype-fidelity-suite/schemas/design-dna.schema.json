@@ -1,0 +1,235 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/design-dna.schema.json",
+  "title": "design-dna",
+  "description": "Extracted design knowledge from a set of rendered prototype screens. Every rule is a claim with its own provenance (measured | observed | inferred), the pages it holds on, a mechanically derived scope, a confidence, and an exception list. Nothing here is a specification until a human sets confirmation.status away from 'candidate'.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "generatedAt", "generator", "viewport", "sources", "fingerprints", "coverage", "summary", "rules", "warnings", "boundaries"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "kind": { "const": "design-dna" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "generator": {
+      "type": "object",
+      "required": ["name", "version", "sourcesPath"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "$ref": "#/definitions/schemaVersion" },
+        "sourcesPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "viewport": {
+      "type": "object",
+      "required": ["width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/sourcePage" }
+    },
+    "fingerprints": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/definitions/fingerprint" }
+    },
+    "coverage": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/coverage" }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["rules", "byCategory", "byScope", "byKind", "byConfidence", "confirmed", "candidates"],
+      "additionalProperties": false,
+      "properties": {
+        "rules": { "type": "integer", "minimum": 0 },
+        "byCategory": { "$ref": "#/definitions/countMap" },
+        "byScope": { "$ref": "#/definitions/countMap" },
+        "byKind": { "$ref": "#/definitions/countMap" },
+        "byConfidence": { "$ref": "#/definitions/countMap" },
+        "confirmed": { "type": "integer", "minimum": 0 },
+        "candidates": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/rule" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "boundaries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    }
+  },
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+
+    "sourcePage": {
+      "type": "object",
+      "required": ["id", "family", "file", "root", "states", "fingerprint"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "family": { "type": "string", "minLength": 1 },
+        "file": { "type": "string", "minLength": 1 },
+        "root": { "type": "string", "minLength": 1 },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "nodeCount"],
+            "additionalProperties": true,
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "nodeCount": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "fingerprint": { "oneOf": [{ "$ref": "#/definitions/fingerprint" }, { "type": "null" }] }
+      }
+    },
+
+    "fingerprint": {
+      "type": "object",
+      "required": ["sha256", "bytes"],
+      "additionalProperties": false,
+      "properties": {
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "coverage": {
+      "type": "object",
+      "required": ["page", "visibleNodes", "inRepeatedComponent", "share", "singletonSignatures", "singletonTotal"],
+      "additionalProperties": false,
+      "properties": {
+        "page": { "type": "string", "minLength": 1 },
+        "visibleNodes": { "type": "integer", "minimum": 0 },
+        "inRepeatedComponent": { "type": "integer", "minimum": 0 },
+        "share": { "type": "number", "minimum": 0, "maximum": 1 },
+        "singletonSignatures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["signature", "nodes"],
+            "additionalProperties": false,
+            "properties": {
+              "signature": { "type": "string", "minLength": 1 },
+              "nodes": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "singletonTotal": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "countMap": {
+      "type": "object",
+      "additionalProperties": { "type": "integer", "minimum": 0 }
+    },
+
+    "rule": {
+      "type": "object",
+      "required": ["id", "category", "kind", "statement", "value", "evidence", "support", "scope", "confidence", "confirmation", "exceptions"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z0-9][a-z0-9-]*)+$" },
+        "category": { "enum": ["token", "component", "page", "interaction", "principle", "exception"] },
+        "kind": {
+          "enum": ["measured", "observed", "inferred"],
+          "description": "measured = read from the rendered page; observed = a regularity counted across pages; inferred = derived from measurements. A rule never upgrades its own kind."
+        },
+        "statement": { "type": "string", "minLength": 1 },
+        "value": { "type": "object" },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "description": "A rule without a source is not a finding. The extractor refuses to emit one.",
+          "items": { "$ref": "#/definitions/evidence" }
+        },
+        "support": { "$ref": "#/definitions/support" },
+        "scope": { "$ref": "#/definitions/scope" },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "confirmation": { "$ref": "#/definitions/confirmation" },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["note"],
+            "additionalProperties": true,
+            "properties": { "note": { "type": "string", "minLength": 1 } }
+          }
+        },
+        "notes": { "type": "string" }
+      }
+    },
+
+    "evidence": {
+      "type": "object",
+      "required": ["type", "source"],
+      "additionalProperties": true,
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "page": { "type": ["string", "null"] },
+        "state": { "type": ["string", "null"] },
+        "source": { "type": "string", "minLength": 1 },
+        "selector": { "type": ["string", "null"] },
+        "prop": { "type": ["string", "null"] },
+        "value": { "type": ["string", "number", "null"] },
+        "path": { "type": "string" }
+      }
+    },
+
+    "support": {
+      "type": "object",
+      "required": ["pages", "instances"],
+      "additionalProperties": true,
+      "properties": {
+        "pages": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "states": { "type": "array", "items": { "type": "string" } },
+        "instances": { "type": "integer", "minimum": 1 },
+        "selectors": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "scope": {
+      "type": "object",
+      "required": ["level", "pages", "families", "rationale"],
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "enum": ["global", "page-family", "page"],
+          "description": "Derived by counting distinct pages and families, never by judging importance. 'global' additionally requires >= 2 families, so a rule seen only inside the weather family can never be promoted to a house-wide norm by accident."
+        },
+        "pages": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "families": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "rationale": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "confirmation": {
+      "type": "object",
+      "required": ["status", "by", "at"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "enum": ["candidate", "confirmed", "rejected"] },
+        "by": { "type": ["string", "null"] },
+        "at": { "type": ["string", "null"], "format": "date-time" }
+      }
+    }
+  }
+}

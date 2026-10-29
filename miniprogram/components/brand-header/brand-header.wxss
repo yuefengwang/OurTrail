@@ -25,6 +25,27 @@
   letter-spacing: -0.2px;
   color: var(--forest);
 }
+
+/* 返回（可选）：与原生导航栏返回同位同义。命中区 44×44（--touch-target 的地板），
+   图标本身 20px 靠左，跟页面 20px 内容网格对齐——居中会把箭头推出网格。 */
+.brand-header__back {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.brand-header__back--tap { opacity: .6; }
+.brand-header__mark { flex: none; display: flex; align-items: center; }
+
+/* plain（天气模块）：它整页是白底无卡片，纸面条会在白底上割一道灰边 ⇒
+   白底、无分隔线、词标用 --ink。不传 variant 的页面（home/me/notices）一分不动。 */
+.brand-header--plain .brand-header__bar {
+  background: var(--white);
+  border-bottom: 0;
+}
+.brand-header--plain .brand-header__word { color: var(--ink); }
 .brand-header__dot {
   color: var(--line);
   font-size: 14px;

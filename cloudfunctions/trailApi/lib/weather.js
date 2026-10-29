@@ -20,8 +20,14 @@ const HOURLY = [
   'temperature_700hPa', 'relative_humidity_700hPa',
 ]
 const CLOUD_LEVELS = [1000, 975, 950, 925, 900, 850, 825, 800, 775, 750, 725, 700, 675, 650, 625, 600, 575, 550, 525, 500, 475, 450]
+/* 剖面显示用的更高气压层（450hPa≈6,700m，400hPa≈7,600m，350hPa≈8,600m，300hPa≈9,700m @30°N；
+   实测中国境内 300hPa 高度 8,498–9,765m）。
+   只喂 cloudLevels（云层剖面图）；cloudBandAt 的业务成带判据仍走 CLOUD_LEVELS
+   —— 业务扫描范围是独立决策（铁律 28），抬显示天花板不得顺带改天相结论。
+   300 是给高原/雪山场景的顶：珠峰顶 ≈323hPa，再高的卷云对徒步决策没有信息量。 */
+const PROFILE_CLOUD_LEVELS = CLOUD_LEVELS.concat([400, 350, 300])
 // 气压层剖面：云量（相对湿度近似）+ 位势高度（换算层海拔 m ASL）
-for (const lv of CLOUD_LEVELS) {
+for (const lv of PROFILE_CLOUD_LEVELS) {
   HOURLY.push('cloud_cover_' + lv + 'hPa', 'geopotential_height_' + lv + 'hPa')
 }
 const DAILY = [
@@ -127,6 +133,81 @@ function cloudBandAt(h, i) {
   }
 }
 
+/* ---------- 日级代表性现象码（2026-10-28） ---------- */
+// provider 的 daily.weather_code 是全天 24h 内最严重的码：折多山 10-28 只有深夜是雾，
+// 整日徽标就被染成「雾」，而当天白昼日照 11 小时。日徽标回答的是「这一天出门会遇到什么」，
+// 因此按**白昼窗口**重取代表码；`days[].code` 原值保留（安全条款仍读它）。
+// 口径与理由：docs/superpowers/specs/2026-10-28-weather-day-code-design.md §2
+
+// 雾的三证门：provider 给 45/48 还不够——实测 43 个雾小时里 19 个 RH<90%
+// （最低 51%；10-28 00:00 能见度 0.54 km 但 RH 67%），只凭能见度会把干霾/低云读成雾。
+// 90 与 1 km 是本次唯一新增的数字，取在被证伪簇（67–89）与被证实簇（91–100）之间。
+const FOG_CODES = [45, 48]
+const FOG_RH_MIN = 90
+const FOG_VIS_KM_MAX = 1
+
+function fogConfirmed(x) {
+  if (!x || FOG_CODES.indexOf(Number(x.code)) === -1) return false
+  return Number.isFinite(x.rh) && x.rh >= FOG_RH_MIN
+    && Number.isFinite(x.visibility) && x.visibility < FOG_VIS_KM_MAX
+}
+
+// 恶劣天气一票否决：窗口内只要有雷/冻雨/雪，就不许被众数投掉。
+// 跨类别取最危险的一类（冻雨比雪更危险：路面结冰），同类取较大码。
+const SEVERE_GROUPS = [
+  { rank: 3, codes: [95, 96, 99] },
+  { rank: 2, codes: [66, 67, 56, 57] },
+  { rank: 1, codes: [71, 73, 75, 77, 85, 86] },
+]
+
+function severeCodeAmong(hours) {
+  let best = null
+  for (const g of SEVERE_GROUPS) {
+    const hit = hours.filter(x => g.codes.indexOf(Number(x.code)) !== -1)
+    if (!hit.length) continue
+    const code = Math.max.apply(null, hit.map(x => Number(x.code)))
+    if (!best || g.rank > best.rank) best = { rank: g.rank, code }
+  }
+  return best ? best.code : null
+}
+
+// 极昼/极夜或 provider 缺字段时回退固定窗口：窗口只决定徽标，不参与安全条款。
+const DAY_WINDOW_FALLBACK = ['08:00', '18:00']
+
+function dayWindow(sunrise, sunset) {
+  const ok = typeof sunrise === 'string' && typeof sunset === 'string'
+    && /^\d{2}:\d{2}$/.test(sunrise) && /^\d{2}:\d{2}$/.test(sunset)
+    && sunrise < sunset
+  return ok ? [sunrise, sunset] : DAY_WINDOW_FALLBACK
+}
+
+/**
+ * 白昼代表性现象码。hours 需含 {t:'HH:mm', code, rh, visibility(km)}——
+ * hourView 逐时对象与 fetchForecast 内部的轻量投影同形，两处共用本函数。
+ * 回退链：窗口内无小时 → provider 日码；雾码缺佐证 → 不参与投票。
+ */
+function representativeDayCode(hours, sunrise, sunset, providerCode) {
+  const win = dayWindow(sunrise, sunset)
+  const inWindow = (hours || []).filter(x => x && x.t >= win[0] && x.t <= win[1])
+  const pool = inWindow.filter(x => FOG_CODES.indexOf(Number(x.code)) === -1 || fogConfirmed(x))
+  if (!pool.length) return providerCode
+  const severe = severeCodeAmong(pool)
+  if (severe !== null) return severe
+  const counts = new Map()
+  for (const x of pool) {
+    const c = Number(x.code)
+    if (!Number.isFinite(c)) continue
+    counts.set(c, (counts.get(c) || 0) + 1)
+  }
+  let bestCode = null
+  let bestCount = 0
+  for (const [code, n] of counts) {
+    // 并列取较大码：不替天气说好话（多云优先于晴）
+    if (n > bestCount || (n === bestCount && code > bestCode)) { bestCode = code; bestCount = n }
+  }
+  return bestCode === null ? providerCode : bestCode
+}
+
 // 返回 { elevation, days, detail, series, cloudLevels }；detail 为所选日 24h 全量（含 band）。
 async function fetchForecast(lat, lng, date) {
   const diff = Math.round((Date.parse(date) - Date.parse(cnToday())) / 86400000)
@@ -164,20 +245,42 @@ async function fetchForecast(lat, lng, date) {
     return s && s[1] ? Math.round(s[0] / s[1]) : 0
   }
 
-  const outDays = (d.time || []).map((t, i) => ({
-    date: t,
-    code: (d.weather_code || [])[i],
-    tMax: Math.round((d.temperature_2m_max || [])[i]),
-    tMin: Math.round((d.temperature_2m_min || [])[i]),
-    windMax: Math.round((d.wind_speed_10m_max || [])[i]),
-    precipSum: Math.round(((d.precipitation_sum || [])[i] || 0) * 10) / 10,
-    precipProbMax: (d.precipitation_probability_max || [])[i] || 0,
-    precipHours: (d.precipitation_hours || [])[i] || 0,
-    sunrise: ((d.sunrise || [])[i] || '').slice(11, 16),
-    sunset: ((d.sunset || [])[i] || '').slice(11, 16),
-    uvMax: (d.uv_index_max || [])[i],
-    cloud: { low: mean('low', t), mid: mean('mid', t), high: mean('high', t) },
+  // 日码投票只需要 code/rh/visibility，不重算 band/profile（轻量投影与 hourView 共用
+  // visibilityKm 与 fogConfirmed，判据不会两处各写一遍）。
+  const hourFacts = times.map((t, i) => ({
+    t: t.slice(11, 16),
+    code: (h.weather_code || [])[i],
+    rh: (h.relative_humidity_2m || [])[i],
+    visibility: visibilityKm(h, i),
   }))
+  const factsByDate = {}
+  for (let i = 0; i < times.length; i++) {
+    const day = times[i].slice(0, 10)
+    if (!factsByDate[day]) factsByDate[day] = []
+    factsByDate[day].push(hourFacts[i])
+  }
+
+  const outDays = (d.time || []).map((t, i) => {
+    const code = (d.weather_code || [])[i]
+    const sunrise = ((d.sunrise || [])[i] || '').slice(11, 16)
+    const sunset = ((d.sunset || [])[i] || '').slice(11, 16)
+    return {
+      date: t,
+      code,
+      // 白昼代表性现象码（additive）：日徽标读它；`code` 原值保留（雷暴/雪的安全条款仍读 code）
+      dayCode: representativeDayCode(factsByDate[t], sunrise, sunset, code),
+      tMax: Math.round((d.temperature_2m_max || [])[i]),
+      tMin: Math.round((d.temperature_2m_min || [])[i]),
+      windMax: Math.round((d.wind_speed_10m_max || [])[i]),
+      precipSum: Math.round(((d.precipitation_sum || [])[i] || 0) * 10) / 10,
+      precipProbMax: (d.precipitation_probability_max || [])[i] || 0,
+      precipHours: (d.precipitation_hours || [])[i] || 0,
+      sunrise,
+      sunset,
+      uvMax: (d.uv_index_max || [])[i],
+      cloud: { low: mean('low', t), mid: mean('mid', t), high: mean('high', t) },
+    }
+  })
 
   const detail = []
   for (let i = 0; i < times.length; i++) {
@@ -211,7 +314,7 @@ function buildCloudLevels(times, h, start, count) {
     const slice = times.slice(start, start + count)
     if (slice.length < count) return null
     const levels = []
-    for (const lv of CLOUD_LEVELS) {
+    for (const lv of PROFILE_CLOUD_LEVELS) {
       const ccArr = h['cloud_cover_' + lv + 'hPa'] || []
       const gtArr = h['geopotential_height_' + lv + 'hPa'] || []
       const altitudes = []
@@ -253,10 +356,19 @@ function profileLevel(h, lv, i) {
   return { t: tOK ? t : null, rh: rhOK ? rh : null }
 }
 
+// 能见度 m → km（保留 1 位小数）。逐时投影与日级雾门共用，避免两处各写一遍取整。
+function visibilityKm(h, i) {
+  const v = (h.visibility || [])[i]
+  return Number.isFinite(v) ? Math.round(v / 100) / 10 : null
+}
+
 function hourView(times, h, i) {
   const p925 = profileLevel(h, 925, i)
   const p850 = profileLevel(h, 850, i)
   const p700 = profileLevel(h, 700, i)
+  const code = (h.weather_code || [])[i]
+  const rh = (h.relative_humidity_2m || [])[i]
+  const visibility = visibilityKm(h, i)
   return {
     t: times[i].slice(11, 16),
     d: times[i].slice(0, 10),
@@ -265,12 +377,14 @@ function hourView(times, h, i) {
     pop: (h.precipitation_probability || [])[i],
     precip: (h.precipitation || [])[i],
     showers: (h.showers || [])[i],
-    code: (h.weather_code || [])[i],
+    code,
+    // 雾的佐证结论（additive）：逐时 code 不回改，本字段只给「入云（雾）」提示用
+    fog: fogConfirmed({ code, rh, visibility }),
     wind: (h.wind_speed_10m || [])[i],
     gust: (h.wind_gusts_10m || [])[i],
     windDir: (h.wind_direction_10m || [])[i],
     // 相对湿度：彩虹/雾/露的水分信号（降水为 0 时高湿仍可能有雾或虹）
-    rh: (h.relative_humidity_2m || [])[i],
+    rh,
     pressure: (h.surface_pressure || [])[i],
     dewPoint: (h.dew_point_2m || [])[i],
     cloud: {
@@ -281,7 +395,7 @@ function hourView(times, h, i) {
       high: (h.cloud_cover_high || [])[i],
     },
     uv: (h.uv_index || [])[i],
-    visibility: Number.isFinite((h.visibility || [])[i]) ? Math.round((h.visibility || [])[i] / 100) / 10 : null,
+    visibility,
     freezing: (h.freezing_level_height || [])[i],
     // 边界层高度（m）：霾/扩散的辅助信号，可选
     pblh: (h.boundary_layer_height || [])[i],
@@ -363,5 +477,5 @@ function pointResponse(forecast) {
 module.exports = {
   fetchForecast, fetchJson, cnToday, gcjToWgs, cloudBandAt, hourView, PROVIDER, PROFILE_LEVELS,
   isWeatherFreeAction, weatherCacheKey, resolvePointQuery, pointResponse,
-  buildCloudLevels,
+  buildCloudLevels, fogConfirmed, representativeDayCode,
 }

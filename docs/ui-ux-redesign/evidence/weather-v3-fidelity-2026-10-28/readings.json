@@ -1,0 +1,267 @@
+{
+  "checks": [
+    {
+      "name": "屏 1 进入（screen=home）",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "屏 1 有 brand-header 组件",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "屏 1 品牌条 bar 在 DOM",
+      "pass": true,
+      "extra": true
+    },
+    {
+      "name": "屏 1 没有返回键（根屏）",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "屏 1 显示品牌 mark（不是返回键）",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "屏 1 三个 home tab",
+      "pass": true,
+      "extra": 3
+    },
+    {
+      "name": "屏 2 进入（screen=detail）",
+      "pass": true,
+      "extra": "峨眉山"
+    },
+    {
+      "name": "屏 2 有 weather-detail 组件",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "真实数据 · 4 个视图 tab",
+      "pass": true,
+      "extra": [
+        "逐时预报",
+        "云层剖面",
+        "沿途天气",
+        "日月天相"
+      ]
+    },
+    {
+      "name": "真实数据 · 日期条每行带 code（不是从中文标签猜）",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "真实数据 · 有图标时必有 code 映射",
+      "pass": true,
+      "extra": [
+        "51:rain",
+        "53:rain",
+        "51:rain",
+        "51:rain",
+        "53:rain"
+      ]
+    },
+    {
+      "name": "[B] 屏 2 有返回键",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "[B] 返回键命中区 ≥44×44",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "[B] 屏 2 品牌条为 plain（白底、无下边框）",
+      "pass": true,
+      "extra": "rgb(255, 255, 255)"
+    },
+    {
+      "name": "[B] 返回态不显示品牌 mark",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "[B] 四视图 tabs 在 DOM",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "[B] tabs 是 sticky",
+      "pass": true,
+      "extra": "sticky"
+    },
+    {
+      "name": "[B] tabs 偏移 = brand-header 实测高度",
+      "pass": true,
+      "extra": {
+        "top": "87px",
+        "chromeHeight": 87
+      }
+    },
+    {
+      "name": "[B] 对照：日期卡文档位置不随滚动变化（offset 为文档坐标）",
+      "pass": true,
+      "extra": {
+        "day0": {
+          "left": 15,
+          "top": 169.1953125
+        },
+        "day1": {
+          "left": 15,
+          "top": 169.1953125
+        }
+      }
+    },
+    {
+      "name": "[B] tabs 文档位置 = 实测高度 + 滚动量（真的吸住）",
+      "pass": true,
+      "extra": {
+        "after": 287,
+        "chromeHeight": 87
+      }
+    },
+    {
+      "name": "[B] 日期条图标数 = 有 code 映射的行数",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "[B] 读数条有图标当且仅当 readout.icon 非空",
+      "pass": true,
+      "extra": {
+        "dom": 1,
+        "data": "rain"
+      }
+    },
+    {
+      "name": "注入载荷渲染完成（5 日卡、起点=今天）",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "日期条出现 5 类图标（sun/cloud/rain/snow/storm）",
+      "pass": true,
+      "extra": [
+        "sun",
+        "cloud",
+        "rain",
+        "snow",
+        "storm"
+      ]
+    },
+    {
+      "name": "读数条图标来自逐时 code（13:00=95 ⇒ storm）",
+      "pass": true,
+      "extra": "storm"
+    },
+    {
+      "name": "污染自证：真实与注入两例读数不同（否则缓存/旧实例在冒充）",
+      "pass": true,
+      "extra": {
+        "real": "",
+        "inj": ""
+      }
+    },
+    {
+      "name": "[C] 屏 2 有返回键",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "[C] 返回键命中区 ≥44×44",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "[C] 屏 2 品牌条为 plain（白底、无下边框）",
+      "pass": true,
+      "extra": "rgb(255, 255, 255)"
+    },
+    {
+      "name": "[C] 返回态不显示品牌 mark",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "[C] 四视图 tabs 在 DOM",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "[C] tabs 是 sticky",
+      "pass": true,
+      "extra": "sticky"
+    },
+    {
+      "name": "[C] tabs 偏移 = brand-header 实测高度",
+      "pass": true,
+      "extra": {
+        "top": "87px",
+        "chromeHeight": 87
+      }
+    },
+    {
+      "name": "[C] 对照：日期卡文档位置不随滚动变化（offset 为文档坐标）",
+      "pass": true,
+      "extra": {
+        "day0": {
+          "left": 15,
+          "top": 169.1953125
+        },
+        "day1": {
+          "left": 15,
+          "top": 169.1953125
+        }
+      }
+    },
+    {
+      "name": "[C] tabs 文档位置 = 实测高度 + 滚动量（真的吸住）",
+      "pass": true,
+      "extra": {
+        "after": 287,
+        "chromeHeight": 87
+      }
+    },
+    {
+      "name": "[C] 日期条图标数 = 有 code 映射的行数",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "[C] 读数条有图标当且仅当 readout.icon 非空",
+      "pass": true,
+      "extra": {
+        "dom": 1,
+        "data": "storm"
+      }
+    },
+    {
+      "name": "D2 真实 buildRouteFlow 给两个停靠点都配了 icon",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "D2 路线详情进入且天气就绪",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "D2 两个停靠点都渲染出图标",
+      "pass": true,
+      "extra": 2
+    },
+    {
+      "name": "D2 沿途图标 16px",
+      "pass": true,
+      "extra": null
+    }
+  ],
+  "ok": true,
+  "route": "NOT_RUN:no-plan"
+}

@@ -1,0 +1,184 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "interaction-contract",
+  "pageId": "weather-hub-home",
+  "generatedAt": "2026-10-28T14:20:50.213Z",
+  "driver": {
+    "adapter": "wechat-miniprogram",
+    "endpoint": "ws://127.0.0.1:9421",
+    "verification": "real-action-and-observation"
+  },
+  "checks": [
+    {
+      "id": "tab-points",
+      "title": "切到「常用地点」：激活 tab 与列表态一起变",
+      "steps": [
+        {
+          "tap": {
+            "selector": ".wh-tab",
+            "index": 1
+          }
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "expect": {
+        "dataEquals": {
+          "homeTab": "points"
+        },
+        "textIncludes": {
+          "selector": ".wh-tab.on",
+          "text": "常用地点"
+        }
+      },
+      "screenshot": true,
+      "status": "PASS",
+      "observed": "ok data.homeTab === \"points\" → points | ok text(.wh-tab.on) includes \"常用地点\" → 常用地点",
+      "assertions": [
+        {
+          "assertion": "data.homeTab === \"points\"",
+          "pass": true,
+          "observed": "points"
+        },
+        {
+          "assertion": "text(.wh-tab.on) includes \"常用地点\"",
+          "pass": true,
+          "observed": "常用地点"
+        }
+      ],
+      "screenshotPath": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\pilot-injected\\interaction\\tab-points.png",
+      "error": null,
+      "verification": "real-action-and-observation"
+    },
+    {
+      "id": "tab-routes",
+      "title": "切到「共用路线」：列表进入路线态",
+      "steps": [
+        {
+          "tap": {
+            "selector": ".wh-tab",
+            "index": 2
+          }
+        },
+        {
+          "wait": 400
+        }
+      ],
+      "expect": {
+        "dataEquals": {
+          "homeTab": "routes"
+        }
+      },
+      "screenshot": true,
+      "status": "PASS",
+      "observed": "ok data.homeTab === \"routes\" → routes",
+      "assertions": [
+        {
+          "assertion": "data.homeTab === \"routes\"",
+          "pass": true,
+          "observed": "routes"
+        }
+      ],
+      "screenshotPath": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\pilot-injected\\interaction\\tab-routes.png",
+      "error": null,
+      "verification": "real-action-and-observation"
+    },
+    {
+      "id": "manual-dialog",
+      "title": "输入经纬度入口：对话框打开且标题正确",
+      "steps": [
+        {
+          "tap": {
+            "selector": ".wh-row-btn",
+            "index": 0
+          }
+        },
+        {
+          "wait": 600
+        }
+      ],
+      "expect": {
+        "dataEquals": {
+          "manualOpen": true
+        },
+        "exists": ".overlay--dialog",
+        "textIncludes": {
+          "selector": ".overlay__title",
+          "text": "输入经纬度"
+        }
+      },
+      "screenshot": true,
+      "status": "PASS",
+      "observed": "ok data.manualOpen === true → true | ok exists .overlay--dialog → true | ok text(.overlay__title) includes \"输入经纬度\" → 输入经纬度",
+      "assertions": [
+        {
+          "assertion": "data.manualOpen === true",
+          "pass": true,
+          "observed": true
+        },
+        {
+          "assertion": "exists .overlay--dialog",
+          "pass": true,
+          "observed": true
+        },
+        {
+          "assertion": "text(.overlay__title) includes \"输入经纬度\"",
+          "pass": true,
+          "observed": "输入经纬度"
+        }
+      ],
+      "screenshotPath": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\pilot-injected\\interaction\\manual-dialog.png",
+      "error": null,
+      "verification": "real-action-and-observation"
+    },
+    {
+      "id": "manual-close",
+      "title": "关闭经纬度对话框：状态复位",
+      "steps": [
+        {
+          "tap": {
+            "selector": ".wh-row-btn",
+            "index": 0
+          }
+        },
+        {
+          "wait": 500
+        },
+        {
+          "tap": {
+            "selector": ".icon-button",
+            "index": 0
+          }
+        },
+        {
+          "wait": 500
+        }
+      ],
+      "expect": {
+        "dataEquals": {
+          "manualOpen": false
+        }
+      },
+      "screenshot": false,
+      "status": "PASS",
+      "observed": "ok data.manualOpen === false → false",
+      "assertions": [
+        {
+          "assertion": "data.manualOpen === false",
+          "pass": true,
+          "observed": false
+        }
+      ],
+      "screenshotPath": null,
+      "error": null,
+      "verification": "real-action-and-observation"
+    }
+  ],
+  "status": "PASS",
+  "reason": null,
+  "provenance": {
+    "builtBy": "pf validate",
+    "config": "pf.config.json#pages[].interactions"
+  }
+}

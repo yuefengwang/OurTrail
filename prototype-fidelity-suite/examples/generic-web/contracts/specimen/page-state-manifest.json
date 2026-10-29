@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "page-state-manifest",
+  "pageId": "specimen",
+  "generatedAt": "2026-10-29T12:27:23.260Z",
+  "states": [
+    {
+      "id": "default",
+      "note": null,
+      "injection": {
+        "declared": false,
+        "dataSource": "real",
+        "keys": []
+      },
+      "sides": {
+        "prototype": {
+          "side": "prototype",
+          "platform": "web",
+          "captured": true,
+          "dataSource": "real",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "dpr": 1,
+          "codeVersion": null,
+          "capturedAt": "2026-10-29T12:27:20.176Z",
+          "nodes": 42,
+          "screenshot": {
+            "path": "screenshot.png",
+            "sha256": "f2c1ec1013b3c86d1ad7c1fb6309872da38dc90eb51665c9c028d6ea26966ea3",
+            "width": 390,
+            "height": 844,
+            "scale": {
+              "x": 1,
+              "y": 1
+            }
+          },
+          "status": "PASS"
+        },
+        "target": {
+          "side": "target",
+          "platform": "web",
+          "captured": true,
+          "dataSource": "real",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "dpr": 1,
+          "codeVersion": null,
+          "capturedAt": "2026-10-29T12:27:23.223Z",
+          "nodes": 42,
+          "screenshot": {
+            "path": "screenshot.png",
+            "sha256": "7d2c8e4b0397cf97cf7422bd5cdde08cae67a73d50709ba44626154bb5c33f78",
+            "width": 390,
+            "height": 844,
+            "scale": {
+              "x": 1,
+              "y": 1
+            }
+          },
+          "status": "PASS"
+        }
+      },
+      "usableAsInteractionEvidence": true,
+      "status": "PASS"
+    }
+  ],
+  "coverage": {
+    "declared": 1,
+    "captured": 1,
+    "injected": 0
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json"
+  }
+}

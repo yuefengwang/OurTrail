@@ -1,0 +1,573 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/project-config.schema.json",
+  "title": "project-config",
+  "description": "The project declaration: which prototype, which target, which pages/states/pairs/interactions are in scope. This is the only human-authored contract; every other artifact is derived from it plus a capture.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "project",
+    "prototype",
+    "target",
+    "pages"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "$ref": "#/definitions/schemaVersion"
+    },
+    "project": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "prototype": {
+      "$ref": "#/definitions/sideConfig"
+    },
+    "target": {
+      "$ref": "#/definitions/sideConfig"
+    },
+    "tolerances": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "$ref": "#/definitions/tolerance"
+        },
+        "size": {
+          "$ref": "#/definitions/tolerance"
+        },
+        "gap": {
+          "$ref": "#/definitions/tolerance"
+        },
+        "font": {
+          "$ref": "#/definitions/tolerance"
+        },
+        "color": {
+          "$ref": "#/definitions/tolerance"
+        },
+        "pixelRatio": {
+          "$ref": "#/definitions/ratio"
+        },
+        "criticalPixelRatio": {
+          "$ref": "#/definitions/ratio"
+        }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/page"
+      }
+    },
+    "viewports": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/namedViewport"
+      }
+    }
+  },
+  "definitions": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "tolerance": {
+      "type": "number",
+      "minimum": 0
+    },
+    "ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "sideConfig": {
+      "type": "object",
+      "required": [
+        "adapter"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "adapter": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string"
+        },
+        "pagePath": {
+          "type": "string"
+        },
+        "viewport": {
+          "$ref": "#/definitions/viewport"
+        },
+        "frameSelector": {
+          "type": "string"
+        },
+        "waitForSelector": {
+          "type": "string"
+        },
+        "waitMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "settleMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "wsEndpoint": {
+          "type": "string"
+        },
+        "projectRoot": {
+          "type": "string"
+        }
+      }
+    },
+    "viewport": {
+      "type": "object",
+      "required": [
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "page": {
+      "type": "object",
+      "required": [
+        "id",
+        "states"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string"
+        },
+        "prototype": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "alignment": {
+          "$ref": "#/definitions/alignment"
+        },
+        "tolerances": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "selectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "targetSelectors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mappings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/mapping"
+          }
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/componentDecl"
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/sectionDecl"
+          }
+        },
+        "states": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/state"
+          }
+        },
+        "interactions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/interaction"
+          }
+        },
+        "acceptedDifferences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/acceptedDifference"
+          }
+        }
+      }
+    },
+    "alignment": {
+      "type": "object",
+      "required": [
+        "anchor",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "mapping": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string"
+        },
+        "criticality": {
+          "enum": [
+            "critical",
+            "normal"
+          ]
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "prototypeSelector": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "targetSelector": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prototypePath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "targetPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "styleProps": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "pixel": {
+          "type": "boolean"
+        },
+        "pixelMode": {
+          "enum": [
+            "exact",
+            "informational"
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dynamicText": {
+          "type": "boolean"
+        }
+      }
+    },
+    "componentDecl": {
+      "type": "object",
+      "required": [
+        "id",
+        "selectors"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string"
+        },
+        "criticality": {
+          "enum": [
+            "critical",
+            "normal"
+          ]
+        },
+        "selectors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "styleProps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "sectionDecl": {
+      "type": "object",
+      "required": [
+        "id",
+        "selector"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string"
+        },
+        "selector": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string"
+        },
+        "injectData": {
+          "type": "object"
+        },
+        "acceptedDifferences": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/acceptedDifference"
+          }
+        }
+      }
+    },
+    "acceptedDifference": {
+      "type": "object",
+      "required": [
+        "pairId",
+        "reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "pairId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "props": {
+          "type": "array",
+          "description": "Accept only these CSS declarations; any other difference in the same category stays judged.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "axis": {
+          "enum": [
+            "x",
+            "y"
+          ],
+          "description": "Accept a position/size difference on one axis only."
+        },
+        "maxAbsPx": {
+          "type": "number",
+          "minimum": 0,
+          "description": "How far the accepted difference may move before the acceptance stops covering it."
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "interaction": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "do": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/step"
+          }
+        },
+        "expect": {
+          "type": "object"
+        },
+        "screenshot": {
+          "type": "boolean"
+        },
+        "reset": {
+          "type": "boolean"
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "tap": {
+          "$ref": "#/definitions/target"
+        },
+        "input": {
+          "$ref": "#/definitions/target"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "wait": {
+          "type": "number",
+          "minimum": 0
+        },
+        "waitFor": {
+          "$ref": "#/definitions/target"
+        },
+        "timeout": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "target": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "required": [
+            "selector"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "selector": {
+              "type": "string",
+              "minLength": 1
+            },
+            "index": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    },
+    "namedViewport": {
+      "type": "object",
+      "required": [
+        "id",
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "width": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "dpr": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "device": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

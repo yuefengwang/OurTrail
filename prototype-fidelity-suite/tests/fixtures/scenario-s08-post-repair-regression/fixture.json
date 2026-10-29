@@ -1,0 +1,520 @@
+{
+  "id": "s08-post-repair-regression",
+  "class": "post-repair-regression",
+  "adversarial": true,
+  "purpose": "一次有界修复把已定位的漂移改回原型值后必须复验通过，且邻居区（r-value / r-note）前后都 PASS；反过来，两种“看起来能修好”的修法——锚点不唯一、以及修好目标却改坏邻居——都必须被拒绝或逐字节回滚，绝不能留下一个更绿的数。",
+  "requires": [
+    "playwright"
+  ],
+  "steps": [
+    {
+      "run": [
+        "verify",
+        "--project",
+        ".",
+        "--page",
+        "s08-page",
+        "--run",
+        "base"
+      ],
+      "expectExit": 1,
+      "captureStdout": "base.stdout.txt"
+    },
+    {
+      "run": [
+        "repair",
+        "--project",
+        ".",
+        "--plan",
+        "repair.json",
+        "--page",
+        "s08-page",
+        "--state",
+        "default",
+        "--run",
+        "repair"
+      ],
+      "expectExit": 0,
+      "captureStdout": "repair.stdout.txt"
+    },
+    {
+      "run": [
+        "verify",
+        "--project",
+        ".",
+        "--page",
+        "s08-page",
+        "--run",
+        "after"
+      ],
+      "expectExit": 0,
+      "captureStdout": "after.stdout.txt"
+    },
+    {
+      "run": [
+        "repair",
+        "--project",
+        ".",
+        "--plan",
+        "plan-ambiguous.json",
+        "--page",
+        "h-ambig",
+        "--state",
+        "default",
+        "--run",
+        "repair-ambig"
+      ],
+      "cwd": "harmful",
+      "expectExit": 2,
+      "captureStdout": "ambig.stdout.txt"
+    },
+    {
+      "run": [
+        "verify",
+        "--project",
+        ".",
+        "--page",
+        "h-ambig",
+        "--run",
+        "after-ambig"
+      ],
+      "cwd": "harmful",
+      "expectExit": 1,
+      "captureStdout": "ambig-verify.stdout.txt"
+    },
+    {
+      "run": [
+        "repair",
+        "--project",
+        ".",
+        "--plan",
+        "plan-shared.json",
+        "--page",
+        "h-broad",
+        "--state",
+        "default",
+        "--run",
+        "repair-broad"
+      ],
+      "cwd": "harmful",
+      "expectExit": 1,
+      "captureStdout": "broad.stdout.txt"
+    },
+    {
+      "run": [
+        "verify",
+        "--project",
+        ".",
+        "--page",
+        "h-broad",
+        "--run",
+        "after-broad"
+      ],
+      "cwd": "harmful",
+      "expectExit": 1,
+      "captureStdout": "broad-verify.stdout.txt"
+    }
+  ],
+  "checks": [
+    {
+      "file": "reports/base/visual-diff-report.json",
+      "path": "$.verdict",
+      "equals": "FAIL"
+    },
+    {
+      "file": "reports/base/visual-diff-report.json",
+      "path": "$.measurement.regionsFailing",
+      "equals": 1
+    },
+    {
+      "file": "reports/base/visual-diff-report.json",
+      "path": "$.regions[1].id",
+      "equals": "r-label"
+    },
+    {
+      "file": "reports/base/visual-diff-report.json",
+      "path": "$.regions[1].status",
+      "equals": "FAIL"
+    },
+    {
+      "file": "reports/base/visual-diff-report.json",
+      "path": "$.regions[1].categories",
+      "contains": "typography"
+    },
+    {
+      "file": "reports/base/visual-diff-report.json",
+      "path": "$.regions[1].styles[0].prop",
+      "equals": "font-size"
+    },
+    {
+      "file": "reports/base/visual-diff-report.json",
+      "path": "$.regions[2].id",
+      "equals": "r-value"
+    },
+    {
+      "file": "reports/base/visual-diff-report.json",
+      "path": "$.regions[2].status",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/base/visual-diff-report.json",
+      "path": "$.regions[3].id",
+      "equals": "r-note"
+    },
+    {
+      "file": "reports/base/visual-diff-report.json",
+      "path": "$.regions[3].status",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/base/fidelity-validation-report.json",
+      "path": "$.status",
+      "equals": "FAIL"
+    },
+    {
+      "file": "repair.stdout.txt",
+      "contains": "repair: FAIL → PASS · kept"
+    },
+    {
+      "file": "reports/after/visual-diff-report.json",
+      "path": "$.verdict",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/after/visual-diff-report.json",
+      "path": "$.measurement.regionsCompared",
+      "equals": 5
+    },
+    {
+      "file": "reports/after/visual-diff-report.json",
+      "path": "$.measurement.regionsFailing",
+      "equals": 0
+    },
+    {
+      "file": "reports/after/visual-diff-report.json",
+      "path": "$.regions[1].id",
+      "equals": "r-label"
+    },
+    {
+      "file": "reports/after/visual-diff-report.json",
+      "path": "$.regions[1].status",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/after/visual-diff-report.json",
+      "path": "$.regions[2].id",
+      "equals": "r-value"
+    },
+    {
+      "file": "reports/after/visual-diff-report.json",
+      "path": "$.regions[2].status",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/after/visual-diff-report.json",
+      "path": "$.regions[3].id",
+      "equals": "r-note"
+    },
+    {
+      "file": "reports/after/visual-diff-report.json",
+      "path": "$.regions[3].status",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/after/fidelity-validation-report.json",
+      "path": "$.status",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/after/fidelity-validation-report.json",
+      "path": "$.scorecard.criticalFailures",
+      "length": 0
+    },
+    {
+      "file": "reports/after/fidelity-validation-report.json",
+      "path": "$.scorecard.nonCriticalFailures",
+      "length": 0
+    },
+    {
+      "file": "reports/after/fidelity-validation-report.json",
+      "path": "$.interaction.checks[0].status",
+      "equals": "PASS"
+    },
+    {
+      "file": "after.stdout.txt",
+      "contains": "verdict PASS"
+    },
+    {
+      "file": "ambig.stdout.txt",
+      "contains": "REPAIR_BLOCKED"
+    },
+    {
+      "file": "ambig.stdout.txt",
+      "contains": "anchor is not unique (2 occurrences)"
+    },
+    {
+      "file": "harmful/reports/after-ambig/visual-diff-report.json",
+      "path": "$.verdict",
+      "equals": "FAIL"
+    },
+    {
+      "file": "harmful/reports/after-ambig/visual-diff-report.json",
+      "path": "$.measurement.regionsFailing",
+      "equals": 1
+    },
+    {
+      "file": "harmful/reports/after-ambig/visual-diff-report.json",
+      "path": "$.regions[1].id",
+      "equals": "h-label"
+    },
+    {
+      "file": "harmful/reports/after-ambig/visual-diff-report.json",
+      "path": "$.regions[1].status",
+      "equals": "FAIL"
+    },
+    {
+      "file": "harmful/reports/after-ambig/visual-diff-report.json",
+      "path": "$.regions[2].id",
+      "equals": "h-value"
+    },
+    {
+      "file": "harmful/reports/after-ambig/visual-diff-report.json",
+      "path": "$.regions[2].status",
+      "equals": "PASS"
+    },
+    {
+      "file": "harmful/reports/after-ambig/visual-diff-report.json",
+      "path": "$.regions[3].status",
+      "equals": "PASS"
+    },
+    {
+      "file": "broad.stdout.txt",
+      "contains": "repair: FAIL → FAIL · rolled-back"
+    },
+    {
+      "file": "broad.stdout.txt",
+      "contains": "rollback byte-identical: true"
+    },
+    {
+      "file": "broad.stdout.txt",
+      "contains": "restored verdict FAIL"
+    },
+    {
+      "file": "harmful/reports/after-broad/visual-diff-report.json",
+      "path": "$.verdict",
+      "equals": "FAIL"
+    },
+    {
+      "file": "harmful/reports/after-broad/visual-diff-report.json",
+      "path": "$.measurement.regionsFailing",
+      "equals": 1
+    },
+    {
+      "file": "harmful/reports/after-broad/visual-diff-report.json",
+      "path": "$.regions[1].id",
+      "equals": "h-label"
+    },
+    {
+      "file": "harmful/reports/after-broad/visual-diff-report.json",
+      "path": "$.regions[1].status",
+      "equals": "FAIL"
+    },
+    {
+      "file": "harmful/reports/after-broad/visual-diff-report.json",
+      "path": "$.regions[3].id",
+      "equals": "h-note"
+    },
+    {
+      "file": "harmful/reports/after-broad/visual-diff-report.json",
+      "path": "$.regions[3].status",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.kind",
+      "equals": "repair-report"
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.status",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.precheck.ok",
+      "equals": true
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.precheck.edits[0].status",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.precheck.edits[0].occurrences",
+      "equals": 1
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.edits[0].id",
+      "equals": "restore-label-type"
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.edits[0].file",
+      "equals": "target.html"
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.before.verdict",
+      "equals": "FAIL"
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.after.verdict",
+      "equals": "PASS"
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.decision.outcome",
+      "equals": "kept"
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.decision.reason",
+      "equals": "FAIL → PASS"
+    },
+    {
+      "file": "reports/repair/repair-report.json",
+      "path": "$.rollback",
+      "equals": null
+    },
+    {
+      "file": "reports/repair/backup/target.html.orig",
+      "contains": "font-size: 14px; line-height: 20px;"
+    },
+    {
+      "file": "reports/repair/before/visual-diff-report.json",
+      "path": "$.verdict",
+      "equals": "FAIL"
+    },
+    {
+      "file": "reports/repair/after/visual-diff-report.json",
+      "path": "$.verdict",
+      "equals": "PASS"
+    },
+    {
+      "file": "harmful/reports/repair-ambig/repair-report.json",
+      "path": "$.status",
+      "equals": "BLOCKED"
+    },
+    {
+      "file": "harmful/reports/repair-ambig/repair-report.json",
+      "path": "$.status",
+      "notEquals": "PASS"
+    },
+    {
+      "file": "harmful/reports/repair-ambig/repair-report.json",
+      "path": "$.precheck.ok",
+      "equals": false
+    },
+    {
+      "file": "harmful/reports/repair-ambig/repair-report.json",
+      "path": "$.precheck.edits[0].status",
+      "equals": "BLOCKED"
+    },
+    {
+      "file": "harmful/reports/repair-ambig/repair-report.json",
+      "path": "$.precheck.edits[0].occurrences",
+      "equals": 2
+    },
+    {
+      "file": "harmful/reports/repair-ambig/repair-report.json",
+      "path": "$.edits[0].id",
+      "equals": "e-broad"
+    },
+    {
+      "file": "harmful/reports/repair-ambig/repair-report.json",
+      "path": "$.decision",
+      "exists": false
+    },
+    {
+      "file": "harmful/reports/repair-ambig/repair-report.json",
+      "path": "$.backup",
+      "exists": false
+    },
+    {
+      "file": "harmful/reports/repair-ambig/repair-report.json",
+      "path": "$.applied",
+      "exists": false
+    },
+    {
+      "fileMissing": "harmful/reports/repair-ambig/before/visual-diff-report.json"
+    },
+    {
+      "file": "harmful/reports/repair-broad/repair-report.json",
+      "path": "$.status",
+      "equals": "FAIL"
+    },
+    {
+      "file": "harmful/reports/repair-broad/repair-report.json",
+      "path": "$.status",
+      "notEquals": "PASS"
+    },
+    {
+      "file": "harmful/reports/repair-broad/repair-report.json",
+      "path": "$.precheck.ok",
+      "equals": true
+    },
+    {
+      "file": "harmful/reports/repair-broad/repair-report.json",
+      "path": "$.decision.outcome",
+      "equals": "rolled-back"
+    },
+    {
+      "file": "harmful/reports/repair-broad/repair-report.json",
+      "path": "$.decision.byteIdentical",
+      "equals": true
+    },
+    {
+      "file": "harmful/reports/repair-broad/repair-report.json",
+      "path": "$.decision.restoredVerdict",
+      "equals": "FAIL"
+    },
+    {
+      "file": "harmful/reports/repair-broad/repair-report.json",
+      "path": "$.decision.restoredMatchesBefore",
+      "equals": true
+    },
+    {
+      "file": "harmful/reports/repair-broad/repair-report.json",
+      "path": "$.rollback[0].byteIdentical",
+      "equals": true
+    },
+    {
+      "file": "harmful/reports/repair-broad/repair-report.json",
+      "path": "$.backup[0].file",
+      "equals": "target-b.html"
+    },
+    {
+      "file": "harmful/reports/repair-broad/repair-report.json",
+      "path": "$.restored.verdict",
+      "equals": "FAIL"
+    },
+    {
+      "file": "harmful/reports/repair-broad/restored/visual-diff-report.json",
+      "path": "$.verdict",
+      "equals": "FAIL"
+    },
+    {
+      "file": "harmful/reports/repair-broad/restored/visual-diff-report.json",
+      "path": "$.regions[3].id",
+      "equals": "h-note"
+    },
+    {
+      "file": "harmful/reports/repair-broad/restored/visual-diff-report.json",
+      "path": "$.regions[3].status",
+      "equals": "PASS"
+    }
+  ]
+}

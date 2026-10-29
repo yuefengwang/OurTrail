@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>实验 F · 流式宽度页</title>
+<link rel="stylesheet" href="../assets/fluid.css">
+</head>
+<body>
+<div id="fluid">
+  <div id="sheet">
+    <h1 id="f-title">装备清单</h1>
+    <div id="f-card">
+      <span id="f-tag">徒步</span>
+      <p id="f-desc">按同行人数与海拔变化增减携带物件，重量由每人分摊，出发前一晚集中清点一次。</p>
+    </div>
+    <ul id="f-list">
+      <li>头灯与备用电池</li>
+      <li>保暖中层与雨衣</li>
+      <li>一日饮水与行动粮</li>
+    </ul>
+    <button id="f-more">展开说明</button>
+    <p id="f-note">说明已收起</p>
+  </div>
+</div>
+<script>
+  document.getElementById('f-more').addEventListener('click', function () {
+    document.getElementById('f-note').textContent = '说明已展开';
+  });
+</script>
+</body>
+</html>

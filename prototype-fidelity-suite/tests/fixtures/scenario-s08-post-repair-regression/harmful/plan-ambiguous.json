@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "1.0.0",
+  "pageId": "h-ambig",
+  "stateId": "default",
+  "edits": [
+    { "id": "e-broad", "file": "target-a.html", "anchor": "font-size: 16px", "replace": "font-size: 14px", "why": "把 16px 改回 14px（看起来能修好字段名）" }
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "kind": "design-review-report",
+  "schemaVersion": "0.2.0",
+  "planId": "community-book-lending",
+  "reviewedAt": "2026-10-29T11:46:13.398Z",
+  "actor": "independent-reviewer",
+  "designer": "design-dna-generalizer",
+  "independent": true,
+  "artifacts": {
+    "html": "index.html",
+    "bytes": 7068
+  },
+  "store": {
+    "id": "ourtrail-design-dna",
+    "revision": 128
+  },
+  "dimensions": [
+    {
+      "id": "tokens",
+      "title": "设计 token 一致性",
+      "verdict": "PASS",
+      "findings": [],
+      "note": null,
+      "items": null
+    },
+    {
+      "id": "components",
+      "title": "组件使用合理性",
+      "verdict": "UNVERIFIED",
+      "findings": [],
+      "note": "3 项功能没有可用形态，页面只有占位结构；这不等于设计错了，但也不等于验过",
+      "items": null
+    },
+    {
+      "id": "structure",
+      "title": "信息组织",
+      "verdict": "PASS",
+      "findings": [],
+      "note": null,
+      "items": null
+    },
+    {
+      "id": "interactions",
+      "title": "交互逻辑",
+      "verdict": "FAIL",
+      "findings": [
+        {
+          "code": "INTERACTION_UNMET",
+          "where": "status-feedback",
+          "severity": "critical",
+          "evidence": [
+            "全库没有可用于本页的 status-feedback 契约"
+          ],
+          "fix": "补一条同类交互的证据再入库；或从业务需求里删掉它，而不是留一个点了没反应的控件"
+        }
+      ],
+      "note": null,
+      "items": null
+    },
+    {
+      "id": "completeness",
+      "title": "功能完整性",
+      "verdict": "PASS",
+      "findings": [],
+      "note": null,
+      "items": null
+    },
+    {
+      "id": "exceptions",
+      "title": "业务例外合理性",
+      "verdict": "UNVERIFIED",
+      "findings": [
+        {
+          "code": "DEAD_TOKEN_CITED",
+          "where": "token.var.green-bright",
+          "severity": "major",
+          "evidence": [
+            "--green-bright 在库里没有消费者，本页也只声明不使用"
+          ],
+          "fix": "要么真的用它，要么别引用"
+        },
+        {
+          "code": "EXCEPTION_NEEDS_HUMAN",
+          "where": "exceptions",
+          "severity": "major",
+          "evidence": [
+            "18 条例外只有人能判：它们描述的是页间差异或边界条件"
+          ],
+          "fix": "逐条确认本页是否落在例外里；确认结果写进评审记录，不要默认通过"
+        }
+      ],
+      "note": null,
+      "items": [
+        "首屏必须能看到借阅入口",
+        "component.button-span：实例间不一致的属性：font-weight（700 / 400 / 600）、line-height（10px / normal）、color（rgb(22, 120, 62) / rgb(123, 133, 125) / rgb(255, 255, 255) / rgb(103, 115, 99)）、background-color（rgba(0, 0, 0, 0) / rgb(22, 120, 62) / rgb(241, 244, 237)） 等 9 项（变体，不是规范）",
+        "principle.tap-target：高 36px，低于 44px 触控建议",
+        "principle.tap-target：高 36px，低于 44px 触控建议",
+        "principle.tap-target：高 33px，低于 44px 触控建议",
+        "principle.tap-target：高 41px，低于 44px 触控建议",
+        "principle.tap-target：高 31px，低于 44px 触控建议",
+        "principle.tap-target：高 31px，低于 44px 触控建议",
+        "principle.tap-target：高 31px，低于 44px 触控建议",
+        "principle.tap-target：高 33px，低于 44px 触控建议",
+        "principle.tap-target：高 31px，低于 44px 触控建议",
+        "principle.tap-target：高 38px，低于 44px 触控建议"
+      ]
+    },
+    {
+      "id": "rules",
+      "title": "与新规则的冲突",
+      "verdict": "UNVERIFIED",
+      "findings": [
+        {
+          "code": "UNCONFIRMED_RULES",
+          "where": "rules",
+          "severity": "major",
+          "evidence": [
+            "32 条被引用的规则仍是 candidate，没有署名确认：token.var.green、token.var.green-bright、token.var.green-soft、token.var.ink、token.var.line …"
+          ],
+          "fix": "这些规则可以先用，但评审记录里要写明\"依据未确认\"；确认由人签字，不由工具代签"
+        }
+      ],
+      "note": null,
+      "items": null
+    },
+    {
+      "id": "process",
+      "title": "评审独立性",
+      "verdict": "PASS",
+      "findings": [],
+      "note": null,
+      "items": null
+    }
+  ],
+  "counts": {
+    "critical": 1,
+    "major": 3,
+    "minor": 0,
+    "findings": 4
+  },
+  "overall": "FAIL",
+  "reason": "4 条发现（critical 1 / major 3）：interactions 未通过"
+}

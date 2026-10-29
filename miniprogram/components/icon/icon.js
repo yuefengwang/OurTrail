@@ -6,6 +6,9 @@ const PATHS = {
   activity: 'M5 5h14v16H5zM8 3v4M16 3v4M5 10h14M8 14h3M8 17h7',
   bell: 'M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zM10 21h4',
   person: 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM5 21v-2a7 7 0 0 1 14 0v2',
+  phone: 'M5 4h4l2 5-2.5 1.5a15 15 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2c-7.3-.5-13.5-6.7-14-14A2 2 0 0 1 5 4Z',
+  refresh: 'M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7',
+  filter: 'M4 6h16M7 12h10M10 18h4',
   pin: 'M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0ZM14 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z',
   car: 'M4 16V8l2-4h12l2 4v8H4ZM4 10h16M7 13h1M16 13h1M6 16v4M18 16v4',
   check: 'm5 12 4 4L19 6',
@@ -40,6 +43,19 @@ const PATHS = {
   power: 'M4 8h13v8H4zM17 10h3v4h-3M7 10v4',
   id: 'M3 6h18v12H3zM7 15v-2a2 2 0 0 1 4 0v2M9 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3M14 10h4M14 14h3',
   backpack: 'M7 8a5 5 0 0 1 10 0v12H7zM10 8V5h4v3M7 12h10M10 16h4',
+  // 天气与读数用：snow/storm 与 format.weatherIcon 的 5 类一一对应（rain/cloud/sun 在上方）
+  snow: 'M6 13h12a4 4 0 0 0-1-8 5 5 0 0 0-9 0 4.5 4.5 0 0 0-2 8ZM7 17v4M5 19h4M17 17v4M15 19h4',
+  storm: 'M6 14h11a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9-1.5A4 4 0 0 0 6 14ZM13 11l-3 5h3l-1.5 5',
+  info: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM12 11v6M12 7.4v.2',
+  down: 'm6 9 6 6 6-6',
+  // 首页与列表用：与 docs/prototypes/ourtrail-explore-v3/weather.js 的 sym 词表同名同义
+  next: 'm9 5 7 7-7 7',
+  up: 'm6 15 6-6 6 6',
+  calendar: 'M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2ZM8 3v4M16 3v4M4 11h16',
+  crosshair: 'M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0ZM12 2v4M12 18v4M2 12h4M18 12h4',
+  upload: 'M12 16V4M7 9l5-5 5 5M5 20h14',
+  lock: 'M7 11h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2ZM8 11V8a4 4 0 0 1 8 0v3',
+  cloudoff: 'M17 17H7a5 5 0 0 1-1-10m3.9-1.9A6 6 0 0 1 17 10h1a4 4 0 0 1 1.6 7.7M4 4l16 16',
 }
 
 // 品牌图形（自定义 viewBox）

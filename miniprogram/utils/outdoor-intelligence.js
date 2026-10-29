@@ -194,12 +194,14 @@ function isClearHour(st, sample, hours) {
 }
 
 function peakCover(sample, hours) {
-  /* 扫**实测网格**（0–7000m）而不是剖面显示窗（2000–6000m）：
+  /* 扫**整个实测网格**（与 CFF.SCAN_RANGE 同源，按引用读）而不是剖面显示窗：
      判「这一小时是不是晴空」要看完用户处与其上下全部有测量的高度，
      显示窗只是这张图画了哪一段。适配器已保证实测范围之外为 0（不外插），
-     所以这里不会因此把「无数据」读成「有云」。 */
+     所以这里不会因此把「无数据」读成「有云」。
+     8,000 m 以上的卷云同样算「有云」——否则图上画着 9,000 m 的卷云、
+     卡片却说晴空，两处互相打脸（铁律 33⑤ 的同一类）。 */
   let peak = 0
-  for (let alt = 0; alt <= 7000; alt += 250) {
+  for (let alt = CFF.SCAN_RANGE.MIN; alt <= CFF.SCAN_RANGE.MAX; alt += 250) {
     peak = Math.max(peak, sample(hours, alt))
   }
   return peak

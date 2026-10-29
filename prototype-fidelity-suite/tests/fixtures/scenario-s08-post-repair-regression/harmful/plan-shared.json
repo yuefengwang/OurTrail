@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "1.0.0",
+  "pageId": "h-broad",
+  "stateId": "default",
+  "edits": [
+    { "id": "e-shared", "file": "target-b.html", "anchor": ".h-label, .h-note { font-size: 16px; }", "replace": ".h-label, .h-note { font-size: 14px; }", "why": "把共用的 16px 声明改成 14px（会让 note 一起变）" }
+  ]
+}

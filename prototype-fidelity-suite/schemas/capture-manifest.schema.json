@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/capture-manifest.schema.json",
+  "title": "Capture manifest",
+  "description": "One rendered capture of one page/state on one side. It must be possible to tell from this file alone what was captured, from which code version, at which viewport/DPR, with which kind of data, and where the raw pixels are.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "pageId", "stateId", "side", "platform", "capturedAt", "source", "screenshot", "snapshot", "provenance"],
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "kind": { "const": "capture-manifest" },
+    "pageId": { "type": "string", "minLength": 1 },
+    "stateId": { "type": "string", "minLength": 1 },
+    "side": { "enum": ["prototype", "target"] },
+    "platform": { "enum": ["web", "wechat-miniprogram"] },
+    "capturedAt": { "$ref": "#/definitions/dateTime" },
+    "source": {
+      "type": "object",
+      "required": ["dataSource"],
+      "properties": {
+        "url": { "type": ["string", "null"] },
+        "projectRoot": { "type": ["string", "null"] },
+        "route": { "type": ["string", "null"] },
+        "codeVersion": {
+          "type": ["string", "null"],
+          "description": "The build the caller declares this capture to show. Never inferred from the suite's own git HEAD."
+        },
+        "suiteHead": {
+          "type": ["string", "null"],
+          "description": "HEAD of the repository that ran the capture. It dates the capture; it does not identify the rendered build."
+        },
+        "dataSource": { "enum": ["real", "injected"] },
+        "injection": { "type": ["object", "array", "null"] },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "viewport": {
+      "type": ["object", "null"],
+      "required": ["width", "height"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "dpr": { "type": ["number", "null"], "minimum": 0 },
+    "bundle": {
+      "description": "Content fingerprint of the source tree this capture is supposed to show, taken before the render. Absent when the side does not declare a bundle.",
+      "type": ["object", "null"],
+      "required": ["fingerprint", "method", "fingerprintedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "fingerprint": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" },
+        "files": { "type": ["integer", "null"], "minimum": 0 },
+        "bytes": { "type": ["integer", "null"], "minimum": 0 },
+        "newestMtime": { "type": ["string", "null"], "format": "date-time" },
+        "fingerprintedAt": { "type": "string", "format": "date-time" },
+        "method": { "const": "content-sha256" },
+        "root": { "type": ["string", "null"] },
+        "status": { "enum": ["PASS", "UNVERIFIED"] },
+        "reason": { "type": ["string", "null"] }
+      }
+    },
+    "screenshot": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["path", "sha256", "width", "height", "scale", "normalizedFrom"],
+          "properties": {
+            "path": { "type": "string", "minLength": 1 },
+            "sha256": { "$ref": "#/definitions/sha256" },
+            "width": { "type": ["integer", "null"] },
+            "height": { "type": ["integer", "null"] },
+            "scale": {
+              "type": "object",
+              "required": ["x", "y"],
+              "properties": {
+                "x": { "type": "number", "exclusiveMinimum": 0 },
+                "y": { "type": "number", "exclusiveMinimum": 0 }
+              }
+            },
+            "normalizedFrom": { "enum": ["device-pixels", "css-pixels"] }
+          }
+        },
+        {
+          "description": "No screenshot: the absence must be named, never implied by nulls alone.",
+          "type": "object",
+          "required": ["path", "sha256", "missing"],
+          "properties": {
+            "path": { "const": null },
+            "sha256": { "const": null },
+            "width": { "const": null },
+            "height": { "const": null },
+            "missing": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "snapshot": {
+      "type": "object",
+      "required": ["nodes"],
+      "properties": {
+        "nodes": { "type": "integer", "minimum": 0 },
+        "rootId": { "type": ["string", "null"] },
+        "dimensions": {
+          "type": ["object", "null"],
+          "required": ["width", "height"],
+          "properties": {
+            "width": { "type": "number" },
+            "height": { "type": "number" }
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["capturedBy", "adapter", "verification"],
+      "properties": {
+        "capturedBy": { "type": "string", "minLength": 1 },
+        "adapter": { "type": "string", "minLength": 1 },
+        "verification": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "dateTime": { "type": "string", "format": "date-time" },
+    "sha256": { "type": "string", "format": "sha256" }
+  }
+}

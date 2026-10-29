@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "prototype-manifest",
+  "projectId": "generic-web",
+  "pageId": "specimen",
+  "generatedAt": "2026-10-29T12:27:23.259Z",
+  "prototype": {
+    "platform": "web",
+    "source": "html",
+    "entry": "prototype/index.html",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "frameSelector": "#device",
+    "readOnly": true
+  },
+  "states": [
+    {
+      "id": "default",
+      "captured": true,
+      "dataSource": "real",
+      "capturedAt": "2026-10-29T12:27:20.176Z",
+      "codeVersion": null,
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "nodes": 42,
+      "screenshot": {
+        "path": "screenshot.png",
+        "sha256": "f2c1ec1013b3c86d1ad7c1fb6309872da38dc90eb51665c9c028d6ea26966ea3",
+        "width": 390,
+        "height": 844,
+        "scale": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      "status": "PASS"
+    }
+  ],
+  "mappings": {
+    "declared": 12,
+    "selectors": [
+      "#toggle",
+      "#note"
+    ],
+    "source": "pf.config.json#pages[].mappings"
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json",
+    "side": "prototype"
+  }
+}

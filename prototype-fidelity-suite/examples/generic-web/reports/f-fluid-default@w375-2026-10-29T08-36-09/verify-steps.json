@@ -1,0 +1,29 @@
+{
+  "steps": [
+    {
+      "step": "capture:prototype",
+      "status": "PASS",
+      "detail": "12 nodes"
+    },
+    {
+      "step": "capture:target",
+      "status": "PASS",
+      "detail": "12 nodes"
+    },
+    {
+      "step": "contract",
+      "status": "PASS"
+    },
+    {
+      "step": "diff",
+      "status": "PASS",
+      "detail": "0 failing"
+    },
+    {
+      "step": "validate",
+      "status": "PASS"
+    }
+  ],
+  "verdict": "PASS",
+  "viewportId": "w375"
+}

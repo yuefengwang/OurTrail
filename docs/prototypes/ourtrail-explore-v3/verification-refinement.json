@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-26",
+  "version": "3.2",
+  "scope": "Local HTML prototype only; not WeChat device verification",
+  "viewport": {
+    "height": 691,
+    "overflow": false,
+    "width": 506
+  },
+  "checks": [
+    "路线节点切换同步更新说明；路线图可放大并返回；报名入口明确列出后续步骤且不提交报名",
+    "详情刷新后返回，青城搜索与单条结果保留；已确认且自行前往显示10:00泰安古镇集合，与城区集体出发分开",
+    "10km以内筛选保留两条；我的同行展示两条已确认活动",
+    "暂停接收报名的活动仍允许已确认成员查看安排；详情当前506px窗口无横向溢出",
+    "从列表下方进入详情后返回，滚动位置保留：455px → 455px",
+    "Final my-outing row displays personal meetup 10:00 at 泰安古镇入口",
+    "Final home, detail, route and my-outings screenshots visually inspected"
+  ],
+  "historyReloadRegression": {
+    "before": {
+      "historyLengthBefore": 3,
+      "historyLengthAfter": 4,
+      "query": "",
+      "resultCount": 3,
+      "result": "FAIL"
+    },
+    "after": {
+      "historyLengthBefore": 3,
+      "historyLengthAfter": 3,
+      "query": "青城",
+      "resultCount": 1,
+      "result": "PASS"
+    }
+  },
+  "consoleErrorsObserved": 0,
+  "staticChecks": {
+    "javascriptSyntax": "PASS: activities.js, app.js, detail.js",
+    "repositoryCheck": "PASS: ALL CHECKS PASSED",
+    "repositoryHandlers": "PASS: exit 0",
+    "trackedWhitespaceDiff": "PASS: git diff --check"
+  },
+  "screenshots": [
+    "preview-home-live.png",
+    "preview-detail-live.png",
+    "preview-route-live.png",
+    "preview-mine-live.png"
+  ],
+  "limitations": [
+    "Route and activity data are fictional; schematic route is not navigation",
+    "Signup shows the workflow scope only; no real submission",
+    "Earlier verification.json refers to the prior home-only iteration; its three-width results are not a final refinement regression",
+    "No production mini-program, backend, or deployment changes"
+  ]
+}

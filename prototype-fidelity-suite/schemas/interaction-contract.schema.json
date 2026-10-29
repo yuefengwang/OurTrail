@@ -1,0 +1,280 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/interaction-contract.schema.json",
+  "title": "interaction-contract",
+  "description": "What each interaction check does, what consequence it expects, and what a real run observed. A declared check with no run is UNVERIFIED; a run that could not reach the driver is BLOCKED. Both are distinct from FAIL, which means the action ran and the consequence was wrong.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "pageId",
+    "generatedAt",
+    "driver",
+    "checks",
+    "status",
+    "reason",
+    "provenance"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "$ref": "#/definitions/schemaVersion"
+    },
+    "kind": {
+      "const": "interaction-contract"
+    },
+    "pageId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "driver": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "adapter",
+            "verification"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "adapter": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "endpoint": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "verification": {
+              "const": "real-action-and-observation"
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/check"
+      }
+    },
+    "status": {
+      "$ref": "#/definitions/status"
+    },
+    "reason": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "enum": [
+                "NOT_RUN",
+                "DRIVER_UNAVAILABLE",
+                "NO_OBSERVATION"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "builtBy",
+        "config"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "builtBy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "config": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  },
+  "definitions": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "status": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "UNVERIFIED",
+        "BLOCKED",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "check": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "steps",
+        "expect",
+        "screenshot",
+        "status",
+        "assertions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/step"
+          }
+        },
+        "expect": {
+          "type": "object"
+        },
+        "screenshot": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/status"
+        },
+        "observed": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "assertions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/assertion"
+          }
+        },
+        "screenshotPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "verification": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "assertion": {
+      "type": "object",
+      "required": [
+        "assertion",
+        "pass"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "assertion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pass": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "observed": {}
+      }
+    },
+    "step": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "tap": {
+          "$ref": "#/definitions/target"
+        },
+        "input": {
+          "$ref": "#/definitions/target"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "wait": {
+          "type": "number",
+          "minimum": 0
+        },
+        "waitFor": {
+          "$ref": "#/definitions/target"
+        },
+        "timeout": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "target": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "required": [
+            "selector"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "selector": {
+              "type": "string",
+              "minLength": 1
+            },
+            "index": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    }
+  }
+}

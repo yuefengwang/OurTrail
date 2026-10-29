@@ -1,0 +1,518 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "name": "屏 1 进入（screen=home）",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "地图选点主键是 pin 19",
+      "pass": true,
+      "extra": {
+        "w": "19px",
+        "h": "19px"
+      }
+    },
+    {
+      "name": "两个次入口各带图形（16×16）",
+      "pass": true,
+      "extra": {
+        "w": "16px",
+        "h": "16px"
+      }
+    },
+    {
+      "name": "资产行首是 38×38 图标砖（图形 18）",
+      "pass": true,
+      "extra": {
+        "tileBox": {
+          "w": "38px",
+          "h": "38px"
+        },
+        "tileIconSize": {
+          "w": "18px",
+          "h": "18px"
+        }
+      }
+    },
+    {
+      "name": "bundle 新鲜度自证：.wh-asset-icon 内含 icon 组件（旧 bundle 只有文字）",
+      "pass": true,
+      "extra": null
+    },
+    {
+      "name": "资产行/最近计划用 next 图形（无文本 ›）",
+      "pass": true,
+      "extra": 1
+    },
+    {
+      "name": "「继续上次」标签带 calendar 11（夹具）",
+      "pass": true,
+      "extra": {
+        "w": "11px",
+        "h": "11px"
+      }
+    },
+    {
+      "name": "屏 2 真实数据就绪",
+      "pass": true,
+      "extra": "Open-Meteo"
+    },
+    {
+      "name": "页头节点行有 pin 12（新 bundle 独有）",
+      "pass": true,
+      "extra": {
+        "w": "12px",
+        "h": "12px"
+      }
+    },
+    {
+      "name": "时段步进是 back/next 一对 chevron（17px，不是 arrow）",
+      "pass": true,
+      "extra": {
+        "stepNames": [
+          "back",
+          "next"
+        ],
+        "stepSize": {
+          "w": "17px",
+          "h": "17px"
+        }
+      }
+    },
+    {
+      "name": "地点弹层每行都有图形（无文本箭头）",
+      "pass": true,
+      "extra": {
+        "rows": 1,
+        "icons": 1
+      }
+    },
+    {
+      "name": "地点弹层图形 17×17",
+      "pass": true,
+      "extra": {
+        "w": "17px",
+        "h": "17px"
+      }
+    },
+    {
+      "name": "地点弹层夹具已落地（两行、首行 current，未被异步刷新覆盖）",
+      "pass": true,
+      "extra": {
+        "landed": true,
+        "fxLen": 2,
+        "realLen": 300
+      }
+    },
+    {
+      "name": "地点弹层当前项 check / 其余项 next（图形名逐行回读）",
+      "pass": true,
+      "extra": [
+        "check",
+        "next"
+      ]
+    },
+    {
+      "name": "节点弹层每行出图（选中 check / 其余 next）",
+      "pass": true,
+      "extra": {
+        "rows": 2,
+        "icons": 2
+      }
+    },
+    {
+      "name": "节点弹层图形 19×19",
+      "pass": true,
+      "extra": {
+        "w": "19px",
+        "h": "19px"
+      }
+    },
+    {
+      "name": "计划弹层已展开（planOpen / sheet.open 双读数）",
+      "pass": true,
+      "extra": {
+        "planOpen": true,
+        "sheetOpen": true
+      }
+    },
+    {
+      "name": "「不改原始记录」说明带 lock 13",
+      "pass": true,
+      "extra": {
+        "w": "13px",
+        "h": "13px"
+      }
+    },
+    {
+      "name": "出发日期 picker 用 down 12（无文本 ▾）",
+      "pass": true,
+      "extra": {
+        "w": "12px",
+        "h": "12px"
+      }
+    },
+    {
+      "name": "lock 说明是 flex 行（图形与文字不挤成一段）",
+      "pass": true,
+      "extra": "flex"
+    },
+    {
+      "name": "缓存时效条带 cloudoff 14",
+      "pass": true,
+      "extra": {
+        "w": "14px",
+        "h": "14px"
+      }
+    },
+    {
+      "name": "缓存条是 flex 行（图形与文字同排）",
+      "pass": true,
+      "extra": "flex"
+    },
+    {
+      "name": "沿途提示条带 clock 14",
+      "pass": true,
+      "extra": {
+        "w": "14px",
+        "h": "14px"
+      }
+    },
+    {
+      "name": "提示条是 flex 行",
+      "pass": true,
+      "extra": "flex"
+    }
+  ],
+  "log": [
+    {
+      "t": "2026-10-28T05:56:10.114Z",
+      "msg": "connected ws://127.0.0.1:9427"
+    },
+    {
+      "t": "2026-10-28T05:56:15.266Z",
+      "msg": "✓ 屏 1 进入（screen=home）"
+    },
+    {
+      "t": "2026-10-28T05:56:15.266Z",
+      "msg": "  账号计划/地点/路线数 = {\"plans\":0,\"points\":1,\"routes\":0}"
+    },
+    {
+      "key": "账号计划/地点/路线数",
+      "value": {
+        "plans": 0,
+        "points": 1,
+        "routes": 0
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:15.291Z",
+      "msg": "  地图选点 icon 实测 = {\"w\":\"19px\",\"h\":\"19px\"}"
+    },
+    {
+      "key": "地图选点 icon 实测",
+      "value": {
+        "w": "19px",
+        "h": "19px"
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:15.291Z",
+      "msg": "✓ 地图选点主键是 pin 19"
+    },
+    {
+      "t": "2026-10-28T05:56:15.320Z",
+      "msg": "  次入口 icon 数 / 尺寸 = {\"count\":2,\"size\":{\"w\":\"16px\",\"h\":\"16px\"}}"
+    },
+    {
+      "key": "次入口 icon 数 / 尺寸",
+      "value": {
+        "count": 2,
+        "size": {
+          "w": "16px",
+          "h": "16px"
+        }
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:15.320Z",
+      "msg": "✓ 两个次入口各带图形（16×16）"
+    },
+    {
+      "t": "2026-10-28T05:56:16.239Z",
+      "msg": "· shot A-home-real.png (34837 B)"
+    },
+    {
+      "t": "2026-10-28T05:56:16.908Z",
+      "msg": "  资产行图标砖 = {\"tiles\":1,\"icons\":1,\"box\":{\"w\":\"38px\",\"h\":\"38px\"},\"icon\":{\"w\":\"18px\",\"h\":\"18px\"}}"
+    },
+    {
+      "key": "资产行图标砖",
+      "value": {
+        "tiles": 1,
+        "icons": 1,
+        "box": {
+          "w": "38px",
+          "h": "38px"
+        },
+        "icon": {
+          "w": "18px",
+          "h": "18px"
+        }
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:16.908Z",
+      "msg": "✓ 资产行首是 38×38 图标砖（图形 18）"
+    },
+    {
+      "t": "2026-10-28T05:56:16.908Z",
+      "msg": "✓ bundle 新鲜度自证：.wh-asset-icon 内含 icon 组件（旧 bundle 只有文字）"
+    },
+    {
+      "t": "2026-10-28T05:56:16.914Z",
+      "msg": "  首页 next 箭头数 = 1"
+    },
+    {
+      "key": "首页 next 箭头数",
+      "value": 1
+    },
+    {
+      "t": "2026-10-28T05:56:16.914Z",
+      "msg": "✓ 资产行/最近计划用 next 图形（无文本 ›）"
+    },
+    {
+      "t": "2026-10-28T05:56:17.788Z",
+      "msg": "· shot A3-home-points-real.png (35647 B)"
+    },
+    {
+      "t": "2026-10-28T05:56:18.950Z",
+      "msg": "✓ 「继续上次」标签带 calendar 11（夹具）"
+    },
+    {
+      "t": "2026-10-28T05:56:19.822Z",
+      "msg": "· shot A2-home-recent-fixture.png (40259 B)"
+    },
+    {
+      "t": "2026-10-28T05:56:21.059Z",
+      "msg": "✓ 屏 2 真实数据就绪"
+    },
+    {
+      "t": "2026-10-28T05:56:21.089Z",
+      "msg": "  页头节点行 pin = {\"count\":1,\"size\":{\"w\":\"12px\",\"h\":\"12px\"}}"
+    },
+    {
+      "key": "页头节点行 pin",
+      "value": {
+        "count": 1,
+        "size": {
+          "w": "12px",
+          "h": "12px"
+        }
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:21.094Z",
+      "msg": "✓ 页头节点行有 pin 12（新 bundle 独有）"
+    },
+    {
+      "t": "2026-10-28T05:56:21.128Z",
+      "msg": "  时段步进 icon 名 / 尺寸 = {\"names\":[\"back\",\"next\"],\"size\":{\"w\":\"17px\",\"h\":\"17px\"}}"
+    },
+    {
+      "key": "时段步进 icon 名 / 尺寸",
+      "value": {
+        "names": [
+          "back",
+          "next"
+        ],
+        "size": {
+          "w": "17px",
+          "h": "17px"
+        }
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:21.128Z",
+      "msg": "✓ 时段步进是 back/next 一对 chevron（17px，不是 arrow）"
+    },
+    {
+      "t": "2026-10-28T05:56:22.039Z",
+      "msg": "· shot B-detail-header.png (54586 B)"
+    },
+    {
+      "t": "2026-10-28T05:56:22.899Z",
+      "msg": "  地点弹层行 / 图标 = {\"rows\":1,\"icons\":1,\"size\":{\"w\":\"17px\",\"h\":\"17px\"}}"
+    },
+    {
+      "key": "地点弹层行 / 图标",
+      "value": {
+        "rows": 1,
+        "icons": 1,
+        "size": {
+          "w": "17px",
+          "h": "17px"
+        }
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:22.899Z",
+      "msg": "✓ 地点弹层每行都有图形（无文本箭头）"
+    },
+    {
+      "t": "2026-10-28T05:56:22.899Z",
+      "msg": "✓ 地点弹层图形 17×17"
+    },
+    {
+      "t": "2026-10-28T05:56:23.787Z",
+      "msg": "· shot C-place-sheet-real.png (41128 B)"
+    },
+    {
+      "t": "2026-10-28T05:56:25.495Z",
+      "msg": "✓ 地点弹层夹具已落地（两行、首行 current，未被异步刷新覆盖）"
+    },
+    {
+      "t": "2026-10-28T05:56:25.508Z",
+      "msg": "  地点弹层夹具 icon 数 / 名字 = {\"count\":2,\"names\":[\"check\",\"next\"]}"
+    },
+    {
+      "key": "地点弹层夹具 icon 数 / 名字",
+      "value": {
+        "count": 2,
+        "names": [
+          "check",
+          "next"
+        ]
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:25.508Z",
+      "msg": "✓ 地点弹层当前项 check / 其余项 next（图形名逐行回读）"
+    },
+    {
+      "t": "2026-10-28T05:56:26.391Z",
+      "msg": "· shot C2-place-sheet-check-fixture.png (41440 B)"
+    },
+    {
+      "t": "2026-10-28T05:56:28.166Z",
+      "msg": "  节点弹层行 / 图标 = {\"rows\":2,\"icons\":2,\"size\":{\"w\":\"19px\",\"h\":\"19px\"}}"
+    },
+    {
+      "key": "节点弹层行 / 图标",
+      "value": {
+        "rows": 2,
+        "icons": 2,
+        "size": {
+          "w": "19px",
+          "h": "19px"
+        }
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:28.166Z",
+      "msg": "✓ 节点弹层每行出图（选中 check / 其余 next）"
+    },
+    {
+      "t": "2026-10-28T05:56:28.166Z",
+      "msg": "✓ 节点弹层图形 19×19"
+    },
+    {
+      "t": "2026-10-28T05:56:29.056Z",
+      "msg": "· shot D-node-sheet-fixture.png (38756 B)"
+    },
+    {
+      "t": "2026-10-28T05:56:30.482Z",
+      "msg": "  计划弹层 lock / picker down = {\"planOpen\":true,\"sheetOpen\":true,\"lockSize\":{\"w\":\"13px\",\"h\":\"13px\"},\"pickerSize\":{\"w\":\"12px\",\"h\":\"12px\"},\"noteLockDisplay\":\"flex\"}"
+    },
+    {
+      "key": "计划弹层 lock / picker down",
+      "value": {
+        "planOpen": true,
+        "sheetOpen": true,
+        "lockSize": {
+          "w": "13px",
+          "h": "13px"
+        },
+        "pickerSize": {
+          "w": "12px",
+          "h": "12px"
+        },
+        "noteLockDisplay": "flex"
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:30.482Z",
+      "msg": "✓ 计划弹层已展开（planOpen / sheet.open 双读数）"
+    },
+    {
+      "t": "2026-10-28T05:56:30.482Z",
+      "msg": "✓ 「不改原始记录」说明带 lock 13"
+    },
+    {
+      "t": "2026-10-28T05:56:30.482Z",
+      "msg": "✓ 出发日期 picker 用 down 12（无文本 ▾）"
+    },
+    {
+      "t": "2026-10-28T05:56:30.482Z",
+      "msg": "✓ lock 说明是 flex 行（图形与文字不挤成一段）"
+    },
+    {
+      "t": "2026-10-28T05:56:31.389Z",
+      "msg": "· shot E-plan-sheet.png (40113 B)"
+    },
+    {
+      "t": "2026-10-28T05:56:32.483Z",
+      "msg": "  缓存条 icon / display = {\"size\":{\"w\":\"14px\",\"h\":\"14px\"},\"display\":\"flex\"}"
+    },
+    {
+      "key": "缓存条 icon / display",
+      "value": {
+        "size": {
+          "w": "14px",
+          "h": "14px"
+        },
+        "display": "flex"
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:32.483Z",
+      "msg": "✓ 缓存时效条带 cloudoff 14"
+    },
+    {
+      "t": "2026-10-28T05:56:32.483Z",
+      "msg": "✓ 缓存条是 flex 行（图形与文字同排）"
+    },
+    {
+      "t": "2026-10-28T05:56:33.396Z",
+      "msg": "· shot F-stale-banner-fixture.png (54077 B)"
+    },
+    {
+      "t": "2026-10-28T05:56:34.594Z",
+      "msg": "  沿途提示条 icon / display = {\"size\":{\"w\":\"14px\",\"h\":\"14px\"},\"display\":\"flex\"}"
+    },
+    {
+      "key": "沿途提示条 icon / display",
+      "value": {
+        "size": {
+          "w": "14px",
+          "h": "14px"
+        },
+        "display": "flex"
+      }
+    },
+    {
+      "t": "2026-10-28T05:56:34.594Z",
+      "msg": "✓ 沿途提示条带 clock 14"
+    },
+    {
+      "t": "2026-10-28T05:56:34.594Z",
+      "msg": "✓ 提示条是 flex 行"
+    },
+    {
+      "t": "2026-10-28T05:56:35.473Z",
+      "msg": "· shot G-route-notice-fixture.png (40913 B)"
+    }
+  ]
+}

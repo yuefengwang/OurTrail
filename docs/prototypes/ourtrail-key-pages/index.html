@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f4ef">
+  <title>OurTrail · 关键页面原型</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --forest: #163e35;
+      --forest-2: #28594a;
+      --leaf: #d6ea8a;
+      --paper: #f5f5f0;
+      --surface: #fff;
+      --ink: #202a26;
+      --muted: #66736b;
+      --line: #e1e5de;
+      --subtle: #f2f4ef;
+      --blue: #346583;
+      --blue-soft: #edf3f6;
+      --amber: #a66a17;
+      --amber-soft: #f8f1e5;
+      --red: #ad4b45;
+      --red-soft: #fbefee;
+      --green: #28704d;
+      --green-soft: #edf5ef;
+      --shadow: 0 24px 70px rgba(27, 39, 32, .12);
+      --phone-shadow: 0 18px 50px rgba(14, 29, 23, .16);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+    body[data-theme="sky"] {
+      --forest: #30383a;
+      --forest-2: #465456;
+      --leaf: #c8df83;
+      --paper: #f2f1eb;
+      --surface: #fffefa;
+      --ink: #222b2d;
+      --muted: #677375;
+      --line: #dde1dd;
+      --subtle: #f0f1ed;
+      --blue: #477c9b;
+      --blue-soft: #edf4f7;
+      --amber: #a66b1d;
+      --amber-soft: #f8f0e1;
+      --green: #356d51;
+      --green-soft: #edf4ef;
+      --shadow: 0 24px 70px rgba(34, 45, 47, .13);
+      --phone-shadow: 0 18px 50px rgba(32, 45, 49, .18);
+    }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: #eceee8; }
+    body { margin: 0; min-height: 100vh; color: var(--ink); background: #eceee8; }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .shell { min-height: 100vh; display: grid; grid-template-columns: 256px minmax(0, 1fr) 292px; gap: 24px; max-width: 1600px; margin: 0 auto; padding: 24px; }
+    .rail, .inspector { align-self: start; position: sticky; top: 24px; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 12px 10px 28px; }
+    .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 13px; background: var(--forest); color: var(--leaf); font-size: 19px; font-weight: 800; }
+    .brand-title { font-weight: 800; letter-spacing: .07em; font-size: 13px; }
+    .brand-sub { color: var(--muted); font-size: 11px; margin-top: 3px; }
+    .rail-label, .eyebrow { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+    .rail-label { padding: 0 11px 9px; }
+    .nav-list { display: grid; gap: 5px; }
+    .nav-item { width: 100%; border: 0; padding: 12px 13px; border-radius: 13px; background: transparent; color: var(--muted); display: flex; align-items: center; gap: 11px; text-align: left; font-size: 13px; font-weight: 650; transition: .18s ease; }
+    .nav-item:hover { background: rgba(255,255,255,.64); color: var(--ink); }
+    .nav-item.active { background: var(--surface); color: var(--forest); box-shadow: 0 3px 12px rgba(34, 45, 38, .05); }
+    .nav-icon { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 8px; background: rgba(100,115,106,.08); font-size: 14px; }
+    .nav-item.active .nav-icon { color: var(--forest); background: color-mix(in srgb, var(--leaf) 34%, white); }
+    .rail-note { margin-top: 25px; padding: 14px; border: 1px solid var(--line); border-radius: 15px; background: rgba(255,255,255,.55); color: var(--muted); font-size: 11px; line-height: 1.65; }
+    .rail-note strong { color: var(--ink); display: block; margin-bottom: 4px; font-size: 12px; }
+    .stage { min-width: 0; }
+    .stage-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 2px 2px 18px; }
+    .stage-title { font-size: 18px; font-weight: 780; letter-spacing: -.025em; }
+    .stage-caption { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .device-wrap { min-height: 850px; border-radius: 28px; background: linear-gradient(135deg, rgba(255,255,255,.72), rgba(255,255,255,.3)); border: 1px solid rgba(255,255,255,.8); display: grid; place-items: start center; padding: 18px 20px 28px; }
+    .phone { width: min(100%, 402px); height: 844px; max-height: calc(100vh - 136px); min-height: 680px; position: relative; overflow: hidden; border: 8px solid #202421; border-radius: 39px; background: var(--paper); box-shadow: var(--phone-shadow); display: flex; flex-direction: column; }
+    .statusbar { height: 30px; flex: 0 0 30px; padding: 8px 19px 0; display: flex; justify-content: space-between; color: var(--ink); background: var(--surface); font-size: 10px; font-weight: 750; }
+    .status-right { letter-spacing: .08em; }
+    .mini-nav { min-height: 43px; padding: 3px 16px 9px; flex: 0 0 auto; display: grid; grid-template-columns: 30px 1fr 60px; align-items: center; background: var(--surface); border-bottom: 1px solid rgba(32,42,38,.035); }
+    .back { border: 0; background: transparent; color: var(--ink); font-size: 22px; padding: 0; width: 27px; line-height: 1; }
+    .nav-title { text-align: center; font-size: 14px; font-weight: 700; }
+    .nav-actions { justify-self: end; display: flex; gap: 4px; }
+    .nav-dot { width: 25px; height: 25px; border-radius: 99px; display: grid; place-items: center; color: var(--muted); background: var(--subtle); font-size: 11px; }
+    .phone-content { min-height: 0; overflow-y: auto; flex: 1; padding: 0 17px 24px; scrollbar-width: thin; scrollbar-color: rgba(100,115,106,.3) transparent; }
+    .phone-content.with-tab { padding-bottom: 18px; }
+    .page-intro { padding: 19px 2px 14px; }
+    .page-intro .eyebrow { margin-bottom: 7px; }
+    .page-title { font-size: 24px; line-height: 1.2; letter-spacing: -.05em; font-weight: 820; margin: 0; }
+    .page-sub { margin: 7px 0 0; color: var(--muted); line-height: 1.5; font-size: 11px; }
+    .tabbar { flex: 0 0 58px; border-top: 1px solid var(--line); background: var(--surface); display: grid; grid-template-columns: repeat(4, 1fr); padding: 6px 5px 8px; }
+    .tab { border: 0; background: transparent; color: var(--muted); display: grid; align-content: center; justify-items: center; gap: 3px; font-size: 9px; }
+    .tab .tab-icon { font-size: 16px; line-height: 1; }
+    .tab.active { color: var(--forest); font-weight: 750; }
+    .card { background: var(--surface); border: 1px solid rgba(34,45,38,.035); border-radius: 16px; padding: 14px; box-shadow: 0 4px 16px rgba(30,43,35,.035); }
+    .card + .card, .section + .section { margin-top: 11px; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .section-title { font-size: 13px; font-weight: 760; margin: 0; }
+    .section-hint { color: var(--muted); font-size: 10px; }
+    .badge { display: inline-flex; align-items: center; white-space: nowrap; border-radius: 99px; padding: 5px 8px; font-size: 9px; font-weight: 730; background: var(--green-soft); color: var(--green); }
+    .badge.blue { background: var(--blue-soft); color: var(--blue); }
+    .badge.amber { background: var(--amber-soft); color: var(--amber); }
+    .badge.neutral { background: var(--subtle); color: var(--muted); }
+    .hero { color: #fff; padding: 17px; border-radius: 19px; background: var(--forest); position: relative; overflow: hidden; }
+    .hero:after { content: ""; position: absolute; width: 155px; height: 155px; right: -62px; top: -77px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); box-shadow: 0 0 0 15px rgba(255,255,255,.045), 0 0 0 33px rgba(255,255,255,.03); }
+    .hero > * { position: relative; z-index: 1; }
+    .hero-overline { color: rgba(255,255,255,.68); font-size: 9px; font-weight: 700; letter-spacing: .08em; }
+    .hero-title { margin: 8px 0 5px; font-size: 17px; line-height: 1.3; font-weight: 780; }
+    .hero-meta { color: rgba(255,255,255,.75); font-size: 10px; line-height: 1.5; }
+    .hero-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .hero-metrics { display: flex; gap: 13px; margin-top: 13px; color: rgba(255,255,255,.86); font-size: 9px; }
+    .hero-metrics b { color: white; font-size: 11px; margin-right: 3px; }
+    .mountain { height: 52px; margin: 12px -1px 2px; position: relative; overflow: hidden; border-radius: 11px; background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.015)); }
+    .mountain svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .btn { min-height: 39px; border: 0; border-radius: 11px; display: inline-flex; justify-content: center; align-items: center; gap: 6px; padding: 0 13px; font-size: 11px; font-weight: 760; transition: transform .15s, opacity .15s; }
+    .btn:active { transform: scale(.98); }
+    .btn.primary { color: var(--leaf); background: var(--forest); }
+    .btn.light { color: var(--forest); background: var(--surface); }
+    .btn.outline { color: var(--forest); border: 1px solid var(--line); background: transparent; }
+    .btn.soft { color: var(--forest); background: color-mix(in srgb, var(--leaf) 31%, white); }
+    .btn.small { min-height: 30px; border-radius: 9px; padding: 0 10px; font-size: 9px; }
+    .btn.full { width: 100%; }
+    .btn-row { display: flex; gap: 8px; }
+    .text-link { color: var(--forest); font-size: 10px; font-weight: 740; border: 0; background: none; padding: 5px 0; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .row + .row { border-top: 1px solid var(--line); margin-top: 11px; padding-top: 11px; }
+    .row-label { color: var(--muted); font-size: 9px; }
+    .row-value { font-size: 10px; font-weight: 680; text-align: right; }
+    .muted { color: var(--muted); }
+    .tiny { color: var(--muted); font-size: 9px; line-height: 1.5; }
+    .stepper { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 0 0 13px; }
+    .step { min-height: 32px; border-radius: 9px; background: var(--subtle); color: var(--muted); display: flex; gap: 6px; align-items: center; padding: 0 8px; font-size: 9px; font-weight: 690; }
+    .step.active { background: color-mix(in srgb, var(--leaf) 36%, white); color: var(--forest); }
+    .step.done { color: var(--green); }
+    .step-num { width: 16px; height: 16px; display: grid; place-items: center; border-radius: 50%; background: rgba(100,115,106,.12); font-size: 8px; }
+    .step.active .step-num { background: var(--forest); color: var(--leaf); }
+    .field { margin-top: 12px; }
+    .field:first-child { margin-top: 0; }
+    .field-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 10px; font-weight: 700; }
+    .field-label small { font-size: 9px; font-weight: 500; color: var(--muted); }
+    .input { min-height: 39px; width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface); font-size: 11px; outline: none; }
+    .input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 13%, transparent); }
+    .input::placeholder { color: #a2aaa3; }
+    .textarea { min-height: 63px; resize: vertical; line-height: 1.5; }
+    .select-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .choice { display: flex; flex-wrap: wrap; gap: 6px; }
+    .choice-pill { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 7px 9px; color: var(--muted); font-size: 9px; }
+    .choice-pill.on { border-color: var(--forest); background: var(--forest); color: var(--leaf); }
+    .route-visual { min-height: 98px; border-radius: 12px; background: linear-gradient(140deg, #e5ece2, #f5f1e7); overflow: hidden; position: relative; }
+    .route-visual svg { width: 100%; height: 98px; display: block; }
+    .route-legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .route-legend span { font-size: 8px; color: var(--muted); }
+    .route-dot { display: inline-block; width: 6px; height: 6px; margin-right: 4px; border-radius: 50%; background: var(--forest); }
+    .form-footer { position: sticky; bottom: -24px; background: linear-gradient(0deg, var(--paper) 78%, transparent); padding: 16px 0 4px; display: flex; gap: 8px; }
+    .form-footer .btn.primary { flex: 1; }
+    .weather-hero { padding: 15px; border-radius: 18px; background: linear-gradient(140deg, color-mix(in srgb, var(--blue) 16%, white), var(--surface) 70%); border: 1px solid color-mix(in srgb, var(--blue) 10%, var(--line)); }
+    .weather-place { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .weather-place h2 { margin: 4px 0 4px; font-size: 16px; letter-spacing: -.03em; }
+    .temp { color: var(--forest); font-size: 31px; font-weight: 780; letter-spacing: -.06em; line-height: 1; }
+    .weather-conditions { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .weather-metric { border-radius: 10px; padding: 8px; background: rgba(255,255,255,.72); }
+    .weather-metric b { display: block; font-size: 10px; }
+    .weather-metric span { color: var(--muted); font-size: 8px; }
+    .segmented { display: flex; gap: 3px; background: var(--subtle); border-radius: 11px; padding: 3px; }
+    .segment { border: 0; flex: 1; min-height: 28px; background: transparent; color: var(--muted); border-radius: 8px; font-size: 9px; font-weight: 680; }
+    .segment.active { color: var(--forest); background: var(--surface); box-shadow: 0 2px 6px rgba(32,42,38,.08); }
+    .chart { height: 116px; margin-top: 9px; background: linear-gradient(180deg, rgba(52,101,131,.04), transparent); border-radius: 10px; position: relative; overflow: hidden; }
+    .chart svg { width: 100%; height: 100%; }
+    .chart-legend { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: 8px; margin-top: 5px; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 4px; vertical-align: -1px; }
+    .finding { display: flex; gap: 9px; padding: 9px; border-radius: 11px; background: var(--blue-soft); }
+    .finding-icon { width: 23px; height: 23px; flex: 0 0 23px; display: grid; place-items: center; border-radius: 8px; color: var(--blue); background: white; }
+    .finding strong { font-size: 10px; display: block; margin-bottom: 3px; }
+    .finding p { font-size: 9px; color: var(--muted); margin: 0; line-height: 1.5; }
+    .forecast-row { display: grid; grid-template-columns: 45px 22px 1fr auto; align-items: center; gap: 7px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 9px; }
+    .forecast-row:first-of-type { border-top: 0; }
+    .weather-symbol { font-size: 15px; }
+    .forecast-bar { height: 6px; border-radius: 99px; background: linear-gradient(90deg, #9fc4d8, #477c9b); }
+    .detail-hero { padding: 15px; border-radius: 18px; color: white; background: var(--forest); position: relative; overflow: hidden; }
+    .detail-hero .hero-title { font-size: 18px; margin-top: 10px; }
+    .detail-hero .hero-meta { max-width: 225px; }
+    .detail-hero .mountain { opacity: .92; }
+    .host { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.18); }
+    .avatar { width: 27px; height: 27px; border-radius: 50%; display: grid; place-items: center; background: var(--leaf); color: var(--forest); font-size: 10px; font-weight: 800; }
+    .host-name { font-size: 9px; font-weight: 700; }
+    .host-role { color: rgba(255,255,255,.7); font-size: 8px; margin-top: 2px; }
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .meta-cell { border-radius: 11px; background: var(--subtle); padding: 10px; }
+    .meta-cell span { color: var(--muted); font-size: 8px; display: block; margin-bottom: 5px; }
+    .meta-cell b { font-size: 10px; }
+    .notice { padding: 10px; border-radius: 11px; background: var(--amber-soft); color: var(--amber); font-size: 9px; line-height: 1.55; }
+    .sticky-cta { flex: 0 0 auto; display: flex; gap: 8px; padding: 9px 14px 13px; border-top: 1px solid var(--line); background: var(--surface); }
+    .sticky-cta .btn.primary { flex: 1; }
+    .icon-btn { min-width: 40px; border: 1px solid var(--line); border-radius: 11px; color: var(--muted); background: var(--surface); font-size: 13px; }
+    .workspace-top { padding: 17px 2px 12px; }
+    .workspace-topline { display: flex; justify-content: space-between; align-items: center; }
+    .workspace-top h1 { margin: 7px 0 5px; font-size: 21px; line-height: 1.25; letter-spacing: -.045em; }
+    .workspace-sub { color: var(--muted); font-size: 9px; line-height: 1.5; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 13px; }
+    .metric { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 9px; }
+    .metric b { display: block; font-size: 16px; letter-spacing: -.04em; }
+    .metric span { color: var(--muted); font-size: 8px; }
+    .task-row { display: grid; grid-template-columns: 25px 1fr auto; align-items: center; gap: 8px; padding: 9px 0; border-top: 1px solid var(--line); }
+    .task-row:first-child { border-top: 0; }
+    .task-state { width: 23px; height: 23px; border-radius: 8px; display: grid; place-items: center; color: var(--amber); background: var(--amber-soft); font-size: 10px; }
+    .task-title { font-size: 9px; font-weight: 720; }
+    .task-sub { color: var(--muted); font-size: 8px; margin-top: 3px; }
+    .pill-action { border: 0; background: var(--subtle); color: var(--forest); border-radius: 8px; font-size: 8px; font-weight: 740; padding: 7px 9px; }
+    .workspace-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; padding: 3px; background: var(--subtle); border-radius: 11px; }
+    .workspace-tab { border: 0; min-height: 29px; border-radius: 8px; background: transparent; color: var(--muted); font-size: 8px; font-weight: 700; }
+    .workspace-tab.active { color: var(--forest); background: var(--surface); box-shadow: 0 2px 6px rgba(32,42,38,.07); }
+    .person-line { display: grid; grid-template-columns: 27px 1fr auto; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+    .person-line:first-child { border-top: 0; }
+    .person-line .avatar { width: 25px; height: 25px; background: var(--subtle); color: var(--forest); }
+    .person-line .host-name { color: var(--ink); }
+    .person-line .host-role { color: var(--muted); }
+    .bottom-action { padding: 9px 0 0; }
+    .inspector-card { border: 1px solid rgba(255,255,255,.82); background: rgba(255,255,255,.6); border-radius: 18px; padding: 16px; box-shadow: 0 8px 30px rgba(27,39,32,.035); }
+    .inspector-card + .inspector-card { margin-top: 12px; }
+    .inspector h2 { font-size: 13px; margin: 0 0 12px; }
+    .theme-options { display: grid; gap: 7px; }
+    .theme-choice { width: 100%; display: grid; grid-template-columns: 22px 1fr auto; gap: 9px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 9px; color: var(--ink); text-align: left; background: var(--surface); }
+    .theme-choice.active { border-color: var(--forest); box-shadow: 0 0 0 2px color-mix(in srgb, var(--forest) 11%, transparent); }
+    .swatches { display: flex; }
+    .swatches i { width: 12px; height: 12px; border: 1px solid rgba(0,0,0,.05); border-radius: 50%; margin-left: -3px; }
+    .theme-name { font-size: 10px; font-weight: 740; }
+    .theme-caption { display: block; color: var(--muted); font-size: 8px; margin-top: 3px; font-weight: 450; }
+    .theme-check { color: var(--forest); font-size: 12px; opacity: 0; }
+    .theme-choice.active .theme-check { opacity: 1; }
+    .role-toggle { width: 100%; display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--subtle); }
+    .role-choice { flex: 1; border: 0; border-radius: 7px; min-height: 28px; color: var(--muted); background: transparent; font-size: 9px; }
+    .role-choice.active { background: var(--surface); color: var(--forest); font-weight: 750; box-shadow: 0 1px 5px rgba(32,42,38,.06); }
+    .inspector-copy { color: var(--muted); font-size: 10px; line-height: 1.65; margin: 0; }
+    .inspector-list { margin: 10px 0 0; padding-left: 16px; color: var(--muted); font-size: 9px; line-height: 1.7; }
+    .state-chip { margin-top: 12px; border-radius: 11px; padding: 9px 10px; color: var(--blue); background: var(--blue-soft); font-size: 9px; line-height: 1.5; }
+    .toast { position: absolute; z-index: 5; left: 50%; bottom: 71px; transform: translate(-50%, 10px); max-width: 82%; padding: 9px 13px; border-radius: 99px; color: #fff; background: rgba(28,38,33,.9); font-size: 9px; white-space: nowrap; opacity: 0; pointer-events: none; transition: .2s; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .demo-note { display: flex; gap: 7px; color: var(--muted); font-size: 8px; line-height: 1.5; margin-top: 10px; }
+    .divider-label { margin: 14px 0 8px; display: flex; justify-content: space-between; align-items: center; }
+    .time-chip { padding: 5px 7px; border-radius: 7px; background: rgba(255,255,255,.8); color: var(--muted); font-size: 8px; }
+    .phase-line { display: flex; align-items: center; gap: 4px; margin: 10px 0 12px; }
+    .phase-point { flex: 1; text-align: center; position: relative; color: var(--muted); font-size: 7px; }
+    .phase-point:before { content: ""; display: block; width: 7px; height: 7px; margin: 0 auto 5px; border-radius: 50%; background: #cbd2cc; }
+    .phase-point.done:before, .phase-point.current:before { background: var(--green); }
+    .phase-point.current { color: var(--forest); font-weight: 750; }
+    .phase-point + .phase-point:after { content: ""; position: absolute; top: 3px; right: 50%; width: 100%; height: 1px; background: #d8ded8; z-index: -1; }
+    .mini-scroll { overflow: hidden; }
+    .route-node { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+    .route-node:first-child { border-top: 0; }
+    .route-node-main { display: flex; align-items: center; gap: 8px; font-size: 9px; font-weight: 680; }
+    .node-dot { width: 7px; height: 7px; border: 2px solid var(--forest); border-radius: 50%; }
+    .node-meta { color: var(--muted); font-size: 8px; }
+    @media (max-width: 1180px) {
+      .shell { grid-template-columns: 210px minmax(0, 1fr); }
+      .inspector { position: static; grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      .inspector-card + .inspector-card { margin-top: 0; }
+    }
+    @media (max-width: 760px) {
+      html, body { background: var(--paper); }
+      .shell { display: block; padding: 0; }
+      .rail, .inspector { display: none; }
+      .stage-head { position: sticky; top: 0; z-index: 10; margin: 0; padding: 11px 15px; background: var(--surface); border-bottom: 1px solid var(--line); }
+      .stage-title { font-size: 14px; }
+      .stage-caption { font-size: 9px; }
+      .device-wrap { min-height: 0; border: 0; border-radius: 0; padding: 0; background: var(--paper); display: block; }
+      .phone { width: 100%; height: calc(100dvh - 55px); min-height: 620px; max-height: none; border: 0; border-radius: 0; box-shadow: none; }
+      .statusbar { padding-left: 22px; padding-right: 22px; }
+    }
+    @media (max-height: 780px) and (min-width: 761px) {
+      .device-wrap { min-height: 0; }
+      .phone { max-height: calc(100vh - 112px); min-height: 650px; }
+    }
+  </style>
+</head>
+<body data-theme="forest">
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand"><div class="brand-mark">↟</div><div><div class="brand-title">OURTRAIL</div><div class="brand-sub">关键页面 · 交互原型</div></div></div>
+      <div class="rail-label">核心页面</div>
+      <nav class="nav-list" aria-label="原型页面导航">
+        <button class="nav-item active" data-go="editor"><span class="nav-icon">✎</span><span>创建活动</span></button>
+        <button class="nav-item" data-go="weather"><span class="nav-icon">☁</span><span>天气详情</span></button>
+        <button class="nav-item" data-go="activity"><span class="nav-icon">⌖</span><span>活动详情</span></button>
+        <button class="nav-item" data-go="workspace"><span class="nav-icon">▤</span><span>组织者工作台</span></button>
+      </nav>
+      <div class="rail-note"><strong>原型说明</strong>所有页面使用同一组示意内容。切换视觉方向不会改变信息架构；页面内按钮用于演示关键状态，不连接真实数据。</div>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-head">
+        <div><div class="stage-title" id="stageTitle">创建活动</div><div class="stage-caption" id="stageCaption">分步整理出发安排，草稿随时可继续。</div></div>
+        <div class="time-chip">视觉/交互评审稿</div>
+      </div>
+      <div class="device-wrap">
+        <section class="phone" aria-label="OurTrail 小程序页面预览">
+          <div class="statusbar"><span>9:41</span><span class="status-right">●●●　◉　▰</span></div>
+          <div id="phoneNav" class="mini-nav"><button class="back" data-act="back" aria-label="返回">‹</button><div class="nav-title" id="phoneNavTitle">创建活动</div><div class="nav-actions"><span class="nav-dot">···</span><span class="nav-dot">◎</span></div></div>
+          <div class="phone-content" id="phoneContent"></div>
+          <div class="tabbar" id="tabbar">
+            <button class="tab active" data-tab="活动"><span class="tab-icon">⌂</span><span>活动</span></button>
+            <button class="tab" data-tab="天气"><span class="tab-icon">☁</span><span>天气</span></button>
+            <button class="tab" data-tab="通知"><span class="tab-icon">♧</span><span>通知</span></button>
+            <button class="tab" data-tab="我的"><span class="tab-icon">♙</span><span>我的</span></button>
+          </div>
+          <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        </section>
+      </div>
+    </main>
+
+    <aside class="inspector">
+      <div class="inspector-card">
+        <h2>比较视觉方向</h2>
+        <div class="theme-options">
+          <button class="theme-choice active" data-theme="forest"><span class="swatches"><i style="background:#163e35"></i><i style="background:#d6ea8a"></i><i style="background:#f5f5f0"></i></span><span><span class="theme-name">A · 森林绿进化</span><span class="theme-caption">熟悉、亲近、自然</span></span><span class="theme-check">✓</span></button>
+          <button class="theme-choice" data-theme="sky"><span class="swatches"><i style="background:#30383a"></i><i style="background:#c8df83"></i><i style="background:#477c9b"></i></span><span><span class="theme-name">B · 山岩与天光</span><span class="theme-caption">清晰、专业、户外感</span></span><span class="theme-check">✓</span></button>
+        </div>
+      </div>
+      <div class="inspector-card">
+        <h2>查看角色视角</h2>
+        <div class="role-toggle"><button class="role-choice active" data-role="participant">参与者</button><button class="role-choice" data-role="organizer">组织者</button></div>
+        <p class="inspector-copy" style="margin-top:10px">活动详情主操作会随角色变化。工作台只展示组织者任务，保持真实产品的权限边界。</p>
+      </div>
+      <div class="inspector-card">
+        <h2>评审重点</h2>
+        <p class="inspector-copy">先看页面层级和操作路径，再看配色、卡片和文案。图表、路线图和活动数据均为视觉示意。</p>
+        <ul class="inspector-list"><li>创建：三步是否清楚，是否知道还差什么</li><li>天气：结论与证据是否好读</li><li>详情：当前角色的下一步是否突出</li><li>工作台：待办能否直达对应任务</li></ul>
+        <div class="state-chip">此原型为设计讨论稿，不会调用微信或云端能力。</div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    'use strict'
+    const state = { page: 'editor', step: 0, role: 'participant', pane: '总览', forecast: 0, title: '海坨山秋日环线', saved: false, completed: {} }
+    const pageInfo = {
+      editor: ['创建活动', '分步整理出发安排，草稿随时可继续。'],
+      weather: ['天气详情', '先看路线时段，再看逐时证据。'],
+      activity: ['活动详情', '参与者与组织者看到各自可执行的下一步。'],
+      workspace: ['组织者工作台', '把阶段、待办和履约分区放在同一处。'],
+    }
+    const mountainArt = `<svg viewBox="0 0 360 80" preserveAspectRatio="none" aria-hidden="true"><path d="M0 61 55 35 82 49 137 14 177 50 222 23 267 49 307 28 360 57V80H0Z" fill="rgba(214,234,138,.38)"/><path d="M0 67 44 50 83 61 126 34 169 61 221 38 258 58 314 41 360 61V80H0Z" fill="rgba(255,255,255,.22)"/><path d="M0 70 C48 53 73 71 119 55 S202 50 237 62 303 52 360 64" fill="none" stroke="rgba(255,255,255,.65)" stroke-width="2" stroke-dasharray="3 4"/></svg>`
+    const routeArt = `<svg viewBox="0 0 360 110" preserveAspectRatio="none" aria-hidden="true"><path d="M-10 83 45 59 93 69 145 36 191 54 238 24 281 42 370 10" fill="none" stroke="#d8e2d7" stroke-width="28"/><path d="M-10 83 45 59 93 69 145 36 191 54 238 24 281 42 370 10" fill="none" stroke="#6d987f" stroke-width="2.4" stroke-dasharray="5 5"/><circle cx="45" cy="59" r="5" fill="#fff" stroke="#163e35" stroke-width="2"/><circle cx="191" cy="54" r="5" fill="#fff" stroke="#163e35" stroke-width="2"/><circle cx="281" cy="42" r="5" fill="#d6ea8a" stroke="#163e35" stroke-width="2"/><text x="18" y="100" font-size="9" fill="#59685f">大海坨村</text><text x="153" y="89" font-size="9" fill="#59685f">鞍部</text><text x="260" y="76" font-size="9" fill="#59685f">观景台</text></svg>`
+    const weatherChart = `<svg viewBox="0 0 330 122" preserveAspectRatio="none" role="img" aria-label="温度、云量和降水趋势示意图"><defs><linearGradient id="cloudFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#789da9" stop-opacity=".38"/><stop offset="1" stop-color="#789da9" stop-opacity=".04"/></linearGradient></defs><g stroke="#e5e9e5" stroke-width="1"><path d="M0 25H330M0 55H330M0 85H330"/></g><path d="M0 61 C25 53 31 39 55 43 S91 60 110 48 143 29 165 39 194 65 220 54 248 38 273 46 300 63 330 45 V122H0Z" fill="url(#cloudFill)"/><path d="M0 61 C25 53 31 39 55 43 S91 60 110 48 143 29 165 39 194 65 220 54 248 38 273 46 300 63 330 45" fill="none" stroke="#477c9b" stroke-width="2.3"/><path d="M0 91 C40 86 53 84 80 79 S126 84 160 76 212 72 245 67 300 76 330 65" fill="none" stroke="#ad8b42" stroke-width="2"/><g fill="#a9c8d2"><rect x="24" y="98" width="7" height="16" rx="3"/><rect x="92" y="101" width="7" height="13" rx="3"/><rect x="202" y="105" width="7" height="9" rx="3"/><rect x="285" y="100" width="7" height="14" rx="3"/></g><g fill="#758078" font-size="8"><text x="4" y="120">06时</text><text x="79" y="120">09时</text><text x="156" y="120">12时</text><text x="232" y="120">15时</text><text x="299" y="120">18时</text></g><g fill="#477c9b"><circle cx="165" cy="39" r="4"/></g></svg>`
+    function pageHeader(eyebrow, title, sub) { return `<div class="page-intro"><div class="eyebrow">${eyebrow}</div><h1 class="page-title">${title}</h1><p class="page-sub">${sub}</p></div>` }
+    function renderEditor() {
+      const labels = ['内容与时间', '路线与集合', '招募与安全']
+      const stepper = `<div class="stepper">${labels.map((x, i) => `<div class="step ${state.step === i ? 'active' : state.step > i ? 'done' : ''}"><span class="step-num">${state.step > i ? '✓' : i + 1}</span><span>${x}</span></div>`).join('')}</div>`
+      let body = ''
+      if (state.step === 0) body = `<div class="card"><div class="field"><label class="field-label">活动名称 <small>必填</small></label><input class="input" data-input="title" value="${escapeHtml(state.title)}" placeholder="给这次同行起个名字" /></div><div class="field"><label class="field-label">活动时间</label><div class="row"><input class="input" style="width:53%" value="2026年11月14日（周六）" readonly><input class="input" style="width:44%" value="06:30" readonly></div></div><div class="field"><label class="field-label">活动类型</label><div class="choice"><button class="choice-pill on">徒步</button><button class="choice-pill">登山</button><button class="choice-pill">露营</button><button class="choice-pill">其他</button></div></div><div class="field"><label class="field-label">一句话介绍 <small>选填</small></label><textarea class="input textarea" placeholder="路况、节奏或这次特别想提醒同行人的事">秋色正好，沿山脊环线走一圈，预计下午返回。</textarea></div><div class="demo-note">◌　已自动保存到本机草稿 · 还没发布</div></div>`
+      if (state.step === 1) body = `<div class="card"><div class="field"><label class="field-label">路线轨迹 <small>已导入 GPX</small></label><div class="route-visual">${routeArt}</div><div class="route-legend"><span><i class="route-dot"></i>起点</span><span><i class="route-dot" style="background:#a66a17"></i>路线节点</span><span>全程 12.6 km · 累计爬升 760 m</span></div></div><div class="field"><label class="field-label">集合地点</label><div class="input select-line"><span>北京市延庆区 · 大海坨村停车场</span><span class="muted">⌖</span></div></div><div class="field"><label class="field-label">集合时间</label><div class="row"><div class="input">06:30 集合</div><div class="input">07:00 出发</div></div></div><div class="field"><label class="field-label">途经节点</label><div class="route-node"><span class="route-node-main"><i class="node-dot"></i>大海坨村</span><span class="node-meta">起点 · 0 km</span></div><div class="route-node"><span class="route-node-main"><i class="node-dot"></i>鞍部</span><span class="node-meta">约 4.8 km</span></div><div class="route-node"><span class="route-node-main"><i class="node-dot"></i>观景台</span><span class="node-meta">约 8.1 km</span></div></div></div>`
+      if (state.step === 2) body = `<div class="card"><div class="field"><label class="field-label">招募人数</label><div class="row"><div class="input">最多 12 人</div><span class="tiny">含发起人以外的报名名额</span></div></div><div class="field"><label class="field-label">报名截止</label><div class="input">11月12日 20:00</div></div><div class="field"><label class="field-label">路线强度</label><div class="choice"><button class="choice-pill">轻松</button><button class="choice-pill on">中等</button><button class="choice-pill">较强</button></div></div><div class="field"><label class="field-label">装备与安全说明</label><textarea class="input textarea">请准备防风外套、饮水和适合山路的鞋。根据自身情况报名，出发前再核对天气和路线状态。</textarea></div><div class="notice" style="margin-top:11px">活动由发起人组织。请参与者根据自身能力判断是否适合路线；平台不提供救援服务。</div><div class="demo-note">✓　发布前会检查必填项与活动规则</div></div>`
+      const footer = `<div class="form-footer">${state.step > 0 ? '<button class="btn outline" data-act="prev-step">上一步</button>' : '<button class="btn outline" data-act="save-draft">保存草稿</button>'}<button class="btn primary" data-act="${state.step < 2 ? 'next-step' : 'publish'}">${state.step < 2 ? '继续' : '检查并发布'}　→</button></div>`
+      return pageHeader('组织一次同行', '把出发，安排妥当。', '分三步补齐活动信息；草稿会保留，确认后再发布。') + stepper + body + footer
+    }
+    function renderWeather() {
+      const periods = ['今天', '明天', '后天']
+      const idx = state.forecast
+      const temps = ['7° / -1°', '5° / -3°', '8° / 0°']
+      return pageHeader('路线天气 · 11月14日', '海坨山环线', '沿路线节点查看天气与天相；示意数据，仅用于原型评审。') +
+        `<div class="weather-hero"><div class="weather-place"><div><span class="badge blue">${periods[idx]} · 山区</span><h2>大海坨山</h2><div class="tiny">海拔 2,241 m · 约 06:30–15:40</div></div><div style="text-align:right"><div style="font-size:25px">☀</div><div class="temp">${idx === 1 ? '4°' : idx === 2 ? '8°' : '6°'}</div><div class="tiny">${temps[idx]}</div></div></div><div class="weather-conditions"><div class="weather-metric"><b>少云</b><span>云量 24%</span></div><div class="weather-metric"><b>微风</b><span>阵风 18 km/h</span></div><div class="weather-metric"><b>无降水</b><span>降水概率 5%</span></div></div></div>
+        <div class="section" style="margin-top:11px"><div class="segmented">${periods.map((x,i)=>`<button class="segment ${idx===i?'active':''}" data-forecast="${i}">${x}</button>`).join('')}</div></div>
+        <div class="card section"><div class="card-head"><h2 class="section-title">逐时天气</h2><span class="section-hint">出发至返回</span></div><div class="chart">${weatherChart}</div><div class="chart-legend"><span><i class="legend-dot" style="background:#477c9b"></i>气温</span><span><i class="legend-dot" style="background:#789da9"></i>云量</span><span><i class="legend-dot" style="background:#a9c8d2"></i>降水</span><span><i class="legend-dot" style="background:#ad8b42"></i>风速</span></div></div>
+        <div class="card section"><div class="card-head"><h2 class="section-title">沿线提醒</h2><button class="text-link" data-act="weather-map">查看路线</button></div><div class="finding"><span class="finding-icon">⌖</span><div><strong>上午视野较好，山脊风偏大</strong><p>预计 10:00–13:00 云量较少；鞍部阵风可能增强，注意保暖与队伍间距。</p></div></div><div class="route-node"><span class="route-node-main"><i class="node-dot"></i>大海坨村 · 06:30</span><span class="badge">少云</span></div><div class="route-node"><span class="route-node-main"><i class="node-dot"></i>鞍部 · 10:15</span><span class="badge amber">阵风偏强</span></div><div class="route-node"><span class="route-node-main"><i class="node-dot"></i>观景台 · 12:40</span><span class="badge blue">留意云量</span></div></div>
+        <div class="card section"><div class="card-head"><h2 class="section-title">天相窗口</h2><span class="badge neutral">基于当前预报</span></div><div class="row"><div><div class="section-title">晨光 · 可能出现</div><div class="tiny" style="margin-top:4px">06:50 前后 · 受云量与地形影响</div></div><span style="font-size:20px">◒</span></div><div class="row"><div><div class="section-title">云海 · 暂无明确窗口</div><div class="tiny" style="margin-top:4px">需要沿线云层与海拔条件配合</div></div><span class="badge neutral">不确定</span></div></div>`
+    }
+    function renderActivity() {
+      const organizer = state.role === 'organizer'
+      return `<div class="page-intro" style="padding-bottom:11px"><div class="eyebrow">周末徒步 · 已发布</div></div><div class="detail-hero"><div class="hero-row"><span class="badge" style="color:var(--leaf);background:rgba(214,234,138,.18)">报名进行中</span><span class="hero-overline">活动详情</span></div><h1 class="hero-title">海坨山秋日环线</h1><div class="hero-meta">11月14日 周六 · 北京延庆<br>大海坨村集合 · 约 12.6 km</div><div class="mountain">${mountainArt}</div><div class="hero-row"><span class="hero-meta">中等强度 · 预计 8 小时</span><button class="btn light small" data-go="weather">☁ 看天气</button></div><div class="host"><span class="avatar">林</span><div><div class="host-name">林野　<span style="font-weight:500;color:rgba(255,255,255,.72)">发起人</span></div><div class="host-role">活动由熟人发起 · 请按自身情况评估</div></div></div></div>
+      <div class="card section"><div class="card-head"><h2 class="section-title">活动安排</h2><button class="text-link" data-act="route-detail">路线详情　›</button></div><div class="meta-grid"><div class="meta-cell"><span>集合时间</span><b>06:30　准时出发</b></div><div class="meta-cell"><span>集合地点</span><b>大海坨村停车场</b></div><div class="meta-cell"><span>路线距离</span><b>12.6 km · 爬升 760 m</b></div><div class="meta-cell"><span>报名情况</span><b>8 / 12 人　候补 0</b></div></div></div>
+      <div class="card section"><div class="card-head"><h2 class="section-title">路线与准备</h2><span class="badge neutral">中等</span></div><div class="route-visual">${routeArt}</div><div class="row"><span class="row-label">建议装备</span><span class="row-value">防风外套 · 饮水 · 防滑鞋</span></div><div class="row"><span class="row-label">风险提示</span><span class="row-value">山脊风大，留意天气变化</span></div></div>
+      <div class="card section"><div class="card-head"><h2 class="section-title">同行安排</h2><button class="text-link" data-act="participant-list">查看名单　›</button></div><div class="row"><span class="row-label">已报名</span><span class="row-value">8 人 · 由发起人审核</span></div><div class="row"><span class="row-label">交通安排</span><span class="row-value">报名后查看上车点与分车</span></div></div>
+      <div class="notice section">这是个人发起的户外活动。路线强度和风险信息供报名参考，请自行评估身体状况与经验。</div>
+      <div class="demo-note">${organizer ? '组织者视角：' : '参与者视角：'}主操作根据你的活动关系与当前阶段变化。</div>` +
+      `<div class="sticky-cta"><button class="icon-btn" data-act="share" aria-label="分享">↗</button><button class="btn outline" data-go="weather">天气</button>${organizer ? '<button class="btn primary" data-go="workspace">进入工作台　→</button>' : '<button class="btn primary" data-act="signup">报名参加　→</button>'}</div>`
+    }
+    function renderWorkspace() {
+      const panes = ['总览', '名单', '交通', '现场']
+      const content = state.pane === '名单' ? `<div class="person-line"><span class="avatar">陈</span><span><span class="host-name">陈禾</span><span class="host-role">本人 · 资料齐</span></span><button class="pill-action" data-act="approve">${state.completed.c1 ? '已确认' : '确认'}</button></div><div class="person-line"><span class="avatar">周</span><span><span class="host-name">周予</span><span class="host-role">同行人 · 待审核</span></span><button class="pill-action" data-act="approve">${state.completed.c2 ? '已确认' : '查看'}</button></div><div class="person-line"><span class="avatar">许</span><span><span class="host-name">许行</span><span class="host-role">本人 · 待审核</span></span><button class="pill-action" data-act="approve">${state.completed.c3 ? '已确认' : '查看'}</button></div>` : state.pane === '交通' ? `<div class="row"><span class="row-label">待安排</span><span class="badge amber">2 人</span></div><div class="person-line"><span class="avatar">周</span><span><span class="host-name">周予 + 1 位同行</span><span class="host-role">上车点：北土城地铁站</span></span><button class="pill-action" data-act="assign">${state.completed.assigned ? '已安排' : '分配'}</button></div><div class="person-line"><span class="avatar">林</span><span><span class="host-name">1 号车 · 4 座</span><span class="host-role">服务上车点：北土城、回龙观</span></span><span class="badge">有余位</span></div>` : state.pane === '现场' ? `<div class="row"><span class="row-label">当前任务</span><span class="badge blue">集合签到</span></div><div class="person-line"><span class="avatar">陈</span><span><span class="host-name">陈禾</span><span class="host-role">已到达集合点</span></span><span class="badge">已签到</span></div><div class="person-line"><span class="avatar">周</span><span><span class="host-name">周予</span><span class="host-role">等待集合确认</span></span><button class="pill-action" data-act="checkin">${state.completed.checked ? '已签到' : '签到'}</button></div>` : `<div class="task-row"><span class="task-state">✓</span><span><span class="task-title">活动已发布</span><span class="task-sub">报名截止 11月12日 20:00</span></span><span class="badge">完成</span></div><div class="task-row"><span class="task-state">${state.completed.c1 && state.completed.c2 && state.completed.c3 ? '✓' : '!'}</span><span><span class="task-title">审核报名</span><span class="task-sub">${state.completed.c1 && state.completed.c2 && state.completed.c3 ? '待审核已处理' : '还有 3 位参与人待确认'}</span></span><button class="pill-action" data-pane="名单">处理</button></div><div class="task-row"><span class="task-state">${state.completed.assigned ? '✓' : '!'}</span><span><span class="task-title">安排车辆</span><span class="task-sub">${state.completed.assigned ? '车辆安排已完成' : '2 位同行人待安排'}</span></span><button class="pill-action" data-pane="交通">查看</button></div><div class="task-row"><span class="task-state">⌖</span><span><span class="task-title">集合与现场</span><span class="task-sub">签到任务将在活动当天开放</span></span><button class="pill-action" data-pane="现场">预览</button></div>`
+      return `<div class="workspace-top"><div class="workspace-topline"><span class="badge">报名阶段</span><span class="tiny">活动工作台　⋯</span></div><h1>海坨山秋日环线</h1><div class="workspace-sub">距离出发还有 19 天 · 11月14日 周六</div><div class="metrics"><div class="metric"><b>3</b><span>待审核</span></div><div class="metric"><b>2</b><span>待分车</span></div><div class="metric"><b>8/12</b><span>已报名</span></div></div></div>
+        <div class="phase-line"><div class="phase-point done">发起</div><div class="phase-point current">报名</div><div class="phase-point">准备</div><div class="phase-point">出发</div><div class="phase-point">收尾</div></div>
+        <div class="card"><div class="card-head"><h2 class="section-title">${state.pane === '总览' ? '现在优先处理' : state.pane + '安排'}</h2><span class="section-hint">${state.pane === '总览' ? '共 2 项待办' : '本次活动'}</span></div>${state.pane === '总览' ? content : `<div class="workspace-tabs">${panes.map(x=>`<button class="workspace-tab ${state.pane===x?'active':''}" data-pane="${x}">${x}</button>`).join('')}</div><div style="margin-top:9px">${content}</div>`}</div>
+        ${state.pane === '总览' ? `<div class="card section"><div class="card-head"><h2 class="section-title">履约分区</h2><span class="section-hint">查看进度</span></div><div class="workspace-tabs">${panes.map(x=>`<button class="workspace-tab ${state.pane===x?'active':''}" data-pane="${x}">${x}</button>`).join('')}</div><p class="tiny" style="margin:9px 0 0">切换分区后保留活动上下文；完成操作会更新对应待办。</p></div>` : ''}
+        <div class="bottom-action"><button class="btn primary full" data-act="phase">${state.completed.phase ? '已进入准备阶段' : '查看阶段推进条件'}　→</button></div>`
+    }
+    function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
+    function render() {
+      const info = pageInfo[state.page]
+      document.getElementById('stageTitle').textContent = info[0]
+      document.getElementById('stageCaption').textContent = info[1]
+      document.getElementById('phoneNavTitle').textContent = state.page === 'weather' ? '天气详情' : state.page === 'activity' ? '活动详情' : state.page === 'workspace' ? '活动工作台' : '创建活动'
+      const content = document.getElementById('phoneContent')
+      content.className = 'phone-content' + (state.page === 'editor' || state.page === 'workspace' ? ' with-tab' : '')
+      content.innerHTML = state.page === 'editor' ? renderEditor() : state.page === 'weather' ? renderWeather() : state.page === 'activity' ? renderActivity() : renderWorkspace()
+      const tabbar = document.getElementById('tabbar')
+      tabbar.style.display = state.page === 'editor' || state.page === 'workspace' ? 'none' : 'grid'
+      document.getElementById('phoneNav').style.display = state.page === 'editor' ? 'none' : 'grid'
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.go === state.page))
+      document.querySelectorAll('.theme-choice').forEach(b => b.classList.toggle('active', b.dataset.theme === document.body.dataset.theme))
+      document.querySelectorAll('.role-choice').forEach(b => b.classList.toggle('active', b.dataset.role === state.role))
+      document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === (state.page === 'weather' ? '天气' : '活动')))
+      content.scrollTop = 0
+    }
+    let toastTimer
+    function showToast(message) {
+      const t = document.getElementById('toast'); t.textContent = message; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900)
+    }
+    document.addEventListener('click', e => {
+      const theme = e.target.closest('.theme-choice[data-theme]')
+      if (theme) { document.body.dataset.theme = theme.dataset.theme; render(); return }
+      const go = e.target.closest('[data-go]')
+      if (go) { state.page = go.dataset.go; render(); return }
+      const role = e.target.closest('[data-role]')
+      if (role) { state.role = role.dataset.role; render(); return }
+      const pane = e.target.closest('[data-pane]')
+      if (pane) { state.pane = pane.dataset.pane; render(); return }
+      const forecast = e.target.closest('[data-forecast]')
+      if (forecast) { state.forecast = Number(forecast.dataset.forecast); render(); return }
+      const step = e.target.closest('[data-act]')?.dataset.act
+      if (step === 'next-step') { if (state.step < 2) state.step += 1; render(); return }
+      if (step === 'prev-step') { if (state.step > 0) state.step -= 1; render(); return }
+      if (step === 'save-draft') { state.saved = true; showToast('草稿已保存到本机'); return }
+      if (step === 'publish') { showToast('原型演示：发布前检查已完成'); return }
+      if (step === 'signup') { showToast('报名流程入口 · 原型示意'); return }
+      if (step === 'approve') { const next = !state.completed.c1; state.completed.c1 = next; render(); showToast(next ? '报名已确认（原型状态）' : '状态已更新'); return }
+      if (step === 'assign') { state.completed.assigned = !state.completed.assigned; render(); showToast(state.completed.assigned ? '车辆安排已更新' : '已取消示意安排'); return }
+      if (step === 'checkin') { state.completed.checked = !state.completed.checked; render(); showToast(state.completed.checked ? '签到已记录（原型状态）' : '签到状态已恢复'); return }
+      if (step === 'phase') { showToast('阶段推进前会展示尚未满足的条件'); return }
+      if (step === 'back') { if (state.page === 'workspace') state.page = 'activity'; else if (state.page === 'weather') state.page = 'activity'; else if (state.page === 'activity') state.page = 'editor'; render(); return }
+      if (step === 'share') { showToast('分享入口 · 原型示意'); return }
+      if (step === 'weather-map') { showToast('路线节点与逐时图联动 · 原型示意'); return }
+      if (step === 'route-detail' || step === 'participant-list') { showToast('展开详情 · 原型示意'); return }
+      const tab = e.target.closest('[data-tab]')
+      if (tab) { if (tab.dataset.tab === '天气') state.page = 'weather'; else if (tab.dataset.tab === '活动') state.page = 'activity'; else showToast(tab.dataset.tab + '入口 · 当前原型未展开'); render(); }
+    })
+    document.addEventListener('input', e => { if (e.target.matches('[data-input="title"]')) state.title = e.target.value })
+    render()
+  </script>
+</body>
+</html>

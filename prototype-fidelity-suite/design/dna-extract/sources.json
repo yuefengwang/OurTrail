@@ -1,0 +1,43 @@
+{
+  "$comment": "Which confirmed prototypes are read, and which UI states of each. Paths are relative to this file. Read-only sources: nothing here writes back into the prototype directory. `screen:true` marks a state that is a whole screen of its own and therefore gets a page-pattern rule (id = page.<page>.<state>).",
+  "root": "../../../docs/prototypes/ourtrail-explore-v3",
+  "viewport": { "width": 390, "height": 844 },
+  "pages": [
+    {
+      "id": "activity-list",
+      "family": "activity",
+      "file": "index.html",
+      "root": "#device",
+      "sectionRoot": "#screen",
+      "states": [
+        { "id": "discover", "screen": true, "steps": [] },
+        { "id": "mine", "steps": [{ "click": "#mine-tab" }] }
+      ]
+    },
+    {
+      "id": "activity-detail",
+      "family": "activity",
+      "file": "index.html",
+      "root": "#device",
+      "sectionRoot": "#detail-screen",
+      "states": [
+        { "id": "overview", "screen": true, "steps": [{ "evaluate": "window.DetailView.open('autumn')" }, { "settleMs": 250 }] },
+        { "id": "route", "steps": [{ "evaluate": "window.DetailView.open('autumn')" }, { "click": "[data-section=\"route\"]" }, { "settleMs": 250 }] }
+      ]
+    },
+    {
+      "id": "weather",
+      "family": "weather",
+      "file": "weather.html",
+      "root": "#device",
+      "sectionRoot": "#weather-detail",
+      "states": [
+        { "id": "home", "screen": true, "sectionRoot": "#weather-home", "steps": [{ "settleMs": 250 }] },
+        { "id": "hourly", "screen": true, "query": "?activity=autumn", "steps": [{ "settleMs": 400 }] },
+        { "id": "cloud", "query": "?activity=autumn", "steps": [{ "click": "[data-tab=\"cloud\"]" }, { "settleMs": 400 }] },
+        { "id": "route", "query": "?activity=autumn", "steps": [{ "click": "[data-tab=\"route\"]" }, { "settleMs": 400 }] },
+        { "id": "sky", "query": "?activity=autumn", "steps": [{ "click": "[data-tab=\"sky\"]" }, { "settleMs": 400 }] }
+      ]
+    }
+  ]
+}

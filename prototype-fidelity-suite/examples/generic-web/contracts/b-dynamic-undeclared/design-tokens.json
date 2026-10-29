@@ -1,0 +1,877 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "design-tokens",
+  "pageId": "b-dynamic-undeclared",
+  "stateId": "default",
+  "generatedAt": "2026-10-29T12:26:12.420Z",
+  "source": {
+    "side": "prototype",
+    "manifest": "captures/b-dynamic-undeclared/default/prototype/capture-manifest.json"
+  },
+  "tokens": {
+    "colors": [
+      {
+        "value": "rgb(31, 42, 38)",
+        "count": 12,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-title",
+          "#b-card",
+          "#b-clock",
+          "#b-img",
+          "#b-btn"
+        ],
+        "token": "color-rgb-31-42-38",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgba(0, 0, 0, 0)",
+        "count": 7,
+        "selectors": [
+          "#sheet",
+          "#b-title",
+          "#b-label",
+          "#b-clock",
+          "#b-desc",
+          "#b-img",
+          "#b-note"
+        ],
+        "token": "color-rgba-0-0-0-0",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(107, 107, 107)",
+        "count": 4,
+        "selectors": [
+          "#b-label",
+          "#b-note"
+        ],
+        "token": "color-rgb-107-107-107",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(255, 255, 255)",
+        "count": 2,
+        "selectors": [
+          "#b-card",
+          "#b-btn"
+        ],
+        "token": "color-rgb-255-255-255",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(51, 51, 51)",
+        "count": 2,
+        "selectors": [
+          "#b-desc"
+        ],
+        "token": "color-rgb-51-51-51",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(185, 199, 192)",
+        "count": 1,
+        "selectors": [
+          "#b-btn"
+        ],
+        "token": "color-rgb-185-199-192",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(216, 216, 216)",
+        "count": 1,
+        "selectors": [
+          "#b-card"
+        ],
+        "token": "color-rgb-216-216-216",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(245, 245, 240)",
+        "count": 1,
+        "selectors": [
+          "#device"
+        ],
+        "token": "color-rgb-245-245-240",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "typography": [
+      {
+        "value": "letter-spacing:normal",
+        "count": 10,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-title",
+          "#b-card",
+          "#b-label",
+          "#b-clock",
+          "#b-desc",
+          "#b-img"
+        ],
+        "token": "typograph-letter-spacing-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:400",
+        "count": 8,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-card",
+          "#b-label",
+          "#b-desc",
+          "#b-img",
+          "#b-btn",
+          "#b-note"
+        ],
+        "token": "typograph-font-weight-400",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:normal",
+        "count": 5,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-card",
+          "#b-img",
+          "#b-btn"
+        ],
+        "token": "typograph-line-height-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:16px",
+        "count": 4,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-card",
+          "#b-img"
+        ],
+        "token": "typograph-font-size-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:12px",
+        "count": 2,
+        "selectors": [
+          "#b-label",
+          "#b-note"
+        ],
+        "token": "typograph-font-size-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:600",
+        "count": 2,
+        "selectors": [
+          "#b-title",
+          "#b-clock"
+        ],
+        "token": "typograph-font-weight-600",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:16px",
+        "count": 2,
+        "selectors": [
+          "#b-label",
+          "#b-note"
+        ],
+        "token": "typograph-line-height-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:13px",
+        "count": 1,
+        "selectors": [
+          "#b-desc"
+        ],
+        "token": "typograph-font-size-13px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:14px",
+        "count": 1,
+        "selectors": [
+          "#b-btn"
+        ],
+        "token": "typograph-font-size-14px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:20px",
+        "count": 1,
+        "selectors": [
+          "#b-title"
+        ],
+        "token": "typograph-font-size-20px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:22px",
+        "count": 1,
+        "selectors": [
+          "#b-clock"
+        ],
+        "token": "typograph-font-size-22px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:20px",
+        "count": 1,
+        "selectors": [
+          "#b-desc"
+        ],
+        "token": "typograph-line-height-20px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:28px",
+        "count": 1,
+        "selectors": [
+          "#b-title"
+        ],
+        "token": "typograph-line-height-28px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:30px",
+        "count": 1,
+        "selectors": [
+          "#b-clock"
+        ],
+        "token": "typograph-line-height-30px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "radius": [
+      {
+        "value": "0px",
+        "count": 8,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-title",
+          "#b-label",
+          "#b-clock",
+          "#b-desc",
+          "#b-img",
+          "#b-note"
+        ],
+        "token": "radiu-0px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "8px",
+        "count": 2,
+        "selectors": [
+          "#b-card",
+          "#b-btn"
+        ],
+        "token": "radiu-8px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "shadows": [],
+    "spacing": [
+      {
+        "value": "16px",
+        "count": 4,
+        "selectors": [
+          "#sheet",
+          "#b-card",
+          "#b-img",
+          "#b-btn"
+        ],
+        "token": "spacin-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "10px",
+        "count": 2,
+        "selectors": [
+          "#b-desc",
+          "#b-note"
+        ],
+        "token": "spacin-10px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "14px",
+        "count": 1,
+        "selectors": [
+          "#b-card"
+        ],
+        "token": "spacin-14px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "1px",
+        "count": 1,
+        "selectors": [
+          "#b-btn"
+        ],
+        "token": "spacin-1px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "24px",
+        "count": 1,
+        "selectors": [
+          "#sheet"
+        ],
+        "token": "spacin-24px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "4px",
+        "count": 1,
+        "selectors": [
+          "#b-clock"
+        ],
+        "token": "spacin-4px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "6px",
+        "count": 1,
+        "selectors": [
+          "#b-btn"
+        ],
+        "token": "spacin-6px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ]
+  },
+  "targetTokens": {
+    "colors": [
+      {
+        "value": "rgb(31, 42, 38)",
+        "count": 12,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-title",
+          "#b-card",
+          "#b-clock",
+          "#b-img",
+          "#b-btn"
+        ],
+        "token": "color-rgb-31-42-38",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgba(0, 0, 0, 0)",
+        "count": 7,
+        "selectors": [
+          "#sheet",
+          "#b-title",
+          "#b-label",
+          "#b-clock",
+          "#b-desc",
+          "#b-img",
+          "#b-note"
+        ],
+        "token": "color-rgba-0-0-0-0",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(107, 107, 107)",
+        "count": 4,
+        "selectors": [
+          "#b-label",
+          "#b-note"
+        ],
+        "token": "color-rgb-107-107-107",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(255, 255, 255)",
+        "count": 2,
+        "selectors": [
+          "#b-card",
+          "#b-btn"
+        ],
+        "token": "color-rgb-255-255-255",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(51, 51, 51)",
+        "count": 2,
+        "selectors": [
+          "#b-desc"
+        ],
+        "token": "color-rgb-51-51-51",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(185, 199, 192)",
+        "count": 1,
+        "selectors": [
+          "#b-btn"
+        ],
+        "token": "color-rgb-185-199-192",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(216, 216, 216)",
+        "count": 1,
+        "selectors": [
+          "#b-card"
+        ],
+        "token": "color-rgb-216-216-216",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(245, 245, 240)",
+        "count": 1,
+        "selectors": [
+          "#device"
+        ],
+        "token": "color-rgb-245-245-240",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "typography": [
+      {
+        "value": "letter-spacing:normal",
+        "count": 10,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-title",
+          "#b-card",
+          "#b-label",
+          "#b-clock",
+          "#b-desc",
+          "#b-img"
+        ],
+        "token": "typograph-letter-spacing-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:400",
+        "count": 8,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-card",
+          "#b-label",
+          "#b-desc",
+          "#b-img",
+          "#b-btn",
+          "#b-note"
+        ],
+        "token": "typograph-font-weight-400",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:normal",
+        "count": 5,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-card",
+          "#b-img",
+          "#b-btn"
+        ],
+        "token": "typograph-line-height-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:16px",
+        "count": 4,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-card",
+          "#b-img"
+        ],
+        "token": "typograph-font-size-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:12px",
+        "count": 2,
+        "selectors": [
+          "#b-label",
+          "#b-note"
+        ],
+        "token": "typograph-font-size-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:600",
+        "count": 2,
+        "selectors": [
+          "#b-title",
+          "#b-clock"
+        ],
+        "token": "typograph-font-weight-600",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:16px",
+        "count": 2,
+        "selectors": [
+          "#b-label",
+          "#b-note"
+        ],
+        "token": "typograph-line-height-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:13px",
+        "count": 1,
+        "selectors": [
+          "#b-desc"
+        ],
+        "token": "typograph-font-size-13px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:14px",
+        "count": 1,
+        "selectors": [
+          "#b-btn"
+        ],
+        "token": "typograph-font-size-14px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:20px",
+        "count": 1,
+        "selectors": [
+          "#b-title"
+        ],
+        "token": "typograph-font-size-20px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:22px",
+        "count": 1,
+        "selectors": [
+          "#b-clock"
+        ],
+        "token": "typograph-font-size-22px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:20px",
+        "count": 1,
+        "selectors": [
+          "#b-desc"
+        ],
+        "token": "typograph-line-height-20px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:28px",
+        "count": 1,
+        "selectors": [
+          "#b-title"
+        ],
+        "token": "typograph-line-height-28px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:30px",
+        "count": 1,
+        "selectors": [
+          "#b-clock"
+        ],
+        "token": "typograph-line-height-30px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "radius": [
+      {
+        "value": "0px",
+        "count": 8,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#b-title",
+          "#b-label",
+          "#b-clock",
+          "#b-desc",
+          "#b-img",
+          "#b-note"
+        ],
+        "token": "radiu-0px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "8px",
+        "count": 2,
+        "selectors": [
+          "#b-card",
+          "#b-btn"
+        ],
+        "token": "radiu-8px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "shadows": [],
+    "spacing": [
+      {
+        "value": "16px",
+        "count": 4,
+        "selectors": [
+          "#sheet",
+          "#b-card",
+          "#b-img",
+          "#b-btn"
+        ],
+        "token": "spacin-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "10px",
+        "count": 2,
+        "selectors": [
+          "#b-desc",
+          "#b-note"
+        ],
+        "token": "spacin-10px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "14px",
+        "count": 1,
+        "selectors": [
+          "#b-card"
+        ],
+        "token": "spacin-14px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "1px",
+        "count": 1,
+        "selectors": [
+          "#b-btn"
+        ],
+        "token": "spacin-1px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "24px",
+        "count": 1,
+        "selectors": [
+          "#sheet"
+        ],
+        "token": "spacin-24px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "4px",
+        "count": 1,
+        "selectors": [
+          "#b-clock"
+        ],
+        "token": "spacin-4px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "6px",
+        "count": 1,
+        "selectors": [
+          "#b-btn"
+        ],
+        "token": "spacin-6px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ]
+  },
+  "drift": {
+    "colors": {
+      "shared": [
+        "rgb(31, 42, 38)",
+        "rgba(0, 0, 0, 0)",
+        "rgb(107, 107, 107)",
+        "rgb(255, 255, 255)",
+        "rgb(51, 51, 51)",
+        "rgb(185, 199, 192)",
+        "rgb(216, 216, 216)",
+        "rgb(245, 245, 240)"
+      ],
+      "onlyPrototype": [],
+      "onlyTarget": []
+    },
+    "typography": {
+      "shared": [
+        "letter-spacing:normal",
+        "font-weight:400",
+        "line-height:normal",
+        "font-size:16px",
+        "font-size:12px",
+        "font-weight:600",
+        "line-height:16px",
+        "font-size:13px",
+        "font-size:14px",
+        "font-size:20px",
+        "font-size:22px",
+        "line-height:20px",
+        "line-height:28px",
+        "line-height:30px"
+      ],
+      "onlyPrototype": [],
+      "onlyTarget": []
+    },
+    "radius": {
+      "shared": [
+        "0px",
+        "8px"
+      ],
+      "onlyPrototype": [],
+      "onlyTarget": []
+    },
+    "shadows": {
+      "shared": [],
+      "onlyPrototype": [],
+      "onlyTarget": []
+    },
+    "spacing": {
+      "shared": [
+        "16px",
+        "10px",
+        "14px",
+        "1px",
+        "24px",
+        "4px",
+        "6px"
+      ],
+      "onlyPrototype": [],
+      "onlyTarget": []
+    }
+  }
+}

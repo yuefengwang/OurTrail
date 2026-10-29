@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "capture-manifest",
+  "pageId": "b-dynamic-undeclared",
+  "stateId": "default",
+  "viewportId": null,
+  "side": "target",
+  "platform": "web",
+  "capturedAt": "2026-10-29T12:26:12.383Z",
+  "source": {
+    "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/b/dynamic.html",
+    "projectRoot": null,
+    "route": null,
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "dataSource": "real",
+    "injection": null,
+    "note": null
+  },
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "dpr": 1,
+  "bundle": null,
+  "screenshot": {
+    "path": "screenshot.png",
+    "sha256": "c46e31fdafa161d9251bdc4dc0398a8a880f512f7afe1accf903380af94c198d",
+    "width": 390,
+    "height": 844,
+    "scale": {
+      "x": 1,
+      "y": 1
+    },
+    "normalizedFrom": "device-pixels"
+  },
+  "snapshot": {
+    "nodes": 10,
+    "rootId": "n0",
+    "dimensions": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "provenance": {
+    "capturedBy": "prototype-fidelity-suite",
+    "adapter": "web",
+    "verification": "captured"
+  }
+}

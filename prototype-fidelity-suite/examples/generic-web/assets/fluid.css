@@ -1,0 +1,46 @@
+/* Experiment F page — the frame is fluid, so the viewport *width* is the
+   variable under test. Every box below sizes itself from the containing block
+   rather than from a pixel constant; that is what makes a width change visible
+   in the captured image and in the node boxes. */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #cfd6d2; }
+body {
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  color: #1f2a26;
+}
+#fluid {
+  width: 100%;
+  min-height: 100vh;
+  background: #f5f5f0;
+}
+#sheet { padding: 24px 16px 0; }
+#f-title { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; }
+#f-card {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid #d8d8d8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+#f-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 16px;
+  border-radius: 4px;
+  background: #e6ece9;
+  color: #33524a;
+}
+#f-desc { margin: 8px 0 0; font-size: 13px; line-height: 20px; color: #333333; }
+#f-list { margin: 16px 0 0; padding-left: 20px; font-size: 13px; line-height: 22px; }
+#f-more {
+  margin-top: 16px;
+  height: 38px;
+  padding: 0 16px;
+  font-size: 14px;
+  border: 1px solid #b9c7c0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2a26;
+}
+#f-note { margin: 10px 0 0; font-size: 12px; line-height: 16px; color: #6b6b6b; }

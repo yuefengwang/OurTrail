@@ -27,7 +27,7 @@ function emptyState() {
     schemaVersion: 1, revision: 0, savedAt: nowIso,
     profiles: [], routes: [], activities: [], groups: [], signups: [], vehicles: [],
     assignments: [], memberships: [], attendance: [], positions: [], incidents: [],
-    events: [], notices: [], tasks: [], receipts: [],
+    events: [], notices: [], tasks: [], plans: [], receipts: [],
   }
 }
 function dispatch(state, payload) {

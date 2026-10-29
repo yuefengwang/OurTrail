@@ -231,14 +231,26 @@ function cloudTexts (svg) {
   check('云全在旧固定窗之上：同样框进来，且不再与「晴空」同形',
     hiDeck.geo.stats.pathCount > 0 && hiDeck.geo.profile.hi >= 6450)
   const trimmed = renderDeck([{ lo: 600, hi: 1200, cov: 96 }, { lo: 6000, hi: 6600, cov: 97 }], 3300, 24, 390)
-  check('装不下的那一侧必须说：边注「窗外上方/下方还有云带」出现且方向与旗标一致',
-    (trimmed.geo.profile.clippedAbove ? /窗外上方还有云带/.test(trimmed.svg) : true) &&
-      (trimmed.geo.profile.clippedBelow ? /窗外下方还有云带/.test(trimmed.svg) : true) &&
-      (trimmed.geo.profile.clippedAbove || trimmed.geo.profile.clippedBelow),
+  check('低云与 6,000 m 高层云同框（上限=轴宽 ⇒ 不存在「装不下」），图上也不印「窗外」边注',
+    trimmed.geo.profile.lo <= 600 && trimmed.geo.profile.hi >= 6600 &&
+      trimmed.geo.profile.clippedAbove === false && trimmed.geo.profile.clippedBelow === false &&
+      !/窗外(上方|下方)还有云带/.test(trimmed.svg),
     JSON.stringify([trimmed.geo.profile.lo, trimmed.geo.profile.hi, trimmed.geo.profile.clippedAbove, trimmed.geo.profile.clippedBelow]))
+  /* 边注这条通路不能被「永不触发」掩盖：把上限影子压回 6,000，同一份数据必须重新印出来。 */
+  check('变异（跨度上限影子压回 6,000）⇒ 同一份数据重新印出「窗外上方还有云带」，证明边注通路仍在',
+    (() => {
+      const CFF = require('../miniprogram/utils/cloud-field-svg.js')
+      const snap = Object.assign({}, CFF.PROFILE)
+      CFF.PROFILE.MAX_SPAN = 6000
+      const cut = renderDeck([{ lo: 600, hi: 1200, cov: 96 }, { lo: 6000, hi: 6600, cov: 97 }], 3300, 24, 390)
+      Object.keys(snap).forEach(k => { CFF.PROFILE[k] = snap[k] })
+      return cut.geo.profile.clippedAbove === true && /窗外上方还有云带/.test(cut.svg)
+    })())
   check('旗标没说的就不许印（点在窗外 ≠ 窗外有云带）',
     (() => {
-      const only = renderDeck([{ lo: 2500, hi: 3200, cov: 90 }], 6200, 24, 390)
+      /* 天花板上移到 9,750 之后，6,200 m 的点已经落得进窗（窗会为它上移），
+         不再是「点在窗外」。这条用例需要一个物理上够不着的点：10,200 m 高于 HI_CEIL。 */
+      const only = renderDeck([{ lo: 2500, hi: 3200, cov: 90 }], 10200, 24, 390)
       return !/窗外(上方|下方)还有云带/.test(only.svg) && /此点在剖面上方 [\d,]+ m/.test(only.svg) &&
         only.geo.profile.clippedAbove === false && only.geo.profile.clippedBelow === false
     })())
@@ -266,7 +278,7 @@ function cloudTexts (svg) {
   const cases = [
     ['晴', renderDeck([], 3000, 24, W)],
     ['云+点在窗外', renderDeck([{ lo: 2500, hi: 3200, cov: 90 }], 6200, 24, W)],
-    ['双层云被裁', renderDeck([{ lo: 600, hi: 1200, cov: 96 }, { lo: 6000, hi: 6600, cov: 97 }], 3300, 24, W)],
+    ['双层云同框', renderDeck([{ lo: 600, hi: 1200, cov: 96 }, { lo: 6000, hi: 6600, cov: 97 }], 3300, 24, W)],
     ['正常', renderDeck([{ lo: 3150, hi: 3850, cov: 85 }], 3500, 24, W)],
   ]
   cases.forEach(([nm, r]) => {

@@ -15,7 +15,10 @@
 'use strict'
 
 const ALT_MIN = 0
-const ALT_MAX = 7000
+/* 网格上界：随云函数新增的 400/350/300 hPa 层一起抬高（350hPa 在 30°N 约 8,600 m，
+   300hPa 实测 8,498–9,765 m）。网格必须覆盖最高一层，否则高层云在渲染前就被丢掉
+   —— 图上看不见，判读也就无从谈起。9,750 是 250 m 步长的整数格点。 */
+const ALT_MAX = 9750
 const ALT_STEP = 250
 
 function altitudesGrid() {
@@ -127,8 +130,12 @@ function buildCloudFieldRange(result, opts) {
       userAltitude: userAlt,
       coveredByHour,
       /* 数据覆盖的海拔范围：覆盖范围之外（用户高于/低于全部层）时，
-         云态必须按「覆盖区与用户的相对位置」推导，不得采样外插值 */
-      covered: (coveredLo != null && coveredHi != null) ? { lo: Math.round(coveredLo), hi: Math.round(coveredHi) } : null,
+         云态必须按「覆盖区与用户的相对位置」推导，不得采样外插值。
+         同时按网格夹一次：超出网格的最高层在 values 里根本不存在，
+         若 covered 仍报得更高，规划器会开出一段全是填充值的窗。 */
+      covered: (coveredLo != null && coveredHi != null)
+        ? { lo: Math.max(ALT_MIN, Math.round(coveredLo)), hi: Math.min(ALT_MAX, Math.round(coveredHi)) }
+        : null,
       meta: { gapHours: gapHours, hours: values.length },
     }
   } catch (e) {

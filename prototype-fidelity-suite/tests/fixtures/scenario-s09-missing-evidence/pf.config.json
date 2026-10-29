@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": { "id": "fixture-s09", "name": "缺证据验收夹具" },
+  "prototype": { "adapter": "web", "url": "prototype.html", "viewport": { "width": 390, "height": 300 }, "frameSelector": "#m-frame" },
+  "target": { "adapter": "web", "url": "target.html", "viewport": { "width": 390, "height": 300 }, "frameSelector": "#m-frame" },
+  "tolerances": { "position": 1.5, "size": 1.5, "gap": 1, "font": 1, "color": 6, "pixelRatio": 0.02, "criticalPixelRatio": 0.005 },
+  "pages": [
+    {
+      "id": "m-ok",
+      "note": "阳性对照：目标文件存在且可渲染，完整证据链，必须 exit 0 / PASS",
+      "states": [{ "id": "default" }],
+      "mappings": [
+        { "id": "m-title", "role": "标题", "prototypeSelector": "#m-title", "targetSelector": "#m-title", "styleProps": ["font-size", "color"], "criticality": "critical" },
+        { "id": "m-note", "role": "说明", "prototypeSelector": "#m-note", "targetSelector": "#m-note", "styleProps": ["font-size", "color"] },
+        { "id": "m-btn", "role": "按钮", "prototypeSelector": "#m-btn", "targetSelector": "#m-btn", "styleProps": ["background-color"] }
+      ],
+      "interactions": [
+        {
+          "id": "record-evidence",
+          "title": "点按钮后输出证据已记录",
+          "do": [{ "tap": { "selector": "#m-btn" } }, { "wait": 150 }],
+          "expect": { "textIncludes": { "selector": "#m-out", "text": "证据已记录" } },
+          "screenshot": false
+        }
+      ]
+    },
+    {
+      "id": "m-missing",
+      "note": "负向：目标页面文件不存在，截图与摘要无法产生",
+      "target": { "url": "target-absent.html" },
+      "states": [{ "id": "default" }],
+      "mappings": [
+        { "id": "m-title", "role": "标题", "prototypeSelector": "#m-title", "targetSelector": "#m-title", "styleProps": ["font-size", "color"], "criticality": "critical" },
+        { "id": "m-note", "role": "说明", "prototypeSelector": "#m-note", "targetSelector": "#m-note", "styleProps": ["font-size", "color"] },
+        { "id": "m-btn", "role": "按钮", "prototypeSelector": "#m-btn", "targetSelector": "#m-btn", "styleProps": ["background-color"] }
+      ],
+      "interactions": [
+        {
+          "id": "record-evidence",
+          "title": "页面都抓不到时交互也无从谈起",
+          "do": [{ "tap": { "selector": "#m-btn" } }, { "wait": 150 }],
+          "expect": { "textIncludes": { "selector": "#m-out", "text": "证据已记录" } },
+          "screenshot": false
+        }
+      ]
+    },
+    {
+      "id": "m-wait",
+      "note": "负向：目标页面存在（就是 m-ok 那一页，逐字节相同），但声明的证据元素 #m-evidence 永远不出现，捕获必须超时。刻意复用同一张页面：这样唯一能解释「抓不到」的就是这条声明，而不是页面本身有差异——早先的 target-wait.html 还改了 #m-note 的文案，会让 capture 一旦放行就以文本差异变红，把因果关系掩盖掉",
+      "target": { "waitForSelector": "#m-evidence", "waitMs": 400 },
+      "states": [{ "id": "default" }],
+      "mappings": [
+        { "id": "m-title", "role": "标题", "prototypeSelector": "#m-title", "targetSelector": "#m-title", "styleProps": ["font-size", "color"], "criticality": "critical" },
+        { "id": "m-note", "role": "说明", "prototypeSelector": "#m-note", "targetSelector": "#m-note", "styleProps": ["font-size", "color"] },
+        { "id": "m-btn", "role": "按钮", "prototypeSelector": "#m-btn", "targetSelector": "#m-btn", "styleProps": ["background-color"] }
+      ],
+      "interactions": [
+        {
+          "id": "record-evidence",
+          "title": "页面抓取失败时不应给出交互裁决",
+          "do": [{ "tap": { "selector": "#m-btn" } }, { "wait": 150 }],
+          "expect": { "textIncludes": { "selector": "#m-out", "text": "证据已记录" } },
+          "screenshot": false
+        }
+      ]
+    }
+  ]
+}

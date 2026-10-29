@@ -1,0 +1,1086 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "visual-diff-report",
+  "pageId": "f-fluid",
+  "stateId": "default",
+  "viewportId": "w414",
+  "generatedAt": "2026-10-29T08:50:38.704Z",
+  "prototype": {
+    "platform": "web",
+    "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/f/fluid.html",
+    "viewport": {
+      "width": 414,
+      "height": 896
+    },
+    "dpr": 1,
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "bundle": null,
+    "dataSource": "real",
+    "capturedAt": "2026-10-29T08:50:35.984Z",
+    "screenshotSha256": "2892a7260042dde417471ffe02230186fa7df9f035b1f8ffc070859e2c97d2cd",
+    "screenshotScale": {
+      "x": 1,
+      "y": 1
+    },
+    "note": null
+  },
+  "target": {
+    "platform": "web",
+    "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/f/fluid.html",
+    "viewport": {
+      "width": 414,
+      "height": 896
+    },
+    "dpr": 1,
+    "codeVersion": null,
+    "suiteHead": "fdc612fd0e3f7a683f689b9091e0ed738deea798",
+    "bundle": null,
+    "dataSource": "real",
+    "capturedAt": "2026-10-29T08:50:38.591Z",
+    "screenshotSha256": "2892a7260042dde417471ffe02230186fa7df9f035b1f8ffc070859e2c97d2cd",
+    "screenshotScale": {
+      "x": 1,
+      "y": 1
+    },
+    "note": null
+  },
+  "tolerances": {
+    "position": 1.5,
+    "size": 1.5,
+    "gap": 1,
+    "font": 1,
+    "color": 6,
+    "pixelRatio": 0.02,
+    "criticalPixelRatio": 0.005
+  },
+  "measurement": {
+    "method": "region-crop",
+    "note": "Both sides are cropped to the shared CSS sub-rect of the two nodes (common width and height, each anchored at its own origin), so a component offset is not charged to every region and a size difference stays a geometry finding.",
+    "regionsCompared": 4,
+    "regionsFailing": 0,
+    "totalDiffRatio": 0
+  },
+  "regions": [
+    {
+      "id": "f-title",
+      "role": "标题",
+      "criticality": "critical",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 16,
+          "y": 24,
+          "w": 382,
+          "h": 28
+        },
+        "target": {
+          "x": 16,
+          "y": 24,
+          "w": 382,
+          "h": 28
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "informational",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 20,
+          "b": 20,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 600,
+          "b": 600,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 28,
+          "b": 28,
+          "delta": 0
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "start",
+          "b": "start"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgba(0, 0, 0, 0)",
+          "b": "rgba(0, 0, 0, 0)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": 0
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "block",
+          "b": "block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "visible",
+          "b": "visible"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
+        }
+      ],
+      "text": {
+        "prototype": "装备清单",
+        "target": "装备清单",
+        "equal": true,
+        "judged": true,
+        "comparable": true,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 0,
+        "aaCount": 0,
+        "diffRatio": 0,
+        "meanDelta": 0,
+        "maxDelta": 0,
+        "components": [],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 16,
+          "y": 24,
+          "w": 382,
+          "h": 28
+        },
+        "targetPixels": {
+          "x": 16,
+          "y": 24,
+          "w": 382,
+          "h": 28
+        },
+        "masked": null,
+        "maskedBy": [],
+        "informativeOnly": true,
+        "ink": {
+          "status": "PASS",
+          "ratio": 1
+        },
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#f-title",
+        "targetSelector": "#f-title",
+        "prototypePath": "div#fluid>div#sheet>h1#f-title",
+        "targetPath": "div#fluid>div#sheet>h1#f-title"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-title-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-title-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-title-diff.png"
+      }
+    },
+    {
+      "id": "f-card",
+      "role": "卡片",
+      "criticality": "critical",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 16,
+          "y": 68,
+          "w": 382,
+          "h": 100
+        },
+        "target": {
+          "x": 16,
+          "y": 68,
+          "w": 382,
+          "h": 100
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "exact",
+      "styles": [
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            14,
+            14,
+            14,
+            14
+          ],
+          "b": [
+            14,
+            14,
+            14,
+            14
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 8,
+          "b": 8,
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgb(255, 255, 255)",
+          "b": "rgb(255, 255, 255)",
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "",
+        "target": "",
+        "equal": null,
+        "judged": false,
+        "comparable": false,
+        "lines": {
+          "prototype": null,
+          "target": null
+        },
+        "lineDelta": null
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 0,
+        "aaCount": 0,
+        "diffRatio": 0,
+        "meanDelta": 0,
+        "maxDelta": 0,
+        "components": [],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 16,
+          "y": 68,
+          "w": 382,
+          "h": 100
+        },
+        "targetPixels": {
+          "x": 16,
+          "y": 68,
+          "w": 382,
+          "h": 100
+        },
+        "masked": {
+          "pixels": 15664,
+          "ratio": 0.4101
+        },
+        "maskedBy": [
+          "f-desc"
+        ],
+        "informativeOnly": false,
+        "ink": null,
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#f-card",
+        "targetSelector": "#f-card",
+        "prototypePath": "div#fluid>div#sheet>div#f-card",
+        "targetPath": "div#fluid>div#sheet>div#f-card"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-card-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-card-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-card-diff.png"
+      }
+    },
+    {
+      "id": "f-desc",
+      "role": "说明",
+      "criticality": "critical",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 31,
+          "y": 113,
+          "w": 352,
+          "h": 40
+        },
+        "target": {
+          "x": 31,
+          "y": 113,
+          "w": 352,
+          "h": 40
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "informational",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 13,
+          "b": 13,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 400,
+          "b": 400,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 20,
+          "b": 20,
+          "delta": 0
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "start",
+          "b": "start"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(51, 51, 51)",
+          "b": "rgb(51, 51, 51)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgba(0, 0, 0, 0)",
+          "b": "rgba(0, 0, 0, 0)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(51, 51, 51)",
+          "b": "rgb(51, 51, 51)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": 0
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            8,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            8,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "block",
+          "b": "block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "visible",
+          "b": "visible"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
+        }
+      ],
+      "text": {
+        "prototype": "按同行人数与海拔变化增减携带物件，重量由每人分摊，出发前一晚集中清点一次。",
+        "target": "按同行人数与海拔变化增减携带物件，重量由每人分摊，出发前一晚集中清点一次。",
+        "equal": true,
+        "judged": true,
+        "comparable": true,
+        "lines": {
+          "prototype": 2,
+          "target": 2
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 0,
+        "aaCount": 0,
+        "diffRatio": 0,
+        "meanDelta": 0,
+        "maxDelta": 0,
+        "components": [],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 31,
+          "y": 113,
+          "w": 352,
+          "h": 40
+        },
+        "targetPixels": {
+          "x": 31,
+          "y": 113,
+          "w": 352,
+          "h": 40
+        },
+        "masked": null,
+        "maskedBy": [],
+        "informativeOnly": true,
+        "ink": {
+          "status": "PASS",
+          "ratio": 1
+        },
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#f-desc",
+        "targetSelector": "#f-desc",
+        "prototypePath": "div#fluid>div#sheet>div#f-card>p#f-desc",
+        "targetPath": "div#fluid>div#sheet>div#f-card>p#f-desc"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "attribution": {
+        "kind": "measured-chain",
+        "chain": [
+          {
+            "pairId": "f-card",
+            "depth": 1,
+            "measured": true,
+            "dx": 0,
+            "dy": 0,
+            "dh": 0,
+            "pushesY": 0
+          }
+        ],
+        "inherited": {
+          "dx": 0,
+          "dy": 0
+        },
+        "own": {
+          "dx": 0,
+          "dy": 0
+        },
+        "dominant": "none",
+        "arithmetic": {
+          "dx": "0 - (0) = 0",
+          "dy": "0 - (0) = 0"
+        }
+      },
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-desc-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-desc-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-desc-diff.png"
+      }
+    },
+    {
+      "id": "f-list",
+      "role": "清单",
+      "criticality": "normal",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 16,
+          "y": 184,
+          "w": 382,
+          "h": 66
+        },
+        "target": {
+          "x": 16,
+          "y": 184,
+          "w": 382,
+          "h": 66
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "informational",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 13,
+          "b": 13,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 400,
+          "b": 400,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 22,
+          "b": 22,
+          "delta": 0
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "start",
+          "b": "start"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgba(0, 0, 0, 0)",
+          "b": "rgba(0, 0, 0, 0)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": 0
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            20
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            20
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            16,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            16,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "block",
+          "b": "block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "visible",
+          "b": "visible"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "background-image",
+          "status": "PASS",
+          "a": "none",
+          "b": "none",
+          "delta": null
+        }
+      ],
+      "text": {
+        "prototype": "",
+        "target": "",
+        "equal": null,
+        "judged": false,
+        "comparable": false,
+        "lines": {
+          "prototype": null,
+          "target": null
+        },
+        "lineDelta": null
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 0,
+        "aaCount": 0,
+        "diffRatio": 0,
+        "meanDelta": 0,
+        "maxDelta": 0,
+        "components": [],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 16,
+          "y": 184,
+          "w": 382,
+          "h": 66
+        },
+        "targetPixels": {
+          "x": 16,
+          "y": 184,
+          "w": 382,
+          "h": 66
+        },
+        "masked": null,
+        "maskedBy": [],
+        "informativeOnly": true,
+        "ink": {
+          "status": "PASS",
+          "ratio": 1
+        },
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#f-list",
+        "targetSelector": "#f-list",
+        "prototypePath": "div#fluid>div#sheet>ul#f-list",
+        "targetPath": "div#fluid>div#sheet>ul#f-list"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "attribution": {
+        "kind": "independent",
+        "reason": "no mapped ancestor"
+      },
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-list-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-list-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\f-fluid-default@w414-2026-10-29T08-50-33\\regions\\f-list-diff.png"
+      }
+    }
+  ],
+  "fullPage": null,
+  "acceptedDifferences": [],
+  "verdict": "PASS",
+  "mapping": {
+    "pairs": 4,
+    "source": "pf.config.json#pages[].mappings"
+  },
+  "alignment": {
+    "applied": false
+  },
+  "cascade": {
+    "method": "measured-deltas-along-declared-ancestry",
+    "attributed": 1,
+    "independent": 3
+  },
+  "warnings": [
+    "Container pixel comparisons masked over declared child regions (each child is judged at its own level): f-card ← f-desc"
+  ]
+}

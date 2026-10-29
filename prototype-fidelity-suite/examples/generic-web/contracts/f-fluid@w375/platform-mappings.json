@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "platform-mappings",
+  "pageId": "f-fluid",
+  "stateId": "default",
+  "generatedAt": "2026-10-29T12:28:08.762Z",
+  "platforms": {
+    "prototype": "web",
+    "target": "web"
+  },
+  "adapters": {
+    "prototype": "web",
+    "target": "web"
+  },
+  "alignment": null,
+  "pairs": [
+    {
+      "id": "f-title",
+      "role": "标题",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": "#f-title",
+      "targetSelector": "#f-title",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "f-card",
+      "role": "卡片",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": "#f-card",
+      "targetSelector": "#f-card",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "padding",
+        "border-radius",
+        "background-color"
+      ],
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "f-desc",
+      "role": "说明",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": "#f-desc",
+      "targetSelector": "#f-desc",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "f-list",
+      "role": "清单",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#f-list",
+      "targetSelector": "#f-list",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    }
+  ],
+  "acceptedDifferences": [],
+  "coverage": {
+    "declared": 4,
+    "resolved": 4,
+    "unverified": 0,
+    "notApplicable": 0,
+    "critical": 3
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json#pages[].mappings"
+  }
+}

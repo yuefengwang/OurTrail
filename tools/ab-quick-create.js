@@ -47,7 +47,7 @@ const emptyState = () => ({
   schemaVersion: 1, revision: 0, savedAt: NOW,
   profiles: [], routes: [], activities: [], groups: [], signups: [], vehicles: [],
   assignments: [], memberships: [], attendance: [], positions: [], incidents: [],
-  events: [], notices: [], tasks: [], receipts: [],
+  events: [], notices: [], tasks: [], plans: [], receipts: [],
 })
 
 // 确定性夹具的时间基准（UTC 墙上时刻，与两侧 ctx.now 同源）

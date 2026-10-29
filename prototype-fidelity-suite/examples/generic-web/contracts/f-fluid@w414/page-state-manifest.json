@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "page-state-manifest",
+  "pageId": "f-fluid",
+  "generatedAt": "2026-10-29T12:28:18.362Z",
+  "states": [
+    {
+      "id": "default",
+      "note": null,
+      "injection": {
+        "declared": false,
+        "dataSource": "real",
+        "keys": []
+      },
+      "sides": {
+        "prototype": {
+          "side": "prototype",
+          "platform": null,
+          "captured": false,
+          "status": "UNVERIFIED",
+          "dataSource": null,
+          "viewport": null,
+          "dpr": null,
+          "codeVersion": null,
+          "capturedAt": null,
+          "screenshot": null,
+          "nodes": 0
+        },
+        "target": {
+          "side": "target",
+          "platform": null,
+          "captured": false,
+          "status": "UNVERIFIED",
+          "dataSource": null,
+          "viewport": null,
+          "dpr": null,
+          "codeVersion": null,
+          "capturedAt": null,
+          "screenshot": null,
+          "nodes": 0
+        }
+      },
+      "usableAsInteractionEvidence": true,
+      "status": "UNVERIFIED"
+    }
+  ],
+  "coverage": {
+    "declared": 1,
+    "captured": 0,
+    "injected": 0
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json"
+  }
+}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>花园工具借用 · 详情</title>
+<style>
+  :root {
+    --paper: #fbf8f2;
+    --backdrop: #e7e2d8;
+    --ink: #232a25;
+    --muted: #6d7168;
+    --surface: #fffdf9;
+    --rule: #ddd8cc;
+    --leaf: #2f6b4f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font: 15px/1.5 system-ui, sans-serif; color: var(--ink); background: var(--backdrop); }
+  #frame { width: 390px; min-height: 844px; background: var(--paper); }
+  #screen { padding: 24px 16px 32px; }
+  .head { margin-bottom: 20px; }
+  .head h1 { margin: 0; font-size: 22px; line-height: 30px; font-weight: 600; color: var(--leaf); }
+  .head p { margin: 6px 0 0; font-size: 13px; line-height: 20px; color: var(--muted); }
+  .spec { padding: 14px; border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); }
+  .spec dt { font-size: 12px; line-height: 18px; color: var(--muted); }
+  .spec dd { margin: 2px 0 10px; font-size: 15px; line-height: 22px; }
+  .borrow { display: block; width: 100%; margin-top: 20px; height: 44px; border: 0; border-radius: 10px; background: var(--leaf); color: var(--surface); font-size: 15px; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="screen">
+    <div class="head">
+      <h1>长柄修枝剪</h1>
+      <p>花园工具 · 2 号架</p>
+    </div>
+    <dl class="spec">
+      <dt>可借时段</dt><dd>周六 09:00 - 11:00</dd>
+      <dt>保管人</dt><dd>门房值班志愿者</dd>
+      <dt>上次归还</dt><dd>10 月 18 日</dd>
+    </dl>
+    <button class="borrow" id="borrow-btn">登记借用</button>
+  </div>
+</div>
+</body>
+</html>

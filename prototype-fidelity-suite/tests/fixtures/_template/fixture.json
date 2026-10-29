@@ -1,0 +1,18 @@
+{
+  "id": "_template",
+  "class": "visual-deviation",
+  "adversarial": false,
+  "purpose": "格式样例（不计数）：一个页面、一条命令、两条产物断言。复制这份改，不要直接引用它。",
+  "requires": ["playwright"],
+  "steps": [
+    {
+      "run": ["verify", "--project", ".", "--page", "t-page", "--run", "t-run"],
+      "expectExit": 0,
+      "captureStdout": "verify.stdout.txt"
+    }
+  ],
+  "checks": [
+    { "file": "reports/t-run/visual-diff-report.json", "path": "$.verdict", "equals": "PASS" },
+    { "file": "verify.stdout.txt", "contains": "verdict PASS" }
+  ]
+}

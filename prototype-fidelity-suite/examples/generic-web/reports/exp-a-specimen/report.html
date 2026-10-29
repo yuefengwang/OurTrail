@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>通用 Web 基样（与 OurTrail 业务无关） · specimen / default — FAIL</title>
+<style>
+:root{--fg:#1f2328;--muted:#6e7781;--line:#d0d7de;--bg:#fff;--soft:#f6f8fa}
+*{box-sizing:border-box}
+body{margin:0;padding:24px;font:13px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;color:var(--fg);background:var(--bg)}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:28px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+code{font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--soft);padding:1px 4px;border-radius:4px}
+.badge{display:inline-block;padding:1px 7px;border:1px solid;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em}
+.verdict{display:inline-block;margin-left:8px;font-size:14px;vertical-align:4px}
+table{border-collapse:collapse;width:100%;margin:8px 0}
+.grid th,.grid td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.grid th{background:var(--soft);font-weight:600}
+.grid.tight td,.grid.tight th{padding:4px 6px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.provenance th{width:120px}
+.region{border:1px solid var(--line);border-radius:6px;margin:10px 0;overflow:hidden}
+.region>summary{cursor:pointer;padding:8px 10px;background:var(--soft);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.region .role{font-weight:600}
+.region .facts{color:var(--muted);font-variant-numeric:tabular-nums}
+.shots{display:flex;gap:12px;padding:12px;overflow:auto}
+.shots figure{margin:0;flex:1 1 0;min-width:160px}
+.shots figcaption{font-size:11px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
+.shots img{width:100%;height:auto;border:1px solid var(--line);border-radius:4px;image-rendering:pixelated;background:#fff}
+.missing{padding:24px 8px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:4px}
+.detail{padding:0 12px 12px}
+.warn{background:#fff8c5;border:1px solid #d4a72c;border-radius:6px;padding:8px 12px;margin:8px 0}
+.blocked{background:#eaeef2;border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin:8px 0}
+footer{margin-top:32px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}
+</style></head><body>
+<h1>通用 Web 基样（与 OurTrail 业务无关） · specimen / default<span class="verdict"><span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span></span></h1>
+<p class="muted">run <code>exp-a-specimen</code> · generated <code>2026-10-28T13:55:54.309Z</code> · 12 mapped regions</p>
+
+
+
+
+<h2>Scorecard</h2>
+<table class="grid">
+    <thead><tr><th>Dimension</th><th>Verdict</th><th class="num">Pass</th><th class="num">Fail</th><th class="num">Unverified</th><th>Notes</th></tr></thead>
+    <tbody><tr>
+      <td>geometry</td>
+      <td><span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span></td>
+      <td class="num">23</td>
+      <td class="num">1</td>
+      <td class="num">0</td>
+      <td></td>
+    </tr><tr>
+      <td>typography</td>
+      <td><span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span></td>
+      <td class="num">53</td>
+      <td class="num">3</td>
+      <td class="num">0</td>
+      <td></td>
+    </tr><tr>
+      <td>appearance</td>
+      <td><span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span></td>
+      <td class="num">93</td>
+      <td class="num">3</td>
+      <td class="num">0</td>
+      <td></td>
+    </tr><tr>
+      <td>state</td>
+      <td><span class="badge" style="color:#1a7f37;border-color:#1a7f37">PASS</span></td>
+      <td class="num">4</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td></td>
+    </tr><tr>
+      <td>interaction</td>
+      <td><span class="badge" style="color:#1a7f37;border-color:#1a7f37">PASS</span></td>
+      <td class="num">1</td>
+      <td class="num">0</td>
+      <td class="num">0</td>
+      <td></td>
+    </tr></tbody>
+  </table>
+  <p class="muted">Critical failures: <b>0</b> · non-critical failures: <b>8</b> — pos-8, gap-4, font-size, line-height, radius, color, crop, wrap · coverage <b>12/12 pairs measured · 0 pixel regions</b></p>
+
+<h2>Provenance</h2>
+<table class="grid provenance">
+
+
+
+</table>
+
+<h2>Regions (12) — 8 failing</h2>
+<details class="region">
+    <summary>
+      <span class="badge" style="color:#1a7f37;border-color:#1a7f37">PASS</span>
+      <span class="role">对照 1</span>
+      <span class="muted">ctrl-1</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 0%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAADkklEQVR4nO3c4U7aYBiG4Z4vx9Cz6IH0QHoApvyQRdvaj2yaAYmTH+/yFooFBJllLY+5r+RJNLIMk3tfPjEsWq1erF0Ipc1m95bnud3d3TF2E/MevcsQKuv2GrUfPD4+WFmWtlwubb1eG3ArvEfvsigKK4qH/Xg93BDC2M8R+FRd17uAIz+Kq6oc+zkBF/Mbgncb+V3Cj2RAxWKxaO7AkV+GueNCifc6neYW+U9zgBrvlnghiXghi3ghi3ghi3ghi3ghi3ghi3gh6//FmyUWp9Xm4yq1eDKxyXZJVlkav3/ebvd44AJfjrdK4/PhHcabZLs/t/1w72N//O7jQ1likzg10kbXdU7eJtTUksnxadpE91G8zWmcWOZhNo+N7fjg3Z7QSWIJ8eLA1+PtnJR7J2jn6yevDal//lGsJ/8y4sWRXidvlkyaaLMksaz5vBPkJ9eGw2vH+Tsv8eJYz2tDtrkq7MLqRHZBvHundffxH/09xIsDve+8zQnaDau9Tpx9tYGTF/31i9ejjFPL0vj8qw29ES+O9YjXrwztHddfFdjce9+/3I3Xv755bNUJvb0zt/8ITsdJvDj25Xh34e3p/vLh/Ye3au9k9ui3oXej9ZfMTr7QCxzj18OQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQ1Sve17c/9vP3L6tfgj0914z907wb78c7GjTe17fX0b959n3mPQ0Wr/+LGfsbZt9n3tNg8dbPXBXY9eY9DRbv2N8s+34jXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlsiNeJrvB4uVtQOyaG/RtQLwBk11zg74Bk7e+s2tu0Le+G//pCOu50f7TEWBsxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZTbx5ntt6vR77uQAX816n09yi2ezelsvl2M8HuNhisTDvNgqhsqIoxn4+wMW81/m8smi1erGieLAQwtjPCfhUXddNr95tE28bcFmWzZHMHRi3xHv0Lv3ELYpHa5vdxeubz5/sx49Zcxn2n+YYu4V5j95lCE/W7fUvLjpvEMaNU8AAAAAASUVORK5CYII=" alt="prototype crop of ctrl-1"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAADkklEQVR4nO3c4U7aYBiG4Z4vx9Cz6IH0QHoApvyQRdvaj2yaAYmTH+/yFooFBJllLY+5r+RJNLIMk3tfPjEsWq1erF0Ipc1m95bnud3d3TF2E/MevcsQKuv2GrUfPD4+WFmWtlwubb1eG3ArvEfvsigKK4qH/Xg93BDC2M8R+FRd17uAIz+Kq6oc+zkBF/Mbgncb+V3Cj2RAxWKxaO7AkV+GueNCifc6neYW+U9zgBrvlnghiXghi3ghi3ghi3ghi3ghi3ghi3gh6//FmyUWp9Xm4yq1eDKxyXZJVlkav3/ebvd44AJfjrdK4/PhHcabZLs/t/1w72N//O7jQ1likzg10kbXdU7eJtTUksnxadpE91G8zWmcWOZhNo+N7fjg3Z7QSWIJ8eLA1+PtnJR7J2jn6yevDal//lGsJ/8y4sWRXidvlkyaaLMksaz5vBPkJ9eGw2vH+Tsv8eJYz2tDtrkq7MLqRHZBvHundffxH/09xIsDve+8zQnaDau9Tpx9tYGTF/31i9ejjFPL0vj8qw29ES+O9YjXrwztHddfFdjce9+/3I3Xv755bNUJvb0zt/8ITsdJvDj25Xh34e3p/vLh/Ye3au9k9ui3oXej9ZfMTr7QCxzj18OQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQ1Sve17c/9vP3L6tfgj0914z907wb78c7GjTe17fX0b959n3mPQ0Wr/+LGfsbZt9n3tNg8dbPXBXY9eY9DRbv2N8s+34jXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlsiNeJrvB4uVtQOyaG/RtQLwBk11zg74Bk7e+s2tu0Le+G//pCOu50f7TEWBsxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZTbx5ntt6vR77uQAX816n09yi2ezelsvl2M8HuNhisTDvNgqhsqIoxn4+wMW81/m8smi1erGieLAQwtjPCfhUXddNr95tE28bcFmWzZHMHRi3xHv0Lv3ELYpHa5vdxeubz5/sx49Zcxn2n+YYu4V5j95lCE/W7fUvLjpvEMaNU8AAAAAASUVORK5CYII=" alt="target crop of ctrl-1"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAABPUlEQVR4nO3SMQ0AMAzAsPIn3XLYM0WyEeTILETN7wB4ZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1kHdl+svhLileQAAAAASUVORK5CYII=" alt="diff of ctrl-1"></figure>
+    </div>
+    <div class="detail">
+      <p>0 pixels differ (0 anti-aliased)</p>
+      <p class="muted">No style declaration differences above tolerance.</p>
+      
+      <p class="muted">Selectors: <code>#ctrl-1</code> → <code>#ctrl-1</code></p>
+    </div>
+  </details><details class="region">
+    <summary>
+      <span class="badge" style="color:#1a7f37;border-color:#1a7f37">PASS</span>
+      <span class="role">对照 2</span>
+      <span class="muted">ctrl-2</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 0%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAADoklEQVR4nO3cUW7aUBRFUc+XMXgWHogH4gFE5iNUie3wUJuoECkNH7e6JiZ2oEAwtTloL+lIRKUtkXZfX1LR6PX1xZqFUNpsdm95ntvd3R1jVzHv0bsMobJ2r1Hz4PHxwcqytNVqZev12oBr4T16l2VZWFE8dOP1cEMIY79G4CjvtAk48qO4qsqxXxNwMr8heLeR3yX8SAZULJfL+g4c+WWYOy6UeK/TaW6RfzUHqPFuiReSiBeyiBeyiBeyiBeyiBeyiBeyiBey/l+8WWJxWm0eV6nFk4lNPpZklaXx58fNts8HTnB2vFUaHw7va7xJtv15Hw87j/3528edX6Yd/bdfJm7YZU7eOtTUksnuaTqJU6v2xVufxollWfLx3Nh2Dt4qtXQbbGaJP7/fK8UNOT/e1knZOUFbP/7Pa0PqH++J9SC/ahAvPvU6ef2vdI82SzZRZUkryCPXhq/XjqN3Xj+huTegpee1IdtcFfxq0HzcPD4h3k6L7efv/DZJ6/cANnrfeesTtB1Wc504+N2G00/e+nmcuNijX7weZZxalsaHv9twrkv8GrhZPeL1K0Nzx93zxVQnPP/xzXOrVujNnbn5Q7D7zYbd05lDGI2z492G19H+x4fPL96qzsnc+pZXO1q+IMM38c/DkEW8kEW8kEW8kEW8kEW8kEW8kEW8kEW8kEW8kEW8kEW8kNUr3rf3P/bz9y+bvwR7ep4z9q15N96PdzRovG/vb6N/8ux25j0NFq//iRn7E2a3M+9psHjnz1wV2OXmPQ0W79ifLLu9ES+THfEy2REvkx3xMtkRL5Md8TLZES+THfEy2REvkx3xMtkRL5Md8TLZES+THfEy2REvkx3xMtkRL5PdYPHyNiB2yQ36NiDegMkuuUHfgMlb39klN+hb343/dIT13Gj/6QgwNuKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFrDrePM9tvV6P/VqAk3mv02lu0Wx2b6vVauzXA5xsuVyadxuFUFlZFmO/HuBkRVHYYlFZ9Pr6YkXxYCGEsV8TcNR8PreieDTvto63CbiqyvpI5g6Ma+I9epd+4jbhduL1LRZP9uPHrL4M+1dzjF3DvEfvMoQna/f6F01rZQ7TOo5aAAAAAElFTkSuQmCC" alt="prototype crop of ctrl-2"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAADoklEQVR4nO3cUW7aUBRFUc+XMXgWHogH4gFE5iNUie3wUJuoECkNH7e6JiZ2oEAwtTloL+lIRKUtkXZfX1LR6PX1xZqFUNpsdm95ntvd3R1jVzHv0bsMobJ2r1Hz4PHxwcqytNVqZev12oBr4T16l2VZWFE8dOP1cEMIY79G4CjvtAk48qO4qsqxXxNwMr8heLeR3yX8SAZULJfL+g4c+WWYOy6UeK/TaW6RfzUHqPFuiReSiBeyiBeyiBeyiBeyiBeyiBeyiBey/l+8WWJxWm0eV6nFk4lNPpZklaXx58fNts8HTnB2vFUaHw7va7xJtv15Hw87j/3528edX6Yd/bdfJm7YZU7eOtTUksnuaTqJU6v2xVufxollWfLx3Nh2Dt4qtXQbbGaJP7/fK8UNOT/e1knZOUFbP/7Pa0PqH++J9SC/ahAvPvU6ef2vdI82SzZRZUkryCPXhq/XjqN3Xj+huTegpee1IdtcFfxq0HzcPD4h3k6L7efv/DZJ6/cANnrfeesTtB1Wc504+N2G00/e+nmcuNijX7weZZxalsaHv9twrkv8GrhZPeL1K0Nzx93zxVQnPP/xzXOrVujNnbn5Q7D7zYbd05lDGI2z492G19H+x4fPL96qzsnc+pZXO1q+IMM38c/DkEW8kEW8kEW8kEW8kEW8kEW8kEW8kEW8kEW8kEW8kEW8kNUr3rf3P/bz9y+bvwR7ep4z9q15N96PdzRovG/vb6N/8ux25j0NFq//iRn7E2a3M+9psHjnz1wV2OXmPQ0W79ifLLu9ES+THfEy2REvkx3xMtkRL5Md8TLZES+THfEy2REvkx3xMtkRL5Md8TLZES+THfEy2REvkx3xMtkRL5PdYPHyNiB2yQ36NiDegMkuuUHfgMlb39klN+hb343/dIT13Gj/6QgwNuKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFLOKFrDrePM9tvV6P/VqAk3mv02lu0Wx2b6vVauzXA5xsuVyadxuFUFlZFmO/HuBkRVHYYlFZ9Pr6YkXxYCGEsV8TcNR8PreieDTvto63CbiqyvpI5g6Ma+I9epd+4jbhduL1LRZP9uPHrL4M+1dzjF3DvEfvMoQna/f6F01rZQ7TOo5aAAAAAElFTkSuQmCC" alt="target crop of ctrl-2"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAABPUlEQVR4nO3SMQ0AMAzAsPIn3XLYM0WyEeTILETN7wB4ZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1kHdl+svhLileQAAAAASUVORK5CYII=" alt="diff of ctrl-2"></figure>
+    </div>
+    <div class="detail">
+      <p>0 pixels differ (0 anti-aliased)</p>
+      <p class="muted">No style declaration differences above tolerance.</p>
+      
+      <p class="muted">Selectors: <code>#ctrl-2</code> → <code>#ctrl-2</code></p>
+    </div>
+  </details><details class="region">
+    <summary>
+      <span class="badge" style="color:#1a7f37;border-color:#1a7f37">PASS</span>
+      <span class="role">对照 3</span>
+      <span class="muted">ctrl-3</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 0%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAADoklEQVR4nO3cXW7aXBRGYc83Y/AsPBAPxAOI4CJEie3YqE1UQErDxa62g41NE/5MbV66HumVqD7aj0grp6dUNFit3qxeWWY2mz3YZDKx+/t7xq5i3qN3WZa5tXsN6gfPz0+WZZktl0tbr9cGXAvv0btM09TS9Kkbr4dbluXYrxE4qCiKJuDAj+I8z8Z+TcDR/Ibg3QZ+l/AjGVCxWCyqO3Dgl2HuuFDivU6nEwv8T3OAGu+WeCGJeCGLeCGLeCGLeCGLeCGLeCGLeCHr38WbRBbG+efjPLbw7s7uNouS3OJw++N6zfOBI5wdbx6H+8PbjTdKmp+3edh57M9vHm9/EYs60Z/8MnHDLnPyVqHGndCahbHlX8VbncaRJUm0eW5oew/e+vn9XiluyPnxtk7Kzgna+u/fXhti//GBWHe1vgEA63vyJtHnb+VJ9HkiJlEryAPXht1rx3d33uZ5foKf/3XiBvW8NmzupE1YiUX14yPi7Ryk7ed/hWsDdvS+81YnY/tUrK8Te99tOP7kbf2fLA5PvGrgpvWL16MMY0vicP+7DZfAyYsdPeL1K0N9EvqpuBNWJ97tqZm3Qq/vzPU3wV+pN+9EHPFuBP47Z8fbhNfR/suHbWx552T26Deht6P1UHk3ASfgr4chi3ghi3ghi3ghi3ghi3ghi3ghi3ghi3ghi3ghi3ghi3ghq1e87x+/7cevn1a8lfbyWjB20rwb78c7GjTe94/30b94djvzngaL179jxv6C2e3Mexos3uKVqwK73LynweId+4tltzfiZbIjXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlshssXj4GxC65QT8GxAcw2SU36Acw+eg7u+QG/ei78Y+OsJ4b7R8dAcZGvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBVxTuZTGy9Xo/9WoCjea/T6cSC2ezBlsvl2K8HONpisTDvNijL3NI0Hfv1AEfzXufz3ILV6s3S9MnKshz7NQEHFUVR9erdVvHWAWdZVh3J3IFxTbxH79JP3DR9trrZJl7ffP5ij4+z6jLsf5pj7BrmPXqXZfli7V7/APFRZMFDCpuRAAAAAElFTkSuQmCC" alt="prototype crop of ctrl-3"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAADoklEQVR4nO3cXW7aXBRGYc83Y/AsPBAPxAOI4CJEie3YqE1UQErDxa62g41NE/5MbV66HumVqD7aj0grp6dUNFit3qxeWWY2mz3YZDKx+/t7xq5i3qN3WZa5tXsN6gfPz0+WZZktl0tbr9cGXAvv0btM09TS9Kkbr4dbluXYrxE4qCiKJuDAj+I8z8Z+TcDR/Ibg3QZ+l/AjGVCxWCyqO3Dgl2HuuFDivU6nEwv8T3OAGu+WeCGJeCGLeCGLeCGLeCGLeCGLeCGLeCHr38WbRBbG+efjPLbw7s7uNouS3OJw++N6zfOBI5wdbx6H+8PbjTdKmp+3edh57M9vHm9/EYs60Z/8MnHDLnPyVqHGndCahbHlX8VbncaRJUm0eW5oew/e+vn9XiluyPnxtk7Kzgna+u/fXhti//GBWHe1vgEA63vyJtHnb+VJ9HkiJlEryAPXht1rx3d33uZ5foKf/3XiBvW8NmzupE1YiUX14yPi7Ryk7ed/hWsDdvS+81YnY/tUrK8Te99tOP7kbf2fLA5PvGrgpvWL16MMY0vicP+7DZfAyYsdPeL1K0N9EvqpuBNWJ97tqZm3Qq/vzPU3wV+pN+9EHPFuBP47Z8fbhNfR/suHbWx552T26Deht6P1UHk3ASfgr4chi3ghi3ghi3ghi3ghi3ghi3ghi3ghi3ghi3ghi3ghi3ghq1e87x+/7cevn1a8lfbyWjB20rwb78c7GjTe94/30b94djvzngaL179jxv6C2e3Mexos3uKVqwK73LynweId+4tltzfiZbIjXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlshssXj4GxC65QT8GxAcw2SU36Acw+eg7u+QG/ei78Y+OsJ4b7R8dAcZGvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBFvJBVxTuZTGy9Xo/9WoCjea/T6cSC2ezBlsvl2K8HONpisTDvNijL3NI0Hfv1AEfzXufz3ILV6s3S9MnKshz7NQEHFUVR9erdVvHWAWdZVh3J3IFxTbxH79JP3DR9trrZJl7ffP5ij4+z6jLsf5pj7BrmPXqXZfli7V7/APFRZMFDCpuRAAAAAElFTkSuQmCC" alt="target crop of ctrl-3"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAABPUlEQVR4nO3SMQ0AMAzAsPIn3XLYM0WyEeTILETN7wB4ZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1kHdl+svhLileQAAAAASUVORK5CYII=" alt="diff of ctrl-3"></figure>
+    </div>
+    <div class="detail">
+      <p>0 pixels differ (0 anti-aliased)</p>
+      <p class="muted">No style declaration differences above tolerance.</p>
+      
+      <p class="muted">Selectors: <code>#ctrl-3</code> → <code>#ctrl-3</code></p>
+    </div>
+  </details><details class="region">
+    <summary>
+      <span class="badge" style="color:#1a7f37;border-color:#1a7f37">PASS</span>
+      <span class="role">对照 4</span>
+      <span class="muted">ctrl-4</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 0%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAADm0lEQVR4nO3c4U7aYBiG4Z4vx9Cz6IH0QHoApvwQo23hI5tmQOLkx7u8hdaWITJhLY+5r+RJYLIMk9vuQ4PRZvNizUIobTa7tzzP7e7ujrGbmPfoXYZQWbfXqLnx9PRoZVnaer227XZrwK3wHr3LsiysKB778Xq4IYSxnyPwKe+0CTjyS3FVlWM/J+BsfkLwbiM/S/glGVCxWq3qM3Dkh2HOuFDivU6nuUX+ag5Q490SLyQRL2QRL2QRL2QRL2QRL2QRL2QRL2T9v3izxOK02t2uUosnE5vsl2SVpfH7/Wbt44EzfDneKo1Ph3cYb5K1f29/s3fbH9/ePiJLiBt917ny1qGmlkz+vppO4tSqY/HWV+PEsizZPza2D9usUkvimHjR8/V4O1fK3hW08/EPjw2p3z8Ra48fMXaREy+6Lrry+n/lHm2WJJbV9ztBfnJsODx2fHTmbf4NI14cuPDYkO2OCn40aO43t8+It3e1PhKnP6b9M+LFgYvPvPUVtI23c5w4+d2Gc6682dEzNAGjcVm8HmWcWpYeeTF17SslV14cuCBevzI2Z9z9i6reh7ux+cd3j+0eBdrz7P6L4GSaxIsDX463Da+n+8OH9xdvvbNrHf0+9G60/i2zU9/oBQ7w42HIIl7IIl7IIl7IIl7IIl7IIl7IIl7IIl7IIl7IIl7IIl7Iuije17ff9uPXT1u8BJs/Lxj7p3k33o93NGi8r2+vo3/y7PvMexosXv+KGfsTZt9n3tNg8S6eOSqw6817GizesT9Z9v1GvEx2xMtkR7xMdsTLZEe8THbEy2RHvEx2xMtkR7xMdsTLZEe8THbEy2RHvEx2xMtkR7xMdsTLZEe8THaDxcvbgNg1N+jbgHgDJrvmBn0DJm99Z9fcoG99N37pCLtwo/3SEWBsxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZdbx5ntt2ux37uQBn816n09yi2eze1uv12M8HONtqtTLvNgqhsrIsxn4+wNmKorDlsrJos3mxoni0EMLYzwn41GKxsKJ4Mu+2jrcJuKrK+pLMGRi3xHv0Lv2K24Tbi9e3XM7t4WFWH4b91RxjtzDv0bsMYW7dXv8AdfNjVQ8tmL4AAAAASUVORK5CYII=" alt="prototype crop of ctrl-4"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAADm0lEQVR4nO3c4U7aYBiG4Z4vx9Cz6IH0QHoApvwQo23hI5tmQOLkx7u8hdaWITJhLY+5r+RJYLIMk9vuQ4PRZvNizUIobTa7tzzP7e7ujrGbmPfoXYZQWbfXqLnx9PRoZVnaer227XZrwK3wHr3LsiysKB778Xq4IYSxnyPwKe+0CTjyS3FVlWM/J+BsfkLwbiM/S/glGVCxWq3qM3Dkh2HOuFDivU6nuUX+ag5Q490SLyQRL2QRL2QRL2QRL2QRL2QRL2QRL2T9v3izxOK02t2uUosnE5vsl2SVpfH7/Wbt44EzfDneKo1Ph3cYb5K1f29/s3fbH9/ePiJLiBt917ny1qGmlkz+vppO4tSqY/HWV+PEsizZPza2D9usUkvimHjR8/V4O1fK3hW08/EPjw2p3z8Ra48fMXaREy+6Lrry+n/lHm2WJJbV9ztBfnJsODx2fHTmbf4NI14cuPDYkO2OCn40aO43t8+It3e1PhKnP6b9M+LFgYvPvPUVtI23c5w4+d2Gc6682dEzNAGjcVm8HmWcWpYeeTF17SslV14cuCBevzI2Z9z9i6reh7ux+cd3j+0eBdrz7P6L4GSaxIsDX463Da+n+8OH9xdvvbNrHf0+9G60/i2zU9/oBQ7w42HIIl7IIl7IIl7IIl7IIl7IIl7IIl7IIl7IIl7IIl7IIl7Iuije17ff9uPXT1u8BJs/Lxj7p3k33o93NGi8r2+vo3/y7PvMexosXv+KGfsTZt9n3tNg8S6eOSqw6817GizesT9Z9v1GvEx2xMtkR7xMdsTLZEe8THbEy2RHvEx2xMtkR7xMdsTLZEe8THbEy2RHvEx2xMtkR7xMdsTLZEe8THaDxcvbgNg1N+jbgHgDJrvmBn0DJm99Z9fcoG99N37pCLtwo/3SEWBsxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZxAtZdbx5ntt2ux37uQBn816n09yi2eze1uv12M8HONtqtTLvNgqhsrIsxn4+wNmKorDlsrJos3mxoni0EMLYzwn41GKxsKJ4Mu+2jrcJuKrK+pLMGRi3xHv0Lv2K24Tbi9e3XM7t4WFWH4b91RxjtzDv0bsMYW7dXv8AdfNjVQ8tmL4AAAAASUVORK5CYII=" alt="target crop of ctrl-4"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAABPUlEQVR4nO3SMQ0AMAzAsPIn3XLYM0WyEeTILETN7wB4ZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1kHdl+svhLileQAAAAASUVORK5CYII=" alt="diff of ctrl-4"></figure>
+    </div>
+    <div class="detail">
+      <p>0 pixels differ (0 anti-aliased)</p>
+      <p class="muted">No style declaration differences above tolerance.</p>
+      
+      <p class="muted">Selectors: <code>#ctrl-4</code> → <code>#ctrl-4</code></p>
+    </div>
+  </details><details class="region" open>
+    <summary>
+      <span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span>
+      <span class="role">位置 8px</span>
+      <span class="muted">pos-8</span>
+      <span class="facts">Δx -8px · Δy 0px · Δw 0px · Δh 0px · pixel 0%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAAD40lEQVR4nO3cUU7iYBiF4e6XNXQX3YL3LKQLMHAhRkttyagZIGHk4pt8tYUfqIhAKAffJznJiEQxeak/TjSaz9+tWVmObTR6sMFgYPf394xdxbxH77Iscwt7jZp/PD8/2Xg8ttlsZsvl0oBr4T16l1mWWZY9bcbr4ZZl2fVjBL5VFMUq4MgvxXk+7voxAQfzE4J3G/lZwi/JgIrpdFqdgSM/DHPGhRLvdTgcWOSv5gA13i3xQhLxQhbxQhbxQhbxQhbxQhbxQhbxQtbJ8aZJz5K0eSu3fhxbP9++l9/es15v3xJLdz468LUT400t2YnOb9sO2OOt75f3La5rz/txHX7w/i1+nybwePdZgV/stHjTxHpJWl19v7yiVnUeeeX10OO+5atP13ZVx291QryfQR53NUwtCaLce78g6jTZvHqvnzR11H776v5fHWFwK46O17+dx3Fcx9v2bX8daPitf++SloNDFeTn+1fvrm9L1lVbL/hc1WNKE44ZN+7oeKurYBDIKpr1HTbfDs66LR+sPbSNY0NwJd35WOEVuj6iHHRlh7KTz7zr6MKjQMuVOLiCtq0t3u0nxOpt4sV54w1eULVdZY+58gbHgSbKz9d/4dm2PpYEP8Hwj7XznQA356zxrm9ueaF0TLz1z5F3zsTVx0osaW5vAt+Iuu1HdrglZ4g33f9jsPjO7r79MdkP/6Ni3xMBv4bmfw8TL2TjBYgXyogXsogXsogXsogXsogXsogXsogXsogXsogXsk6Kd/Hxz16nr1a8l/byVjD2o3k33o93dNF4/RN2/cWz29li+fOAj473z9/Xzr9gdjvzni4Wb/HGUYGdb97TxeLt+otltzfiZbIjXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlsrtYvPwaEDvnLvprQPwCJjvnLvoLmIuPRedfMLudeU8Xi9fqv93gzxj+6Ag7Zt6N93PxPzoCdI14IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IauKdzAY2HK57PqxAAfzXofDgUWj0YPNZrOuHw9wsOl0at5tVJa5ZVnW9eMBDua9Tia5RfP5u2XZk5Vl2fVjAr5VFEXVq3dbxdsEPB6Pq0syZ2BcE+/Ru/QrbpY9W9PsKl7fZPJij4+j6jDsr+YYu4Z5j95lWb5Y2Ot/oQQah1zk9x8AAAAASUVORK5CYII=" alt="prototype crop of pos-8"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAAD40lEQVR4nO3cUU7iYBiF4e6XNXQX3YL3LKQLMHAhRkttyagZIGHk4pt8tYUfqIhAKAffJznJiEQxeak/TjSaz9+tWVmObTR6sMFgYPf394xdxbxH77Iscwt7jZp/PD8/2Xg8ttlsZsvl0oBr4T16l1mWWZY9bcbr4ZZl2fVjBL5VFMUq4MgvxXk+7voxAQfzE4J3G/lZwi/JgIrpdFqdgSM/DHPGhRLvdTgcWOSv5gA13i3xQhLxQhbxQhbxQhbxQhbxQhbxQhbxQtbJ8aZJz5K0eSu3fhxbP9++l9/es15v3xJLdz468LUT400t2YnOb9sO2OOt75f3La5rz/txHX7w/i1+nybwePdZgV/stHjTxHpJWl19v7yiVnUeeeX10OO+5atP13ZVx291QryfQR53NUwtCaLce78g6jTZvHqvnzR11H776v5fHWFwK46O17+dx3Fcx9v2bX8daPitf++SloNDFeTn+1fvrm9L1lVbL/hc1WNKE44ZN+7oeKurYBDIKpr1HTbfDs66LR+sPbSNY0NwJd35WOEVuj6iHHRlh7KTz7zr6MKjQMuVOLiCtq0t3u0nxOpt4sV54w1eULVdZY+58gbHgSbKz9d/4dm2PpYEP8Hwj7XznQA356zxrm9ueaF0TLz1z5F3zsTVx0osaW5vAt+Iuu1HdrglZ4g33f9jsPjO7r79MdkP/6Ni3xMBv4bmfw8TL2TjBYgXyogXsogXsogXsogXsogXsogXsogXsogXsogXsk6Kd/Hxz16nr1a8l/byVjD2o3k33o93dNF4/RN2/cWz29li+fOAj473z9/Xzr9gdjvzni4Wb/HGUYGdb97TxeLt+otltzfiZbIjXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlsiNeJjviZbIjXiY74mWyI14mO+JlsrtYvPwaEDvnLvprQPwCJjvnLvoLmIuPRedfMLudeU8Xi9fqv93gzxj+6Ag7Zt6N93PxPzoCdI14IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IYt4IauKdzAY2HK57PqxAAfzXofDgUWj0YPNZrOuHw9wsOl0at5tVJa5ZVnW9eMBDua9Tia5RfP5u2XZk5Vl2fVjAr5VFEXVq3dbxdsEPB6Pq0syZ2BcE+/Ru/QrbpY9W9PsKl7fZPJij4+j6jDsr+YYu4Z5j95lWb5Y2Ot/oQQah1zk9x8AAAAASUVORK5CYII=" alt="target crop of pos-8"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAABPUlEQVR4nO3SMQ0AMAzAsPIn3XLYM0WyEeTILETN7wB4ZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1nmJcu8ZJmXLPOSZV6yzEuWeckyL1kHdl+svhLileQAAAAASUVORK5CYII=" alt="diff of pos-8"></figure>
+    </div>
+    <div class="detail">
+      <p>categories: position · 0 pixels differ (0 anti-aliased)</p>
+      <p class="muted">No style declaration differences above tolerance.</p>
+      
+      <p class="muted">Selectors: <code>#pos-8</code> → <code>#pos-8</code></p>
+    </div>
+  </details><details class="region" open>
+    <summary>
+      <span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span>
+      <span class="role">间距 4px</span>
+      <span class="muted">gap-4</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 1.84%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAADsElEQVR4nO3cYU7iUBSG4e6XNXQXXUgX0gWY8kOMtoWSUTNAwsiPMzmVWioQULDlq++TfMno6AjJ653rTDRYrV6tXlnmNpncW5qmdnd3x9hNzHv0LsuysN1eg/oXT0+Plue5LZdL22w2BtwK79G7zPPMsuyxHa+HW5Zl348ROMk7rQMO/CguirzvxwSczW8I3m3gdwk/kgEVi8WiugMHfhnmjgsl3ut4nFrgX80Barxb4oUk4oUs4oUs4oUs4oUs4oUs4oUs4oWsi+JNopFFif+qsDgc2Wi0v/ffTyxqve7I24exFVd+ghiui0/eJuB9RRw28W7DfH+dxxvZkXc7+nHCmLTR+H68SXQypqvFW8QWhSHxouUK8R64ArRCtTOvDaEdbnMb+u4nSxFbGCXVadx6X3/9qP6k8Pc79mdiCK4U7+4p+vmUbV6XfLy8f/Im0eHQPq4ln+Md7VxXkqj1CVO93Rl/M0BbRyfvO3/Zfz+Mk7Pi/QjRDsTbumj7yb574vLF32/Qzcm7fduidfKeuja0rxr1qo9JvOjs5D0Y79f+tWH/2tC8f3Wib2OuT+vWqY1B+oGTt3Eo3iruKL483ihqTub6lG1F7acxX7AN2Q/8U9nuSewhNS83b3/hf1LsXRvwG2n+9zDxQjZegHihjHghi3ghi3ghi3ghi3ghi3ghi3ghi3ghi3gh66J412//7HnxbLPX0qYvM8a+NO/G+/GOOo3XP2DfT54NZ+vN1wP+drx//j73/oTZcOY9dRbv7IWrArvevKfO4u37ybLhjXiZ7IiXyY54meyIl8mOeJnsiJfJjniZ7IiXyY54meyIl8mOeJnsiJfJjniZ7IiXyY54meyIl8mOeJnsOouXbwNi11yn3wbEN2Cya67Tb8Bcv617f8JsOPOeOovXtj+7wT9j+KEj7Dvzbryfzn/oCNA34oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oUs4oWsKt40TW2z2fT9WICzea/jcWrBZHJvy+Wy78cDnG2xWJh3G5RlYXme9f14gLNlWWbzeWHBavVqWfZoZVn2/ZiAk2azmWXZk3m3Vbx1wEWRV0cyd2DcEu/Ru/QTtw63Fa9vPp/aw8Okugz7V3OM3cK8R++yLKe22+t//u8cxX/xVFIAAAAASUVORK5CYII=" alt="prototype crop of gap-4"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAADp0lEQVR4nO3d4U6bYBiGYc63x8BZcCAcCAdg6A+7KGBpNs3aJs7+eJcXi4BtUxpReNr7Sp5kOt0ac/vt06VbsN2+WL2yzG2xuLc0Te3u7o6xScx79C7LsrB2r0H9g8fHB8vz3Dabje12OwOmwnv0LvM8syx76Mbr4ZZlOfZjBM7yTuuAAz+KiyIf+zEBvfkNwbsN/C7hRzKgYr1eV3fgwC/D3HGhxHudz1ML/Ks5QI13S7yQRLyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQRbyQNWi8STSzKPEfFRaHM5vNDvf+84lFndedePswtmKQR4ZrNPjJ2wR8qIjDJt59mO+v83gjO/FuJ3+fMCbtWzZcvEl0NqbB4i1ii8KQeG/cN8R75ArQCdV6XhtCO97mPvT2J0sRWxgl1WnceV9//az+pPD3O/VrQtE3xds+RT+fss3rko+XD0/eJDoe2se15HO8s9Z1JYk6nzDV2/X4kwFaRjp53/nL/vNhnPSK9yNEOxJv56LtJ3v7xOWLv2s0zsm7f9uic/KeuzZ0rxr1qt+TeG/SOCfv0Xgv+27D4bWhef/qRN/HXJ/WnVMbV+EHTt7GsXiruKP46/FGUXMy16dsJ2o/jfmC7Zr8wLfK2iexh9S83Lz9F/+S4uDagFtwHX89TLw36TrixU0iXsgiXsgiXsgiXsgiXsgiXsgiXsgiXsgiXsgiXsgaNN7Xt3/2++8fW76U9vS8ZKwz78L78E6GMFi8r2+vo39wmM68l8nE659RY39AmM68l8nEu3zmqsD6z3uZTLxjfzCY3oiXyY54meyIl8mOeJnsiJfJjniZ7IiXyY54meyIl8mOeJnsiJfJjniZ7IiXyY54meyIl8mOeJnsiJfJbjLx8jQgdskm9TQgnoDJLtmknoDJU9/ZJZvUU9+Nf3SEndlk/9ER4KcRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2QRL2RV8aZparvdbuzHAvTmvc7nqQWLxb1tNpuxHw/Q23q9Nu82KMvC8jwb+/EAvWVZZqtVYcF2+2JZ9mBl+fX/Dxb4bsvl0rLs0bzbKt464KLIqyOZOzCmxHv0Lv3ErcPtxOtbrZ7s169FdRn2r+YYm8K8R++yLJ+s3et/woVOTlqoPzMAAAAASUVORK5CYII=" alt="target crop of gap-4"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAABuCAYAAABRJkNkAAACD0lEQVR4nO3aS2rjQBRAUW+ol5OtezvuQQg0Qp+SLKe50jlgCKik0uD6USR5vCDq8b9fAI4SL1niJUu8ZImXLPGSJV6yxEuWeMkSL1niJUu8ZImXLPGSdTzeP1/fn39/nvtsXZ+uhUHvTd616KbxvmYiPmMfbutYvCMxnRWvycyC9+PdOiosrRk9Nhw5gkz355I+E+9InCNRPh/r67behUv7nck7d9/SmrU9pvttreXSzo33NXi+HTky7DkSiPeWfu/YsPSMkXvWvizPx/zzfo4c0+tcxmcm78jEHJ2ka88cOSc7A1/WOb8q2zNdp+u3Ju2eZ83dL9zLOufPw1tT9DU4kdcm5Z5jiXhv4XPxHj1OvLPf1rtwKZ+fvNM1o9Nz735rX5a19yLr/HiXrq3F+k7Moryt/r9Eive2+vFyW+IlS7xkiZcs8ZIlXrLES5Z4yRIvWeIlS7xkiZcs8ZIlXrLES5Z4yRIvWeIlS7xkiZcs8ZIlXrLES5Z4yRIvWeIlS7xkiZcs8ZIlXrLES5Z4yRIvWeIlS7xkiZcs8ZIlXrLES5Z4yRIvWeIlS7xkiZcs8ZIlXrLES5Z4yRIvWeIlS7xkiZcs8ZIlXrLES5Z4yRIvWeIlS7xkiZcs8ZIlXrLES5Z4yRIvWeIlS7xkiZcs8ZIlXrLES5Z4yRIvWeIlS7xkiZcs8ZIlXrLES5Z4yfoLR8uZYHInzbkAAAAASUVORK5CYII=" alt="diff of gap-4"></figure>
+    </div>
+    <div class="detail">
+      <p>categories: spacing · 354 pixels differ (5 anti-aliased)</p>
+      <table class="grid tight">
+    <thead><tr><th>Property</th><th>Category</th><th>Prototype</th><th>Target</th><th class="num">Δ</th></tr></thead>
+    <tbody><tr>
+      <td><code>padding</code></td><td>spacing</td>
+      <td><code>12 12 12 12</code></td><td><code>16 16 16 16</code></td>
+      <td class="num">+4</td></tr></tbody>
+  </table>
+      
+      <p class="muted">Selectors: <code>#gap-4</code> → <code>#gap-4</code></p>
+    </div>
+  </details><details class="region" open>
+    <summary>
+      <span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span>
+      <span class="role">字号</span>
+      <span class="muted">font-size</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 25.89%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAAAYCAYAAAAoNxVrAAACY0lEQVR4nO2a3Y2DMAzHu0nf+tAxGKASe/QBqfMg0U1aMQrdI6eEOAmO80Wj4w78lyKVQhyDfzhO2pNgsQp02toB1v8SA8MqEgPDKhIDwypSFJjX4yLO7SCmpJm3uF/9a6fnTZwfb9/mtROvgI3miUYbO2N37ivbTfSfsM+eDSzHZvK6yFhHVCVgtD6DaGRANSQSGAgeBPs+0l0VXNRYKmgUYDEfEtfnArPmGexcdYGBwKtM8RZ9q+FRQY8BI7OLfpPltW5W0sD02q7bpK2J+N5r4APcCwYGQC9syUy2Q83ABN5iGphJgWAf1nyMHyJkjP5xWQBgphX0nc1EN9E/Oz9ASXCxX0hJYAqy2IFVARhf81sP9iabaSi5wZOBw9dlBhPXS57vJcBEnscRs4qrqsCY6YGCQ09LuJ8tZAPFsApmvPD06h+qWM0Ahpr2Yi1Uj+1ZXwOTVUPEagvQOASg0CuwYH/6vAqmCxtnmCqql2GyVh5zX+/NxFPRuKaGscXr7BuaCouB4UKXUl1gVqVyP0NQ01bW3opje1lHcdFbS9tnGAAtVBQTBe3yGFZpTs2C4PH8w77Cce7yOuLr3vUHMkyGwD8Yw/hErMCcoOcCQwJJwB/epT6Ots8wcMYtnj07dtoyfYnxwIYteANwLvoG7sfsWg9mn+mIqyKsXwZmDrz74KmNPDMSsQIjC1pqWhIRaHC28e7dAtq0nWhanopADjBfbotHgEnutSzk7ByTm3hgR8OxWBkRgp8a0D26v3Gpz4vzAR8DNo6kFX9vSO/0svYr/j8Mq0gMDKtIDAyrSAwMq0g/qyuUpPRe9H8AAAAASUVORK5CYII=" alt="prototype crop of font-size"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAAAYCAYAAAAoNxVrAAAC2UlEQVR4nO1a0Y2DMAy9TfrXjxujAyB1Dz6QOk+lMsDt0IpRYI+cIBhixzYJFJVUeVKlqpDExi/PduiPyciIwM+nDchIC5kwGVHIhMmIwjJhmsqcfs+mbMInfd7Ow5hL3ZIrL1Myc7V1Idzv2lCYe0cvtOZ+PZvT9WFaZ55lW+24MJ/GNW6vkJsHDP6PNn0bdiEMAAI4PezuYS5T4MdAOERpO+4R6wHzg2NJqQc4hgSxhGlN2/R+KhsgYexKGH6uyjwjhljSyWNW72ZRtTwLGMLMZF/7SZVMuxMG0lP/wOF7P9f0u6oGVi0mBerJQ+61hKlMyQbQEmJSutBAImLLhEk16FtgCdMpEqoQxgYC71JEBHcczFP3axHFGK/RdbB6jEG6CsEPVZnRV3UDrCEMSrfMc/qSmubthOGBH/pSmpnXdeYW0lnQXIId7DreWhphHrZeWvF5S4r/APYnDKgH2WFLHQ2XRmQbwghj1c+9F3dZ2OasMBx2I4ybmsRcP667tOPUwtZJZ1pxydkq2p8JI+K9hFkI3qoOggbCIVl4DSN3NbAWIuVqwih+ZcJoChPXRWg7sA+kPg/upIIAwYU1qf9ZYUQcmzD92uQU159TCqhUW40He04t49U2ua0WsStholKRR5gX7kCUk1Zc48C4wpSNQC4mjSL/Fgkzq1rMGU/K3RHguAqjSDxvR2WeQkfm2oSURPI7kDDemZHUrYFdEe+jjorjEoaC1h3cNeLDEMQhSH4aQgoW21YLrxUsafiDzNSVBXDglEQ6D6UonudxbYFA//kBR+TjyMT44oxXCU47xS8pdgGHVRj9QM6tb4gSgPRLdrPpYR7r+0kJo/k221U27vegx5AEEGHWnZtsJ0z4G+flIMgvNTVSwNjCXGpaZ5C2XXyVIMwtpMtUsekfd+sVhnRAgcXtBkv5VwASvANI3IJbv4iihVjhdFSpkif/RTMjCpkwGVH4BxGrM9jQZ07zAAAAAElFTkSuQmCC" alt="target crop of font-size"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAAAYCAYAAAAoNxVrAAACCUlEQVR4nO2aAY7DIAwE86E8p1/vdzhVESpnee01cM1BvRJSm4AxZnAg7VFSqYCOux1IraUEJhVSApMKyQfmeZRyPq7CqtZ/KuZf1+R1q37rg3a/9c2qx/hh1e0Z/4ayI1aDzwQA1dEmVCvIRp1Yto28rykyppEFsyE0PjCRwVuT6QUfXfeygFz9jL+RcaF6FvxsWVBzgdHajAbTmxgvA1gZCvVXIW3baZ+/UFdkapDQ3gKl/XbPMAIFAwNTrIlk+7e+S3ttvKyFtXBGkXoDIwNQCGBQkNgJsCbG2++wPno+W7atPnoWCNPXP9dcYHrrMrZQkLVH0gw/PB+ZPuW9DTQPGFlQuu5ZdV4/1iTNWPUIpnwkTQRmpMgNZmlOS0wbmSEiPlvjR7ZZ+xvoPmBaafsV7R6SPAlJH4sBjxyv11bGQIuJVAJDgMAGjwn0CU5kyK7MTshn7x6Tzb5Mf5thkNj6aJJY4Lw+C4DLehk4oyys+zMMsjfyiOkFvcrbD1nfPfAX1/3AnORJB21+tc9V7QtJ7yVgqzYeGjzeY5EFaUG9gSlg8+mdTlioWkXbMn0ymQIVBBXyh/lNbDNQqn5nGG1wWvZhghIJlrXKkQ0PGi97MNkB+RfxazNoLgqiK/oTwHh1IyBF21rXR7Pp4hr7x90IMJ9ehb1Qoiwm6/XYXVD5F81USAlMKqQfDwfLs+3lGO8AAAAASUVORK5CYII=" alt="diff of font-size"></figure>
+    </div>
+    <div class="detail">
+      <p>categories: typography, pixel · 870 pixels differ (103 anti-aliased)</p>
+      <table class="grid tight">
+    <thead><tr><th>Property</th><th>Category</th><th>Prototype</th><th>Target</th><th class="num">Δ</th></tr></thead>
+    <tbody><tr>
+      <td><code>font-size</code></td><td>typography</td>
+      <td><code>16</code></td><td><code>19</code></td>
+      <td class="num">+3</td></tr></tbody>
+  </table>
+      
+      <p class="muted">Selectors: <code>#fs-label</code> → <code>#fs-label</code></p>
+    </div>
+  </details><details class="region" open>
+    <summary>
+      <span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span>
+      <span class="role">行高</span>
+      <span class="muted">line-height</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 12.71%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAAsCAYAAACHUEHxAAACuUlEQVR4nO2ZbW6jMBBAucn+2x97jB6gUu/BDyTOU6m9SaIcJb2HVzYx2OMPbLKjlcJ70morwJjxPMbGGQyAAsP/fgB4TRALVBgu82/z60/Hv/ka3eAyv5vPH2Pu3++FNpO5lHq/TfXzGVw/4hly2Ljevu/xwZ8v8/bxZe6lRl3xXM2YHJfHyuP26iQVyw+sYycRdvCT5HXSKkrQwnx+ZKSJsAlOhbWyjbf6s7THE/Zhn8mL1feivCqHxXKVrlmIRYauymj7dRWtvY2TJtNmkSVXTbZY++IxiLXDkB/wSrLFm91dtWziCwm094oqSuVayVqNZJvb5J4vfU4rwzbt9cdTmgoRy2xihW+eqFhrkq5mlNXLV7S9yhLJkbnP2nc+KeX1Tlx1HDmx5ilTeUWs3fH4cQvjKb2k55NNiCXeuChJUgh7rUhMQG09kz3XUZ22/jPTV6FipesuKdbReKRYUqJzVrFYLPvGBsly645w0Pzf/rqDYi3tw8GuJzXfvrCAL66xfDvfTyDWkXjW9edWpcYbYnkisfzgLf8/jq9bAptYy/nMVBLQ8gW2CLws7NNrn1jwZyvWg1WIbeo9FE8oFlNhwiZW9AUoku2SNYmp8DmxTLB26tuyqPdbngpz96lNjTHtYlGxTPxVuAWf/zKSa6wnxXpMWeM8dcr1r8TaW3PtxNMs1jkZmgcj2dOqJaJ8bt3pT3bwW3eoG8QqrbFkPM1iVb4gd9dY52RXrOgnnyjp6WDH2wIyacEmZg0vhtweCIWp/SxTqVhy26K0r7UfTzgu8iOkvgd4FvgRGlRALFABsUAFxAIVEAtUQCxQAbFABcQCFRALVEAsUAGxQAXEAhUQC1RALFABsUAFxAIVEAtUQCxQAbFABcQCFRALVEAsUAGxQAXEAhUQC1RALFABsUAFxAIVEAtU+As/KmWLsDhsMAAAAABJRU5ErkJggg==" alt="prototype crop of line-height"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAAsCAYAAACHUEHxAAACuUlEQVR4nO2ZbW6jMBBAucn+2x97jB6gUu/BDyTOU6m9SaIcJb2HVzYx2OMPbLKjlcJ70morwJjxPMbGGQyAAsP/fgB4TRALVEAsUAGxQAXEAhUQC1RALFABsUCF4TL/Nr/+dPybr9ENLvO7+fwx5v79XmgzmUup99tUP5/B9SOeIYeN6+37Hh/8+TJvH1/mXmrUFc/VjMlxeaw8bq9OUrH8wDp2EmEHP0leJ62iBC3M50dGmgib4FRYK9t4qz9LezxhH/aZvFh9L8qrclgsV+mahVhk6KqMtl9X0drbOGkybRZZctVki7UvHoNYOwz5Aa8kW7zZ3VXLJr6QQHuvqKJUrpWs1Ui2uU3u+dLntDJs015/PKWpELHMJlb45omKtSbpakZZvXxF26sskRyZ+6x955NSXu/EVceRE2ueMpVXxNodjx+3MJ7SS3o+2YRY4o2LkiSFsNeKxATU1jPZcx3Vaes/M30VKla67pJiHY1HiiUlOmcVi8Wyb2yQLLfuCAfN/+2vOyjW0j4c7HpS8+0LC/jiGsu38/0EYh2JZ11/blVqvCGWJxLLD97y/+P4uiWwibWcz0wlAS1fYIvAy8I+vfaJBX+2Yj1Yhdim3kPxhGIxFSZsYkVfgCLZLlmTmAqfE8sEa6e+LYt6v+WpMHef2tQY0y4WFcvEX4Vb8PkvI7nGelKsx5Q1zlOnXP9KrL011048zWKdk6F5MJI9rVoiyufWnf5kB791h7pBrNIaS8bTLFblC3J3jXVOdsWKfvKJkp4OdrwtIJMWbGLW8GLI7YFQmNrPMpWKJbctSvta+/GE4yI/Qup7gGeBH6FBBcQCFRALVEAsUAGxQAXEAhUQC1RALFABsUAFxAIVEAtUQCxQAbFABcQCFRALVEAsUAGxQAXEAhUQC1RALFABsUAFxAIVEAtU+AuVwGWLSMgDswAAAABJRU5ErkJggg==" alt="target crop of line-height"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAAsCAYAAACHUEHxAAACPklEQVR4nO2ZCW7EIAxFc6Eep1ef61C1VSSGePk2cUcd/ydFmgUcDA+HTo9BSAHHqwdA3hOKRUo4xsfnCF8zmT5SXxS0vTVWpB+Sz868vTnXiiVNnMYdE5aJEREk0m9H8sYSSeTFyi7Cqy5rDJl8tLmiWD/8ipVdoPU1QkTWSGxtYa0F3xWMjz2VZ7Gs1+f7maiQWpw1nvY5Et8Sy7vfTgVEYjTiHrEkot/tPoq0z7x80ArpfRcZUwOO8Tjsnehda3+0Ys195xge322t9nNsqZ2XJ5LP47j2H8OP24i9M1Z2h2v3RNqgInvjtvJG80Hnp2XFGsmzUnQhIqLuXFK86BiQfLR4aN8357k+ZxburCArkSrkiYDE9hYPFSOST/OqZHHPD6TeNZ8vtPORtTgRGdd7aPezzl+RDSaNXcq/5RlrxpogSQapr7TzLdnGkM9OWuxslZDGt44xmw8y1kboZ6whVCxJOG0nWrtUmuzI5Ft/FWqHe+m+XnW18plFQzYgxQIfAd5O9CbTEnhtk7m0cXhiofmscZAxN+Iq1om106U2K8hkZic9K0BVWy8GxQIqyPp+t2Jl5PpvYjXk+i8djbsqllf9kEVB7utJizw2rXt6j9Tm+GJZE6ZNtrVo2ccjunA7AmTz8fo0lK3Xjyvkz6BYpASKRUqgWKQEikVKoFikBIpFSqBYpASKRUqgWKQEikVKoFikBIpFSqBYpASKRUqgWKQEikVKoFikBIpFSqBYpASKRUqgWKQEikVK+AKfN7i07BqB3wAAAABJRU5ErkJggg==" alt="diff of line-height"></figure>
+    </div>
+    <div class="detail">
+      <p>categories: typography, pixel · 839 pixels differ (35 anti-aliased)</p>
+      <table class="grid tight">
+    <thead><tr><th>Property</th><th>Category</th><th>Prototype</th><th>Target</th><th class="num">Δ</th></tr></thead>
+    <tbody><tr>
+      <td><code>line-height</code></td><td>typography</td>
+      <td><code>18</code></td><td><code>30</code></td>
+      <td class="num">+12</td></tr></tbody>
+  </table>
+      
+      <p class="muted">Selectors: <code>#lh-label</code> → <code>#lh-label</code></p>
+    </div>
+  </details><details class="region" open>
+    <summary>
+      <span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span>
+      <span class="role">圆角</span>
+      <span class="muted">radius</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 2.74%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAABaElEQVR4nO2bUU+DMBRG+///opgR3WRiygaUug2w5qs6NVkAY5vLbW6Ts4c9LOcEwh72TbmJM76NrrGte6qeXV5uXbbP3V2xIQUOcIET3OA4ddStN4dxcGWtXVbQB80GF7l7qbV3XhRoTtbdr+BK/RU4m1M3HajbA7nof0HDzcDGGnK5UNS2/R1oz6/kUqHpzvY7EE8kaqHQoMkH4ulDLRMLtKlj15CLxAJtaqsLcpFYoE1x/M5bCtpUtgKRWKBNUUvERgK5I4HckUDuSCB3JJA7EsgdCeSOBHJHArkjgdyRQO5IIHckkDsSyB0J5E76gSn/AOp/4d2UD+QiscBoT6W4kfkCbepganKRWPgZyaW/kIvEoh/6jynXTu/JZUJznXLhBVcxpacpWvrPgex1TokJIrVYKDANTXYQW5nj3KS5YzxptvObbRzcv7uKz4MHrv3SUfrPgyUwblt8wLr+VvDoneAGx6nzDgz4lyK5OJJJAAAAAElFTkSuQmCC" alt="prototype crop of radius"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAAAe0lEQVR4nO3bMQqAMBAF0b3/FS20CAi2EVJG0nkBkflMMf2+/m/1cc/janM796iWadkqEfdG1t9HfJ1AegLpCaQnkJ5AegLpCaQnkJ5AegLpCaQnkJ5AegLpCaQnkJ5AegLpCaQnkJ5AegLpCaQnkJ5AevnA+FF6+lvBA680a/H2KV3lAAAAAElFTkSuQmCC" alt="target crop of radius"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAA4CAYAAACohjseAAAAjklEQVR4nO3asQ2AMAwAQS/EOOw/CkhIKQg2tLzzL6VJUvh6xzHa9vz8vY+5o/xEqzAEHjY3eaIVbpQCu3UDdk0gvQvYPIH0BNITSE8gPYH0BNITSE8gPYH0BNITSE8gPYH0BNITSE8gPYH0BNITSE8gvQU2nZYAdkSutxDbBflYaU4usaVL6dUjCfoy+wkCUFIpnisS8QAAAABJRU5ErkJggg==" alt="diff of radius"></figure>
+    </div>
+    <div class="detail">
+      <p>categories: appearance, pixel · 86 pixels differ (0 anti-aliased)</p>
+      <table class="grid tight">
+    <thead><tr><th>Property</th><th>Category</th><th>Prototype</th><th>Target</th><th class="num">Δ</th></tr></thead>
+    <tbody><tr>
+      <td><code>border-radius</code></td><td>appearance</td>
+      <td><code>12</code></td><td><code>2</code></td>
+      <td class="num">+10</td></tr></tbody>
+  </table>
+      
+      <p class="muted">Selectors: <code>#radius-box</code> → <code>#radius-box</code></p>
+    </div>
+  </details><details class="region" open>
+    <summary>
+      <span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span>
+      <span class="role">文字颜色</span>
+      <span class="muted">color</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 3.01%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAAAYCAYAAAAoNxVrAAACW0lEQVR4nO2ZjdGDIAyGu5PTZBQGchRGcQ6+408REkg+bas27513PQsGkocQ8eVUKoFe3x6A6l5SYFQiKTAqkRQYlUgKjEokGphldjAZZ3u9Q5vJTeRV97fOTODmxXeFTr/OZSzDLnLB7JbhXOLYxlrcDJODurE1Yzs3VwTGmnbyKDDeUbhTrUEc2DxnA6anCNMAVpa8vQgMOrZmnExgqMX0M8BgKwZxiodiAuNs7ZGdoyooxMDEIJuDtGwZrA1s+K82QACDLYR4zwafcbLbENYbqdiSqkBVwERYkNWDrbYSICEwwc4hWrasQj3nEDBUJvJZGqBr9wna1zBUoMlUu3RXGcRihQ+Mt0NkBZ7yePpQHgEmAI22AzfPJmRgA2dsp9fUsaK3J9/fQ8YGJv1nc3tevVMZxYvRZmj/Ayb0A2jb5bmmhWVnOLylXlWvuGLkFxYUtPBlARMDHZxctk9vQ/wa4L3AhCyytHPwbcLjcibOADFHfSe1GabefrqVf1EvUK+yQ2CqIDeZLW0zrAC8F5htzkW70j/F7xWih6kBpnGm4FVRnmESDKU9YiukaofK2IeBiQtmLXabS7qlXl8VMMXWkIUB4+8hy0cGTMpOaOCI2mkI7yeBQWxh2fmU86TraAdMLOoQOKp7qMN7h3dbixUY3kGfVJ8DxhjkGZSvHlTPJGByLcI7vaSC3RbQ9KcBUkeASUXyqHaQfpbo1jC76f3ASW8OMu1krLBNDlvPTXoHZdVZDeubDh+YJvgnB2xY9O4bPx+Ybw9AdS8pMCqRFBiVSAqMSiQFRiXSHxmjaLK793gsAAAAAElFTkSuQmCC" alt="prototype crop of color"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAAAYCAYAAAAoNxVrAAACXElEQVR4nO2Zjc2EIAyGb/84QSdgBqdgCefgC3+K0EL76d2p1zcxuXhgoX0oFV9OpRLo9e0BqO4lBUYlkgKjEkmBUYmkwKhEooFZZgeTcbbXO7SZ3ERedX/rzARuXnxX6PTrXMYy7CIXzG4ZziWObazFzTA5qBtbM7Zzc0VgrGknjwLjHYU71RrEgc1zNmB6ijANYGXJ24vAoGNrxskEhlpMPwMMtmIQp3goJjDO1h7ZOaqCQgxMDLI5SMuWwdrAhv9qAwQw2EKI92zwGSe7DWG9kYotqQpUBUyEBVk92GorARICE+wcomXLKtRzDgFDZSKfpQG6dp+gfQ1DBZpMtUt3lUEsVvjAeDtEVuApj6cP5RFgAtBoO3DzbEIGNnDGdnpNHSt6e/L9PWRsYNJ/Nrfn1TuVUbwYbYb2P2BCP4C2XZ5rWlh2hsNb6lX1iitGfmFBQQtfFjAx0MHJZfv0NsSvAd4LTMgiSzsH3yY8LmfiDBBz1HdSm2Hq7adb+Rf1AvUqOwSmCnKT2dI2wwrAe4HZ5ly0K/1T/F4hepgaYBpnCl4V5RkmwVDaI7ZCqnaojH0YmLhg1mK3uaRb6vVVAVNsDVkYMP4esnxkwKTshAaOqJ2G8H4SGMQWlp1POU+6jnbAxKIOgaO6hzq8d3i3tViB4R30SfU5YIxBnkH56kH1TAIm1yK800sq2G0BTX8aIHUEmFQkj2oH6WeJbg2zm94PnPTmINNOxgrb5LD13KR3UFad1bC+6fCBaYJ/csCGRe++8fOB+fYAVPeSAqMSSYFRiaTAqERSYFQi/QFllYDCDsc1qwAAAABJRU5ErkJggg==" alt="target crop of color"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAAAYCAYAAAAoNxVrAAABmUlEQVR4nO2YXXKEMAyDuVCP06v3Ou3wkFkq/KcE6CbVN8PLrmNiIZyE7VsIgu2vJyDmQoYRFDKMoJBhBIUMIyhiw3wV/LTHRJeXMxuX5ewdN1ov1j2SY0Je1VmFfnyef/ME2WOteBzjxWCuq4RvuSr5KnPLYv+VYbBYFCUS/hiL46L/vFyjwu/jvTxeHd4LgrF3dLdJ+F0JFncUMCo8E58xzBUCZw/qCsNYMN1sUs6VsQ+6CdSWpHa136p5MF8vlfEjhjnWhXHV+09MXBmzpls04aqGwfge4SvLWa9hji9HNPcr92Bvxmaut9gtsHNEJwRmecKxVkdi39i7DWPFWXNf1jAW2eYXY7PNXmYYfGuZzTZyp2Gi+eF/i3aZc0UVgTx6Okz1fszR+EnDYNfFbrwY/YZhliTv5OWJWtnneDxpGLb7LEB8rG5Ul4hKF4jE9u7H8JRhRrWalPjDXYM1TLQxrn6464UxDHNV5zd6snxztvDhNiIBM4NUYzC+SsWkI1g5M60WZu3qxOXIMIJChhEUMoygkGEExQ+7g5CDcBnj4gAAAABJRU5ErkJggg==" alt="diff of color"></figure>
+    </div>
+    <div class="detail">
+      <p>categories: appearance, pixel · 101 pixels differ (256 anti-aliased)</p>
+      <table class="grid tight">
+    <thead><tr><th>Property</th><th>Category</th><th>Prototype</th><th>Target</th><th class="num">Δ</th></tr></thead>
+    <tbody><tr>
+      <td><code>color</code></td><td>appearance</td>
+      <td><code>rgb(51, 51, 51)</code></td><td><code>rgb(140, 140, 140)</code></td>
+      <td class="num">+89</td></tr><tr>
+      <td><code>border-top-color</code></td><td>appearance</td>
+      <td><code>rgb(51, 51, 51)</code></td><td><code>rgb(140, 140, 140)</code></td>
+      <td class="num">+89</td></tr></tbody>
+  </table>
+      
+      <p class="muted">Selectors: <code>#color-label</code> → <code>#color-label</code></p>
+    </div>
+  </details><details class="region" open>
+    <summary>
+      <span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span>
+      <span class="role">图片裁切</span>
+      <span class="muted">crop</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 86.43%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAAA4CAYAAAAvmxBdAAAA3klEQVR4nO3Sqw2AQBQAQYpCoVDUQVUUQjEoPgmOBAEJpx+hiMshRqxeM1VKKb7udY6prbNX6vecS1xjk71Sv+3Yoxv67FXAAAMMMMAAAwwwwAADDDDAAAMMMMAAAwwwwAADDDDAAAMMMMAAAwwwwAADDDDAAAMMMMAAAwwwwAADDDDAAAMMMMAAAwwwwAADDDDAAAMMMMAAAwwwwAADDDDAAAMMMMAAAwwwwAADDDDAAAMMMMAAAwwwwAADDDDAAAMMMMAAAwwwwAADDDDAAAMMMMAAAwwwwAADzF/BvCWe8FHHz0gEAAAAAElFTkSuQmCC" alt="prototype crop of crop"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAAA4CAYAAAAvmxBdAAAA4UlEQVR4nO3SsQ1AQABA0RvIBAYwhcJUZlBbR0TohELh6hOFEQ7FK379mxdijOnu3Md09GX2nt+0Lqlqm+x99RvmLRV1l723fwEYYIABBhhggAEGGGCAAQYYYIABBhhggAEGGGCAAQYYYIABBhhggAEGGGCAAQYYYIABBhhggAEGGGCAAQYYYIABBhhggAEGGGCAAQYYYIABBhhggAEGGGCAAQYYYIABBhhggAEGGGCAAQYYYIABBhhggAEGGGCAAQYYYIABBhhggAEGGGCAAQYYYIABBhhggAEGGGCA+SuYC09sYs3nvxciAAAAAElFTkSuQmCC" alt="target crop of crop"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAAA4CAYAAAAvmxBdAAABEUlEQVR4nO3SwQkCQQAEQRMyHFM3nRMfggZwOi21sN9t2KnL8X7ul+O43s67z/d/2Tuz9bp/3vv8UWByAwIDzHQPmPiAwAAz3QMmPiAwwEz3gIkPCAww0z1g4gMCA8x0D5j4gMAAM90DJj4gMMBM94CJDwgMMNM9YOIDAgPMdA+Y+IDAADPdAyY+IDDATPeAiQ8IDDDTPWDiAwIDzHQPmPiAwAAz3QMmPiAwwEz3gIkPCAww0z1g4gMCA8x0D5j4gMAAM90DJj4gMMBM94CJDwgMMNM9YOIDAgPMdA+Y+IDAADPdAyY+IDDATPeAiQ8IDDDTPWDiAwIDzHQPmPiAwAAz3QMmPiAwwEz3gIkP+O3eA+TVvSDGyUisAAAAAElFTkSuQmCC" alt="diff of crop"></figure>
+    </div>
+    <div class="detail">
+      <p>categories: pixel · 6776 pixels differ (224 anti-aliased)</p>
+      <p class="muted">No style declaration differences above tolerance.</p>
+      
+      <p class="muted">Selectors: <code>#crop-img</code> → <code>#crop-img</code></p>
+    </div>
+  </details><details class="region" open>
+    <summary>
+      <span class="badge" style="color:#cf222e;border-color:#cf222e">FAIL</span>
+      <span class="role">换行</span>
+      <span class="muted">wrap</span>
+      <span class="facts">Δx 0px · Δy 0px · Δw 0px · Δh 0px · pixel 11.65%</span>
+    </summary>
+    <div class="shots">
+      <figure><figcaption>prototype</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAABCCAYAAACFIj76AAADvklEQVR4nO2bXU7jMBRG2QlvPMwyWAAS++gDEutBSndC1aWUfXiUpm18/f8lpoSZcyQeaNrmi31ybejtgwMQePjpAPC7QBiQQBiQQBiQ2JYwxzf3+OfNfZLh5zNkuAhzcLtEwNP+xT3vT/dLUx2ok/t4fXEfX2vP8XT+SV7bFiZLzPD5/uR2x2/OdGFbwlTpIMz1nTZ3bcu5qzDjya533O3n/XA+OA3q4HbB4xPj5M2vaQo83jnvg/e6q6SnxGMzNqMvzGHOFlYNr5I8vg4uVCMWJp9hfO5uP7jnXuMQ5J5zLMvgCzM+zx+j6ff82KpUK8x88vE5cxBrtT2W5TyJ9mLspMU5zhlug2MrzJjBCHIV42twz54k9j1y565kuD22fhzq1W1hhmgpS8/rGoQlyZ+s+M5+bBUmmDhLmCNcgtqEsXdVqirownQfh0SmZRn8ChzO4bVi9VnG3TphFpjbWRgrRqlyxfQTZsUdnBVHF2ZarnJi9BPHEyZ+s1pIedMoC2PPY5fIwgZ4XJIqE9lHmIXjEGaN9lgLhDlerzsvRY/N8e3/MOZuNZvedMioHCc2lhFZYRKl3d+P3DaHh0KFiauMf8xuCp8Sx/IZeo9D+IeG3QPpGYwIl6o1CyTOUYVt/eNOolyN4Hv4xcLEd2p5uYMe/Gph4P4gDEggDEggDEggDEggDEggDEggDEggDEjMwmyhNRE2zyph7tkauHX8jymWf55V7jxcS4+21FVLEsJcSLYorKF/p5zrJ8yCPlK/XzbRL2paCBoH0n6Q2DpYud7YQk9v8JF/2wDavt3oNdU+n8Q7FscoJUw+Q9wm6r02mKuOFUbrI42DegEr/bRVGicge8c09PRejjR9C8G2TUwTl+w3aZU9GKOYWuuGl6EkTNBI1nlJ0rq84qCZUI3lOmpsapEs0+JY7ukNm5RqwsTXHV2jWGHqS3mtVdVmyAkT5vx3hAlbC9USH4hTGpjz0pf5FkIahPFZLUxyPfcEsROUwZTOy1qtLmO+mIWe3uibBg2N0fY6pwplJlwU5lwBVy1JNoN/bNoLXl4bfvWmzx5maS9ruIbPF2g2sPKm98V97NsmIN8bm+/pNZnPX6pr6aQvbK7dsk1veowKvc2lDKbvefBk8zbKr4P7/Ok/q+H/A2FAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFAAmFA4i+4QRkd0U9MbAAAAABJRU5ErkJggg==" alt="prototype crop of wrap"></figure>
+      <figure><figcaption>target</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAABCCAYAAACFIj76AAAD30lEQVR4nO2cXW7iMBSFs5O+9aHLYAFI7IMHJNaDBDsBdSl0Hx7ll9i599rHcSahPZ9UaWZax479+cYDh1aOEIBq7QGQ94LCEAgKQyAoDIHYuDBPdzl8ut3tufZAfL5P7uPr5O5rj2MFOmEe7qhMwPO2X3HBEoWpF/D8KNNlI8Nn86X2S2G2KkwiJYXpeIv7XoHqfv4cdtTwNZr8duKu7ih8r+Hn6nZDW2TX1dVj7y43ZUfHdrrXbziutjJp95QyZlmY8XWn7eo2x9vo2sXmajskVZiPr727/PQ/1/9ZaFcv8uHq0vZlN/nDpMpjkBcuGEdQYZox939vFml83bQx2xVGH+tLhJJztR3AR1JXFcYLFVYnSJjxhCo/JS1c+AhChEkcc64wy8zVdpgvTPbZYTlhwsU5fhttkX4HMoUpfM5ag5Ew8uKZk2C0izNDGK9qPNrz1Wgx6nOZJ4lH2piLCzNrrrbD8DpM+/zVDr3aJEx3c/r/LGxhvPEIleJ1WD+5e6TCiFVGGbPd7+N1+BceK8vN1XbY+At3OUwXyjvTkFn8QmGEKvGGh8ut8iuFIctBYQgEhSEQFIZAUBgCQWEIBIUhEBSGQFAYApEoDLO1pGVRYRaPOWYLo8c5iM2ij6Tt5mIpTC6tMN7b7vpb8mJU8nB1l7Pc1hOmu44eM0CyIvnZ2liGOcwDQ8IHOWNsswQ5ZCQPPKtfjGpWkKnLh/T/HsYIhjbNDYV9pPVrk5Ot1du5Tig/02KFsSzA+zMTeUgeuMS86jQVpt911sTowgQ3EmZrjeqR0q9NTvJNb6dladJ3bBiwAhaurxKSCNE88Ix+QbwzjLWAucL0H1GxpMgXZ1vCNPcx3H/mTpfEieSBi/SbyOTQq01QvjDPYQfgFSzGHGH0qvdqGx+32rapCrkLF96XnQcu12+calrO/AWIZ1xThHntnHAxtH5tZmZrjQxzeO3sQ+/5Cu30cJ7FT0po35/RLwpf6SUQFIZAUBgCQWEIBIUhEBSGQFAYAkFhCASFIRAUhkBQGAJBYQhEsjD6m3W52Km5ciz7dv9fI1GYJTOwS+drKUxJhEyvsHj12+e5v5Qndm0zzKS93W/HKtwku0thSlGJv5Z0kEPIncCxw1j1kIWxs7UJ0dD/lED7a1TT3SksYGaFSUvRScLEopKWMGFbClMSCkMgJo+kppyHcuSeYZI+mZjySAqzteOMq/x7er2PvvAMU4zm0OvnScseevVr27ncWLbW+wjLLaiSo4zr7vZghSkIX7gjEBSGQFAYAkFhCASFIRAUhkBQGAJBYQgEhSEQFIZAUBgCQWEIxD9pchkt23OQeAAAAABJRU5ErkJggg==" alt="target crop of wrap"></figure>
+      <figure><figcaption>diff</figcaption><img class="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIwAAABCCAYAAACFIj76AAADX0lEQVR4nO2bW27rMAwFvaEu526923FRFEZVXpE6R5YdB5gB8hFHlkh6/EikbDuAwfbqAOC9QBiwQBiwQBiweJYwH/9+X3HbK2OYaXN1DC+iFuY74M/tvsAVYXqFdIrbjqFIoca5Erf/G+UaC/M003vxzEh9Rpin8Uhhjtfn9vfz433v86q/73bHq93WGzOLoy1UlDuLc9/742T5xtzivsrnVf7ZFXS0PbvqqjlN4gujvJT+YqK9z9vtakyx30z0Kuaq6NX+Tn5qrZTaqTItwLslqYUe9Ve1j9vi7UaVNW6PV8IZYdQYlIO67/+P69Rq1HeWy0nOC+MEMiOMe7CyNtn+Tt5VDHsh9yjXXhyrhFHGMlgjjBrErDC9eFQplLzUvKs49oEwar7qvuoJooxl4AmTPWj22ioBuzK229qDE9tX35p6Mba3q96zTjVW+7kqTFbPrH+1dqM6npRlf9wPdy6jYrfbq29vIPPeVRydjQvPLPjhvYWB20EYsEAYsEAYsEAYsEAYsEAYsEAYsEAYsPgV5oaJq+XwS+7tnBPGnWxczRlhVse2airiyimNy2erzwZw5wJyl5UH5KEH94o+f4TpTenvnVneOLnXrstt2/eWBYym8kfrYbPke/u0McX84qx1deX8KFbqZbGoObiTpqOcYswXTcRuZTHi9njFUBZiK4WOqInFgxrjattlomQ599pl+2YHxclPjaPNJ8oc81XjMdCEiW0ORsKMzFaKXtG7amV9K/8aiDlneat1mhGmt2/2b4ojp9G/LapxTf6edpWRM8LE21NGu7+bWDybqjYxRqWo1a00vlcP0CjW2Rhm4zG4TxinSK4w2f6jPJyrhytMlfPMgYsnXdV3VYOlwlSDjgo8aqvsO/PQ274fXaKzeJXnm0p8Jf8s/l7uMYdevlVdes83lwoDkIAwYIEwYIEwYIEwYIEwYIEwYIEwYIEwYIEwYIEwYIEwYKELs3AC69I+q3HgNL4wV4Awb0N/xV02fT+DMr0+2j6KSV1yAKfZ0nUfB84aj8js2pYqjt57py2cYps6WCrOoh+EeQsQBizGt6Rsm8ITbkk8wyzltQ+96rjuQ+2Z5y4o4Yc7sEAYsEAYsEAYsEAYsEAYsEAYsEAYsEAYsEAYsEAYsEAYsPgCsCkwGIOt3EAAAAAASUVORK5CYII=" alt="diff of wrap"></figure>
+    </div>
+    <div class="detail">
+      <p>categories: text-wrap, pixel · 1076 pixels differ (92 anti-aliased)</p>
+      <p class="muted">No style declaration differences above tolerance.</p>
+      
+      <p class="muted">Selectors: <code>#wrap-text</code> → <code>#wrap-text</code></p>
+    </div>
+  </details>
+
+
+
+<h2>Interaction checks</h2>
+<table class="grid">
+    <thead><tr><th>Check</th><th>Status</th><th>Expected</th><th>Observed</th><th>Evidence</th></tr></thead>
+    <tbody><tr>
+      <td>toggle-note 点按钮后说明展开</td>
+      <td><span class="badge" style="color:#1a7f37;border-color:#1a7f37">PASS</span></td>
+      <td>[object Object]</td>
+      <td>ok text(#note) includes &quot;已展开&quot; → 说明已展开</td>
+      <td class="muted">—</td>
+    </tr></tbody>
+  </table>
+
+<footer>
+visual-diff-report.json<br>fidelity-validation-report.json<br>regions/ctrl-1-prototype.png<br>regions/ctrl-1-target.png<br>regions/ctrl-1-diff.png<br>regions/ctrl-2-prototype.png<br>regions/ctrl-2-target.png<br>regions/ctrl-2-diff.png<br>regions/ctrl-3-prototype.png<br>regions/ctrl-3-target.png<br>regions/ctrl-3-diff.png<br>regions/ctrl-4-prototype.png<br>regions/ctrl-4-target.png<br>regions/ctrl-4-diff.png<br>regions/pos-8-prototype.png<br>regions/pos-8-target.png<br>regions/pos-8-diff.png<br>regions/gap-4-prototype.png<br>regions/gap-4-target.png<br>regions/gap-4-diff.png<br>regions/font-size-prototype.png<br>regions/font-size-target.png<br>regions/font-size-diff.png<br>regions/line-height-prototype.png<br>regions/line-height-target.png<br>regions/line-height-diff.png<br>regions/radius-prototype.png<br>regions/radius-target.png<br>regions/radius-diff.png<br>regions/color-prototype.png<br>regions/color-target.png<br>regions/color-diff.png<br>regions/crop-prototype.png<br>regions/crop-target.png<br>regions/crop-diff.png<br>regions/wrap-prototype.png<br>regions/wrap-target.png<br>regions/wrap-diff.png
+<br>Statuses: PASS · FAIL · UNVERIFIED · BLOCKED · NOT_APPLICABLE. Missing evidence is never reported as PASS.
+</footer>
+</body></html>

@@ -1464,7 +1464,7 @@ Page({
         date: day.date,
         label,
         dateLabel: Number(md[0]) + '/' + Number(md[1]),
-        phrase: F.weatherPhrase(day.code),
+        phrase: F.dayPhrase(day),
         tMax: day.tMax,
         tMin: day.tMin,
         precipProbMax: day.precipProbMax,

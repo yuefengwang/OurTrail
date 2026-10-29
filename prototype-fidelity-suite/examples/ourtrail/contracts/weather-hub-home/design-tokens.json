@@ -1,0 +1,1698 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "design-tokens",
+  "pageId": "weather-hub-home",
+  "stateId": "injected-plan",
+  "generatedAt": "2026-10-28T14:20:19.266Z",
+  "source": {
+    "side": "prototype",
+    "manifest": "captures/weather-hub-home/injected-plan/prototype/capture-manifest.json"
+  },
+  "tokens": {
+    "colors": [
+      {
+        "value": "rgba(0, 0, 0, 0)",
+        "count": 87,
+        "selectors": [
+          ".statusbar",
+          "b",
+          ".status-icons",
+          "svg",
+          "path",
+          ".wechatbar",
+          ".weather-brand",
+          ".wordmark"
+        ],
+        "token": "color-rgba-0-0-0-0",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(24, 33, 27)",
+        "count": 66,
+        "selectors": [
+          "#device",
+          ".statusbar",
+          "b",
+          ".status-icons",
+          "svg",
+          "path",
+          ".battery",
+          ".wechatbar"
+        ],
+        "token": "color-rgb-24-33-27",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(22, 120, 62)",
+        "count": 38,
+        "selectors": [
+          "svg",
+          "path",
+          ".home-eyebrow",
+          "circle",
+          "button",
+          ".active",
+          "span"
+        ],
+        "token": "color-rgb-22-120-62",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(123, 133, 125)",
+        "count": 34,
+        "selectors": [
+          "button",
+          "span",
+          "svg",
+          "path",
+          "circle"
+        ],
+        "token": "color-rgb-123-133-125",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(107, 117, 109)",
+        "count": 10,
+        "selectors": [
+          "#data-source-home",
+          ".demo-dot",
+          "span",
+          "svg",
+          "circle"
+        ],
+        "token": "color-rgb-107-117-109",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(138, 150, 140)",
+        "count": 8,
+        "selectors": [
+          "svg",
+          "path"
+        ],
+        "token": "color-rgb-138-150-140",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(44, 90, 56)",
+        "count": 8,
+        "selectors": [
+          ".recent-tag",
+          "svg",
+          "rect",
+          "path"
+        ],
+        "token": "color-rgb-44-90-56",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(95, 122, 99)",
+        "count": 6,
+        "selectors": [
+          "svg",
+          "rect",
+          "path"
+        ],
+        "token": "color-rgb-95-122-99",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(232, 236, 231)",
+        "count": 5,
+        "selectors": [
+          "button",
+          ".home-recent",
+          ".home-tabs",
+          ".bottom-nav"
+        ],
+        "token": "color-rgb-232-236-231",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(255, 255, 255)",
+        "count": 5,
+        "selectors": [
+          "#device",
+          ".home-action-primary",
+          ".home-tabs",
+          ".bottom-nav",
+          ".home-indicator"
+        ],
+        "token": "color-rgb-255-255-255",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(108, 118, 110)",
+        "count": 4,
+        "selectors": [
+          "button"
+        ],
+        "token": "color-rgb-108-118-110",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(111, 122, 114)",
+        "count": 2,
+        "selectors": [
+          ".home-sub"
+        ],
+        "token": "color-rgb-111-122-114",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(119, 129, 122)",
+        "count": 2,
+        "selectors": [
+          "small"
+        ],
+        "token": "color-rgb-119-129-122",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(121, 131, 122)",
+        "count": 2,
+        "selectors": [
+          "small"
+        ],
+        "token": "color-rgb-121-131-122",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(123, 133, 124)",
+        "count": 2,
+        "selectors": [
+          "small"
+        ],
+        "token": "color-rgb-123-133-124",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(139, 149, 140)",
+        "count": 2,
+        "selectors": [
+          ".home-foot"
+        ],
+        "token": "color-rgb-139-149-140",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(227, 230, 227)",
+        "count": 2,
+        "selectors": [
+          ".wechat-capsule",
+          "i"
+        ],
+        "token": "color-rgb-227-230-227",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(34, 64, 45)",
+        "count": 2,
+        "selectors": [
+          "b"
+        ],
+        "token": "color-rgb-34-64-45",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(60, 74, 65)",
+        "count": 2,
+        "selectors": [
+          "button"
+        ],
+        "token": "color-rgb-60-74-65",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(91, 103, 94)",
+        "count": 2,
+        "selectors": [
+          "h2"
+        ],
+        "token": "color-rgb-91-103-94",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(124, 154, 131)",
+        "count": 1,
+        "selectors": [
+          ".demo-dot"
+        ],
+        "token": "color-rgb-124-154-131",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(213, 226, 211)",
+        "count": 1,
+        "selectors": [
+          ".home-action-primary"
+        ],
+        "token": "color-rgb-213-226-211",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(220, 237, 217)",
+        "count": 1,
+        "selectors": [
+          ".recent-tag"
+        ],
+        "token": "color-rgb-220-237-217",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(237, 241, 233)",
+        "count": 1,
+        "selectors": [
+          ".asset-icon"
+        ],
+        "token": "color-rgb-237-241-233",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(242, 246, 240)",
+        "count": 1,
+        "selectors": [
+          "button"
+        ],
+        "token": "color-rgb-242-246-240",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "typography": [
+      {
+        "value": "letter-spacing:normal",
+        "count": 88,
+        "selectors": [
+          "#device",
+          ".statusbar",
+          "b",
+          ".status-icons",
+          "svg",
+          "path",
+          ".battery",
+          ".wechatbar"
+        ],
+        "token": "typograph-letter-spacing-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:400",
+        "count": 73,
+        "selectors": [
+          "#device",
+          ".statusbar",
+          ".status-icons",
+          "svg",
+          "path",
+          ".battery",
+          ".wechatbar",
+          ".weather-brand"
+        ],
+        "token": "typograph-font-weight-400",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:normal",
+        "count": 72,
+        "selectors": [
+          "#device",
+          ".statusbar",
+          "b",
+          ".status-icons",
+          "svg",
+          "path",
+          ".battery",
+          ".wechatbar"
+        ],
+        "token": "typograph-line-height-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:10px",
+        "count": 33,
+        "selectors": [
+          ".home-eyebrow",
+          "#data-source-home",
+          ".demo-dot",
+          "span",
+          "svg",
+          "circle",
+          "small",
+          ".home-foot"
+        ],
+        "token": "typograph-font-size-10px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:16px",
+        "count": 26,
+        "selectors": [
+          "#device",
+          ".wechatbar",
+          ".weather-brand",
+          "#weather-screen",
+          "#weather-home",
+          ".home-header",
+          "div",
+          ".home-actions"
+        ],
+        "token": "typograph-font-size-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:10px",
+        "count": 23,
+        "selectors": [
+          "button",
+          "span",
+          "svg",
+          "path",
+          ".active",
+          "circle"
+        ],
+        "token": "typograph-line-height-10px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:13px",
+        "count": 14,
+        "selectors": [
+          ".statusbar",
+          "b",
+          ".status-icons",
+          "svg",
+          "path",
+          ".battery",
+          "h2",
+          "button"
+        ],
+        "token": "typograph-font-size-13px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:700",
+        "count": 11,
+        "selectors": [
+          "b",
+          ".wechat-capsule",
+          "span",
+          "i",
+          ".capsule-dot",
+          ".active",
+          "svg",
+          "circle"
+        ],
+        "token": "typograph-font-weight-700",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:12px",
+        "count": 8,
+        "selectors": [
+          ".home-sub",
+          "button",
+          "svg",
+          "circle",
+          "path"
+        ],
+        "token": "typograph-font-size-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:17px",
+        "count": 8,
+        "selectors": [
+          ".wordmark",
+          "svg",
+          "path",
+          ".wechat-capsule",
+          "span",
+          "i",
+          ".capsule-dot"
+        ],
+        "token": "typograph-font-size-17px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:650",
+        "count": 8,
+        "selectors": [
+          ".home-eyebrow",
+          "b",
+          "svg",
+          "path",
+          "circle",
+          "h2"
+        ],
+        "token": "typograph-font-weight-650",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:14px",
+        "count": 4,
+        "selectors": [
+          "b",
+          "svg",
+          "path",
+          "circle"
+        ],
+        "token": "typograph-font-size-14px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:9px",
+        "count": 4,
+        "selectors": [
+          ".recent-tag",
+          "svg",
+          "rect",
+          "path"
+        ],
+        "token": "typograph-font-size-9px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:760",
+        "count": 4,
+        "selectors": [
+          ".wordmark",
+          "svg",
+          "path"
+        ],
+        "token": "typograph-font-weight-760",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "letter-spacing:-0.6px",
+        "count": 4,
+        "selectors": [
+          ".wordmark",
+          "svg",
+          "path"
+        ],
+        "token": "typograph-letter-spacing-0-6px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "letter-spacing:1px",
+        "count": 4,
+        "selectors": [
+          ".wechat-capsule",
+          "span",
+          "i",
+          ".capsule-dot"
+        ],
+        "token": "typograph-letter-spacing-1px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:25px",
+        "count": 1,
+        "selectors": [
+          "h1"
+        ],
+        "token": "typograph-font-size-25px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:680",
+        "count": 1,
+        "selectors": [
+          "button"
+        ],
+        "token": "typograph-font-weight-680",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:730",
+        "count": 1,
+        "selectors": [
+          "h1"
+        ],
+        "token": "typograph-font-weight-730",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "letter-spacing:-0.7px",
+        "count": 1,
+        "selectors": [
+          "h1"
+        ],
+        "token": "typograph-letter-spacing-0-7px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "letter-spacing:2px",
+        "count": 1,
+        "selectors": [
+          ".home-eyebrow"
+        ],
+        "token": "typograph-letter-spacing-2px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:17px",
+        "count": 1,
+        "selectors": [
+          ".home-foot"
+        ],
+        "token": "typograph-line-height-17px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:19.2px",
+        "count": 1,
+        "selectors": [
+          ".home-sub"
+        ],
+        "token": "typograph-line-height-19-2px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:32.5px",
+        "count": 1,
+        "selectors": [
+          "h1"
+        ],
+        "token": "typograph-line-height-32-5px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "radius": [
+      {
+        "value": "0px",
+        "count": 88,
+        "selectors": [
+          "#device",
+          ".statusbar",
+          "b",
+          ".status-icons",
+          "svg",
+          "path",
+          ".wechatbar",
+          ".weather-brand"
+        ],
+        "token": "radiu-0px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "10px",
+        "count": 3,
+        "selectors": [
+          "button",
+          ".asset-icon"
+        ],
+        "token": "radiu-10px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "12px",
+        "count": 2,
+        "selectors": [
+          ".home-action-primary",
+          "button"
+        ],
+        "token": "radiu-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "50%",
+        "count": 2,
+        "selectors": [
+          ".capsule-dot",
+          ".demo-dot"
+        ],
+        "token": "radiu-50",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "18px",
+        "count": 1,
+        "selectors": [
+          ".wechat-capsule"
+        ],
+        "token": "radiu-18px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "3px",
+        "count": 1,
+        "selectors": [
+          ".battery"
+        ],
+        "token": "radiu-3px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "5px",
+        "count": 1,
+        "selectors": [
+          ".recent-tag"
+        ],
+        "token": "radiu-5px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "shadows": [
+      {
+        "value": "rgb(255, 255, 255) 0px 0px 0px 1.5px inset",
+        "count": 1,
+        "selectors": [
+          ".battery"
+        ],
+        "token": "shadow-rgb-255-255-255-0px-0px-0px-1-5px-inset",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "spacing": [
+      {
+        "value": "4px",
+        "count": 9,
+        "selectors": [
+          ".home-actions",
+          "small",
+          ".home-foot",
+          "button",
+          ".active"
+        ],
+        "token": "spacin-4px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "6px",
+        "count": 8,
+        "selectors": [
+          ".weather-brand",
+          "button",
+          ".active"
+        ],
+        "token": "spacin-6px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "1px",
+        "count": 7,
+        "selectors": [
+          "button",
+          ".active"
+        ],
+        "token": "spacin-1px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "8px",
+        "count": 6,
+        "selectors": [
+          ".statusbar",
+          ".home-sub",
+          "#data-source-home",
+          "button",
+          ".home-list"
+        ],
+        "token": "spacin-8px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "7px",
+        "count": 5,
+        "selectors": [
+          ".home-eyebrow",
+          "b",
+          "button",
+          ".recent-tag"
+        ],
+        "token": "spacin-7px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "12px",
+        "count": 4,
+        "selectors": [
+          ".wechat-capsule",
+          ".asset-item",
+          ".home-foot",
+          ".bottom-nav"
+        ],
+        "token": "spacin-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "20px",
+        "count": 4,
+        "selectors": [
+          ".home-header",
+          ".home-actions",
+          ".home-recent",
+          ".home-list"
+        ],
+        "token": "spacin-20px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "5px",
+        "count": 4,
+        "selectors": [
+          ".status-icons",
+          ".wordmark",
+          "#data-source-home",
+          ".recent-tag"
+        ],
+        "token": "spacin-5px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "13px",
+        "count": 3,
+        "selectors": [
+          ".home-action-primary",
+          "button"
+        ],
+        "token": "spacin-13px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "14px",
+        "count": 3,
+        "selectors": [
+          ".home-header",
+          "button",
+          ".home-tabs"
+        ],
+        "token": "spacin-14px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "10px",
+        "count": 2,
+        "selectors": [
+          ".home-header",
+          "h2"
+        ],
+        "token": "spacin-10px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "15px",
+        "count": 2,
+        "selectors": [
+          ".home-action-primary",
+          ".asset-item"
+        ],
+        "token": "spacin-15px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "16px",
+        "count": 2,
+        "selectors": [
+          ".home-action-primary",
+          ".home-recent"
+        ],
+        "token": "spacin-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "18px",
+        "count": 2,
+        "selectors": [
+          ".home-actions",
+          ".home-list"
+        ],
+        "token": "spacin-18px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "2px",
+        "count": 2,
+        "selectors": [
+          ".battery",
+          ".bottom-nav"
+        ],
+        "token": "spacin-2px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "9px",
+        "count": 2,
+        "selectors": [
+          ".home-actions",
+          ".home-action-row"
+        ],
+        "token": "spacin-9px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "11px",
+        "count": 1,
+        "selectors": [
+          "button"
+        ],
+        "token": "spacin-11px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "19px",
+        "count": 1,
+        "selectors": [
+          ".wechatbar"
+        ],
+        "token": "spacin-19px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "22px",
+        "count": 1,
+        "selectors": [
+          ".home-header"
+        ],
+        "token": "spacin-22px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "24px",
+        "count": 1,
+        "selectors": [
+          ".statusbar"
+        ],
+        "token": "spacin-24px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "3px",
+        "count": 1,
+        "selectors": [
+          ".recent-tag"
+        ],
+        "token": "spacin-3px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ]
+  },
+  "targetTokens": {
+    "colors": [
+      {
+        "value": "rgb(32, 42, 38)",
+        "count": 15,
+        "selectors": [
+          ".wh-header",
+          ".wh-actions",
+          ".wh-primary",
+          ".wh-row",
+          ".wh-recent",
+          ".wh-tabs",
+          ".wh-list",
+          ".wh-asset"
+        ],
+        "token": "color-rgb-32-42-38",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgba(0, 0, 0, 0)",
+        "count": 14,
+        "selectors": [
+          ".wh-header",
+          ".wh-eyebrow",
+          ".wh-title",
+          ".wh-sub",
+          ".wh-actions",
+          ".wh-primary-sub",
+          ".wh-row",
+          ".wh-recent"
+        ],
+        "token": "color-rgba-0-0-0-0",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(24, 33, 27)",
+        "count": 4,
+        "selectors": [
+          ".wh-title",
+          ".wh-asset-name"
+        ],
+        "token": "color-rgb-24-33-27",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(111, 122, 114)",
+        "count": 2,
+        "selectors": [
+          ".wh-sub"
+        ],
+        "token": "color-rgb-111-122-114",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(121, 131, 122)",
+        "count": 2,
+        "selectors": [
+          ".wh-primary-sub"
+        ],
+        "token": "color-rgb-121-131-122",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(139, 149, 140)",
+        "count": 2,
+        "selectors": [
+          ".wh-foot"
+        ],
+        "token": "color-rgb-139-149-140",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(22, 120, 62)",
+        "count": 2,
+        "selectors": [
+          ".wh-eyebrow"
+        ],
+        "token": "color-rgb-22-120-62",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(232, 236, 231)",
+        "count": 2,
+        "selectors": [
+          ".wh-recent",
+          ".wh-tabs"
+        ],
+        "token": "color-rgb-232-236-231",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(255, 255, 255)",
+        "count": 2,
+        "selectors": [
+          ".wh-primary",
+          ".wh-tabs"
+        ],
+        "token": "color-rgb-255-255-255",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(91, 103, 94)",
+        "count": 2,
+        "selectors": [
+          ".wh-recent-title"
+        ],
+        "token": "color-rgb-91-103-94",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(213, 226, 211)",
+        "count": 1,
+        "selectors": [
+          ".wh-primary"
+        ],
+        "token": "color-rgb-213-226-211",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "typography": [
+      {
+        "value": "letter-spacing:normal",
+        "count": 14,
+        "selectors": [
+          ".wh-header",
+          ".wh-sub",
+          ".wh-actions",
+          ".wh-primary",
+          ".wh-primary-sub",
+          ".wh-row",
+          ".wh-recent",
+          ".wh-recent-title"
+        ],
+        "token": "typograph-letter-spacing-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:22px",
+        "count": 13,
+        "selectors": [
+          ".wh-header",
+          ".wh-eyebrow",
+          ".wh-actions",
+          ".wh-primary",
+          ".wh-primary-sub",
+          ".wh-row",
+          ".wh-recent",
+          ".wh-recent-title"
+        ],
+        "token": "typograph-line-height-22px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:400",
+        "count": 12,
+        "selectors": [
+          ".wh-header",
+          ".wh-sub",
+          ".wh-actions",
+          ".wh-primary",
+          ".wh-primary-sub",
+          ".wh-row",
+          ".wh-recent",
+          ".wh-tabs"
+        ],
+        "token": "typograph-font-weight-400",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:14px",
+        "count": 9,
+        "selectors": [
+          ".wh-header",
+          ".wh-actions",
+          ".wh-primary",
+          ".wh-row",
+          ".wh-recent",
+          ".wh-tabs",
+          ".wh-list",
+          ".wh-asset"
+        ],
+        "token": "typograph-font-size-14px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:10px",
+        "count": 3,
+        "selectors": [
+          ".wh-eyebrow",
+          ".wh-primary-sub",
+          ".wh-foot"
+        ],
+        "token": "typograph-font-size-10px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:600",
+        "count": 3,
+        "selectors": [
+          ".wh-eyebrow",
+          ".wh-recent-title",
+          ".wh-asset-name"
+        ],
+        "token": "typograph-font-weight-600",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:13px",
+        "count": 2,
+        "selectors": [
+          ".wh-recent-title",
+          ".wh-asset-name"
+        ],
+        "token": "typograph-font-size-13px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:12px",
+        "count": 1,
+        "selectors": [
+          ".wh-sub"
+        ],
+        "token": "typograph-font-size-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:25px",
+        "count": 1,
+        "selectors": [
+          ".wh-title"
+        ],
+        "token": "typograph-font-size-25px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:700",
+        "count": 1,
+        "selectors": [
+          ".wh-title"
+        ],
+        "token": "typograph-font-weight-700",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "letter-spacing:-0.7px",
+        "count": 1,
+        "selectors": [
+          ".wh-title"
+        ],
+        "token": "typograph-letter-spacing-0-7px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "letter-spacing:2px",
+        "count": 1,
+        "selectors": [
+          ".wh-eyebrow"
+        ],
+        "token": "typograph-letter-spacing-2px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:17px",
+        "count": 1,
+        "selectors": [
+          ".wh-foot"
+        ],
+        "token": "typograph-line-height-17px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:19.2px",
+        "count": 1,
+        "selectors": [
+          ".wh-sub"
+        ],
+        "token": "typograph-line-height-19-2px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:32.5px",
+        "count": 1,
+        "selectors": [
+          ".wh-title"
+        ],
+        "token": "typograph-line-height-32-5px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "radius": [
+      {
+        "value": "0px",
+        "count": 15,
+        "selectors": [
+          ".wh-header",
+          ".wh-eyebrow",
+          ".wh-title",
+          ".wh-sub",
+          ".wh-actions",
+          ".wh-primary-sub",
+          ".wh-row",
+          ".wh-recent"
+        ],
+        "token": "radiu-0px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "12px",
+        "count": 1,
+        "selectors": [
+          ".wh-primary"
+        ],
+        "token": "radiu-12px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "shadows": [],
+    "spacing": [
+      {
+        "value": "20px",
+        "count": 4,
+        "selectors": [
+          ".wh-header",
+          ".wh-actions",
+          ".wh-recent",
+          ".wh-list"
+        ],
+        "token": "spacin-20px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "12px",
+        "count": 2,
+        "selectors": [
+          ".wh-asset",
+          ".wh-foot"
+        ],
+        "token": "spacin-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "14px",
+        "count": 2,
+        "selectors": [
+          ".wh-header",
+          ".wh-tabs"
+        ],
+        "token": "spacin-14px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "15px",
+        "count": 2,
+        "selectors": [
+          ".wh-primary",
+          ".wh-asset"
+        ],
+        "token": "spacin-15px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "16px",
+        "count": 2,
+        "selectors": [
+          ".wh-primary",
+          ".wh-recent"
+        ],
+        "token": "spacin-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "18px",
+        "count": 2,
+        "selectors": [
+          ".wh-actions",
+          ".wh-list"
+        ],
+        "token": "spacin-18px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "4px",
+        "count": 2,
+        "selectors": [
+          ".wh-actions",
+          ".wh-foot"
+        ],
+        "token": "spacin-4px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "8px",
+        "count": 2,
+        "selectors": [
+          ".wh-sub",
+          ".wh-list"
+        ],
+        "token": "spacin-8px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "9px",
+        "count": 2,
+        "selectors": [
+          ".wh-actions",
+          ".wh-row"
+        ],
+        "token": "spacin-9px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "10px",
+        "count": 1,
+        "selectors": [
+          ".wh-recent-title"
+        ],
+        "token": "spacin-10px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "13px",
+        "count": 1,
+        "selectors": [
+          ".wh-primary"
+        ],
+        "token": "spacin-13px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "150px",
+        "count": 1,
+        "selectors": [
+          ".wh-page"
+        ],
+        "token": "spacin-150px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "7px",
+        "count": 1,
+        "selectors": [
+          ".wh-eyebrow"
+        ],
+        "token": "spacin-7px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ]
+  },
+  "drift": {
+    "colors": {
+      "shared": [
+        "rgba(0, 0, 0, 0)",
+        "rgb(24, 33, 27)",
+        "rgb(22, 120, 62)",
+        "rgb(232, 236, 231)",
+        "rgb(255, 255, 255)",
+        "rgb(111, 122, 114)",
+        "rgb(121, 131, 122)",
+        "rgb(139, 149, 140)",
+        "rgb(91, 103, 94)",
+        "rgb(213, 226, 211)"
+      ],
+      "onlyPrototype": [
+        "rgb(123, 133, 125)",
+        "rgb(107, 117, 109)",
+        "rgb(138, 150, 140)",
+        "rgb(44, 90, 56)",
+        "rgb(95, 122, 99)",
+        "rgb(108, 118, 110)",
+        "rgb(119, 129, 122)",
+        "rgb(123, 133, 124)",
+        "rgb(227, 230, 227)",
+        "rgb(34, 64, 45)",
+        "rgb(60, 74, 65)",
+        "rgb(124, 154, 131)",
+        "rgb(220, 237, 217)",
+        "rgb(237, 241, 233)",
+        "rgb(242, 246, 240)"
+      ],
+      "onlyTarget": [
+        "rgb(32, 42, 38)"
+      ]
+    },
+    "typography": {
+      "shared": [
+        "letter-spacing:normal",
+        "font-weight:400",
+        "font-size:10px",
+        "font-size:13px",
+        "font-weight:700",
+        "font-size:12px",
+        "font-size:14px",
+        "font-size:25px",
+        "letter-spacing:-0.7px",
+        "letter-spacing:2px",
+        "line-height:17px",
+        "line-height:19.2px",
+        "line-height:32.5px"
+      ],
+      "onlyPrototype": [
+        "line-height:normal",
+        "font-size:16px",
+        "line-height:10px",
+        "font-size:17px",
+        "font-weight:650",
+        "font-size:9px",
+        "font-weight:760",
+        "letter-spacing:-0.6px",
+        "letter-spacing:1px",
+        "font-weight:680",
+        "font-weight:730"
+      ],
+      "onlyTarget": [
+        "line-height:22px",
+        "font-weight:600"
+      ]
+    },
+    "radius": {
+      "shared": [
+        "0px",
+        "12px"
+      ],
+      "onlyPrototype": [
+        "10px",
+        "50%",
+        "18px",
+        "3px",
+        "5px"
+      ],
+      "onlyTarget": []
+    },
+    "shadows": {
+      "shared": [],
+      "onlyPrototype": [
+        "rgb(255, 255, 255) 0px 0px 0px 1.5px inset"
+      ],
+      "onlyTarget": []
+    },
+    "spacing": {
+      "shared": [
+        "4px",
+        "8px",
+        "7px",
+        "12px",
+        "20px",
+        "13px",
+        "14px",
+        "10px",
+        "15px",
+        "16px",
+        "18px",
+        "9px"
+      ],
+      "onlyPrototype": [
+        "6px",
+        "1px",
+        "5px",
+        "2px",
+        "11px",
+        "19px",
+        "22px",
+        "24px",
+        "3px"
+      ],
+      "onlyTarget": [
+        "150px"
+      ]
+    }
+  }
+}

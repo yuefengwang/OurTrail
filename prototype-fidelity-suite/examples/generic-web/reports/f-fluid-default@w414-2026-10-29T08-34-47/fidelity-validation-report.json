@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "fidelity-validation-report",
+  "pageId": "f-fluid",
+  "stateId": "default",
+  "viewportId": "w414",
+  "generatedAt": "2026-10-29T08:34:55.635Z",
+  "status": "PASS",
+  "reason": null,
+  "scorecard": {
+    "schemaVersion": "1.0.0",
+    "generatedAt": "2026-10-29T08:34:55.635Z",
+    "dimensions": {
+      "geometry": {
+        "checks": {
+          "total": 8,
+          "fail": 0,
+          "pass": 8,
+          "unverified": 0
+        },
+        "metrics": {
+          "position": {
+            "total": 4,
+            "fail": 0,
+            "criticalFail": 0,
+            "maxAbsPx": 0,
+            "meanAbsPx": 0
+          },
+          "size": {
+            "total": 4,
+            "fail": 0,
+            "criticalFail": 0,
+            "maxAbsPx": 0,
+            "meanAbsPx": 0
+          }
+        },
+        "verdict": "PASS"
+      },
+      "typography": {
+        "checks": {
+          "total": 16,
+          "fail": 0,
+          "pass": 16,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 12,
+            "fail": 0,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "text": {
+            "total": 2,
+            "fail": 0
+          },
+          "wrap": {
+            "total": 2,
+            "fail": 0
+          }
+        },
+        "verdict": "PASS"
+      },
+      "appearance": {
+        "checks": {
+          "total": 30,
+          "fail": 0,
+          "pass": 30,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 26,
+            "fail": 0,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "missingOnTarget": 0,
+          "missingOnPrototype": 0,
+          "notApplicable": 0
+        },
+        "verdict": "PASS"
+      },
+      "state": {
+        "checks": {
+          "total": 4,
+          "pass": 4,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      },
+      "interaction": {
+        "checks": {
+          "total": 1,
+          "pass": 1,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      }
+    },
+    "categories": {},
+    "criticalFailures": [],
+    "nonCriticalFailures": [],
+    "budget": {
+      "criticalFailures": 0,
+      "nonCriticalFailures": 0
+    },
+    "coverage": {
+      "pairsDeclared": 4,
+      "criticalPairs": 3,
+      "pairsMeasured": 4,
+      "pairsUnverified": 0,
+      "notApplicable": 0,
+      "missingOnTarget": 0,
+      "missingOnPrototype": 0,
+      "pixelsCompared": 0,
+      "unownedCategories": []
+    },
+    "verdict": "PASS"
+  },
+  "interaction": {
+    "checks": [
+      {
+        "id": "toggle-note",
+        "title": "点按钮后说明展开",
+        "status": "PASS",
+        "expected": {
+          "textIncludes": {
+            "selector": "#f-note",
+            "text": "已展开"
+          }
+        },
+        "observed": "ok text(#f-note) includes \"已展开\" → 说明已展开",
+        "assertions": [
+          {
+            "assertion": "text(#f-note) includes \"已展开\"",
+            "pass": true,
+            "observed": "说明已展开"
+          }
+        ],
+        "startedAt": "2026-10-29T08:34:54.637Z",
+        "screenshotPath": null,
+        "finishedAt": "2026-10-29T08:34:55.409Z",
+        "durationMs": 772,
+        "verification": "real-action-and-observation"
+      }
+    ],
+    "fail": 0,
+    "unverified": 0,
+    "status": "PASS"
+  },
+  "evidence": [
+    "visual-diff-report.json",
+    "captures/f-fluid/default/@w414/prototype/capture-manifest.json",
+    "captures/f-fluid/default/@w414/target/capture-manifest.json"
+  ],
+  "limitations": [
+    "Container pixel comparisons masked over declared child regions (each child is judged at its own level): f-card ← f-desc"
+  ]
+}

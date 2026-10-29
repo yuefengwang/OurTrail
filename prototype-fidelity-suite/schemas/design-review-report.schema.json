@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/schemas/design-review-report.schema.json",
+  "title": "Independent design review report",
+  "description": "The output of design-consistency-reviewer: seven design dimensions plus the reviewer's independence, each judged on its own (there is no aggregate score), every finding carrying the evidence a reader can re-check and a fix a person can carry out.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind", "schemaVersion", "planId", "reviewedAt", "actor", "designer", "independent",
+    "artifacts", "store", "dimensions", "counts", "overall", "reason"
+  ],
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "verdict": { "type": "string", "enum": ["PASS", "FAIL", "UNVERIFIED", "BLOCKED", "NOT_APPLICABLE"] },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "where", "severity", "evidence", "fix"],
+      "properties": {
+        "code": { "type": "string", "minLength": 3 },
+        "where": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "enum": ["critical", "major", "minor"] },
+        "evidence": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "fix": { "type": "string", "minLength": 4 }
+      }
+    }
+  },
+  "properties": {
+    "kind": { "const": "design-review-report" },
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "planId": { "type": "string", "minLength": 1 },
+    "reviewedAt": { "type": "string", "format": "date-time" },
+    "actor": { "type": ["string", "null"] },
+    "designer": { "type": ["string", "null"] },
+    "independent": { "type": "boolean" },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["html", "bytes"],
+      "properties": {
+        "html": { "type": ["string", "null"] },
+        "bytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "store": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "revision"],
+      "properties": {
+        "id": { "type": ["string", "null"] },
+        "revision": { "type": ["integer", "null"], "minimum": 0 }
+      }
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 8,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "verdict", "findings"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": ["tokens", "components", "structure", "interactions", "completeness", "exceptions", "rules", "process"]
+          },
+          "title": { "type": "string", "minLength": 1 },
+          "verdict": { "$ref": "#/definitions/verdict" },
+          "findings": { "type": "array", "items": { "$ref": "#/definitions/finding" } },
+          "note": { "type": ["string", "null"] },
+          "items": { "type": ["array", "null"], "items": { "type": "string" } }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["critical", "major", "minor", "findings"],
+      "properties": {
+        "critical": { "type": "integer", "minimum": 0 },
+        "major": { "type": "integer", "minimum": 0 },
+        "minor": { "type": "integer", "minimum": 0 },
+        "findings": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "overall": { "$ref": "#/definitions/verdict" },
+    "reason": { "type": "string", "minLength": 1 }
+  }
+}

@@ -299,6 +299,30 @@ check('500m：全程非 IN_CLOUD（低海拔用户不在 2000m+ 云层内）',
   oi500.conditions.every(c => c.key !== 'IN_CLOUD'),
   JSON.stringify(oi500.conditions.map(c => c.key).filter(Boolean)))
 
+/* ---------- 晴空判据的扫描上界（300 hPa 档，2026-10-28） ---------- */
+section('晴空判据：8,000 m 以上的卷云也算「有云」')
+{
+  function hiField (cirrus) {
+    const altitudes = []
+    for (let a = 0; a <= 9750; a += 250) altitudes.push(a)
+    const values = TIMES.map(() => altitudes.map(a => (cirrus && a >= 9300 && a <= 9600) ? 20 : 0))
+    return { times: TIMES.map((_, i) => i), altitudes: altitudes, values: values, covered: { lo: 1000, hi: 9700 } }
+  }
+  const mkClear = (cirrus) => OI.buildOutdoorIntelligence(Object.assign({}, baseCtx, {
+    detail: detail24(TIMES.map(() => ({ low: 0, mid: 0, high: 0 })), {}, {}),
+    userAltitude: 5000, elevOK: true, cloudField: hiField(cirrus),
+  }))
+  const withCirrus = mkClear(true), clean = mkClear(false)
+  /* 20% 低于 OVER_C(40) ⇒ inferState 仍判 clear；只有把扫描上界抬到 9,750 的 peakCover 拦得住它。
+     真实数据里 300hPa 高度 8,498–9,765 m，"在 5,000 m 营地抬头看不到 20% 卷云"是假话。 */
+  check('9,300–9,600 m 的 20% 卷云 ⇒ 不印 CLEAR（否则图上画着卷云、卡片说晴空）',
+    withCirrus.conditions[12] && withCirrus.conditions[12].key !== 'CLEAR',
+    JSON.stringify(withCirrus.conditions[12] && [withCirrus.conditions[12].key, withCirrus.conditions[12].reason]))
+  check('阳性对照：同一天没有高层卷云 ⇒ 照旧 CLEAR（不是在无条件取消晴空）',
+    clean.conditions[12] && clean.conditions[12].key === 'CLEAR',
+    JSON.stringify(clean.conditions[12] && clean.conditions[12].key))
+}
+
 /* ---------- 结构化证据契约与摘要选择（切片二） ---------- */
 section('Evidence kind 契约：摘要由类别决定，不由中文决定')
 {

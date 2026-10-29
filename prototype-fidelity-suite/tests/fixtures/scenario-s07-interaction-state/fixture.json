@@ -1,0 +1,48 @@
+{
+  "id": "s07-interaction-state",
+  "class": "interaction-state",
+  "adversarial": true,
+  "purpose": "交互只有在“真动作 + 后果被观测到”时才 PASS：按钮看得见但没监听器、监听器存在但文案不是声明的那句、声明里没有后果，这三种都必须不通过。",
+  "requires": ["playwright"],
+  "steps": [
+    { "run": ["verify", "--project", ".", "--page", "i-ok", "--run", "r-ok"], "expectExit": 0, "captureStdout": "ok.stdout.txt" },
+    { "run": ["verify", "--project", ".", "--page", "i-dead", "--run", "r-dead"], "expectExit": 1, "captureStdout": "dead.stdout.txt" },
+    { "run": ["verify", "--project", ".", "--page", "i-wrong-text", "--run", "r-wrong"], "expectExit": 1, "captureStdout": "wrong.stdout.txt" },
+    { "run": ["verify", "--project", ".", "--page", "i-no-expect", "--run", "r-noexpect"], "expectExit": 2, "captureStdout": "noexpect.stdout.txt" }
+  ],
+  "checks": [
+    { "file": "reports/r-ok/fidelity-validation-report.json", "path": "$.status", "equals": "PASS" },
+    { "file": "reports/r-ok/fidelity-validation-report.json", "path": "$.interaction.status", "equals": "PASS" },
+    { "file": "reports/r-ok/fidelity-validation-report.json", "path": "$.interaction.checks", "length": 1 },
+    { "file": "reports/r-ok/fidelity-validation-report.json", "path": "$.interaction.checks[0].status", "equals": "PASS" },
+    { "file": "reports/r-ok/fidelity-validation-report.json", "path": "$.interaction.checks[0].verification", "equals": "real-action-and-observation" },
+    { "file": "reports/r-ok/fidelity-validation-report.json", "path": "$.interaction.checks[0].assertions[0].pass", "equals": true },
+    { "file": "reports/r-ok/fidelity-validation-report.json", "path": "$.interaction.checks[0].assertions[0].observed", "equals": "说明已展开" },
+    { "file": "reports/r-ok/fidelity-validation-report.json", "path": "$.interaction.checks[0].observed", "contains": "说明已展开" },
+    { "file": "contracts/i-ok/interaction-contract.json", "path": "$.status", "equals": "PASS" },
+    { "file": "contracts/i-ok/interaction-contract.json", "path": "$.driver.verification", "equals": "real-action-and-observation" },
+    { "file": "contracts/i-ok/interaction-contract.json", "path": "$.checks[0].verification", "equals": "real-action-and-observation" },
+
+    { "file": "reports/r-dead/visual-diff-report.json", "path": "$.verdict", "equals": "PASS" },
+    { "file": "reports/r-dead/fidelity-validation-report.json", "path": "$.status", "equals": "FAIL" },
+    { "file": "reports/r-dead/fidelity-validation-report.json", "path": "$.interaction.status", "equals": "FAIL" },
+    { "file": "reports/r-dead/fidelity-validation-report.json", "path": "$.interaction.checks[0].status", "equals": "FAIL" },
+    { "file": "reports/r-dead/fidelity-validation-report.json", "path": "$.interaction.checks[0].assertions[0].pass", "equals": false },
+    { "file": "reports/r-dead/fidelity-validation-report.json", "path": "$.interaction.checks[0].assertions[0].observed", "equals": "说明未展开" },
+    { "file": "contracts/i-dead/interaction-contract.json", "path": "$.checks[0].status", "equals": "FAIL" },
+
+    { "file": "reports/r-wrong/visual-diff-report.json", "path": "$.verdict", "equals": "PASS" },
+    { "file": "reports/r-wrong/fidelity-validation-report.json", "path": "$.status", "equals": "FAIL" },
+    { "file": "reports/r-wrong/fidelity-validation-report.json", "path": "$.interaction.checks[0].status", "equals": "FAIL" },
+    { "file": "reports/r-wrong/fidelity-validation-report.json", "path": "$.interaction.checks[0].assertions[0].pass", "equals": false },
+    { "file": "reports/r-wrong/fidelity-validation-report.json", "path": "$.interaction.checks[0].assertions[0].observed", "equals": "说明已显示" },
+
+    { "file": "reports/r-noexpect/fidelity-validation-report.json", "path": "$.status", "equals": "UNVERIFIED" },
+    { "file": "reports/r-noexpect/fidelity-validation-report.json", "path": "$.interaction.status", "equals": "UNVERIFIED" },
+    { "file": "reports/r-noexpect/fidelity-validation-report.json", "path": "$.interaction.checks[0].status", "equals": "UNVERIFIED" },
+    { "file": "reports/r-noexpect/fidelity-validation-report.json", "path": "$.interaction.checks[0].assertions", "length": 0 },
+    { "file": "ok.stdout.txt", "contains": "verdict PASS" },
+    { "file": "dead.stdout.txt", "contains": "verdict FAIL" },
+    { "file": "wrong.stdout.txt", "contains": "verdict FAIL" }
+  ]
+}

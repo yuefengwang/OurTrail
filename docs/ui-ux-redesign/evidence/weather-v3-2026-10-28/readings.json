@@ -1,0 +1,48 @@
+{
+  "gate": {
+    "cards": 5,
+    "hourlyLen": 43783,
+    "unified": true
+  },
+  "readings": [
+    {
+      "period": 24,
+      "range": "剖面 0–4,000 m",
+      "legend": "虚线 = 此点海拔",
+      "rangeLabelData": "剖面 0–4,000 m",
+      "legendElevData": "虚线 = 此点海拔",
+      "svgLen": 90260
+    },
+    {
+      "period": 48,
+      "range": "剖面 0–4,000 m",
+      "legend": "虚线 = 此点海拔",
+      "rangeLabelData": "剖面 0–4,000 m",
+      "legendElevData": "虚线 = 此点海拔",
+      "svgLen": 99213
+    },
+    {
+      "period": 72,
+      "range": "剖面 0–4,000 m",
+      "legend": "虚线 = 此点海拔",
+      "rangeLabelData": "剖面 0–4,000 m",
+      "legendElevData": "虚线 = 此点海拔",
+      "svgLen": 137456
+    }
+  ],
+  "log": [
+    "· 进入详情屏，place=\"峨眉山\"",
+    "· 门槛链通过：dayCards=5 hourlySrc=43783 unified=true",
+    "· <image> 计算样式：null",
+    "· <image> src 前缀=data:image/svg+xml;charset=utf-8,%3Csvg% 长度=43783 裸引号=false",
+    "· shot hourly-24.png (52586 B)",
+    "· 24h → range=剖面 0–4,000 m | legend=虚线 = 此点海拔 | lo..hi=undefined..undefined | ticks=undefined",
+    "· shot cloud-24.png (64332 B)",
+    "· 48h → range=剖面 0–4,000 m | legend=虚线 = 此点海拔 | lo..hi=undefined..undefined | ticks=undefined",
+    "· shot cloud-48.png (65977 B)",
+    "· 72h → range=剖面 0–4,000 m | legend=虚线 = 此点海拔 | lo..hi=undefined..undefined | ticks=undefined",
+    "· shot cloud-72.png (70289 B)",
+    "✓ 24/48/72 显示窗、刻度、图例三档逐字相同",
+    "· 污染自证：distinct(period)→3（必须 > 1，否则 period 没生效）"
+  ]
+}

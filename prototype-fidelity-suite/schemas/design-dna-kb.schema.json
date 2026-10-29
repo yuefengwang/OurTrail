@@ -1,0 +1,129 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/design-dna-kb.schema.json",
+  "title": "design-dna-kb",
+  "description": "A versioned design-knowledge store: the rules an extractor produced, plus who touched them, when, and why. This schema pins the *store* (identity, revision discipline, provenance, changelog shape). The rule envelope itself is owned by design-dna.schema.json and re-checked semantically by design/lib/dna-invariants.js on every write, so there is exactly one definition of what a rule is.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "id", "corpus", "sources", "revision", "updatedAt", "rules", "changelog", "decisions"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "kind": { "const": "design-dna-kb" },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]+$" },
+    "title": { "type": ["string", "null"] },
+    "corpus": {
+      "type": "array",
+      "description": "Fingerprints of the source artifacts this store was seeded from. Used to detect that the prototypes moved on while the store stayed behind.",
+      "items": { "$ref": "#/definitions/corpusEntry" }
+    },
+    "sources": {
+      "type": "array",
+      "description": "Captured pages with their family, copied from the extractor so scope rules stay checkable inside the store.",
+      "items": { "$ref": "#/definitions/sourcePage" }
+    },
+    "revision": { "type": "integer", "minimum": 0 },
+    "updatedAt": { "type": ["string", "null"], "format": "date-time" },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/storedRule" }
+    },
+    "changelog": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/changelogEntry" }
+    },
+    "decisions": {
+      "type": "array",
+      "description": "Design decision records: why a rule exists or why an exception was accepted. A decision has no scope and no evidence of its own — it explains.",
+      "items": { "$ref": "#/definitions/decision" }
+    }
+  },
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+
+    "corpusEntry": {
+      "type": "object",
+      "required": ["file", "sha256", "bytes"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "capturedAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+
+    "sourcePage": {
+      "type": "object",
+      "required": ["id", "family"],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "family": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "storedRule": {
+      "type": "object",
+      "description": "A design-dna rule (see design-dna.schema.json) plus the store's provenance record. Deep validation of the claim happens in checkDna; this schema only guarantees that a rule cannot enter the store without a time and an id.",
+      "required": ["id", "category", "kind", "statement", "value", "evidence", "support", "scope", "confidence", "confirmation", "exceptions", "kb"],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "category": { "enum": ["token", "component", "page", "interaction", "principle", "exception"] },
+        "kind": { "enum": ["measured", "observed", "inferred"] },
+        "statement": { "type": "string", "minLength": 1 },
+        "value": { "type": "object" },
+        "evidence": { "type": "array", "minItems": 1 },
+        "support": { "type": "object" },
+        "scope": { "type": "object" },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "confirmation": { "type": "object" },
+        "exceptions": { "type": "array" },
+        "kb": { "$ref": "#/definitions/provenance" }
+      }
+    },
+
+    "provenance": {
+      "type": "object",
+      "required": ["id", "category", "updatedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "minLength": 1 },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": ["string", "null"] },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+
+    "changelogEntry": {
+      "type": "object",
+      "required": ["revision", "at", "by", "action", "id", "fields", "note"],
+      "additionalProperties": false,
+      "properties": {
+        "revision": { "type": "integer", "minimum": 1 },
+        "at": { "type": "string", "format": "date-time" },
+        "by": { "type": ["string", "null"] },
+        "action": { "enum": ["add", "update", "confirm", "decision", "decision-update"] },
+        "id": { "type": "string", "minLength": 1 },
+        "fields": { "type": "array", "items": { "type": "string" } },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+
+    "decision": {
+      "type": "object",
+      "required": ["id", "title", "rationale", "at", "by"],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "pattern": "^DDR-[0-9]{4}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "rules": { "type": "array", "items": { "type": "string" } },
+        "at": { "type": "string", "format": "date-time" },
+        "by": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "exp-b-identical",
+  "pageId": "b-identical",
+  "stateId": "default",
+  "startedAt": "2026-10-28T13:53:04.618Z",
+  "project": {
+    "id": "generic-web",
+    "name": "通用 Web 基样（与 OurTrail 业务无关）"
+  }
+}

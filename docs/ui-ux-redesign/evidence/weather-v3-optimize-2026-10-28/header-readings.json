@@ -1,0 +1,42 @@
+{
+ "capturedAt": "2026-10-28T12:54:42.948Z",
+ "port": 9432,
+ "place": "注入的生产形状路线载荷（3 个命名节点）",
+ "weather": "真实取数",
+ "cases": {
+  "loading": {
+   "loading": true,
+   "placeName": "页头取证线",
+   "placeSub": "取证观景台 · 3,800 m",
+   "isPoint": false,
+   "nodeOptions": [
+    "取证起点:false",
+    "取证观景台:true",
+    "取证营地:false"
+   ]
+  },
+  "afterReady": {
+   "ready": false,
+   "code": "error",
+   "placeSub": "取证观景台 · 3,800 m"
+  },
+  "error": {
+   "code": "outOfRange",
+   "emptyTitle": "这个日期还不在预报范围",
+   "placeSub": "取证营地 · 3,500 m",
+   "nodeOptions": 3
+  },
+  "afterPick": {
+   "placeSub": "取证起点 · 3,200 m",
+   "sel": "true,false,false"
+  }
+ },
+ "files": [
+  "after-header-loading.png",
+  "after-header-error.png"
+ ],
+ "gates": {
+  "passed": 10,
+  "failed": 0
+ }
+}

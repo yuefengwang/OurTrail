@@ -1,0 +1,201 @@
+/* 行程编辑 / 分享弹层。
+   平台约束：组件必须自包含——父级（weather-detail）根节点上的 --w-* 变量在运行时能继承下来，
+   但静态门（swx2 T2.1）要求「本文件里 var() 引用的 token 在本作用域有定义」。
+   所以这里按 §6.1 的同一张表再声明一次；值唯一的出处仍是 design-system.md §17 的皮肤登记。 */
+.wp {
+  --w-green: #16783E;
+  --w-ink: #18211B;
+  --w-muted: #69716B;
+  --w-line: #E8ECE7;
+
+  padding-bottom: 6px;
+}
+
+.wp-note {
+  display: block;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--w-muted);
+  margin-bottom: 10px;
+}
+
+.wp-quiet {
+  display: block;
+  font-size: 10px;
+  line-height: 1.7;
+  color: #8B958C;
+  margin: 10px 0 0;
+}
+
+.wp-field-label {
+  display: block;
+  font-size: 11px;
+  color: #5B675E;
+  margin: 13px 0 5px;
+}
+
+.wp-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 14px;
+  padding: 12px;
+  border: 1px solid var(--w-line);
+  border-radius: 8px;
+  background: #F7F9F5;
+  color: var(--w-ink);
+  min-height: 44px;
+}
+
+.wp-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  min-height: 44px;
+  border: 1px solid var(--w-line);
+  border-radius: 8px;
+  background: #F7F9F5;
+  font-size: 14px;
+  color: var(--w-ink);
+  box-sizing: border-box;
+}
+
+.wp-note-lock { display: flex; gap: 6px; align-items: flex-start; }
+.wp-note-lock text { flex: 1; }
+
+.wp-sub {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3C4A41;
+  margin: 20px 0 6px;
+}
+
+.wp-columns,
+.wp-row {
+  display: grid;
+  grid-template-columns: 1fr 64px 96px;
+  gap: 8px;
+  align-items: center;
+}
+
+.wp-columns {
+  font-size: 9px;
+  color: #8B958C;
+  padding: 8px 0 6px;
+}
+
+.wp-row {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--w-line);
+}
+
+.wp-row-name { min-width: 0; }
+.wp-row-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2C3C31;
+  overflow-wrap: anywhere;
+}
+.wp-row-sub {
+  display: block;
+  font-size: 9px;
+  color: #8B958C;
+  margin-top: 3px;
+}
+
+.wp-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid var(--w-line);
+  border-radius: 7px;
+  background: #F7F9F5;
+  font-size: 12px;
+  color: var(--w-ink);
+  box-sizing: border-box;
+}
+
+.wp-cell-empty { color: #8B958C; }
+
+.wp-time-cell { position: relative; }
+.wp-time-clear {
+  position: absolute;
+  right: 2px;
+  top: -14px;
+  font-size: 9px;
+  color: #738077;
+  padding: 4px;
+}
+
+.wp-code-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wp-code-row .wp-input { flex: 1; min-width: 0; }
+
+.wp-share-list { margin-bottom: 6px; }
+.wp-share-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--w-line);
+}
+.wp-share-code {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: #3C4A41;
+  overflow-wrap: anywhere;
+}
+.wp-share-tag {
+  font-size: 9px;
+  color: #727B6C;
+  background: #F1F3EE;
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+.wp-link {
+  font-size: 11px;
+  color: var(--w-green);
+  padding: 10px 6px;
+}
+.wp-link-hover { opacity: .7; }
+
+.wp-error {
+  display: block;
+  margin-top: 12px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  background: #F9ECEB;
+  color: #96403C;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.wp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 10px;
+  padding: 0 14px;
+}
+.wp-btn-primary {
+  background: var(--w-green);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+.wp-btn-quiet {
+  background: #F2F6F0;
+  color: #3C5544;
+}
+.wp-btn-inline { margin-top: 0; padding: 0 16px; flex: none; }
+.wp-btn-hover { opacity: .82; }
+.wp-btn-busy { opacity: .6; }

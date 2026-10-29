@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "weather-hub-home-real-2026-10-28T12-57-30",
+  "pageId": "weather-hub-home",
+  "stateId": "real",
+  "startedAt": "2026-10-28T12:57:30.342Z",
+  "project": {
+    "id": "ourtrail",
+    "name": "OurTrail 山野天气（选源首页）"
+  }
+}

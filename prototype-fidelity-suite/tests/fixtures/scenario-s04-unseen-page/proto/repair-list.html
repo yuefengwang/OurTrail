@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>维修工单 · 列表</title>
+<style>
+  :root {
+    --paper: #fbf8f2;
+    --backdrop: #e7e2d8;
+    --ink: #232a25;
+    --muted: #6d7168;
+    --surface: #fffdf9;
+    --rule: #ddd8cc;
+    --signal: #c2410c;
+    --ink-accent: #2f6b4f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font: 15px/1.5 system-ui, sans-serif; color: var(--ink); background: var(--backdrop); }
+  #frame { width: 390px; min-height: 844px; background: var(--paper); }
+  #screen { padding: 20px 16px 28px; }
+  .head { margin-bottom: 16px; }
+  .head h1 { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: var(--ink-accent); }
+  .head p { margin: 4px 0 0; font-size: 12px; line-height: 18px; color: var(--muted); }
+  .order-list { display: flex; flex-direction: column; gap: 10px; }
+  .order { display: flex; justify-content: space-between; padding: 12px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+  .order span { font-size: 14px; line-height: 20px; }
+  .order em { font-style: normal; font-size: 12px; line-height: 18px; color: var(--signal); }
+  .foot { margin-top: 20px; font-size: 12px; line-height: 18px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div id="screen">
+    <div class="head">
+      <h1>维修工单</h1>
+      <p>本周 3 单待处理</p>
+    </div>
+    <div class="order-list">
+      <div class="order"><span>三楼水龙头</span><em>待派单</em></div>
+      <div class="order"><span>东门门禁</span><em>维修中</em></div>
+      <div class="order"><span>活动室插座</span><em>已完成</em></div>
+    </div>
+    <div class="foot">派单后请在当日联系报修人。</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,78 @@
+{
+  "id": "s05-function-preservation",
+  "class": "function-preservation",
+  "adversarial": true,
+  "purpose": "对抗样本：一份含 8 个业务功能的 brief，其中筛选、打印凭据两个次要操作和认领失败提示很容易为了版面整洁被删掉；计划与渲染必须逐项保留每个功能及其声明状态，删掉任何一项都应判失败。",
+  "requires": ["playwright"],
+  "steps": [
+    {
+      "run": ["dna", "--sources", "sources.json", "--out", "dna"],
+      "expectExit": 0
+    },
+    {
+      "run": ["kb", "seed", "--from", "dna/dna.json", "--out", "kb.json"],
+      "expectExit": 0
+    },
+    {
+      "run": ["design", "--brief", "brief.json", "--kb", "kb.json", "--out", "plan"],
+      "expectExit": 0,
+      "captureStdout": "design.stdout.txt"
+    }
+  ],
+  "checks": [
+    { "file": "design.stdout.txt", "matches": "design VALID · lost-found-desk · 4 区块 / 8 功能" },
+
+    { "file": "plan/design-plan.json", "path": "$.id", "equals": "lost-found-desk" },
+    { "file": "plan/design-plan.json", "path": "$.sections[0].id", "equals": "head" },
+    { "file": "plan/design-plan.json", "path": "$.sections[1].id", "equals": "shelf" },
+    { "file": "plan/design-plan.json", "path": "$.sections[2].id", "equals": "claim" },
+    { "file": "plan/design-plan.json", "path": "$.sections[3].id", "equals": "footer" },
+
+    { "file": "plan/design-plan.json", "path": "$.sections[0].functions[0].id", "equals": "show-desk" },
+    { "file": "plan/design-plan.json", "path": "$.sections[0].functions[1].id", "equals": "show-cutoff" },
+    { "file": "plan/design-plan.json", "path": "$.sections[1].functions[0].id", "equals": "list-found" },
+    { "file": "plan/design-plan.json", "path": "$.sections[1].functions[1].id", "equals": "filter-category" },
+    { "file": "plan/design-plan.json", "path": "$.sections[2].functions[0].id", "equals": "enter-claimant" },
+    { "file": "plan/design-plan.json", "path": "$.sections[2].functions[1].id", "equals": "submit-claim" },
+    { "file": "plan/design-plan.json", "path": "$.sections[2].functions[2].id", "equals": "show-claim-error" },
+    { "file": "plan/design-plan.json", "path": "$.sections[3].functions[0].id", "equals": "print-receipt" },
+
+    { "file": "plan/design-plan.json", "path": "$.coverage.functions", "equals": 8 },
+    { "file": "plan/design-plan.json", "path": "$.coverage.resolved", "equals": 0 },
+    { "file": "plan/design-plan.json", "path": "$.coverage.unresolved", "equals": 8 },
+    { "file": "plan/design-plan.json", "path": "$.coverage.interactionsRequested", "equals": 2 },
+
+    { "file": "plan/design-plan.json", "path": "$.sections[1].functions[0].states", "contains": "empty" },
+    { "file": "plan/design-plan.json", "path": "$.sections[1].functions[0].states", "contains": "error" },
+    { "file": "plan/design-plan.json", "path": "$.sections[1].functions[1].states", "contains": "selected" },
+    { "file": "plan/design-plan.json", "path": "$.sections[2].functions[0].states", "contains": "error" },
+    { "file": "plan/design-plan.json", "path": "$.sections[2].functions[1].states", "contains": "disabled" },
+
+    { "file": "plan/design-plan.json", "path": "$.gaps[*].where", "contains": "shelf/filter-category" },
+    { "file": "plan/design-plan.json", "path": "$.gaps[*].where", "contains": "footer/print-receipt" },
+    { "file": "plan/design-plan.json", "path": "$.gaps[*].where", "contains": "claim/show-claim-error" },
+
+    { "file": "plan/index.html", "contains": "data-function=\"show-desk\"" },
+    { "file": "plan/index.html", "contains": "data-function=\"show-cutoff\"" },
+    { "file": "plan/index.html", "contains": "data-function=\"list-found\"" },
+    { "file": "plan/index.html", "contains": "data-function=\"filter-category\"" },
+    { "file": "plan/index.html", "contains": "data-function=\"enter-claimant\"" },
+    { "file": "plan/index.html", "contains": "data-function=\"submit-claim\"" },
+    { "file": "plan/index.html", "contains": "data-function=\"show-claim-error\"" },
+    { "file": "plan/index.html", "contains": "data-function=\"print-receipt\"" },
+
+    { "file": "plan/index.html", "contains": "data-states=\"loading empty filled error\"" },
+    { "file": "plan/index.html", "contains": "data-states=\"default selected\"" },
+    { "file": "plan/index.html", "contains": "data-states=\"default disabled\"" },
+    { "file": "plan/index.html", "contains": "data-states=\"error\"" },
+    { "file": "plan/index.html", "contains": "role=\"status\"" },
+    { "file": "plan/index.html", "contains": "<input type=\"text\"" },
+
+    { "file": "plan/design-spec.md", "contains": "功能 8 项" },
+    { "file": "plan/design-spec.md", "contains": "claim/show-claim-error" },
+    { "file": "plan/design-spec.md", "contains": "footer/print-receipt" },
+
+    { "file": "plan/design-plan.json", "path": "$.decisions[*].ruleRefs[*]", "matches": "^(token\\.(var\\.(backdrop|ink|muted|paper|rule|surface)|size\\.(12px|15px)|weight\\.600)|principle\\.type-hierarchy)$" },
+    { "file": "plan/design-plan.json", "path": "$.rejected[*].scope", "matches": "^(page|page-family)$" }
+  ]
+}

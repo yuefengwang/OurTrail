@@ -945,8 +945,10 @@ function oldServerResult(today, selectedDate) {
     check('11b-H 点在窗内：图例写「虚线 = 此点海拔」且画板开关为真',
       insideCard.elevShown === true && insideCard.legendElev === FMT.cloudLegendElev() &&
         3000 >= gp.lo && 3000 <= gp.hi, JSON.stringify([gp.lo, gp.hi, insideCard.legendElev]))
+    /* 天花板上移到 9,750 后，6,200 m 已经落得进窗，不再是「窗外」。
+       这条要的是一个真的够不着的点：10,200 m 高于 HI_CEIL（窗上界 9,750）。 */
     const outCard = runPick([{ alt: 1000, cov: 5 }, { alt: 2500, cov: 90 }, { alt: 3200, cov: 88 }, { alt: 4000, cov: 5 }],
-      { ele: 6200, eleSrc: 'picked' }, DATE + 'T10:08:00+08:00')
+      { ele: 10200, eleSrc: 'picked' }, DATE + 'T10:08:00+08:00')
     const gp2 = outCard._page._unified.geo.profile
     check('11b-H 点在窗外：图例不谎称有虚线，且那句话与图上印的逐字相同（图例=图，不是两套话）',
       outCard.elevShown === false && gp2.pointOutside === 'above' &&
@@ -1512,6 +1514,38 @@ async function stripCases() {
   check('全天同一数值时不印假区间（「12°C」而不是「12 – 12°C」）',
     page.buildBriefRows([{ temp: 12 }, { temp: 12 }])[0].v === '12°C',
     page.buildBriefRows([{ temp: 12 }, { temp: 12 }])[0].v)
+}
+
+// 14. 日级现象码与雾佐证门（2026-10-28）
+// 页面只渲染 F.dayPhrase(day)；口径在云端（lib/weather.representativeDayCode），这里证明
+// ① 新返回体按 dayCode 出文案 ② 旧返回体/旧缓存回退 code ③ null 不会被 Number() 印成晴天
+section('14. 日级现象码：页面读 dayCode，旧返回体回退 code；入云提示只认雾佐证')
+
+{
+  const page = makePage(pageConfig())
+  page.data.date = DATE
+  const mk = (n, patch) => Object.assign({}, fakeDays(addDays(DATE, n), 1)[0], patch)
+  const days = [
+    mk(0, { code: 45, dayCode: 0 }),          // 夜间雾、白天晴
+    mk(1, { code: 45 }),                       // 旧返回体：没有 dayCode
+    mk(2, { code: 45, dayCode: null }),        // 脏值：Number(null) 会变 0
+    mk(3, { code: 85, dayCode: 85 }),          // 恶劣天气与 code 相同
+  ]
+  const cards = page.buildDayCards(days, COORD)
+  check('dayCode=0 → 日卡「晴」（provider 日码 45 不再上屏）', cards[0].phrase.label === '晴', cards[0].phrase.label)
+  check('无 dayCode（旧返回体）→ 回退 code「雾」', cards[1].phrase.label === '雾', cards[1].phrase.label)
+  check('dayCode=null → 回退 code，不印成晴', cards[2].phrase.label === '雾', cards[2].phrase.label)
+  check('dayCode 与 code 相同时恶劣天气不受影响', cards[3].phrase.label === '阵雪', cards[3].phrase.label)
+
+  const titles = hours => cond.buildCallouts({ code: 2, precipProbMax: 10 }, hours, 4000).map(c => c.title).join('|')
+  const dryFog = { t: '00:00', code: 45, rh: 67, visibility: 0.54, fog: false, band: null }
+  check('RH 67% 的「雾」小时不再触发入云提示', !/入云/.test(titles([dryFog])), titles([dryFog]))
+  const wetFog = { t: '21:00', code: 45, rh: 96, visibility: 0.3, fog: true, band: null }
+  check('三证齐全的雾 → 仍触发入云提示', /入云/.test(titles([wetFog])), titles([wetFog]))
+  const legacy = { t: '00:00', code: 45, rh: 67, visibility: 0.54, band: null }
+  check('旧缓存（无 fog 字段）按能见度回退，不放宽', /入云/.test(titles([legacy])), titles([legacy]))
+  const newLowVis = { t: '00:00', code: 3, rh: 60, visibility: 0.8, fog: false, band: null }
+  check('新数据里有 fog=false 时，能见度不再单独触发', !/入云/.test(titles([newLowVis])), titles([newLowVis]))
 }
 
 raceCases()

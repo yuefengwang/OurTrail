@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": { "id": "s07-interaction-state", "name": "交互只由真动作 + 后果观测判定" },
+  "prototype": { "adapter": "web", "viewport": { "width": 390, "height": 844 }, "frameSelector": "#frame" },
+  "target": { "adapter": "web", "frameSelector": "#frame" },
+  "tolerances": { "position": 1.5, "size": 1.5, "gap": 1, "font": 1, "color": 6, "pixelRatio": 0.02, "criticalPixelRatio": 0.005 },
+  "pages": [
+    {
+      "id": "i-ok",
+      "note": "阳性对照：真监听器，点完文本真的变",
+      "prototype": { "url": "prototype.html" },
+      "target": { "url": "target-ok.html" },
+      "mappings": [
+        { "id": "i-title", "role": "标题", "prototypeSelector": "#i-title", "targetSelector": "#i-title", "pixelMode": "informational", "criticality": "critical" },
+        { "id": "i-note", "role": "说明", "prototypeSelector": "#i-note", "targetSelector": "#i-note", "pixelMode": "informational", "criticality": "normal" },
+        { "id": "i-btn", "role": "展开按钮", "prototypeSelector": "#i-btn", "targetSelector": "#i-btn", "pixelMode": "informational", "criticality": "normal" }
+      ],
+      "states": [{ "id": "default" }],
+      "interactions": [
+        {
+          "id": "expand-note",
+          "title": "点按钮后说明展开",
+          "do": [{ "tap": { "selector": "#i-btn" } }, { "wait": 150 }],
+          "expect": { "textIncludes": { "selector": "#i-out", "text": "说明已展开" } },
+          "screenshot": false
+        }
+      ]
+    },
+    {
+      "id": "i-dead",
+      "note": "对抗样本：渲染与原型逐字节相同，按钮没有监听器",
+      "prototype": { "url": "prototype.html" },
+      "target": { "url": "target-dead.html" },
+      "mappings": [
+        { "id": "i-title", "role": "标题", "prototypeSelector": "#i-title", "targetSelector": "#i-title", "pixelMode": "informational", "criticality": "critical" },
+        { "id": "i-note", "role": "说明", "prototypeSelector": "#i-note", "targetSelector": "#i-note", "pixelMode": "informational", "criticality": "normal" },
+        { "id": "i-btn", "role": "展开按钮", "prototypeSelector": "#i-btn", "targetSelector": "#i-btn", "pixelMode": "informational", "criticality": "normal" }
+      ],
+      "states": [{ "id": "default" }],
+      "interactions": [
+        {
+          "id": "expand-note",
+          "title": "点按钮后说明展开",
+          "do": [{ "tap": { "selector": "#i-btn" } }, { "wait": 150 }],
+          "expect": { "textIncludes": { "selector": "#i-out", "text": "说明已展开" } },
+          "screenshot": false
+        }
+      ]
+    },
+    {
+      "id": "i-wrong-text",
+      "note": "对抗样本：监听器存在，但写出的文案不是声明的那句",
+      "prototype": { "url": "prototype.html" },
+      "target": { "url": "target-wrong-text.html" },
+      "mappings": [
+        { "id": "i-title", "role": "标题", "prototypeSelector": "#i-title", "targetSelector": "#i-title", "pixelMode": "informational", "criticality": "critical" },
+        { "id": "i-note", "role": "说明", "prototypeSelector": "#i-note", "targetSelector": "#i-note", "pixelMode": "informational", "criticality": "normal" },
+        { "id": "i-btn", "role": "展开按钮", "prototypeSelector": "#i-btn", "targetSelector": "#i-btn", "pixelMode": "informational", "criticality": "normal" }
+      ],
+      "states": [{ "id": "default" }],
+      "interactions": [
+        {
+          "id": "expand-note",
+          "title": "点按钮后出现「说明已展开」",
+          "do": [{ "tap": { "selector": "#i-btn" } }, { "wait": 150 }],
+          "expect": { "textIncludes": { "selector": "#i-out", "text": "说明已展开" } },
+          "screenshot": false
+        }
+      ]
+    },
+    {
+      "id": "i-no-expect",
+      "note": "动作跑通但声明里没有后果：只能是 UNVERIFIED",
+      "prototype": { "url": "prototype.html" },
+      "target": { "url": "target-empty-expect.html" },
+      "mappings": [
+        { "id": "i-title", "role": "标题", "prototypeSelector": "#i-title", "targetSelector": "#i-title", "pixelMode": "informational", "criticality": "critical" },
+        { "id": "i-note", "role": "说明", "prototypeSelector": "#i-note", "targetSelector": "#i-note", "pixelMode": "informational", "criticality": "normal" },
+        { "id": "i-btn", "role": "展开按钮", "prototypeSelector": "#i-btn", "targetSelector": "#i-btn", "pixelMode": "informational", "criticality": "normal" }
+      ],
+      "states": [{ "id": "default" }],
+      "interactions": [
+        {
+          "id": "expand-note",
+          "title": "只点，不声明后果",
+          "do": [{ "tap": { "selector": "#i-btn" } }, { "wait": 150 }],
+          "expect": {},
+          "screenshot": false
+        }
+      ]
+    }
+  ]
+}

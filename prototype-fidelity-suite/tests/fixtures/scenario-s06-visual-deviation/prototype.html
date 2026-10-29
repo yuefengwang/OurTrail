@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>s06 原型 · 集合点确认</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font: 16px/1.5 system-ui, sans-serif; color: #1f2a26; background: #f5f5f0; }
+  #frame { width: 390px; min-height: 844px; padding: 20px 16px 0; }
+  .s-title { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; }
+  .s-note { margin: 14px 0 0; font-size: 13px; line-height: 19px; color: #5a6660; }
+  .s-pad { margin: 18px 0 0; width: 260px; height: 44px; padding: 12px; border: 1px solid #c8d2cc; border-radius: 8px; background: #fff; font-size: 13px; line-height: 18px; color: #33413a; overflow: hidden; }
+  .s-badge { margin: 18px 0 0; width: 160px; height: 30px; border-radius: 15px; background: #2f6f5e; color: #ffffff; font-size: 12px; text-align: center; line-height: 30px; }
+  .s-move { margin: 18px 0 0; margin-left: 0; width: 200px; height: 34px; background: #e7ece8; border-radius: 6px; font-size: 12px; line-height: 34px; padding-left: 10px; color: #33413a; }
+  .s-btn { margin-top: 18px; height: 38px; padding: 0 16px; font-size: 14px; border: 1px solid #b9c7c0; border-radius: 8px; background: #ffffff; color: #1f2a26; }
+  .s-out { margin: 10px 0 0; font-size: 12px; line-height: 16px; color: #6b6b6b; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <h1 class="s-title" id="s-title">集合点确认</h1>
+  <p class="s-note" id="s-ctrl">出发前请核对时间与地点。</p>
+  <div class="s-pad" id="s-pad">车程约 40 分钟</div>
+  <div class="s-badge" id="s-badge">名额充足</div>
+  <div class="s-move" id="s-move">东南门集合</div>
+  <button class="s-btn" id="s-btn">显示提醒</button>
+  <p class="s-out" id="s-out">提醒未显示</p>
+</div>
+<script>
+  document.getElementById('s-btn').addEventListener('click', function () {
+    document.getElementById('s-out').textContent = '提醒已显示';
+  });
+</script>
+</body>
+</html>

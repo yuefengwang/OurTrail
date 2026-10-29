@@ -1,0 +1,41 @@
+{
+  "id": "s03-component-variant",
+  "class": "component-variant",
+  "adversarial": true,
+  "purpose": "同一个 .tool 卡片的两个视觉实例（带前导图标、102px 高 / 无图标、76px 高）必须被识别为同一组件族，并在产物里显式披露差异（varies + 例外），而不是被压成单一高度；repair 列表里结构相似、语义不同的 .order 卡片必须保持为另一条组件规则，两条不得合并。",
+  "requires": ["playwright"],
+  "steps": [
+    {
+      "run": ["dna", "--sources", "sources.json", "--out", "dna"],
+      "expectExit": 0,
+      "captureStdout": "dna.stdout.txt"
+    }
+  ],
+  "checks": [
+    { "file": "dna/dna.json", "path": "$.rules[*].id", "contains": "component.div-tool" },
+    { "file": "dna/dna.json", "path": "$.rules[*].id", "contains": "component.div-order" },
+    { "file": "dna/dna.json", "path": "$.summary.byCategory.component", "equals": 2 },
+
+    { "file": "dna/dna.json", "path": "$.rules[21].id", "equals": "component.div-tool" },
+    { "file": "dna/dna.json", "path": "$.rules[21].value.signature", "equals": "div.tool" },
+    { "file": "dna/dna.json", "path": "$.rules[21].value.varies.height", "equals": ["102px", "76px"] },
+    { "file": "dna/dna.json", "path": "$.rules[21].value.childTags", "equals": ["span+h2+p", "h2+p"] },
+    { "file": "dna/dna.json", "path": "$.rules[21].value.instancesPerPage", "exists": true },
+    { "file": "dna/dna.json", "path": "$.rules[21].exceptions", "minLength": 1 },
+    { "file": "dna/dna.json", "path": "$.rules[21].exceptions[0].note", "matches": "变体" },
+    { "file": "dna/dna.json", "path": "$.rules[21].evidence", "length": 3 },
+    { "file": "dna/dna.json", "path": "$.rules[21].evidence[*].value", "contains": "358×102" },
+    { "file": "dna/dna.json", "path": "$.rules[21].evidence[*].value", "contains": "358×76" },
+    { "file": "dna/dna.json", "path": "$.rules[21].scope.level", "equals": "page" },
+    { "file": "dna/dna.json", "path": "$.rules[21].scope.pages", "equals": ["garden-browse"] },
+
+    { "file": "dna/dna.json", "path": "$.rules[22].id", "equals": "component.div-order" },
+    { "file": "dna/dna.json", "path": "$.rules[22].value.signature", "equals": "div.order" },
+    { "file": "dna/dna.json", "path": "$.rules[22].value.varies.height", "exists": false },
+    { "file": "dna/dna.json", "path": "$.rules[22].scope.pages", "equals": ["repair-list"] },
+
+    { "file": "dna/dna-summary.md", "contains": "component.div-tool" },
+    { "file": "dna/dna-summary.md", "contains": "component.div-order" },
+    { "file": "dna.stdout.txt", "contains": "design-dna VALID" }
+  ]
+}

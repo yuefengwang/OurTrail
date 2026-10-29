@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>实验 B · 系统状态栏差异</title>
+<link rel="stylesheet" href="../assets/card.css">
+<style>
+  /* The only difference: this shell carries a 24px status bar above the sheet,
+     so every piece of content sits 24px lower. The sheet's own padding is left
+     at the shared value — an earlier version also overrode it to 48px, which
+     made the measured shift 48px while the claim said 24px. Sizes are untouched. */
+  #statusbar { height: 24px; font-size: 11px; line-height: 24px; text-align: center; color: #4a4a4a; }
+</style>
+</head>
+<body>
+<div id="device">
+  <div id="statusbar">9:41</div>
+  <div id="sheet">
+    <h1 id="b-title">登山计划</h1>
+    <div id="b-card">
+      <div id="b-label">出发时间</div>
+      <div id="b-clock">06:00</div>
+      <p id="b-desc">山脊线一带云量较低，适合早起出发。</p>
+    </div>
+    <img id="b-img" src="../assets/stripes.png" alt="">
+    <button id="b-btn">展开说明</button>
+    <p id="b-note">说明已收起</p>
+  </div>
+</div>
+<script src="../assets/card.js"></script>
+</body>
+</html>

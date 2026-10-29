@@ -1,0 +1,17 @@
+{
+  "diffCount": 41,
+  "diffRatio": 0.00417,
+  "prototypePixels": {
+    "x": 31,
+    "y": 103,
+    "w": 328,
+    "h": 30
+  },
+  "targetPixels": {
+    "x": 62,
+    "y": 206,
+    "w": 656,
+    "h": 60
+  },
+  "components": []
+}

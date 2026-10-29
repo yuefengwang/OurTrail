@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>实验 C · 修复前（实现了但写错三处声明）</title>
+<link rel="stylesheet" href="../assets/card.css">
+<style>
+  /* Experiment C fixture: the same page implemented by hand from the prototype,
+     with three declaration-level drifts an implementer plausibly makes. They are
+     not golden values — the runner repairs them and re-verifies against the
+     prototype, which is what the experiment is about.
+
+       1. the field label was set a size up (12 -> 14, line-height 16 -> 18)
+       2. the card corner was rounded further than the prototype (8 -> 12)
+       3. the button sits closer to the image (margin-top 16 -> 10), which also
+          moves the note below it                                               */
+  #b-label { font-size: 14px; line-height: 18px; }
+  #b-card { border-radius: 12px; }
+  #b-btn { margin-top: 10px; }
+</style>
+</head>
+<body>
+<div id="device">
+  <div id="sheet">
+    <h1 id="b-title">登山计划</h1>
+    <div id="b-card">
+      <div id="b-label">出发时间</div>
+      <div id="b-clock">06:00</div>
+      <p id="b-desc">山脊线一带云量较低，适合早起出发。</p>
+    </div>
+    <img id="b-img" src="../assets/stripes.png" alt="">
+    <button id="b-btn">展开说明</button>
+    <p id="b-note">说明已收起</p>
+  </div>
+</div>
+<script src="../assets/card.js"></script>
+</body>
+</html>

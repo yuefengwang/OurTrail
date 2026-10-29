@@ -1,0 +1,78 @@
+{
+  "id": "s01-rule-extraction",
+  "class": "rule-extraction",
+  "adversarial": true,
+  "purpose": "从这套工具从未见过的 4 页 / 2 族原型里抽规则：每条规则必须自带证据、适用范围与可信度，未确认一律 candidate；两页共有的变量只能是 page-family，不得被抬成全局规范——即使别族页面上出现了完全相同的色值。",
+  "requires": ["playwright"],
+  "steps": [
+    {
+      "run": ["dna", "--sources", "sources.json", "--out", "dna"],
+      "expectExit": 0,
+      "captureStdout": "dna.stdout.txt"
+    },
+    {
+      "run": ["kb", "seed", "--from", "dna/dna.json", "--out", "kb/design-dna.json"],
+      "expectExit": 0
+    },
+    {
+      "run": ["kb", "query", "--file", "kb/design-dna.json", "--id", "token.var.leaf"],
+      "expectExit": 0,
+      "captureStdout": "leaf.txt"
+    },
+    {
+      "run": ["kb", "impact", "--file", "kb/design-dna.json", "--id", "token.var.leaf", "--json"],
+      "expectExit": 0,
+      "captureStdout": "leaf-impact.json"
+    },
+    {
+      "run": ["kb", "query", "--file", "kb/design-dna.json", "--id", "token.var.ink-accent"],
+      "expectExit": 0,
+      "captureStdout": "ink-accent.txt"
+    },
+    {
+      "run": ["kb", "impact", "--file", "kb/design-dna.json", "--id", "token.var.ink-accent", "--json"],
+      "expectExit": 0,
+      "captureStdout": "ink-accent-impact.json"
+    },
+    {
+      "run": ["kb", "query", "--file", "kb/design-dna.json", "--id", "token.var.paper"],
+      "expectExit": 0,
+      "captureStdout": "paper.txt"
+    },
+    {
+      "run": ["kb", "impact", "--file", "kb/design-dna.json", "--id", "token.var.paper", "--json"],
+      "expectExit": 0,
+      "captureStdout": "paper-impact.json"
+    }
+  ],
+  "checks": [
+    { "file": "dna/dna.json", "path": "$.kind", "equals": "design-dna" },
+    { "file": "dna/dna.json", "path": "$.rules", "minLength": 20 },
+    { "file": "dna/dna.json", "path": "$.rules[*].id", "contains": "token.var.leaf" },
+    { "file": "dna/dna.json", "path": "$.rules[*].id", "contains": "page.garden-browse.default" },
+
+    { "file": "dna/dna.json", "path": "$.rules[*].confirmation.status", "equals": "candidate" },
+    { "file": "dna/dna.json", "path": "$.rules[*].confirmation.by", "equals": null },
+    { "file": "dna/dna.json", "path": "$.summary.confirmed", "equals": 0 },
+    { "file": "dna/dna.json", "path": "$.summary.candidates", "gte": 20 },
+
+    { "file": "dna/dna.json", "path": "$.rules[*].evidence", "minLength": 1 },
+    { "file": "dna/dna.json", "path": "$.rules[*].evidence[*].source", "exists": true },
+    { "file": "dna/dna.json", "path": "$.rules[*].scope.level", "matches": "^(global|page-family|page)$" },
+    { "file": "dna/dna.json", "path": "$.rules[*].confidence", "matches": "^(low|medium|high)$" },
+    { "file": "dna/dna.json", "path": "$.rules[*].statement", "exists": true },
+
+    { "file": "dna/dna-summary.md", "contains": "全部为候选" },
+    { "file": "dna.stdout.txt", "contains": "design-dna VALID" },
+
+    { "file": "leaf.txt", "matches": "token\\.var\\.leaf\\s+token\\s+page-family\\(2p\\)\\s+high\\s+candidate\\s+--leaf = #2f6b4f" },
+    { "file": "leaf-impact.json", "path": "$.found", "equals": true },
+    { "file": "leaf-impact.json", "path": "$.pages", "equals": ["garden-browse", "garden-detail"] },
+
+    { "file": "ink-accent.txt", "matches": "token\\.var\\.ink-accent\\s+token\\s+page\\s+medium\\s+candidate\\s+--ink-accent = #2f6b4f" },
+    { "file": "ink-accent-impact.json", "path": "$.pages", "equals": ["repair-list"] },
+
+    { "file": "paper.txt", "matches": "token\\.var\\.paper\\s+token\\s+global\\(4p\\)\\s+high\\s+candidate" },
+    { "file": "paper-impact.json", "path": "$.pages", "length": 4 }
+  ]
+}

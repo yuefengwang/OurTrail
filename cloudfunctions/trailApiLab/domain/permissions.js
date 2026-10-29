@@ -188,6 +188,15 @@ function canExecute(state, actor, payload, now) {
     if (!route) return missing()
     return route.ownerId === actor.userId ? allowed() : permissionDenied('只有路线创建者可以管理此路线。')
   }
+  // V3 个人天气计划：同样没有 activityId，必须在 requireActivity 之前分支。
+  // 被授权者（sharedWith）**只读**：plan.update / plan.delete 只给 owner。
+  // 「复制为独立计划」走 plan.create，新 owner 是复制者，不是越权。
+  if (payload.type === 'plan.create') return allowed()
+  if (payload.type === 'plan.update' || payload.type === 'plan.delete') {
+    const plan = state.plans.find(p => p.id === payload.planId)
+    if (!plan) return missing()
+    return plan.ownerId === actor.userId ? allowed() : permissionDenied('只有计划创建者可以修改、分享或删除这个计划。')
+  }
   if (payload.type === 'companion.save' || payload.type === 'companion.remove') {
     return payload.companionId === null || (profile && profile.companions.some(c => c.id === payload.companionId))
       ? allowed() : permissionDenied('只能管理当前账号已有的同行人。')

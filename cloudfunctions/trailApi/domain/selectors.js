@@ -428,6 +428,47 @@ function selectRoutes(state, actor, routeId) {
   return { ok: true, value: { routes } }
 }
 
+function planVisible(plan, userId) {
+  return plan.ownerId === userId || (Array.isArray(plan.sharedWith) && plan.sharedWith.indexOf(userId) !== -1)
+}
+
+/**
+ * V3 个人计划读视图（实施文档 §8.3）。
+ * 白名单投影：**不回传 ownerId / sharedWith 原文**（不暴露他人身份码），
+ * 共享场景只给 isOwner=false + sharedBy=<显示名>（取不到回落「同行者」）。
+ */
+function selectPlans(state, actor, planId) {
+  if (actor.userId === null) return authRequired()
+  const nameOf = userId => {
+    const p = state.profiles.find(x => x.id === userId)
+    return (p && p.person && p.person.name) ? p.person.name : '同行者'
+  }
+  const plans = state.plans
+    .filter(p => planVisible(p, actor.userId))
+    .filter(p => !planId || p.id === planId)
+    .sort((a, b) => (b.updatedAt || '') < (a.updatedAt || '') ? -1 : (b.updatedAt || '') > (a.updatedAt || '') ? 1
+      : (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .map(p => {
+      const isOwner = p.ownerId === actor.userId
+      const row = {
+        id: p.id, routeId: p.routeId, name: p.name, startDate: p.startDate,
+        stops: (p.stops || []).map(s => ({ nodeIndex: s.nodeIndex, day: s.day, time: s.time })),
+        visibility: p.visibility || (p.sharedWith && p.sharedWith.length ? 'shared' : 'private'),
+        isOwner,
+        sharedBy: isOwner ? '' : nameOf(p.ownerId),
+        // 只给 owner 一个**数量**，用来表达「已分享给 N 位同行者」并据此提供「取消全部共享」。
+        // 名单原文不出投影（§8.3）；协作者连数量也不需要知道。
+        sharedCount: isOwner ? (p.sharedWith || []).length : 0,
+        updatedAt: p.updatedAt || null,
+      }
+      // 共享名单只给创建者（与 routeView 同一条界线）：owner 需要它来逐个取消分享；
+      // 被授权者只拿到 sharedBy 显示名，看不到任何人的身份码。
+      if (isOwner) row.sharedWith = (p.sharedWith || []).slice()
+      return row
+    })
+  return { ok: true, value: { kind: 'plans', plans } }
+}
+
 function hasStaffMembership(state, actor, activityId, now) {
   return actor.userId !== null && state.memberships.some(m => m.role === 'staff' && m.activityId === activityId
     && m.userId === actor.userId && Date.parse(now) < Date.parse(m.expiresAt))
@@ -510,7 +551,13 @@ function selectView(state, actor, request, now) {
       if (activity.phase === 'archived' && (owner || ownRows.length)) finished += 1
       positionRows.push.apply(positionRows, positionRowsFor(state, actor, activity, ownRows, now))
       // 最近活动：进行中优先，其余按 |startAt - now| 由近到远（与客户端 me-view.js 同口径）
-      const slim = { id: activity.id, title: activity.title, startAt: activity.startAt, phase: activity.phase, role: owner ? 'owner' : 'participant' }
+      // pickupName：首个上车点名称（「我的」行程大卡的地点行）。没有上车点时给空串，
+      // 页面据此不印地点——不拿活动标题或城市名冒充集合点。
+      const pickup = activity.pickupPoints && activity.pickupPoints.length ? activity.pickupPoints[0] : null
+      const slim = {
+        id: activity.id, title: activity.title, startAt: activity.startAt, phase: activity.phase,
+        role: owner ? 'owner' : 'participant', pickupName: pickup && pickup.name ? pickup.name : '',
+      }
       const pool = ME_ONGOING_PHASES.indexOf(activity.phase) !== -1 && (owner || ownCurrent) ? ongoingPool : restPool
       pool.push({ slim, dist: activity.startAt && Number.isFinite(Date.parse(activity.startAt)) ? Math.abs(Date.parse(activity.startAt) - nowMs) : Infinity })
     }
@@ -518,7 +565,10 @@ function selectView(state, actor, request, now) {
     ongoingPool.sort(byDist)
     restPool.sort(byDist)
     const recent = ongoingPool.concat(restPool).slice(0, 3).map(x => x.slim)
-    return { kind: 'me', profile: meProfile, stats: { ongoing, finished, organized }, recent, positionRows }
+    // 路线库条数：只算本人创建的路线（与 selectRoutes 的 mine 同一条归属判据）。
+    // 「我的」页履历栏的「路线库 N 条」由此而来——共享来的路线算别人的，不记在我头上。
+    const routes = state.routes ? state.routes.filter(r => r.ownerId === actor.userId).length : 0
+    return { kind: 'me', profile: meProfile, stats: { ongoing, finished, organized, routes }, recent, positionRows }
   }
   if (request.kind === 'home') {
     const activities = visibleActivitiesFor(state, actor, request.perspective, request.openedActivityIds, now)
@@ -578,14 +628,31 @@ function selectView(state, actor, request, now) {
     const result = selectTasks(state, actor, request.activityId, now)
     return result.ok ? result.value : deniedView(result.error.code, result.error.message)
   }
+  if (request.kind === 'plans') {
+    const result = selectPlans(state, actor, request.planId || null)
+    return result.ok ? result.value : deniedView(result.error.code, result.error.message)
+  }
   if (request.kind === 'notices') {
     if (actor.userId === null) return deniedView('AUTH_REQUIRED', '请先选择当前账号。')
     if (request.activityId && !state.activities.some(a => a.id === request.activityId)) return deniedView('NOT_FOUND', '找不到此活动。')
+    // 行动流要回答「哪场活动」：通知行头、活动筛选、详情里的关联活动卡都需要标题/出发时刻/集合点。
+    // 这三个字段只做展示投影，不引入新的权限面——能读到通知的人本来就能读到该活动的公开摘要。
+    const activityById = new Map(state.activities.map(a => [a.id, a]))
     return {
       kind: 'notices',
       notices: state.notices
       .filter(n => (!request.activityId || n.activityId === request.activityId) && canReadNotice(state, actor, n, now))
-      .map(n => ({ id: n.id, activityId: n.activityId, content: n.content, publishedAt: n.publishedAt, read: hasOwn(n.readBy, actor.userId), kind: n.kind || 'unknown' })),
+      .map(n => {
+        const activity = activityById.get(n.activityId)
+        const pickup = activity && activity.pickupPoints && activity.pickupPoints.length ? activity.pickupPoints[0] : null
+        return {
+          id: n.id, activityId: n.activityId, content: n.content, publishedAt: n.publishedAt,
+          read: hasOwn(n.readBy, actor.userId), kind: n.kind || 'unknown',
+          activityTitle: activity ? activity.title : '',
+          activityStartAt: activity ? activity.startAt : null,
+          pickupName: pickup && pickup.name ? pickup.name : '',
+        }
+      }),
     }
   }
   if (request.kind !== 'activity') return deniedView('FORBIDDEN', '不支持此读取请求。')
@@ -797,5 +864,5 @@ function getDetailState(view, now) {
 
 module.exports = {
   selectView, selectSensitive, selectContact, selectSignupForm, selectTransport,
-  selectAccess, selectNoticeManagement, selectExport, selectRoutes, getDetailState, DETAIL_STATES,
+  selectAccess, selectNoticeManagement, selectExport, selectRoutes, selectPlans, getDetailState, DETAIL_STATES,
 }

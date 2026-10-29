@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": { "id": "s08-post-repair-regression", "name": "有界修复后复验且不伤邻居" },
+  "prototype": { "adapter": "web", "viewport": { "width": 390, "height": 844 }, "frameSelector": "#frame" },
+  "target": { "adapter": "web", "frameSelector": "#frame" },
+  "tolerances": { "position": 1.5, "size": 1.5, "gap": 1, "font": 1, "color": 6, "pixelRatio": 0.02, "criticalPixelRatio": 0.005 },
+  "pages": [
+    {
+      "id": "s08-page",
+      "note": "r-label 字号漂移（14/20 vs 12/16）；r-value 与 r-note 是必须保持 PASS 的邻居",
+      "prototype": { "url": "prototype.html" },
+      "target": { "url": "target.html" },
+      "mappings": [
+        { "id": "r-title", "role": "标题", "prototypeSelector": "#r-title", "targetSelector": "#r-title", "pixelMode": "informational", "criticality": "critical" },
+        { "id": "r-label", "role": "字段名（漂移）", "prototypeSelector": "#r-label", "targetSelector": "#r-label", "pixelMode": "informational", "criticality": "critical", "styleProps": ["font-size", "line-height"] },
+        { "id": "r-value", "role": "字段值（邻居，必须 PASS）", "prototypeSelector": "#r-value", "targetSelector": "#r-value", "pixelMode": "informational", "criticality": "critical", "styleProps": ["font-size"] },
+        { "id": "r-note", "role": "提示（邻居，必须 PASS）", "prototypeSelector": "#r-note", "targetSelector": "#r-note", "pixelMode": "informational", "criticality": "critical" },
+        { "id": "r-btn", "role": "确认按钮", "prototypeSelector": "#r-btn", "targetSelector": "#r-btn", "pixelMode": "informational", "criticality": "normal" }
+      ],
+      "states": [{ "id": "default" }],
+      "interactions": [
+        {
+          "id": "confirm",
+          "title": "点按钮后出现确认",
+          "do": [{ "tap": { "selector": "#r-btn" } }, { "wait": 150 }],
+          "expect": { "textIncludes": { "selector": "#r-out", "text": "已确认" } },
+          "screenshot": false
+        }
+      ]
+    }
+  ]
+}

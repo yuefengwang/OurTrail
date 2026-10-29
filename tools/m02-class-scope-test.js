@@ -164,8 +164,11 @@ section('§2 .card-label 提升为 app.wxss 全局单源：五页逐页解终值
 const CL_EXPECT = { display: 'block', 'font-size': '15px', 'font-weight': '600', 'margin-bottom': '12px' }
 {
   const users = UNITS.filter(u => u.nodes.some(n => n.classes.indexOf('card-label') !== -1))
-  check('U0 使用 card-label 的作用域恰好是这 5 页（editor/route-edit/weather/weather-hub/me），privacy 不掺进来',
-    users.length === 5 && users.every(u => LIVING.concat('me').indexOf(u.id) !== -1 && u.id !== 'privacy'),
+  /* 2026-10-27 天气页 V3：用户裁决 D2 允许天气 Hub 脱离全站卡片语言（白底无卡片），
+     本页 therefore 不再使用 .card-label。判据由「恰好这 5 页」改成
+     「凡使用该类的页都查」+ 四页覆盖下限，既不放宽单源要求，也不把页面皮肤当成违规。 */
+  check('U0 使用 card-label 的作用域覆盖四页（editor/route-edit/weather/me）；天气 Hub 的新原型允许使用（合并后实测 3 处）',
+    users.length >= 4 && users.every(u => LIVING.concat('me').indexOf(u.id) !== -1 && u.id !== 'privacy'),
     users.map(u => u.id + '×' + u.nodes.filter(n => n.classes.indexOf('card-label') !== -1).length).join(' '))
   let totalNodes = 0
   const overrides = []
@@ -193,7 +196,9 @@ const CL_EXPECT = { display: 'block', 'font-size': '15px', 'font-weight': '600',
   })
   // 原先钉死 totalNodes === 17：上游重构会增删某一页的使用点个数，钉死总数＝把断言绑在工作树偶然状态上（假红）。
   // 这条要防的是「只抽一个样本就宣布全仓修好」，所以判据是覆盖度下限，不是具体计数。
-  check('U2a 判据覆盖 ≥10 处使用点（读数 ' + totalNodes + '；不钉死总数，防只抽一个样本）', totalNodes >= 10, totalNodes + ' 处')
+  // 2026-10-29 山野档案 v3 重排后，me 页的 .card-label 使用点从 7 降到 1（其余改为行标题/列表行），
+  // 全仓实测 8 处；判据仍是「跨页覆盖下限」而不是具体计数 —— 8 处仍覆盖 4 个页面，足以防只抽一个样本。
+  check('U2a 判据覆盖 ≥8 处使用点（读数 ' + totalNodes + '；不钉死总数，防只抽一个样本）', totalNodes >= 8, totalNodes + ' 处')
   const ovFiles = Array.from(new Set(overrides.map(o => o.split(':')[0])))
   check('U2b 内联覆盖 card-label 四条声明的位置都在本批写入集之外（实测 ' + overrides.length + ' 处：' + ovFiles.join(',') +
     '）；出现在 editor/route-edit/weather/weather-hub 里就是本批的错',
@@ -210,9 +215,11 @@ const CL_EXPECT = { display: 'block', 'font-size': '15px', 'font-weight': '600',
 }
 
 /* ===================== §3 影子改写 ===================== */
-section('§3 单源必须改得动：影子改 app.wxss 的字号 ⇒ 五页一起动（铁律 31③）')
+section('§3 单源必须改得动：影子改 app.wxss 的字号 ⇒ 使用该类的页面一起动（铁律 31③）')
 {
-  const users = ['editor', 'route-edit', 'weather', 'weather-hub', 'me']
+  const users = UNITS.filter(u => nodesWith(u, 'card-label').length)
+  check('SH0′ 参与影子对照的页 ≥4（天气 Hub 已按 D2 退出卡片语言；这条防判据缩成空门）',
+    users.length >= 4, users.map(u => u.id).join(','))
   const appText = rd(path.join(MP, 'app.wxss'))
   const hits = (appText.match(/font-size:\s*15px/g) || []).length
   const SHADOW = '17px'
@@ -222,11 +229,11 @@ section('§3 单源必须改得动：影子改 app.wxss 的字号 ⇒ 五页一�
   check('SH0 影子真的改到了那一条（app.wxss 里 font-size:15px 共 ' + hits + ' 处，不要求唯一；改动只落一处且落点可寻）',
     shadowText !== appText && (shadowText.match(/font-size:\s*17px/g) || []).length === 1, '')
   const shadowApp = parse(shadowText, 'app.wxss')
-  const moved = users.map(id => finalOf(cascade([shadowApp, unit(id).scope[1]], { tag: 'text', classes: ['card-label'] }), 'font-size', shadowApp.tokens).value)
-  check('SH1 影子把字号改成 17px ⇒ 五页解出的终值全部变 17（一起动才说明只有一个出处）',
+  const moved = users.map(u => finalOf(cascade([shadowApp, u.scope[1]], { tag: 'text', classes: ['card-label'] }), 'font-size', shadowApp.tokens).value)
+  check('SH1 影子把字号改成 17px ⇒ 参与页解出的终值全部变 17（一起动才说明只有一个出处）',
     shadowText !== appText && moved.every(v => v === SHADOW), moved.join('/'))
-  const back = users.map(id => finSheet(unit(id), nodeOf(unit(id), 'card-label'), 'font-size').value)
-  check('SH2 还原后五页逐项相同（影子没把状态留在别处）', back.every(v => v === '15px'), back.join('/'))
+  const back = users.map(u => finSheet(u, nodesWith(u, 'card-label')[0], 'font-size').value)
+  check('SH2 还原后各页逐项相同（影子没把状态留在别处）', back.every(v => v === '15px'), back.join('/'))
   const fakeMe = parse('.card-label { font-size: 15px; }', 'pages/me/me.wxss')
   const meCopy = finalOf(cascade([shadowApp, fakeMe], { tag: 'text', classes: ['card-label'] }), 'font-size', shadowApp.tokens)
   check('SH3 反证成立：在 me 页塞一份**同值**副本 ⇒ 影子（17px）追不上它、赢家退回 me.wxss ⇒ U1/§2 那条不是摆设',

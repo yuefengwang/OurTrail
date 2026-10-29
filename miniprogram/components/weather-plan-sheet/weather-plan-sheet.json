@@ -1,0 +1,7 @@
+{
+  "component": true,
+  "usingComponents": {
+    "overlay": "../overlay/overlay",
+    "icon": "../icon/icon"
+  }
+}

@@ -1,15 +1,41 @@
 ---
 name: ourtrail-ui
-description: OurTrail 小程序（原生 WXML/WXSS/CommonJS）的 UI 设计系统、设计方法论与审查验证规范。凡在 miniprogram/ 下新建页面或组件、设计界面、调整布局/样式/间距/配色、改进信息层级与信息密度、优化交互与状态反馈、做只读 UI/UX 审计或代码走查、按真机截图做视觉审查、用微信开发者工具/miniprogram-automator 验证交互，或多 Agent 协作改同一批 UI 时使用——即使用户只说"看下这页""这里太乱""顺手改一下""帮我审一下"而没有提"设计系统"四个字。
+description: OurTrail 小程序（原生 WXML/WXSS/CommonJS）的 UI 约束、交互设计、设计方法论与审查验证规范。凡在 miniprogram/ 下新建或修改页面/组件、设计界面、调整布局/样式/间距/配色、改进信息层级与信息密度、优化交互与状态反馈、做只读 UI/UX 审计或代码走查、按真机截图做视觉审查、用微信开发者工具/miniprogram-automator 验证交互，或多 Agent 协作改同一批 UI 时使用——即使用户只说"看下这页""这里太乱""顺手改一下""帮我审一下"而没有提"设计系统"四个字；也适用于多页面、导航或信息架构重构（先读 references/redesign-workflow.md，不把旧原型或旧规范当作最终答案）。
 ---
 
 # OurTrail UI/UX 工程规范
 
 **本 skill 是设计背景与工程约束，不是审计结论。** 它给出的是判据与证据要求；任何"这样设计好不好"的结论仍须由具体那轮的取证实证，允许被质疑并推翻（推翻链记进当轮报告，不改本文件的既有条目——除非取证证明条目本身错了）。
 
-设计语言：森林绿 × 嫩叶绿 × 纸面底，圆角卡片，**文字承载语义（色相只是辅助）**。整体从高仿真原型 `docs/prototypes/ourtrail-app` 移植；原型是**设计语言来源**，其 AGENTS.md 明令不得运行/构建/扩展，也不得当作规范本体引用。
+**证据等级分两类**：微信平台限制与仍有效的业务/数据契约**需要遵守**；现有 token、组件目录、AGENTS、原型和本技能自身是**待评估的设计资产**，可以在充分说明理由并更新规范后调整。
+
+设计语言：森林绿 × 嫩叶绿 × 纸面底，圆角卡片，**文字承载语义（色相只是辅助）**。整体从早期高仿真 React 原型移植而来；该原型树已从仓库移除，现存原型在 `docs/prototypes/`（`ourtrail-explore-v3` / `ourtrail-mature-v2` / `ourtrail-task-first` / `ourtrail-key-pages`）。原型是**设计语言的历史来源**，属候选资产，不是规范本体，也不得被当成实现参考直接搬用。
 
 产品定位决定 UI 的底线：零金额、纯工具的熟人圈户外同行履约工具。所以界面要**替用户做判断但不冒充权威**——状态必须说清"现在怎样 + 接下来会怎样"，凡由天气数据派生的结论一律用概率语气，不承诺救援/保险，不把"没数据"印成"没有"。
+
+当前客户端是原生微信小程序（WXML/WXSS/CommonJS）。不要仅为套用网页设计技能而引入 React、Tailwind 或其他构建链路。每次盘点以 `miniprogram/app.json` 和实际页面/组件代码为准；README、AGENTS、原型和本技能可能滞后或互相矛盾，发现差异时记录并核实。
+
+## 0. 多页面重构工作流
+
+当任务涉及多个页面、导航、关键流程或整体视觉方向时，先读 [references/redesign-workflow.md](references/redesign-workflow.md)。先产出可审阅的全站设计方案，确认后再进入实现；用户明确授权按阶段执行后，可沿已确认方案持续推进。
+
+设计决策应来自真实页面、用户角色和任务、已有产品规则及可验证的平台能力。把视觉观感与实际行为分开记录；不得为了视觉一致性破坏授权、状态、错误恢复、并发版本或服务端响应契约。若发现产品流程本身需要改变，明确列出影响和备选方案，不能把它伪装成纯前端重构。
+
+该工作流**不要求每个小型 UI 改动都先写完整设计文档**——单页/局部改动走 §2 的模式判定即可。
+
+### 0.1 日常改动的五处前置核对
+
+1. 改样式优先用 `miniprogram/app.wxss` 里已有的 token 与组件类，**先复用再新建**；全局搜索类名确认没有等价样式。
+2. 新建/修改自定义组件时，核实它依赖的全局类是否受组件样式隔离影响，并确认当前 `styleIsolation` 设置能满足预期；历史案例见 [references/platform-pitfalls.md](references/platform-pitfalls.md)。
+3. 涉及颜色、字号、间距时，把 [references/design-system.md](references/design-system.md) 当作当前基线；普通局部改动优先复用 token，多页面重构可经审查后调整 token，并同步其所有消费者。
+4. 交付前使用 [references/review-checklist.md](references/review-checklist.md)；清单是发现问题的辅助工具，不能替代运行页面与任务验收。
+5. 头像/昵称/手机号用 `chooseAvatar` / `type="nickname"` / `open-type="getPhoneNumber"`（需平台隐私声明）；**不要用 `wx.getUserProfile`**（返回匿名数据）。
+
+> 这五条是入口，**不是判据的副本**——完整判据在 §3 规则表与 §4 验证要求，冲突时以那两处为准。
+
+### 0.2 现有资产怎么用
+
+现有 token、组件目录、页面骨架、状态表达、提交方式与文案约定都是**候选资产**，不是终态：做全站重构时先比较它们与用户任务的适配度，再决定复用或替换。但两条底线不随重构松动——页面必须完整表达 loading / denied / empty / error 等真实状态（不得省略状态，也不得把错误伪装成空内容，见 §3 #5）；数据提交、身份权限、活动阶段与并发冲突继续服从服务端契约，**视觉/交互重构不得在客户端另造业务判定**（见 §3 #6、#12）。
 
 ## 1. 冲突时谁优先
 
@@ -34,7 +60,7 @@ description: OurTrail 小程序（原生 WXML/WXSS/CommonJS）的 UI 设计系�
 | **M3 Audit（只读）** | UI/UX 审查、代码走查、验收前自查 | ①以真实代码为证据逐条核实 ②每条发现标证据档 E1/E2/E3/E4 与严重度（定义 `audit-verification.md` §1–§2）③规范偏离 ≠ 体验缺陷，分开写 ④按 §4 模板出报告 | 每条发现带 `file:line`；E2 必须写出推断链；E3 必须标"未验证" | 改代码；因"不符合规范"自动判严重；因"符合规范"判体验良好；把未执行的检查标通过 |
 | **M4 Visual / Runtime Verification** | 截图审查、开发者工具驱动、真机回归 | ①记录环境（工具版本/基础库/视口宽度/页面/数据是真实还是注入）②证 bundle 新鲜 ③操作 + 后果观测 ④落盘截图与读数（模板 `audit-verification.md` §5） | §4 的三道门槛；**截图不存在时不得声称完成视觉验证** | 把静态审计、截图审查、自动化点击、真机测试混为同一种证据；用 `page.data()` 读数冒充像素证据 |
 
-判定提示：负责人说"看下/审下" → M3；说"太乱/不顺/优化" → M2；说"做个新的/加一屏" → M1；给了截图或要求"验证/确认渲染" → M4。模式混用时按最严的那档交证据，并说明哪些结论来自哪档。
+判定提示：负责人说"看下/审下" → M3；说"太乱/不顺/优化" → M2；说"做个新的/加一屏" → M1；给了截图或要求"验证/确认渲染" → M4。模式混用时按最严的那档交证据，并说明哪些结论来自哪档。涉及多页面/导航/信息架构的整站改动，另按 §0 走重构工作流。
 
 ## 3. 核心规则（每条标：类别 / 现状 / 有无自动门）
 
@@ -60,6 +86,8 @@ description: OurTrail 小程序（原生 WXML/WXSS/CommonJS）的 UI 设计系�
 
 ## 4. 最低验证要求
 
+**仓库与实现约定**：改仓库文件前遵守根目录 `PARALLEL_DEV.md` 的分支、同步与静态门禁协议；天气、编辑器、发现、地图相关工作先查 `SYNC.md`。开始改 WXML/WXSS/组件结构前读 `docs/e2e-mp/README.md`；驱动微信开发者工具前读 `docs/e2e-mp/automation-playbook.md`。若改动 E2E 语义，先读 `docs/testing/e2e-result-semantics.md` 并遵守 `tools/e2e-result.js`。
+
 **静态门（必跑）**：`node tools/check.js`（既有静态步骤 + 一段平台门，逐条打印 `Gn` 标题与命中读数）与 `node tools/check-handlers.js`（handler 解析 + dataset 契约）。判据本体在 `tools/t4-e08-platform-rules.js` / `tools/e08-remaining-rules.js` / `tools/m02-class-scope-rules.js`，每段落门前都实测命中 0 且自带合成夹具自证。
 ⚠ 天花板仍然在，但**不再是"只有一条有门"**（2026-10-17 复量）：§1/§2/§3/§5/§8/§13 已有常驻门，§6/§10/§11 部分有门（picker 的 `range-key` 只配 warning），仍只有人工清单与本 skill 兜着的是 §4/§7/§9/§14/§15/§16/§17——这几条要么需要像素/运行时证据（真机），要么是产品判断。**"过了 check.js" ≠ "过了 UI 规范"**，反过来也别把"某页过了批次套件"当"全仓合规"：色值/尺寸类套件是按批次写入集查的。
 
@@ -80,6 +108,7 @@ description: OurTrail 小程序（原生 WXML/WXSS/CommonJS）的 UI 设计系�
 | 你要做的事 | 读这个 |
 |---|---|
 | 取色/字号/间距/圆角/类名/组件契约/canvas 色板/色值债清单 | [references/design-system.md](references/design-system.md)（实时值只在这里 + `app.wxss`） |
+| 多页面重构、信息架构或交互设计 | [references/redesign-workflow.md](references/redesign-workflow.md)（阶段交付物与回退点） |
 | 定主任务 §0 · 层级与阅读顺序 §1 · 结构选型 §2 · 密度与噪声信号 §3 · 主/次/危险操作 §4 · 六态 §5 · 跨页流程 §6 · 表单弹层筛选列表工作台 §7 · 长文本窄屏缩放对比度 §8 · 复用还是新建 §9 · 质量标准十维 §10 | [references/ui-methodology.md](references/ui-methodology.md) |
 | STALE vs DEBT §0 · 证据档 §1 · 严重度 §2 · 误判防线 §3 · 审计报告字段 §4 · 验证记录模板 §5 · 退出码 §6 · 常驻红 §7 · 多 Agent 可复核性 §8 | [references/audit-verification.md](references/audit-verification.md) |
 | 交付前逐项自查：T1 静态 / T2 一致性 / T3 交互状态 / T4 层级密度 / T5 截图 / T6 自动化 / T7 真机 / T8 回归登记 | [references/review-checklist.md](references/review-checklist.md) |

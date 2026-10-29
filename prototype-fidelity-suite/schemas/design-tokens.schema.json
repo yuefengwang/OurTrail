@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/design-tokens.schema.json",
+  "title": "design-tokens",
+  "description": "Measured token inventory of the prototype (colors, typography, radius, shadows, spacing), the target's inventory when a target capture exists, and the drift between them. Values are read from computed style; nothing here is normative until a human accepts it.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "pageId", "stateId", "generatedAt", "source", "tokens", "targetTokens", "drift"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "kind": { "const": "design-tokens" },
+    "pageId": { "type": "string", "minLength": 1 },
+    "stateId": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "required": ["side", "manifest"],
+      "additionalProperties": false,
+      "properties": {
+        "side": { "enum": ["prototype", "target"] },
+        "manifest": { "type": "string", "minLength": 1 }
+      }
+    },
+    "tokens": { "$ref": "#/definitions/buckets" },
+    "targetTokens": { "oneOf": [{ "$ref": "#/definitions/buckets" }, { "type": "null" }] },
+    "drift": { "oneOf": [{ "$ref": "#/definitions/drift" }, { "type": "null" }] }
+  },
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "source": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": true,
+      "properties": {
+        "kind": { "enum": ["measured", "inferred", "confirmed", "unknown"] },
+        "captureNode": { "type": "string" }
+      }
+    },
+    "token": {
+      "type": "object",
+      "required": ["value", "count", "selectors", "token", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "value": { "type": "string" },
+        "count": { "type": "integer", "minimum": 1 },
+        "selectors": { "type": "array", "items": { "type": "string" } },
+        "token": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/definitions/source" }
+      }
+    },
+    "buckets": {
+      "type": "object",
+      "required": ["colors", "typography", "radius", "shadows", "spacing"],
+      "additionalProperties": false,
+      "properties": {
+        "colors": { "type": "array", "items": { "$ref": "#/definitions/token" } },
+        "typography": { "type": "array", "items": { "$ref": "#/definitions/token" } },
+        "radius": { "type": "array", "items": { "$ref": "#/definitions/token" } },
+        "shadows": { "type": "array", "items": { "$ref": "#/definitions/token" } },
+        "spacing": { "type": "array", "items": { "$ref": "#/definitions/token" } }
+      }
+    },
+    "groupDrift": {
+      "type": "object",
+      "required": ["shared", "onlyPrototype", "onlyTarget"],
+      "additionalProperties": false,
+      "properties": {
+        "shared": { "type": "array", "items": { "type": "string" } },
+        "onlyPrototype": { "type": "array", "items": { "type": "string" } },
+        "onlyTarget": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "drift": {
+      "type": "object",
+      "required": ["colors", "typography", "radius", "shadows", "spacing"],
+      "additionalProperties": false,
+      "properties": {
+        "colors": { "$ref": "#/definitions/groupDrift" },
+        "typography": { "$ref": "#/definitions/groupDrift" },
+        "radius": { "$ref": "#/definitions/groupDrift" },
+        "shadows": { "$ref": "#/definitions/groupDrift" },
+        "spacing": { "$ref": "#/definitions/groupDrift" }
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": { "id": "s08-harmful", "name": "修复若以损坏邻居为代价必须被拒绝" },
+  "prototype": { "adapter": "web", "viewport": { "width": 390, "height": 844 }, "frameSelector": "#frame" },
+  "target": { "adapter": "web", "frameSelector": "#frame" },
+  "tolerances": { "position": 1.5, "size": 1.5, "gap": 1, "font": 1, "color": 6, "pixelRatio": 0.02, "criticalPixelRatio": 0.005 },
+  "pages": [
+    {
+      "id": "h-ambig",
+      "note": "锚点 font-size: 16px 在目标里出现两次（label 漂移 + value 正确）",
+      "prototype": { "url": "proto-a.html" },
+      "target": { "url": "target-a.html" },
+      "mappings": [
+        { "id": "h-title", "role": "标题", "prototypeSelector": "#h-title", "targetSelector": "#h-title", "pixelMode": "informational", "criticality": "critical" },
+        { "id": "h-label", "role": "字段名（漂移）", "prototypeSelector": "#h-label", "targetSelector": "#h-label", "pixelMode": "informational", "criticality": "critical", "styleProps": ["font-size"] },
+        { "id": "h-value", "role": "字段值（邻居，必须 PASS）", "prototypeSelector": "#h-value", "targetSelector": "#h-value", "pixelMode": "informational", "criticality": "critical", "styleProps": ["font-size"] },
+        { "id": "h-note", "role": "提示（邻居，必须 PASS）", "prototypeSelector": "#h-note", "targetSelector": "#h-note", "pixelMode": "informational", "criticality": "normal" }
+      ],
+      "states": [{ "id": "default" }],
+      "interactions": [
+        { "id": "confirm", "title": "点按钮后出现确认", "do": [{ "tap": { "selector": "#h-btn" } }, { "wait": 150 }], "expect": { "textIncludes": { "selector": "#h-out", "text": "已确认" } }, "screenshot": false }
+      ]
+    },
+    {
+      "id": "h-broad",
+      "note": "目标把 label 与 note 合写在一条声明里；把 16→14 会修好 label 并弄坏 note",
+      "prototype": { "url": "proto-b.html" },
+      "target": { "url": "target-b.html" },
+      "mappings": [
+        { "id": "h-title", "role": "标题", "prototypeSelector": "#h-title", "targetSelector": "#h-title", "pixelMode": "informational", "criticality": "critical" },
+        { "id": "h-label", "role": "字段名（漂移）", "prototypeSelector": "#h-label", "targetSelector": "#h-label", "pixelMode": "informational", "criticality": "critical", "styleProps": ["font-size"] },
+        { "id": "h-value", "role": "字段值（邻居，必须 PASS）", "prototypeSelector": "#h-value", "targetSelector": "#h-value", "pixelMode": "informational", "criticality": "critical", "styleProps": ["font-size"] },
+        { "id": "h-note", "role": "提示（邻居，必须 PASS）", "prototypeSelector": "#h-note", "targetSelector": "#h-note", "pixelMode": "informational", "criticality": "critical", "styleProps": ["font-size"] }
+      ],
+      "states": [{ "id": "default" }],
+      "interactions": [
+        { "id": "confirm", "title": "点按钮后出现确认", "do": [{ "tap": { "selector": "#h-btn" } }, { "wait": 150 }], "expect": { "textIncludes": { "selector": "#h-out", "text": "已确认" } }, "screenshot": false }
+      ]
+    }
+  ]
+}

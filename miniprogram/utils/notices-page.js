@@ -13,6 +13,54 @@ const F = require('./format')
 // 列表读仍是全量（服务端游标分页未做），所以界面任何文案都不得暗示「下载变少了」。
 const PAGE_SIZE = 20
 
+// ---- 行动流的日期派生（原型 A：今天/昨天 + 周几 · 月日 + 时刻）----
+// 只做展示分组，不改变服务端按 publishedAt 倒序的口径。
+const WEEKDAY = ['日', '一', '二', '三', '四', '五', '六']
+const pad2 = n => String(n).padStart(2, '0')
+function cnDay(iso) {
+  const d = new Date(Date.parse(iso) + 8 * 3600000)
+  return {
+    date: `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`,
+    time: `${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`,
+    weekday: d.getUTCDay(),
+  }
+}
+function dayInfoOf(iso, nowIso) {
+  const p = cnDay(iso)
+  const base = cnDay(nowIso || iso)
+  const baseMs = Date.parse(base.date + 'T00:00:00Z')
+  const y = new Date(baseMs - 86400000)
+  const yDate = `${y.getUTCFullYear()}-${pad2(y.getUTCMonth() + 1)}-${pad2(y.getUTCDate())}`
+  const m = Number(p.date.slice(5, 7))
+  const d = Number(p.date.slice(8, 10))
+  const dayText = p.date === base.date ? '今天' : (p.date === yDate ? '昨天' : `${m}月${d}日`)
+  return { dayKey: p.date, dayText, daySub: `周${WEEKDAY[p.weekday]} · ${m}月${d}日`, timeOnly: p.time }
+}
+// 按日期分组（保持服务端倒序；同一天的行归到一组）。
+function groupByDay(list) {
+  const groups = []
+  for (const item of list) {
+    let g = groups.find(x => x.dayKey === item.dayKey)
+    if (!g) {
+      g = { dayKey: item.dayKey, dayText: item.dayText, daySub: item.daySub, items: [] }
+      groups.push(g)
+    }
+    g.items.push(item)
+  }
+  return groups
+}
+// 活动筛选选项：按首次出现顺序，计数用**全量**而不是当前过滤集（与原型的「· N 条」一致）。
+function activityOptionsOf(items) {
+  const map = new Map()
+  for (const item of items) {
+    if (!map.has(item.activityId)) {
+      map.set(item.activityId, { id: item.activityId, label: item.activityTitle || '活动', count: 0 })
+    }
+    map.get(item.activityId).count += 1
+  }
+  return [{ id: 'all', label: '全部活动', count: items.length }].concat(Array.from(map.values()))
+}
+
 module.exports = function makeNoticesPage(getActivityId, opts) {
   const tabBarIndex = opts && Number.isInteger(opts.tabBarIndex) ? opts.tabBarIndex : null
   return {
@@ -21,7 +69,20 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       denied: '',
       items: [],
       visibleItems: [],
+      groups: [],
       hiddenCount: 0,
+      viewMode: 'all',
+      activityFilter: 'all',
+      filterLabel: '全部活动',
+      activityOptions: [],
+      unreadCount: 0,
+      totalCount: 0,
+      filteredCount: 0,
+      emptyKind: '',
+      noticeOpen: false,
+      noticeDetail: null,
+      filterOpen: false,
+      refreshing: false,
       canPublish: false,
       publishOpen: false,
       content: '',
@@ -59,14 +120,37 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
     },
 
     /* items 持全量（计数、handler 查表都用它），visibleItems 才进 WXML。
+       行动流在客户端做「全部/未读 + 活动」两层过滤，再按日期分组；
+       分页仍只切可见条数，hiddenCount 按过滤后的总数算。
        已展开的条数在重读/刷新后保留；列表缩短时收敛到实有条数。 */
+    filteredOf(items) {
+      const view = this.data.viewMode
+      const act = this.data.activityFilter
+      return items.filter(i => (view === 'all' || !i.read) && (act === 'all' || i.activityId === act))
+    },
     applyItems(items, extra) {
-      const count = Math.min(Math.max(this._visibleCount || PAGE_SIZE, PAGE_SIZE), items.length)
+      const filtered = this.filteredOf(items)
+      const count = Math.min(Math.max(this._visibleCount || PAGE_SIZE, PAGE_SIZE), filtered.length)
       this._visibleCount = count
+      const visible = filtered.slice(0, count)
+      const groups = groupByDay(visible)
+      const options = activityOptionsOf(items)
+      const label = this.data.activityFilter === 'all'
+        ? '全部活动'
+        : (options.find(o => o.id === this.data.activityFilter) || {}).label || '全部活动'
+      const emptyKind = !items.length ? 'none'
+        : (!filtered.length ? (this.data.viewMode === 'unread' ? 'unread' : 'activity') : '')
       this.setData(Object.assign({
         items,
-        visibleItems: items.slice(0, count),
-        hiddenCount: items.length - count,
+        visibleItems: visible,
+        groups,
+        hiddenCount: filtered.length - count,
+        unreadCount: items.filter(i => !i.read).length,
+        totalCount: items.length,
+        filteredCount: filtered.length,
+        activityOptions: options,
+        filterLabel: label,
+        emptyKind,
       }, extra || {}))
     },
 
@@ -74,6 +158,42 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
       if (!this.data.hiddenCount) return
       this._visibleCount = (this._visibleCount || PAGE_SIZE) + PAGE_SIZE
       this.applyItems(this.data.items)
+    },
+
+    // ---- 行动流的四个入口：全部/未读、活动筛选、详情、刷新 ----
+    onSetView(e) {
+      const viewMode = e.currentTarget.dataset.view === 'unread' ? 'unread' : 'all'
+      if (viewMode === this.data.viewMode) return
+      this._visibleCount = PAGE_SIZE
+      this.setData({ viewMode })
+      this.applyItems(this.data.items)
+    },
+    onOpenFilter() { this.setData({ filterOpen: true, error: '' }) },
+    onCloseFilter() { this.setData({ filterOpen: false }) },
+    onSelectActivity(e) {
+      const id = e.currentTarget.dataset.id || 'all'
+      if (id === this.data.activityFilter) { this.setData({ filterOpen: false }); return }
+      this._visibleCount = PAGE_SIZE
+      this.setData({ activityFilter: id, filterOpen: false })
+      this.applyItems(this.data.items)
+    },
+    onOpenNotice(e) {
+      const id = e.currentTarget.dataset.id
+      const item = this.data.items.find(i => i.id === id)
+      if (!item) return
+      this.setData({ noticeOpen: true, noticeDetail: item })
+    },
+    onCloseNotice() { this.setData({ noticeOpen: false }) },
+    onOpenDiscover() { wx.navigateTo({ url: '/pages/discover/discover' }) },
+    // 手动刷新（原型标题右侧的圆钮）：先把旋转姿态挂上，读完再落 toast；
+    // 读失败由 reload 的 denied 出口接手，不在这里另造一套错误态。
+    onRefresh() {
+      if (this.data.refreshing) return
+      this.setData({ refreshing: true })
+      return this.reload().then(() => {
+        this.setData({ refreshing: false })
+        api.toast('通知已同步')
+      }).catch(() => this.setData({ refreshing: false }))
     },
 
     reload() {
@@ -86,13 +206,30 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
           this.setData({ loading: false, denied: res.view.message })
           return
         }
-        const items = res.view.notices.slice().reverse().map(n => ({
-          id: n.id,
-          activityId: n.activityId,
-          content: n.content,
-          time: F.dtFull(n.publishedAt),
-          read: n.read,
-        }))
+        const nowIso = res.now || ''
+        this.now = nowIso
+        const items = res.view.notices.slice().reverse().map(n => {
+          const d = dayInfoOf(n.publishedAt, nowIso)
+          return {
+            id: n.id,
+            activityId: n.activityId,
+            activityTitle: n.activityTitle || '',
+            activityStartAt: n.activityStartAt || null,
+            // 详情卡的「关联活动」时间行：与我的页大卡同一句式（M月D日 周X · HH:mm）
+            activityStartText: n.activityStartAt
+              ? F.fullDateLabel(n.activityStartAt) + ' · ' + F.hhmm(n.activityStartAt)
+              : '',
+            pickupName: n.pickupName || '',
+            content: n.content,
+            // time 保留完整北京时间（旧测试与活动内通知都读它）；timeOnly/day* 只服务行动流。
+            time: F.dtFull(n.publishedAt),
+            timeOnly: d.timeOnly,
+            dayKey: d.dayKey,
+            dayText: d.dayText,
+            daySub: d.daySub,
+            read: n.read,
+          }
+        })
         this.applyItems(items, { loading: false, denied: '' })
         if (activityId) this.loadPublishContext(activityId)
       }).catch(e => {
@@ -267,7 +404,12 @@ module.exports = function makeNoticesPage(getActivityId, opts) {
     onMarkRead(e) {
       const { id, activityId } = e.currentTarget.dataset
       api.dispatchAndSync({ type: 'notice.read', activityId, noticeId: id }, this.revision, this)
-        .then(() => this.reload())
+        .then(() => {
+          // 详情 sheet 里的「标记已读」：读完就收起，并给一句确认（原型同行为）。
+          if (this.data.noticeOpen) this.setData({ noticeOpen: false })
+          api.toast('已标记为已读')
+          this.reload()
+        })
         .catch(err => this.setData({ error: api.errorText(err) }))
     },
 

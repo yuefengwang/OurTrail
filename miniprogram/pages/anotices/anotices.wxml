@@ -1,55 +1,148 @@
-<view class="page activity-ui">
+<view class="page anotices-page">
   <status-panel wx:if="{{denied}}" kind="denied" title="暂不能查看通知" detail="{{denied}}" actionLabel="重试" bind:action="reload" />
+
   <block wx:elif="{{loading}}">
-    <status-panel kind="loading" title="正在载入" detail="正在获取与你有关的通知。" />
+    <view class="notice-skeleton">
+      <view class="sk-date"></view>
+      <view wx:for="{{[1, 2, 3]}}" wx:key="*this" class="sk-row">
+        <view class="sk-time"></view>
+        <view class="sk-lines">
+          <view class="sk-line"></view>
+          <view class="sk-line sk-line--wide"></view>
+          <view class="sk-line sk-line--short"></view>
+        </view>
+      </view>
+    </view>
   </block>
-  <view wx:else class="stack-sections">
-    <!-- 2026-10-26 style-B 3c：原本这里是两个分区头（「同行消息」大标题 + 下面又一个「通知」），
-         同一屏连出两次页面身份。并成一处，与 tab 版 notices 的正文逐块同构
-         （M-18 允许的差异只留在页头：本页走原生导航、不顶自绘品牌栏）。 -->
-    <view class="section-head">
+
+  <view wx:else class="notice-body">
+    <!-- 活动内通知的页头：与 tab 版正文同构，差别只在这一层（M-18 允许） -->
+    <view class="section-head anotices-head">
       <text class="kicker">通知</text>
       <text class="list-head__title">重要安排，不错过。</text>
       <text class="section-sub">站内发布、你已阅读与外部发送，是不同的记录。</text>
     </view>
 
-    <view wx:if="{{canPublish}}" class="button primary block" hover-class="button-hover" bindtap="onOpenPublish">
+    <view wx:if="{{canPublish}}" class="button primary block notice-publish" hover-class="button-hover" bindtap="onOpenPublish">
       <icon name="plus" size="18" color="#FFFFFF" />
       <text>发布活动通知</text>
     </view>
 
-    <view class="stack-gap3">
-      <!-- 列表读数降为一行细字（条数、排序、未读标记三个事实一条不少），与 notices 同形 -->
-      <text wx:if="{{items.length}}" class="small muted">共 {{items.length}} 条 · 最新的在最上面 · 左侧深色边线的是还没读的</text>
-      <status-panel wx:if="{{!items.length}}" kind="empty" title="还没有需要你查看的通知" detail="报名确认或集合安排更新后，会在这里显示。" />
-
-      <view
-        wx:for="{{visibleItems}}"
-        wx:key="id"
-        class="notice-card {{item.read ? '' : 'unread'}}"
-      >
-        <view class="card-header">
-          <text class="badge {{item.read ? 'neutral' : 'success'}}">{{item.read ? '已读' : '未读'}}</text>
-          <text class="small muted tabular">{{item.time}}</text>
-        </view>
-        <text class="notice-body" user-select>{{item.content}}</text>
-        <view class="form-actions">
-          <view wx:if="{{!item.read}}" class="button text" hover-class="button-hover" data-id="{{item.id}}" data-activity-id="{{item.activityId}}" bindtap="onMarkRead">标记已读</view>
-          <view class="button text" hover-class="button-hover" data-id="{{item.activityId}}" bindtap="onOpenActivity">查看活动安排</view>
-          <view wx:if="{{item.owned}}" class="button secondary" hover-class="button-hover" data-id="{{item.id}}" data-activity-id="{{item.activityId}}" bindtap="onCopy">复制通知</view>
-        </view>
-        <view wx:if="{{item.owned && item.deliveries.length}}" class="stack-gap3">
-          <text class="small muted">投递记录</text>
-          <text wx:for="{{item.deliveries}}" wx:for-item="d" wx:key="id" class="small muted">{{d.label}}</text>
-        </view>
+    <view class="notice-controls">
+      <view class="view-switch">
+        <view class="view-switch__btn {{viewMode === 'all' ? 'on' : ''}}" data-view="all" bindtap="onSetView">全部 <text class="view-switch__count">{{totalCount}}</text></view>
+        <view class="view-switch__btn {{viewMode === 'unread' ? 'on' : ''}}" data-view="unread" bindtap="onSetView">未读 <text class="view-switch__count">{{unreadCount}}</text></view>
       </view>
-      <!-- D-02：首屏 20 条，之后每次再展开 20 条；总数仍以 items 为准 -->
-      <view wx:if="{{hiddenCount}}" class="button secondary block" hover-class="button-hover" bindtap="onLoadMore">加载更多（还有 {{hiddenCount}} 条）</view>
+      <view class="activity-filter" hover-class="button-hover" bindtap="onOpenFilter" aria-role="button" aria-label="按活动筛选">
+        <icon name="filter" size="16" color="#163E35" />
+        <text class="activity-filter__label">{{filterLabel}}</text>
+      </view>
     </view>
 
-    <text wx:if="{{message}}" class="small muted">{{message}}</text>
+    <view class="feed-meta">
+      <text>{{filteredCount}} 条通知</text>
+      <text>最新在上</text>
+    </view>
+
+    <block wx:if="{{groups.length}}">
+      <view wx:for="{{groups}}" wx:key="dayKey" class="date-group">
+        <view class="date-group__head">
+          <text class="date-group__day">{{item.dayText}}</text>
+          <text class="date-group__sub">{{item.daySub}}</text>
+          <view class="date-group__line"></view>
+        </view>
+        <view
+          wx:for="{{item.items}}"
+          wx:for-item="n"
+          wx:key="id"
+          class="notice-row {{n.read ? '' : 'unread'}}"
+          hover-class="notice-row--tap"
+          data-id="{{n.id}}"
+          bindtap="onOpenNotice"
+        >
+          <text class="notice-row__time">{{n.timeOnly}}</text>
+          <view class="notice-row__dot"></view>
+          <view class="notice-row__main">
+            <view class="notice-row__activity">
+              <icon name="activity" size="12" color="#163E35" />
+              <text class="notice-row__activity-name">{{n.activityTitle || '活动'}}</text>
+            </view>
+            <text class="notice-row__copy">{{n.content}}</text>
+            <view class="notice-row__foot">
+              <text class="notice-row__state">{{n.read ? '已读' : '未读'}}</text>
+              <view class="notice-row__view">查看<text class="chev">›</text></view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="feed-foot">
+        <view class="feed-foot__line"></view>
+        <text>安排有变化，这里会留下记录</text>
+        <view class="feed-foot__line"></view>
+      </view>
+    </block>
+
+    <view wx:else class="notice-state">
+      <view class="notice-state__icon"><icon name="{{emptyKind === 'unread' ? 'check' : 'bell'}}" size="24" color="#163E35" /></view>
+      <text class="notice-state__title">{{emptyKind === 'unread' ? '未读已经处理完' : (emptyKind === 'activity' ? '这个活动暂时没有通知' : '还没有需要你查看的通知')}}</text>
+      <text class="notice-state__detail">{{emptyKind === 'unread' ? '需要你确认的安排都看过了，新的变更会继续出现在这里。' : (emptyKind === 'activity' ? '可以切换到全部活动，查看其他与你有关的安排。' : '报名确认或集合安排更新后，会在这里留下记录。')}}</text>
+      <view wx:if="{{emptyKind === 'unread'}}" class="button secondary" hover-class="button-hover" data-view="all" bindtap="onSetView">查看全部通知</view>
+      <view wx:elif="{{emptyKind === 'activity'}}" class="button secondary" hover-class="button-hover" data-id="all" bindtap="onSelectActivity">查看全部活动</view>
+      <view wx:else class="button primary" hover-class="button-hover" bindtap="onOpenDiscover">去看看活动</view>
+    </view>
+
+    <view wx:if="{{hiddenCount}}" class="button secondary block" hover-class="button-hover" bindtap="onLoadMore">加载更多（还有 {{hiddenCount}} 条）</view>
+
+    <text wx:if="{{message}}" class="small muted notice-message">{{message}}</text>
     <view wx:if="{{error}}" class="callout danger">{{error}}</view>
   </view>
+
+  <overlay open="{{noticeOpen}}" kind="sheet" title="{{noticeDetail.activityTitle ? noticeDetail.activityTitle + ' · 通知' : '通知'}}" bind:close="onCloseNotice">
+    <view class="stack" wx:if="{{noticeDetail}}">
+      <view class="sheet-notice-meta">
+        <text class="badge {{noticeDetail.read ? 'neutral' : 'success'}}">{{noticeDetail.read ? '已读' : '未读'}}</text>
+        <text class="small muted">{{noticeDetail.dayText}} {{noticeDetail.daySub}} · {{noticeDetail.timeOnly}} · 站内通知</text>
+      </view>
+      <text class="sheet-notice-copy" user-select>{{noticeDetail.content}}</text>
+      <view wx:if="{{noticeDetail.activityTitle}}" class="linked-trip">
+        <text class="linked-trip__label">关联活动</text>
+        <text class="linked-trip__title">{{noticeDetail.activityTitle}}</text>
+        <view wx:if="{{noticeDetail.activityStartText}}" class="linked-trip__meta">
+          <icon name="activity" size="14" color="#163E35" />
+          <text>{{noticeDetail.activityStartText}}{{noticeDetail.pickupName ? ' · ' + noticeDetail.pickupName : ''}}</text>
+        </view>
+      </view>
+      <view class="sheet-footnote">
+        <icon name="alert" size="13" color="#5F6E66" />
+        <text>站内发布、已读状态与外部发送是三条不同记录；这里展示的是站内通知。</text>
+      </view>
+      <view wx:if="{{noticeDetail.owned && noticeDetail.deliveries.length}}" class="stack-gap3">
+        <text class="small muted">投递记录</text>
+        <text wx:for="{{noticeDetail.deliveries}}" wx:for-item="d" wx:key="id" class="small muted">{{d.label}}</text>
+      </view>
+      <view class="sheet-actions">
+        <view wx:if="{{!noticeDetail.read}}" class="button secondary" hover-class="button-hover" data-id="{{noticeDetail.id}}" data-activity-id="{{noticeDetail.activityId}}" bindtap="onMarkRead">标记已读</view>
+        <view wx:if="{{noticeDetail.owned}}" class="button secondary" hover-class="button-hover" data-id="{{noticeDetail.id}}" data-activity-id="{{noticeDetail.activityId}}" bindtap="onCopy">复制通知</view>
+        <view class="button primary" hover-class="button-hover" data-id="{{noticeDetail.activityId}}" bindtap="onOpenActivity">查看活动安排</view>
+      </view>
+    </view>
+  </overlay>
+
+  <overlay open="{{filterOpen}}" kind="sheet" title="按活动查看通知" bind:close="onCloseFilter">
+    <view class="filter-sheet">
+      <view
+        wx:for="{{activityOptions}}"
+        wx:key="id"
+        class="activity-option {{activityFilter === item.id ? 'on' : ''}}"
+        hover-class="button-hover"
+        data-id="{{item.id}}"
+        bindtap="onSelectActivity"
+      >
+        <text>{{item.label}} <text class="activity-option__count">· {{item.count}} 条</text></text>
+        <text wx:if="{{activityFilter === item.id}}" class="filter-check">✓</text>
+      </view>
+    </view>
+  </overlay>
 
   <overlay open="{{publishOpen}}" kind="sheet" title="发布活动通知" bind:close="onClosePublish">
     <view class="stack">
@@ -64,9 +157,6 @@
           </view>
         </picker>
       </form-field>
-      <!-- P0-3：定向候选来自真实名单/车辆档案，不再手填内部 ID（全站无处可查的死路） -->
-      <!-- B4-C19：名单**没读到**时不许印成「此活动还没有报名记录/车辆档案」——那是把读失败说成业务事实。
-           失败态单独一层（点名是哪一个没读到）并就地给一条重试路径。 -->
       <view wx:if="{{targetsError}}" class="stack">
         <view class="callout danger">{{targetsError}}</view>
         <view class="button secondary block" hover-class="button-hover" bindtap="onRetryTargets">重新读取名单</view>

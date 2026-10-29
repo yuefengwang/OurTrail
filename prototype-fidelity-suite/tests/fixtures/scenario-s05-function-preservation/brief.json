@@ -1,0 +1,54 @@
+{
+  "id": "lost-found-desk",
+  "title": "失物招领登记台",
+  "family": null,
+  "platform": {
+    "target": "mini-program",
+    "viewport": { "width": 390, "height": 844 },
+    "constraints": ["无 hover", "触摸为主", "无外部字体"]
+  },
+  "constraints": [
+    "每件失物必须能追溯到收件时间与存放格口",
+    "认领失败必须当场给出原因",
+    "不引入新色值"
+  ],
+  "sections": [
+    {
+      "id": "head",
+      "role": "值班信息",
+      "surface": "header",
+      "functions": [
+        { "id": "show-desk", "label": "显示当班登记台", "kind": "display", "role": "text", "states": ["default"] },
+        { "id": "show-cutoff", "label": "显示夜间投递截止时间", "kind": "display", "role": "note", "states": ["default"] }
+      ]
+    },
+    {
+      "id": "shelf",
+      "role": "在架失物",
+      "surface": "content",
+      "functions": [
+        { "id": "list-found", "label": "按收件时间列出在架失物", "kind": "list", "role": "list", "states": ["loading", "empty", "filled", "error"] },
+        { "id": "filter-category", "label": "按物品类别筛选（次要操作）", "kind": "action", "role": "chip", "states": ["default", "selected"] }
+      ]
+    },
+    {
+      "id": "claim",
+      "role": "认领办理",
+      "surface": "content",
+      "functions": [
+        { "id": "enter-claimant", "label": "录入认领人证件号", "kind": "input", "role": "text", "states": ["default", "error"] },
+        { "id": "submit-claim", "label": "提交认领", "kind": "action", "role": "button", "states": ["default", "disabled"] },
+        { "id": "show-claim-error", "label": "认领失败原因提示", "kind": "feedback", "role": "status", "states": ["error"] }
+      ]
+    },
+    {
+      "id": "footer",
+      "role": "凭据",
+      "surface": "footer",
+      "functions": [
+        { "id": "print-receipt", "label": "打印认领凭据（次要操作）", "kind": "action", "role": "button", "states": ["default"] }
+      ]
+    }
+  ],
+  "interactions": ["text-entry", "status-feedback"]
+}

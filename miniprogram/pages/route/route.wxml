@@ -197,7 +197,7 @@
   <overlay open="{{shareOpen}}" kind="sheet" title="共享给协作者" bind:close="onShareClose">
     <view class="stack">
       <view wx:if="{{shareError}}" class="callout danger">{{shareError}}</view>
-      <form-field label="对方协作码" hint="让对方在「我的」页顶部复制协作码，粘贴到这里。">
+      <form-field label="对方协作码" hint="对方的协作码由本人提供；粘贴到这里，对方就能在路线库里看到这条路线。">
         <input class="input" value="{{shareCode}}" placeholder="粘贴协作码" bindinput="onShareCode" />
       </form-field>
       <view class="button primary block" hover-class="button-hover" bindtap="onShareAdd">{{shareBusy ? '正在共享…' : '确认共享'}}</view>

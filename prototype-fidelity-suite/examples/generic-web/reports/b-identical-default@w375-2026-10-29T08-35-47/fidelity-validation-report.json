@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "fidelity-validation-report",
+  "pageId": "b-identical",
+  "stateId": "default",
+  "viewportId": "w375",
+  "generatedAt": "2026-10-29T08:35:56.858Z",
+  "status": "PASS",
+  "reason": null,
+  "scorecard": {
+    "schemaVersion": "1.0.0",
+    "generatedAt": "2026-10-29T08:35:56.858Z",
+    "dimensions": {
+      "geometry": {
+        "checks": {
+          "total": 16,
+          "fail": 0,
+          "pass": 16,
+          "unverified": 0
+        },
+        "metrics": {
+          "position": {
+            "total": 8,
+            "fail": 0,
+            "criticalFail": 0,
+            "maxAbsPx": 0,
+            "meanAbsPx": 0
+          },
+          "size": {
+            "total": 8,
+            "fail": 0,
+            "criticalFail": 0,
+            "maxAbsPx": 0,
+            "meanAbsPx": 0
+          }
+        },
+        "verdict": "PASS"
+      },
+      "typography": {
+        "checks": {
+          "total": 44,
+          "fail": 0,
+          "pass": 44,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 32,
+            "fail": 0,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "text": {
+            "total": 6,
+            "fail": 0
+          },
+          "wrap": {
+            "total": 6,
+            "fail": 0
+          }
+        },
+        "verdict": "PASS"
+      },
+      "appearance": {
+        "checks": {
+          "total": 73,
+          "fail": 0,
+          "pass": 73,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 65,
+            "fail": 0,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "missingOnTarget": 0,
+          "missingOnPrototype": 0,
+          "notApplicable": 0
+        },
+        "verdict": "PASS"
+      },
+      "state": {
+        "checks": {
+          "total": 4,
+          "pass": 4,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      },
+      "interaction": {
+        "checks": {
+          "total": 1,
+          "pass": 1,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      }
+    },
+    "categories": {},
+    "criticalFailures": [],
+    "nonCriticalFailures": [],
+    "budget": {
+      "criticalFailures": 0,
+      "nonCriticalFailures": 0
+    },
+    "coverage": {
+      "pairsDeclared": 8,
+      "criticalPairs": 3,
+      "pairsMeasured": 8,
+      "pairsUnverified": 0,
+      "notApplicable": 0,
+      "missingOnTarget": 0,
+      "missingOnPrototype": 0,
+      "pixelsCompared": 0,
+      "unownedCategories": []
+    },
+    "verdict": "PASS"
+  },
+  "interaction": {
+    "checks": [
+      {
+        "id": "toggle-note",
+        "title": "点按钮后说明展开",
+        "status": "PASS",
+        "expected": {
+          "textIncludes": {
+            "selector": "#b-note",
+            "text": "已展开"
+          }
+        },
+        "observed": "ok text(#b-note) includes \"已展开\" → 说明已展开",
+        "assertions": [
+          {
+            "assertion": "text(#b-note) includes \"已展开\"",
+            "pass": true,
+            "observed": "说明已展开"
+          }
+        ],
+        "startedAt": "2026-10-29T08:35:55.993Z",
+        "screenshotPath": null,
+        "finishedAt": "2026-10-29T08:35:56.740Z",
+        "durationMs": 747,
+        "verification": "real-action-and-observation"
+      }
+    ],
+    "fail": 0,
+    "unverified": 0,
+    "status": "PASS"
+  },
+  "evidence": [
+    "visual-diff-report.json",
+    "captures/b-identical/default/@w375/prototype/capture-manifest.json",
+    "captures/b-identical/default/@w375/target/capture-manifest.json"
+  ],
+  "limitations": [
+    "Container pixel comparisons masked over declared child regions (each child is judged at its own level): b-card ← b-label/b-clock/b-desc"
+  ]
+}

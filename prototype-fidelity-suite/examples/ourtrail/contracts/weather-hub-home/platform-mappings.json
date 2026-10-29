@@ -1,0 +1,453 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "platform-mappings",
+  "pageId": "weather-hub-home",
+  "stateId": "injected-plan",
+  "generatedAt": "2026-10-28T14:20:19.285Z",
+  "platforms": {
+    "prototype": "web",
+    "target": "wechat-miniprogram"
+  },
+  "adapters": {
+    "prototype": "web",
+    "target": "wechat-miniprogram"
+  },
+  "alignment": {
+    "anchor": "header",
+    "reason": "两屏顶栏载体不同（浏览器原型 statusbar+wechatbar，小程序 custom navigation + brand-header）；header 顶边视为内容原点，其余组件只比较相对位置。"
+  },
+  "pairs": [
+    {
+      "id": "header",
+      "role": "首页头容器",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": ".home-header",
+      "targetSelector": ".wh-header",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "padding",
+        "margin",
+        "background-color"
+      ],
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": "原型右上角有「演示数据」徽标按钮（演示页专用），实现没有；因此只比较容器盒模型，不比较 flex 分布与容器文本。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "eyebrow",
+      "role": "栏目小标",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".home-eyebrow",
+      "targetSelector": ".wh-eyebrow",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "font-size",
+        "font-weight",
+        "letter-spacing",
+        "line-height",
+        "color",
+        "margin",
+        "padding"
+      ],
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": "文本叶节点：字形栅格化在 1× 浏览器与缩放后的模拟器截图之间不可逐像素比对，像素差异只作证据记录；字阶/字重/行高/字距/颜色与行数仍逐项判定。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "title",
+      "role": "主标题",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": ".home-header h1",
+      "targetSelector": ".wh-title",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "font-size",
+        "font-weight",
+        "letter-spacing",
+        "line-height",
+        "color",
+        "margin",
+        "padding"
+      ],
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": "文本叶节点：字形栅格化在 1× 浏览器与缩放后的模拟器截图之间不可逐像素比对，像素差异只作证据记录；字阶/字重/行高/字距/颜色与行数仍逐项判定。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "sub",
+      "role": "副标题",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".home-sub",
+      "targetSelector": ".wh-sub",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "font-size",
+        "font-weight",
+        "line-height",
+        "color",
+        "margin",
+        "padding"
+      ],
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": "文本叶节点：字形栅格化在 1× 浏览器与缩放后的模拟器截图之间不可逐像素比对，像素差异只作证据记录；字阶/字重/行高/字距/颜色与行数仍逐项判定。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "actions",
+      "role": "三个入口容器",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".home-actions",
+      "targetSelector": ".wh-actions",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "display",
+        "gap",
+        "padding",
+        "margin"
+      ],
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "primary",
+      "role": "地图选点主按钮",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": ".home-action-primary",
+      "targetSelector": ".wh-primary",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "display",
+        "align-items",
+        "gap",
+        "padding",
+        "margin",
+        "min-height",
+        "box-sizing",
+        "border-radius",
+        "border-top-width",
+        "border-top-color",
+        "background-color"
+      ],
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "primary-sub",
+      "role": "主按钮说明",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".home-action-primary small",
+      "targetSelector": ".wh-primary-sub",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "font-size",
+        "font-weight",
+        "line-height",
+        "color",
+        "margin",
+        "padding"
+      ],
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": "原型文案带「（交互模拟）」后缀，实现是真入口；文案差异登记为产品决定，不参与文本判据之外的修复。 文本叶节点：字形栅格化在 1× 浏览器与缩放后的模拟器截图之间不可逐像素比对，像素差异只作证据记录；字阶/字重/行高/字距/颜色与行数仍逐项判定。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "action-row",
+      "role": "两个次入口",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".home-action-row",
+      "targetSelector": ".wh-row",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "display",
+        "gap",
+        "margin",
+        "padding",
+        "box-sizing"
+      ],
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "recent",
+      "role": "继续上次卡片",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".home-recent",
+      "targetSelector": ".wh-recent",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "padding",
+        "margin",
+        "border-top-width",
+        "border-top-color",
+        "background-color"
+      ],
+      "pixel": false,
+      "pixelMode": "exact",
+      "note": "整块只在有个人计划时出现；副行文案原型写「查看每天抵达节点时的天气」，实现写「N 天 · 个人计划」，属文案决定，故只做盒模型比对与区域截图，不做像素判据。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "recent-title",
+      "role": "继续上次标题",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".home-recent h2",
+      "targetSelector": ".wh-recent-title",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "font-size",
+        "font-weight",
+        "color",
+        "margin",
+        "padding"
+      ],
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": "文本叶节点：字形栅格化在 1× 浏览器与缩放后的模拟器截图之间不可逐像素比对，像素差异只作证据记录；字阶/字重/行高/字距/颜色与行数仍逐项判定。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "tabs",
+      "role": "资产三 tab",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".home-tabs",
+      "targetSelector": ".wh-tabs",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "display",
+        "padding",
+        "border-top-width",
+        "border-top-color",
+        "border-bottom-width",
+        "border-bottom-color",
+        "background-color",
+        "box-sizing",
+        "height"
+      ],
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "list",
+      "role": "资产列表容器",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".home-list",
+      "targetSelector": ".wh-list",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "padding",
+        "margin"
+      ],
+      "pixel": false,
+      "pixelMode": "exact",
+      "note": "列表内容由数据决定，像素判据只对固定外壳生效；本对只比盒模型。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "asset-row",
+      "role": "计划行",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".asset-item",
+      "targetSelector": ".wh-asset",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "display",
+        "align-items",
+        "gap",
+        "padding",
+        "margin",
+        "min-height",
+        "border-bottom-width",
+        "border-bottom-color"
+      ],
+      "pixel": false,
+      "pixelMode": "exact",
+      "note": "行高随内容换行变化（原型与实现计划名相同、但副行日期标签可能不同），像素判据会测到夹具文本差异，改做盒模型比对 + 区域截图留证。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "asset-name",
+      "role": "计划名",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".asset-item b",
+      "targetSelector": ".wh-asset-name",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "font-size",
+        "font-weight",
+        "color",
+        "margin",
+        "padding"
+      ],
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": "文本叶节点：字形栅格化在 1× 浏览器与缩放后的模拟器截图之间不可逐像素比对，像素差异只作证据记录；字阶/字重/行高/字距/颜色与行数仍逐项判定。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "foot",
+      "role": "列表脚注",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": ".home-foot",
+      "targetSelector": ".wh-foot",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": [
+        "font-size",
+        "line-height",
+        "color",
+        "padding",
+        "margin"
+      ],
+      "pixel": false,
+      "pixelMode": "informational",
+      "note": "原型脚注说明「登录后云端同步 · 流程演示」，实现脚注说明数据来源与离线时效；文案不同属产品决定，只比排版。 文本叶节点：字形栅格化在 1× 浏览器与缩放后的模拟器截图之间不可逐像素比对，像素差异只作证据记录；字阶/字重/行高/字距/颜色与行数仍逐项判定。",
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    }
+  ],
+  "acceptedDifferences": [
+    {
+      "pairId": "primary-sub",
+      "categories": [
+        "text"
+      ],
+      "reason": "原型写「找到你想去的山野（交互模拟）」是因为原型的地图是模拟交互；实现是真入口，故后缀不出现。属文案决定，待产品确认。",
+      "scope": "page"
+    },
+    {
+      "pairId": "foot",
+      "categories": [
+        "text"
+      ],
+      "reason": "两条脚注讲的是不同的事（原型：演示/云端同步；实现：数据来源/离线时效）。属文案决定，待产品确认。",
+      "scope": "page"
+    }
+  ],
+  "coverage": {
+    "declared": 15,
+    "resolved": 15,
+    "unverified": 0,
+    "notApplicable": 0,
+    "critical": 3
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json#pages[].mappings"
+  }
+}

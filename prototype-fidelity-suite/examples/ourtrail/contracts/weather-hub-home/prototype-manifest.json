@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "prototype-manifest",
+  "projectId": "ourtrail",
+  "pageId": "weather-hub-home",
+  "generatedAt": "2026-10-28T14:20:19.278Z",
+  "prototype": {
+    "platform": "web",
+    "source": "html",
+    "entry": "../../../docs/prototypes/ourtrail-explore-v3/weather.html",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "frameSelector": "#device",
+    "readOnly": true
+  },
+  "states": [
+    {
+      "id": "real",
+      "captured": true,
+      "dataSource": "real",
+      "capturedAt": "2026-10-28T14:19:13.648Z",
+      "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "nodes": 127,
+      "screenshot": {
+        "path": "screenshot.png",
+        "sha256": "7da6065a99fec4861032015c2a74d46b233fdbe9d494f507b1d476f7970269d9",
+        "width": 390,
+        "height": 844,
+        "scale": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      "status": "PASS"
+    },
+    {
+      "id": "injected-plan",
+      "captured": true,
+      "dataSource": "real",
+      "capturedAt": "2026-10-28T14:20:07.977Z",
+      "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "dpr": 1,
+      "nodes": 127,
+      "screenshot": {
+        "path": "screenshot.png",
+        "sha256": "7da6065a99fec4861032015c2a74d46b233fdbe9d494f507b1d476f7970269d9",
+        "width": 390,
+        "height": 844,
+        "scale": {
+          "x": 1,
+          "y": 1
+        }
+      },
+      "status": "PASS"
+    }
+  ],
+  "mappings": {
+    "declared": 15,
+    "selectors": [
+      ".weather-home",
+      ".home-header",
+      ".home-recent",
+      ".asset-item"
+    ],
+    "source": "pf.config.json#pages[].mappings"
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json",
+    "side": "prototype"
+  }
+}

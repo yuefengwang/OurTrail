@@ -96,17 +96,24 @@ function structure() {
   check('共享添加和取消共享确认仍在', !!handler(route, 'onShareAdd') && !!handler(route, 'onRemoveConfirm') && route.nodes.some(n => n.tag === 'overlay' && n.attrs.title === '取消共享'))
   check('地图没有 view 覆盖层', map && map.children.length === 0)
   check('个人页不再有冗余大标题', !/同行资料与身份|page-title/.test(me.src))
-  const identity = me.nodes.find(n => cls(n, 'profile-identity'))
-  const stats = me.nodes.find(n => cls(n, 'profile-stats'))
-  check('头像昵称身份区与统计带独立', !!identity && !!stats && identity.parent === stats.parent && !ancestors(stats).includes(identity))
+  /* 2026-10-29 山野档案 v3：身份卡与履历栏仍是同级事实（各占一张卡，不套娃）；
+     类名从 profile-identity/profile-stats 换成 ident-card/trail-log，判据跟着结构走，
+     保护的是「身份可编辑、统计只读、两者不互相包含」这条语义。 */
+  const identity = me.nodes.find(n => cls(n, 'ident-card') && !cls(n, 'ident-card--gate'))
+  const ledger = me.nodes.find(n => cls(n, 'trail-log'))
+  check('身份卡与履历栏是同级事实（不再套进同一张卡）',
+    !!identity && !!ledger && identity.parent === ledger.parent && !ancestors(ledger).includes(identity))
   check('身份区保留 nickname 直接编辑及头像按钮', !!identity && me.nodes.some(n => ancestors(n).includes(identity) && n.attrs.type === 'nickname' && n.attrs.bindblur === 'onBlurSave') && me.nodes.some(n => ancestors(n).includes(identity) && n.attrs['open-type'] === 'chooseAvatar'))
-  check('身份区显式说明自动保存和未激活状态', !!identity && /修改后自动保存/.test(me.src.slice(identity.at, stats ? stats.at : identity.at)) && /!activated/.test(me.src))
-  const recent = chapter(me, '最近活动'), entry = handler(me, 'onOpenRoutes')
-  check('路线库为独立工具入口，不混入最近活动容器', !!recent && !!entry && !ancestors(entry).includes(recent) && entry.at < chapter(me, '同行与安全').at)
-  check('安全/同行人/权限三分组始终存在', ['同行与安全', '常用同行人', '协作与权限'].every(title => { const n = chapter(me, title); return n && !n.attrs['wx:if'] }))
+  check('自动保存说明与未激活状态显式可见（说明可在资料编辑面内）', /修改后自动保存/.test(me.src) && /!activated/.test(me.src))
+  const nextTrip = me.nodes.find(n => cls(n, 'next-trip'))
+  const routesEntry = handler(me, 'onOpenRoutes')
+  check('路线库是独立工具入口，不再混进「下一程」卡', !!nextTrip && !!routesEntry && !ancestors(routesEntry).includes(nextTrip))
+  check('安全卡 / 同行人条 / 隐私入口始终存在',
+    ['safety-card', 'companions-strip'].every(c => { const n = me.nodes.find(x => cls(x, c)); return n && !n.attrs['wx:if'] })
+    && !!handler(me, 'onOpenPrivacy'))
   check('电话仍遮罩；代报与位置权限边界仍可见', me.src.includes('tools.maskPhone(person.phone)') && me.src.includes('tools.maskPhone(person.emergency.phone)') && me.src.includes('保存条目不等于代办授权') && me.src.includes('不会后台追踪') && me.src.includes('撤回后本次不再共享'))
-  check('七个资料/危险操作弹层全部保留', me.nodes.filter(n => n.tag === 'overlay').length === 7)
-  check('本机草稿与未激活入口全部保留', ['onSaveDraftNow', 'onAskDiscard', 'onOpenOnboarding'].every(name => !!handler(me, name)))
+  check('十个资料/危险操作弹层全部保留', me.nodes.filter(n => n.tag === 'overlay').length === 10)
+  check('本机草稿与资料编辑入口全部保留', ['onSaveDraftNow', 'onAskDiscard', 'onOpenProfile'].every(name => !!handler(me, name)))
   check('tab 页底部 calc 不变', read('miniprogram/pages/me/me.wxss').includes('padding-bottom: calc(32px + 84px + env(safe-area-inset-bottom))'))
   /* 5a（2026-10-26 style-B）：全站「人行」只有一个出处——<person-row>（44px 头像 / 16·600 姓名 /
      状态徽标 / 副行 / 操作插槽）。activity·vehicle·roster-panel·field-panel 都在用，常用同行人是
@@ -131,6 +138,18 @@ function structure() {
   // 棘轮（与 b4-e05 的 INLINE_STYLE_BASELINE 同族）：内联 style 只许变少，不许变大。14→11 是 5a 实测。
   check('个人页内联 style 数不高于 5a 基线 11（只许变少）',
     (me.src.match(/style="/g) || []).length <= 11)
+
+  /* 2026-10-29 山野档案 v3：把原型的四块承重结构钉住，防止下次改文案时悄悄改掉版式。 */
+  check('头图 / 头像 / 下一程封面按原型尺寸（148 / 72 / 82）',
+    /\.me-cover\s*\{[^}]*height:\s*148px/.test(meCss)
+    && /\.avatar\s*\{[^}]*width:\s*72px/.test(meCss)
+    && /\.next-photo\s*\{[^}]*width:\s*82px/.test(meCss))
+  check('履历四等分 / 安全卡三行 / 同行人胶囊横滑',
+    me.nodes.filter(n => cls(n, 'trail-log__item')).length === 4
+    && me.nodes.filter(n => cls(n, 'safety-row') && ancestors(n).some(a => cls(a, 'safety-card'))).length === 3
+    && me.nodes.some(n => n.tag === 'scroll-view' && cls(n, 'companions-scroll')))
+  check('页面 WXSS 不发明色值（颜色一律 var(--token)，无 #hex / rgba）',
+    (meCss.match(/#[0-9a-fA-F]{3,8}/g) || []).length === 0 && !/rgba?\(/.test(meCss))
 
   /* 5b（2026-10-26 style-B）：路线四页（routes / route / route-edit / weather-chart）没有逐屏板，
      口径与 5a 相同——只收"重复出处"，不改结构。三条真出处问题：
@@ -203,10 +222,12 @@ function structure() {
     /\.route-node-name\s*\{[^}]*\}/.test(routeCss)
     && !/\.route-node-name\s*\{[^}]*(font-weight|overflow-wrap)/.test(routeCss)
     && /class="row-title route-node-name"/.test(route.src))
-  for (const name of ['route', 'me']) {
-    const json = JSON.parse(read('miniprogram/pages/' + name + '/' + name + '.json'))
-    check(name + ' 注册既有 chapter', json.usingComponents.chapter === '/components/chapter/chapter')
-  }
+  const routeJson = JSON.parse(read('miniprogram/pages/route/route.json'))
+  check('route 注册既有 chapter', routeJson.usingComponents.chapter === '/components/chapter/chapter')
+  // 2026-10-29：me 页改成行动流后不再使用章节容器，注册一并移除；
+  // 这条钉的是「模板用了就必须登记，模板不用就不要留死注册」。
+  check('me 不再注册未使用的 chapter（行动流页面不用章节组件）',
+    JSON.parse(read('miniprogram/pages/me/me.json')).usingComponents.chapter === undefined)
   check('个人页注册共享 <person-row>（模板用了就必须登记，否则标签静默不渲染）',
     JSON.parse(read('miniprogram/pages/me/me.json')).usingComponents['person-row'] === '/components/person-row/person-row')
   const css = read('miniprogram/pages/routes/routes.wxss')
