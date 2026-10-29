@@ -795,14 +795,17 @@ section('§8 B-14（重复规则两例）：同文件同选择器不得声明两
     check('T8.2 合并后的 .oi-ev 终值 = 旧两条「层叠赢家」的逐项值：' + p + ' = ' + oiWant[p] +
       '（被覆盖的那条 4px 从来不是生效值，不能拿它当合并基准）', v && v.value === oiWant[p], JSON.stringify(v))
   })
-  const nickWant = { flex: '1', 'min-width': '0', display: 'flex', 'flex-direction': 'column', gap: '4px' }
-  Object.keys(nickWant).forEach(p => {
-    const v = finalValue(cascade('.nick-wrap', [APP, W.me]), p, TOKENS)
-    check('T8.3 收敛后 .nick-wrap 的 ' + p + ' 仍 = ' + nickWant[p] + '（两行逐字相同 ⇒ 是真重复，合并零风险）',
-      v && v.value === nickWant[p], JSON.stringify(v))
+  /* 2026-10-29 山野档案 v3：身份文本容器从 .nick-wrap 换成 .ident-main（头像右列）。
+     T8.3/T8.4 的主语跟着结构走，钉的仍是同一件事：这一列必须能收缩（flex:1 + min-width:0），
+     且属性只有一份出处；换类名不是放宽。 */
+  const identWant = { flex: '1', 'min-width': '0' }
+  Object.keys(identWant).forEach(p => {
+    const v = finalValue(cascade('.ident-main', [APP, W.me]), p, TOKENS)
+    check('T8.3 身份文本容器 .ident-main 的 ' + p + ' = ' + identWant[p] + '（长名字不得把徽标挤出行）',
+      v && v.value === identWant[p], JSON.stringify(v))
   })
-  check('T8.4 且 .nick-wrap 只有一份声明出处（没有把重复换成「同值写两遍」的新形态）',
-    parseRules(read(W.me)).filter(r => r.sels.indexOf('.nick-wrap') !== -1).length === 1)
+  check('T8.4 且 .ident-main 只有一份声明出处（没有把重复换成「同值写两遍」的新形态）',
+    parseRules(read(W.me)).filter(r => r.sels.indexOf('.ident-main') !== -1).length === 1)
   check('T8.5 两条被合并的规则里没有出现「新加的属性」（合并是纯减法：属性集合与旧赢家一致）',
     Object.keys(oi).filter(p => p !== 'box-sizing').every(p => oiWant[p] !== undefined || ['margin', 'margin-left', 'margin-right'].indexOf(p) !== -1),
     JSON.stringify(Object.keys(oi)))

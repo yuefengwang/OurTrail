@@ -551,7 +551,13 @@ function selectView(state, actor, request, now) {
       if (activity.phase === 'archived' && (owner || ownRows.length)) finished += 1
       positionRows.push.apply(positionRows, positionRowsFor(state, actor, activity, ownRows, now))
       // 最近活动：进行中优先，其余按 |startAt - now| 由近到远（与客户端 me-view.js 同口径）
-      const slim = { id: activity.id, title: activity.title, startAt: activity.startAt, phase: activity.phase, role: owner ? 'owner' : 'participant' }
+      // pickupName：首个上车点名称（「我的」行程大卡的地点行）。没有上车点时给空串，
+      // 页面据此不印地点——不拿活动标题或城市名冒充集合点。
+      const pickup = activity.pickupPoints && activity.pickupPoints.length ? activity.pickupPoints[0] : null
+      const slim = {
+        id: activity.id, title: activity.title, startAt: activity.startAt, phase: activity.phase,
+        role: owner ? 'owner' : 'participant', pickupName: pickup && pickup.name ? pickup.name : '',
+      }
       const pool = ME_ONGOING_PHASES.indexOf(activity.phase) !== -1 && (owner || ownCurrent) ? ongoingPool : restPool
       pool.push({ slim, dist: activity.startAt && Number.isFinite(Date.parse(activity.startAt)) ? Math.abs(Date.parse(activity.startAt) - nowMs) : Infinity })
     }
@@ -559,7 +565,10 @@ function selectView(state, actor, request, now) {
     ongoingPool.sort(byDist)
     restPool.sort(byDist)
     const recent = ongoingPool.concat(restPool).slice(0, 3).map(x => x.slim)
-    return { kind: 'me', profile: meProfile, stats: { ongoing, finished, organized }, recent, positionRows }
+    // 路线库条数：只算本人创建的路线（与 selectRoutes 的 mine 同一条归属判据）。
+    // 「我的」页履历栏的「路线库 N 条」由此而来——共享来的路线算别人的，不记在我头上。
+    const routes = state.routes ? state.routes.filter(r => r.ownerId === actor.userId).length : 0
+    return { kind: 'me', profile: meProfile, stats: { ongoing, finished, organized, routes }, recent, positionRows }
   }
   if (request.kind === 'home') {
     const activities = visibleActivitiesFor(state, actor, request.perspective, request.openedActivityIds, now)

@@ -156,7 +156,7 @@
 <!-- 协作授权 -->
 <overlay open="{{accessOpen}}" kind="sheet" title="协作授权" bind:close="onAccessClose">
   <view class="stack">
-    <text class="small muted">授权限定人员范围、能力与有效期。到期自动失效，撤销后立即按新权限读取。让对方在「我的」页复制身份码给你。</text>
+    <text class="small muted">授权限定人员范围、能力与有效期。到期自动失效，撤销后立即按新权限读取。身份码由对方提供。</text>
     <view wx:if="{{accessError}}" class="callout danger">{{accessError}}</view>
     <view wx:for="{{memberships}}" wx:key="id" class="list-row">
       <view class="list-main">
@@ -170,7 +170,7 @@
     </view>
 
     <text class="section-title">{{editingId ? '调整现有授权' : '添加授权'}}</text>
-    <form-field label="对方身份码" hint="请对方在「我的」页复制">
+    <form-field label="对方身份码" hint="由对方提供">
       <input class="input" value="{{mUserId}}" bindinput="onMUserId" placeholder="粘贴身份码" />
     </form-field>
     <form-field label="协作角色">

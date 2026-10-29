@@ -620,7 +620,7 @@ function run() {
     check('me 视图 kind=me 且 person 回读', me0.kind === 'me' && me0.profile.person.name === '墨白'
       && me0.profile.person.phone === '13800000001', JSON.stringify(me0.profile && me0.profile.person))
     check('me 视图：无活动时 stats 全 0、recent 空、positionRows 空',
-      me0.stats.ongoing === 0 && me0.stats.finished === 0 && me0.stats.organized === 0
+      me0.stats.ongoing === 0 && me0.stats.finished === 0 && me0.stats.organized === 0 && me0.stats.routes === 0
       && me0.recent.length === 0 && me0.positionRows.length === 0, JSON.stringify(me0.stats))
     check('me 视图：无账号 AUTH_REQUIRED',
       selectView(st, { userId: null }, { kind: 'me' }, ctx().now).code === 'AUTH_REQUIRED')
@@ -646,12 +646,31 @@ function run() {
     const me1 = selectView(st, { userId: ME }, { kind: 'me' }, ctx().now)
     check('me 视图口径：published+owner → ongoing=1、organized=1',
       me1.stats.ongoing === 1 && me1.stats.organized === 1 && me1.stats.finished === 0, JSON.stringify(me1.stats))
-    check('me 视图：recent ≤3 且 slim 行带 role（owner）',
+    check('me 视图：recent ≤3 且 slim 行带 role（owner）与首个上车点名',
       me1.recent.length === 1 && me1.recent[0].id === actMe && me1.recent[0].role === 'owner'
-      && JSON.stringify(Object.keys(me1.recent[0]).sort()) === JSON.stringify(['id', 'phase', 'role', 'startAt', 'title']),
+      && me1.recent[0].pickupName === '茶店子'
+      && JSON.stringify(Object.keys(me1.recent[0]).sort()) === JSON.stringify(['id', 'phase', 'pickupName', 'role', 'startAt', 'title']),
       JSON.stringify(me1.recent))
+    check('me 视图：stats.routes 计入本人路线（活动发布时沉淀的私有路线也算）',
+      me1.stats.routes === 1, JSON.stringify(me1.stats))
     check('me 视图与 home 视图对同一人不互相泄露：me 不带 activityView/routeSnapshot',
       me1.activities === undefined && me1.profile.person.medical !== undefined, '')
+
+    // 路线库计数：本人创建的才算；共享来的不算（与 selectRoutes 的 mine 同口径）
+    r = dispatch(st, ME, {
+      type: 'route.create',
+      input: {
+        title: '我的环线', distanceKm: 8.2, ascentM: 320,
+        points: [{ id: 'rp-1', name: '起点', kind: 'start', coordinates: null }, { id: 'rp-2', name: '终点', kind: 'finish', coordinates: null }],
+        risks: [], track: [{ lat: 30.9, lng: 103.4 }, { lat: 30.91, lng: 103.41 }],
+      },
+    })
+    check('16a 前置：本人创建路线', r.ok, r.error)
+    st = r.value.state
+    const meRoutes = selectView(st, { userId: ME }, { kind: 'me' }, ctx().now)
+    check('me 视图：stats.routes 计入本人新建的路线', meRoutes.stats.routes === 2, JSON.stringify(meRoutes.stats))
+    const otherRoutes = selectView(st, { userId: OTHER }, { kind: 'me' }, ctx().now)
+    check('me 视图：别人的路线不记在我头上（OTHER 仍 0）', otherRoutes.stats.routes === 0, JSON.stringify(otherRoutes.stats))
 
     // JSON 手术造「归档」「第二场活动」「有效位置」——投影是纯函数，不要求手术态过 invariants
     const surgery = JSON.parse(JSON.stringify(st))

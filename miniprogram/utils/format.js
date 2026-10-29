@@ -25,6 +25,20 @@ function dateLabel(iso) {
   return `${p.date.slice(5, 7)}/${p.date.slice(8, 10)} 周${WEEK[p.weekday]}`
 }
 
+// 'MM/DD'（封面角标，不印星期）
+function shortDate(iso) {
+  if (!iso) return ''
+  const p = cnParts(iso)
+  return `${p.date.slice(5, 7)}/${p.date.slice(8, 10)}`
+}
+
+// 'M月D日 周X'（「我的」行程大卡与紧凑行；原型同句式）
+function fullDateLabel(iso) {
+  if (!iso) return '日期待定'
+  const p = cnParts(iso)
+  return `${Number(p.date.slice(5, 7))}月${Number(p.date.slice(8, 10))}日 周${WEEK[p.weekday]}`
+}
+
 // 'M/D HH:mm'（详情时间）
 function dtLabel(iso) {
   if (!iso) return '待确定'
@@ -305,7 +319,7 @@ function cloudLegendNoElev() { return ELEV_SUBJECT + '海拔未知（未画参�
 function pointOutsideLabel(side, deltaText) { return ELEV_SUBJECT + '在剖面' + (side === 'above' ? '上方' : '下方') + ' ' + deltaText + ' m' }
 
 module.exports = {
-  pad, WEEK, cnParts, dateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
+  pad, WEEK, cnParts, dateLabel, shortDate, fullDateLabel, dtLabel, dtFull, toPickerDT, fromPickerDT, cnToday, hhmm,
   minutesLabel, relativeDeadline, PHASE_LABELS, STATUS_LABELS, DEPARTURE_LABELS, INCIDENT_LABELS,
   DIFFICULTY_LABELS, DIFFICULTY_OPTIONS, difficultyLabel,
   TASK_STATUS_LABELS, TASK_CATEGORY_LABELS, TASK_CATEGORY_OPTIONS,

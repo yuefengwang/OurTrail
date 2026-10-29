@@ -256,25 +256,26 @@ async function scenario1() {
       && page.data.positionRows[1].label === '活动B · 陈屿',
       JSON.stringify(page.data.positionRows))
     const meWxml = fs.readFileSync(path.join(__dirname, '..', 'miniprogram', 'pages', 'me', 'me.wxml'), 'utf8')
-    const validLine = meWxml.split('\n').find(l => l.includes('本次活动的位置授权仍然有效')) || ''
-    check('D-05：模板按 item.expired 分岔，「仍然有效」不再是恒真文案',
-      validLine.includes('item.expired') && meWxml.includes('已过期（活动已结束）'), validLine.trim())
+    const meJs = fs.readFileSync(path.join(__dirname, '..', 'miniprogram', 'pages', 'me', 'me.js'), 'utf8')
+    check('D-05：位置行文案按 expired 分岔，「仍然有效」不再是恒真文案',
+      meJs.includes('row.expired ?') && meJs.includes('本次活动的位置授权仍然有效')
+      && meJs.includes('已过期（活动已结束）') && meWxml.includes('item.subText'),
+      JSON.stringify({ branch: meJs.includes('row.expired ?'), wxml: meWxml.includes('item.subText') }))
     check('revision 取自档案读（后续 CAS 基准）', page.revision === 7, String(page.revision))
     check('完整档案已激活', page.data.activated === true, String(page.data.activated))
   }
   {
-    // 协作码缩略（10 §4）：长 openid 前 4 + … + 后 4；完整值仍留在 identity 供复制
+    // 协作码按原型 v3 移出页面：不再生成展示值、不再有复制出口。
+    // 内部 identity 仍保留——头像云存储路径 avatars/{identity}/... 依赖它。
     const longId = 'openid-abcdef12345678'
     const { page } = bootMe({ profile: profileView({ profile: { id: longId } }) })
     await settle(page)
-    check('协作码缩略展示：前 4 + … + 后 4',
-      page.data.displayIdentity === 'open…5678', page.data.displayIdentity)
-    check('完整 id 保留在 identity（复制出口用）', page.data.identity === longId)
-    {
-      const short = bootMe({})
-      await settle(short.page)
-      check('短 id 原样展示', short.page.data.displayIdentity === 'p1', short.page.data.displayIdentity)
-    }
+    check('协作码按原型移出：不再生成展示用 displayIdentity',
+      !('displayIdentity' in page.data), JSON.stringify(Object.keys(page.data).filter(k => /identity/i.test(k))))
+    check('内部 identity 仍保留（头像云存储路径依赖它）', page.data.identity === longId, page.data.identity)
+    check('复制入口已删除（onCopyIdentity 不再是页面方法）', typeof page.onCopyIdentity === 'undefined')
+    const meWxml = fs.readFileSync(path.join(__dirname, '..', 'miniprogram', 'pages', 'me', 'me.wxml'), 'utf8')
+    check('模板不再渲染协作码/复制按钮', !/displayIdentity|onCopyIdentity|协作码/.test(meWxml))
   }
 }
 
@@ -857,18 +858,9 @@ async function scenario7() {
   }
 }
 
-// 8. 协作码 / 最近活动导航 / 位置授权撤回 / 下拉刷新
+// 8. 最近活动导航 / 位置授权撤回 / 下拉刷新（协作码已按原型移出，断言并入 §1）
 async function scenario8() {
-  section('8. 协作码 / 最近活动 / 位置撤回 / 下拉刷新')
-  {
-    const { page, env } = bootMe({})
-    await settle(page)
-    check('身份码完整值保留（identity = profile.id）', page.data.identity === 'p1', page.data.identity)
-    page.onCopyIdentity()
-    check('复制按钮调 wx.setClipboardData 且内容 = 完整协作码',
-      env.rec.clipboard.length === 1 && env.rec.clipboard[0] === 'p1', JSON.stringify(env.rec.clipboard))
-    check('复制成功反馈「协作码已复制」', env.rec.toasts.indexOf('协作码已复制') !== -1, JSON.stringify(env.rec.toasts))
-  }
+  section('8. 最近活动 / 位置撤回 / 下拉刷新')
   {
     const { page, env } = bootMe({ home: homeWithPosition() })
     await settle(page)
@@ -960,31 +952,113 @@ async function scenario10() {
   section('10. me 视图装配：stats/recent fixtures → data + 展示文案映射')
   {
     const { page } = bootMe({
-      stats: { ongoing: 2, finished: 1, organized: 3 },
+      stats: { ongoing: 2, finished: 1, organized: 3, routes: 6 },
       recent: [
-        { id: 'a3', title: '集合C', startAt: '2026-10-01T08:00:00+08:00', phase: 'gathering', role: 'participant' },
-        { id: 'a1', title: '行前A', startAt: '2026-10-12T08:00:00+08:00', phase: 'published', role: 'owner' },
-        { id: 'a5', title: '取消E', startAt: '2026-10-03T08:00:00+08:00', phase: 'cancelled', role: 'owner' },
+        { id: 'a3', title: '集合C', startAt: '2026-10-01T08:00:00+08:00', phase: 'gathering', role: 'participant', pickupName: '成都集合' },
+        { id: 'a1', title: '行前A', startAt: '2026-10-12T08:00:00+08:00', phase: 'published', role: 'owner', pickupName: '' },
+        { id: 'a5', title: '取消E', startAt: '2026-10-03T08:00:00+08:00', phase: 'cancelled', role: 'owner', pickupName: '' },
       ],
     })
     await settle(page)
-    check('页面装配：stats 三计数原样进 data（服务端口径，客户端不复算）',
-      JSON.stringify(page.data.stats) === JSON.stringify({ ongoing: 2, finished: 1, organized: 3 }),
+    check('页面装配：stats 计数原样进 data（服务端口径，客户端不复算）',
+      JSON.stringify(page.data.stats) === JSON.stringify({ ongoing: 2, finished: 1, organized: 3, routes: 6 }),
       JSON.stringify(page.data.stats))
     check('页面装配：recent 顺序保持服务端排序（≤3 条）',
       page.data.recent.length === 3 && page.data.recent[0].id === 'a3' && page.data.recent[2].id === 'a5',
       JSON.stringify(page.data.recent))
-    check('展示文案映射：dateText（北京时间 MM/DD 周X）与 phaseText（PHASE_LABELS）',
-      page.data.recent[0].dateText === '10/01 周四' && page.data.recent[0].phaseText === '正在集合'
+    check('展示文案映射：dateText（M月D日 周X）/ dateBadge / timeText / phaseText',
+      page.data.recent[0].dateText === '10月1日 周四' && page.data.recent[0].dateBadge === '10/01'
+      && page.data.recent[0].timeText === '08:00' && page.data.recent[0].phaseText === '正在集合'
       && page.data.recent[2].phaseText === '已取消',
-      JSON.stringify(page.data.recent.map(r => ({ d: r.dateText, p: r.phaseText }))))
+      JSON.stringify(page.data.recent.map(r => ({ d: r.dateText, b: r.dateBadge, t: r.timeText, p: r.phaseText }))))
     check('slim 行不携带 routeSnapshot/meta',
       page.data.recent.every(r => !r.meta && !r.routeSnapshot), '')
   }
 }
 
+// 11. 山野档案 v3 派生：履历 / 下一程大卡 / 位置汇总 / 编辑面（2026-10-29 重排）
+//     所有派生只读 me 视图字段；测试不镜像服务端统计口径。
+async function scenario11() {
+  section('11. 山野档案 v3 派生：履历 / 下一程大卡 / 位置汇总 / 编辑面')
+  {
+    const { page, env } = bootMe({
+      stats: { ongoing: 2, finished: 1, organized: 3, routes: 6 },
+      recent: [
+        { id: 'a3', title: '集合C', startAt: '2026-10-01T08:00:00+08:00', phase: 'gathering', role: 'participant', pickupName: '成都集合' },
+        { id: 'a1', title: '行前A', startAt: '2026-10-12T08:00:00+08:00', phase: 'published', role: 'owner', pickupName: '' },
+        { id: 'a5', title: '取消E', startAt: '2026-10-03T08:00:00+08:00', phase: 'cancelled', role: 'owner', pickupName: '' },
+      ],
+    })
+    await settle(page)
+    check('履历四项只来自真实统计（同行 = 进行中 + 已完成）',
+      JSON.stringify(page.data.ledger) === JSON.stringify({ trips: 3, ongoing: 2, routes: 6, organized: 3 }),
+      JSON.stringify(page.data.ledger))
+    check('下一程大卡取服务端第一条并派生日期/时间/集合点',
+      page.data.tripNext.id === 'a3' && page.data.tripNext.overline === '下一程 · 已加入'
+      && page.data.tripNext.dateBadge === '10/01' && page.data.tripNext.dateText === '10月1日 周四'
+      && page.data.tripNext.timeText === '08:00' && page.data.tripNext.pickupName === '成都集合',
+      JSON.stringify(page.data.tripNext))
+    check('其余行程进紧凑行（2 条，顺序不变）',
+      page.data.tripRest.length === 2 && page.data.tripRest[0].id === 'a1' && page.data.tripRest[1].id === 'a5',
+      JSON.stringify(page.data.tripRest.map(r => r.id)))
+    check('封面走 covers 散列（路径来自本地真实摄影）',
+      /^\/assets\/photos\/cover-/.test(page.data.tripNext.cover), page.data.tripNext.cover)
+    const cancelled = page.data.tripRest.find(r => r.id === 'a5')
+    check('已取消/非进行中阶段不印「下一程」',
+      !!cancelled && cancelled.isNext === false && cancelled.overline.indexOf('最近一场') === 0,
+      JSON.stringify(cancelled && { isNext: cancelled.isNext, overline: cancelled.overline }))
+    page.onOpenHome()
+    check('「全部」→ 首页 tab', env.rec.navs.indexOf('/pages/home/home') !== -1, JSON.stringify(env.rec.navs))
+    page.onOpenDiscover()
+    check('「去看看活动」→ 发现页', env.rec.navs.indexOf('/pages/discover/discover') !== -1, JSON.stringify(env.rec.navs))
+  }
+  {
+    const { page, env } = bootMe({ stats: { ongoing: 0, finished: 0, organized: 0, routes: 0 }, recent: [] })
+    await settle(page)
+    check('空数据：没有大卡与紧凑行，ledger 全 0',
+      page.data.tripNext === null && page.data.tripRest.length === 0 && page.data.ledger.trips === 0)
+    check('空数据：位置汇总为未上报（不是伪造授权）',
+      page.data.positionSummary.has === false && page.data.positionSummary.badge === '未上报')
+    page.onOpenDiscover()
+    check('空态给出唯一出路：去发现页', env.rec.navs.indexOf('/pages/discover/discover') !== -1)
+  }
+  {
+    const { page, env } = bootMe({ home: homeWithPosition() })
+    await settle(page)
+    check('位置汇总：多条显示计数与可撤回',
+      page.data.positionSummary.count === 2 && page.data.positionSummary.badge === '可撤回'
+      && page.data.positionSummary.sub.indexOf('等 2 处') !== -1,
+      JSON.stringify(page.data.positionSummary))
+    page.onOpenPosition()
+    check('位置汇总行打开 sheet 且关闭其它编辑面',
+      page.data.positionOpen === true && page.data.onboardingOpen === false)
+    page.onOpenPrivacy()
+    check('隐私指引 sheet 打开（原页面跳转改为 sheet）',
+      page.data.privacyOpen === true && page.data.positionOpen === false)
+    page.onOpenPrivacyDoc()
+    check('完整隐私指引仍进独立页（页面可达）',
+      env.rec.navs.indexOf('/pages/privacy/privacy') !== -1 && page.data.privacyOpen === false)
+  }
+  {
+    const { page } = bootMe({})
+    await settle(page)
+    page.onOpenProfile()
+    check('已激活：资料面是「编辑个人资料」',
+      page.data.onboardingOpen === true && page.data.profileMode === 'edit')
+    page.onOpenCompanions()
+    check('胶囊条点进同行人管理面，并关掉资料面',
+      page.data.companionsOpen === true && page.data.onboardingOpen === false)
+  }
+  {
+    const { page } = bootMe({ profile: emptyProfileView() })
+    await settle(page)
+    page.onOpenProfile()
+    check('未激活：资料面是「完善同行资料」', page.data.profileMode === 'onboarding')
+  }
+}
+
 async function main() {
-  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10]
+  const scenarios = [scenario1, scenario2, scenario3, scenario4, scenario5, scenario6, scenario7, scenario8, scenario9, scenario10, scenario11]
   for (const s of scenarios) {
     try { await s() } catch (e) {
       failed++

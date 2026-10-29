@@ -197,7 +197,9 @@ const CL_EXPECT = { display: 'block', 'font-size': '15px', 'font-weight': '600',
   })
   // 原先钉死 totalNodes === 17：上游重构会增删某一页的使用点个数，钉死总数＝把断言绑在工作树偶然状态上（假红）。
   // 这条要防的是「只抽一个样本就宣布全仓修好」，所以判据是覆盖度下限，不是具体计数。
-  check('U2a 判据覆盖 ≥10 处使用点（读数 ' + totalNodes + '；不钉死总数，防只抽一个样本）', totalNodes >= 10, totalNodes + ' 处')
+  // 2026-10-29 山野档案 v3 重排后，me 页的 .card-label 使用点从 7 降到 1（其余改为行标题/列表行），
+  // 全仓实测 8 处；判据仍是「跨页覆盖下限」而不是具体计数 —— 8 处仍覆盖 4 个页面，足以防只抽一个样本。
+  check('U2a 判据覆盖 ≥8 处使用点（读数 ' + totalNodes + '；不钉死总数，防只抽一个样本）', totalNodes >= 8, totalNodes + ' 处')
   const ovFiles = Array.from(new Set(overrides.map(o => o.split(':')[0])))
   check('U2b 内联覆盖 card-label 四条声明的位置都在本批写入集之外（实测 ' + overrides.length + ' 处：' + ovFiles.join(',') +
     '）；出现在 editor/route-edit/weather/weather-hub 里就是本批的错',
