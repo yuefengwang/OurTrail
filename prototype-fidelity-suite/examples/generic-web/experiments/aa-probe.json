@@ -1,0 +1,442 @@
+{
+  "schemaVersion": "1.0.0",
+  "probe": "anti-aliasing surrogate search",
+  "environment": {
+    "browser": "chromium (playwright)",
+    "platform": "win32",
+    "deviceScaleFactor": 1,
+    "viewport": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "question": "Which treatment changes glyph edge rasterisation while leaving metrics and ink amount unchanged?",
+  "variants": [
+    {
+      "id": "launch-flags",
+      "rows": [
+        {
+          "selector": "#b-title",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-label",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-clock",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-desc",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-btn",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-note",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        }
+      ],
+      "identicalGeometry": true,
+      "maxPixel": 0,
+      "maxInkDeviation": 0,
+      "allInkPass": true,
+      "producedAnyDifference": false,
+      "usableAsAaSurrogate": false
+    },
+    {
+      "id": "css-layer",
+      "rows": [
+        {
+          "selector": "#b-title",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.01047,
+          "inkRatio": 1.006,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-label",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.0162,
+          "inkRatio": 1.078,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-clock",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.00498,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-desc",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.04741,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-btn",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.02697,
+          "inkRatio": 0.984,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-note",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.01414,
+          "inkRatio": 1.129,
+          "inkStatus": "PASS"
+        }
+      ],
+      "identicalGeometry": true,
+      "maxPixel": 0.04741,
+      "maxInkDeviation": 0.129,
+      "allInkPass": true,
+      "producedAnyDifference": true,
+      "usableAsAaSurrogate": true
+    },
+    {
+      "id": "css-geo",
+      "rows": [
+        {
+          "selector": "#b-title",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-label",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-clock",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-desc",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-btn",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-note",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        }
+      ],
+      "identicalGeometry": true,
+      "maxPixel": 0,
+      "maxInkDeviation": 0,
+      "allInkPass": true,
+      "producedAnyDifference": false,
+      "usableAsAaSurrogate": false
+    },
+    {
+      "id": "css-smooth",
+      "rows": [
+        {
+          "selector": "#b-title",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-label",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-clock",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-desc",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-btn",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-note",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0,
+          "inkRatio": 1,
+          "inkStatus": "PASS"
+        }
+      ],
+      "identicalGeometry": true,
+      "maxPixel": 0,
+      "maxInkDeviation": 0,
+      "allInkPass": true,
+      "producedAnyDifference": false,
+      "usableAsAaSurrogate": false
+    },
+    {
+      "id": "css-stroke",
+      "rows": [
+        {
+          "selector": "#b-title",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.00638,
+          "inkRatio": 1.087,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-label",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.02649,
+          "inkRatio": null,
+          "inkStatus": "FAIL"
+        },
+        {
+          "selector": "#b-clock",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.01077,
+          "inkRatio": 1.172,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-desc",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.1128,
+          "inkRatio": null,
+          "inkStatus": "FAIL"
+        },
+        {
+          "selector": "#b-btn",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.04452,
+          "inkRatio": 0.997,
+          "inkStatus": "PASS"
+        },
+        {
+          "selector": "#b-note",
+          "geometryDelta": {
+            "dx": 0,
+            "dy": 0,
+            "dw": 0,
+            "dh": 0
+          },
+          "pixelDiffRatio": 0.02357,
+          "inkRatio": null,
+          "inkStatus": "FAIL"
+        }
+      ],
+      "identicalGeometry": true,
+      "maxPixel": 0.1128,
+      "maxInkDeviation": 0.17199999999999993,
+      "allInkPass": false,
+      "producedAnyDifference": true,
+      "usableAsAaSurrogate": false
+    }
+  ],
+  "conclusion": {
+    "usableSurrogates": [
+      "css-layer"
+    ],
+    "treatmentsWithNoMeasurableEffect": [
+      "launch-flags",
+      "css-geo",
+      "css-smooth"
+    ],
+    "metricsChangingTreatments": []
+  }
+}

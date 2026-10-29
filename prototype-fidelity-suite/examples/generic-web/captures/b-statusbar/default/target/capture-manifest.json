@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "capture-manifest",
+  "pageId": "b-statusbar",
+  "stateId": "default",
+  "side": "target",
+  "platform": "web",
+  "capturedAt": "2026-10-28T14:33:48.856Z",
+  "source": {
+    "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/b/statusbar.html",
+    "projectRoot": null,
+    "route": null,
+    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "dataSource": "real",
+    "injection": null,
+    "note": null
+  },
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "dpr": 1,
+  "screenshot": {
+    "path": "screenshot.png",
+    "sha256": "cca2ca9c2e1943acb66489d5b6662f5968a15ba619e984a1623c99d461e95054",
+    "width": 390,
+    "height": 844,
+    "scale": {
+      "x": 1,
+      "y": 1
+    },
+    "normalizedFrom": "device-pixels"
+  },
+  "snapshot": {
+    "nodes": 11,
+    "rootId": "n0",
+    "dimensions": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "provenance": {
+    "capturedBy": "prototype-fidelity-suite",
+    "adapter": "web",
+    "verification": "captured"
+  }
+}

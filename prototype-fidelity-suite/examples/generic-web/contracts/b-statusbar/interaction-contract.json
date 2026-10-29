@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "interaction-contract",
+  "pageId": "b-statusbar",
+  "generatedAt": "2026-10-28T14:33:54.813Z",
+  "driver": {
+    "adapter": "web",
+    "endpoint": null,
+    "verification": "real-action-and-observation"
+  },
+  "checks": [
+    {
+      "id": "toggle-note",
+      "title": "点按钮后说明展开",
+      "steps": [
+        {
+          "tap": {
+            "selector": "#b-btn"
+          }
+        },
+        {
+          "wait": 150
+        }
+      ],
+      "expect": {
+        "textIncludes": {
+          "selector": "#b-note",
+          "text": "已展开"
+        }
+      },
+      "screenshot": false,
+      "status": "PASS",
+      "observed": "ok text(#b-note) includes \"已展开\" → 说明已展开",
+      "assertions": [
+        {
+          "assertion": "text(#b-note) includes \"已展开\"",
+          "pass": true,
+          "observed": "说明已展开"
+        }
+      ],
+      "screenshotPath": null,
+      "error": null,
+      "verification": "real-action-and-observation"
+    }
+  ],
+  "status": "PASS",
+  "reason": null,
+  "provenance": {
+    "builtBy": "pf validate",
+    "config": "pf.config.json#pages[].interactions"
+  }
+}

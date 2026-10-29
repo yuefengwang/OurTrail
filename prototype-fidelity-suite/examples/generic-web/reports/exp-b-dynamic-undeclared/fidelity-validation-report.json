@@ -1,0 +1,201 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "fidelity-validation-report",
+  "pageId": "b-dynamic-undeclared",
+  "stateId": "default",
+  "generatedAt": "2026-10-28T14:33:37.491Z",
+  "status": "FAIL",
+  "reason": null,
+  "scorecard": {
+    "schemaVersion": "1.0.0",
+    "generatedAt": "2026-10-28T14:33:37.491Z",
+    "dimensions": {
+      "geometry": {
+        "checks": {
+          "total": 16,
+          "pass": 16,
+          "fail": 0,
+          "unverified": 0
+        },
+        "metrics": {
+          "position": {
+            "total": 8,
+            "fail": 0,
+            "criticalFail": 0,
+            "maxAbsPx": 0,
+            "meanAbsPx": 0
+          },
+          "size": {
+            "total": 8,
+            "fail": 0,
+            "criticalFail": 0,
+            "maxAbsPx": 0,
+            "meanAbsPx": 0
+          }
+        },
+        "verdict": "PASS"
+      },
+      "typography": {
+        "checks": {
+          "total": 44,
+          "fail": 1,
+          "pass": 43,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 32,
+            "fail": 0,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "text": {
+            "total": 6,
+            "fail": 1
+          },
+          "wrap": {
+            "total": 6,
+            "fail": 0
+          }
+        },
+        "verdict": "FAIL"
+      },
+      "appearance": {
+        "checks": {
+          "total": 64,
+          "fail": 1,
+          "pass": 63,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 56,
+            "fail": 0,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "missingOnTarget": 0,
+          "missingOnPrototype": 0,
+          "notApplicable": 0
+        },
+        "verdict": "FAIL"
+      },
+      "state": {
+        "checks": {
+          "total": 4,
+          "pass": 4,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      },
+      "interaction": {
+        "checks": {
+          "total": 1,
+          "pass": 1,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      }
+    },
+    "criticalFailures": [],
+    "nonCriticalFailures": [
+      {
+        "pairId": "b-clock",
+        "role": "时间",
+        "criticality": "normal",
+        "categories": [
+          "text",
+          "ink"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 31,
+            "y": 103,
+            "w": 328,
+            "h": 30
+          },
+          "target": {
+            "x": 31,
+            "y": 103,
+            "w": 328,
+            "h": 30
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": true
+        },
+        "failingStyles": [],
+        "notes": null
+      }
+    ],
+    "budget": {
+      "criticalFailures": 0,
+      "nonCriticalFailures": 0
+    },
+    "coverage": {
+      "pairsDeclared": 8,
+      "criticalPairs": 3,
+      "pairsMeasured": 8,
+      "pairsUnverified": 0,
+      "notApplicable": 0,
+      "missingOnTarget": 0,
+      "missingOnPrototype": 0,
+      "pixelsCompared": 0
+    },
+    "verdict": "FAIL"
+  },
+  "interaction": {
+    "checks": [
+      {
+        "id": "toggle-note",
+        "title": "点按钮后说明展开",
+        "status": "PASS",
+        "expected": {
+          "textIncludes": {
+            "selector": "#b-note",
+            "text": "已展开"
+          }
+        },
+        "observed": "ok text(#b-note) includes \"已展开\" → 说明已展开",
+        "assertions": [
+          {
+            "assertion": "text(#b-note) includes \"已展开\"",
+            "pass": true,
+            "observed": "说明已展开"
+          }
+        ],
+        "startedAt": "2026-10-28T14:33:36.506Z",
+        "screenshotPath": null,
+        "finishedAt": "2026-10-28T14:33:37.327Z",
+        "durationMs": 821,
+        "verification": "real-action-and-observation"
+      }
+    ],
+    "fail": 0,
+    "unverified": 0,
+    "status": "PASS"
+  },
+  "evidence": [
+    "visual-diff-report.json",
+    "captures/b-dynamic-undeclared/default/prototype/capture-manifest.json",
+    "captures/b-dynamic-undeclared/default/target/capture-manifest.json"
+  ],
+  "limitations": [
+    "Container pixel comparisons masked over declared child regions (each child is judged at its own level): b-card ← b-label/b-clock/b-desc"
+  ]
+}

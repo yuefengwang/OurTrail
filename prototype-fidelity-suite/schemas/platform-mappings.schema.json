@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/platform-mappings.schema.json",
+  "title": "platform-mappings",
+  "description": "How each prototype node is meant to correspond to a target node, how the two shells are re-based (alignment), which differences were accepted and why. A pair whose selectors did not resolve in the captured DOMs is UNVERIFIED, not matched.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "pageId", "generatedAt", "platforms", "adapters", "pairs", "acceptedDifferences", "coverage", "provenance"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "kind": { "const": "platform-mappings" },
+    "pageId": { "type": "string", "minLength": 1 },
+    "stateId": { "type": ["string", "null"] },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "platforms": {
+      "type": "object",
+      "required": ["prototype", "target"],
+      "additionalProperties": false,
+      "properties": {
+        "prototype": { "type": "string", "minLength": 1 },
+        "target": { "type": ["string", "null"] }
+      }
+    },
+    "adapters": {
+      "type": "object",
+      "required": ["prototype", "target"],
+      "additionalProperties": false,
+      "properties": {
+        "prototype": { "type": ["string", "null"] },
+        "target": { "type": ["string", "null"] }
+      }
+    },
+    "alignment": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["anchor", "reason"],
+          "additionalProperties": false,
+          "properties": {
+            "anchor": { "type": "string", "minLength": 1 },
+            "reason": { "type": "string", "minLength": 1 }
+          }
+        },
+        { "type": "null" }
+      ]
+    },
+    "pairs": { "type": "array", "items": { "$ref": "#/definitions/pair" } },
+    "acceptedDifferences": { "type": "array", "items": { "$ref": "#/definitions/accepted" } },
+    "coverage": {
+      "type": "object",
+      "required": ["declared", "resolved", "unverified", "notApplicable", "critical"],
+      "additionalProperties": false,
+      "properties": {
+        "declared": { "type": "integer", "minimum": 0 },
+        "resolved": { "type": "integer", "minimum": 0 },
+        "unverified": { "type": "integer", "minimum": 0 },
+        "notApplicable": { "type": "integer", "minimum": 0 },
+        "critical": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["builtBy", "config"],
+      "additionalProperties": true,
+      "properties": {
+        "builtBy": { "type": "string", "minLength": 1 },
+        "config": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "status": { "enum": ["PASS", "FAIL", "UNVERIFIED", "BLOCKED", "NOT_APPLICABLE"] },
+    "pair": {
+      "type": "object",
+      "required": ["id", "role", "criticality", "optional", "pixel", "pixelMode", "resolved", "missing", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "role": { "type": "string" },
+        "criticality": { "enum": ["critical", "normal"] },
+        "optional": { "type": "boolean" },
+        "prototypeSelector": { "type": ["string", "null"] },
+        "targetSelector": { "type": ["string", "null"] },
+        "prototypePath": { "type": ["string", "null"] },
+        "targetPath": { "type": ["string", "null"] },
+        "styleProps": { "type": ["array", "null"], "items": { "type": "string" } },
+        "pixel": { "type": "boolean" },
+        "pixelMode": { "enum": ["exact", "informational"] },
+        "note": { "type": ["string", "null"] },
+        "resolved": {
+          "type": "object",
+          "required": ["prototype", "target"],
+          "additionalProperties": false,
+          "properties": {
+            "prototype": { "type": "boolean" },
+            "target": { "type": "boolean" }
+          }
+        },
+        "missing": { "type": "array", "items": { "enum": ["prototype", "target"] } },
+        "status": { "$ref": "#/definitions/status" }
+      }
+    },
+    "accepted": {
+      "type": "object",
+      "required": ["pairId", "categories", "scope"],
+      "additionalProperties": false,
+      "properties": {
+        "pairId": { "type": "string", "minLength": 1 },
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "reason": { "type": ["string", "null"] },
+        "scope": { "enum": ["page", "state"] }
+      }
+    }
+  }
+}

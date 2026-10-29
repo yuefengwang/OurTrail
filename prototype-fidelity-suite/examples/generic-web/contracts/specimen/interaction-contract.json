@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "interaction-contract",
+  "pageId": "specimen",
+  "generatedAt": "2026-10-28T14:32:10.991Z",
+  "driver": {
+    "adapter": "web",
+    "endpoint": null,
+    "verification": "real-action-and-observation"
+  },
+  "checks": [
+    {
+      "id": "toggle-note",
+      "title": "点按钮后说明展开",
+      "steps": [
+        {
+          "tap": {
+            "selector": "#toggle"
+          }
+        },
+        {
+          "wait": 150
+        }
+      ],
+      "expect": {
+        "textIncludes": {
+          "selector": "#note",
+          "text": "已展开"
+        }
+      },
+      "screenshot": false,
+      "status": "PASS",
+      "observed": "ok text(#note) includes \"已展开\" → 说明已展开",
+      "assertions": [
+        {
+          "assertion": "text(#note) includes \"已展开\"",
+          "pass": true,
+          "observed": "说明已展开"
+        }
+      ],
+      "screenshotPath": null,
+      "error": null,
+      "verification": "real-action-and-observation"
+    }
+  ],
+  "status": "PASS",
+  "reason": null,
+  "provenance": {
+    "builtBy": "pf validate",
+    "config": "pf.config.json#pages[].interactions"
+  }
+}

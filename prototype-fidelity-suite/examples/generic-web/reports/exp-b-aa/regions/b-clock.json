@@ -1,0 +1,36 @@
+{
+  "diffCount": 49,
+  "diffRatio": 0.00498,
+  "prototypePixels": {
+    "x": 31,
+    "y": 103,
+    "w": 328,
+    "h": 30
+  },
+  "targetPixels": {
+    "x": 31,
+    "y": 103,
+    "w": 328,
+    "h": 30
+  },
+  "components": [
+    {
+      "x": 40,
+      "y": 12,
+      "w": 4,
+      "h": 7,
+      "area": 16,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 0,
+      "y": 12,
+      "w": 2,
+      "h": 10,
+      "area": 11,
+      "meanDelta": null,
+      "maxDelta": null
+    }
+  ]
+}

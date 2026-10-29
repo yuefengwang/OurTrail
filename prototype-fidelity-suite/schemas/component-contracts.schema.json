@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/component-contracts.schema.json",
+  "title": "component-contracts",
+  "description": "For each declared component, its measured instances: box, styles that define it, text and line count. A declared component whose selector was not found is UNVERIFIED with an explicit reason — never silently absent.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "pageId", "stateId", "generatedAt", "components"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "kind": { "const": "component-contracts" },
+    "pageId": { "type": "string", "minLength": 1 },
+    "stateId": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "components": { "type": "array", "items": { "$ref": "#/definitions/component" } }
+  },
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "status": { "enum": ["PASS", "FAIL", "UNVERIFIED", "BLOCKED", "NOT_APPLICABLE"] },
+    "rect": {
+      "type": "object",
+      "required": ["x", "y", "w", "h"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number" },
+        "h": { "type": "number" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": true,
+      "properties": {
+        "kind": { "enum": ["measured", "inferred", "confirmed", "unknown"] },
+        "captureNode": { "type": "string" }
+      }
+    },
+    "instance": {
+      "type": "object",
+      "required": ["selector", "path", "rect", "styles", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "selector": { "type": "string" },
+        "path": { "type": "string" },
+        "rect": { "$ref": "#/definitions/rect" },
+        "styles": { "type": "object", "additionalProperties": { "type": "string" } },
+        "text": { "type": "string" },
+        "lineCount": { "type": ["integer", "null"] },
+        "source": { "$ref": "#/definitions/source" }
+      }
+    },
+    "component": {
+      "type": "object",
+      "required": ["id", "criticality", "status", "selectors", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "role": { "type": "string" },
+        "criticality": { "enum": ["critical", "normal"] },
+        "status": { "$ref": "#/definitions/status" },
+        "reason": { "type": "string" },
+        "selectors": { "type": "array", "items": { "type": "string" } },
+        "instances": { "type": "array", "items": { "$ref": "#/definitions/instance" } },
+        "source": { "$ref": "#/definitions/source" }
+      }
+    }
+  }
+}

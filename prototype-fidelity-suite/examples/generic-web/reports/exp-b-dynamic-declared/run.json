@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "exp-b-dynamic-declared",
+  "pageId": "b-dynamic-declared",
+  "stateId": "default",
+  "startedAt": "2026-10-28T14:33:02.800Z",
+  "project": {
+    "id": "generic-web",
+    "name": "通用 Web 基样（示例 1 · 卡片页）"
+  }
+}

@@ -1,0 +1,285 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/visual-diff-report.schema.json",
+  "title": "visual-diff-report",
+  "description": "Per-region comparison of two captures: geometry, style declarations, text, pixel statistics, whether the difference was accepted and where the raw evidence lives. The verdict is FAIL if any region failed after acceptance; UNVERIFIED if nothing was compared.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "pageId", "stateId", "generatedAt", "prototype", "target", "tolerances", "measurement", "regions", "fullPage", "acceptedDifferences", "verdict", "mapping", "alignment", "warnings"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "kind": { "const": "visual-diff-report" },
+    "pageId": { "type": "string", "minLength": 1 },
+    "stateId": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "prototype": { "$ref": "#/definitions/provenance" },
+    "target": { "$ref": "#/definitions/provenance" },
+    "tolerances": { "$ref": "#/definitions/tolerances" },
+    "measurement": {
+      "type": "object",
+      "required": ["method", "note", "regionsCompared", "regionsFailing", "totalDiffRatio"],
+      "additionalProperties": false,
+      "properties": {
+        "method": { "const": "region-crop" },
+        "note": { "type": "string" },
+        "regionsCompared": { "type": "integer", "minimum": 0 },
+        "regionsFailing": { "type": "integer", "minimum": 0 },
+        "totalDiffRatio": { "type": "number", "minimum": 0 }
+      }
+    },
+    "regions": { "type": "array", "items": { "$ref": "#/definitions/region" } },
+    "fullPage": { "type": ["object", "null"] },
+    "acceptedDifferences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pairId", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "pairId": { "type": "string", "minLength": 1 },
+          "categories": { "type": "array", "items": { "type": "string" } },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "verdict": { "$ref": "#/definitions/verdict" },
+    "mapping": {
+      "type": "object",
+      "required": ["pairs", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "pairs": { "type": "integer", "minimum": 0 },
+        "source": { "type": "string", "minLength": 1 }
+      }
+    },
+    "alignment": {
+      "type": "object",
+      "required": ["applied"],
+      "additionalProperties": false,
+      "properties": {
+        "applied": { "type": "boolean" },
+        "anchor": { "type": "string" },
+        "shift": {
+          "type": "object",
+          "required": ["x", "y"],
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" }
+          }
+        }
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "verdict": { "enum": ["PASS", "FAIL", "UNVERIFIED", "BLOCKED", "NOT_APPLICABLE"] },
+    "status": { "enum": ["PASS", "FAIL", "UNVERIFIED", "BLOCKED", "NOT_APPLICABLE"] },
+    "rect": {
+      "type": "object",
+      "required": ["x", "y", "w", "h"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "w": { "type": "number" },
+        "h": { "type": "number" }
+      }
+    },
+    "tolerances": {
+      "type": "object",
+      "required": ["position", "size", "gap", "font", "color", "pixelRatio", "criticalPixelRatio"],
+      "additionalProperties": false,
+      "properties": {
+        "position": { "type": "number", "minimum": 0 },
+        "size": { "type": "number", "minimum": 0 },
+        "gap": { "type": "number", "minimum": 0 },
+        "font": { "type": "number", "minimum": 0 },
+        "color": { "type": "number", "minimum": 0 },
+        "pixelRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "criticalPixelRatio": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["platform", "viewport", "dpr", "codeVersion", "dataSource", "capturedAt", "screenshotSha256", "screenshotScale"],
+      "additionalProperties": false,
+      "properties": {
+        "platform": { "type": "string", "minLength": 1 },
+        "url": { "type": ["string", "null"] },
+        "viewport": { "type": ["object", "null"] },
+        "dpr": { "type": ["number", "null"] },
+        "codeVersion": { "type": ["string", "null"] },
+        "dataSource": { "enum": ["real", "injected", null] },
+        "capturedAt": { "type": "string", "format": "date-time" },
+        "screenshotSha256": { "type": ["string", "null"], "format": "sha256" },
+        "screenshotScale": { "type": ["object", "null"] },
+        "note": { "type": ["object", "string", "null"] }
+      }
+    },
+    "geometry": {
+      "type": "object",
+      "required": ["dx", "dy", "dw", "dh", "prototype", "target", "positionPass", "sizePass"],
+      "additionalProperties": false,
+      "properties": {
+        "dx": { "type": "number" },
+        "dy": { "type": "number" },
+        "dw": { "type": "number" },
+        "dh": { "type": "number" },
+        "dwRatio": { "type": ["number", "null"] },
+        "dhRatio": { "type": ["number", "null"] },
+        "prototype": { "$ref": "#/definitions/rect" },
+        "target": { "$ref": "#/definitions/rect" },
+        "tolerances": {
+          "type": "object",
+          "required": ["position", "size"],
+          "additionalProperties": false,
+          "properties": {
+            "position": { "type": "number" },
+            "size": { "type": "number" }
+          }
+        },
+        "positionPass": { "type": "boolean" },
+        "sizePass": { "type": "boolean" },
+        "alignedTo": { "type": "string" },
+        "isAnchor": { "type": "boolean" }
+      }
+    },
+    "style": {
+      "type": "object",
+      "required": ["prop", "status", "a", "b"],
+      "additionalProperties": false,
+      "properties": {
+        "prop": { "type": "string", "minLength": 1 },
+        "category": { "type": "string" },
+        "status": { "$ref": "#/definitions/status" },
+        "a": {},
+        "b": {},
+        "delta": { "type": ["number", "null"] },
+        "reason": { "type": "string" },
+        "accepted": { "type": "boolean" }
+      }
+    },
+    "text": {
+      "type": "object",
+      "required": ["prototype", "target", "equal", "lines", "lineDelta"],
+      "additionalProperties": false,
+      "properties": {
+        "prototype": { "type": "string" },
+        "target": { "type": "string" },
+        "equal": { "type": "boolean" },
+        "lines": {
+          "type": "object",
+          "required": ["prototype", "target"],
+          "additionalProperties": false,
+          "properties": {
+            "prototype": { "type": ["integer", "null"] },
+            "target": { "type": ["integer", "null"] }
+          }
+        },
+        "lineDelta": { "type": ["integer", "null"] }
+      }
+    },
+    "ink": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": false,
+      "properties": {
+        "status": { "$ref": "#/definitions/status" },
+        "reason": { "type": "string" },
+        "reasons": { "type": "array", "items": { "type": "string" } },
+        "ratio": { "type": "number" }
+      }
+    },
+    "pixel": {
+      "type": "object",
+      "required": ["diffCount", "aaCount", "diffRatio", "meanDelta", "maxDelta", "components", "resampled", "informativeOnly", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "diffCount": { "type": "integer", "minimum": 0 },
+        "aaCount": { "type": "integer", "minimum": 0 },
+        "diffRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "meanDelta": { "type": "number", "minimum": 0 },
+        "maxDelta": { "type": "number", "minimum": 0 },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["x", "y", "w", "h", "area"],
+            "additionalProperties": false,
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" },
+              "w": { "type": "number" },
+              "h": { "type": "number" },
+              "area": { "type": "number" },
+              "meanDelta": { "type": ["number", "null"] },
+              "maxDelta": { "type": ["number", "null"] }
+            }
+          }
+        },
+        "resampled": { "type": "boolean" },
+        "prototypePixels": { "type": ["object", "null"] },
+        "targetPixels": { "type": ["object", "null"] },
+        "informativeOnly": { "type": "boolean" },
+        "ink": { "oneOf": [{ "$ref": "#/definitions/ink" }, { "type": "null" }] },
+        "status": { "$ref": "#/definitions/status" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["prototypeSelector", "targetSelector", "prototypePath", "targetPath"],
+      "additionalProperties": false,
+      "properties": {
+        "prototypeSelector": { "type": ["string", "null"] },
+        "targetSelector": { "type": ["string", "null"] },
+        "prototypePath": { "type": ["string", "null"] },
+        "targetPath": { "type": ["string", "null"] }
+      }
+    },
+    "region": {
+      "type": "object",
+      "required": ["id", "role", "criticality", "status", "categories", "observedCategories", "presence", "geometry", "pixelCompared", "pixelMode", "styles", "text", "pixel", "evidence", "acceptedCategories"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "role": { "type": ["string", "null"] },
+        "criticality": { "enum": ["critical", "normal"] },
+        "status": { "$ref": "#/definitions/status" },
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "observedCategories": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": ["string", "null"] },
+        "presence": {
+          "type": "object",
+          "required": ["prototype", "target"],
+          "additionalProperties": false,
+          "properties": {
+            "prototype": { "type": "boolean" },
+            "target": { "type": "boolean" }
+          }
+        },
+        "geometry": { "oneOf": [{ "$ref": "#/definitions/geometry" }, { "type": "null" }] },
+        "note": { "type": ["string", "null"] },
+        "pixelCompared": { "type": "boolean" },
+        "pixelMode": { "enum": ["exact", "informational"] },
+        "styles": { "type": "array", "items": { "$ref": "#/definitions/style" } },
+        "text": { "oneOf": [{ "$ref": "#/definitions/text" }, { "type": "null" }] },
+        "pixel": { "oneOf": [{ "$ref": "#/definitions/pixel" }, { "type": "null" }] },
+        "evidence": { "$ref": "#/definitions/evidence" },
+        "acceptedDifference": { "type": ["string", "null"] },
+        "acceptedCategories": { "type": "array", "items": { "type": "string" } },
+        "images": {
+          "type": "object",
+          "required": ["prototype", "target", "diff"],
+          "additionalProperties": false,
+          "properties": {
+            "prototype": { "type": "string" },
+            "target": { "type": "string" },
+            "diff": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

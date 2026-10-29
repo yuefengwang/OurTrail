@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "exp-c-before",
+  "pageId": "c-repair",
+  "stateId": "default",
+  "startedAt": "2026-10-28T14:34:11.944Z",
+  "project": {
+    "id": "generic-web",
+    "name": "通用 Web 基样（示例 1 · 卡片页）"
+  }
+}

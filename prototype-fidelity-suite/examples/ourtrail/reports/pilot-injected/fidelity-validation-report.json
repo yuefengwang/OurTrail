@@ -1,0 +1,934 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "fidelity-validation-report",
+  "pageId": "weather-hub-home",
+  "stateId": "injected-plan",
+  "generatedAt": "2026-10-28T14:20:50.250Z",
+  "status": "FAIL",
+  "reason": null,
+  "scorecard": {
+    "schemaVersion": "1.0.0",
+    "generatedAt": "2026-10-28T14:20:50.250Z",
+    "dimensions": {
+      "geometry": {
+        "checks": {
+          "total": 30,
+          "pass": 7,
+          "fail": 23,
+          "unverified": 0
+        },
+        "metrics": {
+          "position": {
+            "total": 15,
+            "fail": 10,
+            "criticalFail": 0,
+            "maxAbsPx": 81.01,
+            "meanAbsPx": 30.24
+          },
+          "size": {
+            "total": 15,
+            "fail": 13,
+            "criticalFail": 2,
+            "maxAbsPx": 110,
+            "meanAbsPx": 37.82
+          }
+        },
+        "verdict": "FAIL"
+      },
+      "typography": {
+        "checks": {
+          "total": 34,
+          "fail": 7,
+          "pass": 27,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 20,
+            "fail": 6,
+            "unverified": 0,
+            "criticalFail": 1
+          },
+          "text": {
+            "total": 15,
+            "fail": 0
+          },
+          "wrap": {
+            "total": 7,
+            "fail": 1
+          }
+        },
+        "verdict": "FAIL"
+      },
+      "appearance": {
+        "checks": {
+          "total": 33,
+          "fail": 9,
+          "pass": 24,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 18,
+            "fail": 0,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "missingOnTarget": 0,
+          "missingOnPrototype": 0,
+          "notApplicable": 0
+        },
+        "verdict": "FAIL"
+      },
+      "state": {
+        "checks": {
+          "total": 4,
+          "pass": 4,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      },
+      "interaction": {
+        "checks": {
+          "total": 4,
+          "pass": 4,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      }
+    },
+    "criticalFailures": [
+      {
+        "pairId": "header",
+        "role": "首页头容器",
+        "criticality": "critical",
+        "categories": [
+          "spacing",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0.31,
+          "dwRatio": 1,
+          "dhRatio": 1.003,
+          "prototype": {
+            "x": 0,
+            "y": 72,
+            "w": 390,
+            "h": 116.69
+          },
+          "target": {
+            "x": 0,
+            "y": 87,
+            "w": 390,
+            "h": 117
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": true,
+          "rawDx": 0,
+          "rawDy": 15,
+          "alignedTo": "header",
+          "isAnchor": true
+        },
+        "failingStyles": [
+          {
+            "prop": "padding",
+            "a": [
+              22,
+              20,
+              14,
+              20
+            ],
+            "b": [
+              14,
+              20,
+              14,
+              20
+            ],
+            "delta": 8
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "title",
+        "role": "主标题",
+        "criticality": "critical",
+        "categories": [
+          "size",
+          "typography",
+          "ink"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 110,
+          "dh": 0.5,
+          "dwRatio": 1.458,
+          "dhRatio": 1.015,
+          "prototype": {
+            "x": 20,
+            "y": 115,
+            "w": 240,
+            "h": 32.5
+          },
+          "target": {
+            "x": 20,
+            "y": 130,
+            "w": 350,
+            "h": 33
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [
+          {
+            "prop": "font-weight",
+            "a": 730,
+            "b": 700,
+            "delta": 30
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "primary",
+        "role": "地图选点主按钮",
+        "criticality": "critical",
+        "categories": [
+          "size",
+          "other",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0.01,
+          "dw": 0,
+          "dh": 32,
+          "dwRatio": 1,
+          "dhRatio": 1.533,
+          "prototype": {
+            "x": 20,
+            "y": 192.69,
+            "w": 350,
+            "h": 60
+          },
+          "target": {
+            "x": 20,
+            "y": 207.7,
+            "w": 350,
+            "h": 92
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [
+          {
+            "prop": "box-sizing",
+            "a": "border-box",
+            "b": "content-box"
+          }
+        ],
+        "notes": null
+      }
+    ],
+    "nonCriticalFailures": [
+      {
+        "pairId": "eyebrow",
+        "role": "栏目小标",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "typography",
+          "position",
+          "ink"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": -8,
+          "dw": 110,
+          "dh": 8,
+          "dwRatio": 1.458,
+          "dhRatio": 1.571,
+          "prototype": {
+            "x": 20,
+            "y": 94,
+            "w": 240,
+            "h": 14
+          },
+          "target": {
+            "x": 20,
+            "y": 101,
+            "w": 350,
+            "h": 22
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [
+          {
+            "prop": "font-weight",
+            "a": 650,
+            "b": 600,
+            "delta": 50
+          },
+          {
+            "prop": "line-height",
+            "a": "normal",
+            "b": "22px"
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "sub",
+        "role": "副标题",
+        "criticality": "normal",
+        "categories": [
+          "size"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 110,
+          "dh": -0.19,
+          "dwRatio": 1.458,
+          "dhRatio": 0.99,
+          "prototype": {
+            "x": 20,
+            "y": 155.5,
+            "w": 240,
+            "h": 19.19
+          },
+          "target": {
+            "x": 20,
+            "y": 170.5,
+            "w": 350,
+            "h": 19
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [],
+        "notes": null
+      },
+      {
+        "pairId": "actions",
+        "role": "三个入口容器",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0.01,
+          "dw": 0,
+          "dh": 34,
+          "dwRatio": 1,
+          "dhRatio": 1.248,
+          "prototype": {
+            "x": 0,
+            "y": 188.69,
+            "w": 390,
+            "h": 137
+          },
+          "target": {
+            "x": 0,
+            "y": 203.7,
+            "w": 390,
+            "h": 171
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [],
+        "notes": null
+      },
+      {
+        "pairId": "primary-sub",
+        "role": "主按钮说明",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "typography",
+          "spacing",
+          "position",
+          "ink"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 10.01,
+          "dw": -60,
+          "dh": 8,
+          "dwRatio": 0.571,
+          "dhRatio": 1.571,
+          "prototype": {
+            "x": 132,
+            "y": 217.69,
+            "w": 140,
+            "h": 14
+          },
+          "target": {
+            "x": 132,
+            "y": 242.7,
+            "w": 80,
+            "h": 22
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [
+          {
+            "prop": "line-height",
+            "a": "normal",
+            "b": "22px"
+          },
+          {
+            "prop": "margin",
+            "a": [
+              4,
+              0,
+              0,
+              0
+            ],
+            "b": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "delta": 4
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "action-row",
+        "role": "两个次入口",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "other",
+          "position",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 32.01,
+          "dw": 0,
+          "dh": 2,
+          "dwRatio": 1,
+          "dhRatio": 1.043,
+          "prototype": {
+            "x": 20,
+            "y": 261.69,
+            "w": 350,
+            "h": 46
+          },
+          "target": {
+            "x": 20,
+            "y": 308.7,
+            "w": 350,
+            "h": 48
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [
+          {
+            "prop": "box-sizing",
+            "a": "border-box",
+            "b": "content-box"
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "recent",
+        "role": "继续上次卡片",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "position"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 34.01,
+          "dw": 0,
+          "dh": 29,
+          "dwRatio": 1,
+          "dhRatio": 1.234,
+          "prototype": {
+            "x": 0,
+            "y": 325.69,
+            "w": 390,
+            "h": 124
+          },
+          "target": {
+            "x": 0,
+            "y": 374.7,
+            "w": 390,
+            "h": 153
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [],
+        "notes": null
+      },
+      {
+        "pairId": "recent-title",
+        "role": "继续上次标题",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "typography",
+          "position"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 34.01,
+          "dw": 0,
+          "dh": 5,
+          "dwRatio": 1,
+          "dhRatio": 1.294,
+          "prototype": {
+            "x": 20,
+            "y": 342.69,
+            "w": 350,
+            "h": 17
+          },
+          "target": {
+            "x": 20,
+            "y": 391.7,
+            "w": 350,
+            "h": 22
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [
+          {
+            "prop": "font-weight",
+            "a": 650,
+            "b": 600,
+            "delta": 50
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "tabs",
+        "role": "资产三 tab",
+        "criticality": "normal",
+        "categories": [
+          "other",
+          "position",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 63.01,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 0,
+            "y": 449.69,
+            "w": 390,
+            "h": 48
+          },
+          "target": {
+            "x": 0,
+            "y": 527.7,
+            "w": 390,
+            "h": 48
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": true,
+          "alignedTo": "header"
+        },
+        "failingStyles": [
+          {
+            "prop": "box-sizing",
+            "a": "border-box",
+            "b": "content-box"
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "list",
+        "role": "资产列表容器",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "position"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 63.01,
+          "dw": 0,
+          "dh": 35,
+          "dwRatio": 1,
+          "dhRatio": 1.273,
+          "prototype": {
+            "x": 0,
+            "y": 497.69,
+            "w": 390,
+            "h": 128
+          },
+          "target": {
+            "x": 0,
+            "y": 575.7,
+            "w": 390,
+            "h": 163
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [],
+        "notes": null
+      },
+      {
+        "pairId": "asset-row",
+        "role": "计划行",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "position"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 63.01,
+          "dw": 0,
+          "dh": 18,
+          "dwRatio": 1,
+          "dhRatio": 1.261,
+          "prototype": {
+            "x": 20,
+            "y": 505.69,
+            "w": 350,
+            "h": 69
+          },
+          "target": {
+            "x": 20,
+            "y": 583.7,
+            "w": 350,
+            "h": 87
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [],
+        "notes": null
+      },
+      {
+        "pairId": "asset-name",
+        "role": "计划名",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "typography",
+          "position",
+          "ink"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 65.51,
+          "dw": 0,
+          "dh": 5,
+          "dwRatio": 1,
+          "dhRatio": 1.294,
+          "prototype": {
+            "x": 70,
+            "y": 522.19,
+            "w": 272,
+            "h": 17
+          },
+          "target": {
+            "x": 70,
+            "y": 602.7,
+            "w": 272,
+            "h": 22
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [
+          {
+            "prop": "font-weight",
+            "a": 650,
+            "b": 600,
+            "delta": 50
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "foot",
+        "role": "列表脚注",
+        "criticality": "normal",
+        "categories": [
+          "size",
+          "text-wrap",
+          "position"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 81.01,
+          "dw": 0,
+          "dh": 17,
+          "dwRatio": 1,
+          "dhRatio": 1.515,
+          "prototype": {
+            "x": 20,
+            "y": 574.69,
+            "w": 350,
+            "h": 33
+          },
+          "target": {
+            "x": 20,
+            "y": 670.7,
+            "w": 350,
+            "h": 50
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": false,
+          "alignedTo": "header"
+        },
+        "failingStyles": [],
+        "notes": null
+      }
+    ],
+    "budget": {
+      "criticalFailures": 0,
+      "nonCriticalFailures": 0
+    },
+    "coverage": {
+      "pairsDeclared": 15,
+      "criticalPairs": 3,
+      "pairsMeasured": 15,
+      "pairsUnverified": 0,
+      "notApplicable": 0,
+      "missingOnTarget": 0,
+      "missingOnPrototype": 0,
+      "pixelsCompared": 0
+    },
+    "verdict": "FAIL"
+  },
+  "interaction": {
+    "checks": [
+      {
+        "id": "tab-points",
+        "title": "切到「常用地点」：激活 tab 与列表态一起变",
+        "status": "PASS",
+        "expected": {
+          "dataEquals": {
+            "homeTab": "points"
+          },
+          "textIncludes": {
+            "selector": ".wh-tab.on",
+            "text": "常用地点"
+          }
+        },
+        "observed": "ok data.homeTab === \"points\" → points | ok text(.wh-tab.on) includes \"常用地点\" → 常用地点",
+        "assertions": [
+          {
+            "assertion": "data.homeTab === \"points\"",
+            "pass": true,
+            "observed": "points"
+          },
+          {
+            "assertion": "text(.wh-tab.on) includes \"常用地点\"",
+            "pass": true,
+            "observed": "常用地点"
+          }
+        ],
+        "startedAt": "2026-10-28T14:20:19.638Z",
+        "screenshotPath": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\pilot-injected\\interaction\\tab-points.png",
+        "finishedAt": "2026-10-28T14:20:27.164Z",
+        "durationMs": 7526,
+        "verification": "real-action-and-observation"
+      },
+      {
+        "id": "tab-routes",
+        "title": "切到「共用路线」：列表进入路线态",
+        "status": "PASS",
+        "expected": {
+          "dataEquals": {
+            "homeTab": "routes"
+          }
+        },
+        "observed": "ok data.homeTab === \"routes\" → routes",
+        "assertions": [
+          {
+            "assertion": "data.homeTab === \"routes\"",
+            "pass": true,
+            "observed": "routes"
+          }
+        ],
+        "startedAt": "2026-10-28T14:20:27.165Z",
+        "screenshotPath": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\pilot-injected\\interaction\\tab-routes.png",
+        "finishedAt": "2026-10-28T14:20:35.062Z",
+        "durationMs": 7897,
+        "verification": "real-action-and-observation"
+      },
+      {
+        "id": "manual-dialog",
+        "title": "输入经纬度入口：对话框打开且标题正确",
+        "status": "PASS",
+        "expected": {
+          "dataEquals": {
+            "manualOpen": true
+          },
+          "exists": ".overlay--dialog",
+          "textIncludes": {
+            "selector": ".overlay__title",
+            "text": "输入经纬度"
+          }
+        },
+        "observed": "ok data.manualOpen === true → true | ok exists .overlay--dialog → true | ok text(.overlay__title) includes \"输入经纬度\" → 输入经纬度",
+        "assertions": [
+          {
+            "assertion": "data.manualOpen === true",
+            "pass": true,
+            "observed": true
+          },
+          {
+            "assertion": "exists .overlay--dialog",
+            "pass": true,
+            "observed": true
+          },
+          {
+            "assertion": "text(.overlay__title) includes \"输入经纬度\"",
+            "pass": true,
+            "observed": "输入经纬度"
+          }
+        ],
+        "startedAt": "2026-10-28T14:20:35.062Z",
+        "screenshotPath": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\pilot-injected\\interaction\\manual-dialog.png",
+        "finishedAt": "2026-10-28T14:20:42.775Z",
+        "durationMs": 7713,
+        "verification": "real-action-and-observation"
+      },
+      {
+        "id": "manual-close",
+        "title": "关闭经纬度对话框：状态复位",
+        "status": "PASS",
+        "expected": {
+          "dataEquals": {
+            "manualOpen": false
+          }
+        },
+        "observed": "ok data.manualOpen === false → false",
+        "assertions": [
+          {
+            "assertion": "data.manualOpen === false",
+            "pass": true,
+            "observed": false
+          }
+        ],
+        "startedAt": "2026-10-28T14:20:42.775Z",
+        "screenshotPath": null,
+        "finishedAt": "2026-10-28T14:20:50.201Z",
+        "durationMs": 7426,
+        "verification": "real-action-and-observation"
+      }
+    ],
+    "fail": 0,
+    "unverified": 0,
+    "status": "PASS"
+  },
+  "evidence": [
+    "visual-diff-report.json",
+    "captures/weather-hub-home/injected-plan/prototype/capture-manifest.json",
+    "captures/weather-hub-home/injected-plan/target/capture-manifest.json"
+  ],
+  "limitations": [
+    "Target capture used injected data: visual evidence only, not acceptable as interaction evidence.",
+    "Target screenshot is 0.7846×0.7820 of CSS px; region crops are normalised to the smaller side before diffing."
+  ]
+}

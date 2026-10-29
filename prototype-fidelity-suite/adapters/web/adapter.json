@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "web",
+  "platform": "web",
+  "title": "Browser page rendered by Playwright Chromium",
+  "captureModule": "capture.js",
+  "interactionDriver": "web",
+  "runtime": {
+    "name": "playwright",
+    "versionTested": "1.63.0-alpha-2026-08-31",
+    "resolvedBy": "env.detectPlaywright",
+    "outsideRepo": true,
+    "installHint": "npm i playwright in a scratch directory outside the repo and point PLAYWRIGHT_MODULE_PATH at its package root; the repo itself stays dependency-free"
+  },
+  "endpoint": {
+    "kind": "url",
+    "default": null,
+    "configKey": "prototype.url"
+  },
+  "capabilities": {
+    "nodeTree": "dom-tree",
+    "text": "leaf-text",
+    "lineCount": "measured",
+    "computedStyles": "dom-cssom",
+    "screenshot": "page",
+    "elementScreenshot": false,
+    "screenshotScale": "one",
+    "injection": "evaluate"
+  },
+  "coordinates": {
+    "basis": "viewport-css-px",
+    "derivation": "getBoundingClientRect + window.scroll - frame origin; screenshot pinned to scale:'css' and deviceScaleFactor 1 so 1 reported px is 1 image px"
+  },
+  "selectors": {
+    "dialect": "css",
+    "hierarchyDiscovery": true
+  },
+  "limitations": ["WEB-01", "WEB-02", "WEB-03"],
+  "limitationsDoc": "LIMITATIONS.md"
+}

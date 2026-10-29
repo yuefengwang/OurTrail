@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390, initial-scale=1">
+<title>实验 B · 字形粗细变化（应被检出）</title>
+<link rel="stylesheet" href="../assets/card.css">
+<style>
+  /* Genuine glyph-weight change: every text run is stroked by 0.3 CSS px, so the
+     ink a reader sees grows without any metric (box, font-size, line-height)
+     moving. This is the positive control for the ink gate — the deviation must
+     be CAUGHT — and it is deliberately distinct from b/aa.html, where the same
+     metrics are rendered with different pixels by anti-aliasing alone and must
+     be TOLERATED. Measured separation: experiments/aa-probe.json. */
+  #b-title, #b-label, #b-clock, #b-desc, #b-btn, #b-note {
+    -webkit-text-stroke: 0.3px currentColor;
+  }
+</style>
+</head>
+<body>
+<div id="device">
+  <div id="sheet">
+    <h1 id="b-title">登山计划</h1>
+    <div id="b-card">
+      <div id="b-label">出发时间</div>
+      <div id="b-clock">06:00</div>
+      <p id="b-desc">山脊线一带云量较低，适合早起出发。</p>
+    </div>
+    <img id="b-img" src="../assets/stripes.png" alt="">
+    <button id="b-btn">展开说明</button>
+    <p id="b-note">说明已收起</p>
+  </div>
+</div>
+<script src="../assets/card.js"></script>
+</body>
+</html>

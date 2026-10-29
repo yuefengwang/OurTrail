@@ -1,0 +1,17 @@
+{
+  "diffCount": 0,
+  "diffRatio": 0,
+  "prototypePixels": {
+    "x": 16,
+    "y": 194,
+    "w": 358,
+    "h": 90
+  },
+  "targetPixels": {
+    "x": 16,
+    "y": 196,
+    "w": 358,
+    "h": 90
+  },
+  "components": []
+}

@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/prototype-manifest.schema.json",
+  "title": "prototype-manifest",
+  "description": "What the prototype is and which of its states were actually captured. Declared states carry their capture provenance; a declared state without a screenshot is UNVERIFIED.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "pageId", "generatedAt", "prototype", "states", "mappings", "provenance"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "kind": { "const": "prototype-manifest" },
+    "projectId": { "type": ["string", "null"] },
+    "pageId": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "prototype": {
+      "type": "object",
+      "required": ["platform", "source", "readOnly"],
+      "additionalProperties": false,
+      "properties": {
+        "platform": { "type": "string", "minLength": 1 },
+        "source": { "enum": ["html"] },
+        "entry": { "type": ["string", "null"] },
+        "viewport": { "oneOf": [{ "$ref": "#/definitions/viewport" }, { "type": "null" }] },
+        "frameSelector": { "type": ["string", "null"] },
+        "readOnly": { "const": true }
+      }
+    },
+    "states": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/state" } },
+    "mappings": {
+      "type": "object",
+      "required": ["declared", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "declared": { "type": "integer", "minimum": 0 },
+        "selectors": { "type": "array", "items": { "type": "string" } },
+        "source": { "type": "string", "minLength": 1 }
+      }
+    },
+    "provenance": { "$ref": "#/definitions/provenance" }
+  },
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "status": { "enum": ["PASS", "FAIL", "UNVERIFIED", "BLOCKED", "NOT_APPLICABLE"] },
+    "viewport": {
+      "type": "object",
+      "required": ["width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "scale": {
+      "type": "object",
+      "required": ["x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number", "exclusiveMinimum": 0 },
+        "y": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "screenshot": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "format": "sha256" },
+        "width": { "type": ["integer", "null"] },
+        "height": { "type": ["integer", "null"] },
+        "scale": { "type": ["object", "null"] }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["id", "captured", "nodes", "screenshot", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "captured": { "type": "boolean" },
+        "dataSource": { "enum": ["real", "injected", null] },
+        "capturedAt": { "type": ["string", "null"] },
+        "codeVersion": { "type": ["string", "null"] },
+        "viewport": { "type": ["object", "null"] },
+        "dpr": { "type": ["number", "null"] },
+        "nodes": { "type": "integer", "minimum": 0 },
+        "screenshot": { "oneOf": [{ "$ref": "#/definitions/screenshot" }, { "type": "null" }] },
+        "status": { "$ref": "#/definitions/status" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["builtBy", "config", "side"],
+      "additionalProperties": true,
+      "properties": {
+        "builtBy": { "type": "string", "minLength": 1 },
+        "config": { "type": "string", "minLength": 1 },
+        "side": { "enum": ["prototype", "target"] }
+      }
+    }
+  }
+}

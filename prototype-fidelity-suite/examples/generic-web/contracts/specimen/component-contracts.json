@@ -1,0 +1,872 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "component-contracts",
+  "pageId": "specimen",
+  "stateId": "default",
+  "generatedAt": "2026-10-28T14:32:05.257Z",
+  "components": [
+    {
+      "id": "cell",
+      "role": "specimen cell",
+      "criticality": "critical",
+      "status": "PASS",
+      "selectors": [
+        ".cell"
+      ],
+      "instances": [
+        {
+          "selector": "#ctrl-1",
+          "path": "div#device>div#sheet>div#ctrl-1:nth(0)",
+          "rect": {
+            "x": 15,
+            "y": 96,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n4"
+          }
+        },
+        {
+          "selector": "#ctrl-2",
+          "path": "div#device>div#sheet>div#ctrl-2:nth(1)",
+          "rect": {
+            "x": 200,
+            "y": 96,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n7"
+          }
+        },
+        {
+          "selector": "#pos-8",
+          "path": "div#device>div#sheet>div#pos-8:nth(2)",
+          "rect": {
+            "x": 15,
+            "y": 216,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n10"
+          }
+        },
+        {
+          "selector": "#gap-4",
+          "path": "div#device>div#sheet>div#gap-4:nth(3)",
+          "rect": {
+            "x": 200,
+            "y": 216,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n13"
+          }
+        },
+        {
+          "selector": "#font-size",
+          "path": "div#device>div#sheet>div#font-size:nth(4)",
+          "rect": {
+            "x": 15,
+            "y": 336,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n16"
+          }
+        },
+        {
+          "selector": "#line-height",
+          "path": "div#device>div#sheet>div#line-height:nth(5)",
+          "rect": {
+            "x": 200,
+            "y": 336,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n19"
+          }
+        },
+        {
+          "selector": "#radius",
+          "path": "div#device>div#sheet>div#radius:nth(6)",
+          "rect": {
+            "x": 15,
+            "y": 456,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n22"
+          }
+        },
+        {
+          "selector": "#color",
+          "path": "div#device>div#sheet>div#color:nth(7)",
+          "rect": {
+            "x": 200,
+            "y": 456,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n25"
+          }
+        },
+        {
+          "selector": "#crop",
+          "path": "div#device>div#sheet>div#crop:nth(8)",
+          "rect": {
+            "x": 15,
+            "y": 576,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n28"
+          }
+        },
+        {
+          "selector": "#wrap",
+          "path": "div#device>div#sheet>div#wrap:nth(9)",
+          "rect": {
+            "x": 200,
+            "y": 576,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n31"
+          }
+        },
+        {
+          "selector": "#ctrl-3",
+          "path": "div#device>div#sheet>div#ctrl-3:nth(10)",
+          "rect": {
+            "x": 15,
+            "y": 696,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n34"
+          }
+        },
+        {
+          "selector": "#ctrl-4",
+          "path": "div#device>div#sheet>div#ctrl-4:nth(11)",
+          "rect": {
+            "x": 200,
+            "y": 696,
+            "w": 175,
+            "h": 110
+          },
+          "styles": {
+            "padding": "12px",
+            "border-radius": "6px",
+            "background-color": "rgb(255, 255, 255)",
+            "border-top-color": "rgb(216, 216, 216)",
+            "width": "175px",
+            "height": "110px"
+          },
+          "text": "",
+          "lineCount": null,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n37"
+          }
+        }
+      ],
+      "source": {
+        "kind": "measured"
+      }
+    },
+    {
+      "id": "caption",
+      "role": "cell caption",
+      "criticality": "normal",
+      "status": "PASS",
+      "selectors": [
+        ".cap"
+      ],
+      "instances": [
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#ctrl-1:nth(0)>div.cap:nth(0)",
+          "rect": {
+            "x": 28,
+            "y": 109,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "对照 1",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n5"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#ctrl-2:nth(1)>div.cap:nth(0)",
+          "rect": {
+            "x": 213,
+            "y": 109,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "对照 2",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n8"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#pos-8:nth(2)>div.cap:nth(0)",
+          "rect": {
+            "x": 28,
+            "y": 229,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "位置 8px",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n11"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#gap-4:nth(3)>div.cap:nth(0)",
+          "rect": {
+            "x": 213,
+            "y": 229,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "间距 4px",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n14"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#font-size:nth(4)>div.cap:nth(0)",
+          "rect": {
+            "x": 28,
+            "y": 349,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "字号",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n17"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#line-height:nth(5)>div.cap:nth(0)",
+          "rect": {
+            "x": 213,
+            "y": 349,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "行高",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n20"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#radius:nth(6)>div.cap:nth(0)",
+          "rect": {
+            "x": 28,
+            "y": 469,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "圆角",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n23"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#color:nth(7)>div.cap:nth(0)",
+          "rect": {
+            "x": 213,
+            "y": 469,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "文字颜色",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n26"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#crop:nth(8)>div.cap",
+          "rect": {
+            "x": 28,
+            "y": 589,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "图片裁切",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n29"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#wrap:nth(9)>div.cap",
+          "rect": {
+            "x": 213,
+            "y": 589,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "换行",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n32"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#ctrl-3:nth(10)>div.cap:nth(0)",
+          "rect": {
+            "x": 28,
+            "y": 709,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "对照 3",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n35"
+          }
+        },
+        {
+          "selector": ".cap",
+          "path": "div#device>div#sheet>div#ctrl-4:nth(11)>div.cap:nth(0)",
+          "rect": {
+            "x": 213,
+            "y": 709,
+            "w": 149,
+            "h": 14
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "0px",
+            "width": "149px",
+            "height": "14px",
+            "font-size": "11px",
+            "font-weight": "400",
+            "line-height": "14px",
+            "letter-spacing": "normal",
+            "color": "rgb(107, 107, 107)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(107, 107, 107)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "对照 4",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n38"
+          }
+        }
+      ],
+      "source": {
+        "kind": "measured"
+      }
+    },
+    {
+      "id": "probe",
+      "role": "text probe",
+      "criticality": "normal",
+      "status": "PASS",
+      "selectors": [
+        ".probe",
+        ".probe-lh"
+      ],
+      "instances": [
+        {
+          "selector": "#fs-label",
+          "path": "div#device>div#sheet>div#font-size:nth(4)>div#fs-label:nth(1)",
+          "rect": {
+            "x": 28,
+            "y": 371,
+            "w": 140,
+            "h": 24
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "8px 0px 0px",
+            "width": "140px",
+            "height": "24px",
+            "font-size": "16px",
+            "font-weight": "400",
+            "line-height": "24px",
+            "letter-spacing": "normal",
+            "color": "rgb(31, 42, 38)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(31, 42, 38)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "山脊线刻度",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n18"
+          }
+        },
+        {
+          "selector": "#lh-label",
+          "path": "div#device>div#sheet>div#line-height:nth(5)>div#lh-label:nth(1)",
+          "rect": {
+            "x": 213,
+            "y": 369,
+            "w": 150,
+            "h": 44
+          },
+          "styles": {
+            "display": "block",
+            "flex-direction": "row",
+            "align-items": "normal",
+            "justify-content": "normal",
+            "gap": "normal",
+            "padding": "0px",
+            "margin": "6px 0px 0px",
+            "width": "150px",
+            "height": "44px",
+            "font-size": "13px",
+            "font-weight": "400",
+            "line-height": "18px",
+            "letter-spacing": "normal",
+            "color": "rgb(31, 42, 38)",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "border-radius": "0px",
+            "border-top-width": "0px",
+            "border-top-color": "rgb(31, 42, 38)",
+            "box-shadow": "none",
+            "opacity": "1"
+          },
+          "text": "两行文字的行距",
+          "lineCount": 1,
+          "source": {
+            "kind": "measured",
+            "captureNode": "n21"
+          }
+        }
+      ],
+      "source": {
+        "kind": "measured"
+      }
+    }
+  ]
+}

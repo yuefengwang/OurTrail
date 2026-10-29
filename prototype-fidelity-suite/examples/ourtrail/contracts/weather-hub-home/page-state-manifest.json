@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "page-state-manifest",
+  "pageId": "weather-hub-home",
+  "generatedAt": "2026-10-28T14:20:19.281Z",
+  "states": [
+    {
+      "id": "real",
+      "note": "测试账号真实数据：无个人计划 ⇒ 继续上次与计划行在原型有、实现没有。该差异是数据状态差异，不是视觉缺陷。",
+      "injection": {
+        "declared": false,
+        "dataSource": "real",
+        "keys": []
+      },
+      "sides": {
+        "prototype": {
+          "side": "prototype",
+          "platform": "web",
+          "captured": true,
+          "dataSource": "real",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "dpr": 1,
+          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+          "capturedAt": "2026-10-28T14:19:13.648Z",
+          "nodes": 127,
+          "screenshot": {
+            "path": "screenshot.png",
+            "sha256": "7da6065a99fec4861032015c2a74d46b233fdbe9d494f507b1d476f7970269d9",
+            "width": 390,
+            "height": 844,
+            "scale": {
+              "x": 1,
+              "y": 1
+            }
+          },
+          "status": "PASS"
+        },
+        "target": {
+          "side": "target",
+          "platform": "wechat-miniprogram",
+          "captured": true,
+          "dataSource": "real",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "dpr": 3,
+          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+          "capturedAt": "2026-10-28T14:19:23.228Z",
+          "nodes": 12,
+          "screenshot": {
+            "path": "screenshot.png",
+            "sha256": "09e9dcc24d7a7cd37afa11db755c5a82074d9a342da20324d37ade1f1524afa2",
+            "width": 306,
+            "height": 660,
+            "scale": {
+              "x": 0.7846153846153846,
+              "y": 0.7819905213270142
+            }
+          },
+          "status": "PASS"
+        }
+      },
+      "usableAsInteractionEvidence": true,
+      "status": "PASS"
+    },
+    {
+      "id": "injected-plan",
+      "note": "注入与原型演示计划同名的夹具，覆盖继续上次/计划行的版式；dataSource=injected，只作视觉证据，不作交互证据。",
+      "injection": {
+        "declared": true,
+        "dataSource": "injected",
+        "keys": [
+          "plansState",
+          "plans",
+          "sharedPlans",
+          "lastPlan"
+        ]
+      },
+      "sides": {
+        "prototype": {
+          "side": "prototype",
+          "platform": "web",
+          "captured": true,
+          "dataSource": "real",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "dpr": 1,
+          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+          "capturedAt": "2026-10-28T14:20:07.977Z",
+          "nodes": 127,
+          "screenshot": {
+            "path": "screenshot.png",
+            "sha256": "7da6065a99fec4861032015c2a74d46b233fdbe9d494f507b1d476f7970269d9",
+            "width": 390,
+            "height": 844,
+            "scale": {
+              "x": 1,
+              "y": 1
+            }
+          },
+          "status": "PASS"
+        },
+        "target": {
+          "side": "target",
+          "platform": "wechat-miniprogram",
+          "captured": true,
+          "dataSource": "injected",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "dpr": 3,
+          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+          "capturedAt": "2026-10-28T14:20:19.205Z",
+          "nodes": 16,
+          "screenshot": {
+            "path": "screenshot.png",
+            "sha256": "f4823c632a492ccb312ad4bb40577138138eeab37353e78fb81540f7d21530b6",
+            "width": 306,
+            "height": 660,
+            "scale": {
+              "x": 0.7846153846153846,
+              "y": 0.7819905213270142
+            }
+          },
+          "status": "PASS"
+        }
+      },
+      "usableAsInteractionEvidence": false,
+      "status": "PASS"
+    }
+  ],
+  "coverage": {
+    "declared": 2,
+    "captured": 2,
+    "injected": 1
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json"
+  }
+}

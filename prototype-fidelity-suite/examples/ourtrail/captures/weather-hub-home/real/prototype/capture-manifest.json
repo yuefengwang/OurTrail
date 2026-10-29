@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "capture-manifest",
+  "pageId": "weather-hub-home",
+  "stateId": "real",
+  "side": "prototype",
+  "platform": "web",
+  "capturedAt": "2026-10-28T14:19:13.648Z",
+  "source": {
+    "url": "file:///D:/OurTrail/docs/prototypes/ourtrail-explore-v3/weather.html",
+    "projectRoot": null,
+    "route": null,
+    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "dataSource": "real",
+    "injection": null,
+    "note": null
+  },
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "dpr": 1,
+  "screenshot": {
+    "path": "screenshot.png",
+    "sha256": "7da6065a99fec4861032015c2a74d46b233fdbe9d494f507b1d476f7970269d9",
+    "width": 390,
+    "height": 844,
+    "scale": {
+      "x": 1,
+      "y": 1
+    },
+    "normalizedFrom": "device-pixels"
+  },
+  "snapshot": {
+    "nodes": 127,
+    "rootId": "n0",
+    "dimensions": {
+      "width": 390,
+      "height": 844
+    }
+  },
+  "provenance": {
+    "capturedBy": "prototype-fidelity-suite",
+    "adapter": "web",
+    "verification": "captured"
+  }
+}

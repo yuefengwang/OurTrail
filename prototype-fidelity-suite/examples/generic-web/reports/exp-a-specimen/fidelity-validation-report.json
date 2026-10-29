@@ -1,0 +1,506 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "fidelity-validation-report",
+  "pageId": "specimen",
+  "stateId": "default",
+  "generatedAt": "2026-10-28T13:55:54.307Z",
+  "status": "FAIL",
+  "reason": null,
+  "scorecard": {
+    "schemaVersion": "1.0.0",
+    "generatedAt": "2026-10-28T13:55:54.306Z",
+    "dimensions": {
+      "geometry": {
+        "checks": {
+          "total": 24,
+          "pass": 23,
+          "fail": 1,
+          "unverified": 0
+        },
+        "metrics": {
+          "position": {
+            "total": 12,
+            "fail": 1,
+            "criticalFail": 0,
+            "maxAbsPx": 8,
+            "meanAbsPx": 0.67
+          },
+          "size": {
+            "total": 12,
+            "fail": 0,
+            "criticalFail": 0,
+            "maxAbsPx": 0,
+            "meanAbsPx": 0
+          }
+        },
+        "verdict": "FAIL"
+      },
+      "typography": {
+        "checks": {
+          "total": 56,
+          "fail": 3,
+          "pass": 53,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 48,
+            "fail": 2,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "text": {
+            "total": 4,
+            "fail": 0
+          },
+          "wrap": {
+            "total": 4,
+            "fail": 1
+          }
+        },
+        "verdict": "FAIL"
+      },
+      "appearance": {
+        "checks": {
+          "total": 96,
+          "fail": 3,
+          "pass": 93,
+          "unverified": 0
+        },
+        "metrics": {
+          "style": {
+            "total": 84,
+            "fail": 3,
+            "unverified": 0,
+            "criticalFail": 0
+          },
+          "missingOnTarget": 0,
+          "missingOnPrototype": 0,
+          "notApplicable": 0
+        },
+        "verdict": "FAIL"
+      },
+      "state": {
+        "checks": {
+          "total": 4,
+          "pass": 4,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      },
+      "interaction": {
+        "checks": {
+          "total": 1,
+          "pass": 1,
+          "fail": 0,
+          "unverified": 0,
+          "blocked": 0
+        },
+        "metrics": {},
+        "verdict": "PASS"
+      }
+    },
+    "criticalFailures": [],
+    "nonCriticalFailures": [
+      {
+        "pairId": "pos-8",
+        "role": "位置 8px",
+        "criticality": "normal",
+        "categories": [
+          "position"
+        ],
+        "geometry": {
+          "dx": -8,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 15,
+            "y": 216,
+            "w": 175,
+            "h": 110
+          },
+          "target": {
+            "x": 7,
+            "y": 216,
+            "w": 175,
+            "h": 110
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": false,
+          "sizePass": true
+        },
+        "failingStyles": [],
+        "notes": null
+      },
+      {
+        "pairId": "gap-4",
+        "role": "间距 4px",
+        "criticality": "normal",
+        "categories": [
+          "spacing"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 200,
+            "y": 216,
+            "w": 175,
+            "h": 110
+          },
+          "target": {
+            "x": 200,
+            "y": 216,
+            "w": 175,
+            "h": 110
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": true
+        },
+        "failingStyles": [
+          {
+            "prop": "padding",
+            "a": [
+              12,
+              12,
+              12,
+              12
+            ],
+            "b": [
+              16,
+              16,
+              16,
+              16
+            ],
+            "delta": 4
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "font-size",
+        "role": "字号",
+        "criticality": "normal",
+        "categories": [
+          "typography",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 28,
+            "y": 371,
+            "w": 140,
+            "h": 24
+          },
+          "target": {
+            "x": 28,
+            "y": 371,
+            "w": 140,
+            "h": 24
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": true
+        },
+        "failingStyles": [
+          {
+            "prop": "font-size",
+            "a": 16,
+            "b": 19,
+            "delta": 3
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "line-height",
+        "role": "行高",
+        "criticality": "normal",
+        "categories": [
+          "typography",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 213,
+            "y": 369,
+            "w": 150,
+            "h": 44
+          },
+          "target": {
+            "x": 213,
+            "y": 369,
+            "w": 150,
+            "h": 44
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": true
+        },
+        "failingStyles": [
+          {
+            "prop": "line-height",
+            "a": 18,
+            "b": 30,
+            "delta": 12
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "radius",
+        "role": "圆角",
+        "criticality": "normal",
+        "categories": [
+          "appearance",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 28,
+            "y": 491,
+            "w": 56,
+            "h": 56
+          },
+          "target": {
+            "x": 28,
+            "y": 491,
+            "w": 56,
+            "h": 56
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": true
+        },
+        "failingStyles": [
+          {
+            "prop": "border-radius",
+            "a": 12,
+            "b": 2,
+            "delta": 10
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "color",
+        "role": "文字颜色",
+        "criticality": "normal",
+        "categories": [
+          "appearance",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 213,
+            "y": 491,
+            "w": 140,
+            "h": 24
+          },
+          "target": {
+            "x": 213,
+            "y": 491,
+            "w": 140,
+            "h": 24
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": true
+        },
+        "failingStyles": [
+          {
+            "prop": "color",
+            "a": "rgb(51, 51, 51)",
+            "b": "rgb(140, 140, 140)",
+            "delta": 89
+          },
+          {
+            "prop": "border-top-color",
+            "a": "rgb(51, 51, 51)",
+            "b": "rgb(140, 140, 140)",
+            "delta": 89
+          }
+        ],
+        "notes": null
+      },
+      {
+        "pairId": "crop",
+        "role": "图片裁切",
+        "criticality": "normal",
+        "categories": [
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 28,
+            "y": 611,
+            "w": 140,
+            "h": 56
+          },
+          "target": {
+            "x": 28,
+            "y": 611,
+            "w": 140,
+            "h": 56
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": true
+        },
+        "failingStyles": [],
+        "notes": null
+      },
+      {
+        "pairId": "wrap",
+        "role": "换行",
+        "criticality": "normal",
+        "categories": [
+          "text-wrap",
+          "pixel"
+        ],
+        "geometry": {
+          "dx": 0,
+          "dy": 0,
+          "dw": 0,
+          "dh": 0,
+          "dwRatio": 1,
+          "dhRatio": 1,
+          "prototype": {
+            "x": 213,
+            "y": 609,
+            "w": 140,
+            "h": 66
+          },
+          "target": {
+            "x": 213,
+            "y": 609,
+            "w": 140,
+            "h": 66
+          },
+          "tolerances": {
+            "position": 1.5,
+            "size": 1.5
+          },
+          "positionPass": true,
+          "sizePass": true
+        },
+        "failingStyles": [],
+        "notes": null
+      }
+    ],
+    "budget": {
+      "criticalFailures": 0,
+      "nonCriticalFailures": 0
+    },
+    "coverage": {
+      "pairsDeclared": 12,
+      "criticalPairs": 4,
+      "pairsMeasured": 12,
+      "pairsUnverified": 0,
+      "notApplicable": 0,
+      "missingOnTarget": 0,
+      "missingOnPrototype": 0,
+      "pixelsCompared": 0
+    },
+    "verdict": "FAIL"
+  },
+  "interaction": {
+    "checks": [
+      {
+        "id": "toggle-note",
+        "title": "点按钮后说明展开",
+        "status": "PASS",
+        "expected": {
+          "textIncludes": {
+            "selector": "#note",
+            "text": "已展开"
+          }
+        },
+        "observed": "ok text(#note) includes \"已展开\" → 说明已展开",
+        "assertions": [
+          {
+            "assertion": "text(#note) includes \"已展开\"",
+            "pass": true,
+            "observed": "说明已展开"
+          }
+        ],
+        "startedAt": "2026-10-28T13:55:53.309Z",
+        "screenshotPath": null,
+        "finishedAt": "2026-10-28T13:55:54.115Z",
+        "durationMs": 806,
+        "verification": "real-action-and-observation"
+      }
+    ],
+    "fail": 0,
+    "unverified": 0,
+    "status": "PASS"
+  },
+  "evidence": [
+    "visual-diff-report.json",
+    "captures/specimen/default/prototype/capture-manifest.json",
+    "captures/specimen/default/target/capture-manifest.json"
+  ],
+  "limitations": []
+}

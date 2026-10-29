@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "exp-b-dpr2",
+  "pageId": "b-dpr2",
+  "stateId": "default",
+  "startedAt": "2026-10-28T14:32:28.803Z",
+  "project": {
+    "id": "generic-web",
+    "name": "通用 Web 基样（示例 1 · 卡片页）"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "page-state-manifest",
+  "pageId": "b-aa",
+  "generatedAt": "2026-10-28T14:32:22.867Z",
+  "states": [
+    {
+      "id": "default",
+      "note": null,
+      "injection": {
+        "declared": false,
+        "dataSource": "real",
+        "keys": []
+      },
+      "sides": {
+        "prototype": {
+          "side": "prototype",
+          "platform": "web",
+          "captured": true,
+          "dataSource": "real",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "dpr": 1,
+          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+          "capturedAt": "2026-10-28T14:32:17.462Z",
+          "nodes": 10,
+          "screenshot": {
+            "path": "screenshot.png",
+            "sha256": "aa388c693ef44064532c4d448fc65e1a7471833fc3a51f3082338b1d90e20667",
+            "width": 390,
+            "height": 844,
+            "scale": {
+              "x": 1,
+              "y": 1
+            }
+          },
+          "status": "PASS"
+        },
+        "target": {
+          "side": "target",
+          "platform": "web",
+          "captured": true,
+          "dataSource": "real",
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "dpr": 1,
+          "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+          "capturedAt": "2026-10-28T14:32:22.762Z",
+          "nodes": 10,
+          "screenshot": {
+            "path": "screenshot.png",
+            "sha256": "a74074a06355544e29e6a4aa908df605304ca501e8b567001e52726c03616de7",
+            "width": 390,
+            "height": 844,
+            "scale": {
+              "x": 1,
+              "y": 1
+            }
+          },
+          "status": "PASS"
+        }
+      },
+      "usableAsInteractionEvidence": true,
+      "status": "PASS"
+    }
+  ],
+  "coverage": {
+    "declared": 1,
+    "captured": 1,
+    "injected": 0
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json"
+  }
+}

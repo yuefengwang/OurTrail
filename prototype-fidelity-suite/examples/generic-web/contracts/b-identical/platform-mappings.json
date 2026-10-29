@@ -1,0 +1,190 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "platform-mappings",
+  "pageId": "b-identical",
+  "stateId": "default",
+  "generatedAt": "2026-10-28T14:37:11.682Z",
+  "platforms": {
+    "prototype": "web",
+    "target": "web"
+  },
+  "adapters": {
+    "prototype": "web",
+    "target": "web"
+  },
+  "alignment": null,
+  "pairs": [
+    {
+      "id": "b-title",
+      "role": "标题",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": "#b-title",
+      "targetSelector": "#b-title",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "b-card",
+      "role": "卡片",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": "#b-card",
+      "targetSelector": "#b-card",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "b-label",
+      "role": "字段名",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#b-label",
+      "targetSelector": "#b-label",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "b-clock",
+      "role": "时间",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#b-clock",
+      "targetSelector": "#b-clock",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "b-desc",
+      "role": "说明",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#b-desc",
+      "targetSelector": "#b-desc",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "b-img",
+      "role": "图片",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": "#b-img",
+      "targetSelector": "#b-img",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "b-btn",
+      "role": "按钮",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#b-btn",
+      "targetSelector": "#b-btn",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "b-note",
+      "role": "结果说明",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#b-note",
+      "targetSelector": "#b-note",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "informational",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    }
+  ],
+  "acceptedDifferences": [],
+  "coverage": {
+    "declared": 8,
+    "resolved": 8,
+    "unverified": 0,
+    "notApplicable": 0,
+    "critical": 3
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json#pages[].mappings"
+  }
+}

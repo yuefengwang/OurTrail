@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "1.0.0",
+  "runId": "exp-a-specimen",
+  "pageId": "specimen",
+  "stateId": "default",
+  "startedAt": "2026-10-28T13:55:36.483Z",
+  "project": {
+    "id": "generic-web",
+    "name": "通用 Web 基样（与 OurTrail 业务无关）"
+  }
+}

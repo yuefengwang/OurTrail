@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "capture-manifest",
+  "pageId": "weather-hub-home",
+  "stateId": "injected-plan",
+  "side": "target",
+  "platform": "wechat-miniprogram",
+  "capturedAt": "2026-10-28T14:20:19.205Z",
+  "source": {
+    "url": "/pages/weather-hub/weather-hub",
+    "projectRoot": "../../../miniprogram",
+    "route": null,
+    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "dataSource": "injected",
+    "injection": {
+      "plansState": "string",
+      "plans": "array(1)",
+      "sharedPlans": "array(0)",
+      "lastPlan": "object"
+    },
+    "note": null
+  },
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "dpr": 3,
+  "screenshot": {
+    "path": "screenshot.png",
+    "sha256": "f4823c632a492ccb312ad4bb40577138138eeab37353e78fb81540f7d21530b6",
+    "width": 306,
+    "height": 660,
+    "scale": {
+      "x": 0.7846153846153846,
+      "y": 0.7819905213270142
+    },
+    "normalizedFrom": "device-pixels"
+  },
+  "snapshot": {
+    "nodes": 16,
+    "rootId": "s0",
+    "dimensions": null
+  },
+  "provenance": {
+    "capturedBy": "prototype-fidelity-suite",
+    "adapter": "wechat-miniprogram",
+    "verification": "captured"
+  }
+}

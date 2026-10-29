@@ -1,0 +1,180 @@
+{
+  "diffCount": 875,
+  "diffRatio": 0.13338,
+  "prototypePixels": {
+    "x": 31,
+    "y": 143,
+    "w": 328,
+    "h": 20
+  },
+  "targetPixels": {
+    "x": 62,
+    "y": 286,
+    "w": 656,
+    "h": 40
+  },
+  "components": [
+    {
+      "x": 14,
+      "y": 4,
+      "w": 51,
+      "h": 13,
+      "area": 244,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 79,
+      "y": 5,
+      "w": 23,
+      "h": 12,
+      "area": 160,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 131,
+      "y": 5,
+      "w": 12,
+      "h": 12,
+      "area": 71,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 156,
+      "y": 5,
+      "w": 15,
+      "h": 11,
+      "area": 68,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 196,
+      "y": 8,
+      "w": 11,
+      "h": 9,
+      "area": 43,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 107,
+      "y": 5,
+      "w": 9,
+      "h": 12,
+      "area": 38,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 183,
+      "y": 6,
+      "w": 11,
+      "h": 8,
+      "area": 26,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 143,
+      "y": 5,
+      "w": 13,
+      "h": 5,
+      "area": 25,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 66,
+      "y": 4,
+      "w": 11,
+      "h": 2,
+      "area": 20,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 67,
+      "y": 10,
+      "w": 9,
+      "h": 6,
+      "area": 20,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 145,
+      "y": 14,
+      "w": 9,
+      "h": 3,
+      "area": 16,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 184,
+      "y": 14,
+      "w": 10,
+      "h": 3,
+      "area": 15,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 174,
+      "y": 15,
+      "w": 8,
+      "h": 2,
+      "area": 14,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 175,
+      "y": 4,
+      "w": 6,
+      "h": 2,
+      "area": 10,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 106,
+      "y": 7,
+      "w": 1,
+      "h": 10,
+      "area": 10,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 2,
+      "y": 15,
+      "w": 9,
+      "h": 2,
+      "area": 10,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 6,
+      "y": 5,
+      "w": 1,
+      "h": 9,
+      "area": 9,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 170,
+      "y": 8,
+      "w": 6,
+      "h": 2,
+      "area": 8,
+      "meanDelta": null,
+      "maxDelta": null
+    }
+  ]
+}

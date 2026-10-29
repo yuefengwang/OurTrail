@@ -1,0 +1,1070 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "design-tokens",
+  "pageId": "specimen",
+  "stateId": "default",
+  "generatedAt": "2026-10-28T14:32:05.251Z",
+  "source": {
+    "side": "prototype",
+    "manifest": "captures/specimen/default/prototype/capture-manifest.json"
+  },
+  "tokens": {
+    "colors": [
+      {
+        "value": "rgb(31, 42, 38)",
+        "count": 41,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#title",
+          "#ctrl-1",
+          ".bar",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4"
+        ],
+        "token": "color-rgb-31-42-38",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(107, 107, 107)",
+        "count": 28,
+        "selectors": [
+          "#subtitle",
+          ".cap",
+          "#note"
+        ],
+        "token": "color-rgb-107-107-107",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgba(0, 0, 0, 0)",
+        "count": 21,
+        "selectors": [
+          "#sheet",
+          "#title",
+          "#subtitle",
+          ".cap",
+          "#fs-label",
+          "#lh-label",
+          "#color-label",
+          "#crop-img"
+        ],
+        "token": "color-rgba-0-0-0-0",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(255, 255, 255)",
+        "count": 13,
+        "selectors": [
+          "#ctrl-1",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size",
+          "#line-height",
+          "#radius",
+          "#color"
+        ],
+        "token": "color-rgb-255-255-255",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(216, 216, 216)",
+        "count": 12,
+        "selectors": [
+          "#ctrl-1",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size",
+          "#line-height",
+          "#radius",
+          "#color"
+        ],
+        "token": "color-rgb-216-216-216",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(232, 239, 233)",
+        "count": 6,
+        "selectors": [
+          ".bar"
+        ],
+        "token": "color-rgb-232-239-233",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(51, 51, 51)",
+        "count": 2,
+        "selectors": [
+          "#color-label"
+        ],
+        "token": "color-rgb-51-51-51",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(185, 199, 192)",
+        "count": 1,
+        "selectors": [
+          "#toggle"
+        ],
+        "token": "color-rgb-185-199-192",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(219, 231, 223)",
+        "count": 1,
+        "selectors": [
+          "#radius-box"
+        ],
+        "token": "color-rgb-219-231-223",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(245, 245, 240)",
+        "count": 1,
+        "selectors": [
+          "#device"
+        ],
+        "token": "color-rgb-245-245-240",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "typography": [
+      {
+        "value": "letter-spacing:normal",
+        "count": 42,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#title",
+          "#subtitle",
+          "#ctrl-1",
+          ".cap",
+          ".bar",
+          "#ctrl-2"
+        ],
+        "token": "typograph-letter-spacing-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:400",
+        "count": 41,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#subtitle",
+          "#ctrl-1",
+          ".cap",
+          ".bar",
+          "#ctrl-2",
+          "#pos-8"
+        ],
+        "token": "typograph-font-weight-400",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:16px",
+        "count": 23,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#ctrl-1",
+          ".bar",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size"
+        ],
+        "token": "typograph-font-size-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:normal",
+        "count": 23,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#ctrl-1",
+          ".bar",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size"
+        ],
+        "token": "typograph-line-height-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:11px",
+        "count": 12,
+        "selectors": [
+          ".cap"
+        ],
+        "token": "typograph-font-size-11px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:14px",
+        "count": 12,
+        "selectors": [
+          ".cap"
+        ],
+        "token": "typograph-line-height-14px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:12px",
+        "count": 4,
+        "selectors": [
+          "#subtitle",
+          "#wrap-text",
+          "#toggle",
+          "#note"
+        ],
+        "token": "typograph-font-size-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:16px",
+        "count": 2,
+        "selectors": [
+          "#subtitle",
+          "#note"
+        ],
+        "token": "typograph-line-height-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:24px",
+        "count": 2,
+        "selectors": [
+          "#fs-label",
+          "#color-label"
+        ],
+        "token": "typograph-line-height-24px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:13px",
+        "count": 1,
+        "selectors": [
+          "#lh-label"
+        ],
+        "token": "typograph-font-size-13px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:15px",
+        "count": 1,
+        "selectors": [
+          "#color-label"
+        ],
+        "token": "typograph-font-size-15px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:18px",
+        "count": 1,
+        "selectors": [
+          "#title"
+        ],
+        "token": "typograph-font-size-18px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:600",
+        "count": 1,
+        "selectors": [
+          "#title"
+        ],
+        "token": "typograph-font-weight-600",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:18px",
+        "count": 1,
+        "selectors": [
+          "#lh-label"
+        ],
+        "token": "typograph-line-height-18px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:20px",
+        "count": 1,
+        "selectors": [
+          "#wrap-text"
+        ],
+        "token": "typograph-line-height-20px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:26px",
+        "count": 1,
+        "selectors": [
+          "#title"
+        ],
+        "token": "typograph-line-height-26px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "radius": [
+      {
+        "value": "0px",
+        "count": 22,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#title",
+          "#subtitle",
+          ".cap",
+          "#fs-label",
+          "#lh-label",
+          "#color-label"
+        ],
+        "token": "radiu-0px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "6px",
+        "count": 13,
+        "selectors": [
+          "#ctrl-1",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size",
+          "#line-height",
+          "#radius",
+          "#color"
+        ],
+        "token": "radiu-6px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "4px",
+        "count": 6,
+        "selectors": [
+          ".bar"
+        ],
+        "token": "radiu-4px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "12px",
+        "count": 1,
+        "selectors": [
+          "#radius-box"
+        ],
+        "token": "radiu-12px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "shadows": [],
+    "spacing": [
+      {
+        "value": "12px",
+        "count": 12,
+        "selectors": [
+          "#ctrl-1",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size",
+          "#line-height",
+          "#radius",
+          "#color"
+        ],
+        "token": "spacin-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "10px",
+        "count": 7,
+        "selectors": [
+          ".bar",
+          "#toggle"
+        ],
+        "token": "spacin-10px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "8px",
+        "count": 4,
+        "selectors": [
+          "#fs-label",
+          "#radius-box",
+          "#color-label",
+          "#crop-img"
+        ],
+        "token": "spacin-8px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "6px",
+        "count": 2,
+        "selectors": [
+          "#lh-label",
+          "#wrap-text"
+        ],
+        "token": "spacin-6px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ]
+  },
+  "targetTokens": {
+    "colors": [
+      {
+        "value": "rgb(31, 42, 38)",
+        "count": 41,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#title",
+          "#ctrl-1",
+          ".bar",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4"
+        ],
+        "token": "color-rgb-31-42-38",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(107, 107, 107)",
+        "count": 28,
+        "selectors": [
+          "#subtitle",
+          ".cap",
+          "#note"
+        ],
+        "token": "color-rgb-107-107-107",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgba(0, 0, 0, 0)",
+        "count": 21,
+        "selectors": [
+          "#sheet",
+          "#title",
+          "#subtitle",
+          ".cap",
+          "#fs-label",
+          "#lh-label",
+          "#color-label",
+          "#crop-img"
+        ],
+        "token": "color-rgba-0-0-0-0",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(255, 255, 255)",
+        "count": 13,
+        "selectors": [
+          "#ctrl-1",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size",
+          "#line-height",
+          "#radius",
+          "#color"
+        ],
+        "token": "color-rgb-255-255-255",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(216, 216, 216)",
+        "count": 12,
+        "selectors": [
+          "#ctrl-1",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size",
+          "#line-height",
+          "#radius",
+          "#color"
+        ],
+        "token": "color-rgb-216-216-216",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(232, 239, 233)",
+        "count": 6,
+        "selectors": [
+          ".bar"
+        ],
+        "token": "color-rgb-232-239-233",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(140, 140, 140)",
+        "count": 2,
+        "selectors": [
+          "#color-label"
+        ],
+        "token": "color-rgb-140-140-140",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(185, 199, 192)",
+        "count": 1,
+        "selectors": [
+          "#toggle"
+        ],
+        "token": "color-rgb-185-199-192",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(219, 231, 223)",
+        "count": 1,
+        "selectors": [
+          "#radius-box"
+        ],
+        "token": "color-rgb-219-231-223",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "rgb(245, 245, 240)",
+        "count": 1,
+        "selectors": [
+          "#device"
+        ],
+        "token": "color-rgb-245-245-240",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "typography": [
+      {
+        "value": "font-weight:400",
+        "count": 41,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#subtitle",
+          "#ctrl-1",
+          ".cap",
+          ".bar",
+          "#ctrl-2",
+          "#pos-8"
+        ],
+        "token": "typograph-font-weight-400",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "letter-spacing:normal",
+        "count": 41,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#title",
+          "#subtitle",
+          "#ctrl-1",
+          ".cap",
+          ".bar",
+          "#ctrl-2"
+        ],
+        "token": "typograph-letter-spacing-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:normal",
+        "count": 23,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#ctrl-1",
+          ".bar",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size"
+        ],
+        "token": "typograph-line-height-normal",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:16px",
+        "count": 22,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#ctrl-1",
+          ".bar",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size"
+        ],
+        "token": "typograph-font-size-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:11px",
+        "count": 12,
+        "selectors": [
+          ".cap"
+        ],
+        "token": "typograph-font-size-11px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:14px",
+        "count": 12,
+        "selectors": [
+          ".cap"
+        ],
+        "token": "typograph-line-height-14px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:12px",
+        "count": 4,
+        "selectors": [
+          "#subtitle",
+          "#wrap-text",
+          "#toggle",
+          "#note"
+        ],
+        "token": "typograph-font-size-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:16px",
+        "count": 2,
+        "selectors": [
+          "#subtitle",
+          "#note"
+        ],
+        "token": "typograph-line-height-16px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:24px",
+        "count": 2,
+        "selectors": [
+          "#fs-label",
+          "#color-label"
+        ],
+        "token": "typograph-line-height-24px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:13px",
+        "count": 1,
+        "selectors": [
+          "#lh-label"
+        ],
+        "token": "typograph-font-size-13px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:15px",
+        "count": 1,
+        "selectors": [
+          "#color-label"
+        ],
+        "token": "typograph-font-size-15px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:18px",
+        "count": 1,
+        "selectors": [
+          "#title"
+        ],
+        "token": "typograph-font-size-18px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-size:19px",
+        "count": 1,
+        "selectors": [
+          "#fs-label"
+        ],
+        "token": "typograph-font-size-19px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "font-weight:600",
+        "count": 1,
+        "selectors": [
+          "#title"
+        ],
+        "token": "typograph-font-weight-600",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "letter-spacing:0.9px",
+        "count": 1,
+        "selectors": [
+          "#wrap-text"
+        ],
+        "token": "typograph-letter-spacing-0-9px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:20px",
+        "count": 1,
+        "selectors": [
+          "#wrap-text"
+        ],
+        "token": "typograph-line-height-20px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:26px",
+        "count": 1,
+        "selectors": [
+          "#title"
+        ],
+        "token": "typograph-line-height-26px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "line-height:30px",
+        "count": 1,
+        "selectors": [
+          "#lh-label"
+        ],
+        "token": "typograph-line-height-30px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "radius": [
+      {
+        "value": "0px",
+        "count": 22,
+        "selectors": [
+          "#device",
+          "#sheet",
+          "#title",
+          "#subtitle",
+          ".cap",
+          "#fs-label",
+          "#lh-label",
+          "#color-label"
+        ],
+        "token": "radiu-0px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "6px",
+        "count": 13,
+        "selectors": [
+          "#ctrl-1",
+          "#ctrl-2",
+          "#pos-8",
+          "#gap-4",
+          "#font-size",
+          "#line-height",
+          "#radius",
+          "#color"
+        ],
+        "token": "radiu-6px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "4px",
+        "count": 6,
+        "selectors": [
+          ".bar"
+        ],
+        "token": "radiu-4px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "2px",
+        "count": 1,
+        "selectors": [
+          "#radius-box"
+        ],
+        "token": "radiu-2px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ],
+    "shadows": [],
+    "spacing": [
+      {
+        "value": "12px",
+        "count": 11,
+        "selectors": [
+          "#ctrl-1",
+          "#ctrl-2",
+          "#pos-8",
+          "#font-size",
+          "#line-height",
+          "#radius",
+          "#color",
+          "#crop"
+        ],
+        "token": "spacin-12px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "10px",
+        "count": 7,
+        "selectors": [
+          ".bar",
+          "#toggle"
+        ],
+        "token": "spacin-10px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "8px",
+        "count": 4,
+        "selectors": [
+          "#fs-label",
+          "#radius-box",
+          "#color-label",
+          "#crop-img"
+        ],
+        "token": "spacin-8px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "6px",
+        "count": 2,
+        "selectors": [
+          "#lh-label",
+          "#wrap-text"
+        ],
+        "token": "spacin-6px",
+        "source": {
+          "kind": "measured"
+        }
+      },
+      {
+        "value": "16px",
+        "count": 1,
+        "selectors": [
+          "#gap-4"
+        ],
+        "token": "spacin-16px",
+        "source": {
+          "kind": "measured"
+        }
+      }
+    ]
+  },
+  "drift": {
+    "colors": {
+      "shared": [
+        "rgb(31, 42, 38)",
+        "rgb(107, 107, 107)",
+        "rgba(0, 0, 0, 0)",
+        "rgb(255, 255, 255)",
+        "rgb(216, 216, 216)",
+        "rgb(232, 239, 233)",
+        "rgb(185, 199, 192)",
+        "rgb(219, 231, 223)",
+        "rgb(245, 245, 240)"
+      ],
+      "onlyPrototype": [
+        "rgb(51, 51, 51)"
+      ],
+      "onlyTarget": [
+        "rgb(140, 140, 140)"
+      ]
+    },
+    "typography": {
+      "shared": [
+        "letter-spacing:normal",
+        "font-weight:400",
+        "font-size:16px",
+        "line-height:normal",
+        "font-size:11px",
+        "line-height:14px",
+        "font-size:12px",
+        "line-height:16px",
+        "line-height:24px",
+        "font-size:13px",
+        "font-size:15px",
+        "font-size:18px",
+        "font-weight:600",
+        "line-height:20px",
+        "line-height:26px"
+      ],
+      "onlyPrototype": [
+        "line-height:18px"
+      ],
+      "onlyTarget": [
+        "font-size:19px",
+        "letter-spacing:0.9px",
+        "line-height:30px"
+      ]
+    },
+    "radius": {
+      "shared": [
+        "0px",
+        "6px",
+        "4px"
+      ],
+      "onlyPrototype": [
+        "12px"
+      ],
+      "onlyTarget": [
+        "2px"
+      ]
+    },
+    "shadows": {
+      "shared": [],
+      "onlyPrototype": [],
+      "onlyTarget": []
+    },
+    "spacing": {
+      "shared": [
+        "12px",
+        "10px",
+        "8px",
+        "6px"
+      ],
+      "onlyPrototype": [],
+      "onlyTarget": [
+        "16px"
+      ]
+    }
+  }
+}

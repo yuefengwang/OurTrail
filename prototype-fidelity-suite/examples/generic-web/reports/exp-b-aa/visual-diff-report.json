@@ -1,0 +1,2509 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "visual-diff-report",
+  "pageId": "b-aa",
+  "stateId": "default",
+  "generatedAt": "2026-10-28T14:32:23.145Z",
+  "prototype": {
+    "platform": "web",
+    "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/b/base.html",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "dpr": 1,
+    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "dataSource": "real",
+    "capturedAt": "2026-10-28T14:32:17.462Z",
+    "screenshotSha256": "aa388c693ef44064532c4d448fc65e1a7471833fc3a51f3082338b1d90e20667",
+    "screenshotScale": {
+      "x": 1,
+      "y": 1
+    },
+    "note": null
+  },
+  "target": {
+    "platform": "web",
+    "url": "file:///D:/OurTrail/prototype-fidelity-suite/examples/generic-web/b/aa.html",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "dpr": 1,
+    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "dataSource": "real",
+    "capturedAt": "2026-10-28T14:32:22.762Z",
+    "screenshotSha256": "a74074a06355544e29e6a4aa908df605304ca501e8b567001e52726c03616de7",
+    "screenshotScale": {
+      "x": 1,
+      "y": 1
+    },
+    "note": null
+  },
+  "tolerances": {
+    "position": 1.5,
+    "size": 1.5,
+    "gap": 1,
+    "font": 1,
+    "color": 6,
+    "pixelRatio": 0.02,
+    "criticalPixelRatio": 0.005
+  },
+  "measurement": {
+    "method": "region-crop",
+    "note": "Both sides are cropped to the shared CSS sub-rect of the two nodes (common width and height, each anchored at its own origin), so a component offset is not charged to every region and a size difference stays a geometry finding.",
+    "regionsCompared": 8,
+    "regionsFailing": 0,
+    "totalDiffRatio": 0.01502
+  },
+  "regions": [
+    {
+      "id": "b-title",
+      "role": "标题",
+      "criticality": "critical",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 16,
+          "y": 24,
+          "w": 358,
+          "h": 28
+        },
+        "target": {
+          "x": 16,
+          "y": 24,
+          "w": 358,
+          "h": 28
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "informational",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 20,
+          "b": 20,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 600,
+          "b": 600,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 28,
+          "b": 28,
+          "delta": 0
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "start",
+          "b": "start"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgba(0, 0, 0, 0)",
+          "b": "rgba(0, 0, 0, 0)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "block",
+          "b": "block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "visible",
+          "b": "visible"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        }
+      ],
+      "text": {
+        "prototype": "登山计划",
+        "target": "登山计划",
+        "equal": true,
+        "judged": true,
+        "comparable": true,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 105,
+        "aaCount": 238,
+        "diffRatio": 0.01047,
+        "meanDelta": 921.77,
+        "maxDelta": 1638.3,
+        "components": [
+          {
+            "x": 76,
+            "y": 6,
+            "w": 1,
+            "h": 16,
+            "area": 16,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 78,
+            "y": 6,
+            "w": 1,
+            "h": 16,
+            "area": 16,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 68,
+            "y": 12,
+            "w": 5,
+            "h": 10,
+            "area": 14,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 74,
+            "y": 8,
+            "w": 1,
+            "h": 11,
+            "area": 11,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 16,
+          "y": 24,
+          "w": 358,
+          "h": 28
+        },
+        "targetPixels": {
+          "x": 16,
+          "y": 24,
+          "w": 358,
+          "h": 28
+        },
+        "masked": null,
+        "maskedBy": [],
+        "informativeOnly": true,
+        "ink": {
+          "status": "PASS",
+          "ratio": 1.006
+        },
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#b-title",
+        "targetSelector": "#b-title",
+        "prototypePath": "div#device>div#sheet>h1#b-title",
+        "targetPath": "div#device>div#sheet>h1#b-title"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-title-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-title-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-title-diff.png"
+      }
+    },
+    {
+      "id": "b-card",
+      "role": "卡片",
+      "criticality": "critical",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 16,
+          "y": 68,
+          "w": 358,
+          "h": 110
+        },
+        "target": {
+          "x": 16,
+          "y": 68,
+          "w": 358,
+          "h": 110
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "exact",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 16,
+          "b": 16,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 400,
+          "b": 400,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "start",
+          "b": "start"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgb(255, 255, 255)",
+          "b": "rgb(255, 255, 255)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 8,
+          "b": 8,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(216, 216, 216)",
+          "b": "rgb(216, 216, 216)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            14,
+            14,
+            14,
+            14
+          ],
+          "b": [
+            14,
+            14,
+            14,
+            14
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            16,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            16,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "block",
+          "b": "block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "visible",
+          "b": "visible"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        }
+      ],
+      "text": {
+        "prototype": "",
+        "target": "",
+        "equal": null,
+        "judged": false,
+        "comparable": false,
+        "lines": {
+          "prototype": null,
+          "target": null
+        },
+        "lineDelta": null
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 0,
+        "aaCount": 0,
+        "diffRatio": 0,
+        "meanDelta": 0,
+        "maxDelta": 0,
+        "components": [],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 16,
+          "y": 68,
+          "w": 358,
+          "h": 110
+        },
+        "targetPixels": {
+          "x": 16,
+          "y": 68,
+          "w": 358,
+          "h": 110
+        },
+        "masked": {
+          "pixels": 25896,
+          "ratio": 0.6576
+        },
+        "maskedBy": [
+          "b-label",
+          "b-clock",
+          "b-desc"
+        ],
+        "informativeOnly": false,
+        "ink": null,
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#b-card",
+        "targetSelector": "#b-card",
+        "prototypePath": "div#device>div#sheet>div#b-card",
+        "targetPath": "div#device>div#sheet>div#b-card"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-card-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-card-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-card-diff.png"
+      }
+    },
+    {
+      "id": "b-label",
+      "role": "字段名",
+      "criticality": "normal",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 31,
+          "y": 83,
+          "w": 328,
+          "h": 16
+        },
+        "target": {
+          "x": 31,
+          "y": 83,
+          "w": 328,
+          "h": 16
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "informational",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 12,
+          "b": 12,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 400,
+          "b": 400,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 16,
+          "b": 16,
+          "delta": 0
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "start",
+          "b": "start"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(107, 107, 107)",
+          "b": "rgb(107, 107, 107)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgba(0, 0, 0, 0)",
+          "b": "rgba(0, 0, 0, 0)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(107, 107, 107)",
+          "b": "rgb(107, 107, 107)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "block",
+          "b": "block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "visible",
+          "b": "visible"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        }
+      ],
+      "text": {
+        "prototype": "出发时间",
+        "target": "出发时间",
+        "equal": true,
+        "judged": true,
+        "comparable": true,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 85,
+        "aaCount": 92,
+        "diffRatio": 0.0162,
+        "meanDelta": 627.23,
+        "maxDelta": 784.33,
+        "components": [
+          {
+            "x": 27,
+            "y": 5,
+            "w": 5,
+            "h": 6,
+            "area": 15,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 36,
+            "y": 6,
+            "w": 2,
+            "h": 8,
+            "area": 15,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 46,
+            "y": 4,
+            "w": 1,
+            "h": 8,
+            "area": 8,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 24,
+            "y": 5,
+            "w": 2,
+            "h": 6,
+            "area": 8,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 39,
+            "y": 5,
+            "w": 1,
+            "h": 8,
+            "area": 8,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 31,
+          "y": 83,
+          "w": 328,
+          "h": 16
+        },
+        "targetPixels": {
+          "x": 31,
+          "y": 83,
+          "w": 328,
+          "h": 16
+        },
+        "masked": null,
+        "maskedBy": [],
+        "informativeOnly": true,
+        "ink": {
+          "status": "PASS",
+          "ratio": 1.078
+        },
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#b-label",
+        "targetSelector": "#b-label",
+        "prototypePath": "div#device>div#sheet>div#b-card>div#b-label:nth(0)",
+        "targetPath": "div#device>div#sheet>div#b-card>div#b-label:nth(0)"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-label-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-label-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-label-diff.png"
+      }
+    },
+    {
+      "id": "b-clock",
+      "role": "时间",
+      "criticality": "normal",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 31,
+          "y": 103,
+          "w": 328,
+          "h": 30
+        },
+        "target": {
+          "x": 31,
+          "y": 103,
+          "w": 328,
+          "h": 30
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "informational",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 22,
+          "b": 22,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 600,
+          "b": 600,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 30,
+          "b": 30,
+          "delta": 0
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "start",
+          "b": "start"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgba(0, 0, 0, 0)",
+          "b": "rgba(0, 0, 0, 0)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            4,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            4,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "block",
+          "b": "block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "visible",
+          "b": "visible"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        }
+      ],
+      "text": {
+        "prototype": "06:00",
+        "target": "06:00",
+        "equal": true,
+        "judged": true,
+        "comparable": true,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 49,
+        "aaCount": 184,
+        "diffRatio": 0.00498,
+        "meanDelta": 853.02,
+        "maxDelta": 1713.11,
+        "components": [
+          {
+            "x": 40,
+            "y": 12,
+            "w": 4,
+            "h": 7,
+            "area": 16,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 0,
+            "y": 12,
+            "w": 2,
+            "h": 10,
+            "area": 11,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 31,
+          "y": 103,
+          "w": 328,
+          "h": 30
+        },
+        "targetPixels": {
+          "x": 31,
+          "y": 103,
+          "w": 328,
+          "h": 30
+        },
+        "masked": null,
+        "maskedBy": [],
+        "informativeOnly": true,
+        "ink": {
+          "status": "PASS",
+          "ratio": 1
+        },
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#b-clock",
+        "targetSelector": "#b-clock",
+        "prototypePath": "div#device>div#sheet>div#b-card>div#b-clock:nth(1)",
+        "targetPath": "div#device>div#sheet>div#b-card>div#b-clock:nth(1)"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-clock-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-clock-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-clock-diff.png"
+      }
+    },
+    {
+      "id": "b-desc",
+      "role": "说明",
+      "criticality": "normal",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 31,
+          "y": 143,
+          "w": 328,
+          "h": 20
+        },
+        "target": {
+          "x": 31,
+          "y": 143,
+          "w": 328,
+          "h": 20
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "informational",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 13,
+          "b": 13,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 400,
+          "b": 400,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 20,
+          "b": 20,
+          "delta": 0
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "start",
+          "b": "start"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(51, 51, 51)",
+          "b": "rgb(51, 51, 51)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgba(0, 0, 0, 0)",
+          "b": "rgba(0, 0, 0, 0)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(51, 51, 51)",
+          "b": "rgb(51, 51, 51)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            10,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            10,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "block",
+          "b": "block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "visible",
+          "b": "visible"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        }
+      ],
+      "text": {
+        "prototype": "山脊线一带云量较低，适合早起出发。",
+        "target": "山脊线一带云量较低，适合早起出发。",
+        "equal": true,
+        "judged": true,
+        "comparable": true,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 311,
+        "aaCount": 394,
+        "diffRatio": 0.04741,
+        "meanDelta": 789.34,
+        "maxDelta": 1492.46,
+        "components": [
+          {
+            "x": 106,
+            "y": 4,
+            "w": 10,
+            "h": 12,
+            "area": 31,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 88,
+            "y": 7,
+            "w": 8,
+            "h": 6,
+            "area": 17,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 34,
+            "y": 10,
+            "w": 5,
+            "h": 5,
+            "area": 14,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 170,
+            "y": 10,
+            "w": 4,
+            "h": 5,
+            "area": 13,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 6,
+            "y": 5,
+            "w": 1,
+            "h": 9,
+            "area": 9,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 98,
+            "y": 8,
+            "w": 5,
+            "h": 4,
+            "area": 9,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 198,
+            "y": 8,
+            "w": 4,
+            "h": 5,
+            "area": 9,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 53,
+            "y": 9,
+            "w": 3,
+            "h": 6,
+            "area": 9,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 58,
+            "y": 11,
+            "w": 3,
+            "h": 4,
+            "area": 9,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 131,
+            "y": 9,
+            "w": 3,
+            "h": 7,
+            "area": 8,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 31,
+          "y": 143,
+          "w": 328,
+          "h": 20
+        },
+        "targetPixels": {
+          "x": 31,
+          "y": 143,
+          "w": 328,
+          "h": 20
+        },
+        "masked": null,
+        "maskedBy": [],
+        "informativeOnly": true,
+        "ink": {
+          "status": "PASS",
+          "ratio": 1
+        },
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#b-desc",
+        "targetSelector": "#b-desc",
+        "prototypePath": "div#device>div#sheet>div#b-card>p#b-desc",
+        "targetPath": "div#device>div#sheet>div#b-card>p#b-desc"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-desc-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-desc-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-desc-diff.png"
+      }
+    },
+    {
+      "id": "b-img",
+      "role": "图片",
+      "criticality": "critical",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 16,
+          "y": 194,
+          "w": 358,
+          "h": 90
+        },
+        "target": {
+          "x": 16,
+          "y": 194,
+          "w": 358,
+          "h": 90
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "exact",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 16,
+          "b": 16,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 400,
+          "b": 400,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "start",
+          "b": "start"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgba(0, 0, 0, 0)",
+          "b": "rgba(0, 0, 0, 0)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            16,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            16,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "block",
+          "b": "block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "clip",
+          "b": "clip"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        }
+      ],
+      "text": {
+        "prototype": "",
+        "target": "",
+        "equal": true,
+        "judged": true,
+        "comparable": true,
+        "lines": {
+          "prototype": null,
+          "target": null
+        },
+        "lineDelta": null
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 0,
+        "aaCount": 0,
+        "diffRatio": 0,
+        "meanDelta": 0,
+        "maxDelta": 0,
+        "components": [],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 16,
+          "y": 194,
+          "w": 358,
+          "h": 90
+        },
+        "targetPixels": {
+          "x": 16,
+          "y": 194,
+          "w": 358,
+          "h": 90
+        },
+        "masked": null,
+        "maskedBy": [],
+        "informativeOnly": false,
+        "ink": null,
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#b-img",
+        "targetSelector": "#b-img",
+        "prototypePath": "div#device>div#sheet>img#b-img",
+        "targetPath": "div#device>div#sheet>img#b-img"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-img-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-img-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-img-diff.png"
+      }
+    },
+    {
+      "id": "b-btn",
+      "role": "按钮",
+      "criticality": "normal",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 16,
+          "y": 300,
+          "w": 120,
+          "h": 38
+        },
+        "target": {
+          "x": 16,
+          "y": 300,
+          "w": 120,
+          "h": 38
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "informational",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 14,
+          "b": 14,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 400,
+          "b": 400,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "center",
+          "b": "center"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(31, 42, 38)",
+          "b": "rgb(31, 42, 38)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgb(255, 255, 255)",
+          "b": "rgb(255, 255, 255)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 8,
+          "b": 8,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(185, 199, 192)",
+          "b": "rgb(185, 199, 192)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            1,
+            6,
+            1,
+            6
+          ],
+          "b": [
+            1,
+            6,
+            1,
+            6
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            16,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            16,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "inline-block",
+          "b": "inline-block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "visible",
+          "b": "visible"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        }
+      ],
+      "text": {
+        "prototype": "展开说明",
+        "target": "展开说明",
+        "equal": true,
+        "judged": true,
+        "comparable": true,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 123,
+        "aaCount": 139,
+        "diffRatio": 0.02697,
+        "meanDelta": 1086.61,
+        "maxDelta": 1793.11,
+        "components": [
+          {
+            "x": 78,
+            "y": 15,
+            "w": 4,
+            "h": 10,
+            "area": 22,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 75,
+            "y": 16,
+            "w": 2,
+            "h": 7,
+            "area": 12,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 64,
+            "y": 18,
+            "w": 4,
+            "h": 6,
+            "area": 10,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 69,
+            "y": 19,
+            "w": 4,
+            "h": 5,
+            "area": 10,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 36,
+            "y": 22,
+            "w": 4,
+            "h": 4,
+            "area": 10,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 86,
+            "y": 15,
+            "w": 1,
+            "h": 9,
+            "area": 9,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 62,
+            "y": 20,
+            "w": 3,
+            "h": 5,
+            "area": 8,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 16,
+          "y": 300,
+          "w": 120,
+          "h": 38
+        },
+        "targetPixels": {
+          "x": 16,
+          "y": 300,
+          "w": 120,
+          "h": 38
+        },
+        "masked": null,
+        "maskedBy": [],
+        "informativeOnly": true,
+        "ink": {
+          "status": "PASS",
+          "ratio": 0.984
+        },
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#b-btn",
+        "targetSelector": "#b-btn",
+        "prototypePath": "div#device>div#sheet>button#b-btn",
+        "targetPath": "div#device>div#sheet>button#b-btn"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-btn-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-btn-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-btn-diff.png"
+      }
+    },
+    {
+      "id": "b-note",
+      "role": "结果说明",
+      "criticality": "normal",
+      "status": "PASS",
+      "categories": [],
+      "observedCategories": [],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 16,
+          "y": 348,
+          "w": 358,
+          "h": 16
+        },
+        "target": {
+          "x": 16,
+          "y": 348,
+          "w": 358,
+          "h": 16
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": true
+      },
+      "note": null,
+      "pixelCompared": true,
+      "pixelMode": "informational",
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 12,
+          "b": 12,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 400,
+          "b": 400,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 16,
+          "b": 16,
+          "delta": 0
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "text-align",
+          "status": "PASS",
+          "a": "start",
+          "b": "start"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(107, 107, 107)",
+          "b": "rgb(107, 107, 107)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgba(0, 0, 0, 0)",
+          "b": "rgba(0, 0, 0, 0)",
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 0,
+          "b": 0,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(107, 107, 107)",
+          "b": "rgb(107, 107, 107)",
+          "delta": 0
+        },
+        {
+          "prop": "box-shadow",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "opacity",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            10,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            10,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "gap",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "block",
+          "b": "block"
+        },
+        {
+          "prop": "flex-direction",
+          "status": "PASS",
+          "a": "row",
+          "b": "row"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "justify-content",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        },
+        {
+          "prop": "overflow",
+          "status": "PASS",
+          "a": "visible",
+          "b": "visible"
+        },
+        {
+          "prop": "position",
+          "status": "PASS",
+          "a": "static",
+          "b": "static"
+        },
+        {
+          "prop": "text-transform",
+          "status": "PASS",
+          "a": "none",
+          "b": "none"
+        },
+        {
+          "prop": "white-space",
+          "status": "PASS",
+          "a": "normal",
+          "b": "normal"
+        }
+      ],
+      "text": {
+        "prototype": "说明已收起",
+        "target": "说明已收起",
+        "equal": true,
+        "judged": true,
+        "comparable": true,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "status": "PASS",
+        "diffCount": 81,
+        "aaCount": 84,
+        "diffRatio": 0.01414,
+        "meanDelta": 530.35,
+        "maxDelta": 682.54,
+        "components": [
+          {
+            "x": 15,
+            "y": 5,
+            "w": 3,
+            "h": 9,
+            "area": 16,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 1,
+            "y": 8,
+            "w": 6,
+            "h": 5,
+            "area": 16,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 10,
+            "y": 6,
+            "w": 3,
+            "h": 7,
+            "area": 9,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": false,
+        "prototypePixels": {
+          "x": 16,
+          "y": 348,
+          "w": 358,
+          "h": 16
+        },
+        "targetPixels": {
+          "x": 16,
+          "y": 348,
+          "w": 358,
+          "h": 16
+        },
+        "masked": null,
+        "maskedBy": [],
+        "informativeOnly": true,
+        "ink": {
+          "status": "PASS",
+          "ratio": 1.129
+        },
+        "judged": true
+      },
+      "evidence": {
+        "prototypeSelector": "#b-note",
+        "targetSelector": "#b-note",
+        "prototypePath": "div#device>div#sheet>p#b-note",
+        "targetPath": "div#device>div#sheet>p#b-note"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-note-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-note-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\generic-web\\reports\\exp-b-aa\\regions\\b-note-diff.png"
+      }
+    }
+  ],
+  "fullPage": null,
+  "acceptedDifferences": [],
+  "verdict": "PASS",
+  "mapping": {
+    "pairs": 8,
+    "source": "pf.config.json#pages[].mappings"
+  },
+  "alignment": {
+    "applied": false
+  },
+  "warnings": [
+    "Container pixel comparisons masked over declared child regions (each child is judged at its own level): b-card ← b-label/b-clock/b-desc"
+  ]
+}

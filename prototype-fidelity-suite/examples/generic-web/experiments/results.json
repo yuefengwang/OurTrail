@@ -1,0 +1,644 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-10-28T14:31:53.974Z",
+  "project": "examples/generic-web",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "playwright": "C:\\Users\\thinkbook\\AppData\\Roaming\\npm\\node_modules\\@playwright\\cli\\node_modules\\playwright",
+    "browser": "chromium (headless)"
+  },
+  "experiments": {
+    "A": {
+      "page": "specimen",
+      "run": "exp-specimen",
+      "rc": 1,
+      "readings": {
+        "pos-8": {
+          "status": "FAIL",
+          "categories": [
+            "position"
+          ],
+          "dx": -8,
+          "dy": 0,
+          "pixelDiffRatio": 0,
+          "ink": null
+        },
+        "gap-4": {
+          "status": "FAIL",
+          "categories": [
+            "spacing"
+          ],
+          "dx": 0,
+          "dy": 0,
+          "pixelDiffRatio": 0.01839,
+          "ink": null
+        },
+        "font-size": {
+          "status": "FAIL",
+          "categories": [
+            "typography",
+            "pixel"
+          ],
+          "dx": 0,
+          "dy": 0,
+          "pixelDiffRatio": 0.25893,
+          "ink": null
+        },
+        "line-height": {
+          "status": "FAIL",
+          "categories": [
+            "typography",
+            "pixel"
+          ],
+          "dx": 0,
+          "dy": 0,
+          "pixelDiffRatio": 0.12712,
+          "ink": null
+        },
+        "radius": {
+          "status": "FAIL",
+          "categories": [
+            "appearance",
+            "pixel"
+          ],
+          "dx": 0,
+          "dy": 0,
+          "pixelDiffRatio": 0.02742,
+          "ink": null
+        },
+        "color": {
+          "status": "FAIL",
+          "categories": [
+            "appearance",
+            "pixel"
+          ],
+          "dx": 0,
+          "dy": 0,
+          "pixelDiffRatio": 0.03006,
+          "ink": null
+        },
+        "crop": {
+          "status": "FAIL",
+          "categories": [
+            "pixel"
+          ],
+          "dx": 0,
+          "dy": 0,
+          "pixelDiffRatio": 0.86429,
+          "ink": null
+        },
+        "wrap": {
+          "status": "FAIL",
+          "categories": [
+            "text-wrap",
+            "pixel"
+          ],
+          "dx": 0,
+          "dy": 0,
+          "pixelDiffRatio": 0.11645,
+          "ink": null
+        }
+      },
+      "verdict": "FAIL"
+    },
+    "B": {
+      "b-aa": {
+        "rc": 0,
+        "verdict": "PASS",
+        "readings": {
+          "b-desc": {
+            "pixelDiffRatio": 0.04741,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          }
+        }
+      },
+      "b-dpr2": {
+        "rc": 0,
+        "verdict": "PASS",
+        "readings": {
+          "b-desc": {
+            "pixelDiffRatio": 0.13338,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1.108
+            }
+          }
+        }
+      },
+      "b-taller": {
+        "rc": 0,
+        "verdict": "PASS"
+      },
+      "b-dynamic-declared": {
+        "rc": 0,
+        "verdict": "PASS",
+        "readings": {
+          "b-clock": {
+            "pixelDiffRatio": 0.10102,
+            "ink": {
+              "status": "FAIL",
+              "reasons": [
+                "ink w 54 vs 116",
+                "ink amount ×1.72"
+              ]
+            },
+            "judged": false
+          }
+        }
+      },
+      "b-dynamic-undeclared": {
+        "rc": 1,
+        "verdict": "FAIL",
+        "readings": {
+          "b-clock": {
+            "pixelDiffRatio": 0.10752,
+            "ink": {
+              "status": "FAIL",
+              "reasons": [
+                "ink w 54 vs 123",
+                "ink amount ×1.89"
+              ]
+            }
+          }
+        }
+      },
+      "b-statusbar": {
+        "rc": 0,
+        "verdict": "PASS",
+        "alignment": {
+          "applied": true,
+          "anchor": "b-title",
+          "shift": {
+            "x": 0,
+            "y": 24
+          }
+        }
+      },
+      "b-weight": {
+        "rc": 1,
+        "verdict": "FAIL",
+        "readings": {
+          "b-label": {
+            "categories": [
+              "ink"
+            ],
+            "ink": {
+              "status": "FAIL",
+              "reasons": [
+                "ink amount ×1.43"
+              ]
+            }
+          },
+          "b-desc": {
+            "categories": [
+              "ink"
+            ],
+            "ink": {
+              "status": "FAIL",
+              "reasons": [
+                "ink amount ×1.41"
+              ]
+            }
+          },
+          "b-note": {
+            "categories": [
+              "ink"
+            ],
+            "ink": {
+              "status": "FAIL",
+              "reasons": [
+                "ink amount ×1.41"
+              ]
+            }
+          },
+          "b-title": {
+            "categories": [],
+            "ink": {
+              "status": "PASS",
+              "ratio": 1.087
+            }
+          }
+        }
+      }
+    },
+    "C": {
+      "fixture": "c-repair/before.html",
+      "target": "c-repair/target.html",
+      "fixtureSha256": "5135526686d366d6c75d844a5515ebdce01e8b98b0f5f90fec68e8df36c7930f",
+      "defects": [
+        {
+          "region": "b-label",
+          "category": "typography",
+          "prop": "font-size"
+        },
+        {
+          "region": "b-card",
+          "category": "appearance",
+          "prop": "border-radius"
+        },
+        {
+          "region": "b-btn",
+          "category": "spacing",
+          "prop": "margin"
+        }
+      ],
+      "before": {
+        "run": "exp-c-before",
+        "rc": 1,
+        "verdict": "FAIL",
+        "regions": {
+          "b-title": {
+            "status": "PASS",
+            "categories": [],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          },
+          "b-card": {
+            "status": "FAIL",
+            "categories": [
+              "size",
+              "appearance",
+              "pixel"
+            ],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 2
+            },
+            "failingStyles": [
+              {
+                "prop": "border-radius",
+                "a": 8,
+                "b": 12,
+                "delta": 4
+              }
+            ],
+            "pixelDiffRatio": 0.02929,
+            "ink": null,
+            "styleCause": {
+              "prop": "border-radius",
+              "category": "appearance",
+              "status": "FAIL",
+              "a": 8,
+              "b": 12,
+              "delta": 4
+            }
+          },
+          "b-label": {
+            "status": "FAIL",
+            "categories": [
+              "size",
+              "typography",
+              "ink"
+            ],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 2
+            },
+            "failingStyles": [
+              {
+                "prop": "font-size",
+                "a": 12,
+                "b": 14,
+                "delta": 2
+              },
+              {
+                "prop": "line-height",
+                "a": 16,
+                "b": 18,
+                "delta": 2
+              }
+            ],
+            "pixelDiffRatio": 0.07336,
+            "ink": {
+              "status": "FAIL",
+              "reasons": [
+                "ink w 47 vs 55"
+              ]
+            },
+            "styleCause": {
+              "prop": "font-size",
+              "category": "typography",
+              "status": "FAIL",
+              "a": 12,
+              "b": 14,
+              "delta": 2
+            }
+          },
+          "b-clock": {
+            "status": "FAIL",
+            "categories": [
+              "position"
+            ],
+            "geometry": {
+              "dx": 0,
+              "dy": 2,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          },
+          "b-desc": {
+            "status": "FAIL",
+            "categories": [
+              "position"
+            ],
+            "geometry": {
+              "dx": 0,
+              "dy": 2,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          },
+          "b-img": {
+            "status": "FAIL",
+            "categories": [
+              "position"
+            ],
+            "geometry": {
+              "dx": 0,
+              "dy": 2,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": null
+          },
+          "b-btn": {
+            "status": "FAIL",
+            "categories": [
+              "position",
+              "spacing"
+            ],
+            "geometry": {
+              "dx": 0,
+              "dy": -4,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [
+              {
+                "prop": "margin",
+                "a": [
+                  16,
+                  0,
+                  0,
+                  0
+                ],
+                "b": [
+                  10,
+                  0,
+                  0,
+                  0
+                ],
+                "delta": 6
+              }
+            ],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            },
+            "styleCause": {
+              "prop": "margin",
+              "category": "spacing",
+              "status": "FAIL",
+              "a": [
+                16,
+                0,
+                0,
+                0
+              ],
+              "b": [
+                10,
+                0,
+                0,
+                0
+              ],
+              "delta": 6
+            }
+          },
+          "b-note": {
+            "status": "FAIL",
+            "categories": [
+              "position"
+            ],
+            "geometry": {
+              "dx": 0,
+              "dy": -4,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          }
+        }
+      },
+      "after": {
+        "run": "exp-c-after",
+        "rc": 0,
+        "verdict": "PASS",
+        "regions": {
+          "b-title": {
+            "status": "PASS",
+            "categories": [],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          },
+          "b-card": {
+            "status": "PASS",
+            "categories": [],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": null
+          },
+          "b-label": {
+            "status": "PASS",
+            "categories": [],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          },
+          "b-clock": {
+            "status": "PASS",
+            "categories": [],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          },
+          "b-desc": {
+            "status": "PASS",
+            "categories": [],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          },
+          "b-img": {
+            "status": "PASS",
+            "categories": [],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": null
+          },
+          "b-btn": {
+            "status": "PASS",
+            "categories": [],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          },
+          "b-note": {
+            "status": "PASS",
+            "categories": [],
+            "geometry": {
+              "dx": 0,
+              "dy": 0,
+              "dw": 0,
+              "dh": 0
+            },
+            "failingStyles": [],
+            "pixelDiffRatio": 0,
+            "ink": {
+              "status": "PASS",
+              "ratio": 1
+            }
+          }
+        }
+      },
+      "repairs": [
+        {
+          "region": "b-label",
+          "prop": "font-size",
+          "from": "#b-label { font-size: 14px; line-height: 18px; }",
+          "to": "#b-label { font-size: 12px; line-height: 16px; }",
+          "applied": true,
+          "hits": 1
+        },
+        {
+          "region": "b-card",
+          "prop": "border-radius",
+          "from": "#b-card { border-radius: 12px; }",
+          "to": "#b-card { border-radius: 8px; }",
+          "applied": true,
+          "hits": 1
+        },
+        {
+          "region": "b-btn",
+          "prop": "margin",
+          "from": "#b-btn { margin-top: 10px; }",
+          "to": "#b-btn { margin-top: 16px; }",
+          "applied": true,
+          "hits": 1
+        }
+      ],
+      "iterations": 1,
+      "newIssues": [],
+      "regressions": []
+    },
+    "D": {
+      "copiedTo": "(removed after the run)",
+      "pages": {
+        "b-identical": {
+          "rc": 0,
+          "verdict": "PASS"
+        },
+        "specimen": {
+          "rc": 1,
+          "verdict": "FAIL"
+        }
+      },
+      "repoReferences": []
+    }
+  }
+}

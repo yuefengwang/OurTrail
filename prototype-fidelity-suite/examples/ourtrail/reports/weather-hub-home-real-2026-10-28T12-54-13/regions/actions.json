@@ -1,0 +1,126 @@
+{
+  "diffCount": 2772,
+  "diffRatio": 0.0671,
+  "prototypePixels": {
+    "x": 0,
+    "y": 188,
+    "w": 390,
+    "h": 138
+  },
+  "targetPixels": {
+    "x": 0,
+    "y": 159,
+    "w": 306,
+    "h": 135
+  },
+  "components": [
+    {
+      "x": 49,
+      "y": 28,
+      "w": 46,
+      "h": 18,
+      "area": 634,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 103,
+      "y": 31,
+      "w": 65,
+      "h": 14,
+      "area": 592,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 68,
+      "y": 90,
+      "w": 48,
+      "h": 18,
+      "area": 543,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 222,
+      "y": 90,
+      "w": 41,
+      "h": 17,
+      "area": 311,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 171,
+      "y": 31,
+      "w": 38,
+      "h": 10,
+      "area": 244,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 31,
+      "y": 26,
+      "w": 12,
+      "h": 21,
+      "area": 129,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 51,
+      "y": 88,
+      "w": 13,
+      "h": 20,
+      "area": 97,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 212,
+      "y": 90,
+      "w": 10,
+      "h": 17,
+      "area": 87,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 197,
+      "y": 99,
+      "w": 16,
+      "h": 8,
+      "area": 59,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 197,
+      "y": 89,
+      "w": 7,
+      "h": 9,
+      "area": 32,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 188,
+      "y": 98,
+      "w": 7,
+      "h": 7,
+      "area": 17,
+      "meanDelta": null,
+      "maxDelta": null
+    },
+    {
+      "x": 188,
+      "y": 106,
+      "w": 8,
+      "h": 1,
+      "area": 8,
+      "meanDelta": null,
+      "maxDelta": null
+    }
+  ]
+}

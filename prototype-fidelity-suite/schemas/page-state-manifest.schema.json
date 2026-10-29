@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ourtrail.local/prototype-fidelity/schemas/page-state-manifest.schema.json",
+  "title": "page-state-manifest",
+  "description": "Every declared page state, how it was reached (real data or an injection) and what each side actually captured. This is the artifact that stops an injected screenshot from being quoted as interaction evidence.",
+  "type": "object",
+  "required": ["schemaVersion", "kind", "pageId", "generatedAt", "states", "coverage", "provenance"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "$ref": "#/definitions/schemaVersion" },
+    "kind": { "const": "page-state-manifest" },
+    "pageId": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "states": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/state" } },
+    "coverage": {
+      "type": "object",
+      "required": ["declared", "captured", "injected"],
+      "additionalProperties": false,
+      "properties": {
+        "declared": { "type": "integer", "minimum": 0 },
+        "captured": { "type": "integer", "minimum": 0 },
+        "injected": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["builtBy", "config"],
+      "additionalProperties": true,
+      "properties": {
+        "builtBy": { "type": "string", "minLength": 1 },
+        "config": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "definitions": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "status": { "enum": ["PASS", "FAIL", "UNVERIFIED", "BLOCKED", "NOT_APPLICABLE"] },
+    "dataSource": { "enum": ["real", "injected", null] },
+    "screenshot": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "format": "sha256" },
+        "width": { "type": ["integer", "null"] },
+        "height": { "type": ["integer", "null"] },
+        "scale": { "type": ["object", "null"] }
+      }
+    },
+    "side": {
+      "type": "object",
+      "required": ["side", "captured", "nodes", "screenshot", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "side": { "enum": ["prototype", "target"] },
+        "platform": { "type": ["string", "null"] },
+        "captured": { "type": "boolean" },
+        "dataSource": { "$ref": "#/definitions/dataSource" },
+        "viewport": { "type": ["object", "null"] },
+        "dpr": { "type": ["number", "null"] },
+        "codeVersion": { "type": ["string", "null"] },
+        "capturedAt": { "type": ["string", "null"] },
+        "nodes": { "type": "integer", "minimum": 0 },
+        "screenshot": { "oneOf": [{ "$ref": "#/definitions/screenshot" }, { "type": "null" }] },
+        "status": { "$ref": "#/definitions/status" }
+      }
+    },
+    "state": {
+      "type": "object",
+      "required": ["id", "injection", "sides", "usableAsInteractionEvidence", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "note": { "type": ["string", "null"] },
+        "injection": {
+          "type": "object",
+          "required": ["declared", "dataSource", "keys"],
+          "additionalProperties": false,
+          "properties": {
+            "declared": { "type": "boolean" },
+            "dataSource": { "enum": ["real", "injected"] },
+            "keys": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "sides": {
+          "type": "object",
+          "required": ["prototype", "target"],
+          "additionalProperties": false,
+          "properties": {
+            "prototype": { "$ref": "#/definitions/side" },
+            "target": { "$ref": "#/definitions/side" }
+          }
+        },
+        "usableAsInteractionEvidence": { "type": "boolean" },
+        "status": { "$ref": "#/definitions/status" }
+      }
+    }
+  }
+}

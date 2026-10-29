@@ -1,0 +1,270 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "platform-mappings",
+  "pageId": "specimen",
+  "stateId": "default",
+  "generatedAt": "2026-10-28T14:32:05.271Z",
+  "platforms": {
+    "prototype": "web",
+    "target": "web"
+  },
+  "adapters": {
+    "prototype": "web",
+    "target": "web"
+  },
+  "alignment": null,
+  "pairs": [
+    {
+      "id": "ctrl-1",
+      "role": "对照 1",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": "#ctrl-1",
+      "targetSelector": "#ctrl-1",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "ctrl-2",
+      "role": "对照 2",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": "#ctrl-2",
+      "targetSelector": "#ctrl-2",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "ctrl-3",
+      "role": "对照 3",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": "#ctrl-3",
+      "targetSelector": "#ctrl-3",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "ctrl-4",
+      "role": "对照 4",
+      "criticality": "critical",
+      "optional": false,
+      "prototypeSelector": "#ctrl-4",
+      "targetSelector": "#ctrl-4",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "pos-8",
+      "role": "位置 8px",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#pos-8",
+      "targetSelector": "#pos-8",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "gap-4",
+      "role": "间距 4px",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#gap-4",
+      "targetSelector": "#gap-4",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "font-size",
+      "role": "字号",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#fs-label",
+      "targetSelector": "#fs-label",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "line-height",
+      "role": "行高",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#lh-label",
+      "targetSelector": "#lh-label",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "radius",
+      "role": "圆角",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#radius-box",
+      "targetSelector": "#radius-box",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "color",
+      "role": "文字颜色",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#color-label",
+      "targetSelector": "#color-label",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "crop",
+      "role": "图片裁切",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#crop-img",
+      "targetSelector": "#crop-img",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    },
+    {
+      "id": "wrap",
+      "role": "换行",
+      "criticality": "normal",
+      "optional": false,
+      "prototypeSelector": "#wrap-text",
+      "targetSelector": "#wrap-text",
+      "prototypePath": null,
+      "targetPath": null,
+      "styleProps": null,
+      "pixel": true,
+      "pixelMode": "exact",
+      "note": null,
+      "resolved": {
+        "prototype": true,
+        "target": true
+      },
+      "missing": [],
+      "status": "PASS"
+    }
+  ],
+  "acceptedDifferences": [],
+  "coverage": {
+    "declared": 12,
+    "resolved": 12,
+    "unverified": 0,
+    "notApplicable": 0,
+    "critical": 4
+  },
+  "provenance": {
+    "builtBy": "pf contract",
+    "config": "pf.config.json#pages[].mappings"
+  }
+}

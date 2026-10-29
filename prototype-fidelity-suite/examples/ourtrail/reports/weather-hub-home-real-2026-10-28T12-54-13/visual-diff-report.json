@@ -1,0 +1,2321 @@
+{
+  "schemaVersion": "1.0.0",
+  "kind": "visual-diff-report",
+  "pageId": "weather-hub-home",
+  "stateId": "real",
+  "generatedAt": "2026-10-28T12:54:13.260Z",
+  "prototype": {
+    "platform": "web",
+    "url": "file:///D:/OurTrail/docs/prototypes/ourtrail-explore-v3/weather.html",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "dpr": 1,
+    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "dataSource": "real",
+    "capturedAt": "2026-10-28T12:48:55.140Z",
+    "screenshotSha256": "7da6065a99fec4861032015c2a74d46b233fdbe9d494f507b1d476f7970269d9",
+    "screenshotScale": {
+      "x": 1,
+      "y": 1
+    },
+    "note": null
+  },
+  "target": {
+    "platform": "wechat-miniprogram",
+    "url": "/pages/weather-hub/weather-hub",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "dpr": 3,
+    "codeVersion": "4922e151581e9ffbf8ee338cebe3fd47444c19a2",
+    "dataSource": "real",
+    "capturedAt": "2026-10-28T12:49:07.849Z",
+    "screenshotSha256": "f476d0a8a308d55bf02e6d96308b182667600753f330b36e913b1a4dbc329f6c",
+    "screenshotScale": {
+      "x": 0.7846153846153846,
+      "y": 0.7819905213270142
+    },
+    "note": null
+  },
+  "tolerances": {
+    "position": 1.5,
+    "size": 1.5,
+    "gap": 1,
+    "font": 1,
+    "color": 6,
+    "pixelRatio": 0.02,
+    "criticalPixelRatio": 0.005
+  },
+  "measurement": {
+    "method": "region-crop",
+    "note": "Each side is cropped to its own node rect before comparison; a global page offset is therefore not charged to every component.",
+    "regionsCompared": 15,
+    "regionsFailing": 11,
+    "totalDiffRatio": 0.11244
+  },
+  "regions": [
+    {
+      "id": "header",
+      "role": "首页头容器",
+      "criticality": "critical",
+      "status": "FAIL",
+      "categories": [
+        "spacing",
+        "pixel"
+      ],
+      "observedCategories": [
+        "position",
+        "spacing"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 15,
+        "dw": 0,
+        "dh": 0.31,
+        "dwRatio": 1,
+        "dhRatio": 1.003,
+        "prototype": {
+          "x": 0,
+          "y": 72,
+          "w": 390,
+          "h": 116.69
+        },
+        "target": {
+          "x": 0,
+          "y": 87,
+          "w": 390,
+          "h": 117
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": false,
+        "sizePass": true,
+        "alignedTo": "header",
+        "isAnchor": true
+      },
+      "note": "原型右上角有「演示数据」徽标按钮（演示页专用），实现没有；因此只比较容器盒模型，不比较 flex 分布与容器文本。",
+      "pixelCompared": true,
+      "styles": [
+        {
+          "prop": "padding",
+          "category": "spacing",
+          "status": "FAIL",
+          "a": [
+            22,
+            20,
+            14,
+            20
+          ],
+          "b": [
+            14,
+            20,
+            14,
+            20
+          ],
+          "delta": 8
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgba(0, 0, 0, 0)",
+          "b": "rgba(0, 0, 0, 0)",
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "",
+        "target": "山野天气 看清天气，再出发。 一个地点，一段路线，或一场计划中的徒步。",
+        "equal": false,
+        "lines": {
+          "prototype": null,
+          "target": 5
+        },
+        "lineDelta": null
+      },
+      "pixel": {
+        "diffCount": 3440,
+        "aaCount": 0,
+        "diffRatio": 0.12219,
+        "meanDelta": 7946.31,
+        "maxDelta": 25672.9,
+        "components": [
+          {
+            "x": 16,
+            "y": 37,
+            "w": 84,
+            "h": 22,
+            "area": 1156,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 111,
+            "y": 37,
+            "w": 65,
+            "h": 22,
+            "area": 891,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 110,
+            "y": 68,
+            "w": 85,
+            "h": 11,
+            "area": 484,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 16,
+            "y": 17,
+            "w": 38,
+            "h": 10,
+            "area": 247,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 63,
+            "y": 69,
+            "w": 42,
+            "h": 10,
+            "area": 233,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 16,
+            "y": 69,
+            "w": 39,
+            "h": 11,
+            "area": 176,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 253,
+            "y": 25,
+            "w": 23,
+            "h": 9,
+            "area": 122,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 245,
+            "y": 26,
+            "w": 10,
+            "h": 7,
+            "area": 43,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 281,
+            "y": 25,
+            "w": 9,
+            "h": 9,
+            "area": 33,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 237,
+            "y": 27,
+            "w": 4,
+            "h": 5,
+            "area": 16,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 195,
+            "y": 75,
+            "w": 4,
+            "h": 5,
+            "area": 11,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": true,
+        "prototypePixels": {
+          "x": 0,
+          "y": 72,
+          "w": 390,
+          "h": 117
+        },
+        "targetPixels": {
+          "x": 0,
+          "y": 68,
+          "w": 306,
+          "h": 92
+        },
+        "status": "FAIL"
+      },
+      "evidence": {
+        "prototypeSelector": ".home-header",
+        "targetSelector": ".wh-header",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>header.home-header",
+        "targetPath": "selector:.wh-header"
+      },
+      "acceptedDifference": "外壳差异：原型自带模拟状态栏+微信标题栏，实现是自己的品牌导航条；本页已把 header 设为对齐锚点，其绝对 dy 是外壳高度差，不是版式偏差（padding 偏差仍单独判 FAIL）。",
+      "acceptedCategories": [
+        "position"
+      ],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\header-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\header-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\header-diff.png"
+      }
+    },
+    {
+      "id": "eyebrow",
+      "role": "栏目小标",
+      "criticality": "normal",
+      "status": "FAIL",
+      "categories": [
+        "typography",
+        "typography",
+        "position",
+        "pixel"
+      ],
+      "observedCategories": [
+        "size",
+        "typography",
+        "typography",
+        "position"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": -8,
+        "dw": 110,
+        "dh": 8,
+        "dwRatio": 1.458,
+        "dhRatio": 1.571,
+        "prototype": {
+          "x": 20,
+          "y": 94,
+          "w": 240,
+          "h": 14
+        },
+        "target": {
+          "x": 20,
+          "y": 101,
+          "w": 350,
+          "h": 22
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": false,
+        "sizePass": false,
+        "alignedTo": "header"
+      },
+      "note": null,
+      "pixelCompared": true,
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 10,
+          "b": 10,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "category": "typography",
+          "status": "FAIL",
+          "a": 650,
+          "b": 600,
+          "delta": 50
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": 2,
+          "b": 2,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "category": "typography",
+          "status": "FAIL",
+          "a": "normal",
+          "b": "22px"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(22, 120, 62)",
+          "b": "rgb(22, 120, 62)",
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            7,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            7,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "山野天气",
+        "target": "山野天气",
+        "equal": true,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "diffCount": 282,
+        "aaCount": 0,
+        "diffRatio": 0.08393,
+        "meanDelta": 5510.28,
+        "maxDelta": 13776.12,
+        "components": [
+          {
+            "x": 0,
+            "y": 3,
+            "w": 34,
+            "h": 9,
+            "area": 237,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 36,
+            "y": 3,
+            "w": 10,
+            "h": 9,
+            "area": 45,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": true,
+        "prototypePixels": {
+          "x": 20,
+          "y": 94,
+          "w": 240,
+          "h": 14
+        },
+        "targetPixels": {
+          "x": 15,
+          "y": 78,
+          "w": 276,
+          "h": 19
+        },
+        "status": "FAIL"
+      },
+      "evidence": {
+        "prototypeSelector": ".home-eyebrow",
+        "targetSelector": ".wh-eyebrow",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>header.home-header>div>p.home-eyebrow:nth(0)",
+        "targetPath": "selector:.wh-eyebrow"
+      },
+      "acceptedDifference": "容器宽度差异：原型头部右侧有「演示数据」徽标，文字列因此只有 240px；实现没有该徽标，文字列 350px。字阶/字重/行高仍逐项判定。",
+      "acceptedCategories": [
+        "size"
+      ],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\eyebrow-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\eyebrow-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\eyebrow-diff.png"
+      }
+    },
+    {
+      "id": "title",
+      "role": "主标题",
+      "criticality": "critical",
+      "status": "FAIL",
+      "categories": [
+        "typography",
+        "pixel"
+      ],
+      "observedCategories": [
+        "size",
+        "typography"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 110,
+        "dh": 0.5,
+        "dwRatio": 1.458,
+        "dhRatio": 1.015,
+        "prototype": {
+          "x": 20,
+          "y": 115,
+          "w": 240,
+          "h": 32.5
+        },
+        "target": {
+          "x": 20,
+          "y": 130,
+          "w": 350,
+          "h": 33
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": false,
+        "alignedTo": "header"
+      },
+      "note": null,
+      "pixelCompared": true,
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 25,
+          "b": 25,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "category": "typography",
+          "status": "FAIL",
+          "a": 730,
+          "b": 700,
+          "delta": 30
+        },
+        {
+          "prop": "letter-spacing",
+          "status": "PASS",
+          "a": -0.7,
+          "b": -0.7,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 32.5,
+          "b": 32.5,
+          "delta": 0
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(24, 33, 27)",
+          "b": "rgb(24, 33, 27)",
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "看清天气，再出发。",
+        "target": "看清天气，再出发。",
+        "equal": true,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "diffCount": 2841,
+        "aaCount": 0,
+        "diffRatio": 0.43843,
+        "meanDelta": 12574.85,
+        "maxDelta": 25672.9,
+        "components": [
+          {
+            "x": 0,
+            "y": 3,
+            "w": 203,
+            "h": 23,
+            "area": 2841,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": true,
+        "prototypePixels": {
+          "x": 20,
+          "y": 115,
+          "w": 240,
+          "h": 33
+        },
+        "targetPixels": {
+          "x": 15,
+          "y": 101,
+          "w": 276,
+          "h": 27
+        },
+        "status": "FAIL"
+      },
+      "evidence": {
+        "prototypeSelector": ".home-header h1",
+        "targetSelector": ".wh-title",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>header.home-header>div>h1",
+        "targetPath": "selector:.wh-title"
+      },
+      "acceptedDifference": "同上：宽度来自演示徽标占位，不是标题排版偏差。",
+      "acceptedCategories": [
+        "size"
+      ],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\title-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\title-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\title-diff.png"
+      }
+    },
+    {
+      "id": "sub",
+      "role": "副标题",
+      "criticality": "normal",
+      "status": "FAIL",
+      "categories": [
+        "pixel"
+      ],
+      "observedCategories": [
+        "size"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0,
+        "dw": 110,
+        "dh": -0.19,
+        "dwRatio": 1.458,
+        "dhRatio": 0.99,
+        "prototype": {
+          "x": 20,
+          "y": 155.5,
+          "w": 240,
+          "h": 19.19
+        },
+        "target": {
+          "x": 20,
+          "y": 170.5,
+          "w": 350,
+          "h": 19
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": false,
+        "alignedTo": "header"
+      },
+      "note": null,
+      "pixelCompared": true,
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 12,
+          "b": 12,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 400,
+          "b": 400,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 19.2,
+          "b": 19.2,
+          "delta": 0
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(111, 122, 114)",
+          "b": "rgb(111, 122, 114)",
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            8,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            8,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "一个地点，一段路线，或一场计划中的徒步。",
+        "target": "一个地点，一段路线，或一场计划中的徒步。",
+        "equal": true,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "diffCount": 1303,
+        "aaCount": 0,
+        "diffRatio": 0.33932,
+        "meanDelta": 3045.33,
+        "maxDelta": 9521.48,
+        "components": [
+          {
+            "x": 0,
+            "y": 3,
+            "w": 179,
+            "h": 12,
+            "area": 1057,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 192,
+            "y": 4,
+            "w": 36,
+            "h": 9,
+            "area": 188,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 181,
+            "y": 4,
+            "w": 10,
+            "h": 9,
+            "area": 48,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 228,
+            "y": 10,
+            "w": 4,
+            "h": 3,
+            "area": 10,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": true,
+        "prototypePixels": {
+          "x": 20,
+          "y": 155,
+          "w": 240,
+          "h": 20
+        },
+        "targetPixels": {
+          "x": 15,
+          "y": 133,
+          "w": 276,
+          "h": 16
+        },
+        "status": "FAIL"
+      },
+      "evidence": {
+        "prototypeSelector": ".home-sub",
+        "targetSelector": ".wh-sub",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>header.home-header>div>p.home-sub:nth(1)",
+        "targetPath": "selector:.wh-sub"
+      },
+      "acceptedDifference": "同上：宽度来自演示徽标占位。",
+      "acceptedCategories": [
+        "size"
+      ],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\sub-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\sub-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\sub-diff.png"
+      }
+    },
+    {
+      "id": "actions",
+      "role": "三个入口容器",
+      "criticality": "normal",
+      "status": "FAIL",
+      "categories": [
+        "size",
+        "pixel"
+      ],
+      "observedCategories": [
+        "size"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0.01,
+        "dw": 0,
+        "dh": 34,
+        "dwRatio": 1,
+        "dhRatio": 1.248,
+        "prototype": {
+          "x": 0,
+          "y": 188.69,
+          "w": 390,
+          "h": 137
+        },
+        "target": {
+          "x": 0,
+          "y": 203.7,
+          "w": 390,
+          "h": 171
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": false,
+        "alignedTo": "header"
+      },
+      "note": null,
+      "pixelCompared": true,
+      "styles": [
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "grid",
+          "b": "grid"
+        },
+        {
+          "prop": "gap",
+          "category": "spacing",
+          "status": "UNVERIFIED",
+          "a": "9px",
+          "b": null,
+          "reason": "not reported by target adapter"
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            4,
+            20,
+            18,
+            20
+          ],
+          "b": [
+            4,
+            20,
+            18,
+            20
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "",
+        "target": "地图选点 找到你想去的山野 输入经纬度 导入 GPX 轨迹",
+        "equal": false,
+        "lines": {
+          "prototype": null,
+          "target": 8
+        },
+        "lineDelta": null
+      },
+      "pixel": {
+        "diffCount": 2772,
+        "aaCount": 0,
+        "diffRatio": 0.0671,
+        "meanDelta": 5742.22,
+        "maxDelta": 20718.05,
+        "components": [
+          {
+            "x": 49,
+            "y": 28,
+            "w": 46,
+            "h": 18,
+            "area": 634,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 103,
+            "y": 31,
+            "w": 65,
+            "h": 14,
+            "area": 592,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 68,
+            "y": 90,
+            "w": 48,
+            "h": 18,
+            "area": 543,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 222,
+            "y": 90,
+            "w": 41,
+            "h": 17,
+            "area": 311,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 171,
+            "y": 31,
+            "w": 38,
+            "h": 10,
+            "area": 244,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 31,
+            "y": 26,
+            "w": 12,
+            "h": 21,
+            "area": 129,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 51,
+            "y": 88,
+            "w": 13,
+            "h": 20,
+            "area": 97,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 212,
+            "y": 90,
+            "w": 10,
+            "h": 17,
+            "area": 87,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 197,
+            "y": 99,
+            "w": 16,
+            "h": 8,
+            "area": 59,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 197,
+            "y": 89,
+            "w": 7,
+            "h": 9,
+            "area": 32,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 188,
+            "y": 98,
+            "w": 7,
+            "h": 7,
+            "area": 17,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 188,
+            "y": 106,
+            "w": 8,
+            "h": 1,
+            "area": 8,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": true,
+        "prototypePixels": {
+          "x": 0,
+          "y": 188,
+          "w": 390,
+          "h": 138
+        },
+        "targetPixels": {
+          "x": 0,
+          "y": 159,
+          "w": 306,
+          "h": 135
+        },
+        "status": "FAIL"
+      },
+      "evidence": {
+        "prototypeSelector": ".home-actions",
+        "targetSelector": ".wh-actions",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>div.home-actions",
+        "targetPath": "selector:.wh-actions"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\actions-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\actions-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\actions-diff.png"
+      }
+    },
+    {
+      "id": "primary",
+      "role": "地图选点主按钮",
+      "criticality": "critical",
+      "status": "FAIL",
+      "categories": [
+        "size",
+        "pixel"
+      ],
+      "observedCategories": [
+        "size"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 0.01,
+        "dw": 0,
+        "dh": 32,
+        "dwRatio": 1,
+        "dhRatio": 1.533,
+        "prototype": {
+          "x": 20,
+          "y": 192.69,
+          "w": 350,
+          "h": 60
+        },
+        "target": {
+          "x": 20,
+          "y": 207.7,
+          "w": 350,
+          "h": 92
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": true,
+        "sizePass": false,
+        "alignedTo": "header"
+      },
+      "note": null,
+      "pixelCompared": true,
+      "styles": [
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "flex",
+          "b": "flex"
+        },
+        {
+          "prop": "align-items",
+          "status": "PASS",
+          "a": "center",
+          "b": "center"
+        },
+        {
+          "prop": "gap",
+          "category": "spacing",
+          "status": "UNVERIFIED",
+          "a": "13px",
+          "b": null,
+          "reason": "not reported by target adapter"
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            15,
+            16,
+            15,
+            16
+          ],
+          "b": [
+            15,
+            16,
+            15,
+            16
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "border-radius",
+          "status": "PASS",
+          "a": 12,
+          "b": 12,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(213, 226, 211)",
+          "b": "rgb(213, 226, 211)",
+          "delta": 0
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgb(255, 255, 255)",
+          "b": "rgb(255, 255, 255)",
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "",
+        "target": "地图选点 找到你想去的山野",
+        "equal": false,
+        "lines": {
+          "prototype": null,
+          "target": 4
+        },
+        "lineDelta": null
+      },
+      "pixel": {
+        "diffCount": 1443,
+        "aaCount": 0,
+        "diffRatio": 0.08571,
+        "meanDelta": 3891.1,
+        "maxDelta": 20718.05,
+        "components": [
+          {
+            "x": 34,
+            "y": 25,
+            "w": 46,
+            "h": 12,
+            "area": 441,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 88,
+            "y": 28,
+            "w": 65,
+            "h": 11,
+            "area": 408,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 10,
+            "y": 60,
+            "w": 257,
+            "h": 1,
+            "area": 257,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 175,
+            "y": 29,
+            "w": 19,
+            "h": 9,
+            "area": 127,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 15,
+            "y": 23,
+            "w": 13,
+            "h": 15,
+            "area": 110,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 156,
+            "y": 28,
+            "w": 19,
+            "h": 10,
+            "area": 98,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": true,
+        "prototypePixels": {
+          "x": 20,
+          "y": 192,
+          "w": 350,
+          "h": 61
+        },
+        "targetPixels": {
+          "x": 15,
+          "y": 162,
+          "w": 276,
+          "h": 73
+        },
+        "status": "FAIL"
+      },
+      "evidence": {
+        "prototypeSelector": ".home-action-primary",
+        "targetSelector": ".wh-primary",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>div.home-actions>button.home-action-primary",
+        "targetPath": "selector:.wh-primary"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\primary-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\primary-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\primary-diff.png"
+      }
+    },
+    {
+      "id": "primary-sub",
+      "role": "主按钮说明",
+      "criticality": "normal",
+      "status": "FAIL",
+      "categories": [
+        "size",
+        "typography",
+        "spacing",
+        "position",
+        "pixel"
+      ],
+      "observedCategories": [
+        "size",
+        "typography",
+        "spacing",
+        "text",
+        "position"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 10.01,
+        "dw": -60,
+        "dh": 8,
+        "dwRatio": 0.571,
+        "dhRatio": 1.571,
+        "prototype": {
+          "x": 132,
+          "y": 217.69,
+          "w": 140,
+          "h": 14
+        },
+        "target": {
+          "x": 132,
+          "y": 242.7,
+          "w": 80,
+          "h": 22
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": false,
+        "sizePass": false,
+        "alignedTo": "header"
+      },
+      "note": "原型文案带「（交互模拟）」后缀，实现是真入口；文案差异登记为产品决定，不参与文本判据之外的修复。",
+      "pixelCompared": true,
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 10,
+          "b": 10,
+          "delta": 0
+        },
+        {
+          "prop": "font-weight",
+          "status": "PASS",
+          "a": 400,
+          "b": 400,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "category": "typography",
+          "status": "FAIL",
+          "a": "normal",
+          "b": "22px"
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(121, 131, 122)",
+          "b": "rgb(121, 131, 122)",
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "category": "spacing",
+          "status": "FAIL",
+          "a": [
+            4,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 4
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "找到你想去的山野（交互模拟）",
+        "target": "找到你想去的山野",
+        "equal": false,
+        "lines": {
+          "prototype": 1,
+          "target": 1
+        },
+        "lineDelta": 0
+      },
+      "pixel": {
+        "diffCount": 368,
+        "aaCount": 0,
+        "diffRatio": 0.38333,
+        "meanDelta": 2271.22,
+        "maxDelta": 8288.87,
+        "components": [
+          {
+            "x": 0,
+            "y": 3,
+            "w": 64,
+            "h": 11,
+            "area": 364,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": true,
+        "prototypePixels": {
+          "x": 132,
+          "y": 217,
+          "w": 140,
+          "h": 15
+        },
+        "targetPixels": {
+          "x": 103,
+          "y": 189,
+          "w": 64,
+          "h": 18
+        },
+        "status": "FAIL"
+      },
+      "evidence": {
+        "prototypeSelector": ".home-action-primary small",
+        "targetSelector": ".wh-primary-sub",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>div.home-actions>button.home-action-primary>small",
+        "targetPath": "selector:.wh-primary-sub"
+      },
+      "acceptedDifference": "原型写「找到你想去的山野（交互模拟）」是因为原型的地图是模拟交互；实现是真入口，故后缀不出现。属文案决定，待产品确认。",
+      "acceptedCategories": [
+        "text"
+      ],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\primary-sub-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\primary-sub-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\primary-sub-diff.png"
+      }
+    },
+    {
+      "id": "action-row",
+      "role": "两个次入口",
+      "criticality": "normal",
+      "status": "FAIL",
+      "categories": [
+        "size",
+        "position",
+        "pixel"
+      ],
+      "observedCategories": [
+        "size",
+        "position"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": 32.01,
+        "dw": 0,
+        "dh": 2,
+        "dwRatio": 1,
+        "dhRatio": 1.043,
+        "prototype": {
+          "x": 20,
+          "y": 261.69,
+          "w": 350,
+          "h": 46
+        },
+        "target": {
+          "x": 20,
+          "y": 308.7,
+          "w": 350,
+          "h": 48
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": false,
+        "sizePass": false,
+        "alignedTo": "header"
+      },
+      "note": null,
+      "pixelCompared": true,
+      "styles": [
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "grid",
+          "b": "grid"
+        },
+        {
+          "prop": "gap",
+          "category": "spacing",
+          "status": "UNVERIFIED",
+          "a": "9px",
+          "b": null,
+          "reason": "not reported by target adapter"
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "",
+        "target": "输入经纬度 导入 GPX 轨迹",
+        "equal": false,
+        "lines": {
+          "prototype": null,
+          "target": 2
+        },
+        "lineDelta": null
+      },
+      "pixel": {
+        "diffCount": 826,
+        "aaCount": 0,
+        "diffRatio": 0.07876,
+        "meanDelta": 5295.13,
+        "maxDelta": 17537.14,
+        "components": [
+          {
+            "x": 182,
+            "y": 14,
+            "w": 66,
+            "h": 11,
+            "area": 389,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 52,
+            "y": 15,
+            "w": 49,
+            "h": 11,
+            "area": 339,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 35,
+            "y": 14,
+            "w": 14,
+            "h": 12,
+            "area": 73,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 173,
+            "y": 16,
+            "w": 7,
+            "h": 7,
+            "area": 17,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 173,
+            "y": 24,
+            "w": 8,
+            "h": 1,
+            "area": 8,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": true,
+        "prototypePixels": {
+          "x": 20,
+          "y": 261,
+          "w": 350,
+          "h": 47
+        },
+        "targetPixels": {
+          "x": 15,
+          "y": 241,
+          "w": 276,
+          "h": 38
+        },
+        "status": "FAIL"
+      },
+      "evidence": {
+        "prototypeSelector": ".home-action-row",
+        "targetSelector": ".wh-row",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>div.home-actions>div.home-action-row",
+        "targetPath": "selector:.wh-row"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\action-row-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\action-row-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\action-row-diff.png"
+      }
+    },
+    {
+      "id": "recent",
+      "role": "继续上次卡片",
+      "criticality": "normal",
+      "status": "NOT_APPLICABLE",
+      "categories": [
+        "target-missing"
+      ],
+      "observedCategories": [
+        "target-missing"
+      ],
+      "notes": "node missing on target side",
+      "presence": {
+        "prototype": true,
+        "target": false
+      },
+      "geometry": null,
+      "note": "整块只在有个人计划时出现；副行文案原型写「查看每天抵达节点时的天气」，实现写「N 天 · 个人计划」，属文案决定，故只做盒模型比对与区域截图，不做像素判据。",
+      "pixelCompared": false,
+      "styles": [],
+      "text": null,
+      "pixel": null,
+      "evidence": {
+        "prototypeSelector": ".home-recent",
+        "targetSelector": ".wh-recent",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>section.home-recent:nth(0)",
+        "targetPath": null
+      },
+      "acceptedDifference": "数据状态差异：原型内置一条演示计划，测试账号没有个人计划，因此「继续上次」整块不存在（模板 wx:if 的正确行为）。",
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\recent-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\recent-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\recent-diff.png"
+      }
+    },
+    {
+      "id": "recent-title",
+      "role": "继续上次标题",
+      "criticality": "normal",
+      "status": "NOT_APPLICABLE",
+      "categories": [
+        "target-missing"
+      ],
+      "observedCategories": [
+        "target-missing"
+      ],
+      "notes": "node missing on target side",
+      "presence": {
+        "prototype": true,
+        "target": false
+      },
+      "geometry": null,
+      "note": null,
+      "pixelCompared": true,
+      "styles": [],
+      "text": null,
+      "pixel": null,
+      "evidence": {
+        "prototypeSelector": ".home-recent h2",
+        "targetSelector": ".wh-recent-title",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>section.home-recent:nth(0)>h2",
+        "targetPath": null
+      },
+      "acceptedDifference": "随 recent 整块不出现；子节点在目标侧无 DOM，不能单独判定。",
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\recent-title-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\recent-title-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\recent-title-diff.png"
+      }
+    },
+    {
+      "id": "tabs",
+      "role": "资产三 tab",
+      "criticality": "normal",
+      "status": "FAIL",
+      "categories": [
+        "position",
+        "pixel"
+      ],
+      "observedCategories": [
+        "position"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": -89.99,
+        "dw": 0,
+        "dh": 0,
+        "dwRatio": 1,
+        "dhRatio": 1,
+        "prototype": {
+          "x": 0,
+          "y": 449.69,
+          "w": 390,
+          "h": 48
+        },
+        "target": {
+          "x": 0,
+          "y": 374.7,
+          "w": 390,
+          "h": 48
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": false,
+        "sizePass": true,
+        "alignedTo": "header"
+      },
+      "note": null,
+      "pixelCompared": true,
+      "styles": [
+        {
+          "prop": "display",
+          "status": "PASS",
+          "a": "flex",
+          "b": "flex"
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            0,
+            14,
+            0,
+            14
+          ],
+          "b": [
+            0,
+            14,
+            0,
+            14
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "border-top-width",
+          "status": "PASS",
+          "a": 1,
+          "b": 1,
+          "delta": 0
+        },
+        {
+          "prop": "border-top-color",
+          "status": "PASS",
+          "a": "rgb(232, 236, 231)",
+          "b": "rgb(232, 236, 231)",
+          "delta": 0
+        },
+        {
+          "prop": "border-bottom-width",
+          "category": "other",
+          "status": "UNVERIFIED",
+          "a": "1px",
+          "b": null,
+          "reason": "not reported by target adapter"
+        },
+        {
+          "prop": "background-color",
+          "status": "PASS",
+          "a": "rgb(255, 255, 255)",
+          "b": "rgb(255, 255, 255)",
+          "delta": 0
+        },
+        {
+          "prop": "height",
+          "category": "other",
+          "status": "UNVERIFIED",
+          "a": "48px",
+          "b": null,
+          "reason": "not reported by target adapter"
+        }
+      ],
+      "text": {
+        "prototype": "",
+        "target": "个人计划 常用地点 共用路线",
+        "equal": false,
+        "lines": {
+          "prototype": null,
+          "target": 2
+        },
+        "lineDelta": null
+      },
+      "pixel": {
+        "diffCount": 1022,
+        "aaCount": 0,
+        "diffRatio": 0.08789,
+        "meanDelta": 3623.4,
+        "maxDelta": 15530.08,
+        "components": [
+          {
+            "x": 133,
+            "y": 14,
+            "w": 41,
+            "h": 12,
+            "area": 324,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 227,
+            "y": 14,
+            "w": 42,
+            "h": 11,
+            "area": 294,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 38,
+            "y": 14,
+            "w": 42,
+            "h": 11,
+            "area": 293,
+            "meanDelta": null,
+            "maxDelta": null
+          },
+          {
+            "x": 32,
+            "y": 35,
+            "w": 55,
+            "h": 3,
+            "area": 110,
+            "meanDelta": null,
+            "maxDelta": null
+          }
+        ],
+        "resampled": true,
+        "prototypePixels": {
+          "x": 0,
+          "y": 449,
+          "w": 390,
+          "h": 49
+        },
+        "targetPixels": {
+          "x": 0,
+          "y": 293,
+          "w": 306,
+          "h": 38
+        },
+        "status": "FAIL"
+      },
+      "evidence": {
+        "prototypeSelector": ".home-tabs",
+        "targetSelector": ".wh-tabs",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>nav.home-tabs",
+        "targetPath": "selector:.wh-tabs"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\tabs-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\tabs-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\tabs-diff.png"
+      }
+    },
+    {
+      "id": "list",
+      "role": "资产列表容器",
+      "criticality": "normal",
+      "status": "FAIL",
+      "categories": [
+        "size",
+        "position"
+      ],
+      "observedCategories": [
+        "size",
+        "position"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": -89.99,
+        "dw": 0,
+        "dh": 2,
+        "dwRatio": 1,
+        "dhRatio": 1.016,
+        "prototype": {
+          "x": 0,
+          "y": 497.69,
+          "w": 390,
+          "h": 128
+        },
+        "target": {
+          "x": 0,
+          "y": 422.7,
+          "w": 390,
+          "h": 130
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": false,
+        "sizePass": false,
+        "alignedTo": "header"
+      },
+      "note": "列表内容由数据决定，像素判据只对固定外壳生效；本对只比盒模型。",
+      "pixelCompared": false,
+      "styles": [
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            8,
+            20,
+            18,
+            20
+          ],
+          "b": [
+            8,
+            20,
+            18,
+            20
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "",
+        "target": "还没有个人计划。先选一条路线，再安排哪天到哪个节点。 天气来自公开预报服务；个人计划与共享状态保存在云端。山野信号不稳时，页面会显示最近一次取到的预报并标注时效。",
+        "equal": false,
+        "lines": {
+          "prototype": null,
+          "target": 6
+        },
+        "lineDelta": null
+      },
+      "pixel": null,
+      "evidence": {
+        "prototypeSelector": ".home-list",
+        "targetSelector": ".wh-list",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>section.home-list:nth(1)",
+        "targetPath": "selector:.wh-list"
+      },
+      "acceptedDifference": null,
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\list-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\list-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\list-diff.png"
+      }
+    },
+    {
+      "id": "asset-row",
+      "role": "计划行",
+      "criticality": "normal",
+      "status": "NOT_APPLICABLE",
+      "categories": [
+        "target-missing"
+      ],
+      "observedCategories": [
+        "target-missing"
+      ],
+      "notes": "node missing on target side",
+      "presence": {
+        "prototype": true,
+        "target": false
+      },
+      "geometry": null,
+      "note": "行高随内容换行变化（原型与实现计划名相同、但副行日期标签可能不同），像素判据会测到夹具文本差异，改做盒模型比对 + 区域截图留证。",
+      "pixelCompared": false,
+      "styles": [],
+      "text": null,
+      "pixel": null,
+      "evidence": {
+        "prototypeSelector": ".asset-item",
+        "targetSelector": ".wh-asset",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>section.home-list:nth(1)>button.asset-item",
+        "targetPath": null
+      },
+      "acceptedDifference": "数据状态差异：同上，个人计划列表为空，页面显示空态文案。",
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\asset-row-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\asset-row-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\asset-row-diff.png"
+      }
+    },
+    {
+      "id": "asset-name",
+      "role": "计划名",
+      "criticality": "normal",
+      "status": "NOT_APPLICABLE",
+      "categories": [
+        "target-missing"
+      ],
+      "observedCategories": [
+        "target-missing"
+      ],
+      "notes": "node missing on target side",
+      "presence": {
+        "prototype": true,
+        "target": false
+      },
+      "geometry": null,
+      "note": null,
+      "pixelCompared": true,
+      "styles": [],
+      "text": null,
+      "pixel": null,
+      "evidence": {
+        "prototypeSelector": ".asset-item b",
+        "targetSelector": ".wh-asset-name",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>section.home-list:nth(1)>button.asset-item>span.asset-body:nth(1)>b",
+        "targetPath": null
+      },
+      "acceptedDifference": "随 asset-row 不出现；目标侧无 DOM。",
+      "acceptedCategories": [],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\asset-name-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\asset-name-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\asset-name-diff.png"
+      }
+    },
+    {
+      "id": "foot",
+      "role": "列表脚注",
+      "criticality": "normal",
+      "status": "FAIL",
+      "categories": [
+        "size",
+        "text-wrap",
+        "position"
+      ],
+      "observedCategories": [
+        "size",
+        "text",
+        "text-wrap",
+        "position"
+      ],
+      "notes": null,
+      "presence": {
+        "prototype": true,
+        "target": true
+      },
+      "geometry": {
+        "dx": 0,
+        "dy": -105.4,
+        "dw": 0,
+        "dh": 17,
+        "dwRatio": 1,
+        "dhRatio": 1.515,
+        "prototype": {
+          "x": 20,
+          "y": 574.69,
+          "w": 350,
+          "h": 33
+        },
+        "target": {
+          "x": 20,
+          "y": 484.29,
+          "w": 350,
+          "h": 50
+        },
+        "tolerances": {
+          "position": 1.5,
+          "size": 1.5
+        },
+        "positionPass": false,
+        "sizePass": false,
+        "alignedTo": "header"
+      },
+      "note": "原型脚注说明「登录后云端同步 · 流程演示」，实现脚注说明数据来源与离线时效；文案不同属产品决定，只比排版。",
+      "pixelCompared": false,
+      "styles": [
+        {
+          "prop": "font-size",
+          "status": "PASS",
+          "a": 10,
+          "b": 10,
+          "delta": 0
+        },
+        {
+          "prop": "line-height",
+          "status": "PASS",
+          "a": 17,
+          "b": 17,
+          "delta": 0
+        },
+        {
+          "prop": "color",
+          "status": "PASS",
+          "a": "rgb(139, 149, 140)",
+          "b": "rgb(139, 149, 140)",
+          "delta": 0
+        },
+        {
+          "prop": "padding",
+          "status": "PASS",
+          "a": [
+            12,
+            0,
+            4,
+            0
+          ],
+          "b": [
+            12,
+            0,
+            4,
+            0
+          ],
+          "delta": 0
+        },
+        {
+          "prop": "margin",
+          "status": "PASS",
+          "a": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "delta": 0
+        }
+      ],
+      "text": {
+        "prototype": "目标方案为登录后云端同步，同时保留本机缓存；此处为流程演示。",
+        "target": "天气来自公开预报服务；个人计划与共享状态保存在云端。山野信号不稳时，页面会显示最近一次取到的预报并标注时效。",
+        "equal": false,
+        "lines": {
+          "prototype": 1,
+          "target": 3
+        },
+        "lineDelta": 2
+      },
+      "pixel": null,
+      "evidence": {
+        "prototypeSelector": ".home-foot",
+        "targetSelector": ".wh-foot",
+        "prototypePath": "div#device:nth(1)>main#weather-screen>section#weather-home:nth(0)>section.home-list:nth(1)>p.home-foot",
+        "targetPath": "selector:.wh-foot"
+      },
+      "acceptedDifference": "两条脚注讲的是不同的事（原型：演示/云端同步；实现：数据来源/离线时效）。属文案决定，待产品确认。",
+      "acceptedCategories": [
+        "text"
+      ],
+      "images": {
+        "prototype": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\foot-prototype.png",
+        "target": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\foot-target.png",
+        "diff": "D:\\OurTrail\\prototype-fidelity-suite\\examples\\ourtrail\\reports\\weather-hub-home-real-2026-10-28T12-54-13\\regions\\foot-diff.png"
+      }
+    }
+  ],
+  "fullPage": null,
+  "acceptedDifferences": [
+    {
+      "pairId": "primary-sub",
+      "categories": [
+        "text"
+      ],
+      "reason": "原型写「找到你想去的山野（交互模拟）」是因为原型的地图是模拟交互；实现是真入口，故后缀不出现。属文案决定，待产品确认。"
+    },
+    {
+      "pairId": "foot",
+      "categories": [
+        "text"
+      ],
+      "reason": "两条脚注讲的是不同的事（原型：演示/云端同步；实现：数据来源/离线时效）。属文案决定，待产品确认。"
+    }
+  ],
+  "verdict": "FAIL",
+  "mapping": {
+    "pairs": 15,
+    "source": "pf.config.json#pages[].mappings"
+  },
+  "alignment": {
+    "applied": true,
+    "anchor": "header",
+    "shift": {
+      "x": 0,
+      "y": 15
+    }
+  },
+  "warnings": [
+    "Target screenshot is 0.7846×0.7820 of CSS px; region crops are normalised to the smaller side before diffing.",
+    "NOT_APPLICABLE regions: recent, recent-title, asset-row, asset-name"
+  ]
+}

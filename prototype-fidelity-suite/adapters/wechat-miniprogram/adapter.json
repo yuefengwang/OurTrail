@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "wechat-miniprogram",
+  "platform": "wechat-miniprogram",
+  "title": "WeChat mini program driven through the DevTools automation endpoint",
+  "captureModule": "capture.js",
+  "interactionDriver": "wechat-miniprogram",
+  "runtime": {
+    "name": "miniprogram-automator",
+    "versionTested": "0.13.0",
+    "resolvedBy": "env.detectAutomator",
+    "outsideRepo": true,
+    "installHint": "npm i miniprogram-automator in a scratch directory outside the repo (the host project uses %TEMP%/mp-auto) and point MINIPROGRAM_AUTOMATOR_PATH or NODE_PATH at it"
+  },
+  "endpoint": {
+    "kind": "websocket",
+    "default": "ws://127.0.0.1:9421",
+    "configKey": "target.wsEndpoint"
+  },
+  "capabilities": {
+    "nodeTree": "flat-per-selector",
+    "text": "concatenated",
+    "lineCount": "inferred",
+    "computedStyles": "element-api",
+    "screenshot": "page",
+    "elementScreenshot": false,
+    "screenshotScale": "measured",
+    "injection": "page.setData"
+  },
+  "coordinates": {
+    "basis": "viewport-css-px",
+    "derivation": "el.offset() is document-space; page.scrollTop() is subtracted so the basis matches the web adapter. Screenshot scale is NOT 1 and is measured per capture"
+  },
+  "selectors": {
+    "dialect": "automator",
+    "hierarchyDiscovery": false
+  },
+  "limitations": ["WX-01", "WX-02", "WX-03", "WX-04", "WX-05", "WX-06", "WX-07", "WX-08", "WX-09"],
+  "limitationsDoc": "LIMITATIONS.md"
+}
