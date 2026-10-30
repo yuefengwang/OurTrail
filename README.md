@@ -107,7 +107,13 @@ cloudfunctions/trailApiLab/   预演工具（私有测试用）：以合成演�
 SYNC.md                落地过程的进度同步文档（含架构决策）
 AGENTS.md              分层知识库：起手先读，子目录另有 AGENTS.md
 docs/prototypes/ourtrail-app/   v1 高仿真原型（React，设计基准；已冻结，勿改勿跑）
+design-references/stitch/weather/  Google Stitch 天气原型入库快照（只读参考，未裁决；
+                       入口 design-references/stitch/weather/README.md）
 ```
+
+> 天气模块的 Stitch 原型（11 个屏族 + 原始 ZIP + 差异记录）统一入口在
+> [`design-references/stitch/weather/README.md`](design-references/stitch/weather/README.md)。
+> 它们是**设计参考**，不是设计基线，也不代表当前实现；设计系统仍以 `app.wxss` 为准。
 
 ## 数据与安全模型（与原型一致）
 

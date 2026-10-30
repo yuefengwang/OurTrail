@@ -5,6 +5,11 @@
 **设计来源**：`/Users/yfwang/stitch_ourtrail_ui_optimization/`（Google Stitch 导出，11 份 `code.html` + `screen.png`）
 **实施对象**：`miniprogram/pages/weather/*`（既有 Weather V2），不改云函数取数契约
 
+> **前向指针（2026-10-30 追加，原文未改）**：本文写作时这些 Stitch 资产只在仓库外。
+> 同日已原样入库到 [`design-references/stitch/weather/`](../../../design-references/stitch/weather/README.md)
+> （11 屏 HTML + PNG + 原始 ZIP，逐字节未改）。**本文 §1 的来源映射与 §2 的配色判断属于当轮实施记录，不是已裁决结论**；
+> 后续引用请以资产库的 `SCREEN_INDEX.md` / `DESIGN_CONFLICTS.md` 为准。本文中的仓库外绝对路径仅作历史记录，不再可用。
+
 ---
 
 ## 0. 一句话结论

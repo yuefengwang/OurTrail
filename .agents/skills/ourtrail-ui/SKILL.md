@@ -11,6 +11,11 @@ description: OurTrail 小程序（原生 WXML/WXSS/CommonJS）的 UI 设计系�
 
 产品定位决定 UI 的底线：零金额、纯工具的熟人圈户外同行履约工具。所以界面要**替用户做判断但不冒充权威**——状态必须说清"现在怎样 + 接下来会怎样"，凡由天气数据派生的结论一律用概率语气，不承诺救援/保险，不把"没数据"印成"没有"。
 
+**第三类设计资产（与上面两类不同）**：天气模块的 Google Stitch 原型快照在
+[`design-references/stitch/weather/`](../../../design-references/stitch/weather/README.md)（11 屏 HTML+PNG + 原始 ZIP + 差异记录）。
+它是**只读参考、全部未裁决**：没有一屏被确认为实施基线，HTML 主题与截图配色互相矛盾（见其 `DESIGN_CONFLICTS.md`）。
+引用它可以讨论"要不要这样做"，但**不得据它直接改 `app.wxss`、token 或页面样式**——设计系统的真身仍是 `app.wxss`（第 4 级）。
+
 ## 1. 冲突时谁优先
 
 自上而下，上级压下级；判不出或必须越级时**登记待裁决，不自行改数、不自行改样式**：

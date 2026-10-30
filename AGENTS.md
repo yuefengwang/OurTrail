@@ -124,6 +124,7 @@ OurTrail is a **zero-money, pure-tool outdoor companion/fulfillment app for frie
 | 页面图与死页面归谁管 | `tools/journey-graph-test.js`（可达性、返回路径、denied 出口、模板比枚举、词汇漂移） |
 | GPX → route nodes | `miniprogram/utils/gpx.js` → `parseGpx` |
 | 天相 / 概率判断 | `miniprogram/utils/sky.js` → `summarize`; astronomy in `utils/astro.js` |
+| 天气模块的 Stitch 原型在哪 / 哪版是哪屏 | `design-references/stitch/weather/README.md`（总入口 → 版本快照 → `SCREEN_INDEX.md` → 具体资产；**全部未裁决**，不是设计基线） |
 | Why does rule X exist? | `docs/product/` + `docs/prototypes/ourtrail-app/src/domain/` (read-only) |
 | It broke yesterday — what happened? | `SYNC.md` 变更日志 |
 | 改完 UI 怎么确认真的没坏？ | 真机驱动，见下方「直连微信开发者工具」+ `docs/e2e-mp/README.md` |

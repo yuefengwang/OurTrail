@@ -20,6 +20,10 @@
 > 户外编辑式的品牌气质（决定我是谁）、Strava 式活动表达（决定活动内容怎么读）、
 > AllTrails 式户外信息（决定路线/天气怎么讲）、高效的协作交互（决定工作台怎么用）。
 
+> **范围外**：天气模块的 Google Stitch 原型快照不属本文件（本文件也不覆盖天气）。
+> 需要看原型时请走 [`design-references/stitch/weather/README.md`](../../design-references/stitch/weather/README.md)——
+> 那是只读参考、全部未裁决，不得反过来当成规范源。
+
 ---
 
 ## 1. 视觉方向

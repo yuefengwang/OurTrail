@@ -1,0 +1,713 @@
+{
+  "schemaVersion": 1,
+  "pathBase": "repository-root",
+  "assetSet": {
+    "id": "stitch-weather-2026-10-30",
+    "name": "OurTrail 天气模块 Google Stitch 原型快照（2026-10-30）",
+    "module": "weather",
+    "platform": "Google Stitch",
+    "importedAt": "2026-10-30",
+    "snapshotDir": "design-references/stitch/weather/2026-10-30",
+    "status": "snapshot-unratified",
+    "statusNote": "本快照只登记「Stitch 当时生成了什么」。任何页面是否为实施基线、哪个版本代表最终设计，均未裁决（见 DESIGN_CONFLICTS.md）。",
+    "stitchProject": {
+      "name": "stitch_ourtrail_ui_optimization",
+      "id": null,
+      "idStatus": "unknown",
+      "idNote": "导出物与 ZIP 内均未包含可核验的项目 ID；此处按未知记录，不作推断。"
+    },
+    "source": {
+      "kind": "zip",
+      "path": "design-references/stitch/weather/2026-10-30/source/stitch_ourtrail_ui_optimization.zip",
+      "originalFilename": "stitch_ourtrail_ui_optimization (1).zip",
+      "originalLocationNote": "导入时位于操作机器的下载目录，仓库外；原文件未改名、未重打包。",
+      "sha256": "121621e74237f50ee45926d32b8e5bbe0ac20f26b42208e28c5c254ac0b3d1e6",
+      "bytes": 5053393,
+      "entries": 36,
+      "files": 23,
+      "directories": 13,
+      "uncompressedBytes": 5475222,
+      "zipMatchesRaw": true,
+      "zipMatchesRawNote": "逐文件 SHA-256 比对：ZIP 内 23 个条目与 raw/ 下 23 个文件完全一致（2026-10-30 实测）。",
+      "extractedCopyNote": "导入只做了「解压 + 原样复制」，未编辑、未重压缩、未重绘、未转码。"
+    },
+    "designSystem": {
+      "path": "design-references/stitch/weather/2026-10-30/raw/alexandria/DESIGN.md",
+      "name": "Alexandria — The Digital Curator",
+      "status": "unresolved",
+      "statusNote": "该 DESIGN.md 与同批 HTML 的主题明显不一致（字体族、主色、边线规则均不同），且没有任何 HTML 引用它。它不是本批页面的已确认设计依据；是否采用未裁决。"
+    },
+    "counts": {
+      "screens": 11,
+      "html": 11,
+      "png": 11,
+      "designDocs": 1,
+      "zip": 1,
+      "rawFiles": 23,
+      "rawBytes": 5475222,
+      "snapshotFilesTotal": 30,
+      "snapshotFilesTotalNote": "24 个资产（23 个 raw + 1 个 zip）+ 6 个文档。"
+    }
+  },
+  "screens": [
+    {
+      "id": "ourtrail_v7",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v7",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v7/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v7/screen.png",
+      "name": "天气页 · 云层剖面（早期深色版）",
+      "surfaceKind": "page",
+      "tab": "cloud",
+      "status": "unresolved",
+      "statusNote": "视觉方向与同批其余页面差异最大（深色地形底 + 蓝色渐变强调），版本关系无法从资产核实。是否曾作为候选基线，未知。",
+      "keyVisuals": [
+        "深色地貌立面 + 云层剖面主图",
+        "云层密度/透光率图例",
+        "峰顶测站状态块",
+        "分层大气垂直构造",
+        "高海拔气象概览（气压/含氧量/风速）"
+      ],
+      "statesShown": ["整页展示（单屏长页）"],
+      "interactionsShown": ["底部 tab 切换（静态高亮）"],
+      "relations": [
+        {
+          "screenId": "ourtrail_v12_2",
+          "relation": "same-tab-different-visual-direction",
+          "confidence": "candidate",
+          "note": "同为「云层剖面」整页，但配色与信息架构差异大；先后顺序与继承关系无据可查，不合并。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather/weather.js（天气页，TAB_CLOUD = 云层剖面）",
+        "miniprogram/pages/weather-chart/",
+        "miniprogram/utils/cloud-field-svg.js",
+        "miniprogram/components/meteogram/"
+      ],
+      "measured": {
+        "png": { "width": 780, "height": 3808, "colorType": "rgb" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#1554ba", "#1e59bf", "#3366cc", "#071b15"]
+      }
+    },
+    {
+      "id": "ourtrail_v12_1",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v12_1",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v12_1/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v12_1/screen.png",
+      "name": "全屏「山体与云层」剖面",
+      "surfaceKind": "fullscreen",
+      "tab": "cloud",
+      "status": "unresolved",
+      "statusNote": "全屏态独立页面；是否作为「全屏查看」交互的基线未裁决。PNG 顶栏为蓝色（#094cb2），HTML 主题为绿色。",
+      "keyVisuals": [
+        "2,500–5,500 m 山体剖面 + 云带分层",
+        "路线折线 19.8 km 与四个航点（3,200 / 3,750 / 4,379 / 5,025 m）",
+        "逆温云 / 谷地云标注、0°C 层 3,920 m",
+        "航点点击详情面板",
+        "无障碍表格替代视图"
+      ],
+      "statesShown": ["全屏剖面", "航点详情（JS 交互）"],
+      "interactionsShown": ["点击航点展开详情", "展开表格视图"],
+      "relations": [
+        {
+          "screenId": "ourtrail_v12_2",
+          "relation": "same-content-different-surface",
+          "confidence": "candidate",
+          "note": "v12_2 的整页外壳里出现「全屏查看」入口，v12_1 像是该入口的目标态；该对应关系由页面文案观察得出，未经官方确认。"
+        },
+        {
+          "screenId": "ourtrail_72_v14",
+          "relation": "same-surface-family",
+          "confidence": "candidate",
+          "note": "同为全屏云剖面，但 72_v14 表达 72 小时时间维而非单时刻空间剖面。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather/weather.js（全屏剖面相关交互）",
+        "miniprogram/pages/weather-chart/",
+        "miniprogram/components/route-profile/"
+      ],
+      "measured": {
+        "png": { "width": 780, "height": 1768, "colorType": "rgb" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#094cb2"]
+      }
+    },
+    {
+      "id": "ourtrail_v12_2",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v12_2",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v12_2/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v12_2/screen.png",
+      "name": "天气页 · 云层剖面（整页外壳）",
+      "surfaceKind": "page",
+      "tab": "cloud",
+      "status": "unresolved",
+      "statusNote": "早期四 tab 外壳，含「全屏查看」模态；后续版本（v14_72 等）是否取代它未裁决。",
+      "keyVisuals": [
+        "四 tab：逐时预报 / 云层剖面 / 沿途天气 / 日月天相",
+        "高海拔气象概览",
+        "山体与云层剖面 + 全屏查看入口",
+        "云层时序与注意事项",
+        "同步给队友 CTA"
+      ],
+      "statesShown": ["整页", "全屏剖面模态（JS 切换）"],
+      "interactionsShown": ["打开全屏剖面模态", "关闭模态"],
+      "relations": [
+        {
+          "screenId": "ourtrail_v14_72",
+          "relation": "same-tab-later-iteration",
+          "confidence": "candidate",
+          "note": "同为「云层剖面」整页；v14_72 增加了 72 小时梯度与时间选择。目录名暗示先后，但目录名不是版本依据，故仅记候选。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather/weather.js（TAB_CLOUD）",
+        "miniprogram/components/meteogram/"
+      ],
+      "measured": {
+        "png": { "width": 780, "height": 2928, "colorType": "rgba" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#c1f9e4", "#006c49", "#d88a00"]
+      }
+    },
+    {
+      "id": "ourtrail_v14_72",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v14_72",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v14_72/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v14_72/screen.png",
+      "name": "天气页 · 云层剖面（72 小时云量梯度）",
+      "surfaceKind": "page",
+      "tab": "cloud",
+      "status": "unresolved",
+      "statusNote": "含 72 小时云量时序与时间选择；与 v12_2 的继承关系为候选。",
+      "keyVisuals": [
+        "云量覆盖梯度图例",
+        "选中时段 06:00 的事实卡",
+        "72 小时云层变化二维场 + 全屏查看",
+        "时间 chip 选择",
+        "天气变化与注意事项"
+      ],
+      "statesShown": ["整页", "选中时段态", "全屏查看入口"],
+      "interactionsShown": ["切换时间 chip", "打开全屏"],
+      "relations": [
+        {
+          "screenId": "ourtrail_72_v14",
+          "relation": "same-data-different-surface",
+          "confidence": "candidate",
+          "note": "v14_72 的 72 小时区块与 72_v14 全屏页描述同一份 72 小时云场；对应关系由文案观察得出。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather/weather.js（TAB_CLOUD）",
+        "miniprogram/utils/cloud-field-svg.js",
+        "miniprogram/components/meteogram/"
+      ],
+      "measured": {
+        "png": { "width": 780, "height": 3210, "colorType": "rgba" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#006c49", "#b6f2e3", "#d3fdea"]
+      }
+    },
+    {
+      "id": "ourtrail_72_v14",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_72_v14",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_72_v14/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_72_v14/screen.png",
+      "name": "全屏「72 小时云层变化」",
+      "surfaceKind": "fullscreen",
+      "tab": "cloud",
+      "status": "unresolved",
+      "statusNote": "全屏时间维云场页；图例明确标注 ECMWF 局地模型（演示数据）。",
+      "keyVisuals": [
+        "高度范围切换：登山高度 3,000–6,500 / 全高度 2,000–12,000 / 72H 连续探空",
+        "云层横剖面",
+        "峰顶趋势曲线",
+        "ECMWF 局地模型图例",
+        "分层明细（卷云 / 冲顶高空 / 大本营逆温 / 河谷层积云 / 0°C）"
+      ],
+      "statesShown": ["全屏云场", "三个高度范围档位（JS 高亮）"],
+      "interactionsShown": ["切换高度范围档位"],
+      "relations": [
+        {
+          "screenId": "ourtrail_v14_72",
+          "relation": "same-data-different-surface",
+          "confidence": "candidate",
+          "note": "对应 v14_72 的「全屏查看」目标态；由文案观察得出。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather-chart/",
+        "miniprogram/utils/cloud-field-svg.js",
+        "miniprogram/components/meteogram/"
+      ],
+      "measured": {
+        "png": { "width": 780, "height": 2702, "colorType": "rgb" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#3366cc", "#006c49", "#094cb2"]
+      }
+    },
+    {
+      "id": "ourtrail_v16_1",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_1",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_1/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_1/screen.png",
+      "name": "天气页 · 沿途天气",
+      "surfaceKind": "page",
+      "tab": "enroute",
+      "status": "unresolved",
+      "statusNote": "沿途微气象整页；含演示性的递减率与航点预报表。",
+      "keyVisuals": [
+        "沿途时空微气象标题区",
+        "路线摘要 19.8 km / +1,825 m / 5,025 m",
+        "D1 / D2 分段",
+        "海拔剖面与地图",
+        "沿途航点预报表（5 节点）",
+        "航迹导出"
+      ],
+      "statesShown": ["整页", "D1 / D2 分段切换（JS 高亮）"],
+      "interactionsShown": ["切换分段", "展开披露块", "导出航迹"],
+      "relations": [
+        {
+          "screenId": "ourtrail_v16_2",
+          "relation": "same-shell-different-tab",
+          "confidence": "observed",
+          "note": "同一四 tab 外壳下的不同 tab；外壳结构相似可直接观察。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather/weather.js（TAB_ENROUTE）",
+        "miniprogram/pages/weather-plan/",
+        "miniprogram/utils/route-schedule.js",
+        "miniprogram/components/route-profile/"
+      ],
+      "measured": {
+        "png": { "width": 780, "height": 4236, "colorType": "rgba" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#006c49", "#653e00", "#6ffbbe"]
+      }
+    },
+    {
+      "id": "ourtrail_v16_2",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_2",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_2/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_2/screen.png",
+      "name": "天气页 · 逐时预报",
+      "surfaceKind": "page",
+      "tab": "hourly",
+      "status": "unresolved",
+      "statusNote": "逐时预报整页；四轨联动图表与微气象矩阵。演示数据源标注 ECMWF + WRF。",
+      "keyVisuals": [
+        "选中小时（明天 06:00）事实带：风 / 降水 / 冰点 / 云层可见度",
+        "四条联动曲线",
+        "7 日趋势",
+        "5,025 m 微气象矩阵（湿度/气压/含氧/露点/UV）",
+        "观测点列表"
+      ],
+      "statesShown": ["整页", "选中小时态", "披露展开态"],
+      "interactionsShown": ["选择小时", "展开披露块"],
+      "relations": [
+        {
+          "screenId": "ourtrail_v16_3",
+          "relation": "same-shell-different-tab",
+          "confidence": "observed",
+          "note": "同一外壳的相邻 tab。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather/weather.js（TAB_HOURLY）",
+        "miniprogram/components/meteogram/",
+        "miniprogram/utils/solar-arc.js"
+      ],
+      "measured": {
+        "png": { "width": 780, "height": 3830, "colorType": "rgba" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#006c49", "#005a73"]
+      }
+    },
+    {
+      "id": "ourtrail_v16_3",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_3",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_3/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_3/screen.png",
+      "name": "天气页 · 日月天相",
+      "surfaceKind": "page",
+      "tab": "sky",
+      "status": "unresolved",
+      "statusNote": "天相整页。含依赖外部图片的天空带底图，以及当前实现不支持的 AR/对日功能展示。",
+      "keyVisuals": [
+        "24 小时天穹带",
+        "晨昏时刻表",
+        "太阳轨迹弧（最大高度 48°，方位 108°/180°/252°）",
+        "晨昏照金山时刻 06:48–07:25",
+        "月相 82% 盈凸月与月出月落",
+        "月光分析",
+        "活动窗口建议",
+        "Bortle 2 / 日照 11h44m"
+      ],
+      "statesShown": ["整页（单屏长页）"],
+      "interactionsShown": ["底部 tab 切换（静态）"],
+      "relations": [
+        {
+          "screenId": "ourtrail_v16_2",
+          "relation": "same-shell-different-tab",
+          "confidence": "observed",
+          "note": "同一外壳的相邻 tab。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather/weather.js（TAB_SKY）",
+        "miniprogram/utils/sky.js",
+        "miniprogram/utils/sky-ephemeris.js",
+        "miniprogram/utils/solar-arc.js",
+        "miniprogram/utils/astro.js"
+      ],
+      "measured": {
+        "png": { "width": 784, "height": 4460, "colorType": "rgb" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#094cb2", "#f9e37a"],
+        "widthNote": "唯一宽度 784 px 的截图（其余 780 px），比例归一化时需注意。"
+      }
+    },
+    {
+      "id": "ourtrail_v18_1",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_1",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_1/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_1/screen.png",
+      "name": "逐时预报 + 地点选择浮层",
+      "surfaceKind": "page-with-sheet",
+      "tab": "hourly",
+      "status": "unresolved",
+      "statusNote": "PNG 文本出现乱码（mojibake），HTML 文本正常。作为视觉基线使用前必须回到 HTML 或重新截图，不得以该 PNG 判断文案。",
+      "keyVisuals": [
+        "地点/路线选择浮层：全部(6) / 我的路线(3) / 我的地点(3)",
+        "最近使用",
+        "选中路线与相机地点",
+        "底栏三动作：地图选点 / 导入 GPX / 新建路线"
+      ],
+      "statesShown": ["浮层展开态", "逐时预报被遮挡态"],
+      "interactionsShown": ["切换浮层分组（JS）"],
+      "relations": [
+        {
+          "screenId": "ourtrail_v18_2",
+          "relation": "same-sheet-different-data",
+          "confidence": "candidate",
+          "note": "同一浮层结构的另一数据态；是否代表「有数据 vs 空态」的成对设计，未裁决。"
+        },
+        {
+          "screenId": "ourtrail_v18_3",
+          "relation": "same-sheet-different-data",
+          "confidence": "candidate",
+          "note": "v18_3 为零数据的空态；两者很可能成对，但无官方说明。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather/weather.js（地点浮层）",
+        "miniprogram/pages/weather-hub/",
+        "miniprogram/pages/routes/",
+        "miniprogram/pages/route-edit/"
+      ],
+      "measured": {
+        "png": { "width": 780, "height": 1768, "colorType": "rgb" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#094cb2", "#006c49"]
+      }
+    },
+    {
+      "id": "ourtrail_v18_2",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_2",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_2/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_2/screen.png",
+      "name": "逐时预报 + 地点选择浮层（有数据态）",
+      "surfaceKind": "page-with-sheet",
+      "tab": "hourly",
+      "status": "unresolved",
+      "statusNote": "浮层内按最近活动排序，2 条路线 + 3 个地点；底栏按钮在 PNG 中为蓝色（#094cb2），HTML 主题声明为绿色。",
+      "keyVisuals": [
+        "分组计数 全部(6) / 我的路线(3) / 我的地点(3)",
+        "「按最近活动排序」提示",
+        "路线与地点条目",
+        "底栏三动作"
+      ],
+      "statesShown": ["浮层展开态（有数据）"],
+      "interactionsShown": ["切换分组（JS）"],
+      "relations": [
+        {
+          "screenId": "ourtrail_v18_1",
+          "relation": "same-sheet-different-data",
+          "confidence": "candidate",
+          "note": "同一浮层结构。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather/weather.js（地点浮层）",
+        "miniprogram/pages/weather-hub/",
+        "miniprogram/pages/routes/"
+      ],
+      "measured": {
+        "png": { "width": 780, "height": 1768, "colorType": "rgb" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#094cb2", "#fdf4ca", "#6d5e00"]
+      }
+    },
+    {
+      "id": "ourtrail_v18_3",
+      "dir": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_3",
+      "module": "weather",
+      "html": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_3/code.html",
+      "png": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_3/screen.png",
+      "name": "逐时预报 + 地点选择浮层（空态）",
+      "surfaceKind": "page-with-sheet",
+      "tab": "hourly",
+      "status": "unresolved",
+      "statusNote": "零数据空态与新手引导；空态插画是排版资产，不是可移植的业务图。",
+      "keyVisuals": [
+        "计数 全部(0) / 我的路线(0) / 我的地点(0)",
+        "空态插画「还没有保存的地点或路线」",
+        "新手指引",
+        "底栏三动作"
+      ],
+      "statesShown": ["浮层展开态（空）"],
+      "interactionsShown": ["切换分组（JS）"],
+      "relations": [
+        {
+          "screenId": "ourtrail_v18_2",
+          "relation": "same-sheet-empty-counterpart",
+          "confidence": "candidate",
+          "note": "有数据态与空态的对应关系由内容观察得出。"
+        }
+      ],
+      "existingImplementation": [
+        "miniprogram/pages/weather/weather.js（地点浮层）",
+        "miniprogram/pages/weather-hub/"
+      ],
+      "measured": {
+        "png": { "width": 780, "height": 1768, "colorType": "rgb" },
+        "htmlThemePrimary": "#00231a",
+        "htmlThemeSurface": "#f9f9ff",
+        "pngDominantColors": ["#094cb2"]
+      }
+    }
+  ],
+  "files": [
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/alexandria/DESIGN.md",
+      "type": "markdown",
+      "bytes": 1581,
+      "sha256": "9c1129c63fb89d3731d391dffcc79531ac03d508547f3ba7e831a9fb90775325"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_72_v14/code.html",
+      "type": "html",
+      "bytes": 26305,
+      "sha256": "61caa930a2daae4734df5106bdc5ed47e5be411e7b4b0b4b690f02069a66f85e"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_72_v14/screen.png",
+      "type": "png",
+      "bytes": 390448,
+      "sha256": "8a4da6aff55a3a320c73856b612c7b8e13ea95ae20b4f825ea6f867fd00c41be"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v12_1/code.html",
+      "type": "html",
+      "bytes": 32020,
+      "sha256": "00e72b8d809ed608b82f8fb50d1ae98f56c8e635c801bb36d636fe6e2e618269"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v12_1/screen.png",
+      "type": "png",
+      "bytes": 265224,
+      "sha256": "840431cfeb51b1ec51fac9318d429f04fc2f4648e8848d1c9c35d6df6a6aa73e"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v12_2/code.html",
+      "type": "html",
+      "bytes": 35512,
+      "sha256": "a616b6bfe748cf7ca2ba5074c491306c3c5bfadf5c9bc2bdbf4d7d7287b22b27"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v12_2/screen.png",
+      "type": "png",
+      "bytes": 556631,
+      "sha256": "49205ccda7bdd845ef6634947a5ee3c9ed9a4a6ed6e4330746b7d9bf56d7371b"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v14_72/code.html",
+      "type": "html",
+      "bytes": 39178,
+      "sha256": "babe3d6ff035e6bf2c2af201c546a4becda63e3cdb1d4f1d94a751b95790390d"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v14_72/screen.png",
+      "type": "png",
+      "bytes": 608792,
+      "sha256": "f98c3850ecda4d6ce171c3812d6b0451a8c6a857ac7a04c418f73d13f13ceaa4"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_1/code.html",
+      "type": "html",
+      "bytes": 30817,
+      "sha256": "7b4c54134f71be67c4c3fb59426ad66c2212e1bcdbb41583d97e695e6ff7c45b"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_1/screen.png",
+      "type": "png",
+      "bytes": 743993,
+      "sha256": "bcb4c06483eeb3f6ef939aee06bff21a75e0f3a3a84355ac9873f9e848db9294"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_2/code.html",
+      "type": "html",
+      "bytes": 37877,
+      "sha256": "f4a3b747edc9c641ace1bb53b8fd0febcaf4a43cdc9c8524c2c563f2f22979e4"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_2/screen.png",
+      "type": "png",
+      "bytes": 571441,
+      "sha256": "ff1fc7e2ed4cba39e9a376d437bfdb8f8cc8fc0d1cde0628835fcbda3003b4fa"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_3/code.html",
+      "type": "html",
+      "bytes": 34911,
+      "sha256": "3d355ee9c7bd4702edf38e45c08b2659d43797e5994dde0dc7188dd13f083e77"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v16_3/screen.png",
+      "type": "png",
+      "bytes": 803691,
+      "sha256": "32e7afaed07a1a03581f152e3961ba18701e29d27127c8f39d920c90fb9a88b3"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_1/code.html",
+      "type": "html",
+      "bytes": 21425,
+      "sha256": "fd4b5b60097304f987df80c0eaa201d59938a7f6117c1641f39e0754c0fad390"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_1/screen.png",
+      "type": "png",
+      "bytes": 234991,
+      "sha256": "22d16ad3f82239ecb1bb3491217fc9b16a17a9b69d852b0e396dc9040b0fcc2b"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_2/code.html",
+      "type": "html",
+      "bytes": 21998,
+      "sha256": "c984669b0399e3f0d52344366accae525a25ad6a90b4e2f5247837b0a90bfb56"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_2/screen.png",
+      "type": "png",
+      "bytes": 218467,
+      "sha256": "f3f2e7e588537871b1716b4d7c980493a9160afcc0c9942dfffc4705aa738ee1"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_3/code.html",
+      "type": "html",
+      "bytes": 15149,
+      "sha256": "945a30de557a261bb9267328894d3a89031b051011228bccd41d4a906d994a01"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v18_3/screen.png",
+      "type": "png",
+      "bytes": 199252,
+      "sha256": "de151732cdc6a18dfcd1c3ae5a499d00f52322d41465f9864ef895e182984cd5"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v7/code.html",
+      "type": "html",
+      "bytes": 40442,
+      "sha256": "bd5863d2cb9404a0505327a11bc2eb922f4d1006933aa4d6aee8a64e50c785e4"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/raw/ourtrail_v7/screen.png",
+      "type": "png",
+      "bytes": 545077,
+      "sha256": "2e953d46d43d4025ea333edc250265e0906f65d144dcf2c9d89ee8b78de3d249"
+    },
+    {
+      "path": "design-references/stitch/weather/2026-10-30/source/stitch_ourtrail_ui_optimization.zip",
+      "type": "zip",
+      "bytes": 5053393,
+      "sha256": "121621e74237f50ee45926d32b8e5bbe0ac20f26b42208e28c5c254ac0b3d1e6"
+    }
+  ],
+  "externalDependencies": [
+    {
+      "id": "tailwind-cdn",
+      "kind": "script-cdn",
+      "url": "https://cdn.tailwindcss.com",
+      "bundled": false,
+      "usedBy": "all-html",
+      "note": "所有 HTML 的样式都由运行时 Tailwind CDN 生成；ourtrail_v7 额外带 ?plugins=forms,container-queries。离线打开将丢失几乎全部样式。"
+    },
+    {
+      "id": "google-fonts-css",
+      "kind": "stylesheet-network",
+      "url": "https://fonts.googleapis.com/css2",
+      "bundled": false,
+      "usedBy": "all-html",
+      "note": "Hanken Grotesk 与 Manrope 字族（含多个字重/子集请求）、preconnect 到 fonts.gstatic.com。"
+    },
+    {
+      "id": "google-fonts-files",
+      "kind": "font-file-network",
+      "url": "https://fonts.gstatic.com",
+      "bundled": false,
+      "usedBy": "all-html",
+      "note": "字体的实际 woff2 字形文件经该域加载（preconnect + CSS 内 url()）。仓库内无字体字节。"
+    },
+    {
+      "id": "material-symbols",
+      "kind": "stylesheet-network",
+      "url": "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined",
+      "bundled": false,
+      "usedBy": "all-html",
+      "note": "图标是字体 ligature（<span class=\"material-symbols-outlined\">），不是 SVG；微信小程序不可直接用。"
+    },
+    {
+      "id": "stitch-aida-background",
+      "kind": "image-network",
+      "url": "https://lh3.googleusercontent.com/aida-public/...",
+      "bundled": false,
+      "usedBy": "ourtrail_v16_3",
+      "note": "ourtrail_v16_3/code.html 中作为 CSS background-image 的天空带底图；未随导出物打包，仓库内不存在该图字节。"
+    }
+  ],
+  "documents": {
+    "entry": "design-references/stitch/weather/README.md",
+    "snapshotReadme": "design-references/stitch/weather/2026-10-30/README.md",
+    "screenIndex": "design-references/stitch/weather/2026-10-30/SCREEN_INDEX.md",
+    "designConflicts": "design-references/stitch/weather/2026-10-30/DESIGN_CONFLICTS.md",
+    "assetAudit": "design-references/stitch/weather/2026-10-30/ASSET_AUDIT.md",
+    "verification": "design-references/stitch/weather/2026-10-30/VERIFICATION.md",
+    "checker": "tools/design-assets-check.js"
+  },
+  "verification": {
+    "checkedAt": "2026-10-30",
+    "checker": "node tools/design-assets-check.js",
+    "summary": "文件数与 manifest 一致、逐文件 SHA-256 与尺寸匹配、HTML↔PNG 成对、Markdown 本地链接可解析、ZIP 与 raw 逐文件一致、DESIGN.md 未改动、天气生产代码零改动、全部文件已纳入 Git 跟踪、文档中无个人目录绝对路径。详见 VERIFICATION.md。"
+  }
+}

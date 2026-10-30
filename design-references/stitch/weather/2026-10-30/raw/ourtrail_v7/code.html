@@ -1,0 +1,398 @@
+<!DOCTYPE html><html class="h-full" lang="zh-CN" data-deeptranslate-injected="true"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..900;1,300..900&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface-variant": "#414845", "on-tertiary-fixed-variant": "#653e00", "primary-fixed-dim": "#a7cfbf", "inverse-surface": "#2a313d", "surface-bright": "#f9f9ff", "on-primary": "#ffffff", "inverse-on-surface": "#ebf1ff", "tertiary": "#2d1900", "on-tertiary": "#ffffff", "surface-container-low": "#f0f3ff", "on-secondary-fixed-variant": "#005236", "on-error-container": "#93000a", "secondary-container": "#6cf8bb", "surface-container": "#e7eefe", "surface-container-lowest": "#ffffff", "on-secondary-container": "#00714d", "secondary-fixed": "#6ffbbe", "on-error": "#ffffff", "surface-tint": "#416659", "inverse-primary": "#a7cfbf", "surface-variant": "#dce2f3", "error-container": "#ffdad6", "secondary": "#006c49", "primary-fixed": "#c3ebdb", "on-surface": "#151c27", "outline": "#717975", "primary": "#00231a", "primary-container": "#13392e", "surface-container-highest": "#dce2f3", "surface-container-high": "#e2e8f8", "on-tertiary-fixed": "#2a1700", "tertiary-fixed": "#ffddb8", "on-primary-fixed": "#002118", "surface-dim": "#d3daea", "background": "#f9f9ff", "on-primary-container": "#7ca394", "on-background": "#151c27", "secondary-fixed-dim": "#4edea3", "error": "#ba1a1a", "surface": "#f9f9ff", "on-secondary-fixed": "#002113", "tertiary-fixed-dim": "#ffb95f", "on-tertiary-container": "#d88a00", "tertiary-container": "#4a2c00", "on-secondary": "#ffffff", "on-primary-fixed-variant": "#294e42", "outline-variant": "#c1c8c3" }, borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, spacing: { "space-lg": "1rem", "space-md": "0.75rem", "margin": "1rem", "space-xl": "1.5rem", "gutter": "0.75rem", "space-xs": "0.25rem", "space-sm": "0.5rem" }, fontFamily: { "label-caps": ["Hanken Grotesk"], "metric-label": ["Hanken Grotesk"], "headline-md": ["Manrope"], "metric-val": ["Manrope"], "body-lg": ["Hanken Grotesk"], "body-md": ["Hanken Grotesk"], "body-sm": ["Hanken Grotesk"], "display-lg": ["Manrope"], "title-md": ["Hanken Grotesk"], "headline-lg": ["Manrope"], "headline-sm": ["Manrope"] }, fontSize: { "label-caps": ["10px", { lineHeight: "12px", letterSpacing: "0.06em", fontWeight: "700" }], "metric-label": ["11px", { lineHeight: "14px", letterSpacing: "0.04em", fontWeight: "600" }], "headline-md": ["20px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }], "metric-val": ["22px", { lineHeight: "26px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }], "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }], "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }], "display-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "800" }], "title-md": ["15px", { lineHeight: "20px", fontWeight: "600" }], "headline-lg": ["24px", { lineHeight: "32px", letterSpacing: "-0.015em", fontWeight: "700" }], "headline-sm": ["17px", { lineHeight: "24px", fontWeight: "600" }] } } } };</script><style>@layer base{html,body{width:100vw;min-height:100vh;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head><body class="bg-surface text-on-surface font-body-md text-body-md antialiased"><header class="fixed top-0 w-full z-50 bg-surface/95 backdrop-blur-xl border-b border-surface-container pt-safe shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="flex flex-col px-space-lg pt-1 pb-1"><div class="flex items-center justify-between h-12"><div class="flex items-center gap-space-xs"><span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span><span class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">OurTrail</span><span class="font-headline-sm text-headline-sm font-semibold tracking-tight text-on-surface ml-space-xs">云层剖面</span></div><div class="flex items-center gap-space-md"><div class="flex items-center bg-surface-container-high/70 backdrop-blur-md rounded-full px-space-sm py-1"><button aria-label="更多" class="w-7 h-7 flex items-center justify-center text-on-surface hover:text-primary transition-colors"><span class="material-symbols-outlined text-[18px]">more_horiz</span></button><div class="w-px h-3 bg-outline-variant/60 mx-0.5"></div><button aria-label="关闭" class="w-7 h-7 flex items-center justify-center text-on-surface hover:text-primary transition-colors"><span class="material-symbols-outlined text-[16px]">adjust</span></button></div><div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[16px]">person</span></div></div></div><div class="flex items-center justify-between py-1"><button class="flex items-center gap-space-xs group"><span class="material-symbols-outlined text-secondary text-[18px]">landscape</span><span class="font-title-md text-title-md font-bold text-on-surface group-hover:text-primary transition-colors">四姑娘山 · 大峰 (5,025m)</span><span class="material-symbols-outlined text-on-surface-variant text-[16px] group-hover:translate-y-0.5 transition-transform">expand_more</span></button><div class="flex items-center gap-1 font-metric-label text-metric-label text-on-surface-variant"><span class="material-symbols-outlined text-[13px] text-secondary">satellite_alt</span><span class="">GPS 同步</span></div></div></div><nav class="h-10 px-space-lg flex items-center gap-space-lg overflow-x-auto bg-surface/50 border-t border-surface-container/50" data-active-classes="text-primary-container font-semibold relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary-container"><a class="h-full flex items-center font-title-md text-title-md text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap" data-path="hourly-forecast" href="#">逐时预报</a><a aria-current="page" class="h-full flex items-center whitespace-nowrap text-primary-container font-semibold relative after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary-container" data-path="cloud-cross-section" href="#">云层剖面</a><a class="h-full flex items-center font-title-md text-title-md text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap" data-path="trail-weather" href="#">沿途天气</a><a class="h-full flex items-center font-title-md text-title-md text-on-surface-variant hover:text-on-surface transition-colors whitespace-nowrap" data-path="astronomy-solunar" href="#">日月天相</a></nav></header><main class="flex flex-col relative w-full pb-20 bg-surface min-h-screen px-space-lg pt-28"><div class="flex flex-col w-full pb-10 space-y-4"><!-- Route Info & Mode Switcher Bar -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm space-y-space-sm mt-3"><div class="flex items-start justify-between"><div class="min-w-0 pr-space-xs"><div class="flex items-center gap-1.5 flex-wrap"><span class="font-headline-sm text-headline-sm text-on-surface font-bold">四姑娘山 · 大峰</span><span class="font-label-caps text-label-caps bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded-full">5,025m</span></div><div class="flex items-center gap-1.5 mt-1.5 text-on-surface-variant flex-wrap"><span class="material-symbols-outlined text-[14px] text-secondary">alt_route</span><span class="font-body-sm text-body-sm">长坪沟-海子沟冲顶线 19.8km</span><span class="text-outline-variant">•</span><span class="font-metric-label text-metric-label font-bold text-on-surface">累计爬升 3,200m → 5,025m</span></div></div><div class="flex flex-col items-end shrink-0"><span class="inline-flex items-center gap-1 bg-surface-container-high px-2 py-0.5 rounded-full text-on-surface-variant font-label-caps text-label-caps"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>ECMWF 4km</span><span class="font-label-caps text-label-caps text-outline mt-0.5">探空同化订正</span></div></div><div class="flex bg-surface-container p-0.5 rounded-lg w-full"><button class="flex-1 py-1.5 rounded-md bg-primary-container text-on-primary font-title-md text-title-md flex items-center justify-center gap-1.5 shadow-sm transition-all" id="btnModeRoute"><span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>路线剖面</button><button class="flex-1 py-1.5 rounded-md text-on-surface-variant font-title-md text-title-md flex items-center justify-center gap-1.5 hover:text-on-surface transition-all" id="btnModeTemporal">云层时序</button></div></div>
+<!-- Compact Weather Overview (明日 06:00 冲顶基准) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm space-y-space-xs">
+<div class="flex items-center justify-between pb-space-xs border-b border-surface-container">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">routine</span>
+<span class="font-title-md text-title-md text-on-surface font-bold">高海拔气象概览</span>
+<span class="font-label-caps text-label-caps text-outline">(明日 06:00 预报基准)</span>
+</div>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed font-label-caps text-label-caps px-2 py-0.5 rounded-full font-bold">窗口期相对开阔</span>
+</div>
+<div class="grid grid-cols-2 gap-x-space-md gap-y-space-sm pt-1">
+<!-- Metric 1: Temp & Feels like -->
+<div class="flex flex-col">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-secondary">device_thermostat</span>
+<span class="font-metric-label text-metric-label uppercase">气温 · 体感</span>
+</div>
+<div class="flex items-baseline gap-1 mt-0.5">
+<span class="font-metric-val text-metric-val text-on-surface">-8°C</span>
+<span class="font-body-sm text-body-sm text-outline">(体感 -15°C)</span>
+</div>
+</div>
+<!-- Metric 2: Wind Speed & Gust -->
+<div class="flex flex-col">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-secondary">air</span>
+<span class="font-metric-label text-metric-label uppercase">风速 · NW</span>
+</div>
+<div class="flex items-baseline gap-1 mt-0.5">
+<span class="font-metric-val text-metric-val text-on-surface">24 <span class="font-body-sm text-body-sm font-normal">km/h</span></span>
+<span class="font-body-sm text-body-sm text-tertiary-container font-medium">(阵风 38)</span>
+</div>
+</div>
+<!-- Metric 3: Precip & Total Clouds -->
+<div class="flex flex-col">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-secondary">weather_snowy</span>
+<span class="font-metric-label text-metric-label uppercase">降水 · 云量</span>
+</div>
+<div class="flex items-baseline gap-1.5 mt-0.5">
+<span class="font-title-md text-title-md text-on-surface font-bold">20%</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">零星微雪 (总云量 45%)</span>
+</div>
+</div>
+<!-- Metric 4: Freezing Height -->
+<div class="flex flex-col">
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[13px] text-secondary">ac_unit</span>
+<span class="font-metric-label text-metric-label uppercase">0°C 冻结高度</span>
+</div>
+<div class="flex items-baseline gap-1 mt-0.5">
+<span class="font-metric-val text-metric-val text-secondary">3,920<span class="font-body-sm text-body-sm font-normal">m</span></span>
+<span class="font-label-caps text-label-caps text-outline">大本营下方</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Atmospheric Cross Section Visualization Studio (Major Upgrade V7) -->
+<div class="bg-primary text-on-primary rounded-xl overflow-hidden shadow-md" id="mountain-cloud-card" role="region" aria-label="高山地貌与连续立面云剖面图">
+<!-- Chart Header with Focus Switcher -->
+<div class="flex items-center justify-between px-space-md pt-3 pb-2 bg-primary-container/50 border-b border-primary-container">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[17px] text-secondary-fixed">cloud_queue</span>
+<span class="font-title-md text-title-md text-on-primary font-bold">高山地貌与立面云剖面</span>
+<span class="bg-primary-container text-primary-fixed-dim font-label-caps text-label-caps px-1.5 py-0.5 rounded border border-primary-fixed-dim/40 ml-1">聚焦 2,500-5,500m</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 text-primary-fixed-dim font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed animate-ping"></span>
+        真实剖面 · 19.8km
+      </span>
+<button class="px-2.5 py-1 min-h-[44px] min-w-[44px] flex items-center justify-center rounded bg-primary-container text-primary-fixed-dim hover:text-on-primary font-label-caps text-label-caps transition-colors border border-primary-fixed-dim/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-fixed" aria-label="切换全高度显示">全高度</button>
+</div>
+</div>
+<!-- Main Chart Canvas Area with Continuous Cloud Fraction Field and Strictly Clipped Atmospheric Boundaries -->
+<div class="relative w-full px-2 pt-3 pb-1 select-none bg-gradient-to-b from-[#02140e] via-[#051c14] to-[#010b07]"><p class="sr-only">明天06:00四姑娘山大峰路线，山顶5,025m气温-8度处于冲顶晴空窗口，大本营4,379m处于逆温沉降层上沿，0°C冻结层高度3,920m位于大本营下方，河谷云海覆盖于3,800m以下。</p>
+<svg class="w-full h-auto overflow-visible min-h-[310px]" preserveAspectRatio="xMidYMid meet" viewBox="0 0 360 310">
+<defs>
+<!-- Grid Pattern -->
+<pattern height="25" id="topoGridV7" patternUnits="userSpaceOnUse" width="54">
+<path d="M 54 0 L 0 0 0 25" fill="none" stroke="#1d3f33" stroke-dasharray="2 3" stroke-width="0.55"></path>
+</pattern>
+<!-- Deep Sky Gradient -->
+<linearGradient id="skyGradV7" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#041510"></stop>
+<stop offset="30%" stop-color="#082018"></stop>
+<stop offset="65%" stop-color="#0c271e"></stop>
+<stop offset="100%" stop-color="#03100b"></stop>
+</linearGradient>
+<!-- Mountain Rock Geology Gradients -->
+<linearGradient id="rockBackGeologyV7" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#183a2e"></stop>
+<stop offset="40%" stop-color="#102a21"></stop>
+<stop offset="100%" stop-color="#061711"></stop>
+</linearGradient>
+<linearGradient id="rockForeGeologyV7" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#225744"></stop>
+<stop offset="30%" stop-color="#163e30"></stop>
+<stop offset="70%" stop-color="#0d291f"></stop>
+<stop offset="100%" stop-color="#05150f"></stop>
+</linearGradient>
+<!-- Atmosphere Upper Clip Boundary (Masking Clouds Above Fore Terrain Only) -->
+<clipPath id="skyAtmosphereClip">
+<path d="M 34,16 L 356,16 L 356,112 L 342,80 L 332,63 L 316,81 L 294,98 L 272,114.7 L 246,126 L 220,138 L 194,152 L 168,165 L 140,181 L 112,189 L 84,196 L 58,203 L 34,209 Z"></path></clipPath>
+<!-- Continuous Low Valley Stratocumulus Gradient (Dense Cloud Sea) -->
+<linearGradient id="valleyContinuousField" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"></stop>
+<stop offset="18%" stop-color="#ebf6fa" stop-opacity="0.9"></stop>
+<stop offset="45%" stop-color="#cce4ef" stop-opacity="0.82"></stop>
+<stop offset="75%" stop-color="#a2c7d7" stop-opacity="0.7"></stop>
+<stop offset="100%" stop-color="#6595a8" stop-opacity="0.45"></stop>
+</linearGradient>
+<!-- Valley Horizontal Dissipation Gradient -->
+<linearGradient id="valleyHLinearFade" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"></stop>
+<stop offset="55%" stop-color="#ebf6fa" stop-opacity="0.88"></stop>
+<stop offset="80%" stop-color="#cbe3ee" stop-opacity="0.6"></stop>
+<stop offset="100%" stop-color="#a8cad9" stop-opacity="0.05"></stop>
+</linearGradient>
+<!-- Continuous Inversion Cloud Band Gradient (4,100 - 4,400m) Pure Silver Mist / Cool Blue-Gray, NO ORANGE -->
+<linearGradient id="inversionLayerFieldGrad" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0%" stop-color="#dff0f8" stop-opacity="0.05"></stop>
+<stop offset="15%" stop-color="#eaf4f9" stop-opacity="0.65"></stop>
+<stop offset="45%" stop-color="#f3f9fc" stop-opacity="0.78"></stop>
+<stop offset="75%" stop-color="#dcedf5" stop-opacity="0.62"></stop>
+<stop offset="100%" stop-color="#cbe1ec" stop-opacity="0.12"></stop>
+</linearGradient>
+<!-- Summit Aura Glow -->
+<radialGradient cx="50%" cy="50%" id="summitGlowV7" r="50%">
+<stop offset="0%" stop-color="#6cf8bb" stop-opacity="0.95"></stop>
+<stop offset="55%" stop-color="#6cf8bb" stop-opacity="0.28"></stop>
+<stop offset="100%" stop-color="#6cf8bb" stop-opacity="0"></stop>
+</radialGradient>
+</defs>
+<!-- Background Sky & Grid: 2,500m (y=265) to 5,500m (y=25), Height=240px -->
+<rect fill="url(#skyGradV7)" height="250" rx="5" width="322" x="34" y="16"></rect>
+<rect fill="url(#topoGridV7)" height="250" rx="5" width="322" x="34" y="16"></rect>
+<!-- Elevation Y-Axis Labels & Reference Grid Lines -->
+<g class="font-label-caps" fill="#7ca394" font-size="7.5" text-anchor="end">
+<text x="31" y="28">5,500m</text>
+<text x="31" y="68">5,000m</text>
+<text x="31" y="108">4,500m</text>
+<text x="31" y="148">4,000m</text>
+<text x="31" y="188">3,500m</text>
+<text x="31" y="228">3,000m</text>
+<text x="31" y="268">2,500m</text>
+</g>
+<line stroke="#1d3f33" stroke-width="0.6" x1="34" x2="356" y1="25" y2="25"></line>
+<line stroke="#1d3f33" stroke-width="0.6" x1="34" x2="356" y1="65" y2="65"></line>
+<line stroke="#1d3f33" stroke-width="0.6" x1="34" x2="356" y1="105" y2="105"></line>
+<line stroke="#1d3f33" stroke-width="0.6" x1="34" x2="356" y1="145" y2="145"></line>
+<line stroke="#1d3f33" stroke-width="0.6" x1="34" x2="356" y1="185" y2="185"></line>
+<line stroke="#1d3f33" stroke-width="0.6" x1="34" x2="356" y1="225" y2="225"></line>
+<line stroke="#1d3f33" stroke-width="0.6" x1="34" x2="356" y1="265" y2="265"></line>
+<!-- High-altitude Cirrus Strands (>5,200m) -->
+<path d="M 36,22 Q 120,17 210,24 T 352,21" fill="none" stroke="#ffffff" stroke-dasharray="14 5 20 6" stroke-opacity="0.35" stroke-width="1.1"></path>
+<path d="M 70,36 Q 160,30 250,38 T 345,34" fill="none" stroke="#c3ebdb" stroke-dasharray="10 4" stroke-opacity="0.22" stroke-width="0.8"></path>
+<!-- ================= 1. BACK MOUNTAIN TERRAIN LAYER ================= -->
+<path d="M 34,265 L 34,185 L 68,175 L 112,160 L 158,142 L 204,118 L 246,95 L 285,74 L 318,52 L 334,48 L 346,68 L 356,105 L 356,265 Z" fill="url(#rockBackGeologyV7)" opacity="0.55"></path>
+<!-- ================= 2. SCIENTIFIC CONTINUOUS ATMOSPHERIC CLOUD FIELDS (CLIPPED TO SKY/ATMOSPHERE) ================= -->
+<g clip-path="url(#skyAtmosphereClip)" id="atmosphericContinuousFields">
+<!-- A. Valley Continuous Stratocumulus Sea (2,500m - 3,800m -> y=265 to y=161) -->
+<path d="M 34,161 C 60,158 92,163 125,157 C 156,152 188,162 215,156 C 235,153 252,162 265,169 L 265,265 L 34,265 Z" fill="url(#valleyContinuousField)"></path>
+<!-- Smooth multi-wave natural density gradients (Continuous Fraction isoclines, no discrete ellipses) -->
+<path d="M 34,165 C 56,155 88,157 118,163 C 148,151 180,150 206,160 C 228,153 248,162 265,172 L 265,265 L 34,265 Z" fill="url(#valleyHLinearFade)" opacity="0.75"></path>
+<path d="M 34,172 C 65,166 100,168 135,162 C 168,158 200,167 230,165 L 230,265 L 34,265 Z" fill="#ffffff" opacity="0.4"></path>
+<!-- Cloud sea inversion boundary ribbon at 3,800m (y=161) -->
+<path d="M 34,161 Q 95,158 155,162 T 265,163" fill="none" stroke="#eaf5fb" stroke-dasharray="3 3" stroke-opacity="0.75" stroke-width="0.8"></path>
+<!-- B. Organic Continuous Inversion Cloud Band (4,100m - 4,400m -> y=137 to y=113) -->
+<path d="M 145,127 C 175,116 205,113 238,118 C 268,112 298,114 326,120 C 342,117 352,121 356,124 L 356,139 C 342,138 322,136 298,138 C 270,142 240,140 212,137 C 185,139 162,135 145,131 Z" fill="url(#inversionLayerFieldGrad)"></path>
+<path d="M 165,124 C 195,117 228,116 258,119 C 288,115 318,118 348,122 L 348,134 C 322,132 292,135 262,133 C 230,131 198,135 165,128 Z" fill="#ffffff" opacity="0.32"></path>
+<line stroke="#a7cfbf" stroke-dasharray="3 3" stroke-opacity="0.6" stroke-width="0.8" x1="155" x2="356" y1="113" y2="113"></line>
+<line stroke="#a7cfbf" stroke-dasharray="3 3" stroke-opacity="0.6" stroke-width="0.8" x1="155" x2="356" y1="137" y2="137"></line>
+</g>
+<!-- Valley Cloud Tag (Outside Mask for Crisp Sharp Text) -->
+<g transform="translate(38, 172)">
+<rect fill="#021c15" fill-opacity="0.9" height="13" rx="2.5" stroke="#a7cfbf" stroke-opacity="0.7" stroke-width="0.6" width="112" x="0" y="0"></rect>
+<text fill="#e0f7ed" font-family="Hanken Grotesk" font-size="7" font-weight="600" x="5" y="9.2">河谷云海 (云顶 3,800m)</text>
+</g>
+<!-- Restrained Clean Amber Pill Tag for Inversion Layer -->
+<g transform="translate(196, 99)">
+<rect fill="#2a1700" fill-opacity="0.94" height="13" rx="3" stroke="#ffb95f" stroke-width="0.7" width="155" x="0" y="0"></rect>
+<circle cx="6.5" cy="6.5" fill="#ffb95f" r="2"></circle>
+<text fill="#ffddb8" font-family="Hanken Grotesk" font-size="7" font-weight="bold" x="13" y="9.4">逆温沉降层 (4,100-4,400m) · 稳定平铺</text>
+</g>
+<!-- ================= 3. FOREGROUND ALPINE MOUNTAIN PROFILE (Solid Rock, Cut Cleanly) ================= -->
+<path d="M 34,265 L 34,209 L 58,203 L 84,196 L 112,189 L 140,181 L 168,165 L 194,152 L 220,138 L 246,126 L 272,114.7 L 294,98 L 316,81 L 332,63 L 342,80 L 356,112 L 356,265 Z" fill="url(#rockForeGeologyV7)"></path>
+<!-- Mountain rock striations & contour ridges -->
+<path d="M 58,203 L 86,228 M 112,189 L 142,220 M 140,181 L 174,216 M 194,152 L 226,195 M 220,138 L 250,180 M 246,126 L 274,166 M 272,114.7 L 302,155 M 316,81 L 336,122" fill="none" stroke="#164433" stroke-dasharray="2 3" stroke-width="0.8"></path>
+<!-- ================= 4. 0°C FREEZING LEVEL LINE (3,920m -> y=151.4) ================= -->
+<line stroke="#5de2d4" stroke-dasharray="4 3" stroke-opacity="0.9" stroke-width="1.1" x1="34" x2="356" y1="151.4" y2="151.4"></line>
+<g transform="translate(38, 137)">
+<rect fill="#00291d" fill-opacity="0.92" height="13" rx="2.5" stroke="#5de2d4" stroke-opacity="0.8" stroke-width="0.6" width="132" x="0" y="0"></rect>
+<circle cx="6" cy="6.5" fill="#5de2d4" r="2"></circle>
+<text fill="#5de2d4" font-family="Hanken Grotesk" font-size="7" font-weight="bold" x="13" y="9.5">0°C 冻结高度 3,920m (大本营下方)</text>
+</g>
+<!-- ================= 5. GLOWING GLACIER-MINT HIKING TRAIL ================= -->
+<!-- Trail Glow Underlay -->
+<path d="M 34,209 Q 86,195 130,183 T 168,165 T 220,138 T 272,114.7 L 294,98 L 316,81 L 332,63" fill="none" stroke="#6cf8bb" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.35" stroke-width="7"></path>
+<!-- Crisp Luminous Hiking Polyline -->
+<path d="M 34,209 Q 86,195 130,183 T 168,165 T 220,138 T 272,114.7 L 294,98 L 316,81 L 332,63" fill="none" stroke="#6cf8bb" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<!-- Waypoint 1: 起点 3,200m (0km, y=209) -->
+<circle cx="34" cy="209" fill="#ffffff" r="3.5" stroke="#0f3226" stroke-width="1.8" role="img" aria-label="航点：起点，海拔3,200米，0公里"></circle>
+<text fill="#dce2f3" font-family="Hanken Grotesk" font-size="7.5" font-weight="600" x="40" y="222">起点 3,200m</text>
+<!-- Waypoint 2: 打尖包 3,750m (7.5km, y=165) -->
+<circle cx="168" cy="165" fill="#a7cfbf" r="3.2" stroke="#00231a" stroke-width="1.5" role="img" aria-label="航点：打尖包，海拔3,750米，7.5公里"></circle>
+<text fill="#c3ebdb" font-family="Hanken Grotesk" font-size="7.2" font-weight="600" x="152" y="179">打尖包 3,750m</text>
+<!-- Waypoint 3: 大本营 4,379m (15km, y=114.7) -->
+<circle cx="272" cy="114.7" fill="#ffb95f" r="3.8" stroke="#0f3226" stroke-width="1.8" role="img" aria-label="航点：大本营，海拔4,379米，15公里"></circle>
+<g transform="translate(236, 83)">
+<rect fill="#13392e" fill-opacity="0.95" height="14.5" rx="2.5" stroke="#ffb95f" stroke-width="0.8" width="70" x="0" y="0"></rect>
+<text fill="#ffb95f" font-family="Hanken Grotesk" font-size="7.2" font-weight="bold" x="5" y="10.4">⛺ 大本营 4,379m</text>
+</g>
+<!-- Waypoint 4: 峰顶 (大峰 5,025m, 19.8km, y=63) Rising proud into clear air -->
+<circle cx="332" cy="63" fill="url(#summitGlowV7)" r="10"></circle>
+<circle cx="332" cy="63" fill="#6cf8bb" r="4.8" stroke="#ffffff" stroke-width="1.6" role="img" aria-label="航点：大峰山顶，海拔5,025米，19.8公里"></circle>
+<!-- Summit Tooltip Floating Card -->
+<line stroke="#6cf8bb" stroke-dasharray="2 2" stroke-opacity="0.85" stroke-width="1" x1="332" x2="306" y1="63" y2="46"></line>
+<g transform="translate(202, 18)">
+<rect fill="#002118" fill-opacity="0.95" height="27" rx="4" stroke="#6cf8bb" stroke-width="1" width="152" x="0" y="0"></rect>
+<circle cx="8" cy="8.5" fill="#6cf8bb" r="2.5"></circle>
+<text fill="#6cf8bb" font-family="Hanken Grotesk" font-size="7.8" font-weight="bold" x="15" y="11">★ 大峰 5,025m · 明天 06:00</text>
+<text fill="#ffffff" font-family="Hanken Grotesk" font-size="7" font-weight="500" x="8" y="22">-8°C · 风 24km/h · 云量 15% · 冲顶开阔</text>
+</g>
+<!-- X-Axis Baseline & Mileage Coordinates -->
+<line stroke="#294e42" stroke-width="0.9" x1="34" x2="356" y1="265" y2="265"></line>
+<g class="font-label-caps" fill="#7ca394" font-size="7.5" text-anchor="middle">
+<text x="34" y="278">0km</text>
+<text x="110" y="278">5.0km</text>
+<text x="168" y="278">7.5km</text>
+<text x="272" y="278">15.0km</text>
+<text x="332" y="278">19.8km</text>
+</g>
+</svg>
+</div>
+<!-- Timeline Slider Under Chart -->
+<div class="px-space-md pt-2.5 pb-space-md bg-primary-container/30 border-t border-primary-container/60">
+<div class="flex items-center justify-between mb-1.5">
+<span class="font-label-caps text-label-caps text-primary-fixed-dim uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">schedule</span>
+        预报时刻轴 (滑动时刻切换云层，地形固定)
+      </span>
+<span class="font-label-caps text-label-caps text-secondary-fixed font-bold">冲顶关键窗口</span>
+</div>
+<div class="flex items-center gap-1.5 overflow-x-auto py-1"><button class="px-2.5 py-1.5 min-h-[44px] inline-flex items-center rounded bg-primary-container/80 text-primary-fixed-dim font-metric-label text-metric-label whitespace-nowrap hover:text-on-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-fixed" aria-label="切换至今天 18:00 云层预报">今天 18:00</button><button class="px-2.5 py-1.5 min-h-[44px] inline-flex items-center rounded bg-primary-container/80 text-primary-fixed-dim font-metric-label text-metric-label whitespace-nowrap hover:text-on-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-fixed" aria-label="切换至今天 22:00 云层预报">今天 22:00</button><button class="px-2.5 py-1.5 min-h-[44px] inline-flex items-center rounded bg-primary-container/80 text-primary-fixed-dim font-metric-label text-metric-label whitespace-nowrap hover:text-on-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-fixed" aria-label="切换至明天 02:00 云层预报">明天 02:00</button><button aria-current="true" class="px-3 py-1.5 min-h-[44px] rounded bg-secondary-container text-on-secondary-container font-metric-label text-metric-label font-bold whitespace-nowrap shadow-sm inline-flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary" aria-label="当前选择：明天 06:00 冲顶窗口预报"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>明天 06:00 (冲顶窗口)</button><button class="px-2.5 py-1.5 min-h-[44px] inline-flex items-center rounded bg-primary-container/80 text-primary-fixed-dim font-metric-label text-metric-label whitespace-nowrap hover:text-on-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-fixed" aria-label="切换至明天 10:00 云层预报">明天 10:00</button></div>
+</div>
+</div>
+<!-- Cloud Density & Transmittance Legend (Unified with Chart Grayscale / Mist Blue Coding) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-secondary">blur_on</span>
+<span class="font-metric-label text-metric-label text-on-surface font-bold uppercase">云量密度与透光率图例</span>
+<span class="font-label-caps text-label-caps text-outline ml-1">CLOUD FRACTION</span>
+</div>
+<span class="font-label-caps text-label-caps text-outline">探空反演标尺</span>
+</div>
+<div class="grid grid-cols-4 gap-2">
+<div class="flex flex-col items-center bg-surface-container-low rounded-lg p-2 text-center">
+<div class="w-full h-2 rounded bg-surface-container-highest/60 mb-1 border border-outline-variant/30"></div>
+<span class="font-metric-label text-metric-label text-on-surface font-semibold">20% 散云</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">轻雾透光 · 极高视距</span>
+</div>
+<div class="flex flex-col items-center bg-surface-container-low rounded-lg p-2 text-center">
+<div class="w-full h-2 rounded bg-primary-fixed-dim/60 mb-1 border border-primary-fixed-dim/40"></div>
+<span class="font-metric-label text-metric-label text-on-surface font-semibold">50% 碎云</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">柔和半透 · 间歇遮蔽</span>
+</div>
+<div class="flex flex-col items-center bg-surface-container-low rounded-lg p-2 text-center">
+<div class="w-full h-2 rounded bg-[#bedce8] mb-1 border border-outline-variant/30"></div>
+<span class="font-metric-label text-metric-label text-on-surface font-semibold">80% 多云</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">冷灰青蓝 · 浓密层积</span>
+</div>
+<div class="flex flex-col items-center bg-surface-container-low rounded-lg p-2 text-center">
+<div class="w-full h-2 rounded bg-[#ffffff] mb-1 border border-outline-variant/30 shadow-sm"></div>
+<span class="font-metric-label text-metric-label text-on-surface font-semibold">100% 满布</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">致密云海 · 视线遮断</span>
+</div>
+</div>
+</div>
+<!-- Focused Elevation Station Detail Card (Summit 5,025m / 明天 06:00) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-xs border-b border-surface-container">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-md bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[15px]">terrain</span>
+</div>
+<div>
+<span class="font-title-md text-title-md text-on-surface font-bold">峰顶测站状态</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant ml-1">5,025m · 明天 06:00</span>
+</div>
+</div>
+<div class="flex items-center gap-1 text-secondary font-metric-label text-metric-label font-bold"><span class="w-2 h-2 rounded-full bg-secondary-container"></span><span class="">云海平稳 · 窗口相对开阔</span></div>
+</div>
+<div class="grid grid-cols-3 gap-space-sm pt-space-sm">
+<div class="bg-surface-container-low p-2 rounded-lg">
+<span class="font-label-caps text-label-caps text-on-surface-variant block">峰顶气压</span>
+<span class="font-metric-val text-metric-val text-on-surface font-bold">540 <span class="font-body-sm text-body-sm font-normal">hPa</span></span>
+</div>
+<div class="bg-surface-container-low p-2 rounded-lg">
+<span class="font-label-caps text-label-caps text-on-surface-variant block">能见度</span>
+<span class="font-metric-val text-metric-val text-secondary font-bold">&gt;30 <span class="font-body-sm text-body-sm font-normal">km</span></span>
+</div>
+<div class="bg-surface-container-low p-2 rounded-lg">
+<span class="font-label-caps text-label-caps text-on-surface-variant block">相对湿度</span>
+<span class="font-metric-val text-metric-val text-on-surface font-bold">62<span class="font-body-sm text-body-sm font-normal">%</span></span>
+</div>
+</div>
+<div class="flex items-center justify-between mt-2 pt-2 border-t border-surface-container font-body-sm text-body-sm text-on-surface-variant flex-wrap gap-1">
+<span class="">垂直气流速度: <strong class="text-on-surface font-semibold">+0.2 m/s (微弱上升)</strong></span>
+<span class="">风向方位: <strong class="text-on-surface font-semibold">310° 西北 (NW)</strong></span>
+</div>
+</div>
+<!-- Atmospheric Vertical Layer Stratification -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm space-y-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-title-md text-title-md text-on-surface font-bold">分层大气垂直构造</span>
+<span class="font-label-caps text-label-caps text-outline">三维气象反演</span>
+</div>
+<!-- Tier 1: High Cirrus -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex items-start justify-between gap-2">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+<span class="font-title-md text-title-md text-on-surface font-bold">高空卷云层</span>
+<span class="font-metric-label text-metric-label text-on-surface-variant">(6,000m - 11,000m)</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+        覆盖率 25% · 西风急流 16m/s · 无冰雹及强对流发展威胁
+      </p>
+</div>
+<span class="bg-surface-container text-on-surface font-label-caps text-label-caps px-2 py-0.5 rounded shrink-0 font-semibold">
+      通透
+    </span>
+</div>
+<!-- Tier 2: Ridge & Col Layer -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex items-start justify-between gap-2">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-title-md text-title-md text-on-surface font-bold">垭口山脊层</span>
+<span class="font-metric-label text-metric-label text-on-surface-variant">(4,000m - 5,025m)</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+        逆温沉降层稳定 (4,100m-4,400m) · 阵风 4-5 级 · 峰顶无遮挡
+      </p>
+</div>
+<span class="bg-secondary-fixed text-on-secondary-fixed-variant font-label-caps text-label-caps px-2 py-0.5 rounded shrink-0 font-bold">
+      视界良好
+    </span>
+</div>
+<!-- Tier 3: Valley Stratocumulus -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex items-start justify-between gap-2">
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-fixed-dim"></span>
+<span class="font-title-md text-title-md text-on-surface font-bold">河谷层积云</span>
+<span class="font-metric-label text-metric-label text-on-surface-variant">(2,200m - 3,800m)</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+        云底高度 2,400m，云顶 3,800m · 平整厚实逆温压制形成稳态云海
+      </p>
+</div>
+<span class="bg-primary-container text-on-primary font-label-caps text-label-caps px-2 py-0.5 rounded shrink-0 font-bold">
+      云海汇聚
+    </span>
+</div>
+</div>
+<!-- Mountaineering Meteorological Interpretation (山地天气研判) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm space-y-space-xs">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-tertiary-container">psychology_alt</span>
+<span class="font-title-md text-title-md text-on-surface font-bold">山地天气研判</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed pt-1">
+    预计清晨 <span class="font-bold text-primary">04:00-08:00</span> 逆温层结构稳定，低层云海锁定在 3,800m 以下，冲顶路段（大本营至峰顶）视线开阔无强降水，但需关注 4,800m 垭口段西北向阵风风寒效应（阵风 38km/h，体感 -15°C），建议强化防风夹层与面部防冻防护。
+  </p>
+<div class="pt-space-sm border-t border-surface-container flex flex-col gap-1 text-outline font-label-caps text-label-caps">
+<div class="flex items-center justify-between">
+<span class="">预报模型: ECMWF 4km &amp; GFS 0.25° 融合</span>
+<span class="">更新于今日 18:30 CST</span>
+</div>
+<div class="text-on-surface-variant">
+      ※ 高海拔局地微地形湍流多变，行进中请密切结合现场云势与气压计谨慎决策。
+    </div>
+</div>
+</div></div>
+</main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.03)]" data-active-classes="text-primary-container font-semibold"><div class="h-16 flex items-center justify-around px-space-md"><a class="flex flex-col items-center justify-center min-w-[48px] h-12 gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors" data-path="activities" href="#"><span class="material-symbols-outlined text-[22px]">explore</span><span class="font-body-sm text-body-sm">活动</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 gap-0.5 text-primary-container font-semibold" data-path="mountain-weather" href="#"><span class="material-symbols-outlined text-[22px] font-bold">wb_cloudy</span><span class="font-body-sm text-body-sm">天气</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors" data-path="routes-matrix" href="#"><span class="material-symbols-outlined text-[22px]">route</span><span class="font-body-sm text-body-sm">路线</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-12 gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors" data-path="profile-center" href="#"><span class="material-symbols-outlined text-[22px]">account_circle</span><span class="font-body-sm text-body-sm">我的</span></a></div></nav>
+
+<div data-deeptranslate-ui="hover" hidden="" style="position: fixed; z-index: 2147483500; max-width: 360px; max-height: 220px; overflow: auto; padding: 10px 12px; border-radius: 10px; background: rgb(23, 32, 51); color: white; font: 13px / 1.5 system-ui; box-shadow: rgba(19, 41, 77, 0.333) 0px 8px 28px; white-space: pre-wrap;"></div><div id="deeptranslate-word-selection" data-deeptranslate-ui="word-selection"></div></body><div data-deeptranslate-ui="hover" hidden="" style="position: fixed; z-index: 2147483500; max-width: 360px; max-height: 220px; overflow: auto; padding: 10px 12px; border-radius: 10px; background: rgb(23, 32, 51); color: white; font: 13px / 1.5 system-ui; box-shadow: rgba(19, 41, 77, 0.333) 0px 8px 28px; white-space: pre-wrap;"></div><div id="deeptranslate-word-selection" data-deeptranslate-ui="word-selection"></div></html>
