@@ -431,6 +431,47 @@
 .sw-blue { background: var(--blue-hour); opacity: 0.55; }
 .sw-sun { border-top-color: var(--forest); }
 
+/* 24 小时天穹带（日月标签）：色块由 utils/sky-ephemeris.js 的 PALETTE 生成，
+   图例这五个色块必须与那张图同值——两处都是 token 引用，没有新色值。 */
+.sky-band-card { display: flex; flex-direction: column; gap: 6px; }
+.sky-band-img { display: block; width: 100%; border-radius: 8px; background: var(--white); }
+.sky-band-summary { font-size: var(--text-body); font-weight: 600; color: var(--ink); word-break: keep-all; }
+.sw-night { background: var(--forest); }
+.sw-astro { background: var(--on-forest-line); }
+.sw-nautical { background: var(--blue-hour); }
+.sw-civil { background: var(--golden); }
+.sw-day { background: var(--forest-soft); }
+
+/* 晨昏时刻表：两列同构（晨/暮各四行），行内左名右时刻。
+   列宽用 minmax(0,1fr)：极区「—」与「05:58」都能放下，长词不把两列挤歪。 */
+.ephem-card { display: flex; flex-direction: column; gap: 8px; }
+.ephem-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.ephem-col {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 8px; border-radius: 8px; background: var(--forest-soft);
+}
+.ephem-head { font-size: var(--text-caption); font-weight: 600; color: var(--muted); }
+.ephem-row { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.ephem-k { font-size: var(--text-caption); color: var(--muted); overflow-wrap: anywhere; }
+.ephem-v { font-size: var(--text-body); font-weight: 600; color: var(--ink); }
+
+/* 月相卡：月盘 64px 固定宽（与 SVG 画布同值），右侧文字区允许收缩。 */
+.moon-card { display: flex; flex-direction: column; gap: 8px; }
+.moon-row { display: flex; align-items: center; gap: 12px; }
+.moon-disc { display: block; width: 64px; height: 64px; flex: 0 0 64px; }
+.moon-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.moon-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.moon-name { font-size: var(--text-title); font-weight: 600; color: var(--ink); }
+.moon-illum { font-size: var(--text-caption); font-weight: 600; color: var(--forest); }
+.moon-sub { font-size: var(--text-caption); color: var(--muted); }
+.moon-times {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px;
+  margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line);
+}
+.moon-time { display: flex; flex-direction: column; gap: 1px; }
+.moon-time-k { font-size: var(--text-caption); color: var(--muted); }
+.moon-time-v { font-size: var(--text-body); font-weight: 600; color: var(--ink); }
+
 /* 地点选择 sheet（overlay 内）：行高与沿途索引一致，出口固定两个。 */
 .loc-note { display: block; margin-bottom: 6px; }
 .loc-list { display: flex; flex-direction: column; }

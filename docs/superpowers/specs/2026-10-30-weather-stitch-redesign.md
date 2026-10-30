@@ -118,7 +118,12 @@ Stitch 稿大面积使用蓝色（`#094cb2` 一类）与深绿剖面底；OurTra
 ### Wave 2（同批，若回归稳定）
 
 5. ~~**云层标签**：标题区加「全屏查看」（复用 `weather-chart`）~~ **裁掉，理由可核**：`pages/weather-chart` 是全屏 **surface meteogram**（`meteogram-svg` + 时间轴），不是云层剖面；把云层卡指向它会得到一个「打开后内容不一样」的入口。真要做云层全屏需要新页面或给 `weather-chart` 增加剖面模式，属于另一件事（且没有真机证据，本机 NOT_RUN）。选中小时的云层读数**已经存在**：云层标签现有的 `unified.r1–r4` 读数行 + 点按/拖动同步，本轮没有重复造一份。
-6. **日月标签**：新增 24h 日照轨迹卡（真实太阳高度曲线 + 日出日落 + 黄金/蓝调色带 + 选中时刻），纯函数 `utils/solar-arc.js` 生成 SVG；月相与夜间窗口沿用既有 `agenda` / `condCards`。
+6. **日月标签（第二批，2026-10-30 已落地）**：新增 24h 日照轨迹卡（真实太阳高度曲线 + 日出日落 + 黄金/蓝调色带 + 选中时刻），纯函数 `utils/solar-arc.js` 生成 SVG；月相与夜间窗口沿用既有 `agenda` / `condCards`。**同日补齐 Stitch 日月标签的三块剩余内容**（新增 `utils/sky-ephemeris.js`）：
+   - **24h 天穹带**：按太阳高度角每 5 分钟采样分夜/天文/航海/民用/白昼五段，配日出日落虚线、选中时刻点与 00/06/12/18/24 刻度；只用既有 token 做字面量（SVG 取不到 `var()`）。
+   - **晨昏时刻表**：晨光 4 行（天文/航海/民用/日出），暮间 4 行**按时间下行为序**（日落 → 民用 → 航海 → 天文暗夜始），与晨间阶梯同向。
+   - **月相与月出月落**：半椭圆明暗界线（`a=|1−2f|·r`），南北半球与盈/亏错开其一即镜像；月出/月落、极区「当日不升/不落」、跨日「（次日）」。
+   - 三条诚实边界：极昼/极夜/极区月相/该纬度不出现的阶段各有各的话（`—` ≠ 缺测）；海拔只认数字（`Number(null)===0` 会把「没填」当海平面）；日期做日历合法性校验（`2026-02-30` 不许静默变成 3 月 2 日）。
+   - **首屏默认标签 `cloud` → `hourly`**（负责人 2026-10-30 裁定，见 §8 第 5 条）。
 
 ### 不在本次范围
 
@@ -137,7 +142,9 @@ Stitch 稿大面积使用蓝色（`#094cb2` 一类）与深绿剖面底；OurTra
 | `miniprogram/pages/weather/weather.wxss` | 新增页面级排版；**零新色值、零新字阶**；可点行 ≥ `--touch-target` |
 | `miniprogram/pages/weather/weather.json` | 注册 `overlay`、`fact-grid` |
 | `miniprogram/utils/solar-arc.js`（新增） | 纯函数：太阳高度/晨昏色带/SVG；wx-free，可在 Node 直测 |
+| `miniprogram/utils/sky-ephemeris.js`（新增） | 纯函数：24h 天穹带 / 晨昏时刻表 / 月相盘与月出月落；只 `require('./astro')`，wx-free |
 | `tools/solar-arc-test.js`（新增） | 63 条：输入边界、色板单源、曲线与升落一致、极昼/极夜、海拔三态、选中时刻、图元卫生 |
+| `tools/sky-ephemeris-test.js`（新增） | 99 条：输入边界（含假日期）、色板↔`app.wxss` 单源、相位界与 `astro` 对齐、极昼/极夜、海拔三态、选中点、图元卫生、晨昏逐字、月相四镜像、真页面装配、文案卫生 |
 | `tools/page2-gates-test.js` | 夹具补新字段 + §4 新增 6 条（hero / 日照卡 / 地点 sheet / 沿途标签） |
 | `tools/weather-page-test.js`、`tools/weather-production-ux-test.js` | **未改**：单点仍是 3 标签、逐时四行不变，两套原样通过（219 / 55） |
 
@@ -165,7 +172,8 @@ Stitch 稿大面积使用蓝色（`#094cb2` 一类）与深绿剖面底；OurTra
 | `node tools/check-handlers.js` | 全部解析；死 handler 仍只有存量 `editor#onNumber` |
 | `node tools/page2-gates-test.js` | `passed=116 failed=0` |
 | `node tools/weather-page-test.js` | `passed=219 failed=0` |
-| `node tools/weather-production-ux-test.js` | `passed=55 failed=0` |
+| `node tools/weather-production-ux-test.js` | `passed=56 failed=0` |
+| `node tools/sky-ephemeris-test.js`（第二批新增） | `passed=99 failed=0` |
 | `node tools/weather-v2-test.js` | `passed=103 failed=0` |
 | `node tools/sky-test.js` | `passed=280 failed=0` |
 | `node tools/journey-graph-test.js` | `passed=15 failed=0` |
@@ -196,7 +204,7 @@ Stitch 稿大面积使用蓝色（`#094cb2` 一类）与深绿剖面底；OurTra
 2. **沿途标签不做逐点预报**：避免与 `weather-plan` 形成第二套实现；标签负责「看清路线与时刻并切换节点」，预报在既有页面。这是取舍，不是遗漏。
 3. **地点选择 sheet 不复制天气首页的全部能力**：只列当前点集 + 两个出口；路线库/GPX 仍在 `weather-hub`；保存地点只在单点模式。
 4. **日照轨迹是新可视化**：只画真实天文量；不叠加「山体遮挡」与「视界预判」，因为仓库没有可量化的山脊遮挡模型。
-5. **默认标签**：本次保持既有默认（`cloud`）不变，避免无证据的导航行为变化；后续若负责人裁定改为 `hourly`，只需改一处并更新夹具。
+5. **默认标签**：~~本次保持既有默认（`cloud`）不变~~ **2026-10-30 负责人裁定改为 `hourly`，已落地**——理由：板 01-2 的主任务是「看今天几点走」，云层剖面是下钻项；改动只有一处默认值 + 一处载入兜底（新页面不存在该标签时也退回 `hourly`，否则单点回退会落回旧默认），并由 `weather-production-ux` 新增一条断言（`weatherTab === 'hourly'` 且该标签排第一）与真机像素层（第一个 `.seg` 带 `on`）同时钉住。
 6. **云层全屏被裁掉**：见 §5 第 5 条的可核理由——`weather-chart` 是全屏 surface meteogram，不是剖面；入口打开后内容不一致比没有入口更糟。
 
 ---
@@ -223,6 +231,6 @@ Stitch 稿大面积使用蓝色（`#094cb2` 一类）与深绿剖面底；OurTra
 
 - 本文：`docs/superpowers/specs/2026-10-30-weather-stitch-redesign.md`
 - 分支：`mac/weather-stitch-redesign`
-- 真机：`docs/weather-ux/qa/stitch-redesign-2026-10-30/README.md` + `device/`（十张截图 + 两份读数 JSON）
-- 真机边界：375 宽两个真实数据用例已核；390/414、物理机、大字体、软键盘、弱网与缓存兜底态未验
+- 真机：`docs/weather-ux/qa/stitch-redesign-2026-10-30/README.md` + `device/`（十张截图 + 两份读数 JSON；第二批在 `device/sky-ephemeris/`：A–E 五张 + `readings.json` + `run.log`）
+- 真机边界：375 宽两个真实数据用例已核（第二批另有同宽同日月的 36 条断言）；390/414、物理机、大字体、软键盘、弱网与缓存兜底态未验
 - 设计来源截图：`/Users/yfwang/stitch_ourtrail_ui_optimization/*/screen.png`（仓库外，未入库）

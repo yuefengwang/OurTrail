@@ -19,6 +19,8 @@
 | `notices-page.js` | ~270 | yes | `makeNoticesPage(getActivityId, opts)` page factory（`opts.tabBarIndex` 供 Tab 页自报选中态；定向候选名单有 `targetsLoading`/`targetsError` 两个独立态，见下） |
 | `route-profile.js` | 171 | yes | 活动/路线海拔剖面纯函数：连续轨迹高程 / 节点高程 / 无数据三态；输出 SVG 字符串，调用方只负责编码成 data-URI。**不插值伪造地形**；轨迹高程缺口不跨线连接。测试：`tools/route-profile-test.js` |
 | `weather-brief.js` | 88 | yes | 活动详情「出发日天气」摘要：只组合 `getWeatherByPoint` 已返回的逐日/逐时事实，缺数据/超 14 天/陈旧三态分开；没有精确出发小时就只给全天，不拿 00:00 冒充。**不新增阈值、不重算天相、不承诺天气**。测试：`tools/weather-brief-test.js` |
+| `solar-arc.js` | ~200 | yes | 日月标签「今日日照轨迹」：太阳高度曲线 + 日出日落 + 黄金/蓝调色带 + 选中时刻，输出 SVG 字符串。**只画真实天文量**，不叠加山体遮挡；`astro.js` 是唯一判据来源，色板是字面量（SVG 取不到 `var()`）并逐条注明来源 token。测试：`tools/solar-arc-test.js`（64） |
+| `sky-ephemeris.js` | 295 | yes | 日月标签其余三块的事实层：24h 天穹带（按太阳高度角每 5 分钟采样分段 + 日出日落线 + 选中点）、晨昏时刻表（晨 4 行 / 暮 4 行按时间下行）、月相盘（半椭圆明暗界线 + 南北半球镜像）与月出月落（含极区「当日不升/不落」、跨日「（次日）」）。只 `require('./astro')`，**不新造天文判据**；判不出的形态各有各的话（`—` = 该阶段不出现 ≠ 缺测），海拔只认 `typeof number`。测试：`tools/sky-ephemeris-test.js`（99） |
 
 Measured reference centrality (files requiring each, 2026-10-08 复点): `format.js` 15 · `api.js` 13 · `journey.js` 7 · `draft.js` 7 · `astro.js` 5 · `sky.js` 4 · `route-schedule.js` 3 · `gpx.js` 3 · `chart-store.js` 3 · `notices-page.js` 2 · **`util.js` 0（死模块，见下）**.
 
@@ -90,6 +92,8 @@ A module-level `let payload` with `set`/`get`/`clear`, carrying `{series, marks,
 | `route-schedule.js` | `node tools/route-schedule-test.js` | 41 |
 | `watch-points.js` | `node tools/watch-points-test.js` | 37 |
 | `sky`+`astro`+`route-schedule` + `lib/weather` + weather 页（含 local 模式） | `node tools/weather-page-test.js` | 129 |
+| `solar-arc.js` | `node tools/solar-arc-test.js` | 64 |
+| `sky-ephemeris.js`（含真页面 `buildSkyEphemeris` 装配） | `node tools/sky-ephemeris-test.js` | 99 |
 | `api.js` (monkey-patched) + `draft.js` | `node tools/scenario-editor-test.js` | 137 |
 | `lib/weather` 纯函数（byPoint 校验/缓存 key/免鉴权集合） | `node cloudfunctions/trailApi/smoke-test.js` §15 | （并入 smoke） |
 

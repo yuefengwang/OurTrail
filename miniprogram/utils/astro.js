@@ -359,6 +359,6 @@ module.exports = {
      新代码引用它，不再新写 -0.833 字面量。 */
   SUN_HORIZON,
   cnToMs, hhmm, norm1440, norm360, bearingLabel,
-  moonInfo,
+  moonInfo, SYNODIC,
   equatorialToHorizontal, moonPosition, moonTimes, galaxyPosition,
 }

@@ -173,6 +173,10 @@ async function main() {
   await page.reload()
   check('路线权限失效不使用旧坐标继续查', page.data.denied === '无权限' && page.data.rows.length === 0)
   const detail = loadPage('weather')
+  // 首屏主任务是「今天几点走」，云层剖面是下钻项（2026-10-30 负责人裁定改默认标签）
+  check('天气页首屏默认逐时预报且该标签排在第一位',
+    detail.data.weatherTab === 'hourly' && detail.data.tabOptions[0].key === 'hourly',
+    detail.data.weatherTab + ' / ' + detail.data.tabOptions.map(t => t.key).join(','))
   detail.onLoad({ src: 'local', lat: '', lng: '103' })
   check('分享或深链接空坐标也被拒绝', detail.localPoint.invalid === true)
   detail.data.chartView = surface

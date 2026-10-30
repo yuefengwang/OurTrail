@@ -1,0 +1,108 @@
+{
+  "model": "iPhone 6/7/8",
+  "windowWidth": 375,
+  "windowHeight": 667,
+  "pixelRatio": 2,
+  "checks": [
+    {
+      "name": "载荷门槛：dayCards / hourOverview / solarArc 都在",
+      "ok": true,
+      "extra": "days=7"
+    },
+    {
+      "name": "单点仍是三标签（无沿途）",
+      "ok": true,
+      "extra": "[\"hourly\",\"cloud\",\"sky\"]"
+    },
+    {
+      "name": "切到逐时标签",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "name": "逐时：卡片与分区标题不横向溢出（2 卡 / 3 头）",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "name": "选中时段卡存在且 6 格事实齐全",
+      "ok": true,
+      "extra": "hero=335 cells=6"
+    },
+    {
+      "name": "事实格同一行不压叠",
+      "ok": true,
+      "extra": "overlap=0"
+    },
+    {
+      "name": "事实格不出卡沿",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "name": "事实格等宽两列（宽度 > 120）",
+      "ok": true,
+      "extra": "cellW=145"
+    },
+    {
+      "name": "切到日月标签",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "name": "日月：卡片不横向溢出（8 卡）",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "name": "日照卡时刻与白昼分两行",
+      "ok": true,
+      "extra": "971:22 / 995:22"
+    },
+    {
+      "name": "两行各自单行（高 ≤ 26px）",
+      "ok": true,
+      "extra": "22/22"
+    },
+    {
+      "name": "日照文字不出卡沿",
+      "ok": true,
+      "extra": "card=335"
+    },
+    {
+      "name": "路线模式有四标签（含沿途）",
+      "ok": true,
+      "extra": "[\"hourly\",\"cloud\",\"enroute\",\"sky\"]"
+    },
+    {
+      "name": "地点行存在（多节点才有）",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "name": "地点行高度 ≥ 44",
+      "ok": true,
+      "extra": "h=90"
+    },
+    {
+      "name": "点击后 sheet 真的打开（locationOpen=true）",
+      "ok": true,
+      "extra": ""
+    },
+    {
+      "name": "节点行高度 ≥ 44",
+      "ok": true,
+      "extra": "rows=12 min=61"
+    },
+    {
+      "name": "节点行不横向溢出",
+      "ok": true,
+      "extra": "maxRight=358"
+    },
+    {
+      "name": "两条出口可滚到且在视口内（bottom ≤ 视口高）",
+      "ok": true,
+      "extra": "586/667"
+    }
+  ]
+}

@@ -238,6 +238,58 @@
       </view>
 
 
+      <!-- 24 小时天穹带（Stitch v16.3 日月标签）：与日照轨迹同源同日期，
+           选中时刻是带上的一个白点（selectHour 与日照卡同一次 setData 重画）。 -->
+      <block wx:if="{{skyEphemeris && skyEphemeris.band}}">
+        <view class="section-head">
+          <text class="section-title">24 小时天穹带</text>
+          <text class="section-sub">按太阳高度角分段 · 每 5 分钟采样</text>
+        </view>
+        <view class="card sky-band-card">
+          <image class="sky-band-img" src="{{skyEphemeris.band.src}}" mode="widthFix" />
+          <text class="sky-band-summary tabular">{{skyEphemeris.band.summary}}</text>
+          <view class="chart-legend">
+            <view class="lg-row">
+              <view class="lg-item"><view class="sw-band sw-night"></view><text>天文暗夜</text></view>
+              <view class="lg-item"><view class="sw-band sw-astro"></view><text>天文晨昏</text></view>
+              <view class="lg-item"><view class="sw-band sw-nautical"></view><text>航海晨昏</text></view>
+              <view class="lg-item"><view class="sw-band sw-civil"></view><text>民用晨昏</text></view>
+              <view class="lg-item"><view class="sw-band sw-day"></view><text>白昼</text></view>
+            </view>
+          </view>
+          <text class="small muted">{{skyEphemeris.band.note}}</text>
+        </view>
+      </block>
+
+      <!-- 晨昏时刻表：与天穹带同一次装配；「—」表示该纬度当日不出现这个阶段，
+           不是缺测——这句话由 twilight.note 自己说，页面不另写第二份。 -->
+      <block wx:if="{{skyEphemeris && skyEphemeris.twilight}}">
+        <view class="section-head">
+          <text class="section-title">晨昏时刻</text>
+          <text class="section-sub">太阳高度角穿越 · 日出日落含海拔修正</text>
+        </view>
+        <view class="card ephem-card">
+          <view class="ephem-grid">
+            <view class="ephem-col">
+              <text class="ephem-head">晨间梯度</text>
+              <view wx:for="{{skyEphemeris.twilight.dawnRows}}" wx:key="k" class="ephem-row">
+                <text class="ephem-k">{{item.k}}</text>
+                <text class="ephem-v tabular">{{item.v}}</text>
+              </view>
+            </view>
+            <view class="ephem-col">
+              <text class="ephem-head">暮间梯度</text>
+              <view wx:for="{{skyEphemeris.twilight.duskRows}}" wx:key="k" class="ephem-row">
+                <text class="ephem-k">{{item.k}}</text>
+                <text class="ephem-v tabular">{{item.v}}</text>
+              </view>
+            </view>
+          </view>
+          <text class="small muted">{{skyEphemeris.twilight.note}}</text>
+        </view>
+      </block>
+
+
       <block wx:if="{{solarArc}}">
         <view class="section-head">
           <text class="section-title">今日日照轨迹</text>
@@ -258,6 +310,38 @@
               <view class="lg-item"><view class="sw-line sw-dash"></view><text>地平线（虚线）</text></view>
             </view>
           </view>
+        </view>
+      </block>
+
+      <!-- 月相与夜空光照：月盘是矢量（utils/sky-ephemeris.js），亮面比例与月龄同源。
+           月落标注「（次日）」由模块判一次，页面照搬，不在模板里比大小。 -->
+      <block wx:if="{{skyEphemeris && skyEphemeris.moon}}">
+        <view class="section-head">
+          <text class="section-title">月相与夜空光照</text>
+          <text class="section-sub">按日期与坐标计算 · 不含云量与光污染</text>
+        </view>
+        <view class="card moon-card">
+          <view class="moon-row">
+            <image class="moon-disc" src="{{skyEphemeris.moon.src}}" mode="widthFix" />
+            <view class="moon-main">
+              <view class="moon-line">
+                <text class="moon-name">{{skyEphemeris.moon.name}}</text>
+                <text class="moon-illum tabular">亮面 {{skyEphemeris.moon.illumination}}%</text>
+              </view>
+              <text class="moon-sub tabular">月龄 {{skyEphemeris.moon.age}} 天</text>
+              <view class="moon-times">
+                <view class="moon-time">
+                  <text class="moon-time-k">{{skyEphemeris.moon.riseCell.k}}</text>
+                  <text class="moon-time-v tabular">{{skyEphemeris.moon.riseCell.v}}</text>
+                </view>
+                <view class="moon-time">
+                  <text class="moon-time-k">{{skyEphemeris.moon.setCell.k}}</text>
+                  <text class="moon-time-v tabular">{{skyEphemeris.moon.setCell.v}}{{skyEphemeris.moon.setCell.hint}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+          <text class="small muted">{{skyEphemeris.moon.note}}</text>
         </view>
       </block>
 

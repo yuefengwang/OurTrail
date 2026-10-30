@@ -33,6 +33,8 @@ const OI = require('../../utils/outdoor-intelligence.js')
 const OIP = require('../../utils/oi-presentation.js')
 // 日月标签的日照轨迹：纯函数生成 SVG（wx-free，tools/solar-arc-test.js 直接打它）
 const Solar = require('../../utils/solar-arc')
+// 日月标签的 24h 天穹带 / 晨昏时刻表 / 月相（纯函数，wx-free，tools/sky-ephemeris-test.js 直接打它）
+const Ephem = require('../../utils/sky-ephemeris')
 
 const wpStore = WP.createWatchPoints(draft.durableStorage)
 
@@ -133,7 +135,8 @@ function buildSunLines(series, coords, elevation) {
 
 Page({
   data: {
-    weatherTab: 'cloud',
+    // 首屏默认「逐时预报」：板 01-2 的主任务是看今天几点走，云层剖面是下钻项（2026-10-30 负责人裁定）
+    weatherTab: 'hourly',
     cloudWindow: 'auto',
     selectedTime: '00:00',
     selectedHourIndex: 0,
@@ -187,6 +190,9 @@ Page({
     hourOverview: null,
     // 日照轨迹（日月标签）：null = 此坐标/日期算不出，卡片自己说明，不留白也不画假曲线
     solarArc: null,
+    // 日月标签的 24h 天穹带 / 晨昏时刻表 / 月相：与日照轨迹同一份 _solarInput，
+    // null 同理表示算不出（卡片整块不出现，不留一行空壳）
+    skyEphemeris: null,
     // 地点选择 sheet：只有多节点才给「换地点」入口——单点模式没有第二个地点可选
     showLocation: false,
     locationOpen: false,
@@ -573,6 +579,52 @@ Page({
     }
   },
 
+  /* ---------- 24h 天穹带 / 晨昏时刻表 / 月相（Stitch v16.3 日月标签剩余块） ---------- */
+
+  /* 与日照轨迹同源（同一份 _solarInput：同坐标、同海拔判定、同日期），
+     一次 setData 里两处必须说同一个日期/同一段昼夜。
+     算不出（非法坐标/日期）时 Ephem.build 返回 null ⇒ 两块卡片整块不出现，
+     不画一条"全是白天"的假带，也不印一行"—"冒充全天缺失。 */
+  buildSkyEphemeris(date, selectedTime) {
+    const input = this._solarInput
+    if (!input) return null
+    try {
+      const out = Ephem.build({
+        date: date || input.date,
+        lat: input.lat,
+        lng: input.lng,
+        elevation: input.elevation,
+        selected: selectedTime || '',
+      })
+      if (!out) return null
+      const band = out.band || null
+      const tw = out.twilight || null
+      const moon = out.moon || null
+      return {
+        band: band ? {
+          src: cfToDataUri(band.svg),
+          summary: band.summary,
+          note: band.note,
+        } : null,
+        // 晨昏表按「先早后晚」两列排；缺阶段是 '—'（当日不出现），与缺测分开
+        twilight: tw ? { dawnRows: tw.dawnRows, duskRows: tw.duskRows, note: tw.note } : null,
+        moon: moon ? {
+          src: cfToDataUri(moon.svg),
+          name: moon.name,
+          illumination: moon.illumination,
+          age: moon.age,
+          riseCell: moon.riseCell,
+          setCell: moon.setCell,
+          riseText: moon.riseText,
+          note: moon.note,
+        } : null,
+      }
+    } catch (e) {
+      console.warn('[weather] 天穹带降级：', e)
+      return null
+    }
+  },
+
   /* ---------- 地点切换：sheet 与沿途标签共用一个入口 ---------- */
 
   // 单独抽出来是为了「同一个动作只有一个实现」：sheet 行、沿途行都走这里
@@ -629,9 +681,9 @@ Page({
       const multi = points.length > 1
       this._localPoints = this.mode === 'local' ? points : null
       // 标签与地点入口都由「这一屏有几个节点」决定：单点三标签、多节点四标签。
-      // 既有的 weatherTab 若在新页面里不存在（例如从四标签回退到单点），退回默认云层。
+      // 既有的 weatherTab 若在新页面里不存在（例如从四标签回退到单点），退回默认的逐时预报。
       const tabOptions = multi ? TABS_ENROUTE.slice() : TABS_BASE.slice()
-      const weatherTab = tabOptions.some(item => item.key === this.data.weatherTab) ? this.data.weatherTab : 'cloud'
+      const weatherTab = tabOptions.some(item => item.key === this.data.weatherTab) ? this.data.weatherTab : 'hourly'
       const locationTitle = this.mode === 'activity'
         ? '路线关键点'
         : this.localKind === 'route' ? '路线节点' : this.localKind === 'track' ? '轨迹节点' : '地点'
@@ -736,7 +788,7 @@ Page({
       loadingWeather: true, dayCards: [], callouts: [],
       detailRows: [], chartMarks: {}, chartNight: {},
       chartView: [], chartSunBands: {}, chartSunLines: {}, chartNow: null, chartElev: null,
-      chartPick: null, hourOverview: null, solarArc: null, agenda: [],
+      chartPick: null, hourOverview: null, solarArc: null, skyEphemeris: null, agenda: [],
       unified: null, cloudFieldMissing: false, oiCard: null, oiHorizon: null,
       condOverall: null, condSilent: null, condCards: [], openEvidence: {},
       emptyKind: 'empty', retryNote: '', weatherStale: null,
@@ -1130,6 +1182,8 @@ Page({
       popShown: hourStrip.popShown,
       hourOverview: pickRow ? this.buildHourOverview(pickRow, pickRow.d, chartMarks) : null,
       solarArc: this.buildSolarCard(this.data.date, pickRow ? pickRow.t : ''),
+      // 天穹带与日照轨迹同一次装配：两块卡的选中时刻必须是同一个
+      skyEphemeris: this.buildSkyEphemeris(this.data.date, pickRow ? pickRow.t : ''),
       cloudFieldMissing: !!this._cloudFieldMissing,
       unified: unified,
       oiCard: oiCard,
@@ -1781,6 +1835,7 @@ Page({
       chartPick: null,
       hourOverview: null,
       solarArc: this.buildSolarCard(this.data.date, ''),
+      skyEphemeris: this.buildSkyEphemeris(this.data.date, ''),
     })
     /* Phase 4：horizon 变化 → 统一 Meteogram / OI 卡按新窗口重建（缓存 key 含 horizon，
        命中时零成本；数据缺失时各自降级回退，不影响主流程） */
@@ -1933,6 +1988,8 @@ Page({
       // 选中时段卡与日照轨迹同一次 setData 落地：一处换了小时，两处必须说同一时刻
       hourOverview: this.buildHourOverview(h, date, this.data.chartMarks),
       solarArc: this.buildSolarCard(date, t),
+      // 天穹带的选中竖线跟着同一时刻走（只重画一条带，不重算天文）
+      skyEphemeris: this.buildSkyEphemeris(date, t),
     })
     // Weather V2：统一 Meteogram 与图共享选中时刻（只更 crosshair overlay，不重算等值带）
     this.updateUnifiedSel(date, t)
