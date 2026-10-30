@@ -601,9 +601,10 @@ section('4. Optional 字段缺失：旧返回体整链不炸')
   page.data.chartView = view
   page.data.chartMarks = {}
   page.onChartPickHour({ detail: { date: DATE, t: '01:00' } })
-  check('selectHour：缺失字段下浮条装配成功且气压显示 —',
-    !!page.data.hourChip && page.data.hourChip.pressure === '—' && page.data.chartPick.t === '01:00',
-    JSON.stringify(page.data.hourChip))
+  const pressureFact = ((page.data.hourOverview && page.data.hourOverview.facts) || []).find(f => f.key === 'pressure') || {}
+  check('selectHour：缺失字段下选中时段卡装配成功且气压显示 —',
+    !!page.data.hourOverview && pressureFact.value === '—' && page.data.chartPick.t === '01:00',
+    JSON.stringify(page.data.hourOverview))
 
   // 风向文案：非法输入返回 null（WXML 层判空）
   check('windDirText：150°→东南风，null→null', F.windDirText(150) === '东南风' && F.windDirText(null) === null)

@@ -31,6 +31,8 @@ const WCFF = require('../../utils/weather-cloud-field.js')
 const UMG = require('../../utils/meteogram-svg.js')
 const OI = require('../../utils/outdoor-intelligence.js')
 const OIP = require('../../utils/oi-presentation.js')
+// 日月标签的日照轨迹：纯函数生成 SVG（wx-free，tools/solar-arc-test.js 直接打它）
+const Solar = require('../../utils/solar-arc')
 
 const wpStore = WP.createWatchPoints(draft.durableStorage)
 
@@ -63,6 +65,16 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 // 够一次冷启动缓过来，又不让人久等；切点/切日会使令牌失效，旧链路结果作废。
 const WEATHER_ATTEMPTS = 3
 const WEATHER_RETRY_DELAYS = [1200, 2600]
+
+/* Stitch v18 外壳的四个标签。单点查询仍是三个：一个节点构不成「沿途」，
+   硬塞一个只会让人点开一个只有自己的列表（沿途空态的说明是该标签存在的唯一理由）。
+   顺序对齐 v18：逐时 → 云层 → 沿途 → 日月。 */
+const TAB_HOURLY = { key: 'hourly', label: '逐时预报' }
+const TAB_CLOUD = { key: 'cloud', label: '云层剖面' }
+const TAB_ENROUTE = { key: 'enroute', label: '沿途天气' }
+const TAB_SKY = { key: 'sky', label: '日月天相' }
+const TABS_BASE = [TAB_HOURLY, TAB_CLOUD, TAB_SKY]
+const TABS_ENROUTE = [TAB_HOURLY, TAB_CLOUD, TAB_ENROUTE, TAB_SKY]
 
 // （V2）当日安全提示与评级装配已迁至 utils/conditions.js：buildCallouts（含 WMO 雪码修复）
 // 与 overallGrade/starsFor。本页只消费其产出，不再持有安全规则的字面副本。
@@ -126,7 +138,7 @@ Page({
     selectedTime: '00:00',
     selectedHourIndex: 0,
     hourOptions: [],
-    tabOptions: [{ key: 'hourly', label: '逐时预报' }, { key: 'cloud', label: '云层剖面' }, { key: 'sky', label: '日月天相' }],
+    tabOptions: TABS_BASE.slice(),
     loading: true,
     denied: '',
     mode: 'activity',
@@ -171,7 +183,18 @@ Page({
     chartNow: null,
     chartElev: null,
     chartPick: null,
-    hourChip: null,
+    // 选中小时概览（逐时标签，图上方）：时刻/温度/体感 + 六项读数；缺测印「—」
+    hourOverview: null,
+    // 日照轨迹（日月标签）：null = 此坐标/日期算不出，卡片自己说明，不留白也不画假曲线
+    solarArc: null,
+    // 地点选择 sheet：只有多节点才给「换地点」入口——单点模式没有第二个地点可选
+    showLocation: false,
+    locationOpen: false,
+    locationTitle: '',
+    locationNote: '',
+    locationRows: [],
+    // 沿途标签（索引层）：路线摘要 + 节点列表；逐节点预报仍只由 pages/weather-plan 提供
+    routeView: null,
     agenda: [],
     // Weather V2：统一 Meteogram 卡（additive）。null = 数据缺失/渲染失败 → 回退经典 canvas。
     unified: null,
@@ -295,10 +318,22 @@ Page({
     if (this.localKind === 'route') {
       return api.readRoutes(this.routeId).then(response => {
         const route = response.route
-        const point = route && (route.points || []).find(item => item.id === this.routePointId)
-        if (!point) return { denied: '路线节点已移除或没有查看权限，请返回沿途天气重新选择。' }
+        const points = (route && route.points) || []
+        if (!points.length) return { denied: '路线已删除或没有查看权限，请返回沿途天气重新选择。' }
+        // 路线模式取全部节点：沿途标签要列出整条线，地点 sheet 要能在节点间切换。
+        // routePointId 只决定「先看哪个」，节点已被移除时仍如实拒绝，不静默改成起点。
+        let index = points.findIndex(item => item.id === this.routePointId)
+        if (index < 0) {
+          if (this.routePointId) return { denied: '路线节点已移除，请返回沿途天气重新选择节点。' }
+          index = 0
+        }
         this._lastResult = null
-        return { points: [point], sched: [], hasStart: false, pointIndex: 0, isOwner: false, title: point.name, initialDate: this.userPickedDate ? this.data.date : '' }
+        this._routeAsset = route
+        return {
+          points, sched: [], hasStart: false, pointIndex: index, isOwner: false,
+          initialDate: this.userPickedDate ? this.data.date : '',
+          title: points[index].name,
+        }
       })
     }
     if (this.mode === 'activity') {
@@ -311,6 +346,9 @@ Page({
         this.now = res.now
         this.view = res.view
         const a = res.view.activity
+        // 沿途摘要只能读活动里的路线快照：本轮没有路线库原件权限时，快照就是唯一事实
+        this._routeAsset = a.routeSnapshot
+        this._trackAsset = null
         const points = a.routeSnapshot.points
         if (this.routePointId) {
           const index = points.findIndex(point => point.id === this.routePointId)
@@ -334,6 +372,8 @@ Page({
         return Promise.resolve({ denied: '坐标不完整，无法查询。' })
       }
       const p = this.localPoint
+      this._routeAsset = null
+      this._trackAsset = null
       const points = [{
         id: p.id,
         name: p.name,
@@ -354,6 +394,8 @@ Page({
     if (!set || !set.points || set.points.length < 2) {
       return Promise.resolve({ denied: '轨迹组已删除或不存在。' })
     }
+    this._routeAsset = null
+    this._trackAsset = set
     const len = set.points.length
     const points = set.points.map((p, i) => ({
       id: p.id,
@@ -383,6 +425,200 @@ Page({
     return p.name || WP.coordName(p.coordinates.lat, p.coordinates.lng)
   },
 
+  /* ---------- 地点索引（地点 sheet 与沿途标签共用一份） ---------- */
+
+  // 只写名字与节点性质：本页的 sched 恒为空（抵达时刻在 pages/weather-plan 里按个人计划算），
+  // 在这里补一个「第几天几点」就是第二套推算，两边一改就打架。
+  buildLocationRows(points) {
+    const list = points || []
+    const total = list.length
+    return list.map((pt, i) => ({
+      id: pt.id,
+      index: i,
+      name: this.displayPointName(pt),
+      sub: this.kindLabelOf(pt.kind) + ' · ' + (i + 1) + '/' + total,
+    }))
+  },
+
+  kindLabelOf(kind) {
+    if (kind === 'start') return '起点'
+    if (kind === 'finish') return '终点'
+    return '途经点'
+  },
+
+  /* 沿途摘要只写仓库里有出处的事实。里程/爬升为 0 或缺失时不印「0 km / 0 m」——
+     那是把「没算出来」印成「是零」（与 home/discover 同一条旧账）。 */
+  buildRouteView(points) {
+    const list = points || []
+    const mode = this.mode === 'activity' ? 'activity' : this.localKind
+    let title = ''
+    let distance = null
+    let ascent = null
+    if (mode === 'activity') {
+      const snap = this.view && this.view.activity && this.view.activity.routeSnapshot
+      title = (snap && snap.title) || ''
+      distance = snap ? snap.distanceKm : null
+      ascent = snap ? snap.ascentM : null
+    } else if (mode === 'route') {
+      const route = this._routeAsset || {}
+      title = route.title || ''
+      distance = route.distanceKm
+      ascent = route.ascentM
+    } else if (mode === 'track') {
+      const set = this._trackAsset || {}
+      const stats = set.stats || {}
+      title = set.name || ''
+      distance = stats.distanceKm
+      ascent = stats.ascentM
+    }
+    const rows = []
+    /* 不再单列一行「路线：<标题>」：卡片抬头已经印着同一个字符串，两行一模一样是噪音
+       （真机 2026-10-30 实测）。标题缺失时才由抬头留白，不靠这一行兜底。 */
+    if (typeof distance === 'number' && Number.isFinite(distance) && distance > 0) {
+      rows.push({ k: '里程', v: (Math.round(distance * 10) / 10) + ' km' })
+    }
+    if (typeof ascent === 'number' && Number.isFinite(ascent) && ascent > 0) {
+      rows.push({ k: '累计爬升', v: Math.round(ascent) + ' m' })
+    }
+    rows.push({ k: '关键节点', v: list.length + ' 个' })
+    const eles = list.map(p => p.ele).filter(v => typeof v === 'number' && Number.isFinite(v))
+    if (eles.length) rows.push({ k: '节点最高点', v: Math.round(Math.max.apply(null, eles)) + ' m' })
+    return {
+      title,
+      rows,
+      sourceNote: mode === 'activity'
+        ? '活动当前路线快照 · 逐点预报在「完整沿途天气」里查'
+        : mode === 'track' ? '本机 GPX 轨迹 · 行程与预报都不上传'
+          : '路线库资产 · 只读浏览，不回写路线',
+    }
+  },
+
+  /* ---------- 选中小时概览（Stitch v16.2 的「选中时段」卡） ---------- */
+
+  // 天相归属与图上标记/结论卡同源（chartMarks），inCloud 是减分项单独提示
+  hourTags(marks, date, t) {
+    const tagNames = {
+      cloudSea: '云海窗口', alpenglow: '光染可能', golden: '黄金时刻',
+      blueHour: '蓝调时刻', rainbow: '彩虹可能', star: '星空', galaxy: '银河',
+    }
+    const list = (marks || {})[date + 'T' + t] || []
+    return {
+      tags: list.filter(k => k !== 'inCloud').map(k => tagNames[k] || k),
+      inCloud: list.indexOf('inCloud') !== -1,
+    }
+  },
+
+  /* 全部读数取当前小时对象本身；缺测印「—」。
+     风/降水等字段在旧返回体里可能不存在（新客户端配旧云函数是常态），
+     每一项都必须给出非空字符——fact-grid 会过滤空串，过滤掉就变成「这项不存在」。 */
+  buildHourOverview(h, date, marks) {
+    const has = v => typeof v === 'number' && Number.isFinite(v)
+    const round = v => has(v) ? String(Math.round(v)) : '—'
+    const one = v => has(v) ? String(Number(v.toFixed(1))) : '—'
+    const phrase = F.weatherPhrase(h.code)
+    const dir = F.windDirText(h.windDir)
+    const c = h.cloud || null
+    const cloudSub = c && (has(c.low) || has(c.mid) || has(c.high))
+      ? '低 ' + round(c.low) + '% · 中 ' + round(c.mid) + '% · 高 ' + round(c.high) + '%'
+      : '分层云量缺测'
+    const tagInfo = this.hourTags(marks, date, h.t)
+    return {
+      time: h.t,
+      dateLabel: String(date || '').slice(5),
+      tempTxt: has(h.temp) ? Math.round(h.temp) + '°' : '—',
+      feelsTxt: has(h.feels) ? Math.round(h.feels) + '°' : '—',
+      phrase: phrase.label,
+      tone: phrase.tone,
+      facts: [
+        { key: 'wind', label: '风', value: round(h.wind), unit: 'km/h', sub: (has(h.gust) ? '阵风 ' + Math.round(h.gust) + ' km/h' : '阵风 —') + (dir ? ' · ' + dir : '') },
+        { key: 'precip', label: '降水', value: one(h.precip), unit: 'mm/h', sub: has(h.pop) ? '概率 ' + h.pop + '%' : '概率 —' },
+        { key: 'cloud', label: '云量', value: c ? round(c.total) : '—', unit: '%', sub: cloudSub },
+        { key: 'visibility', label: '能见度', value: has(h.visibility) ? String(h.visibility) : '—', unit: 'km', sub: has(h.uv) ? '紫外线 ' + h.uv : '紫外线 —' },
+        { key: 'rh', label: '湿度', value: round(h.rh), unit: '%', sub: has(h.dewPoint) ? '露点 ' + Math.round(h.dewPoint) + '°C' : '露点 —' },
+        { key: 'pressure', label: '地面气压', value: round(h.pressure), unit: 'hPa', sub: has(h.freezing) ? '0°C 冻结 ' + Math.round(h.freezing) + ' m' : '0°C 冻结 —' },
+      ],
+      tags: tagInfo.tags,
+      inCloud: tagInfo.inCloud,
+    }
+  },
+
+  /* ---------- 日照轨迹（Stitch v16.3） ---------- */
+
+  /* 只画真实天文量（与 sky/agenda 同一套 astro），不叠加山体遮挡模型。
+     坐标/日期算不出时 Solar.build 返回 null ⇒ 卡片改为一句说明，
+     不画一条 0° 直线冒充「今天太阳没出来」。 */
+  buildSolarCard(date, selectedTime) {
+    const input = this._solarInput
+    if (!input) return null
+    try {
+      const arc = Solar.build({
+        date: date || input.date,
+        lat: input.lat,
+        lng: input.lng,
+        elevation: input.elevation,
+        selected: selectedTime || '',
+      })
+      if (!arc) return null
+      return {
+        src: cfToDataUri(arc.svg),
+        dateLabel: String(date || input.date).slice(5),
+        summary: arc.summary,
+        // 白昼单独一行：合成一句会在「白昼 11 / 小时 21 分」处断行（真机实测）
+        daylight: arc.daylight,
+        note: arc.note,
+      }
+    } catch (e) {
+      console.warn('[weather] 日照轨迹降级：', e)
+      return null
+    }
+  },
+
+  /* ---------- 地点切换：sheet 与沿途标签共用一个入口 ---------- */
+
+  // 单独抽出来是为了「同一个动作只有一个实现」：sheet 行、沿途行都走这里
+  switchPoint(index) {
+    const points = this.getPoints()
+    const next = Number(index)
+    const valid = Number.isFinite(next) && next >= 0 && next < points.length
+    this.setData({ locationOpen: false })
+    if (!valid || next === this.data.pointIndex) return
+    this.onPoint({ detail: { value: next } })
+  },
+
+  onOpenLocation() {
+    if (!this.data.showLocation) return
+    this.setData({ locationOpen: true, locationRows: this.buildLocationRows(this.getPoints()) })
+  },
+
+  onCloseLocation() {
+    this.setData({ locationOpen: false })
+  },
+
+  onPickLocation(e) {
+    this.switchPoint(e.currentTarget.dataset.index)
+  },
+
+  // 逐节点预报不在本页重做（那会造出第二套查询/缓存）；索引层只负责把人送到那一页
+  onOpenRoutePlan() {
+    let url = ''
+    if (this.mode === 'activity' && this.activityId) {
+      url = '/pages/weather-plan/weather-plan?activity=' + encodeURIComponent(this.activityId)
+    } else if (this.localKind === 'route' && this.routeId) {
+      url = '/pages/weather-plan/weather-plan?route=' + encodeURIComponent(this.routeId)
+    } else if (this.localKind === 'track' && this.setId) {
+      url = '/pages/weather-plan/weather-plan?set=' + encodeURIComponent(this.setId)
+    }
+    if (!url) return
+    this.setData({ locationOpen: false }, () => wx.navigateTo({ url }))
+  },
+
+  // 天气首页是 tab 页：必须 switchTab（navigateTo 会因页面栈里已有它而失败）
+  onOpenWeatherHub() {
+    this.setData({ locationOpen: false }, () => {
+      wx.switchTab({ url: '/pages/weather-hub/weather-hub', fail: () => {} })
+    })
+  },
+
   reload() {
     this.resolveContext().then(ctx => {
       if (ctx.denied) {
@@ -390,7 +626,16 @@ Page({
         return
       }
       const points = ctx.points
+      const multi = points.length > 1
       this._localPoints = this.mode === 'local' ? points : null
+      // 标签与地点入口都由「这一屏有几个节点」决定：单点三标签、多节点四标签。
+      // 既有的 weatherTab 若在新页面里不存在（例如从四标签回退到单点），退回默认云层。
+      const tabOptions = multi ? TABS_ENROUTE.slice() : TABS_BASE.slice()
+      const weatherTab = tabOptions.some(item => item.key === this.data.weatherTab) ? this.data.weatherTab : 'cloud'
+      const locationTitle = this.mode === 'activity'
+        ? '路线关键点'
+        : this.localKind === 'route' ? '路线节点' : this.localKind === 'track' ? '轨迹节点' : '地点'
+      const scheduleBasis = '这里只切换浏览地点，不修改个人行程；GPX 历史时刻不作为本次抵达时间。'
       // 日期必须在这一轮 setData 里一并落定。setData 的回调是异步的：若把日期放到回调里再设，
       // 紧随其后的 fetchWeather 会读到上一次的空日期，发出 date:''，云函数回"日期无效"。
       // 同理请求也放进回调，确保 this.data.date 已是最终值。
@@ -410,12 +655,22 @@ Page({
           return label ? pt.name + '（' + label + '）' : pt.name
         }),
         schedule: ctx.sched,
-        scheduleBasis: '这里只切换浏览地点，不修改个人行程；GPX 历史时刻不作为本次抵达时间。',
+        scheduleBasis,
         spanDays: RS.spanDays(ctx.sched),
         pointIndex: ctx.pointIndex,
         date,
+        tabOptions,
+        weatherTab,
         isOwner: ctx.isOwner,
         showSave: single,
+        // 地点入口只对多节点开放：单点若挂一个「换地点」，点开只有一个自己
+        showLocation: multi,
+        locationOpen: false,
+        locationTitle,
+        locationNote: scheduleBasis,
+        // 只在多节点时备行：单点的 sheet 不可达，留着就是没人读的死状态
+        locationRows: multi ? this.buildLocationRows(points) : [],
+        routeView: multi ? this.buildRouteView(points) : null,
         pointCard: single && p0 ? {
           name: this.displayPointName(p0),
           coordText: p0.coordinates.lat.toFixed(4) + ', ' + p0.coordinates.lng.toFixed(4),
@@ -481,7 +736,7 @@ Page({
       loadingWeather: true, dayCards: [], callouts: [],
       detailRows: [], chartMarks: {}, chartNight: {},
       chartView: [], chartSunBands: {}, chartSunLines: {}, chartNow: null, chartElev: null,
-      chartPick: null, hourChip: null, agenda: [],
+      chartPick: null, hourOverview: null, solarArc: null, agenda: [],
       unified: null, cloudFieldMissing: false, oiCard: null, oiHorizon: null,
       condOverall: null, condSilent: null, condCards: [], openEvidence: {},
       emptyKind: 'empty', retryNote: '', weatherStale: null,
@@ -720,6 +975,14 @@ Page({
        误差带，落在带内的高差不足以判定云在上方还是下方——页面不再自己分类。 */
     this.elevBasis = EV.basis
     this._skyElevation = Number.isFinite(elevation) ? elevation : null
+    /* 日照轨迹的取数口径与图表/天相同源：同一坐标、同一海拔判定。
+       存在实例上是为了点选小时（selectHour）能原地重画，不必再外呼。 */
+    this._solarInput = {
+      date: this.data.date,
+      lat: point.coordinates.lat,
+      lng: point.coordinates.lng,
+      elevation: Number.isFinite(elevation) ? elevation : null,
+    }
     const skyCtx = {
       date: this.data.date,
       lat: point.coordinates.lat,
@@ -818,6 +1081,13 @@ Page({
       series: chartSeries, marks: chartMarks, night: chartNight, selected: chartSelected,
       pointName: this.displayPointName(point), date: this.data.date,
     })
+    /* 选中小时概览与日照轨迹：换日期/换节点/重新查询后都要跟着这份新数据重建。
+       reset 明确清空 chartPick 时不复活旧读数（否则会拿上一天的小时配今天的序列）；
+       其余路径（软降级重绘、上下文刷新）保留当前选中并把读数换成新的那份小时对象。 */
+    const keepPick = !reset || !Object.prototype.hasOwnProperty.call(reset, 'chartPick')
+    const pickRow = keepPick && this.data.chartPick
+      ? (viewSeries || []).find(row => row.d === this.data.chartPick.date && row.t === this.data.chartPick.t)
+      : null
     this.setData(Object.assign({}, reset, {
       loadingWeather: false,
       emptyTitle: '',
@@ -858,6 +1128,8 @@ Page({
       hourOptions: viewSeries.map(row => row.d.slice(5) + ' ' + row.t),
       hourStrip: hourStrip.items,
       popShown: hourStrip.popShown,
+      hourOverview: pickRow ? this.buildHourOverview(pickRow, pickRow.d, chartMarks) : null,
+      solarArc: this.buildSolarCard(this.data.date, pickRow ? pickRow.t : ''),
       cloudFieldMissing: !!this._cloudFieldMissing,
       unified: unified,
       oiCard: oiCard,
@@ -1507,7 +1779,8 @@ Page({
       hourStrip: hourStrip.items,
       popShown: hourStrip.popShown,
       chartPick: null,
-      hourChip: null,
+      hourOverview: null,
+      solarArc: this.buildSolarCard(this.data.date, ''),
     })
     /* Phase 4：horizon 变化 → 统一 Meteogram / OI 卡按新窗口重建（缓存 key 含 horizon，
        命中时零成本；数据缺失时各自降级回退，不影响主流程） */
@@ -1653,31 +1926,13 @@ Page({
   selectHour(date, t) {
     const h = (this.data.chartView || []).find(x => x.d === date && x.t === t)
     if (!h) return
-    const list = this.data.chartMarks[date + 'T' + t] || []
-    // 天相标签与图上标记/结论卡同源（marks），inCloud 是减分项单独提示
-    const tagNames = {
-      cloudSea: '云海窗口', alpenglow: '光染可能', golden: '黄金时刻',
-      blueHour: '蓝调时刻', rainbow: '彩虹可能', star: '星空', galaxy: '银河',
-    }
     this.setData({
       chartPick: { date, t },
       selectedTime: date.slice(5) + ' ' + t,
       selectedHourIndex: this.data.chartView.indexOf(h),
-      hourChip: {
-        t,
-        phrase: F.weatherPhrase(h.code),
-        temp: h.temp == null ? '—' : Math.round(h.temp),
-        feels: h.feels == null ? '—' : Math.round(h.feels),
-        pop: h.pop == null ? '—' : h.pop,
-        precip: Number.isFinite(h.precip) ? Math.round(h.precip * 10) / 10 : '—',
-        wind: h.wind == null ? '—' : Math.round(h.wind),
-        windDir: F.windDirText(h.windDir),
-        rh: h.rh == null ? '—' : Math.round(h.rh),
-        pressure: h.pressure == null ? '—' : Math.round(h.pressure),
-        band: h.band && Number.isFinite(h.band.base) ? h.band.base + '–' + h.band.top + ' m' : '',
-        tags: list.filter(k => k !== 'inCloud').map(k => tagNames[k] || k),
-        inCloud: list.indexOf('inCloud') !== -1,
-      },
+      // 选中时段卡与日照轨迹同一次 setData 落地：一处换了小时，两处必须说同一时刻
+      hourOverview: this.buildHourOverview(h, date, this.data.chartMarks),
+      solarArc: this.buildSolarCard(date, t),
     })
     // Weather V2：统一 Meteogram 与图共享选中时刻（只更 crosshair overlay，不重算等值带）
     this.updateUnifiedSel(date, t)

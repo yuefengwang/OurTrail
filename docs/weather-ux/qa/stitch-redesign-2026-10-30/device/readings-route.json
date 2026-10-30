@@ -1,0 +1,14 @@
+{
+  "routeId": "route-mul4l1as23ykhk",
+  "pointIndex": 1,
+  "points": 12,
+  "tabKeys": [
+    "hourly",
+    "cloud",
+    "enroute",
+    "sky"
+  ],
+  "routeTitle": "月亮湖穿越伍须海-1790560849819",
+  "weatherTab": "enroute",
+  "failed": []
+}

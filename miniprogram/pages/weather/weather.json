@@ -4,6 +4,8 @@
     "icon": "/components/icon/icon",
     "form-field": "/components/form-field/form-field",
     "status-panel": "/components/status-panel/status-panel",
-    "meteogram": "/components/meteogram/meteogram"
+    "meteogram": "/components/meteogram/meteogram",
+    "overlay": "/components/overlay/overlay",
+    "fact-grid": "/components/fact-grid/fact-grid"
   }
 }

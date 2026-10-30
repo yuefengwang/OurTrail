@@ -7,11 +7,19 @@
       <text class="page-title">{{pointCard ? pointCard.name : pointLabels[pointIndex]}}</text>
       <text class="section-sub">同一地点的时间与高度变化，不是整条路线的空间云层图。</text>
     </view>
-    <view wx:if="{{pointCard}}" class="weather-location">
+    <view wx:if="{{showLocation}}" class="place-row" hover-class="button-hover" bindtap="onOpenLocation">
+      <view class="place-row__main">
+        <text class="place-row__label">{{locationTitle}} · 第 {{pointIndex + 1}}/{{pointLabels.length}} 个</text>
+        <text class="place-row__name">{{pointLabels[pointIndex]}}</text>
+        <text class="place-row__hint">点此切换浏览地点</text>
+      </view>
+      <text class="place-row__chev">▾</text>
+    </view>
+    <view wx:elif="{{pointCard}}" class="weather-location">
       <text class="point-meta tabular">坐标 {{pointCard.coordText}} · 海拔 {{pointCard.eleText}}</text>
       <view class="button text" hover-class="button-hover" bindtap="onSavePoint">保存常用地点</view>
     </view>
-    <form-field wx:if="{{!pointCard}}" label="路线关键点" hint="{{scheduleBasis}}">
+    <form-field wx:else label="路线关键点" hint="{{scheduleBasis}}">
       <picker range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPoint"><view class="picker"><text class="picker-value">{{pointLabels[pointIndex] || '暂无路线节点'}}</text><text>▾</text></view></picker>
     </form-field>
     <view class="weather-date">
@@ -43,7 +51,7 @@
       </scroll-view>
 
 
-      <block wx:if="{{weatherTab !== 'sky'}}">
+      <block wx:if="{{weatherTab === 'cloud' || weatherTab === 'hourly'}}">
         <view wx:for="{{callouts}}" wx:key="title" class="callout {{item.tone}}"><text>{{item.title}}</text></view>
         <view class="tl-viewseg">
           <view class="seg-btn {{viewSpan === 24 ? 'on' : ''}}" hover-class="button-hover" bindtap="onSpanToggle" data-span="24">24 小时</view>
@@ -110,8 +118,23 @@
       </block>
       <block wx:elif="{{weatherTab === 'hourly'}}">
         <view class="section-head has-action"><text class="section-title">逐时预报</text><view class="button text" hover-class="button-hover" bindtap="onFullscreen">全图展示</view><text class="section-sub">近地面温度、降水与风 · 小时累计降水（mm）</text></view>
+        <view wx:if="{{hourOverview}}" class="card hour-hero">
+          <view class="hour-hero__head">
+            <view class="hour-hero__main">
+              <text class="chip-time tabular">{{hourOverview.dateLabel}} {{hourOverview.time}}</text>
+              <text class="hour-hero__temp tabular">{{hourOverview.tempTxt}}</text>
+              <text class="small muted tabular">体感 {{hourOverview.feelsTxt}}</text>
+              <text class="day-phrase {{hourOverview.tone}}">{{hourOverview.phrase}}</text>
+            </view>
+            <view wx:if="{{hourOverview.tags.length}}" class="hour-hero__tags">
+              <text wx:for="{{hourOverview.tags}}" wx:key="*this" class="chip-tag">{{item}}</text>
+            </view>
+          </view>
+          <text class="hour-hero__note">读数属于选中这一小时；点图、横向拖动或用下方按钮换时都会同步。</text>
+          <view wx:if="{{hourOverview.inCloud}}" class="hour-hero__warn">此点此时可能处在云中：体感更冷，能见度可能更差。</view>
+          <fact-grid items="{{hourOverview.facts}}" variant="card" />
+        </view>
         <view class="timeline-card"><meteogram series="{{chartView}}" marks="{{chartMarks}}" night="{{chartNight}}" selected-dates="{{chartSelected}}" hour-width="{{viewHW}}" elevation="{{chartElev}}" sun-bands="{{chartSunBands}}" sun-lines="{{chartSunLines}}" now="{{chartNow}}" pick="{{chartPick}}" bind:pickhour="onChartPickHour" /></view>
-        <view wx:if="{{hourChip}}" class="hour-chip"><text class="chip-time tabular">{{selectedTime}}</text><text>{{hourChip.phrase.label}} · {{hourChip.temp}}°C · 降水 {{hourChip.precip}} mm · 风 {{hourChip.wind}} km/h</text></view>
         <view class="weather-time-controls"><view class="button secondary" hover-class="button-hover" bindtap="onHourStep" data-step="-1">前一时</view><picker range="{{hourOptions}}" value="{{selectedHourIndex}}" bindchange="onHourPicker"><view class="picker tabular">{{selectedTime}} ▾</view></picker><view class="button secondary" hover-class="button-hover" bindtap="onHourStep" data-step="1">后一时</view></view>
         <view class="section-head has-action"><text class="section-title">当天数据</text><view class="button text" hover-class="button-hover" bindtap="toggleDetail">{{showDetail ? '收起逐小时全表' : '展开逐小时全表'}}</view></view>
         <view class="card brief-rows">
@@ -152,6 +175,45 @@
 
 
       </block>
+      <block wx:elif="{{weatherTab === 'enroute'}}">
+        <view class="section-head">
+          <text class="section-title">沿途天气</text>
+          <text class="section-sub">先看清这条路线与要去的节点；逐节点的抵达预报在「完整沿途天气」里查。</text>
+        </view>
+        <view wx:if="{{routeView}}" class="card route-card">
+          <text wx:if="{{routeView.title}}" class="route-title">{{routeView.title}}</text>
+          <view wx:if="{{routeView.rows.length}}" class="route-rows">
+            <view wx:for="{{routeView.rows}}" wx:key="k" class="route-row">
+              <text class="route-row__k">{{item.k}}</text>
+              <text class="route-row__v tabular">{{item.v}}</text>
+            </view>
+          </view>
+          <text class="small muted">{{routeView.sourceNote}}</text>
+        </view>
+        <view class="section-head">
+          <text class="section-title">路过哪些节点</text>
+          <text class="section-sub">这里只切换浏览地点，不推算抵达时刻，也不修改个人行程。</text>
+        </view>
+        <view class="card route-list">
+          <view
+            wx:for="{{locationRows}}"
+            wx:key="id"
+            class="route-row-item {{pointIndex === item.index ? 'on' : ''}}"
+            hover-class="button-hover"
+            bindtap="onPickLocation"
+            data-index="{{item.index}}"
+          >
+            <view class="route-row-item__main">
+              <text class="route-row-item__name">{{item.name}}</text>
+              <text class="route-row-item__sub tabular">{{item.sub}}</text>
+            </view>
+            <text wx:if="{{pointIndex === item.index}}" class="route-row-item__now">正在查看</text>
+            <text wx:else class="route-row-item__chev">▾</text>
+          </view>
+        </view>
+        <view class="button secondary block" hover-class="button-hover" bindtap="onOpenRoutePlan">打开完整沿途天气</view>
+        <view class="button text block" hover-class="button-hover" bindtap="onOpenWeatherHub">去天气首页选别的路线</view>
+      </block>
       <block wx:else>
         <view wx:if="{{condOverall || condCards.length || condSilent || skyInputLoading || skyInputNote}}" class="card cond-card cond-strip">
         <view wx:if="{{condOverall}}" class="cond-main">
@@ -174,6 +236,30 @@
       <view wx:if="{{condSilent}}" class="card cond-silent">
         <text class="pheno-text">{{condSilent.text}}</text>
       </view>
+
+
+      <block wx:if="{{solarArc}}">
+        <view class="section-head">
+          <text class="section-title">今日日照轨迹</text>
+          <text class="section-sub">太阳高度随时间变化 · 真实天文量，不含山体遮挡</text>
+        </view>
+        <view class="card solar-card">
+          <image class="solar-img" src="{{solarArc.src}}" mode="widthFix" />
+          <view class="solar-meta">
+            <text class="solar-summary tabular">{{solarArc.dateLabel}} · {{solarArc.summary}}</text>
+            <text wx:if="{{solarArc.daylight}}" class="solar-summary tabular">{{solarArc.daylight}}</text>
+          </view>
+          <text class="small muted">{{solarArc.note}}</text>
+          <view class="chart-legend">
+            <view class="lg-row">
+              <view class="lg-item"><view class="sw-line sw-sun"></view><text>太阳高度</text></view>
+              <view class="lg-item"><view class="sw-band sw-golden"></view><text>黄金时刻</text></view>
+              <view class="lg-item"><view class="sw-band sw-blue"></view><text>蓝调时刻</text></view>
+              <view class="lg-item"><view class="sw-line sw-dash"></view><text>地平线（虚线）</text></view>
+            </view>
+          </view>
+        </view>
+      </block>
 
 
         <view wx:if="{{oiCard || oiHorizon}}" class="card oi-card">
@@ -395,9 +481,35 @@
 
 
       </block>
-      <view wx:if="{{weatherTab !== 'sky' && popShown}}" class="pop-strip"><text class="pop-strip__label">降水概率</text><view class="pop-strip__row"><text wx:for="{{hourStrip}}" wx:key="k" class="pop-strip__v tabular">{{item.pop}}</text></view></view>
+      <view wx:if="{{(weatherTab === 'cloud' || weatherTab === 'hourly') && popShown}}" class="pop-strip"><text class="pop-strip__label">降水概率</text><view class="pop-strip__row"><text wx:for="{{hourStrip}}" wx:key="k" class="pop-strip__v tabular">{{item.pop}}</text></view></view>
       <view class="weather-source"><text class="small muted">更新时间：{{updatedAt}} · 北京时间</text><text class="small muted">这是行前参考，不是出发许可；出发前核实当地气象与路况。</text><text class="small muted">数据来源 {{providerLabel || 'Open-Meteo'}}.com（CC BY 4.0）。日月时刻为本机按坐标计算；天气类天相为条件判断，不作保证。</text><text class="small muted">增强输入：7Timer!（非商业）、CAMS/Open-Meteo Air Quality（Copernicus）、Copernicus DEM（© DLR/Airbus DS）、DarkSkySites。</text><view class="button text" hover-class="button-hover" bindtap="onCopySources">数据来源与许可</view></view>
     </block>
     <status-panel wx:else kind="{{emptyKind}}" title="{{emptyTitle || '暂不展示天气数字'}}" detail="{{emptyDetail || '此节点暂无可用天气数据，请重新查询。'}}" action-label="重新查询" bind:action="fetchWeather" />
+    <!-- 地点选择：只列当前这一屏的节点，另给「完整沿途天气」与天气首页两个出口。
+         不复制路线库/GPX 能力（那些在 weather-hub），也不在这里查逐点预报。 -->
+    <overlay open="{{locationOpen}}" kind="sheet" title="{{locationTitle}}" bind:close="onCloseLocation">
+      <view class="loc-note small muted">{{locationNote}}</view>
+      <view class="loc-list">
+        <view
+          wx:for="{{locationRows}}"
+          wx:key="id"
+          class="loc-row {{pointIndex === item.index ? 'on' : ''}}"
+          hover-class="button-hover"
+          bindtap="onPickLocation"
+          data-index="{{item.index}}"
+        >
+          <view class="loc-row__main">
+            <text class="loc-row__name">{{item.name}}</text>
+            <text class="loc-row__sub tabular">{{item.sub}}</text>
+          </view>
+          <text wx:if="{{pointIndex === item.index}}" class="loc-row__now">正在查看</text>
+          <text wx:else class="loc-row__chev">▾</text>
+        </view>
+      </view>
+      <view class="loc-actions">
+        <view class="button secondary block" hover-class="button-hover" bindtap="onOpenRoutePlan">打开完整沿途天气</view>
+        <view class="button text block" hover-class="button-hover" bindtap="onOpenWeatherHub">去天气首页选别的路线</view>
+      </view>
+    </overlay>
   </view>
 </view>

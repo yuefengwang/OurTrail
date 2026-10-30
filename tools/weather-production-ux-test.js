@@ -178,7 +178,9 @@ async function main() {
   detail.data.chartView = surface
   detail.data.chartMarks = {}
   detail.selectHour(today, '08:00')
-  check('真实页面逐时读数不重复加阵雨', detail.data.hourChip.precip === 1)
+  // 选中时段卡是现在唯一显示读数的位置（旧 .hour-chip 一条行已删除），断言直接打在它上面
+  const precipFact = (detail.data.hourOverview.facts || []).find(f => f.key === 'precip') || {}
+  check('真实页面逐时读数不重复加阵雨', precipFact.value === '1', JSON.stringify(precipFact))
   detail.onHourStep({ currentTarget: { dataset: { step: 1 } } })
   check('前后小时按钮联动选择', detail.data.chartPick.t === '09:00')
   detail.onHourPicker({ detail: { value: 12 } })

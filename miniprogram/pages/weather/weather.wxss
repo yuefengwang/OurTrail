@@ -91,16 +91,10 @@
 .sw-arrow { margin-right: 2px; font-weight: 600; }
 
 /* 小时浮条：点图上某小时后的数字与窗口归属（L1 事实 + L2 归属同条） */
-.hour-chip {
-  margin-top: 8px; border-radius: 10px; background: var(--forest-soft); padding: 8px 12px;
-}
-.chip-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-/* B-16：字重两档（正文 400/500、强调 600），700 只留给 .page-title；数字强调由 --forest 与 tabular 承载 */
+/* 选中小时的读数标签（逐时标签的 hero 与图上标记共用）：
+   B-16：字重两档（正文 400/500、强调 600），700 只留给 .page-title；数字强调由 --forest 与 tabular 承载。
+   hero 取代了原来图下的 .hour-chip 一条压扁的行 —— 六个读数需要两列网格，一行塞不下。 */
 .chip-time { font-size: var(--text-body); font-weight: 600; color: var(--forest); }
-.chip-main { font-size: var(--text-caption); font-weight: 600; flex: 1; }
-.chip-close { font-size: 11px; color: var(--muted); }
-.chip-sub { margin-top: 2px; font-size: 11px; line-height: 17px; color: var(--ink); }
-.chip-tags { margin-top: 4px; }
 .chip-tag {
   font-size: 10px; line-height: 16px; padding: 0 7px; border-radius: 5px;
   background: var(--surface); color: var(--forest); font-weight: 600;
@@ -367,3 +361,88 @@
 .weather-time-controls > picker { flex: 1; min-width: 120px; }
 .weather-time-controls .button { min-height: var(--touch-target); padding: 8px; }
 .weather-source { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--line); }
+
+/* ---------- Stitch 天气重设计（2026-10-30）：地点行 / 选中时段 / 沿途索引 / 日照轨迹 ----------
+   全部只引用 app.wxss 的 token（零新色值、零新字阶）；可点行一律 ≥ --touch-target。 */
+
+/* 地点行：多节点模式唯一的「换地点」入口。整行可点，右侧只放一个 ▾；
+   「保存常用地点」仍只属于单点模式，不在这里复制第二份。 */
+.place-row {
+  display: flex; align-items: center; gap: 10px;
+  min-height: var(--touch-target);
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.place-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.place-row__label { font-size: var(--text-caption); color: var(--muted); }
+.place-row__name { font-size: var(--text-body); font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.place-row__hint { font-size: var(--text-caption); color: var(--forest); }
+.place-row__chev { flex: 0 0 auto; font-size: 12px; color: var(--muted); }
+
+/* 选中时段卡（逐时标签图上方）：时刻 + 温度 + 简字一行，下面两列事实。
+   温度独用 26px —— 与 fact-grid--stats 的读数档同值，本仓唯一的大数字档，不新造字号。 */
+.hour-hero { display: flex; flex-direction: column; gap: 8px; }
+.hour-hero__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.hour-hero__main { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.hour-hero__temp { font-size: 26px; line-height: 1.15; font-weight: 600; color: var(--ink); }
+.hour-hero__tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.hour-hero__note { font-size: var(--text-caption); color: var(--muted); line-height: 18px; }
+.hour-hero__warn {
+  font-size: var(--text-caption); line-height: 18px; color: var(--warning);
+  background: var(--warning-soft); border-radius: 8px; padding: 4px 8px;
+}
+
+/* 沿途标签：路线摘要（只列有值的项）+ 节点索引。时刻不在这里推算，预报交给 weather-plan。 */
+.route-card { display: flex; flex-direction: column; gap: 6px; }
+.route-title { font-size: 15px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.route-rows { display: flex; flex-direction: column; }
+.route-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 4px 0; border-bottom: 1px solid var(--line);
+}
+.route-row:last-child { border-bottom: none; }
+.route-row__k { font-size: var(--text-caption); color: var(--muted); }
+.route-row__v { font-size: var(--text-caption); font-weight: 600; color: var(--ink); }
+.route-list { padding: 4px 0; }
+.route-row-item {
+  display: flex; align-items: center; gap: 10px;
+  min-height: var(--touch-target);
+  padding: 6px 12px; border-radius: 8px;
+}
+.route-row-item.on { background: var(--forest-soft); }
+.route-row-item__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.route-row-item__name { font-size: var(--text-body); font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.route-row-item__sub { font-size: var(--text-caption); color: var(--muted); }
+.route-row-item__now { font-size: var(--text-caption); font-weight: 600; color: var(--forest); }
+.route-row-item__chev { font-size: 12px; color: var(--muted); }
+
+/* 日照轨迹卡（日月标签）：图本身由 utils/solar-arc.js 生成（色板在该文件的 PALETTE，
+   逐条注明来源 token）；这里只排图注与图例。 */
+.solar-card { display: flex; flex-direction: column; gap: 6px; }
+.solar-img { display: block; width: 100%; border-radius: 8px; background: var(--surface); }
+/* 时刻与白昼分两行：中文可以在任意两字之间折行，合成一句时真机断在「白昼 11 / 小时 21 分」。
+   keep-all 再兜一层：极昼这类长句只在空格/标点处折行。 */
+.solar-meta { display: flex; flex-direction: column; gap: 2px; }
+.solar-summary { font-size: var(--text-body); font-weight: 600; color: var(--ink); word-break: keep-all; }
+.sw-band { width: 14px; height: 9px; border-radius: 2px; margin-right: 2px; }
+.sw-golden { background: var(--golden); opacity: 0.55; }
+.sw-blue { background: var(--blue-hour); opacity: 0.55; }
+.sw-sun { border-top-color: var(--forest); }
+
+/* 地点选择 sheet（overlay 内）：行高与沿途索引一致，出口固定两个。 */
+.loc-note { display: block; margin-bottom: 6px; }
+.loc-list { display: flex; flex-direction: column; }
+.loc-row {
+  display: flex; align-items: center; gap: 10px;
+  min-height: var(--touch-target);
+  padding: 8px 10px; border-radius: 8px;
+}
+.loc-row.on { background: var(--forest-soft); }
+.loc-row__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.loc-row__name { font-size: var(--text-body); font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.loc-row__sub { font-size: var(--text-caption); color: var(--muted); }
+.loc-row__now { font-size: var(--text-caption); font-weight: 600; color: var(--forest); }
+.loc-row__chev { font-size: 12px; color: var(--muted); }
+.loc-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }

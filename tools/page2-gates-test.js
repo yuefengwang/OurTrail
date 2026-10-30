@@ -403,6 +403,11 @@ function baseWeatherData(over) {
     dayCards: [], viewSpan: 24, unified: null, oiCard: null, oiHorizon: null, oiMultiDay: [],
     chartView: [], chartMarks: {}, chartNight: {}, chartSelected: {}, chartElev: null, chartNow: null,
     chartPick: null, hourChip: null, agenda: [], callouts: [], detailRows: [], showDetail: false,
+    // 2026-10-30 Stitch 重设计：选中小时 hero / 日照轨迹 / 地点 sheet / 沿途索引。
+    // 缺省全空（与页面 data 的缺省值一致），各状态按需填充，避免「表达式求值失败被当成不渲染」。
+    hourOverview: null, solarArc: null,
+    showLocation: false, locationOpen: false, locationTitle: '', locationNote: '', locationRows: [],
+    routeView: null,
     // 2026-10-26 style-B 4：图上方逐时摘要带 / 图下降水概率行 / 详细数据四行。
     // 默认给空数组是**页面 data 的缺省值**（else 语法求值会因 undefined.length 抛错，
     // 被「表达式求值得动」那条门判成假绿）；下面 data / dataClassic 两档再填真形状，让新块真的渲染。
@@ -438,7 +443,20 @@ const WEATHER_STATES = {
   }),
   dataClassic: baseWeatherData({ weatherTab: 'hourly',
     dayCards: fixtureDayCards(7), unified: null, oiCard: null,
-    condCards: fixtureCondCards(1), hourChip: { t: '08:00', phrase: { label: '晴' }, temp: 10, feels: 9, pop: 10, precip: 0, wind: 7, windDir: '北', rh: 60, pressure: '812', band: '2400–2600 m', tags: ['云海窗口'], inCloud: false },
+    condCards: fixtureCondCards(1),
+    // 选中小时 hero 的真形状（页面 buildHourOverview 的产物）：六项事实 + 同源标签。
+    hourOverview: {
+      dateLabel: '10-20', time: '08:00', tempTxt: '10°', feelsTxt: '9°', phrase: '晴', tone: 'success',
+      facts: [
+        { key: 'wind', label: '风', value: '7', unit: 'km/h', sub: '阵风 12 km/h · 北' },
+        { key: 'precip', label: '降水', value: '0', unit: 'mm/h', sub: '概率 10%' },
+        { key: 'cloud', label: '云量', value: '30', unit: '%', sub: '低 20% · 中 30% · 高 40%' },
+        { key: 'visibility', label: '能见度', value: '18', unit: 'km', sub: '紫外线 3' },
+        { key: 'rh', label: '湿度', value: '60', unit: '%', sub: '露点 3°C' },
+        { key: 'pressure', label: '地面气压', value: '812', unit: 'hPa', sub: '0°C 冻结 4200 m' },
+      ],
+      tags: ['云海窗口'], inCloud: false,
+    },
     // 经典分支也铺一份：48h 窗 6 小时一格 × 2 列，其中一格缺概率 ⇒ 印「—」，整行仍在
     hourStrip: [
       { k: '2026-10-20T00:00', t: '00:00', phrase: { label: '晴', tone: 'success' }, temp: '8°', pop: '10%' },
@@ -876,6 +894,39 @@ section('§4 逐时、云层、日月读数契约')
   check('云层灰阶语义与数据缺测语义明确', textsWith(cloudEntries, '分层云量').length === 1 && textsWith(cloudEntries, '斜纹 = 缺测或高度覆盖外').length === 1)
   const location = viewFor('cloud', { pointCard: { name: '大峰', coordText: '31.0632, 102.9085', eleText: '5025 m · 手动填写' } })
   check('地点名坐标海拔来源与保存入口齐备', textsWith(location, '大峰').length === 1 && textsWith(location, '31.0632, 102.9085').length === 1 && textsWith(location, '5025 m · 手动填写').length === 1 && nodesTagged(location, 'view').filter(node => attrOf(node, 'bindtap') === 'onSavePoint').length === 1)
+
+  /* 2026-10-30 Stitch 重设计：选中小时 hero / 日照轨迹卡 / 地点 sheet / 沿途索引。
+     四者都必须「有数据才出现」，且不得与既有读数重复或抢走旧契约的计数。 */
+  const hero = entriesWithClass(viewFor('hourly', { hourOverview: WEATHER_STATES.dataClassic.hourOverview }), 'hour-hero')
+  const heroEntries = viewFor('hourly', { hourOverview: WEATHER_STATES.dataClassic.hourOverview })
+  check('选中小时 hero：只在逐时标签、只有一个、六项事实交给 fact-grid',
+    hero.length === 1 && nodesTagged(heroEntries, 'fact-grid').length === 1
+    && textsWith(heroEntries, '10-20 08:00').length === 1 && textsWith(heroEntries, '体感 9°').length === 1
+    && textsWith(heroEntries, '云海窗口').length === 1)
+  check('选中小时 hero：不可读数据时不渲染空卡', entriesWithClass(hourlyEntries, 'hour-hero').length === 0)
+  const withSolar = viewFor('sky', { solarArc: { src: 'data:image/svg+xml;base64,AAA', dateLabel: '10-20', summary: '日出 07:10 · 日落 18:31', daylight: '白昼 11 小时 21 分', note: '曲线按坐标每 15 分钟采样，并折算为可见地平线以上的高度角。' } })
+  check('日照轨迹卡：日月标签里有数据才出现，且写清「不含山体遮挡」',
+    entriesWithClass(withSolar, 'solar-card').length === 1 && entriesWithClass(skyEntries, 'solar-card').length === 0
+    && textsWith(withSolar, '不含山体遮挡').length === 1)
+  check('日照轨迹卡：时刻与白昼分两行（不在「白昼 11 / 小时」处折行）',
+    textsWith(withSolar, '10-20 · 日出 07:10 · 日落 18:31').length === 1
+    && textsWith(withSolar, '白昼 11 小时 21 分').length === 1)
+  const multiRows = [{ id: 'a', index: 0, name: '起点', sub: '起点 · 1/2' }, { id: 'b', index: 1, name: '垭口', sub: '途经点 · 2/2' }]
+  const sheet = viewFor('cloud', { showLocation: true, locationOpen: true, locationRows: multiRows, pointIndex: 1, pointLabels: ['起点', '垭口'], locationTitle: '路线节点' })
+  check('地点 sheet：多节点才挂入口，打开后逐行可点且只有一个「正在查看」',
+    nodesTagged(sheet, 'overlay').length === 1 && entriesWithClass(sheet, 'loc-row').length === 2
+    && nodesTagged(sheet, 'view').filter(node => attrOf(node, 'bindtap') === 'onPickLocation').length === 2
+    && textsWith(sheet, '正在查看').length === 1)
+  check('地点 sheet：单点模式不出现换地点入口（不造「只有一个自己」的假选择）',
+    nodesTagged(viewFor('cloud'), 'overlay').length === 0 && entriesWithClass(viewFor('cloud'), 'place-row').length === 0)
+  const enroute = viewFor('enroute', {
+    weatherTab: 'enroute', showLocation: true, pointIndex: 1,
+    pointLabels: ['起点', '垭口'], locationRows: multiRows,
+    routeView: { title: '四姑娘山', rows: [{ k: '里程', v: '12 km' }, { k: '关键节点', v: '2 个' }], sourceNote: '活动当前路线快照 · 逐点预报在「完整沿途天气」里查' },
+  })
+  check('沿途标签：路线摘要 + 节点索引各一处，且不重做逐点预报',
+    entriesWithClass(enroute, 'route-card').length === 1 && entriesWithClass(enroute, 'route-row-item').length === 2
+    && nodesTagged(enroute, 'meteogram').length === 0 && textsWith(enroute, '打开完整沿途天气').length === 1)
 }
 
 section('§6 边界：写入集与追加条款（M-18 本批只做一半都不算完成）')

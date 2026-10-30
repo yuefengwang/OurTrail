@@ -117,6 +117,20 @@ tools/gen-icons.js          # PNG 光栅化脚本（无第三方依赖，node �
 
 ## 六、变更日志
 
+- 2026-10-30（**天气模块落地 Stitch 重设计：动态四标签外壳 / 地点 sheet / 选中时段卡 / 沿途索引 / 日照轨迹卡**，基线 `3a9b4f8`，分支 `mac/weather-stitch-redesign`）：**不需要重新部署 trailApi**（`cloudfunctions/`、`domain/`、`app.wxss` 零改动；只动天气页 4 个文件 + 新增 1 个纯函数模块 + 2 套测试）。设计来源是仓库外 `/Users/yfwang/stitch_ourtrail_ui_optimization/` 的 11 份导出；落地规格与逐条数据能力裁定在 `docs/superpowers/specs/2026-10-30-weather-stitch-redesign.md`（含「哪些演示数字必须删」的矩阵与 §9 两个被自家判据抓到的缺陷）。
+
+  **做了什么**：① **标签集合随节点数**——单点仍是 `hourly/cloud/sky` 三标签（既有契约不变），多节点新增 `enroute` 第四标签；`weatherTab` 在新页面里不存在时退回 `cloud`，不落空块。② **地点选择 sheet**（多节点才挂）：标题区整行可点（≥44px）打开 sheet，列当前点集的「节点性质 · i/N」，两个出口是「打开完整沿途天气」与「去天气首页选别的路线」；保存地点仍只属于单点模式，全页仍只有一处 `onSavePoint`。③ **选中时段卡**（逐时标签图上方）：时刻 + 温度 + 体感 + 天气简字 + 天相同源标签，六项两列事实（风/阵风/风向、降水/概率、云量/分层、能见度/UV、湿度/露点、地面气压/冻结高度），缺测 `—`，`inCloud` 单独一行提示；它取代了原来图下 `.hour-chip` 一条压扁的读数，`hourChip` 状态与相关测试一并迁到 `hourOverview`（断言打在实际显示的那张卡上）。④ **沿途标签（索引层）**：路线摘要（标题/里程/累计爬升/关键节点/节点最高点，零值不印）+ 节点索引 + 两个出口；**不推算抵达时刻、不查逐点预报**（唯一实现在 `pages/weather-plan`）。⑤ **今日日照轨迹卡**（日月标签）：新增 `miniprogram/utils/solar-arc.js`（wx-free）画真实太阳高度曲线 + 日出日落竖线 + 黄金/蓝调色带 + 选中时刻，`astro.js` 是唯一判据来源；色板 7 条字面量逐条注明来源 token。⑥ **云层全屏被裁掉**：`pages/weather-chart` 是全屏 surface meteogram，不是云层剖面，指向它会得到「打开后内容不一样」的入口；选中小时云层读数既有 `unified.r1–r4` 已覆盖，未重复造。
+
+  **两个缺陷是本轮自家判据抓出来的**（都属「数据对、渲染不对」）：① `HHMM` 少一个捕获组 ⇒ `parseHM` 读 `m[2]` 得 `undefined` ⇒ `x(NaN)`，日出日落竖线与选中点全部 `cx="NaN"`，SVG 仍渲染、只是标记静默消失；`solar-arc-test` §3 的「竖线画在交点横坐标上」当场红。② 极夜底色被天文暮光误导：78°N 冬至太阳最高 −11.6°，仍满足 −18° 天文暮光 ⇒ 旧逻辑把正午画成「白天」；改为按太阳是否升起分岔，整天不升则铺满整幅。
+
+  **验证**：`node tools/check.js` ALL CHECKS PASSED（G10 作用域 43 / class token 3463 / 命中 0）；`check-handlers` 通过（死 handler 仍只有存量 `editor#onNumber`）；逐套实测 `solar-arc-test` **64/0**（新增）、`page2-gates 116/0`、`weather-page 219/0`、`weather-production-ux 55/0`、`weather-v2 103/0`、`sky 280/0`、`journey-graph 15/0`、`weather-v2-visual-audit 43/0`、`swx1 45/0`、`swx2 110/0`、`nav-chrome 15/0`。
+
+  **真机（微信开发者工具模拟器）VERIFIED**：本机 macOS 版工具（iPhone 6/7/8 **375×667 @2x**，SDK 3.8.12，自动化端口 9421）。`close --project` → `open` → `auto` 重编译后再驱动，bundle 新鲜度由新文案（两行日照卡）自证。两个用例都吃**真实云函数数据**：A 单点峨眉山 `?src=local&lat=29.5183&lng=103.3358&ele=3077`，B 路线模式 `?route=route-mul4l1as23ykhk`（12 节点）。**A 25 条断言全过**（门槛链 `dayCards=7 / chartView=24 / unified≠null`；单点三标签、无 place-row、`locationRows=[]`；选中时段卡六项事实由 `fact-grid` 渲染；14:00 换时后卡与像素同步、读数与 00:00 不同）；**B 20 条断言全过**（四标签、place-row、sheet 12 行 + 唯一「正在查看」、点选第 2 点后 sheet 关闭且天气仍 ready、沿途卡 12 行 + 出口、沿途无 meteogram、卡内无 `mm/h`/`hPa`）。
+
+  **真机抓到并修掉三处「数据对、渲染不对」**（静态门与纯函数都测不到）：① 日照卡 summary 在 375 宽断在「白昼 11 / 小时 21 分」⇒ 拆成 `summary`（日出日落）与 `daylight`（白昼时长）两行 + `word-break: keep-all`；② 单点仍预生成 `locationRows`（sheet 不可达，等于无人读的死状态）⇒ 改为仅多节点生成；③ 沿途卡抬头与「路线」行印**同一个标题字符串** ⇒ 删掉该行。另有一处是静态门当场抓的：`.solar-daylight` 类没有对应规则（G10 命中）⇒ 不新增无定义类。
+
+  **结论边界**：375 宽与上述两个真实数据用例已核；390/414、物理机、大字体、软键盘、真实弱网/本地缓存兜底态**未验**。证据 `docs/weather-ux/qa/stitch-redesign-2026-10-30/device/`（A–J 十张截图 + `readings.json` / `readings-route.json`），方法与三道门槛写在同目录 `README.md`。未 commit/push/部署。
+
 - 2026-10-28（**发现列表封面过小与左侧空洞**）：针对用户截图，仅调整 `activity-card` 的 flat 变体；封面由共享默认 64×76px 改为 104px 宽、最小 128px 高并随文字区等高，图片保持等比例裁切，去掉行内重复横向边距。首页非 flat 紧凑卡与 featured 不变，未修改业务或云函数，**不需要重新部署 trailApi**。9 套相关回归 **395/0**，两项静态门通过；重开项目后三档 375/390/414px 原生各 **27 项渲染检查通过、0 异常**。正常列表来自真实云端（50 条）；长标题与失败态仅临时修改组件数据并恢复，不混称真实弱网验收。证据 `docs/ui-ux-redesign/evidence/discover-cover-2026-10-28/README.md`，物理机与大字体未验。
 
 - 2026-10-28（**用户截图反馈：无活动首页仍像旧版**）：核对用户截图与上一批原生空态截图，发现新版按钮已生效，但空态结构未迭代；不是有证据支持的编译缓存问题。补改首页与 `next-up-card`：无活动时用有明确氛围用途标签的现有山林图、成组发起/发现按钮、活动保存去向说明；仅有历史/草稿时保留紧凑无图卡；图片失败仍有文案和两入口。有下一场、发现数据、创建流程及业务权限均未改，无云函数变更。26 套相关回归 **1814/0**，两项静态门及 diff 检查通过；375/390/414px 原生各 **85 条混合检查通过、0 异常、0 云写入**，含空态两个入口真实点击、48px 同排尺寸和图片失败分支（414 为 Mac 宽屏预设，非物理手机）。证据 `docs/ui-ux-redesign/evidence/home-empty-followup-2026-10-28/README.md`；上一轮证据保留，不拿有活动样例代替空首页验收。未 commit/push/部署。
